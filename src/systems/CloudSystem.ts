@@ -1,0 +1,356 @@
+/**
+ * Bestenliste und Spielstand-Abgleich ueber Supabase.
+ *
+ * ## Zwei Grundsaetze
+ *
+ * **1. Das Netz darf das Spiel nie aufhalten.** Jede Funktion hier gibt ein
+ * Ergebnisobjekt zurueck und wirft nie. Kein Fehlschlag - kein Empfang, kein
+ * Dienst, keine Zugangsdaten - darf dazu fuehren, dass man nicht mehr spielen
+ * kann. Online ist eine Zugabe, kein Bestandteil der Schleife.
+ *
+ * **2. Kein Konto, kein Passwort, keine E-Mail.** Ein Spielstand gehoert einer
+ * zufaelligen UUID, die nur lokal liegt. Wer ihn auf ein zweites Geraet holen
+ * will, laesst sich einen kurzen Code geben und tippt ihn dort ein. Damit
+ * braucht das Spiel weder Anmeldung noch personenbezogene Daten - und es gibt
+ * nichts, was jemand vergessen oder verlieren koennte ausser dem Geraet selbst.
+ *
+ * ## Was hier bewusst NICHT passiert
+ *
+ * Spielstaende werden **nicht automatisch** hochgeladen. Der Abgleich ist immer
+ * eine bewusste Handlung im Sync-Bildschirm. Ein Hintergrund-Upload muesste
+ * bei jedem Konflikt still entscheiden, welcher Stand gewinnt - und die falsche
+ * Entscheidung kostet Wochen Fortschritt.
+ */
+
+import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+
+import {
+  BACKEND_ANON_KEY,
+  BACKEND_TIMEOUT_MS,
+  BACKEND_URL,
+  isBackendConfigured,
+  LEADERBOARD_LIMIT,
+  PLAYER_NAME_MAX_LENGTH,
+  SYNC_CODE_ALPHABET,
+  SYNC_CODE_LENGTH,
+} from '@/config/backend';
+import * as SaveSystem from '@/systems/SaveSystem';
+import type { SaveData } from '@/types';
+
+// --- Ergebnistypen ----------------------------------------------------------
+
+/**
+ * Ergebnis jeder Netzoperation.
+ *
+ * Bewusst kein `throw`: Aufrufer sind Scenes, und eine Scene, die eine Ausnahme
+ * nicht faengt, reisst das Spiel mit. Ein Ergebnisobjekt zwingt dazu, den
+ * Fehlerfall anzusehen.
+ */
+export type CloudResult<T> = { ok: true; value: T } | { ok: false; error: string };
+
+export interface LeaderboardEntry {
+  playerName: string;
+  score: number;
+  bestCombo: number;
+  createdAt: string;
+}
+
+/** Kurzfassung eines Spielstands - genug, um zwei Staende zu unterscheiden. */
+export interface RemoteSaveSummary {
+  level: number;
+  bestScore: number;
+  totalRuns: number;
+  updatedAt: string;
+}
+
+export interface RemoteSave extends RemoteSaveSummary {
+  data: SaveData;
+}
+
+// --- Client ------------------------------------------------------------------
+
+let client: SupabaseClient | null = null;
+
+function getClient(): SupabaseClient | null {
+  if (!isBackendConfigured) return null;
+
+  client ??= createClient(BACKEND_URL, BACKEND_ANON_KEY, {
+    auth: {
+      // Ohne Anmeldung gibt es keine Sitzung zu behalten oder zu erneuern.
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  });
+
+  return client;
+}
+
+export function isAvailable(): boolean {
+  return isBackendConfigured;
+}
+
+/**
+ * Legt ein Zeitlimit ueber eine Anfrage.
+ *
+ * Supabase bricht von sich aus nicht ab. Ohne Limit wartet der Sync-Bildschirm
+ * bei schlechtem Empfang unbegrenzt auf eine Antwort, die nie kommt.
+ */
+async function withTimeout<T>(operation: PromiseLike<T>, label: string): Promise<CloudResult<T>> {
+  try {
+    const timeout = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('Zeitueberschreitung')), BACKEND_TIMEOUT_MS);
+    });
+
+    return { ok: true, value: await Promise.race([operation, timeout]) };
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : 'Unbekannter Fehler';
+    console.warn(`[CloudSystem] ${label} fehlgeschlagen:`, error);
+    return { ok: false, error: `${label}: ${reason}` };
+  }
+}
+
+// --- Bestenliste -------------------------------------------------------------
+
+/** Beste Ergebnisse einer Welt, absteigend. */
+export async function fetchLeaderboard(worldId: string): Promise<CloudResult<LeaderboardEntry[]>> {
+  const supabase = getClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+
+  const result = await withTimeout(
+    supabase
+      .from('scores')
+      .select('player_name, score, best_combo, created_at')
+      .eq('world_id', worldId)
+      .order('score', { ascending: false })
+      .order('created_at', { ascending: true })
+      .limit(LEADERBOARD_LIMIT),
+    'Bestenliste laden',
+  );
+
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  const rows = result.value.data ?? [];
+  return {
+    ok: true,
+    value: rows.map((row) => ({
+      playerName: String(row.player_name),
+      score: Number(row.score),
+      bestCombo: Number(row.best_combo),
+      createdAt: String(row.created_at),
+    })),
+  };
+}
+
+/** Traegt ein Ergebnis ein. Der Name wird auf die erlaubte Laenge gekuerzt. */
+export async function submitScore(
+  playerName: string,
+  worldId: string,
+  score: number,
+  bestCombo: number,
+): Promise<CloudResult<true>> {
+  const supabase = getClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+
+  const name = sanitizePlayerName(playerName);
+  if (!name) return { ok: false, error: 'Kein Name angegeben' };
+
+  const result = await withTimeout(
+    supabase.from('scores').insert({
+      player_name: name,
+      world_id: worldId,
+      score: Math.max(0, Math.round(score)),
+      best_combo: Math.max(0, Math.round(bestCombo)),
+    }),
+    'Ergebnis eintragen',
+  );
+
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  return { ok: true, value: true };
+}
+
+/**
+ * Bereinigt einen Spielernamen.
+ *
+ * Steuerzeichen raus, Leerraum zusammenfassen, kuerzen. Die Datenbank prueft
+ * die Laenge ebenfalls - hier passiert es nur frueher, damit der Nutzer eine
+ * verstaendliche Rueckmeldung statt eines Datenbankfehlers bekommt.
+ */
+export function sanitizePlayerName(raw: string): string {
+  return raw
+    .replace(/[\p{Cc}\p{Cf}]/gu, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, PLAYER_NAME_MAX_LENGTH);
+}
+
+// --- Spielstand --------------------------------------------------------------
+
+/** Laedt den lokalen Spielstand hoch und legt ihn bei Bedarf neu an. */
+export async function pushSave(): Promise<CloudResult<string>> {
+  const supabase = getClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+
+  const save = SaveSystem.load();
+  const cloudId = SaveSystem.ensureCloudId();
+
+  const result = await withTimeout(
+    supabase.from('saves').upsert(
+      {
+        id: cloudId,
+        data: save,
+        level: save.level,
+        best_score: save.bestScore,
+        total_runs: save.totalRuns,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: 'id' },
+    ),
+    'Spielstand hochladen',
+  );
+
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  return { ok: true, value: cloudId };
+}
+
+/** Holt einen Spielstand, ohne ihn zu uebernehmen - der Aufrufer entscheidet. */
+export async function fetchSave(cloudId: string): Promise<CloudResult<RemoteSave | null>> {
+  const supabase = getClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+
+  const result = await withTimeout(
+    supabase
+      .from('saves')
+      .select('data, level, best_score, total_runs, updated_at')
+      .eq('id', cloudId)
+      .maybeSingle(),
+    'Spielstand laden',
+  );
+
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  const row = result.value.data;
+  if (!row) return { ok: true, value: null };
+
+  return {
+    ok: true,
+    value: {
+      data: row.data as SaveData,
+      level: Number(row.level),
+      bestScore: Number(row.best_score),
+      totalRuns: Number(row.total_runs),
+      updatedAt: String(row.updated_at),
+    },
+  };
+}
+
+// --- Sync-Codes --------------------------------------------------------------
+
+/**
+ * Erzeugt einen Code aus dem verwechslungsarmen Alphabet.
+ *
+ * `crypto.getRandomValues` statt `Math.random`: bei einem so kurzen Code soll
+ * die Verteilung nicht vorhersagbar sein, sonst reduziert sich der Suchraum.
+ */
+function createCode(): string {
+  const bytes = new Uint8Array(SYNC_CODE_LENGTH);
+  crypto.getRandomValues(bytes);
+
+  let code = '';
+  for (const byte of bytes) {
+    code += SYNC_CODE_ALPHABET[byte % SYNC_CODE_ALPHABET.length];
+  }
+  return code;
+}
+
+/**
+ * Laedt den Spielstand hoch und gibt einen kurzen Code darauf zurueck.
+ *
+ * Bei einer Kollision - der Code ist schon vergeben - wird ein neuer versucht.
+ * Drei Versuche reichen: bei rund einer Milliarde Moeglichkeiten und wenigen
+ * gleichzeitig gueltigen Codes ist schon der erste praktisch immer frei.
+ */
+export async function createSyncCode(): Promise<CloudResult<string>> {
+  const supabase = getClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+
+  const uploaded = await pushSave();
+  if (!uploaded.ok) return uploaded;
+
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const code = createCode();
+    const result = await withTimeout(
+      supabase.from('sync_codes').insert({ code, save_id: uploaded.value }),
+      'Code erzeugen',
+    );
+
+    if (!result.ok) return result;
+    if (!result.value.error) return { ok: true, value: code };
+
+    // 23505 = unique_violation. Alles andere ist ein echter Fehler.
+    if (result.value.error.code !== '23505') {
+      return { ok: false, error: result.value.error.message };
+    }
+  }
+
+  return { ok: false, error: 'Kein freier Code gefunden - bitte erneut versuchen' };
+}
+
+/**
+ * Loest einen Code ein und liefert den zugehoerigen Spielstand.
+ *
+ * Uebernommen wird er hier **nicht** - das entscheidet der Sync-Bildschirm,
+ * nachdem er beide Staende nebeneinander gezeigt hat.
+ */
+export async function redeemSyncCode(
+  rawCode: string,
+): Promise<CloudResult<{ cloudId: string; save: RemoteSave } | null>> {
+  const supabase = getClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+
+  const code = normalizeSyncCode(rawCode);
+  if (code.length !== SYNC_CODE_LENGTH) {
+    return { ok: false, error: `Ein Code hat ${SYNC_CODE_LENGTH} Zeichen` };
+  }
+
+  // Abgelaufene Codes sind per Zugriffsregel unsichtbar - ein verfallener Code
+  // liefert deshalb dasselbe wie ein falscher.
+  const lookup = await withTimeout(
+    supabase.from('sync_codes').select('save_id').eq('code', code).maybeSingle(),
+    'Code pruefen',
+  );
+
+  if (!lookup.ok) return lookup;
+  if (lookup.value.error) return { ok: false, error: lookup.value.error.message };
+  if (!lookup.value.data) return { ok: true, value: null };
+
+  const cloudId = String(lookup.value.data.save_id);
+  const remote = await fetchSave(cloudId);
+  if (!remote.ok) return remote;
+  if (!remote.value) return { ok: true, value: null };
+
+  return { ok: true, value: { cloudId, save: remote.value } };
+}
+
+/**
+ * Bringt eine Eingabe auf die Code-Form.
+ *
+ * Grossbuchstaben, keine Leerzeichen - und die drei Zeichen, die es im
+ * Alphabet nicht gibt, werden auf ihre Zwillinge abgebildet. Wer eine 0 als O
+ * liest, soll trotzdem ankommen.
+ */
+export function normalizeSyncCode(raw: string): string {
+  return raw
+    .toUpperCase()
+    .replace(/\s+/g, '')
+    .replace(/O/g, '0')
+    .replace(/I/g, '1')
+    .replace(/L/g, '1')
+    .slice(0, SYNC_CODE_LENGTH);
+}

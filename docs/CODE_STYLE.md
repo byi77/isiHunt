@@ -22,7 +22,7 @@ if (this.remainingMs < CRITICAL_TIME_MS) { ... }
 Jede Zahl, an der man beim Balancing dreht, gehoert nach `src/config/`. Das
 ist der Ort, an dem man das Spiel aendert, ohne Code zu lesen.
 
-### 1.2 Kommentare erklaeren *warum*, nie *was*
+### 1.2 Kommentare erklaeren _warum_, nie _was_
 
 ```ts
 // Nein — sagt nur, was ohnehin dasteht
@@ -97,16 +97,16 @@ Zeiger.
 
 ## 2. Namenskonventionen
 
-| Was | Form | Beispiel |
-|---|---|---|
-| Dateien mit Klasse | `PascalCase.ts` | `GameScene.ts` |
-| Dateien mit Daten/Funktionen | `camelCase.ts` | `rarities.ts` |
-| Klassen, Typen, Interfaces | `PascalCase` | `ScoreSystem`, `RarityDef` |
-| Funktionen, Variablen | `camelCase` | `rollRarity` |
-| Konstanten | `SCREAMING_SNAKE` | `RUN_DURATION_MS` |
-| Konstanten-Objekte | `PascalCase` + `as const` | `SceneKey`, `TextureKey` |
-| Private Felder | fuehrendes `private` | `private readonly core` |
-| Bewusst ungenutzt | fuehrender `_` | `_time` |
+| Was                          | Form                      | Beispiel                   |
+| ---------------------------- | ------------------------- | -------------------------- |
+| Dateien mit Klasse           | `PascalCase.ts`           | `GameScene.ts`             |
+| Dateien mit Daten/Funktionen | `camelCase.ts`            | `rarities.ts`              |
+| Klassen, Typen, Interfaces   | `PascalCase`              | `ScoreSystem`, `RarityDef` |
+| Funktionen, Variablen        | `camelCase`               | `rollRarity`               |
+| Konstanten                   | `SCREAMING_SNAKE`         | `RUN_DURATION_MS`          |
+| Konstanten-Objekte           | `PascalCase` + `as const` | `SceneKey`, `TextureKey`   |
+| Private Felder               | fuehrendes `private`      | `private readonly core`    |
+| Bewusst ungenutzt            | fuehrender `_`            | `_time`                    |
 
 **Zeiteinheiten gehoeren in den Namen:** `remainingMs`, `dtSec`,
 `COMBO_GRACE_MS`. Eine Zahl namens `duration` ist ein Fehler, der darauf
@@ -126,13 +126,13 @@ wartet zu passieren.
 
 Diese Regel haelt die Doku aktuell — nicht Disziplin.
 
-| Aenderung | Zuerst aktualisieren |
-|---|---|
-| Balancing-Wert | `docs/GAME_DESIGN.md` |
-| Neue Datei / neues System | `docs/ARCHITECTURE.md` |
-| Architekturentscheidung | `docs/DECISIONS.md` (neuer ADR) |
-| Neue Farbe / Effekt | `docs/ART_STYLE.md` |
-| Feature fertig | `docs/ROADMAP.md` abhaken, `CHANGELOG.md` ergaenzen |
+| Aenderung                 | Zuerst aktualisieren                                |
+| ------------------------- | --------------------------------------------------- |
+| Balancing-Wert            | `docs/GAME_DESIGN.md`                               |
+| Neue Datei / neues System | `docs/ARCHITECTURE.md`                              |
+| Architekturentscheidung   | `docs/DECISIONS.md` (neuer ADR)                     |
+| Neue Farbe / Effekt       | `docs/ART_STYLE.md`                                 |
+| Feature fertig            | `docs/ROADMAP.md` abhaken, `CHANGELOG.md` ergaenzen |
 
 Die Dokumentation wird **im selben Commit** geaendert wie der Code. Ein
 separater "docs update"-Commit bedeutet, dass die Doku schon einmal falsch war.
@@ -158,5 +158,5 @@ Was beim Durchsehen eines Diffs zuerst gefragt wird:
 2. Steht eine neue Zahl im Code statt in `config/`?
 3. Gibt es ein `onEvent` ohne passendes `offEvent`?
 4. Bewegt sich etwas ohne `delta`?
-5. Erklaert ein Kommentar *was* statt *warum*?
+5. Erklaert ein Kommentar _was_ statt _warum_?
 6. Wurde die Doku mitgezogen?

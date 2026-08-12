@@ -21,8 +21,21 @@ Achievement-System fuer alle, die dranbleiben.
   bis x5. Ein zu langes Zoegern setzt ihn zurueck.
 - **Fortschritt bleibt.** XP → Charakterlevel → Talentpunkte → neue Welten und
   Erfolge.
+- **Duell zu zweit.** Zwei Personen, ein Geraet, je 90 Sekunden — beide jagen
+  dieselben Relikte in derselben Reihenfolge.
+- **Bestenliste und Geraetewechsel.** Optional, ohne Konto und ohne Passwort.
 
 Details: [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md)
+
+## Spielen
+
+Fertig gebaut und ohne Installation:
+
+**[byi77.github.io/isiHunt](https://byi77.github.io/isiHunt/)**
+
+Auf dem Handy: _Teilen → Zum Home-Bildschirm_. Dann laeuft das Spiel im
+Vollbild ohne Adressleiste. Auf dem iPhone ist das der **einzige** Weg dorthin
+— Safari kennt dort keine Fullscreen-API (ADR-0009).
 
 ## Steuerung
 
@@ -68,7 +81,7 @@ npm run dev
 
 Vite gibt zwei Adressen aus: `localhost` fuer den PC und eine
 Netzwerk-Adresse (`192.168.x.x:5173`). **Die Netzwerk-Adresse im Handy-Browser
-oeffnen** — Handy und PC muessen im selben WLAN sein. Aenderungen am Code sind
+oeffnen** — Handy und PC muessen im selben Netz sein. Aenderungen am Code sind
 sofort auch auf dem Handy sichtbar.
 
 ### Weitere Befehle
@@ -81,18 +94,43 @@ sofort auch auf dem Handy sichtbar.
 | `npm run typecheck` | Nur TypeScript pruefen                       |
 | `npm run lint`      | ESLint                                       |
 | `npm run format`    | Prettier ueber alle Quellen                  |
+| `npm run icons`     | App-Icons neu zeichnen                       |
+
+### Online-Funktionen (optional)
+
+Bestenliste und Spielstand-Abgleich brauchen ein Supabase-Projekt. **Ohne
+Zugangsdaten laeuft das Spiel vollstaendig** — die beiden Knoepfe erscheinen
+dann gar nicht erst.
+
+Zum Einrichten:
+
+1. Kostenloses Projekt auf [supabase.com](https://supabase.com) anlegen
+2. `supabase/schema.sql` im SQL-Editor ausfuehren (legt Tabellen, Rechte und
+   Zugriffsregeln an; wiederholbar)
+3. `.env.example` nach `.env` kopieren und die beiden Werte aus
+   _Project Settings → API keys_ eintragen
+
+> Gebraucht wird ausschliesslich der **oeffentliche** Schluessel
+> (`publishable` bzw. `anon`). Der `secret`- oder `service_role`-Schluessel
+> umgeht saemtliche Zugriffsregeln und darf nie in den Client — siehe ADR-0012.
+
+**Die Bestenliste ist manipulierbar.** Das Spiel laeuft im Browser; ohne
+serverseitige Nachrechnung eines Runs laesst sich das nicht verhindern. Fuer
+ein Duell unter Bekannten unerheblich, fuer eine oeffentliche Rangliste nicht
+(ADR-0011).
 
 ---
 
 ## Technik
 
-|         |                                                            |
-| ------- | ---------------------------------------------------------- |
-| Sprache | TypeScript (strict)                                        |
-| Engine  | [Phaser 3](https://phaser.io/)                             |
-| Build   | [Vite](https://vite.dev/)                                  |
-| Ziel    | Mobile Browser (Hochformat), spaeter per Capacitor als App |
-| Assets  | v0.1 komplett prozedural erzeugt — keine Bilddateien       |
+|          |                                                            |
+| -------- | ---------------------------------------------------------- |
+| Sprache  | TypeScript (strict)                                        |
+| Engine   | [Phaser 3](https://phaser.io/)                             |
+| Build    | [Vite](https://vite.dev/)                                  |
+| Backend  | [Supabase](https://supabase.com/) — optional               |
+| Ziel     | Mobile Browser (Hochformat), spaeter per Capacitor als App |
+| Grafiken | Komplett prozedural erzeugt — keine Bilddateien im Spiel   |
 
 Warum dieser Stack: [docs/DECISIONS.md](docs/DECISIONS.md)
 Wie der Code aufgebaut ist: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)

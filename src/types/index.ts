@@ -24,6 +24,17 @@ export interface SaveData {
   collected: Record<RarityId, number>;
   unlockedAchievements: string[];
   lastWorldId: string;
+
+  /** Anzeigename in der Bestenliste. Leer, solange keiner gesetzt wurde. */
+  playerName: string;
+  /**
+   * Kennung dieses Spielstands im Online-Speicher.
+   *
+   * Zufaellige UUID, entsteht erst beim ersten Abgleich - wer nie synchronisiert,
+   * hinterlaesst nichts. Zwei Geraete mit derselben Kennung teilen sich einen
+   * Spielstand; genau das stellt der Sync-Code her.
+   */
+  cloudId: string | null;
 }
 
 /** Ergebnis eines einzelnen Runs - Eingabe fuer Progression und Achievements. */

@@ -11,6 +11,24 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+**Online: Bestenliste und Spielstand-Abgleich** (Supabase)
+
+- Bestenliste je Welt, Top 10, eigener Eintrag hervorgehoben
+- Eintragen auf Knopfdruck im Ergebnisbildschirm — bewusst nicht automatisch,
+  sonst flutet jeder Uebungslauf die Liste
+- Spielstand zwischen Geraeten per sechsstelligem Code, **ohne Konto,
+  Passwort oder E-Mail**; der Code gilt 15 Minuten
+- Sind zwei Spielstaende vorhanden, werden beide mit Level, Bestwert und
+  Anzahl Runs gegenuebergestellt — uebernommen wird erst auf Ansage
+- Namensfeld in der Bestenliste, echtes Eingabefeld mit Systemtastatur
+- Ohne Zugangsdaten laeuft das Spiel unveraendert weiter; die Online-Knoepfe
+  erscheinen dann gar nicht erst
+- Datenbankschema samt Rechten und Zugriffsregeln in `supabase/schema.sql`
+
+> **Bekannte Grenze:** Punktestaende sind manipulierbar. Das Spiel laeuft im
+> Browser, und ohne serverseitige Nachrechnung eines Runs laesst sich das
+> nicht verhindern. Eintraege sind immerhin unveraenderlich. Siehe ADR-0011.
+
 **Duell-Modus fuer zwei Spieler**
 
 - Zwei Personen spielen abwechselnd an einem Geraet, je 90 Sekunden
@@ -41,6 +59,16 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 - Leuchtende Fortschrittsbalken, Schein hinter Knoepfen, abgesetzte Panels
 - Farbmarke je Welt in der Weltenliste
 
+### Behoben
+
+- **Knoepfe liessen sich auf dem iPhone nur oberhalb ihrer sichtbaren Flaeche
+  druecken.** Zwei Ursachen: Safari verschiebt beim Ein- und Ausklappen der
+  Adressleiste den Canvas, ohne ein `resize` auszuloesen — Phaser rechnete
+  deshalb mit einer veralteten Position. Und `height: 100%` meint dort die
+  Hoehe _ohne_ Adressleiste, wodurch die Seite hoeher als das Sichtbare war.
+  Behoben mit `100dvh` und einer Neuvermessung vor jeder Beruehrung.
+- "1 Relikte" und "1 Runs" heissen jetzt "1 Relikt" und "1 Run"
+
 ### Geaendert
 
 - **Spawn-System ist deterministisch geworden.** Der Zufallsgenerator wird
@@ -53,8 +81,13 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Dokumentation
 
-- Drei neue Architekturentscheidungen: Duell-Bauform (ADR-0008),
-  Vollbild-Strategie (ADR-0009), Weg zum Netzwerkduell (ADR-0010)
+- Fuenf neue Architekturentscheidungen: Duell-Bauform (ADR-0008),
+  Vollbild-Strategie (ADR-0009), Weg zum Netzwerkduell (ADR-0010),
+  Backend ohne Konto samt Manipulierbarkeit (ADR-0011), Zugangsdaten im
+  Repository (ADR-0012)
+- Die `GRANT`-Falle bei Supabase dokumentiert: `PGRST205 "not found in schema
+cache"` heisst im Zweifel "keine Rechte", nicht "Tabelle fehlt". Beim Aufbau
+  hat das zwei Fehlversuche gekostet.
 - Roadmap-Eintrag "Mehrspieler in Echtzeit — nicht geplant" als ueberholt
   gekennzeichnet und korrigiert
 - ADR-0007 (Lizenz) um den Nachtrag ergaenzt, dass das Repository inzwischen

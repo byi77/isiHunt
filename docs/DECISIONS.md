@@ -5,7 +5,7 @@ Begruendung und den verworfenen Alternativen.
 
 **Format:** Kontext → Entscheidung → Begruendung → Konsequenzen.
 **Regel:** Entscheidungen werden nie geloescht. Ueberholte bekommen den Status
-*Ersetzt durch ADR-XXXX*.
+_Ersetzt durch ADR-XXXX_.
 
 ---
 
@@ -37,12 +37,12 @@ Web-Anwendung.
 
 ### Verworfene Alternativen
 
-| Alternative | Warum nicht |
-|---|---|
-| **Godot (GDScript)** | Staerker bei komplexen Spielen, aber schwerer Editor, langsamerer Weg zum ersten Test auf dem Geraet, und die Projektdaten sind weniger gut in Textform pflegbar. Fuer diese Spielmechanik ueberdimensioniert. |
-| **Flutter + Flame** | Gute native Leistung, aber kleineres Spiele-Oekosystem und der Web-Export ist schwerer als eine reine Web-App. |
-| **Unity** | Fuer ein 2D-Arcade-Spiel dieser Groesse deutlich zu viel Werkzeug, lange Build-Zeiten, Lizenzfragen. |
-| **Reines Canvas ohne Engine** | Klingt schlank, endet aber darin, Tweens, Szenenverwaltung und Eingabe selbst zu bauen. |
+| Alternative                   | Warum nicht                                                                                                                                                                                                    |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Godot (GDScript)**          | Staerker bei komplexen Spielen, aber schwerer Editor, langsamerer Weg zum ersten Test auf dem Geraet, und die Projektdaten sind weniger gut in Textform pflegbar. Fuer diese Spielmechanik ueberdimensioniert. |
+| **Flutter + Flame**           | Gute native Leistung, aber kleineres Spiele-Oekosystem und der Web-Export ist schwerer als eine reine Web-App.                                                                                                 |
+| **Unity**                     | Fuer ein 2D-Arcade-Spiel dieser Groesse deutlich zu viel Werkzeug, lange Build-Zeiten, Lizenzfragen.                                                                                                           |
+| **Reines Canvas ohne Engine** | Klingt schlank, endet aber darin, Tweens, Szenenverwaltung und Eingabe selbst zu bauen.                                                                                                                        |
 
 ### Konsequenzen
 
@@ -319,10 +319,10 @@ Hochformat-Sperre mit.
 
 ### Verworfene Alternativen
 
-| Alternative | Warum nicht |
-|---|---|
-| Nur Fullscreen-API | Laesst iPhone-Nutzer ohne Loesung — die Zielplattform. |
-| Nur PWA | Auf Android und Desktop ist ein Knopf der schnellere Weg. |
+| Alternative                              | Warum nicht                                                                      |
+| ---------------------------------------- | -------------------------------------------------------------------------------- |
+| Nur Fullscreen-API                       | Laesst iPhone-Nutzer ohne Loesung — die Zielplattform.                           |
+| Nur PWA                                  | Auf Android und Desktop ist ein Knopf der schnellere Weg.                        |
 | Adressleiste per Scroll-Trick verstecken | Funktioniert seit Jahren unzuverlaessig und bricht die Scroll-Sperre des Spiels. |
 
 ### Konsequenzen
@@ -384,3 +384,122 @@ zeigt, dass das Zeitversetzte nicht reicht, lohnt sich Schritt 2.
   damit ueberholt und wurde korrigiert.
 - Eine echte Online-Bestenliste setzt Schritt 2 voraus: Punkte muessen
   serverseitig bewertet werden (siehe auch ADR-0006, letzte Konsequenz).
+
+**Nachtrag 2026-08-12:** Mit ADR-0011 kam ein Backend (Supabase) dazu. Der
+Weg zum Echtzeitduell ist damit kuerzer als hier beschrieben — die
+Infrastrukturfrage ist beantwortet, offen bleibt der Abgleich zweier
+laufender Spiele.
+
+---
+
+## ADR-0011 — Bestenliste und Spielstand-Abgleich ueber Supabase, ohne Konto
+
+**Datum:** 2026-08-12 · **Status:** Angenommen
+
+### Kontext
+
+Gewuenscht waren eine Bestenliste und ein Spielstand, der zwischen zwei Handys
+umzieht. Beides scheitert an GitHub Pages: reines Datei-Hosting kann keinen
+Server-Prozess ausfuehren und nichts speichern.
+
+### Entscheidung
+
+Supabase als Backend. **Keine Anmeldung**: Ein Spielstand gehoert einer
+zufaelligen UUID, die nur lokal liegt. Fuer den Umzug erzeugt das erste Geraet
+einen sechsstelligen Code mit 15 Minuten Gueltigkeit.
+
+Hochgeladen wird ausschliesslich auf Ansage, und bei zwei vorhandenen
+Staenden entscheidet der Nutzer nach einem Vergleich.
+
+### Begruendung
+
+**Gegen Konten mit E-Mail oder Passwort:** Das Spiel dauert 60 Sekunden. Eine
+Registrierung davorzuschalten, um einen Punktestand zu speichern, steht in
+keinem Verhaeltnis — und wuerde personenbezogene Daten einbringen, die es
+sonst nirgends gibt.
+
+**Fuer den Code statt eines QR-Codes oder Links:** Sechs Zeichen tippt man in
+zehn Sekunden ab, ohne Kamera, ohne zweiten Kanal. Das Alphabet laesst `I`,
+`O` und `L` weg, weil man sie auf einem Handy mit `1` und `0` verwechselt; die
+Eingabe bildet sie zusaetzlich auf ihre Zwillinge ab.
+
+**Fuer die kurze Gueltigkeit:** Sechs Zeichen aus 33 sind rund eine Milliarde
+Moeglichkeiten — ratbar, wenn man beliebig lange Zeit hat. Nach 15 Minuten ist
+ein Treffer wertlos.
+
+**Gegen automatischen Abgleich im Hintergrund:** Er muesste bei jedem Konflikt
+still entscheiden, welcher Stand gewinnt. Die falsche Entscheidung kostet
+Wochen Fortschritt, und der Nutzer bemerkt sie erst, wenn es zu spaet ist.
+
+### Ehrliche Grenze: die Bestenliste ist manipulierbar
+
+Das Spiel laeuft vollstaendig im Browser, der Code ist oeffentlich, und der
+Datenbankschluessel steht im ausgelieferten JavaScript — weil er dort stehen
+muss. Wer will, traegt jede beliebige Zahl ein.
+
+Das ist **keine Nachlaessigkeit, sondern die Grenze jeder Bestenliste ohne
+serverseitige Nachrechnung des Runs**. Die einzige echte Loesung waere, den
+kompletten Spielverlauf zu uebertragen und auf einem Server nachzuspielen.
+
+Abgesichert ist deshalb nur, was sich ohne Server absichern laesst:
+
+- Eintraege sind **unveraenderlich** — kein `UPDATE`, kein `DELETE`, schon auf
+  der Rechteebene.
+- Spielstaende sind nur mit Kenntnis ihrer zufaelligen UUID erreichbar.
+- Sync-Codes verfallen.
+- Wertebereiche und Namenslaengen sind in der Datenbank begrenzt.
+
+**Konsequenz:** Fuer ein Duell unter Bekannten ist das unerheblich. Bevor die
+Liste oeffentlich beworben wird, muss die Bewertung auf einen Server.
+
+### Weitere Konsequenzen
+
+- Das Projekt hat jetzt eine externe Abhaengigkeit, die ausfallen kann. Jede
+  Netzfunktion hat deshalb ein Zeitlimit von fuenf Sekunden, gibt ein
+  Ergebnisobjekt zurueck statt zu werfen, und die Online-Knoepfe erscheinen
+  nur, wenn Zugangsdaten vorhanden sind.
+- Wer das Repository ohne eigenes Supabase-Projekt auscheckt, kann trotzdem
+  spielen — nur ohne Bestenliste und Abgleich.
+- Der Abgleich **ersetzt** einen Spielstand, statt zwei zusammenzufuehren. Wer
+  auf beiden Geraeten regelmaessig spielt, verliert bei jedem Abgleich eine
+  Seite. Feldweises Zusammenfuehren waere moeglich, ist aber bei XP und
+  Talenten nicht eindeutig — bewusst offen gelassen.
+
+---
+
+## ADR-0012 — Zugangsdaten des Clients liegen im Repository
+
+**Datum:** 2026-08-12 · **Status:** Angenommen
+
+### Kontext
+
+Der Supabase-Client braucht Projekt-URL und oeffentlichen Schluessel. Beide
+muessen zur Bauzeit vorliegen, auch im GitHub-Actions-Build.
+
+### Entscheidung
+
+Beide Werte stehen in `.env.production` und sind eingecheckt. Der geheime
+Schluessel (`service_role` bzw. `secret`) ist ausgeschlossen — er darf das
+Repository und den Client nie beruehren.
+
+### Begruendung
+
+Der `publishable`-Schluessel ist dafuer gemacht, oeffentlich zu sein. Er landet
+ohnehin im ausgelieferten JavaScript; jeder Besucher kann ihn aus dem Browser
+auslesen. Ihn zusaetzlich in Repository-Secrets zu legen, waere ein
+Scheinschutz — am Ergebnis im Browser aendert sich nichts.
+
+Der eigentliche Schutz liegt in den Zugriffsregeln der Datenbank
+(`supabase/schema.sql`). Sie legen fest, was mit diesem Schluessel moeglich
+ist.
+
+### Konsequenzen
+
+- Ein Schluesselwechsel braucht einen Commit. Bei einem oeffentlichen
+  Schluessel unkritisch.
+- Die Trennung muss beim Lesen sofort erkennbar sein: `.env.production` und
+  `config/backend.ts` benennen beide ausdruecklich, welcher Schluessel hier
+  gehoert und welcher nie.
+- Wer die Werte lieber nicht im Repository haette, legt sie als
+  Repository-Secrets an und reicht sie in `deploy.yml` durch. Der Code aendert
+  sich dafuer nicht.

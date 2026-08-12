@@ -16,6 +16,7 @@
     "format:check": "prettier --check \"src/**/*.ts\""
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.112.3",
     "phaser": "^3.88.0"
   },
   "devDependencies": {

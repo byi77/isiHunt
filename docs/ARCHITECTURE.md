@@ -14,13 +14,13 @@ Entscheidungen mit Alternativen stehen in [DECISIONS.md](DECISIONS.md).
 
 Konkret:
 
-| Schicht | Kennt Phaser? | Beispiel |
-|---|---|---|
-| **Config** | nein | `rarities.ts`, `talents.ts` — reine Daten |
-| **Systems** | fast nicht | `ProgressionSystem`, `ScoreSystem` — reine Logik |
-| **Entities** | ja | `Player`, `Collectible` — GameObjects |
-| **Scenes** | ja | `GameScene`, `HudScene` — Orchestrierung |
-| **UI** | ja | `widgets.ts`, `textures.ts` — Darstellung |
+| Schicht      | Kennt Phaser? | Beispiel                                         |
+| ------------ | ------------- | ------------------------------------------------ |
+| **Config**   | nein          | `rarities.ts`, `talents.ts` — reine Daten        |
+| **Systems**  | fast nicht    | `ProgressionSystem`, `ScoreSystem` — reine Logik |
+| **Entities** | ja            | `Player`, `Collectible` — GameObjects            |
+| **Scenes**   | ja            | `GameScene`, `HudScene` — Orchestrierung         |
+| **UI**       | ja            | `widgets.ts`, `textures.ts` — Darstellung        |
 
 `ProgressionSystem` und die Achievement-Praedikate laufen ohne laufendes
 Spiel — sie sind dadurch ohne Testharness pruefbar.
@@ -53,10 +53,12 @@ isiHunt/
 │   │   ├── worlds.ts           Welten
 │   │   ├── talents.ts          Talente + Stat-Aufloesung
 │   │   ├── challenge.ts        Duell: Dauer, Spielernamen, Fairness-Regeln
+│   │   ├── backend.ts          Zugang zum Online-Dienst, Grenzwerte
 │   │   └── achievements.ts     Erfolge als Praedikate
 │   ├── core/
 │   │   ├── EventBus.ts         Typisierter Event-Bus zwischen Scenes
-│   │   └── display.ts          Vollbild- und Installationszustand des Browsers
+│   │   ├── display.ts          Vollbild- und Installationszustand des Browsers
+│   │   └── viewport.ts         Haelt Phasers Canvas-Position aktuell
 │   ├── entities/               Spielobjekte
 │   │   ├── Player.ts
 │   │   └── Collectible.ts
@@ -70,12 +72,15 @@ isiHunt/
 │   │   ├── GameScene.ts        Die Simulation (Solo und Duell)
 │   │   ├── HudScene.ts         Anzeige waehrend des Runs
 │   │   ├── ChallengeScene.ts   Duell: Einfuehrung, Uebergabe, Ergebnis
+│   │   ├── LeaderboardScene.ts Online-Bestenliste je Welt
+│   │   ├── SyncScene.ts        Spielstand-Abgleich zwischen Geraeten
 │   │   └── ResultScene.ts      Auswertung eines Solo-Runs
 │   ├── systems/                Regeln ohne Darstellung
 │   │   ├── SaveSystem.ts       localStorage, versioniert
 │   │   ├── ProgressionSystem.ts XP, Level, Talentpunkte, Erfolge
 │   │   ├── ScoreSystem.ts      Punkte + Combo eines Runs
 │   │   ├── ChallengeSystem.ts  Duell-Zustand: Seed, Punktstaende, Sieger
+│   │   ├── CloudSystem.ts      Bestenliste und Spielstand ueber Supabase
 │   │   └── SpawnSystem.ts      Wann und wo etwas erscheint
 │   ├── types/
 │   │   └── index.ts            SaveData, RunStats, ChallengeState, ...
@@ -83,15 +88,19 @@ isiHunt/
 │   │   ├── theme.ts            Farben, Schriftgroessen
 │   │   ├── depth.ts            Zeichenreihenfolge aller Ebenen
 │   │   ├── textures.ts         Prozedurale Grafiken
+│   │   ├── textInput.ts        Echtes HTML-Eingabefeld ueber dem Canvas
 │   │   └── widgets.ts          Knoepfe, Balken, Hintergruende, Effekte
+│   ├── env.d.ts                Typen der Umgebungsvariablen
 │   └── main.ts                 Phaser-Konfiguration
+├── supabase/
+│   └── schema.sql              Tabellen, Rechte und Zugriffsregeln
 ├── index.html                  Mobile-Meta-Tags, Scroll-Sperre, PWA-Verweise
 ├── vite.config.ts
 ├── tsconfig.json
 └── eslint.config.js
 ```
 
-**Regel:** Ein Import darf nur nach *unten* zeigen.
+**Regel:** Ein Import darf nur nach _unten_ zeigen.
 `scenes → systems → config` ist erlaubt. `config → scenes` ist es nie.
 
 ## 3. Scene-Fluss
@@ -160,13 +169,13 @@ wird nicht angefasst.
 ## 4.1 Determinismus im Duell
 
 Beide Duellanten muessen dieselbe Relikt-Abfolge sehen. Gleicher Seed allein
-reicht dafuer **nicht** — der Zufallsgenerator muss auch gleich *oft* und in
-gleicher *Reihenfolge* verbraucht werden. Zwei Stellen verletzten das:
+reicht dafuer **nicht** — der Zufallsgenerator muss auch gleich _oft_ und in
+gleicher _Reihenfolge_ verbraucht werden. Zwei Stellen verletzten das:
 
-| Falle | Wirkung | Loesung |
-|---|---|---|
-| Volles Spielfeld hielt den Spawn-Timer an | Wer langsamer sammelt, verschiebt den restlichen Spawn-Plan | Timer laeuft immer; ein faelliger Spawn faellt bei vollem Feld aus |
-| Positionssuche brach beim ersten Treffer ab | Verbrauch haengt an der Figurposition | Es werden immer alle Kandidaten gezogen |
+| Falle                                       | Wirkung                                                     | Loesung                                                            |
+| ------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------ |
+| Volles Spielfeld hielt den Spawn-Timer an   | Wer langsamer sammelt, verschiebt den restlichen Spawn-Plan | Timer laeuft immer; ein faelliger Spawn faellt bei vollem Feld aus |
+| Positionssuche brach beim ersten Treffer ab | Verbrauch haengt an der Figurposition                       | Es werden immer alle Kandidaten gezogen                            |
 
 Beide Regeln stehen als Kommentar in `SpawnSystem.ts`, weil sie beim Lesen des
 Codes wie unnoetiger Aufwand aussehen. Sie sind es nicht — ohne sie ist der
@@ -236,6 +245,69 @@ schreibt direkt.
 - **Fehler blockieren nie den Start.** Privater Modus, volles Quota oder
   kaputtes JSON fuehren zu einem frischen Spielstand mit Konsolenwarnung.
 
+## 8.1 Online: Bestenliste und Spielstand-Abgleich
+
+`CloudSystem` kapselt Supabase vollstaendig; kein anderer Code kennt den
+Dienst. Zwei Grundsaetze bestimmen den Aufbau:
+
+**Das Netz haelt das Spiel nie auf.** Jede Funktion liefert ein
+`CloudResult<T>` und wirft nie. Fehlende Zugangsdaten, kein Empfang, Dienst
+weg — nichts davon darf verhindern, dass man spielt. Ohne Zugangsdaten
+erscheinen die Online-Knoepfe gar nicht erst; ein Knopf, der zuverlaessig in
+eine Fehlermeldung fuehrt, ist schlimmer als keiner.
+
+**Kein Konto, kein Passwort, keine E-Mail.** Ein Spielstand gehoert einer
+zufaelligen UUID, die nur lokal liegt. Fuer das zweite Geraet erzeugt das
+erste einen sechsstelligen Code, der 15 Minuten gilt.
+
+```
+Geraet A                     Supabase                    Geraet B
+   │                            │                            │
+   ├── Spielstand hochladen ───▶│                            │
+   ├── Code erzeugen ──────────▶│                            │
+   │   "VST6PC"                 │◀───── Code einloesen ──────┤
+   │                            ├────── Spielstand ─────────▶│
+   │                            │                            │
+   │                            │      Vergleich anzeigen ───┤
+   │                            │      Nutzer entscheidet    │
+   │                            │◀───── uebernehmen ─────────┤
+```
+
+**Der Konflikt wird gezeigt, nicht entschieden.** Wurde auf beiden Geraeten
+gespielt, gibt es zwei Staende und keine Regel, die verlaesslich den richtigen
+waehlt. "Der neuere gewinnt" kostet genau dann Wochen, wenn man auf dem
+Zweitgeraet kurz eine Runde gespielt hat. Deshalb stehen beide Staende mit
+Level, Bestwert und Anzahl Runs nebeneinander, und uebernommen wird erst auf
+ausdrueckliche Ansage.
+
+**Hochgeladen wird nur auf Ansage.** Es gibt keinen Hintergrund-Upload — der
+muesste bei jedem Konflikt still entscheiden.
+
+### Die GRANT-Falle
+
+Supabase-Tabellen brauchen **zwei** Ebenen, die man leicht verwechselt:
+
+| Ebene      | Regelt                                                 |
+| ---------- | ------------------------------------------------------ |
+| `GRANT`    | ob eine Rolle die Tabelle **ueberhaupt** anfassen darf |
+| RLS-Policy | **welche Zeilen** sie dabei sieht und aendert          |
+
+Fehlt der `GRANT`, nuetzt die beste Policy nichts — und der Fehler ist
+besonders taeuschend, weil PostgREST eine Tabelle ohne Rechte nicht mit
+"keine Berechtigung" quittiert, sondern mit:
+
+```
+PGRST205  Could not find the table 'public.scores' in the schema cache
+```
+
+Das liest sich wie "Tabelle existiert nicht" und schickt einen auf die Suche
+nach einem Fehler im `CREATE TABLE`, wo keiner ist. Beim Aufbau hat genau das
+zwei Fehlversuche gekostet. Aufgeklaert hat es ein RPC-Aufruf, der mit `204`
+antwortete: Die Funktion loescht aus der angeblich fehlenden Tabelle — sie
+musste also existieren, und es konnte nur an den Rechten liegen.
+
+**Merksatz:** `PGRST205` heisst im Zweifel "keine Rechte", nicht "nicht da".
+
 ## 9. Assets
 
 Das Spiel laedt **keine Bilddateien**. Alle Spielgrafiken entstehen in
@@ -272,10 +344,12 @@ verstreut. Wer eine neue Ebene einzog, musste alle Dateien durchsuchen.
 
 Ehrlich benannt, damit sie nicht ueberrascht:
 
-| Grenze | Ab wann relevant | Loesung |
-|---|---|---|
-| Kein Object Pooling — jedes Relikt wird neu erzeugt | > 100 gleichzeitige Objekte | Pool in `SpawnSystem` |
-| Kein Test-Setup | ab erster Regressionsangst | Vitest, M2 |
-| Kollisionstest ist O(n) ueber alle Objekte | > ~200 Objekte | Raeumliches Gitter |
-| Keine Ton-Ebene | M4 | `SoundSystem` neben den anderen Systems |
-| HUD-Layout ist fest auf 720×1280 | nie (FIT skaliert) | — |
+| Grenze                                              | Ab wann relevant                                    | Loesung                                    |
+| --------------------------------------------------- | --------------------------------------------------- | ------------------------------------------ |
+| Kein Object Pooling — jedes Relikt wird neu erzeugt | > 100 gleichzeitige Objekte                         | Pool in `SpawnSystem`                      |
+| Kein Test-Setup                                     | ab erster Regressionsangst                          | Vitest, M2                                 |
+| Kollisionstest ist O(n) ueber alle Objekte          | > ~200 Objekte                                      | Raeumliches Gitter                         |
+| Keine Ton-Ebene                                     | M4                                                  | `SoundSystem` neben den anderen Systems    |
+| HUD-Layout ist fest auf 720×1280                    | nie (FIT skaliert)                                  | —                                          |
+| **Bestenliste ist manipulierbar**                   | sobald sie oeffentlich beworben wird                | Runs serverseitig nachrechnen (ADR-0011)   |
+| Sync ueberschreibt, statt zusammenzufuehren         | wenn auf beiden Geraeten regelmaessig gespielt wird | Feldweises Zusammenfuehren monotoner Werte |

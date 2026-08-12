@@ -13,6 +13,7 @@ import type { WorldDef } from '@/config/worlds';
 import { isIos, isStandalone } from '@/core/display';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
+import * as CloudSystem from '@/systems/CloudSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import { TextureKey } from '@/ui/textures';
@@ -247,7 +248,7 @@ export class MenuScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      GAME_HEIGHT - 306,
+      GAME_HEIGHT - 390,
       'JAGD BEGINNEN',
       () => {
         this.scene.start(SceneKey.Game, { worldId: this.selectedWorld.id });
@@ -262,7 +263,7 @@ export class MenuScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      GAME_HEIGHT - 212,
+      GAME_HEIGHT - 296,
       'DUELL ZU ZWEIT',
       () => {
         ChallengeSystem.start(this.selectedWorld.id);
@@ -270,6 +271,24 @@ export class MenuScene extends Phaser.Scene {
       },
       { width: 440, height: 76, accent: Palette.goldHex, fontSize: FontSize.body },
     );
+
+    // Online-Knoepfe nur zeigen, wenn ein Dienst eingerichtet ist - ein Knopf,
+    // der zuverlaessig in eine Fehlermeldung fuehrt, ist schlimmer als keiner.
+    if (CloudSystem.isAvailable()) {
+      const y = GAME_HEIGHT - 212;
+      createButton(this, 196, y, 'BESTENLISTE', () => this.scene.start(SceneKey.Leaderboard), {
+        width: 244,
+        height: 66,
+        accent: 0x9aa3bd,
+        fontSize: FontSize.tiny,
+      });
+      createButton(this, 524, y, 'SPIELSTAND', () => this.scene.start(SceneKey.Sync), {
+        width: 244,
+        height: 66,
+        accent: 0x9aa3bd,
+        fontSize: FontSize.tiny,
+      });
+    }
 
     this.add
       .text(

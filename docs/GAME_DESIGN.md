@@ -33,7 +33,7 @@ kommt nicht ins Spiel.
 **Zielgruppe:** Casual-Spieler mit MMO-Vorerfahrung. Die visuelle Sprache
 setzt voraus, dass "Orange = extrem selten" bereits verinnerlicht ist.
 
-**Referenz:** World of Warcraft — nicht als Genre, sondern als *Grammatik*:
+**Referenz:** World of Warcraft — nicht als Genre, sondern als _Grammatik_:
 Item-Qualitaetsfarben, Erfahrungsbalken, Talentpunkte, Zonen mit
 Levelanforderung, Erfolge. Das sind erprobte Fortschrittsmuster, die hier auf
 eine Arcade-Schleife von einer Minute komprimiert werden.
@@ -76,18 +76,18 @@ Menue → Einfuehrung → Spieler 1 (90 s) → Uebergabe → Spieler 2 (90 s) �
 ```
 
 **Warum 90 statt 60 Sekunden.** Im Solo-Modus glaettet sich Pech ueber viele
-Runs hinweg. Im Duell zaehlt genau *ein* Durchgang pro Person — je kuerzer der
+Runs hinweg. Im Duell zaehlt genau _ein_ Durchgang pro Person — je kuerzer der
 ist, desto staerker entscheidet der Zufall der letzten Sekunden. 90 Sekunden
 bedeuten rund 50 % mehr Spawns und damit spuerbar weniger Streuung: das
 Ergebnis bildet Koennen ab statt Glueck.
 
 **Drei Fairness-Regeln.** Sie sind der Kern des Modus, nicht Beiwerk:
 
-| Regel | Warum |
-|---|---|
+| Regel                      | Warum                                                                                                                                                                                                |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Gleiche Relikt-Abfolge** | Beide Spieler bekommen denselben Seed — dieselben Seltenheiten, an denselben Stellen, zur selben Sekunde. Sonst waere das Duell ein Wuerfelspiel darum, wer das legendaere Relikt geschenkt bekommt. |
-| **Keine Talente** | Beide spielen mit den Grundwerten der Figur. Sonst haette der Geraetebesitzer einen Vorteil, den der Gast nicht ausgleichen kann. |
-| **Keine Progression** | Ein Duell vergibt weder XP noch Bestwerte noch Erfolge. Die Haelfte der Durchgaenge spielt jemand, dem der Spielstand nicht gehoert. |
+| **Keine Talente**          | Beide spielen mit den Grundwerten der Figur. Sonst haette der Geraetebesitzer einen Vorteil, den der Gast nicht ausgleichen kann.                                                                    |
+| **Keine Progression**      | Ein Duell vergibt weder XP noch Bestwerte noch Erfolge. Die Haelfte der Durchgaenge spielt jemand, dem der Spielstand nicht gehoert.                                                                 |
 
 Die gleiche Abfolge ist technisch anspruchsvoller, als sie klingt: Der
 Zufallsgenerator muss **unabhaengig vom Spielverlauf** verbraucht werden, sonst
@@ -95,7 +95,7 @@ laufen die beiden Durchgaenge auseinander. Die zwei Fallstricke sind in
 `src/systems/SpawnSystem.ts` dokumentiert.
 
 **Waehrend des zweiten Durchgangs** steht die Vorlage des Gegners im HUD
-(`Ziel 1.234`). Faellt sie, wird das einmalig gefeiert (*UEBERHOLT!*) — der
+(`Ziel 1.234`). Faellt sie, wird das einmalig gefeiert (_UEBERHOLT!_) — der
 Moment ist die Pointe des Modus und darf nicht im Ergebnisbildschirm
 untergehen.
 
@@ -108,14 +108,14 @@ Quere kommen.
 
 Die zentrale Achse. Alles andere haengt daran.
 
-| Stufe | Farbe | Punkte | XP | Spawn | Lebensdauer | Tempo | Radius |
-|---|---|---|---|---|---|---|---|
-| Schlicht | Grau `#9d9d9d` | 1 | 1 | 34 % | 5,2 s | 30 px/s | 30 |
-| Gewoehnlich | Weiss `#ffffff` | 2 | 2 | 28 % | 4,6 s | 45 px/s | 30 |
-| Ungewoehnlich | Gruen `#1eff00` | 5 | 6 | 20 % | 3,8 s | 70 px/s | 32 |
-| Selten | Blau `#0070dd` | 15 | 18 | 11 % | 3,0 s | 105 px/s | 34 |
-| Episch | Lila `#a335ee` | 50 | 60 | 5,5 % | 2,4 s | 140 px/s | 38 |
-| Legendaer | Orange `#ff8000` | 200 | 250 | 1,5 % | 2,0 s | 190 px/s | 44 |
+| Stufe         | Farbe            | Punkte | XP  | Spawn | Lebensdauer | Tempo    | Radius |
+| ------------- | ---------------- | ------ | --- | ----- | ----------- | -------- | ------ |
+| Schlicht      | Grau `#9d9d9d`   | 1      | 1   | 34 %  | 5,2 s       | 30 px/s  | 30     |
+| Gewoehnlich   | Weiss `#ffffff`  | 2      | 2   | 28 %  | 4,6 s       | 45 px/s  | 30     |
+| Ungewoehnlich | Gruen `#1eff00`  | 5      | 6   | 20 %  | 3,8 s       | 70 px/s  | 32     |
+| Selten        | Blau `#0070dd`   | 15     | 18  | 11 %  | 3,0 s       | 105 px/s | 34     |
+| Episch        | Lila `#a335ee`   | 50     | 60  | 5,5 % | 2,4 s       | 140 px/s | 38     |
+| Legendaer     | Orange `#ff8000` | 200    | 250 | 1,5 % | 2,0 s       | 190 px/s | 44     |
 
 **Designregel:** Seltener ⇒ wertvoller ⇒ schneller ⇒ kuerzer sichtbar ⇒
 groesser (damit man es ueberhaupt rechtzeitig sieht).
@@ -136,27 +136,27 @@ Anruf). Combo-Verlust durch Verpassen wuerde sich unfair anfuehlen. Belohnt
 wird **Flow**, nicht Fehlerfreiheit.
 
 | Combo | Multiplikator |
-|---|---|
-| 0–4 | ×1 |
-| 5–9 | ×2 |
-| 10–19 | ×3 |
-| 20–34 | ×4 |
-| ab 35 | ×5 |
+| ----- | ------------- |
+| 0–4   | ×1            |
+| 5–9   | ×2            |
+| 10–19 | ×3            |
+| 20–34 | ×4            |
+| ab 35 | ×5            |
 
 ## 7. Progression
 
 ### 7.1 Charakterlevel
 
-XP fuer den Aufstieg von Level *n*: `floor(80 · n^1.45)`
+XP fuer den Aufstieg von Level _n_: `floor(80 · n^1.45)`
 
 | Level | XP fuer naechstes | kumuliert |
-|---|---|---|
-| 1 | 80 | 80 |
-| 2 | 219 | 299 |
-| 3 | 385 | 684 |
-| 5 | 819 | 2 176 |
-| 10 | 2 244 | 9 271 |
-| 15 | 4 034 | 24 133 |
+| ----- | ----------------- | --------- |
+| 1     | 80                | 80        |
+| 2     | 219               | 299       |
+| 3     | 385               | 684       |
+| 5     | 819               | 2 176     |
+| 10    | 2 244             | 9 271     |
+| 15    | 4 034             | 24 133    |
 
 Ein durchschnittlicher Run bringt grob 400–900 XP. Die ersten Level fallen in
 den ersten Runs, danach flacht es ab — bewusst, damit Neulinge sofort
@@ -169,29 +169,29 @@ Jeder Levelaufstieg gibt **1 Talentpunkt**.
 Dauerhafte Upgrades. Datenmodell und Wirkung sind implementiert, die
 Vergabe-Oberflaeche folgt in M2.
 
-| Talent | Max. Rang | Pro Rang |
-|---|---|---|
-| Reichweite | 5 | +6 Sammelradius |
-| Flinkheit | 5 | +5 % Tempo |
-| Magnetismus | 4 | +35 Sogreichweite |
-| Ausdauer | 4 | +4 s Rundendauer |
-| Fokus | 4 | +250 ms Combo-Fenster |
-| Erkenntnis | 5 | +8 % XP |
-| Gunst | 5 | +6 % Punkte |
+| Talent      | Max. Rang | Pro Rang              |
+| ----------- | --------- | --------------------- |
+| Reichweite  | 5         | +6 Sammelradius       |
+| Flinkheit   | 5         | +5 % Tempo            |
+| Magnetismus | 4         | +35 Sogreichweite     |
+| Ausdauer    | 4         | +4 s Rundendauer      |
+| Fokus       | 4         | +250 ms Combo-Fenster |
+| Erkenntnis  | 5         | +8 % XP               |
+| Gunst       | 5         | +6 % Punkte           |
 
-**Balancing-Absicht:** Kein Talent ist Pflicht. *Reichweite* und *Magnetismus*
-machen das Spiel leichter, *Gunst* und *Erkenntnis* machen es ertragreicher —
+**Balancing-Absicht:** Kein Talent ist Pflicht. _Reichweite_ und _Magnetismus_
+machen das Spiel leichter, _Gunst_ und _Erkenntnis_ machen es ertragreicher —
 zwei gleichwertige Bauweisen, keine dominante.
 
 ### 7.3 Welten
 
-| Welt | Ab Level | Stimmung | Geplante Besonderheit |
-|---|---|---|---|
-| Silberhain | 1 | Gruen, Wald | keine — die Lernwelt |
-| Frostzinne | 3 | Blau, Eis | Relikte gleiten weiter |
-| Glutmark | 6 | Orange, Asche | kuerzere Zeitfenster |
-| Leerenbluete | 10 | Violett, Leere | Relikte blinken kurz weg |
-| Sonnenhort | 15 | Gold, Licht | doppelte Legendaer-Chance, halbe Lebensdauer |
+| Welt         | Ab Level | Stimmung       | Geplante Besonderheit                        |
+| ------------ | -------- | -------------- | -------------------------------------------- |
+| Silberhain   | 1        | Gruen, Wald    | keine — die Lernwelt                         |
+| Frostzinne   | 3        | Blau, Eis      | Relikte gleiten weiter                       |
+| Glutmark     | 6        | Orange, Asche  | kuerzere Zeitfenster                         |
+| Leerenbluete | 10       | Violett, Leere | Relikte blinken kurz weg                     |
+| Sonnenhort   | 15       | Gold, Licht    | doppelte Legendaer-Chance, halbe Lebensdauer |
 
 In v0.1 unterscheiden sich die Welten nur optisch. Das ist Absicht: erst muss
 sich die Grundmechanik gut anfuehlen, dann kommt Varianz dazu (M3).
@@ -232,15 +232,15 @@ darf nicht als Geschenk direkt unter dem Daumen erscheinen.
 
 ## 10. Was bewusst NICHT drin ist
 
-| Nicht drin | Begruendung |
-|---|---|
-| Gegner / Schaden / Verlieren | Der Zeitdruck ist die Spannung. Zusaetzlicher Misserfolg macht kurze Sessions frustrierend. |
-| Tutorial | Wenn es eins braucht, ist das Design gescheitert (Designziel 1). |
-| Werbung / Kaeufe | Vorerst kein Monetarisierungsdruck. Beeinflusst sonst das Balancing. |
-| Online-Bestenliste | Erst wenn die Kernschleife steht (M5). |
-| Querformat | Das Spiel ist fuer eine Hand gebaut. |
-| Geteilter Bildschirm im Duell | Zwei Spielfelder auf einem Hochformat-Handy sind zu klein (siehe 4.1). |
-| Echtzeit-Duell ueber Netzwerk | Braucht einen Server. Der Weg dorthin steht in ADR-0010. |
+| Nicht drin                    | Begruendung                                                                                 |
+| ----------------------------- | ------------------------------------------------------------------------------------------- |
+| Gegner / Schaden / Verlieren  | Der Zeitdruck ist die Spannung. Zusaetzlicher Misserfolg macht kurze Sessions frustrierend. |
+| Tutorial                      | Wenn es eins braucht, ist das Design gescheitert (Designziel 1).                            |
+| Werbung / Kaeufe              | Vorerst kein Monetarisierungsdruck. Beeinflusst sonst das Balancing.                        |
+| Online-Bestenliste            | Erst wenn die Kernschleife steht (M5).                                                      |
+| Querformat                    | Das Spiel ist fuer eine Hand gebaut.                                                        |
+| Geteilter Bildschirm im Duell | Zwei Spielfelder auf einem Hochformat-Handy sind zu klein (siehe 4.1).                      |
+| Echtzeit-Duell ueber Netzwerk | Braucht einen Server. Der Weg dorthin steht in ADR-0010.                                    |
 
 ## 11. Offene Designfragen
 

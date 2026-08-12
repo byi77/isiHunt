@@ -15,8 +15,10 @@ import { BootScene } from '@/scenes/BootScene';
 import { ChallengeScene } from '@/scenes/ChallengeScene';
 import { GameScene } from '@/scenes/GameScene';
 import { HudScene } from '@/scenes/HudScene';
+import { LeaderboardScene } from '@/scenes/LeaderboardScene';
 import { MenuScene } from '@/scenes/MenuScene';
 import { ResultScene } from '@/scenes/ResultScene';
+import { SyncScene } from '@/scenes/SyncScene';
 import { Palette } from '@/ui/theme';
 
 const config: Phaser.Types.Core.GameConfig = {
@@ -38,8 +40,23 @@ const config: Phaser.Types.Core.GameConfig = {
   input: {
     activePointers: 3,
   },
+  // Fuer Namens- und Code-Eingabe: ein echtes HTML-Eingabefeld ueber dem
+  // Canvas. Phaser hat kein eigenes Textfeld, und nur ein echtes Feld oeffnet
+  // auf dem Handy die Systemtastatur samt Autokorrektur und Zahlenblock.
+  dom: {
+    createContainer: true,
+  },
   // Ohne Physik-Engine: Kollision ist ein Distanztest (siehe GameScene).
-  scene: [BootScene, MenuScene, GameScene, HudScene, ResultScene, ChallengeScene],
+  scene: [
+    BootScene,
+    MenuScene,
+    GameScene,
+    HudScene,
+    ResultScene,
+    ChallengeScene,
+    LeaderboardScene,
+    SyncScene,
+  ],
 };
 
 const game = new Phaser.Game(config);

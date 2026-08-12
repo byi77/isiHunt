@@ -25,7 +25,37 @@ export function createDefaultSave(): SaveData {
     collected: emptyRarityCounts(),
     unlockedAchievements: [],
     lastWorldId: DEFAULT_WORLD_ID,
+    playerName: '',
+    cloudId: null,
   };
+}
+
+/**
+ * Erzeugt eine UUID v4.
+ *
+ * `crypto.randomUUID` gibt es nur in sicheren Kontexten. Beim Testen ueber die
+ * Netzwerkadresse des Dev-Servers (http://192.168.x.x:5173) ist das nicht
+ * gegeben - dort faellt die Funktion sonst mit "undefined is not a function"
+ * aus. `getRandomValues` steht dagegen ueberall zur Verfuegung.
+ */
+function createUuid(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+
+  // Version 4 und Variante 1 nach RFC 4122 setzen.
+  bytes[6] = ((bytes[6] ?? 0) & 0x0f) | 0x40;
+  bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80;
+
+  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+  return [
+    hex.slice(0, 8),
+    hex.slice(8, 12),
+    hex.slice(12, 16),
+    hex.slice(16, 20),
+    hex.slice(20, 32),
+  ].join('-');
 }
 
 /**
@@ -92,4 +122,46 @@ export function reset(): SaveData {
   const fresh = createDefaultSave();
   save(fresh);
   return fresh;
+}
+
+// --- Online-Abgleich ---------------------------------------------------------
+
+/**
+ * Liefert die Cloud-Kennung und legt sie beim ersten Aufruf an.
+ *
+ * Bewusst traege: Wer nie synchronisiert, bekommt keine Kennung und hinterlaesst
+ * damit auch nichts, was sich einem Geraet zuordnen liesse.
+ */
+export function ensureCloudId(): string {
+  const existing = load().cloudId;
+  if (existing) return existing;
+
+  const id = createUuid();
+  update((data) => {
+    data.cloudId = id;
+  });
+  return id;
+}
+
+export function setPlayerName(name: string): void {
+  update((data) => {
+    data.playerName = name;
+  });
+}
+
+/**
+ * Ersetzt den lokalen Spielstand durch einen heruntergeladenen.
+ *
+ * Der Aufrufer muss den Nutzer vorher entscheiden lassen - hier wird nichts
+ * abgewogen, sondern ueberschrieben. `reconcile()` faengt dabei ab, dass ein
+ * fremder Stand aus einer aelteren Fassung Felder vermissen laesst.
+ *
+ * Die Cloud-Kennung wird mit uebernommen: ab jetzt zeigen beide Geraete auf
+ * denselben Eintrag, und der naechste Abgleich funktioniert in beide Richtungen.
+ */
+export function adoptRemote(remote: Partial<SaveData>, cloudId: string): SaveData {
+  const merged = reconcile(remote);
+  merged.cloudId = cloudId;
+  save(merged);
+  return merged;
 }

@@ -2,12 +2,12 @@
 
 **Stand:** 2026-08-12
 
-Meilensteine sind nach *spielbarem Wert* geordnet, nicht nach technischem
+Meilensteine sind nach _spielbarem Wert_ geordnet, nicht nach technischem
 Aufwand. Jeder Meilenstein endet mit etwas, das man in die Hand nehmen kann.
 
 ---
 
-## M0 — Fundament ✅ *(abgeschlossen)*
+## M0 — Fundament ✅ _(abgeschlossen)_
 
 Das Geruest steht und ist spielbar.
 
@@ -22,7 +22,7 @@ Das Geruest steht und ist spielbar.
 - [x] Persistenz ueber `localStorage`, versioniert
 - [x] Debug-Tasten im Dev-Build
 
-## M1 — Spielgefuehl *(laufend)*
+## M1 — Spielgefuehl _(laufend)_
 
 Der Prototyp funktioniert. Jetzt muss er sich **gut** anfuehlen.
 
@@ -38,7 +38,7 @@ Der Prototyp funktioniert. Jetzt muss er sich **gut** anfuehlen.
 - [ ] Bildschirmschoner / Sperre waehrend eines Runs verhindern (Wake Lock)
 - [ ] Verhalten beim Wegwischen der App (Run pausieren statt weiterlaufen)
 
-## M1.5 — Duell *(neu, teilweise fertig)*
+## M1.5 — Duell _(neu, teilweise fertig)_
 
 Ein Modus fuer zwei Personen.
 
@@ -88,14 +88,18 @@ Aus dem Prototyp wird ein Produkt.
 - [ ] Startbildschirm der installierten App (Splash Screen)
 - [ ] Ladebildschirm, sobald es etwas zu laden gibt
 
-## M5 — Teilen & Wettbewerb
+## M5 — Teilen & Wettbewerb _(teilweise fertig)_
 
+- [x] **Online-Bestenliste je Welt** ueber Supabase, Top 10
+- [x] **Spielstand geraeteuebergreifend** per Sync-Code, ohne Konto
+- [x] Konflikt zweier Spielstaende wird gezeigt statt still entschieden
 - [ ] Ergebnisbild zum Teilen erzeugen
-- [ ] Lokale Bestenliste je Welt
-- [ ] Echtzeit-Duell ueber Netzwerk (ADR-0010, Schritt 2) — braucht einen
-      Server und damit laufende Kosten
-- [ ] Online-Bestenliste (setzt serverseitige Bewertung voraus)
-- [ ] Spielstand geraeteuebergreifend
+- [ ] Duell ueber zwei Geraete per geteiltem Link (ADR-0010, Schritt 1)
+- [ ] Echtzeit-Duell ueber Netzwerk (ADR-0010, Schritt 2)
+- [ ] **Punkte serverseitig bewerten** — solange das fehlt, ist die
+      Bestenliste manipulierbar (ADR-0011). Vor jeder oeffentlichen Bewerbung
+      der Liste noetig.
+- [ ] Spielstaende zusammenfuehren statt ersetzen
 
 ## M6 — Als App
 
@@ -119,7 +123,7 @@ Damit die Roadmap ehrlich bleibt:
 ### Korrigiert
 
 - ~~**Mehrspieler in Echtzeit** — passt nicht zur 60-Sekunden-Schleife.~~
-  *(Stand 2026-08-12)* Ueberholt. Das lokale Duell zeigt, dass ein Modus fuer
+  _(Stand 2026-08-12)_ Ueberholt. Das lokale Duell zeigt, dass ein Modus fuer
   zwei Personen sehr wohl passt — er ist nur laenger als die Solo-Schleife.
   Echtzeit ueber Netzwerk ist jetzt in M5 eingeplant, mit dem Link-Duell als
   guenstigerem Zwischenschritt (ADR-0010).

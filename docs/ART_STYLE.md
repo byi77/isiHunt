@@ -8,7 +8,7 @@
 
 > **Dunkler Hintergrund, leuchtende Objekte.**
 
-Der Name traegt es schon: *isi* ist türkisch für Licht (*ışık*). Alles, was
+Der Name traegt es schon: _isi_ ist türkisch für Licht (_ışık_). Alles, was
 wichtig ist, leuchtet. Alles, was nicht leuchtet, ist Kulisse.
 
 Drei Konsequenzen:
@@ -28,27 +28,27 @@ Diese sechs Farben sind die Sprache des Spiels. Sie werden **nie** fuer etwas
 anderes benutzt — kein UI-Element, kein Hintergrund, keine Welt darf Lila
 verwenden, wenn es nicht "episch" bedeutet.
 
-| Stufe | Hex | |
-|---|---|---|
-| Schlicht | `#9d9d9d` | Grau |
-| Gewoehnlich | `#ffffff` | Weiss |
-| Ungewoehnlich | `#1eff00` | Gruen |
-| Selten | `#0070dd` | Blau |
-| Episch | `#a335ee` | Lila |
-| Legendaer | `#ff8000` | Orange |
+| Stufe         | Hex       |        |
+| ------------- | --------- | ------ |
+| Schlicht      | `#9d9d9d` | Grau   |
+| Gewoehnlich   | `#ffffff` | Weiss  |
+| Ungewoehnlich | `#1eff00` | Gruen  |
+| Selten        | `#0070dd` | Blau   |
+| Episch        | `#a335ee` | Lila   |
+| Legendaer     | `#ff8000` | Orange |
 
 ### 2.2 Welten
 
 Jede Welt hat einen Verlauf (oben → unten) und **eine** Leitfarbe. Die
 Leitfarbe faerbt Figur-Aura, HUD-Akzente und Schwebepartikel.
 
-| Welt | Oben | Unten | Leitfarbe |
-|---|---|---|---|
-| Silberhain | `#123021` | `#061410` | `#4ade80` |
-| Frostzinne | `#11294d` | `#050d1c` | `#7dd3fc` |
-| Glutmark | `#431407` | `#1a0703` | `#fb923c` |
+| Welt         | Oben      | Unten     | Leitfarbe |
+| ------------ | --------- | --------- | --------- |
+| Silberhain   | `#123021` | `#061410` | `#4ade80` |
+| Frostzinne   | `#11294d` | `#050d1c` | `#7dd3fc` |
+| Glutmark     | `#431407` | `#1a0703` | `#fb923c` |
 | Leerenbluete | `#2e1065` | `#0f0524` | `#c084fc` |
-| Sonnenhort | `#4a3308` | `#1a1103` | `#fcd34d` |
+| Sonnenhort   | `#4a3308` | `#1a1103` | `#fcd34d` |
 
 **Regel fuer neue Welten:** Der Hintergrund darf nie heller als etwa 25 %
 Helligkeit sein, und die Leitfarbe muss sich von allen sechs
@@ -56,15 +56,15 @@ Seltenheitsfarben klar unterscheiden.
 
 ### 2.3 Oberflaeche
 
-| Zweck | Wert |
-|---|---|
-| Grundton | `#0b1020` |
-| Panel | `#101733` |
-| Text | `#f4f1e8` |
-| Text gedaempft | `#9aa3bd` |
+| Zweck               | Wert      |
+| ------------------- | --------- |
+| Grundton            | `#0b1020` |
+| Panel               | `#101733` |
+| Text                | `#f4f1e8` |
+| Text gedaempft      | `#9aa3bd` |
 | Hervorhebung / Gold | `#ffd479` |
-| Warnung | `#ff6b6b` |
-| Erfolg | `#7ee787` |
+| Warnung             | `#ff6b6b` |
+| Erfolg              | `#7ee787` |
 
 Definiert in `src/ui/theme.ts`. Scenes definieren **keine** eigenen Farben.
 
@@ -81,23 +81,23 @@ Definiert in `src/ui/theme.ts`. Scenes definieren **keine** eigenen Farben.
 
 Bewegung ist Sprache — sie sagt dem Spieler, was passiert ist.
 
-| Ereignis | Bewegung | Dauer |
-|---|---|---|
-| Relikt erscheint | Skalierung 0 → 1, `Back.Out` | 220 ms |
-| Relikt laeuft ab | Alpha + Skalierung sinken | letzte 700 ms |
-| Fang | Relikt zieht sich zusammen, Splitter, Schockwelle, Zahl steigt auf | 160 / 480 / 420 / 750 ms |
-| Seltener Fang (ab episch) | zusaetzlich Kamera-Ruckler + Aufblitzen, groessere Schockwelle | 180 ms |
-| Punktestand aendert sich | kurzer Pop auf 112 % | 180 ms |
-| Figur im Stillstand | Pulsieren 94 % ↔ 106 % | 1100 ms |
-| Figur in Bewegung | Lichtspur ab 60 px/s | 420 ms Nachleuchten |
-| Seltenes Relikt liegt da | Strahlenkranz dreht gegenlaeufig zum Relikt | endlos |
-| Vorlage im Duell ueberholt | *UEBERHOLT!* blendet auf und wieder aus | 240 ms + 700 ms |
+| Ereignis                   | Bewegung                                                           | Dauer                    |
+| -------------------------- | ------------------------------------------------------------------ | ------------------------ |
+| Relikt erscheint           | Skalierung 0 → 1, `Back.Out`                                       | 220 ms                   |
+| Relikt laeuft ab           | Alpha + Skalierung sinken                                          | letzte 700 ms            |
+| Fang                       | Relikt zieht sich zusammen, Splitter, Schockwelle, Zahl steigt auf | 160 / 480 / 420 / 750 ms |
+| Seltener Fang (ab episch)  | zusaetzlich Kamera-Ruckler + Aufblitzen, groessere Schockwelle     | 180 ms                   |
+| Punktestand aendert sich   | kurzer Pop auf 112 %                                               | 180 ms                   |
+| Figur im Stillstand        | Pulsieren 94 % ↔ 106 %                                             | 1100 ms                  |
+| Figur in Bewegung          | Lichtspur ab 60 px/s                                               | 420 ms Nachleuchten      |
+| Seltenes Relikt liegt da   | Strahlenkranz dreht gegenlaeufig zum Relikt                        | endlos                   |
+| Vorlage im Duell ueberholt | _UEBERHOLT!_ blendet auf und wieder aus                            | 240 ms + 700 ms          |
 
 **Zwei Schwellen steuern die Aufmerksamkeit**, beide in `GameConfig.ts`:
 
-| Schwelle | Ab | Wirkung |
-|---|---|---|
-| `RARITY_RAYS_MIN_POINTS` | selten (15) | Strahlenkranz, staerkeres Pulsieren |
+| Schwelle                   | Ab          | Wirkung                                           |
+| -------------------------- | ----------- | ------------------------------------------------- |
+| `RARITY_RAYS_MIN_POINTS`   | selten (15) | Strahlenkranz, staerkeres Pulsieren               |
 | `RARITY_IMPACT_MIN_POINTS` | episch (50) | Kamera-Ruckler, Aufblitzen, doppelte Splitterzahl |
 
 Der Abstand ist Absicht: **Sehen darf man Seltenes oft, spueren selten.**
@@ -112,14 +112,14 @@ bedeuten.
 v0.1 nutzt System-Fonts (`Trebuchet MS`, `Segoe UI`, `system-ui`). Kein
 Webfont-Laden, kein Layoutsprung, funktioniert offline.
 
-| Rolle | Groesse |
-|---|---|
-| Titel / Punktestand | 68 px |
-| Ueberschrift | 40 px |
-| Gross | 34 px |
-| Fliesstext | 26 px |
-| Klein | 21 px |
-| Winzig / Label | 17 px |
+| Rolle               | Groesse |
+| ------------------- | ------- |
+| Titel / Punktestand | 68 px   |
+| Ueberschrift        | 40 px   |
+| Gross               | 34 px   |
+| Fliesstext          | 26 px   |
+| Klein               | 21 px   |
+| Winzig / Label      | 17 px   |
 
 Labels in Grossbuchstaben mit **6–8 px Laufweite** — das ist der
 "UI-Rahmen"-Look, der die Anzeige von Spielinhalten trennt.
@@ -139,18 +139,18 @@ Der Stern nimmt bewusst nur 30 % der Icon-Breite ein: Android schneidet
 "maskable" Icons zu einem Kreis zu und garantiert nur die inneren 80 % der
 Flaeche.
 
-| Key | Was | Groesse |
-|---|---|---|
-| `tex-pixel` | 1×1 weiss, Basis fuer Flaechen und Balken | 1×1 |
-| `tex-orb` | Relikt als geschliffener Stein: acht Facetten, Kern, Glanzpunkt | 64×64 |
-| `tex-glow` | weicher Lichtschein (konzentrische Kreise) | 128×128 |
-| `tex-spark` | rundes Partikel fuer Schwebestaub | 16×16 |
-| `tex-shard` | vierzackiger Splitter fuer Fang-Explosionen | 24×24 |
-| `tex-rays` | Strahlenkranz hinter seltenen Relikten | 160×160 |
-| `tex-ring` | Ring fuer die Schockwelle beim Fang | 128×128 |
-| `tex-vignette` | radiale Randabdunklung | 256×256 |
-| `tex-player-core` | zwei ineinander gedrehte vierzackige Sterne | 96×96 |
-| `tex-player-halo` | Ring mit vier Segmenten und Markern | 128×128 |
+| Key               | Was                                                             | Groesse |
+| ----------------- | --------------------------------------------------------------- | ------- |
+| `tex-pixel`       | 1×1 weiss, Basis fuer Flaechen und Balken                       | 1×1     |
+| `tex-orb`         | Relikt als geschliffener Stein: acht Facetten, Kern, Glanzpunkt | 64×64   |
+| `tex-glow`        | weicher Lichtschein (konzentrische Kreise)                      | 128×128 |
+| `tex-spark`       | rundes Partikel fuer Schwebestaub                               | 16×16   |
+| `tex-shard`       | vierzackiger Splitter fuer Fang-Explosionen                     | 24×24   |
+| `tex-rays`        | Strahlenkranz hinter seltenen Relikten                          | 160×160 |
+| `tex-ring`        | Ring fuer die Schockwelle beim Fang                             | 128×128 |
+| `tex-vignette`    | radiale Randabdunklung                                          | 256×256 |
+| `tex-player-core` | zwei ineinander gedrehte vierzackige Sterne                     | 96×96   |
+| `tex-player-halo` | Ring mit vier Segmenten und Markern                             | 128×128 |
 
 **Alles wird weiss gezeichnet und zur Laufzeit getintet.** Deshalb bedient
 eine Textur alle Seltenheiten und Welten.
@@ -172,13 +172,13 @@ Zwei Formentscheidungen mit Absicht dahinter:
 Ein Verlauf allein wirkt wie ein Plakat. Der Hintergrund besteht deshalb aus
 fuenf Ebenen (Reihenfolge in `src/ui/depth.ts`):
 
-| Ebene | Zweck |
-|---|---|
-| Grundverlauf | Farbstimmung der Welt |
-| Horizontschein | die Lichtquelle der Welt, oberes Drittel |
-| Farbwolken | vier weiche Flecken in **fester** Anordnung — jede Welt bleibt wiedererkennbar |
-| Zwei Parallax-Ebenen | die hintere kleiner, dunkler, langsamer; der Geschwindigkeitsunterschied *ist* der Tiefeneindruck |
-| Lichtstaub | steigt auf, traegt die Stimmung |
+| Ebene                | Zweck                                                                                             |
+| -------------------- | ------------------------------------------------------------------------------------------------- |
+| Grundverlauf         | Farbstimmung der Welt                                                                             |
+| Horizontschein       | die Lichtquelle der Welt, oberes Drittel                                                          |
+| Farbwolken           | vier weiche Flecken in **fester** Anordnung — jede Welt bleibt wiedererkennbar                    |
+| Zwei Parallax-Ebenen | die hintere kleiner, dunkler, langsamer; der Geschwindigkeitsunterschied _ist_ der Tiefeneindruck |
+| Lichtstaub           | steigt auf, traegt die Stimmung                                                                   |
 
 Darueber liegt eine **Vignette**, die den Blick zur Bildmitte zieht.
 
