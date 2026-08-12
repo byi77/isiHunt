@@ -1,0 +1,209 @@
+# Game Design Document — isiHunt
+
+**Version:** 0.1
+**Stand:** 2026-08-12
+**Status:** lebendes Dokument — jede Balancing- oder Regelaenderung wird hier
+zuerst beschrieben, dann implementiert.
+
+---
+
+## 1. Pitch
+
+> **isiHunt** ist ein farbenfroher 2D-Arcade-Collector fuer den Handy-Browser.
+> Du steuerst eine Lichtgestalt durch Fantasy-Welten und faengst Relikte, bevor
+> sie verblassen. Ein Run dauert eine Minute — aber Level, Talente und Erfolge
+> ziehen sich ueber Wochen.
+
+## 2. Designziele
+
+Diese vier Saetze entscheiden jeden Zweifelsfall. Was ihnen widerspricht,
+kommt nicht ins Spiel.
+
+1. **In 5 Sekunden verstanden.** Keine Tutorial-Texte. Wer die Farben sieht,
+   weiss, was wertvoll ist.
+2. **In 60 Sekunden gespielt.** Ein Run passt in die Bahnfahrt, die
+   Kaffeepause, die Werbepause.
+3. **Ueber Wochen belohnt.** Wer haeufiger spielt, kommt sichtbar weiter —
+   ohne dass Gelegenheitsspieler abgehaengt werden.
+4. **Fuer den Daumen gebaut.** Alles Wichtige liegt in Reichweite einer Hand.
+   Nichts Wichtiges liegt unter der Hand.
+
+## 3. Zielgruppe und Referenzen
+
+**Zielgruppe:** Casual-Spieler mit MMO-Vorerfahrung. Die visuelle Sprache
+setzt voraus, dass "Orange = extrem selten" bereits verinnerlicht ist.
+
+**Referenz:** World of Warcraft — nicht als Genre, sondern als *Grammatik*:
+Item-Qualitaetsfarben, Erfahrungsbalken, Talentpunkte, Zonen mit
+Levelanforderung, Erfolge. Das sind erprobte Fortschrittsmuster, die hier auf
+eine Arcade-Schleife von einer Minute komprimiert werden.
+
+## 4. Core Loop
+
+```
+Menue  →  Run (60 s)  →  Ergebnis  →  Menue
+             ↑                          │
+             └──────  "Nochmal"  ───────┘
+```
+
+**Im Run, alle paar Sekunden:**
+
+```
+Relikt erscheint  →  Spieler bewegt sich hin  →  eingesammelt
+        │                                             │
+        │                                    Punkte × Multiplikator
+        │                                    Combo +1, Fenster neu
+        ↓
+   verblasst (verpasst — Combo bleibt, aber Zeit war verloren)
+```
+
+Die eigentliche Entscheidung des Spielers ist **Prioritaet**: Auf dem Feld
+liegen mehrere Relikte gleichzeitig. Das lila ist 25-mal so viel wert wie das
+graue — aber es ist weiter weg und verschwindet frueher. Genau diese Abwaegung
+ist das Spiel.
+
+## 5. Seltenheitsstufen
+
+Die zentrale Achse. Alles andere haengt daran.
+
+| Stufe | Farbe | Punkte | XP | Spawn | Lebensdauer | Tempo | Radius |
+|---|---|---|---|---|---|---|---|
+| Schlicht | Grau `#9d9d9d` | 1 | 1 | 34 % | 5,2 s | 30 px/s | 30 |
+| Gewoehnlich | Weiss `#ffffff` | 2 | 2 | 28 % | 4,6 s | 45 px/s | 30 |
+| Ungewoehnlich | Gruen `#1eff00` | 5 | 6 | 20 % | 3,8 s | 70 px/s | 32 |
+| Selten | Blau `#0070dd` | 15 | 18 | 11 % | 3,0 s | 105 px/s | 34 |
+| Episch | Lila `#a335ee` | 50 | 60 | 5,5 % | 2,4 s | 140 px/s | 38 |
+| Legendaer | Orange `#ff8000` | 200 | 250 | 1,5 % | 2,0 s | 190 px/s | 44 |
+
+**Designregel:** Seltener ⇒ wertvoller ⇒ schneller ⇒ kuerzer sichtbar ⇒
+groesser (damit man es ueberhaupt rechtzeitig sieht).
+
+**Erwartungswert pro Spawn:** ≈ 6,9 Punkte, ≈ 8,9 XP.
+Quelle: `src/config/rarities.ts` — diese Tabelle ist eine Abschrift, der Code
+ist die Wahrheit.
+
+## 6. Combo-System
+
+- Jeder Fang: Combo **+1**, Zeitfenster startet neu (Basis **2,2 s**).
+- Faengst du im Fenster nichts, faellt die Combo auf **0**.
+- **Ein verpasstes Relikt bricht die Combo NICHT.**
+
+Das ist eine bewusste Abweichung vom Arcade-Standard. Begruendung: Auf dem
+Handy sind Fehlgriffe oft Geraet- statt Spielerfehler (Fettfinger, Ruckler,
+Anruf). Combo-Verlust durch Verpassen wuerde sich unfair anfuehlen. Belohnt
+wird **Flow**, nicht Fehlerfreiheit.
+
+| Combo | Multiplikator |
+|---|---|
+| 0–4 | ×1 |
+| 5–9 | ×2 |
+| 10–19 | ×3 |
+| 20–34 | ×4 |
+| ab 35 | ×5 |
+
+## 7. Progression
+
+### 7.1 Charakterlevel
+
+XP fuer den Aufstieg von Level *n*: `floor(80 · n^1.45)`
+
+| Level | XP fuer naechstes | kumuliert |
+|---|---|---|
+| 1 | 80 | 80 |
+| 2 | 219 | 299 |
+| 3 | 385 | 684 |
+| 5 | 819 | 2 176 |
+| 10 | 2 244 | 9 271 |
+| 15 | 4 034 | 24 133 |
+
+Ein durchschnittlicher Run bringt grob 400–900 XP. Die ersten Level fallen in
+den ersten Runs, danach flacht es ab — bewusst, damit Neulinge sofort
+Levelaufstiege erleben.
+
+Jeder Levelaufstieg gibt **1 Talentpunkt**.
+
+### 7.2 Talente
+
+Dauerhafte Upgrades. Datenmodell und Wirkung sind implementiert, die
+Vergabe-Oberflaeche folgt in M2.
+
+| Talent | Max. Rang | Pro Rang |
+|---|---|---|
+| Reichweite | 5 | +6 Sammelradius |
+| Flinkheit | 5 | +5 % Tempo |
+| Magnetismus | 4 | +35 Sogreichweite |
+| Ausdauer | 4 | +4 s Rundendauer |
+| Fokus | 4 | +250 ms Combo-Fenster |
+| Erkenntnis | 5 | +8 % XP |
+| Gunst | 5 | +6 % Punkte |
+
+**Balancing-Absicht:** Kein Talent ist Pflicht. *Reichweite* und *Magnetismus*
+machen das Spiel leichter, *Gunst* und *Erkenntnis* machen es ertragreicher —
+zwei gleichwertige Bauweisen, keine dominante.
+
+### 7.3 Welten
+
+| Welt | Ab Level | Stimmung | Geplante Besonderheit |
+|---|---|---|---|
+| Silberhain | 1 | Gruen, Wald | keine — die Lernwelt |
+| Frostzinne | 3 | Blau, Eis | Relikte gleiten weiter |
+| Glutmark | 6 | Orange, Asche | kuerzere Zeitfenster |
+| Leerenbluete | 10 | Violett, Leere | Relikte blinken kurz weg |
+| Sonnenhort | 15 | Gold, Licht | doppelte Legendaer-Chance, halbe Lebensdauer |
+
+In v0.1 unterscheiden sich die Welten nur optisch. Das ist Absicht: erst muss
+sich die Grundmechanik gut anfuehlen, dann kommt Varianz dazu (M3).
+
+### 7.4 Erfolge
+
+15 Erfolge in vier Gruppen: erste Male, Combo-Schwellen, Punktschwellen,
+Sammelmengen. Sie werden nach jedem Run geprueft und wirken rueckwirkend —
+wer die Bedingung schon erfuellt hat, bekommt sie beim naechsten Run.
+
+Vollstaendige Liste: `src/config/achievements.ts`.
+
+## 8. Steuerung
+
+**Handy (primaer):** Finger irgendwo aufsetzen und ziehen. Die Figur laeuft
+zum Finger, klebt aber nicht daran.
+
+Warum nicht am Finger kleben: Die Hand wuerde die Figur und den Sammelradius
+verdecken — genau die Information, die man braucht. Der Abstand haelt das
+Spielfeld sichtbar.
+
+Nahe am Ziel bremst die Figur ab (siehe `POINTER_DEADZONE`), damit sie nicht
+um den Finger herum zittert.
+
+**PC (Test):** WASD oder Pfeiltasten. Tastatur hat Vorrang, solange eine Taste
+gehalten wird.
+
+## 9. Spielfeld
+
+720 × 1280 interne Aufloesung, Hochformat, per FIT auf jedes Geraet skaliert.
+
+- Oben **170 px** frei fuer das HUD.
+- Unten **120 px** frei — dort liegt die Hand.
+- Seitlich je **60 px**.
+
+Relikte spawnen nie naeher als **150 px** an der Figur: Ein legendaeres Relikt
+darf nicht als Geschenk direkt unter dem Daumen erscheinen.
+
+## 10. Was bewusst NICHT drin ist
+
+| Nicht drin | Begruendung |
+|---|---|
+| Gegner / Schaden / Verlieren | Der Zeitdruck ist die Spannung. Zusaetzlicher Misserfolg macht kurze Sessions frustrierend. |
+| Tutorial | Wenn es eins braucht, ist das Design gescheitert (Designziel 1). |
+| Werbung / Kaeufe | Vorerst kein Monetarisierungsdruck. Beeinflusst sonst das Balancing. |
+| Online-Bestenliste | Erst wenn die Kernschleife steht (M5). |
+| Querformat | Das Spiel ist fuer eine Hand gebaut. |
+
+## 11. Offene Designfragen
+
+- [ ] Wo lebt die Talentvergabe — eigener Bildschirm oder direkt im Ergebnis?
+- [ ] Braucht es eine zweite Waehrung (Gold) fuer Kosmetik, oder reichen Level?
+- [ ] Sollen Welten unterschiedliche Seltenheitsverteilungen haben, oder nur
+      Modifikatoren?
+- [ ] Endlos-Modus ohne Timer als zweiter Spielmodus?
+- [ ] Tages-Herausforderung mit festem Seed (der `RandomDataGenerator` ist
+      bereits seedbar)?
