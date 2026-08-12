@@ -8,7 +8,9 @@
 
 import Phaser from 'phaser';
 
+import { RARITY_RAYS_MIN_POINTS } from '@/config/GameConfig';
 import type { RarityDef } from '@/config/rarities';
+import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
 
 /** Zeitfenster am Lebensende, in dem das Relikt sichtbar verblasst. */
@@ -20,6 +22,7 @@ export class Collectible extends Phaser.GameObjects.Container {
 
   private readonly orb: Phaser.GameObjects.Image;
   private readonly glow: Phaser.GameObjects.Image;
+  private readonly rays: Phaser.GameObjects.Image | null;
   private readonly velocity: Phaser.Math.Vector2;
 
   private ageMs = 0;
@@ -41,10 +44,22 @@ export class Collectible extends Phaser.GameObjects.Container {
       .setAlpha(0.9)
       .setBlendMode(Phaser.BlendModes.ADD);
 
+    // Strahlenkranz nur ab "selten": Bekaeme ihn jedes Relikt, wuerde er
+    // aufhoeren, Seltenheit zu bedeuten.
+    this.rays =
+      rarity.points >= RARITY_RAYS_MIN_POINTS
+        ? scene.add
+            .image(0, 0, TextureKey.Rays)
+            .setTint(rarity.color)
+            .setScale(scale * 0.75)
+            .setAlpha(0.45)
+            .setBlendMode(Phaser.BlendModes.ADD)
+        : null;
+
     this.orb = scene.add.image(0, 0, TextureKey.Orb).setTint(rarity.color).setScale(scale);
 
-    this.add([this.glow, this.orb]);
-    this.setDepth(20);
+    this.add(this.rays ? [this.rays, this.glow, this.orb] : [this.glow, this.orb]);
+    this.setDepth(Depth.Collectible);
     scene.add.existing(this);
 
     // Zufaellige Driftrichtung mit der seltenheitsabhaengigen Geschwindigkeit.
@@ -63,7 +78,7 @@ export class Collectible extends Phaser.GameObjects.Container {
     });
 
     // Seltene Relikte pulsieren staerker - sie sollen ins Auge springen.
-    if (rarity.points >= 15) {
+    if (rarity.points >= RARITY_RAYS_MIN_POINTS) {
       scene.tweens.add({
         targets: this.glow,
         alpha: { from: 0.55, to: 1 },
@@ -123,6 +138,9 @@ export class Collectible extends Phaser.GameObjects.Container {
     }
 
     this.orb.rotation += dtSec * 0.8;
+    // Gegenlaeufig zum Relikt - die Bewegung bleibt dadurch lesbar, statt sich
+    // zu einer einzigen drehenden Scheibe zu vermischen.
+    if (this.rays) this.rays.rotation -= dtSec * 0.35;
 
     const remaining = this.rarity.lifetimeMs - this.ageMs;
     if (remaining <= FADE_OUT_MS) {

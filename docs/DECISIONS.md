@@ -232,3 +232,155 @@ privat ist, hat die Wahl keine Wirkung.
 - Bei kommerzieller Absicht: proprietaere Lizenz statt MIT.
 - Assets aus fremden Quellen haben **eigene** Lizenzen, unabhaengig von dieser
   — sie gehoeren in eine `CREDITS.md`.
+
+**Nachtrag 2026-08-12:** Das Repository ist inzwischen oeffentlich (noetig fuer
+GitHub Pages ohne kostenpflichtigen Tarif). Die MIT-Lizenz ist damit wirksam.
+Die Frage nach kommerzieller Absicht bleibt offen — eine spaetere Umstellung
+gilt nur fuer neue Versionen, bereits veroeffentlichter Stand bleibt MIT.
+
+---
+
+## ADR-0008 — Duell lokal am Geraet, mit gleichem Seed und ohne Progression
+
+**Datum:** 2026-08-12 · **Status:** Angenommen
+
+### Kontext
+
+Gewuenscht war ein Modus fuer zwei Spieler. Drei Bauformen kamen in Frage:
+geteilter Bildschirm, abwechselnd am selben Geraet, oder ueber Netzwerk.
+
+### Entscheidung
+
+Abwechselnd am selben Geraet ("Hot Seat"). Beide Spieler bekommen **denselben
+Seed**, spielen **ohne Talente** und das Duell **veraendert den Spielstand
+nicht**. Ein Durchgang dauert 90 statt 60 Sekunden.
+
+### Begruendung
+
+**Gegen geteilten Bildschirm:** Auf 720 × 1280 blieben je Spieler 360 × 640
+Pixel. Bei einem Sammelradius von 46 Pixeln waere das Spielfeld zu eng, und
+zwei Daumen auf einem Handy behindern sich gegenseitig.
+
+**Gegen Netzwerk als ersten Schritt:** Braucht Server-Infrastruktur, die es
+nicht gibt (ADR-0010). Der lokale Modus liefert sofort Spielwert und legt
+zugleich die Grundlage — ein Netzwerkduell ist danach im Wesentlichen
+"derselbe Seed, andere Person, anderes Geraet".
+
+**Fuer die drei Fairness-Regeln:** Jede verhindert einen konkreten Weg, auf dem
+das Duell unfair wuerde — Glueck bei der Relikt-Verteilung, Talent-Vorsprung des
+Geraetebesitzers, und ein Gast, der den fremden Spielstand veraendert.
+
+**Fuer 90 Sekunden:** Ein einzelner Durchgang entscheidet alles. Mehr Zeit
+bedeutet mehr Spawns und damit weniger Streuung — das Ergebnis bildet Koennen
+ab statt Glueck.
+
+### Konsequenzen
+
+- **Das Spawning ist jetzt an Determinismus gebunden.** Zwei Aenderungen daran
+  waren noetig (siehe ARCHITECTURE.md 4.1), und kuenftige Aenderungen koennen
+  ihn unbemerkt brechen. Ein Vitest-Test dafuer ist in M2 vorgemerkt.
+- Ein Duell dauert mit Uebergabe rund vier Minuten — laenger als die
+  60-Sekunden-Schleife, fuer die das Spiel sonst gebaut ist. Das ist bei einem
+  Modus fuer zwei Personen vertretbar.
+- Talente wirken im Duell nicht. Wer sie erspielt hat, sieht dort keinen
+  Nutzen — das muss die Oberflaeche erklaeren, sonst wirkt es wie ein Fehler.
+
+---
+
+## ADR-0009 — Vollbild ueber zwei getrennte Wege je Plattform
+
+**Datum:** 2026-08-12 · **Status:** Angenommen
+
+### Kontext
+
+Die Adressleiste des Browsers nimmt auf dem Handy dauerhaft Platz weg und
+stoert bei einem Spiel, das den ganzen Bildschirm nutzt.
+
+### Entscheidung
+
+Zwei Wege parallel:
+
+1. **Fullscreen-API** ueber einen Knopf im Menue — dort, wo sie funktioniert.
+2. **Installation als Web-App** ("Zum Home-Bildschirm") ueber ein
+   PWA-Manifest — ueberall, und auf dem iPhone der einzige Weg.
+
+Der Vollbild-Knopf erscheint nur, wenn die API verfuegbar ist. Auf iOS steht
+stattdessen ein Installationshinweis in der Fusszeile.
+
+### Begruendung
+
+Apple gibt die Fullscreen-API auf dem iPhone nur fuer Videoelemente frei, nicht
+fuer beliebige Elemente. Ein Vollbild-Knopf waere dort ein Knopf, der nichts
+tut — schlimmer als kein Knopf.
+
+Als installierte Web-App laeuft das Spiel dagegen auf allen Plattformen ohne
+jede Browserleiste. Das Manifest bringt zusaetzlich Icon, Startfarbe und
+Hochformat-Sperre mit.
+
+### Verworfene Alternativen
+
+| Alternative | Warum nicht |
+|---|---|
+| Nur Fullscreen-API | Laesst iPhone-Nutzer ohne Loesung — die Zielplattform. |
+| Nur PWA | Auf Android und Desktop ist ein Knopf der schnellere Weg. |
+| Adressleiste per Scroll-Trick verstecken | Funktioniert seit Jahren unzuverlaessig und bricht die Scroll-Sperre des Spiels. |
+
+### Konsequenzen
+
+- Zwei Wege heissen zwei Pfade zum Testen und zwei Stellen, an denen sich
+  Plattformverhalten aendern kann. Gekapselt in `src/core/display.ts`.
+- Das Projekt hat jetzt PNG-Dateien im Repository (App-Icons). Sie werden von
+  einem Skript erzeugt, nicht von Hand gemalt — die prozedurale Linie bleibt.
+
+---
+
+## ADR-0010 — Netzwerkduell: erst per geteiltem Link, Echtzeit spaeter
+
+**Datum:** 2026-08-12 · **Status:** Vorgeschlagen — noch nicht umgesetzt
+
+### Kontext
+
+Naheliegende naechste Frage nach dem lokalen Duell: zwei Handys gegeneinander.
+
+### Ausgangslage
+
+Das Spiel liegt auf **GitHub Pages**. Das ist reines Datei-Hosting — es kann
+keinen Server-Prozess ausfuehren, keine WebSocket-Verbindung halten und nichts
+speichern. Jede Form von Netzwerkspiel braucht deshalb zusaetzliche
+Infrastruktur, die es heute nicht gibt.
+
+### Vorgeschlagene Reihenfolge
+
+**Schritt 1 — Duell per geteiltem Link (kein Server noetig).**
+Der Seed wandert in die Adresse:
+`…/isiHunt/#duell=<seed>&punkte=<wert>`. Wer den Link oeffnet, spielt exakt
+dieselbe Jagd und sieht die Vorlage im HUD. Das ist derselbe Modus wie heute,
+nur ueber zwei Geraete und zeitversetzt.
+
+- **Aufwand:** gering — die Seed-Mechanik steht bereits.
+- **Ehrliche Grenze:** Punktzahlen im Link sind manipulierbar. Fuer ein Duell
+  unter Bekannten unerheblich, fuer eine Bestenliste unbrauchbar.
+
+**Schritt 2 — Echtzeit, beide gleichzeitig.**
+Braucht einen Server fuer Verbindungsaufbau und Abgleich. Realistische
+Optionen: ein kleiner WebSocket-Dienst (Fly.io, Railway) oder eine fertige
+Echtzeit-Plattform. WebRTC verlagert die Spieldaten direkt zwischen die
+Geraete, braucht aber trotzdem einen Server fuer den Verbindungsaufbau.
+
+- **Aufwand:** deutlich hoeher — Verbindungsabbrueche, unterschiedliche
+  Bildraten, Wiedereinstieg nach Anruf.
+- **Vorbedingung:** laufende Kosten und ein Betreiber. Solange beides offen
+  ist, bleibt Schritt 1 die bessere Antwort.
+
+### Warum diese Reihenfolge
+
+Schritt 1 liefert den Grossteil des Spielwerts ("ich fordere jemanden heraus")
+zu einem Bruchteil des Aufwands und ohne laufende Kosten. Erst wenn sich
+zeigt, dass das Zeitversetzte nicht reicht, lohnt sich Schritt 2.
+
+### Konsequenzen
+
+- Der Eintrag "Mehrspieler in Echtzeit — nicht geplant" in der Roadmap ist
+  damit ueberholt und wurde korrigiert.
+- Eine echte Online-Bestenliste setzt Schritt 2 voraus: Punkte muessen
+  serverseitig bewertet werden (siehe auch ADR-0006, letzte Konsequenz).

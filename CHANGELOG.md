@@ -9,7 +9,56 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
-Siehe [docs/ROADMAP.md](docs/ROADMAP.md), Meilenstein M1.
+### Hinzugefuegt
+
+**Duell-Modus fuer zwei Spieler**
+
+- Zwei Personen spielen abwechselnd an einem Geraet, je 90 Sekunden
+- Beide bekommen **dieselbe Relikt-Abfolge** — gleicher Seed, gleiche
+  Seltenheiten, gleiche Positionen, gleiche Zeitpunkte
+- Faire Bedingungen: keine Talente, und der Spielstand bleibt unberuehrt
+- Einfuehrung, Uebergabe-Bildschirm und Ergebnis mit Sieger und Punktabstand
+- Vorlage des Gegners im HUD; wird sie ueberholt, wird das gefeiert
+- "Revanche" startet ein neues Duell mit frischem Seed
+
+**Vollbild und Installation**
+
+- PWA-Manifest — das Spiel laesst sich auf den Home-Bildschirm legen und
+  laeuft dann ohne Adressleiste
+- App-Icons, erzeugt von `scripts/generate-icons.mjs` (`npm run icons`)
+- Vollbild-Knopf im Menue, wo die Fullscreen-API verfuegbar ist
+- Auf dem iPhone stattdessen ein Hinweis auf "Zum Home-Bildschirm" — Safari
+  kennt dort keine Fullscreen-API
+
+**Grafik**
+
+- Relikte sind geschliffene Steine mit acht Facetten statt glatter Kugeln
+- Strahlenkranz hinter seltenen Relikten, gegenlaeufig rotierend
+- Schockwelle beim Einsammeln; Fang-Partikel sind jetzt Splitter statt Punkte
+- Lichtspur hinter der Figur, sobald sie sich bewegt
+- Hintergrund in fuenf Ebenen: Verlauf, Horizontschein, Farbwolken, zwei
+  Parallax-Ebenen — dazu eine Vignette
+- Leuchtende Fortschrittsbalken, Schein hinter Knoepfen, abgesetzte Panels
+- Farbmarke je Welt in der Weltenliste
+
+### Geaendert
+
+- **Spawn-System ist deterministisch geworden.** Der Zufallsgenerator wird
+  jetzt unabhaengig vom Spielverlauf verbraucht: ein volles Spielfeld haelt
+  den Takt nicht mehr an, und die Positionssuche bricht nicht mehr frueh ab.
+  Ohne beides haetten zwei Duell-Durchgaenge unterschiedliche Runden ergeben.
+- Zeichenreihenfolge zentral in `src/ui/depth.ts` statt verstreuter Zahlen
+- Duell-Konstanten in `src/config/challenge.ts`, mit den Fairness-Regeln als
+  Begruendung
+
+### Dokumentation
+
+- Drei neue Architekturentscheidungen: Duell-Bauform (ADR-0008),
+  Vollbild-Strategie (ADR-0009), Weg zum Netzwerkduell (ADR-0010)
+- Roadmap-Eintrag "Mehrspieler in Echtzeit — nicht geplant" als ueberholt
+  gekennzeichnet und korrigiert
+- ADR-0007 (Lizenz) um den Nachtrag ergaenzt, dass das Repository inzwischen
+  oeffentlich und die MIT-Lizenz damit wirksam ist
 
 ---
 

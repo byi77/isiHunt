@@ -17,7 +17,7 @@ import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
-import { createBar, createButton, createWorldBackdrop } from '@/ui/widgets';
+import { createBar, createButton, createVignette, createWorldBackdrop } from '@/ui/widgets';
 import type { ProgressionResult, RunStats } from '@/types';
 
 export interface ResultSceneData {
@@ -34,7 +34,8 @@ export class ResultScene extends Phaser.Scene {
     const { stats, progression } = data;
     const world = getWorld(stats.worldId);
 
-    createWorldBackdrop(this, GAME_WIDTH, GAME_HEIGHT, world.bgTop, world.bgBottom);
+    createWorldBackdrop(this, GAME_WIDTH, GAME_HEIGHT, world.bgTop, world.bgBottom, world.accent);
+    createVignette(this, GAME_WIDTH, GAME_HEIGHT);
 
     // Abdunkeln, damit die Zahlen im Vordergrund stehen.
     this.add

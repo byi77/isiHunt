@@ -10,12 +10,21 @@ import Phaser from 'phaser';
 import { DEBUG_ENABLED, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { WORLDS } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
+import { isIos, isStandalone } from '@/core/display';
 import { SceneKey } from '@/scenes/SceneKey';
+import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
-import { createAmbientMotes, createBar, createButton, createWorldBackdrop } from '@/ui/widgets';
+import {
+  createAmbientMotes,
+  createBar,
+  createButton,
+  createDriftLayers,
+  createVignette,
+  createWorldBackdrop,
+} from '@/ui/widgets';
 
 export class MenuScene extends Phaser.Scene {
   private selectedWorld!: WorldDef;
@@ -38,16 +47,28 @@ export class MenuScene extends Phaser.Scene {
       GAME_HEIGHT,
       this.selectedWorld.bgTop,
       this.selectedWorld.bgBottom,
+      this.selectedWorld.accent,
     );
+    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT);
     createAmbientMotes(this, GAME_WIDTH, GAME_HEIGHT, this.selectedWorld.accent);
+    createVignette(this, GAME_WIDTH, GAME_HEIGHT);
 
     this.buildTitle();
+    this.buildFullscreenToggle();
     this.buildCharacterPanel(save.level);
     this.buildWorldList(save.level);
     this.buildFooter(save.bestScore);
   }
 
   private buildTitle(): void {
+    // Lichtschein hinter dem Titel - der Name bedeutet Licht, das darf man sehen.
+    this.add
+      .image(GAME_WIDTH / 2, 100, TextureKey.Glow)
+      .setDisplaySize(560, 320)
+      .setTint(Palette.goldHex)
+      .setAlpha(0.35)
+      .setBlendMode(Phaser.BlendModes.ADD);
+
     const title = this.add
       .text(
         GAME_WIDTH / 2,
@@ -70,6 +91,34 @@ export class MenuScene extends Phaser.Scene {
       repeat: -1,
       ease: 'Sine.InOut',
     });
+  }
+
+  /**
+   * Vollbild-Umschalter oben rechts.
+   *
+   * Erscheint nur, wo die Fullscreen-API wirklich etwas bewirkt - auf dem
+   * iPhone gibt es sie nicht (siehe core/display.ts), dort steht stattdessen
+   * der Installationshinweis in der Fusszeile.
+   */
+  private buildFullscreenToggle(): void {
+    if (!this.scale.fullscreen.available || isStandalone()) return;
+
+    const button = createButton(
+      this,
+      GAME_WIDTH - 96,
+      52,
+      this.scale.isFullscreen ? 'ZURUECK' : 'VOLLBILD',
+      () => {
+        if (this.scale.isFullscreen) {
+          this.scale.stopFullscreen();
+          button.setLabel('VOLLBILD');
+        } else {
+          this.scale.startFullscreen();
+          button.setLabel('ZURUECK');
+        }
+      },
+      { width: 148, height: 52, accent: 0x9aa3bd, fontSize: FontSize.tiny },
+    );
   }
 
   /** Level, XP-Balken und offene Talentpunkte. */
@@ -108,11 +157,11 @@ export class MenuScene extends Phaser.Scene {
 
   /** Weltenliste mit Sperr-Zustand. */
   private buildWorldList(level: number): void {
-    const startY = 366;
-    const rowHeight = 104;
+    const startY = 352;
+    const rowHeight = 98;
 
     this.add
-      .text(60, startY - 34, 'WELTEN', textStyle(FontSize.tiny, Palette.inkDim))
+      .text(60, startY - 32, 'WELTEN', textStyle(FontSize.tiny, Palette.inkDim))
       .setLetterSpacing(6);
 
     WORLDS.forEach((world, index) => {
@@ -138,10 +187,17 @@ export class MenuScene extends Phaser.Scene {
         12,
       );
 
+      // Farbmarke am linken Rand - macht die Welt auch ohne Lesen erkennbar.
+      const swatch = this.add
+        .image(-(GAME_WIDTH - 120) / 2 + 14, 0, TextureKey.Pixel)
+        .setDisplaySize(5, rowHeight - 40)
+        .setTint(world.accent)
+        .setAlpha(isUnlocked ? 1 : 0.3);
+
       const name = this.add
         .text(
-          -(GAME_WIDTH - 120) / 2 + 24,
-          -16,
+          -(GAME_WIDTH - 120) / 2 + 34,
+          -15,
           world.name,
           textStyle(FontSize.body, isUnlocked ? toCss(world.accent) : Palette.inkDim, {
             fontStyle: 'bold',
@@ -151,15 +207,15 @@ export class MenuScene extends Phaser.Scene {
 
       const subtitle = this.add
         .text(
-          -(GAME_WIDTH - 120) / 2 + 24,
-          16,
+          -(GAME_WIDTH - 120) / 2 + 34,
+          15,
           isUnlocked ? world.flavor : `Freigeschaltet ab Level ${world.unlockLevel}`,
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0, 0.5);
-      subtitle.setWordWrapWidth(GAME_WIDTH - 200);
+      subtitle.setWordWrapWidth(GAME_WIDTH - 210);
 
-      row.add([bg, border, name, subtitle]);
+      row.add([bg, border, swatch, name, subtitle]);
 
       if (!isUnlocked) {
         row.setAlpha(0.5);
@@ -191,7 +247,7 @@ export class MenuScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      GAME_HEIGHT - 168,
+      GAME_HEIGHT - 306,
       'JAGD BEGINNEN',
       () => {
         this.scene.start(SceneKey.Game, { worldId: this.selectedWorld.id });
@@ -203,21 +259,54 @@ export class MenuScene extends Phaser.Scene {
       },
     );
 
+    createButton(
+      this,
+      GAME_WIDTH / 2,
+      GAME_HEIGHT - 212,
+      'DUELL ZU ZWEIT',
+      () => {
+        ChallengeSystem.start(this.selectedWorld.id);
+        this.scene.start(SceneKey.Challenge);
+      },
+      { width: 440, height: 76, accent: Palette.goldHex, fontSize: FontSize.body },
+    );
+
     this.add
       .text(
         GAME_WIDTH / 2,
-        GAME_HEIGHT - 92,
+        GAME_HEIGHT - 142,
         `Bestwert: ${bestScore.toLocaleString('de-DE')}`,
         textStyle(FontSize.small, Palette.inkDim),
       )
       .setOrigin(0.5);
+
+    this.buildHint();
+  }
+
+  /**
+   * Fusszeile: Steuerungshinweis - und auf dem iPhone der einzige Weg zum
+   * Vollbild, weil es dort keine Fullscreen-API gibt (core/display.ts).
+   */
+  private buildHint(): void {
+    if (isIos() && !isStandalone()) {
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          GAME_HEIGHT - 88,
+          'Fuer Vollbild ohne Adressleiste:\nTeilen-Symbol  ·  Zum Home-Bildschirm',
+          textStyle(FontSize.tiny, Palette.gold),
+        )
+        .setOrigin(0.5)
+        .setAlign('center')
+        .setLineSpacing(4);
+    }
 
     const hint = DEBUG_ENABLED
       ? 'Ziehen zum Steuern  ·  am PC: WASD / Pfeiltasten  ·  Debug: 1-6, L, K, J, P, 0'
       : 'Ziehen zum Steuern  ·  am PC: WASD / Pfeiltasten';
 
     this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 48, hint, textStyle(FontSize.tiny, Palette.inkDim))
+      .text(GAME_WIDTH / 2, GAME_HEIGHT - 36, hint, textStyle(FontSize.tiny, Palette.inkDim))
       .setOrigin(0.5)
       .setWordWrapWidth(GAME_WIDTH - 80)
       .setAlign('center');

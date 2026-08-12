@@ -10,14 +10,16 @@
 
 import Phaser from 'phaser';
 
-import { PLAYER_ACCEL_RESPONSE } from '@/config/GameConfig';
+import { PLAYER_ACCEL_RESPONSE, PLAYER_TRAIL_MIN_SPEED } from '@/config/GameConfig';
 import type { PlayerStats } from '@/config/talents';
+import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
 
 export class Player extends Phaser.GameObjects.Container {
   private readonly core: Phaser.GameObjects.Image;
   private readonly halo: Phaser.GameObjects.Image;
   private readonly aura: Phaser.GameObjects.Image;
+  private readonly trail: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly velocity = new Phaser.Math.Vector2();
 
   constructor(
@@ -38,8 +40,23 @@ export class Player extends Phaser.GameObjects.Container {
     this.core = scene.add.image(0, 0, TextureKey.PlayerCore).setTint(0xffffff);
 
     this.add([this.aura, this.halo, this.core]);
-    this.setDepth(50);
+    this.setDepth(Depth.Player);
     scene.add.existing(this);
+
+    // Spur: eigener Emitter im Weltkoordinatensystem, NICHT im Container.
+    // Partikel im Container wuerden mit der Figur mitwandern - eine Spur muss
+    // aber dort liegen bleiben, wo die Figur war.
+    this.trail = scene.add.particles(0, 0, TextureKey.Glow, {
+      lifespan: 420,
+      scale: { start: 0.42, end: 0 },
+      alpha: { start: 0.5, end: 0 },
+      tint: accentColor,
+      blendMode: 'ADD',
+      frequency: 34,
+      quantity: 1,
+      emitting: false,
+    });
+    this.trail.setDepth(Depth.Player - 1);
 
     this.syncHaloToRadius();
 
@@ -85,6 +102,12 @@ export class Player extends Phaser.GameObjects.Container {
     this.x = Phaser.Math.Clamp(this.x + this.velocity.x * dtSec, bounds.left, bounds.right);
     this.y = Phaser.Math.Clamp(this.y + this.velocity.y * dtSec, bounds.top, bounds.bottom);
 
+    // Spur nur bei echter Bewegung - im Stillstand wuerde sie sich zu einem
+    // Fleck unter der Figur aufstauen.
+    const speed = this.velocity.length();
+    this.trail.setPosition(this.x, this.y);
+    this.trail.emitting = speed > PLAYER_TRAIL_MIN_SPEED;
+
     this.halo.rotation += dtSec * 1.2;
     // Leichte Neigung in Bewegungsrichtung - reine Spielgefuehl-Politur.
     this.core.rotation = Phaser.Math.Linear(
@@ -109,6 +132,16 @@ export class Player extends Phaser.GameObjects.Container {
   setAccent(color: number): void {
     this.aura.setTint(color);
     this.halo.setTint(color);
+    this.trail.setParticleTint(color);
+  }
+
+  /**
+   * Der Emitter haengt nicht am Container und wird deshalb nicht automatisch
+   * mit zerstoert - ohne dieses Override ueberlebt die Spur den Run.
+   */
+  override destroy(fromScene?: boolean): void {
+    this.trail.destroy();
+    super.destroy(fromScene);
   }
 
   /** Der Ring zeigt exakt den Sammelradius - wichtig fuer faires Feedback. */

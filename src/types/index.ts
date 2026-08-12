@@ -39,6 +39,31 @@ export interface RunStats {
   xpGained: number;
 }
 
+/**
+ * In welchem Modus ein Run laeuft.
+ *
+ * `solo` schreibt Progression, `challenge` nicht - siehe config/challenge.ts.
+ */
+export type RunMode = 'solo' | 'challenge';
+
+/** Das Ergebnis eines einzelnen Duell-Durchgangs. */
+export interface ChallengeRound {
+  score: number;
+  bestCombo: number;
+  totalCollected: number;
+}
+
+/**
+ * Ein laufendes Duell. `rounds` waechst mit jedem beendeten Durchgang; die
+ * Laenge sagt zugleich, welcher Spieler als naechstes dran ist.
+ */
+export interface ChallengeState {
+  /** Bestimmt die Relikt-Abfolge. Beide Spieler bekommen denselben. */
+  seed: string;
+  worldId: string;
+  rounds: ChallengeRound[];
+}
+
 /** Was ein Run an Progression ausgeloest hat - fuer den Ergebnisbildschirm. */
 export interface ProgressionResult {
   levelsGained: number;

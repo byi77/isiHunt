@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
+    "icons": "node scripts/generate-icons.mjs",
     "format": "prettier --write \"src/**/*.ts\" \"*.{json,md}\"",
     "format:check": "prettier --check \"src/**/*.ts\""
   },

@@ -9,6 +9,7 @@
 
 import Phaser from 'phaser';
 
+import { CHALLENGE_DURATION_MS, challengePlayerLabel } from '@/config/challenge';
 import {
   COUNTDOWN_STEP_MS,
   COUNTDOWN_STEPS,
@@ -18,6 +19,7 @@ import {
   PLAYFIELD_PADDING_BOTTOM,
   PLAYFIELD_PADDING_TOP,
   PLAYFIELD_PADDING_X,
+  RARITY_IMPACT_MIN_POINTS,
 } from '@/config/GameConfig';
 import type { RarityDef } from '@/config/rarities';
 import { resolveStats } from '@/config/talents';
@@ -30,15 +32,28 @@ import { Player } from '@/entities/Player';
 import { DebugKeys } from '@/input/DebugKeys';
 import { InputController } from '@/input/InputController';
 import { SceneKey } from '@/scenes/SceneKey';
+import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import { ScoreSystem } from '@/systems/ScoreSystem';
 import { SpawnSystem } from '@/systems/SpawnSystem';
+import { Depth } from '@/ui/depth';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
-import { burst, createAmbientMotes, createWorldBackdrop, floatingScore } from '@/ui/widgets';
+import {
+  burst,
+  createAmbientMotes,
+  createDriftLayers,
+  createVignette,
+  createWorldBackdrop,
+  floatingScore,
+  shockwave,
+} from '@/ui/widgets';
+import type { RunMode } from '@/types';
 
 export interface GameSceneData {
   worldId: string;
+  /** Fehlt der Modus, ist es ein normaler Solo-Run. */
+  mode?: RunMode;
 }
 
 type RunPhase = 'countdown' | 'running' | 'ended';
@@ -58,6 +73,8 @@ export class GameScene extends Phaser.Scene {
   private phase: RunPhase = 'countdown';
   private remainingMs = 0;
   private totalMs = 0;
+  private mode: RunMode = 'solo';
+  private playerIndex = 0;
 
   constructor() {
     super(SceneKey.Game);
@@ -66,10 +83,17 @@ export class GameScene extends Phaser.Scene {
   create(data: GameSceneData): void {
     const save = SaveSystem.load();
 
+    this.mode = data.mode ?? 'solo';
     this.world = getWorld(data.worldId ?? save.lastWorldId);
-    this.stats = resolveStats(save.talents);
 
-    this.totalMs = this.stats.runDurationMs;
+    // Im Duell mit Grundwerten spielen: Talente des Geraetebesitzers waeren ein
+    // Vorteil, den der Gast nicht ausgleichen kann (config/challenge.ts).
+    this.stats = resolveStats(this.mode === 'challenge' ? {} : save.talents);
+
+    const challenge = this.mode === 'challenge' ? ChallengeSystem.getState() : null;
+    this.playerIndex = challenge ? ChallengeSystem.currentPlayerIndex() : 0;
+
+    this.totalMs = this.mode === 'challenge' ? CHALLENGE_DURATION_MS : this.stats.runDurationMs;
     this.remainingMs = this.totalMs;
     this.phase = 'countdown';
     this.collectibles = [];
@@ -81,8 +105,17 @@ export class GameScene extends Phaser.Scene {
       GAME_HEIGHT - PLAYFIELD_PADDING_TOP - PLAYFIELD_PADDING_BOTTOM,
     );
 
-    createWorldBackdrop(this, GAME_WIDTH, GAME_HEIGHT, this.world.bgTop, this.world.bgBottom);
+    createWorldBackdrop(
+      this,
+      GAME_WIDTH,
+      GAME_HEIGHT,
+      this.world.bgTop,
+      this.world.bgBottom,
+      this.world.accent,
+    );
+    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT);
     createAmbientMotes(this, GAME_WIDTH, GAME_HEIGHT, this.world.accent);
+    createVignette(this, GAME_WIDTH, GAME_HEIGHT);
 
     this.player = new Player(
       this,
@@ -98,10 +131,23 @@ export class GameScene extends Phaser.Scene {
       this.stats.scoreMultiplier,
       this.stats.xpMultiplier,
     );
-    this.spawner = new SpawnSystem(new Phaser.Math.RandomDataGenerator(), this.playfield);
+
+    // Nur im Duell wird geseedet - beide Spieler bekommen dieselbe Abfolge.
+    // Solo bleibt jeder Run eine neue Jagd.
+    this.spawner = new SpawnSystem(
+      challenge
+        ? new Phaser.Math.RandomDataGenerator([challenge.seed])
+        : new Phaser.Math.RandomDataGenerator(),
+      this.playfield,
+    );
 
     // HUD als eigene Scene parallel starten - siehe Kommentar in EventBus.ts.
-    this.scene.launch(SceneKey.Hud, { worldId: this.world.id });
+    this.scene.launch(SceneKey.Hud, {
+      worldId: this.world.id,
+      mode: this.mode,
+      playerLabel: this.mode === 'challenge' ? challengePlayerLabel(this.playerIndex) : null,
+      scoreToBeat: this.mode === 'challenge' ? ChallengeSystem.scoreToBeat() : null,
+    });
 
     if (DEBUG_ENABLED) this.installDebugKeys();
 
@@ -204,12 +250,15 @@ export class GameScene extends Phaser.Scene {
 
     orb.collect(() => orb.destroy());
 
-    burst(this, orb.x, orb.y, orb.rarity.color, orb.rarity.points >= 50 ? 26 : 12);
+    const isImpact = orb.rarity.points >= RARITY_IMPACT_MIN_POINTS;
+
+    burst(this, orb.x, orb.y, orb.rarity.color, isImpact ? 26 : 12);
+    shockwave(this, orb.x, orb.y, orb.rarity.color, isImpact ? 1.5 : 0.85);
     floatingScore(this, orb.x, orb.y, `+${outcome.awardedPoints}`, orb.rarity.color);
     this.player.pulse(orb.rarity.color);
 
     // Kamera-Ruckler skaliert mit dem Wert - Legendaeres soll sich fett anfuehlen.
-    if (orb.rarity.points >= 50) {
+    if (isImpact) {
       this.cameras.main.shake(180, 0.006);
       this.cameras.main.flash(140, 255, 255, 255, false);
     }
@@ -239,10 +288,25 @@ export class GameScene extends Phaser.Scene {
   }
 
   private runCountdown(): void {
+    // Im Duell zuerst zeigen, wer gerade spielt - nach der Geraeteuebergabe ist
+    // das die wichtigste Information auf dem Bildschirm.
+    if (this.mode === 'challenge') {
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          GAME_HEIGHT / 2 - 110,
+          challengePlayerLabel(this.playerIndex).toUpperCase(),
+          textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
+        )
+        .setOrigin(0.5)
+        .setDepth(Depth.Overlay)
+        .setLetterSpacing(4);
+    }
+
     const label = this.add
       .text(GAME_WIDTH / 2, GAME_HEIGHT / 2, '', textStyle(FontSize.title, Palette.gold))
       .setOrigin(0.5)
-      .setDepth(200);
+      .setDepth(Depth.Overlay);
 
     let step = COUNTDOWN_STEPS;
 
@@ -283,8 +347,20 @@ export class GameScene extends Phaser.Scene {
     this.phase = 'ended';
 
     const stats = this.scoring.toRunStats(this.world.id);
-    const progression = ProgressionSystem.applyRun(stats);
 
+    // Ein Duell-Durchgang laesst den Spielstand unberuehrt: die Haelfte der
+    // Durchgaenge spielt jemand, dem er nicht gehoert (config/challenge.ts).
+    if (this.mode === 'challenge') {
+      ChallengeSystem.submitRound(stats);
+
+      this.time.delayedCall(450, () => {
+        this.scene.stop(SceneKey.Hud);
+        this.scene.start(SceneKey.Challenge);
+      });
+      return;
+    }
+
+    const progression = ProgressionSystem.applyRun(stats);
     eventBus.emitEvent(GameEvent.RunEnded, { stats, progression });
 
     // Kurz stehen lassen, damit der letzte Fang noch ausklingt.

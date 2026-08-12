@@ -5,6 +5,8 @@ export const SceneKey = {
   Game: 'Game',
   Hud: 'Hud',
   Result: 'Result',
+  /** Alle Nicht-Spiel-Phasen eines Duells: Einfuehrung, Uebergabe, Ergebnis. */
+  Challenge: 'Challenge',
 } as const;
 
 export type SceneKeyValue = (typeof SceneKey)[keyof typeof SceneKey];

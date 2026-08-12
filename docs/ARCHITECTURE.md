@@ -42,15 +42,21 @@ isiHunt/
 │   ├── CODE_STYLE.md           Wie geschrieben wird
 │   └── DECISIONS.md            Warum so und nicht anders
 ├── public/                     Statische Dateien, 1:1 nach dist/
+│   ├── manifest.webmanifest    PWA: "Zum Home-Bildschirm"
+│   └── icon-*.png              Erzeugt von scripts/generate-icons.mjs
+├── scripts/
+│   └── generate-icons.mjs      Zeichnet die App-Icons (npm run icons)
 ├── src/
 │   ├── config/                 Reine Daten, keine Logik
 │   │   ├── GameConfig.ts       Alle Balancing-Zahlen
 │   │   ├── rarities.ts         Seltenheitsstufen
 │   │   ├── worlds.ts           Welten
 │   │   ├── talents.ts          Talente + Stat-Aufloesung
+│   │   ├── challenge.ts        Duell: Dauer, Spielernamen, Fairness-Regeln
 │   │   └── achievements.ts     Erfolge als Praedikate
 │   ├── core/
-│   │   └── EventBus.ts         Typisierter Event-Bus zwischen Scenes
+│   │   ├── EventBus.ts         Typisierter Event-Bus zwischen Scenes
+│   │   └── display.ts          Vollbild- und Installationszustand des Browsers
 │   ├── entities/               Spielobjekte
 │   │   ├── Player.ts
 │   │   └── Collectible.ts
@@ -60,23 +66,26 @@ isiHunt/
 │   ├── scenes/
 │   │   ├── SceneKey.ts         Scene-Namen zentral
 │   │   ├── BootScene.ts        Texturen erzeugen
-│   │   ├── MenuScene.ts        Charakter, Welten, Start
-│   │   ├── GameScene.ts        Die Simulation
+│   │   ├── MenuScene.ts        Charakter, Welten, Start, Duell
+│   │   ├── GameScene.ts        Die Simulation (Solo und Duell)
 │   │   ├── HudScene.ts         Anzeige waehrend des Runs
-│   │   └── ResultScene.ts      Auswertung
+│   │   ├── ChallengeScene.ts   Duell: Einfuehrung, Uebergabe, Ergebnis
+│   │   └── ResultScene.ts      Auswertung eines Solo-Runs
 │   ├── systems/                Regeln ohne Darstellung
 │   │   ├── SaveSystem.ts       localStorage, versioniert
 │   │   ├── ProgressionSystem.ts XP, Level, Talentpunkte, Erfolge
 │   │   ├── ScoreSystem.ts      Punkte + Combo eines Runs
+│   │   ├── ChallengeSystem.ts  Duell-Zustand: Seed, Punktstaende, Sieger
 │   │   └── SpawnSystem.ts      Wann und wo etwas erscheint
 │   ├── types/
-│   │   └── index.ts            SaveData, RunStats, ProgressionResult
+│   │   └── index.ts            SaveData, RunStats, ChallengeState, ...
 │   ├── ui/
 │   │   ├── theme.ts            Farben, Schriftgroessen
+│   │   ├── depth.ts            Zeichenreihenfolge aller Ebenen
 │   │   ├── textures.ts         Prozedurale Grafiken
-│   │   └── widgets.ts          Knoepfe, Balken, Partikel
+│   │   └── widgets.ts          Knoepfe, Balken, Hintergruende, Effekte
 │   └── main.ts                 Phaser-Konfiguration
-├── index.html                  Mobile-Meta-Tags, Scroll-Sperre
+├── index.html                  Mobile-Meta-Tags, Scroll-Sperre, PWA-Verweise
 ├── vite.config.ts
 ├── tsconfig.json
 └── eslint.config.js
@@ -90,15 +99,31 @@ isiHunt/
 ```
 BootScene          Texturen erzeugen, Ladehinweis entfernen
     ↓
-MenuScene    ←──────────────────────┐
-    ↓  scene.start(Game)            │
-GameScene  ──launch──▶  HudScene    │
-    ↓  scene.start(Result)          │
-ResultScene ────────────────────────┘
-    └── "Nochmal" ──▶ GameScene
+MenuScene    ←──────────────────────┬───────────────────────┐
+    │                               │                       │
+    │ Solo                          │ Duell                 │
+    ↓  scene.start(Game)            ↓  scene.start(Challenge)│
+GameScene  ──launch──▶  HudScene    ChallengeScene           │
+    ↓  scene.start(Result)          │        ↑               │
+ResultScene ────────────────────────┘        │               │
+    └── "Nochmal" ──▶ GameScene              │               │
+                                             ↓               │
+                             GameScene (mode: challenge) ────┘
 ```
 
 `GameScene` und `HudScene` laufen **gleichzeitig**. Sie kennen sich nicht.
+
+**`ChallengeScene` ist eine Scene fuer drei Zustaende** — Einfuehrung,
+Uebergabe, Ergebnis. Sie bekommt keine Parameter, sondern liest den
+Duell-Zustand aus `ChallengeSystem` und leitet daraus ab, welche Phase gilt:
+keine Runde gespielt → Einfuehrung, eine → Uebergabe, alle → Ergebnis. Dadurch
+laesst sie sich von ueberall mit `scene.start(SceneKey.Challenge)` betreten,
+ohne dass der Aufrufer den Fortschritt kennen muss.
+
+**Warum der Duell-Zustand ein Modul-Singleton ist:** Ein Duell ueberspannt vier
+Scene-Wechsel. Scene-Felder ueberleben `scene.start()` nicht, dieser Zustand
+muss das aber. Persistiert wird er bewusst nicht — ein Duell ist ein Spiel zu
+zweit im Hier und Jetzt, kein Fortschritt zum Aufheben.
 
 ## 4. Datenfluss im Run
 
@@ -127,6 +152,30 @@ Run-Ende ──▶ ScoreSystem.toRunStats() ──▶ ProgressionSystem.applyRun
 
 **Wichtig:** Der Spielstand wird **einmal pro Run** geschrieben, nicht bei
 jedem Fang. Das haelt `localStorage`-Zugriffe aus der Frame-Schleife heraus.
+
+Im Duell-Modus faellt dieser letzte Schritt komplett weg: `GameScene.endRun()`
+uebergibt an `ChallengeSystem` statt an `ProgressionSystem`, und der Spielstand
+wird nicht angefasst.
+
+## 4.1 Determinismus im Duell
+
+Beide Duellanten muessen dieselbe Relikt-Abfolge sehen. Gleicher Seed allein
+reicht dafuer **nicht** — der Zufallsgenerator muss auch gleich *oft* und in
+gleicher *Reihenfolge* verbraucht werden. Zwei Stellen verletzten das:
+
+| Falle | Wirkung | Loesung |
+|---|---|---|
+| Volles Spielfeld hielt den Spawn-Timer an | Wer langsamer sammelt, verschiebt den restlichen Spawn-Plan | Timer laeuft immer; ein faelliger Spawn faellt bei vollem Feld aus |
+| Positionssuche brach beim ersten Treffer ab | Verbrauch haengt an der Figurposition | Es werden immer alle Kandidaten gezogen |
+
+Beide Regeln stehen als Kommentar in `SpawnSystem.ts`, weil sie beim Lesen des
+Codes wie unnoetiger Aufwand aussehen. Sie sind es nicht — ohne sie ist der
+Modus kaputt, und zwar auf eine Weise, die niemand beim Spielen bemerkt.
+
+**Geprueft** wurde das durch zwei Durchgaenge desselben Duells ohne Eingabe: 12
+Spawns, identisch in Seltenheit, Position und Spielzeit. Ein automatisierter
+Test dafuer gehoert zu Vitest in M2 — genau diese Eigenschaft bricht sonst
+unbemerkt bei der naechsten Aenderung am Spawning.
 
 ## 5. Kollision ohne Physik-Engine
 
@@ -189,7 +238,7 @@ schreibt direkt.
 
 ## 9. Assets
 
-v0.1 laedt **keine Bilddateien**. Alle Grafiken entstehen in
+Das Spiel laedt **keine Bilddateien**. Alle Spielgrafiken entstehen in
 `src/ui/textures.ts` aus Phaser-Graphics, werden weiss gezeichnet und zur
 Laufzeit getintet.
 
@@ -198,6 +247,26 @@ Seltenheiten und fuenf Welten.
 
 Der Austausch gegen echte Assets aendert **nur** `textures.ts` — die
 Texture-Keys bleiben. Siehe [ART_STYLE.md](ART_STYLE.md).
+
+**Ausnahme App-Icons.** Manifest und iOS-Home-Bildschirm brauchen echte
+PNG-Dateien; iOS akzeptiert fuer `apple-touch-icon` kein SVG. Sie werden
+deshalb von `scripts/generate-icons.mjs` erzeugt — derselbe Stern, dieselben
+Farben, nur eben vorab statt zur Laufzeit. Das Skript bringt einen kleinen
+PNG-Encoder mit, statt fuer vier Dateien eine Bildbibliothek ins Projekt zu
+holen.
+
+```bash
+npm run icons
+```
+
+## 9.1 Zeichenreihenfolge
+
+Alle Tiefenwerte stehen in `src/ui/depth.ts`, von hinten nach vorne lesbar:
+Hintergrund → Parallax-Ebenen → Lichtstaub → Relikte → Figur → Effekte →
+Punktzahlen → Vignette → Einblendungen.
+
+Vorher lagen diese Zahlen als `setDepth(60)` in Entities, Scenes und Widgets
+verstreut. Wer eine neue Ebene einzog, musste alle Dateien durchsuchen.
 
 ## 10. Grenzen der aktuellen Architektur
 

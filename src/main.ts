@@ -10,7 +10,9 @@
 import Phaser from 'phaser';
 
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { keepCanvasBoundsFresh } from '@/core/viewport';
 import { BootScene } from '@/scenes/BootScene';
+import { ChallengeScene } from '@/scenes/ChallengeScene';
 import { GameScene } from '@/scenes/GameScene';
 import { HudScene } from '@/scenes/HudScene';
 import { MenuScene } from '@/scenes/MenuScene';
@@ -37,10 +39,14 @@ const config: Phaser.Types.Core.GameConfig = {
     activePointers: 3,
   },
   // Ohne Physik-Engine: Kollision ist ein Distanztest (siehe GameScene).
-  scene: [BootScene, MenuScene, GameScene, HudScene, ResultScene],
+  scene: [BootScene, MenuScene, GameScene, HudScene, ResultScene, ChallengeScene],
 };
 
 const game = new Phaser.Game(config);
+
+// Ohne das liegen Trefferflaechen auf dem iPhone neben dem, was man sieht -
+// die Begruendung steht in core/viewport.ts.
+keepCanvasBoundsFresh(game);
 
 // Im Dev-Build ueber die Browser-Konsole erreichbar (`isiHunt.scale`,
 // `isiHunt.scene.getScene('Game')`). Im Production-Build entfaellt der Block.

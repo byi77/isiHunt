@@ -14,7 +14,7 @@ export const PLAYFIELD_PADDING_TOP = 170;
 export const PLAYFIELD_PADDING_BOTTOM = 120;
 export const PLAYFIELD_PADDING_X = 60;
 
-/** Laenge eines Runs in Millisekunden. */
+/** Laenge eines Solo-Runs in Millisekunden. Das Duell rechnet eigen (config/challenge.ts). */
 export const RUN_DURATION_MS = 60_000;
 
 /** Countdown vor dem Start (3 - 2 - 1 - LOS). */
@@ -31,6 +31,24 @@ export const PLAYER_ACCEL_RESPONSE = 14;
 export const PLAYER_BASE_COLLECT_RADIUS = 46;
 /** Ab dieser Distanz zum Finger gilt "Ziel erreicht" - verhindert Zittern. */
 export const POINTER_DEADZONE = 6;
+/** Ab dieser Geschwindigkeit (px/s) zieht die Figur eine Lichtspur. */
+export const PLAYER_TRAIL_MIN_SPEED = 60;
+
+// --- Darstellungsschwellen --------------------------------------------------
+
+/**
+ * Ab wie vielen Basispunkten ein Relikt einen Strahlenkranz bekommt (ab
+ * "selten"). Schwelle statt Liste, damit neue Seltenheitsstufen automatisch
+ * richtig einsortiert werden.
+ */
+export const RARITY_RAYS_MIN_POINTS = 15;
+
+/**
+ * Ab wie vielen Basispunkten ein Fang den Bildschirm erschuettert und heller
+ * aufblitzt (ab "episch"). Bewusst hoeher als der Strahlenkranz: Sehen darf
+ * man Seltenes oft, spueren selten.
+ */
+export const RARITY_IMPACT_MIN_POINTS = 50;
 
 // --- Spawning ---------------------------------------------------------------
 
@@ -42,6 +60,11 @@ export const SPAWN_RAMP_FACTOR = 0.55;
 export const MAX_ACTIVE_COLLECTIBLES = 14;
 /** Mindestabstand eines neuen Spawns zur Figur - kein Gratis-Einsammeln. */
 export const SPAWN_MIN_DISTANCE_TO_PLAYER = 150;
+/**
+ * Wie viele Positionen je Spawn gezogen werden. Es werden immer alle gezogen,
+ * auch wenn die erste schon passt - der Grund steht in SpawnSystem.ts.
+ */
+export const SPAWN_POSITION_CANDIDATES = 12;
 
 // --- Combo ------------------------------------------------------------------
 

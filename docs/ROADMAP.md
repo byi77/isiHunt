@@ -22,10 +22,14 @@ Das Geruest steht und ist spielbar.
 - [x] Persistenz ueber `localStorage`, versioniert
 - [x] Debug-Tasten im Dev-Build
 
-## M1 — Spielgefuehl *(als naechstes)*
+## M1 — Spielgefuehl *(laufend)*
 
 Der Prototyp funktioniert. Jetzt muss er sich **gut** anfuehlen.
 
+- [x] Grafische Aufwertung: Facetten-Relikte, Strahlenkranz, Schockwelle,
+      Lichtspur, Hintergrund in Schichten, Vignette
+- [x] Vollbild ohne Adressleiste (Fullscreen-API + PWA-Installation)
+- [x] App-Icon und Manifest
 - [ ] Auf echten Geraeten testen (verschiedene Groessen, iOS + Android)
 - [ ] Balancing nach dem ersten echten Spieltest nachziehen
 - [ ] Vibrations-Feedback bei seltenen Faengen (`navigator.vibrate`)
@@ -33,6 +37,18 @@ Der Prototyp funktioniert. Jetzt muss er sich **gut** anfuehlen.
 - [ ] Erster Start: dezente Einfuehrung ohne Textwand
 - [ ] Bildschirmschoner / Sperre waehrend eines Runs verhindern (Wake Lock)
 - [ ] Verhalten beim Wegwischen der App (Run pausieren statt weiterlaufen)
+
+## M1.5 — Duell *(neu, teilweise fertig)*
+
+Ein Modus fuer zwei Personen.
+
+- [x] Duell an einem Geraet, abwechselnd, 90 Sekunden je Durchgang
+- [x] Gleicher Seed fuer beide — identische Relikt-Abfolge
+- [x] Faire Bedingungen: keine Talente, keine Progression
+- [x] Uebergabe- und Ergebnisbildschirm mit Revanche
+- [x] Vorlage des Gegners im HUD, Ueberhol-Moment gefeiert
+- [ ] Duell ueber zwei Geraete per geteiltem Link (ADR-0010, Schritt 1)
+- [ ] Benannte Spieler statt "Spieler 1 / Spieler 2"
 
 ## M2 — Talente & Charakter
 
@@ -43,7 +59,11 @@ Der Fortschritt bekommt seine Oberflaeche.
 - [ ] Erfolgsuebersicht mit Fortschrittsanzeige
 - [ ] Statistik-Bildschirm (Runs gesamt, Relikte gesamt, beste Kette)
 - [ ] **Vitest einrichten** — `ProgressionSystem`, `ScoreSystem`,
-      Achievement-Praedikate sind bereits reine Logik und sofort testbar
+      `ChallengeSystem` und die Achievement-Praedikate sind reine Logik und
+      sofort testbar
+- [ ] **Test fuer den Duell-Determinismus** — dass zwei Durchgaenge mit
+      gleichem Seed dieselbe Relikt-Abfolge liefern, bricht sonst unbemerkt
+      bei der naechsten Aenderung am Spawning (ARCHITECTURE.md 4.1)
 - [ ] Level-Aufstieg im Run feiern, nicht erst im Ergebnis
 
 ## M3 — Welten mit Charakter
@@ -64,14 +84,17 @@ Aus dem Prototyp wird ein Produkt.
 - [ ] Eigene Schrift statt System-Font
 - [ ] Ton: Fang-Sounds je Seltenheit, Level-Aufstieg, Hintergrundmusik
 - [ ] Ton stummschaltbar, Zustand gespeichert
-- [ ] App-Icon, Startbildschirm, PWA-Manifest ("Zum Startbildschirm")
+- [x] App-Icon und PWA-Manifest ("Zum Home-Bildschirm") — in M1 vorgezogen
+- [ ] Startbildschirm der installierten App (Splash Screen)
 - [ ] Ladebildschirm, sobald es etwas zu laden gibt
 
 ## M5 — Teilen & Wettbewerb
 
 - [ ] Ergebnisbild zum Teilen erzeugen
 - [ ] Lokale Bestenliste je Welt
-- [ ] Online-Bestenliste (Backend-Entscheidung noch offen)
+- [ ] Echtzeit-Duell ueber Netzwerk (ADR-0010, Schritt 2) — braucht einen
+      Server und damit laufende Kosten
+- [ ] Online-Bestenliste (setzt serverseitige Bewertung voraus)
 - [ ] Spielstand geraeteuebergreifend
 
 ## M6 — Als App
@@ -87,7 +110,16 @@ Aus dem Prototyp wird ein Produkt.
 
 Damit die Roadmap ehrlich bleibt:
 
-- **Mehrspieler in Echtzeit** — passt nicht zur 60-Sekunden-Schleife.
 - **Werbung / In-App-Kaeufe** — erst wenn das Spiel ohne sie ueberzeugt.
 - **Querformat** — das Spiel ist fuer eine Hand gebaut.
 - **Desktop-Version als eigenes Produkt** — der Browser reicht.
+- **Geteilter Bildschirm im Duell** — zwei Spielfelder sind auf einem
+  Hochformat-Handy zu klein (ADR-0008).
+
+### Korrigiert
+
+- ~~**Mehrspieler in Echtzeit** — passt nicht zur 60-Sekunden-Schleife.~~
+  *(Stand 2026-08-12)* Ueberholt. Das lokale Duell zeigt, dass ein Modus fuer
+  zwei Personen sehr wohl passt — er ist nur laenger als die Solo-Schleife.
+  Echtzeit ueber Netzwerk ist jetzt in M5 eingeplant, mit dem Link-Duell als
+  guenstigerem Zwischenschritt (ADR-0010).

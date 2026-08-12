@@ -12,10 +12,20 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="isiHunt" />
     <meta
       name="description"
       content="isiHunt - jage und sammle leuchtende Relikte in farbenfrohen Fantasy-Welten."
     />
+
+    <!-- Als installierte App laeuft das Spiel ohne Adressleiste. Auf dem iPhone
+         ist das der EINZIGE Weg zum Vollbild - Safari kennt dort keine
+         Fullscreen-API (siehe src/core/display.ts). -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <!-- iOS liest das Manifest nicht, sondern ausschliesslich diesen Verweis. -->
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+
     <title>isiHunt</title>
     <style>
       html,
@@ -23,6 +33,7 @@
         margin: 0;
         padding: 0;
         width: 100%;
+        /* Fallback fuer aeltere Browser; dvh gewinnt direkt darunter. */
         height: 100%;
         overflow: hidden;
         background: #0b1020;
@@ -33,6 +44,26 @@
         user-select: none;
         -webkit-tap-highlight-color: transparent;
         font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
+      }
+
+      /* Als installierte App reicht der Hintergrund bis unter Notch und
+         Home-Indicator. Ohne diese Angabe blitzt dort Weiss durch. */
+      @supports (padding: env(safe-area-inset-top)) {
+        body {
+          background: #0b1020;
+        }
+      }
+
+      /* `dvh` = dynamische Viewport-Hoehe: waechst und schrumpft mit Safaris
+         ein- und ausklappender Adressleiste. `100%` bzw. `100vh` meinen dort
+         die Hoehe MIT ausgeblendeter Leiste - die Seite ist dann hoeher als
+         das Sichtbare, der zentrierte Canvas rutscht nach unten und alle
+         Trefferflaechen liegen neben dem, was man sieht. */
+      @supports (height: 100dvh) {
+        html,
+        body {
+          height: 100dvh;
+        }
       }
 
       #game {

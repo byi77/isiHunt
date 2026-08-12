@@ -1,0 +1,284 @@
+/**
+ * Alle Phasen eines Duells, die nicht gespielt werden.
+ *
+ * Eine Scene fuer drei Zustaende statt drei Scenes: Einfuehrung, Uebergabe und
+ * Ergebnis teilen Hintergrund, Panel-Layout und Knopfposition. Getrennte Scenes
+ * haetten dasselbe dreimal aufgebaut. Welche Phase gilt, leitet sich aus dem
+ * Duell-Zustand ab - die Scene braucht keine Parameter und kann von ueberall
+ * mit `scene.start(SceneKey.Challenge)` betreten werden.
+ *
+ *   Menue --> [Einfuehrung] --> Runde 1 --> [Uebergabe] --> Runde 2 --> [Ergebnis]
+ */
+
+import Phaser from 'phaser';
+
+import { CHALLENGE_DURATION_MS, challengePlayerLabel } from '@/config/challenge';
+import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { getWorld } from '@/config/worlds';
+import type { WorldDef } from '@/config/worlds';
+import { SceneKey } from '@/scenes/SceneKey';
+import * as ChallengeSystem from '@/systems/ChallengeSystem';
+import { Depth } from '@/ui/depth';
+import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
+import {
+  createButton,
+  createDriftLayers,
+  createPanel,
+  createVignette,
+  createWorldBackdrop,
+} from '@/ui/widgets';
+import type { ChallengeState } from '@/types';
+
+/** "1 Relikt" statt "1 Relikte" - der Fall tritt bei kurzen Duellen wirklich auf. */
+function relics(count: number): string {
+  return `${count} ${count === 1 ? 'Relikt' : 'Relikte'}`;
+}
+
+export class ChallengeScene extends Phaser.Scene {
+  constructor() {
+    super(SceneKey.Challenge);
+  }
+
+  create(): void {
+    const state = ChallengeSystem.getState();
+
+    // Ohne Duell-Zustand gibt es nichts anzuzeigen. Kann nur passieren, wenn
+    // die Scene direkt angesprungen wird - dann zurueck ins Menue statt Absturz.
+    if (!state) {
+      this.scene.start(SceneKey.Menu);
+      return;
+    }
+
+    const world = getWorld(state.worldId);
+    this.buildBackground(world);
+
+    if (ChallengeSystem.isComplete()) {
+      this.buildResult(state, world);
+    } else if (state.rounds.length === 0) {
+      this.buildIntro(world);
+    } else {
+      this.buildHandover(state, world);
+    }
+  }
+
+  private buildBackground(world: WorldDef): void {
+    createWorldBackdrop(this, GAME_WIDTH, GAME_HEIGHT, world.bgTop, world.bgBottom, world.accent);
+    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT);
+    createVignette(this, GAME_WIDTH, GAME_HEIGHT);
+  }
+
+  // --- Phase 1: Einfuehrung ---------------------------------------------------
+
+  private buildIntro(world: WorldDef): void {
+    this.buildHeading('DUELL', `${challengePlayerLabel(0)} gegen ${challengePlayerLabel(1)}`);
+
+    const seconds = Math.round(CHALLENGE_DURATION_MS / 1000);
+    const rules: readonly string[] = [
+      `Jeder spielt ${seconds} Sekunden.`,
+      'Beide jagen exakt dieselben Relikte.',
+      'Keine Talente - gleiche Voraussetzungen.',
+      'Das Duell aendert euren Spielstand nicht.',
+    ];
+
+    createPanel(this, GAME_WIDTH / 2, 560, GAME_WIDTH - 120, 260, world.accent);
+
+    rules.forEach((rule, index) => {
+      this.add
+        .text(100, 470 + index * 52, `·  ${rule}`, textStyle(FontSize.small, Palette.ink))
+        .setOrigin(0, 0.5);
+    });
+
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        760,
+        `Welt: ${world.name}`,
+        textStyle(FontSize.small, toCss(world.accent)),
+      )
+      .setOrigin(0.5);
+
+    createButton(
+      this,
+      GAME_WIDTH / 2,
+      GAME_HEIGHT - 250,
+      `${challengePlayerLabel(0).toUpperCase()} STARTET`,
+      () => this.scene.start(SceneKey.Game, { worldId: world.id, mode: 'challenge' }),
+      { width: 460, accent: world.accent, fontSize: FontSize.large },
+    );
+
+    this.buildBackToMenu('ABBRECHEN');
+  }
+
+  // --- Phase 2: Uebergabe -----------------------------------------------------
+
+  private buildHandover(state: ChallengeState, world: WorldDef): void {
+    const finishedIndex = state.rounds.length - 1;
+    const nextIndex = state.rounds.length;
+    const finished = state.rounds[finishedIndex];
+    if (!finished) return;
+
+    this.buildHeading('GERAET WEITERGEBEN', `${challengePlayerLabel(nextIndex)} ist dran`);
+
+    createPanel(this, GAME_WIDTH / 2, 500, GAME_WIDTH - 120, 230, world.accent);
+
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        424,
+        `${challengePlayerLabel(finishedIndex)} hat vorgelegt`,
+        textStyle(FontSize.small, Palette.inkDim),
+      )
+      .setOrigin(0.5);
+
+    const score = this.add
+      .text(
+        GAME_WIDTH / 2,
+        500,
+        finished.score.toLocaleString('de-DE'),
+        textStyle(FontSize.title, Palette.ink, { fontStyle: 'bold' }),
+      )
+      .setOrigin(0.5)
+      .setScale(0.4);
+
+    this.tweens.add({ targets: score, scale: 1, duration: 420, ease: 'Back.Out' });
+
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        566,
+        `${relics(finished.totalCollected)}  ·  beste Kette ${finished.bestCombo}`,
+        textStyle(FontSize.small, toCss(world.accent)),
+      )
+      .setOrigin(0.5);
+
+    createButton(
+      this,
+      GAME_WIDTH / 2,
+      GAME_HEIGHT - 250,
+      `${challengePlayerLabel(nextIndex).toUpperCase()} IST BEREIT`,
+      () => this.scene.start(SceneKey.Game, { worldId: world.id, mode: 'challenge' }),
+      { width: 460, accent: world.accent, fontSize: FontSize.large },
+    );
+
+    this.buildBackToMenu('DUELL ABBRECHEN');
+  }
+
+  // --- Phase 3: Ergebnis ------------------------------------------------------
+
+  private buildResult(state: ChallengeState, world: WorldDef): void {
+    const winner = ChallengeSystem.winnerIndex();
+
+    this.buildHeading(
+      winner === null ? 'UNENTSCHIEDEN' : `${challengePlayerLabel(winner).toUpperCase()} GEWINNT`,
+      winner === null ? 'Punktgleich - das muss wiederholt werden.' : 'Gut gejagt.',
+    );
+
+    state.rounds.forEach((round, index) => {
+      const y = 470 + index * 190;
+      const isWinner = winner === index;
+      const color = isWinner ? Palette.goldHex : world.accent;
+
+      createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, 158, color, {
+        alpha: isWinner ? 0.75 : 0.45,
+      });
+
+      this.add
+        .text(
+          104,
+          y - 44,
+          challengePlayerLabel(index),
+          textStyle(FontSize.body, isWinner ? Palette.gold : Palette.ink, { fontStyle: 'bold' }),
+        )
+        .setOrigin(0, 0.5);
+
+      if (isWinner) {
+        this.add
+          .text(GAME_WIDTH - 104, y - 44, 'SIEG', textStyle(FontSize.tiny, Palette.gold))
+          .setOrigin(1, 0.5)
+          .setLetterSpacing(4);
+      }
+
+      this.add
+        .text(
+          104,
+          y + 18,
+          round.score.toLocaleString('de-DE'),
+          textStyle(FontSize.heading, Palette.ink, { fontStyle: 'bold' }),
+        )
+        .setOrigin(0, 0.5);
+
+      this.add
+        .text(
+          GAME_WIDTH - 104,
+          y + 24,
+          `${relics(round.totalCollected)}  ·  Kette ${round.bestCombo}`,
+          textStyle(FontSize.tiny, Palette.inkDim),
+        )
+        .setOrigin(1, 0.5);
+    });
+
+    // Abstand zwischen den beiden Ergebnissen - die eigentliche Pointe.
+    const [first, second] = state.rounds;
+    if (first && second) {
+      const gap = Math.abs(first.score - second.score);
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          846,
+          gap === 0 ? 'Kein Punkt Unterschied.' : `Abstand: ${gap.toLocaleString('de-DE')} Punkte`,
+          textStyle(FontSize.small, Palette.inkDim),
+        )
+        .setOrigin(0.5);
+    }
+
+    createButton(
+      this,
+      GAME_WIDTH / 2,
+      GAME_HEIGHT - 250,
+      'REVANCHE',
+      () => {
+        ChallengeSystem.rematch();
+        this.scene.restart();
+      },
+      { width: 460, accent: world.accent, fontSize: FontSize.large },
+    );
+
+    this.buildBackToMenu('ZUM MENUE');
+  }
+
+  // --- Gemeinsame Bausteine ---------------------------------------------------
+
+  private buildHeading(title: string, subtitle: string): void {
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        150,
+        title,
+        textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
+      )
+      .setOrigin(0.5)
+      .setLetterSpacing(3)
+      .setDepth(Depth.Overlay);
+
+    this.add
+      .text(GAME_WIDTH / 2, 212, subtitle, textStyle(FontSize.small, Palette.inkDim))
+      .setOrigin(0.5)
+      .setWordWrapWidth(GAME_WIDTH - 140)
+      .setAlign('center')
+      .setDepth(Depth.Overlay);
+  }
+
+  private buildBackToMenu(label: string): void {
+    createButton(
+      this,
+      GAME_WIDTH / 2,
+      GAME_HEIGHT - 140,
+      label,
+      () => {
+        ChallengeSystem.clear();
+        this.scene.start(SceneKey.Menu);
+      },
+      { width: 300, height: 72, accent: 0x9aa3bd, fontSize: FontSize.small },
+    );
+  }
+}

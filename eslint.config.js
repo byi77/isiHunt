@@ -22,4 +22,20 @@ export default tseslint.config(
       'no-console': ['warn', { allow: ['warn', 'error'] }],
     },
   },
+  {
+    // Build-Skripte laufen in Node, nicht im Browser. Dort sind `Buffer` und
+    // `console` selbstverstaendlich - und Ausgabe ist ihr Zweck, keine
+    // vergessene Debug-Zeile.
+    files: ['scripts/**/*.mjs'],
+    languageOptions: {
+      globals: {
+        Buffer: 'readonly',
+        console: 'readonly',
+        process: 'readonly',
+      },
+    },
+    rules: {
+      'no-console': 'off',
+    },
+  },
 );

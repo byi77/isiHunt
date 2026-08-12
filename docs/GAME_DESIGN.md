@@ -46,6 +46,9 @@ Menue  →  Run (60 s)  →  Ergebnis  →  Menue
              └──────  "Nochmal"  ───────┘
 ```
 
+Daneben steht der **Duell-Modus** (Abschnitt 4.1) als zweite, kuerzere
+Schleife fuer zwei Personen an einem Geraet.
+
 **Im Run, alle paar Sekunden:**
 
 ```
@@ -61,6 +64,45 @@ Die eigentliche Entscheidung des Spielers ist **Prioritaet**: Auf dem Feld
 liegen mehrere Relikte gleichzeitig. Das lila ist 25-mal so viel wert wie das
 graue — aber es ist weiter weg und verschwindet frueher. Genau diese Abwaegung
 ist das Spiel.
+
+### 4.1 Duell-Modus
+
+Zwei Personen, ein Geraet, abwechselnd.
+
+```
+Menue → Einfuehrung → Spieler 1 (90 s) → Uebergabe → Spieler 2 (90 s) → Ergebnis
+                                                                           │
+                            └──────────────  "Revanche"  ─────────────────┘
+```
+
+**Warum 90 statt 60 Sekunden.** Im Solo-Modus glaettet sich Pech ueber viele
+Runs hinweg. Im Duell zaehlt genau *ein* Durchgang pro Person — je kuerzer der
+ist, desto staerker entscheidet der Zufall der letzten Sekunden. 90 Sekunden
+bedeuten rund 50 % mehr Spawns und damit spuerbar weniger Streuung: das
+Ergebnis bildet Koennen ab statt Glueck.
+
+**Drei Fairness-Regeln.** Sie sind der Kern des Modus, nicht Beiwerk:
+
+| Regel | Warum |
+|---|---|
+| **Gleiche Relikt-Abfolge** | Beide Spieler bekommen denselben Seed — dieselben Seltenheiten, an denselben Stellen, zur selben Sekunde. Sonst waere das Duell ein Wuerfelspiel darum, wer das legendaere Relikt geschenkt bekommt. |
+| **Keine Talente** | Beide spielen mit den Grundwerten der Figur. Sonst haette der Geraetebesitzer einen Vorteil, den der Gast nicht ausgleichen kann. |
+| **Keine Progression** | Ein Duell vergibt weder XP noch Bestwerte noch Erfolge. Die Haelfte der Durchgaenge spielt jemand, dem der Spielstand nicht gehoert. |
+
+Die gleiche Abfolge ist technisch anspruchsvoller, als sie klingt: Der
+Zufallsgenerator muss **unabhaengig vom Spielverlauf** verbraucht werden, sonst
+laufen die beiden Durchgaenge auseinander. Die zwei Fallstricke sind in
+`src/systems/SpawnSystem.ts` dokumentiert.
+
+**Waehrend des zweiten Durchgangs** steht die Vorlage des Gegners im HUD
+(`Ziel 1.234`). Faellt sie, wird das einmalig gefeiert (*UEBERHOLT!*) — der
+Moment ist die Pointe des Modus und darf nicht im Ergebnisbildschirm
+untergehen.
+
+**Was das Duell bewusst nicht ist:** kein geteilter Bildschirm. Auf einem
+Hochformat-Handy waeren zwei Spielfelder je 360 × 640 Pixel gross — zu klein
+fuer einen Sammelradius von 46 Pixeln, und beide Daumen wuerden sich in die
+Quere kommen.
 
 ## 5. Seltenheitsstufen
 
@@ -197,6 +239,8 @@ darf nicht als Geschenk direkt unter dem Daumen erscheinen.
 | Werbung / Kaeufe | Vorerst kein Monetarisierungsdruck. Beeinflusst sonst das Balancing. |
 | Online-Bestenliste | Erst wenn die Kernschleife steht (M5). |
 | Querformat | Das Spiel ist fuer eine Hand gebaut. |
+| Geteilter Bildschirm im Duell | Zwei Spielfelder auf einem Hochformat-Handy sind zu klein (siehe 4.1). |
+| Echtzeit-Duell ueber Netzwerk | Braucht einen Server. Der Weg dorthin steht in ADR-0010. |
 
 ## 11. Offene Designfragen
 
@@ -205,5 +249,8 @@ darf nicht als Geschenk direkt unter dem Daumen erscheinen.
 - [ ] Sollen Welten unterschiedliche Seltenheitsverteilungen haben, oder nur
       Modifikatoren?
 - [ ] Endlos-Modus ohne Timer als zweiter Spielmodus?
-- [ ] Tages-Herausforderung mit festem Seed (der `RandomDataGenerator` ist
-      bereits seedbar)?
+- [ ] Tages-Herausforderung mit festem Seed — die Technik dafuer steht seit dem
+      Duell-Modus bereit.
+- [ ] Soll das Duell benannte Spieler erlauben statt "Spieler 1 / Spieler 2"?
+- [ ] Duell ueber zwei Geraete per geteiltem Link (ADR-0010) — als naechster
+      Schritt oder erst nach den Talenten?
