@@ -193,7 +193,9 @@ export class GameScene extends Phaser.Scene {
   /** Distanztest statt Physik-Body - exakt, billig und leicht nachvollziehbar. */
   private isTouching(orb: Collectible): boolean {
     const reach = this.player.collectRadius + orb.radius;
-    return Phaser.Math.Distance.Squared(this.player.x, this.player.y, orb.x, orb.y) <= reach * reach;
+    return (
+      Phaser.Math.Distance.Squared(this.player.x, this.player.y, orb.x, orb.y) <= reach * reach
+    );
   }
 
   private collect(orb: Collectible, index: number): void {

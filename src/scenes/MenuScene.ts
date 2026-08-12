@@ -28,7 +28,9 @@ export class MenuScene extends Phaser.Scene {
     const save = SaveSystem.load();
     const unlocked = WORLDS.filter((w) => w.unlockLevel <= save.level);
     this.selectedWorld =
-      unlocked.find((w) => w.id === save.lastWorldId) ?? unlocked[unlocked.length - 1] ?? WORLDS[0]!;
+      unlocked.find((w) => w.id === save.lastWorldId) ??
+      unlocked[unlocked.length - 1] ??
+      WORLDS[0]!;
 
     createWorldBackdrop(
       this,
@@ -47,16 +49,16 @@ export class MenuScene extends Phaser.Scene {
 
   private buildTitle(): void {
     const title = this.add
-      .text(GAME_WIDTH / 2, 96, 'isiHunt', textStyle(FontSize.title, Palette.gold, { fontStyle: 'bold' }))
+      .text(
+        GAME_WIDTH / 2,
+        96,
+        'isiHunt',
+        textStyle(FontSize.title, Palette.gold, { fontStyle: 'bold' }),
+      )
       .setOrigin(0.5);
 
     this.add
-      .text(
-        GAME_WIDTH / 2,
-        152,
-        'JAGE DAS LICHT',
-        textStyle(FontSize.tiny, Palette.inkDim),
-      )
+      .text(GAME_WIDTH / 2, 152, 'JAGE DAS LICHT', textStyle(FontSize.tiny, Palette.inkDim))
       .setOrigin(0.5)
       .setLetterSpacing(8);
 
@@ -186,13 +188,20 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private buildFooter(bestScore: number): void {
-    createButton(this, GAME_WIDTH / 2, GAME_HEIGHT - 168, 'JAGD BEGINNEN', () => {
-      this.scene.start(SceneKey.Game, { worldId: this.selectedWorld.id });
-    }, {
-      width: 440,
-      accent: this.selectedWorld.accent,
-      fontSize: FontSize.large,
-    });
+    createButton(
+      this,
+      GAME_WIDTH / 2,
+      GAME_HEIGHT - 168,
+      'JAGD BEGINNEN',
+      () => {
+        this.scene.start(SceneKey.Game, { worldId: this.selectedWorld.id });
+      },
+      {
+        width: 440,
+        accent: this.selectedWorld.accent,
+        fontSize: FontSize.large,
+      },
+    );
 
     this.add
       .text(

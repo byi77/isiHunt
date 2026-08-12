@@ -26,27 +26,31 @@ Details: [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md)
 
 ## Steuerung
 
-| Eingabe | Aktion |
-|---|---|
-| **Finger ziehen** (Handy) | Die Figur laeuft zum Finger |
-| **WASD / Pfeiltasten** (PC) | Figur direkt steuern |
+| Eingabe                     | Aktion                      |
+| --------------------------- | --------------------------- |
+| **Finger ziehen** (Handy)   | Die Figur laeuft zum Finger |
+| **WASD / Pfeiltasten** (PC) | Figur direkt steuern        |
 
 Die Figur folgt dem Finger, klebt aber nicht daran — so verdeckt die Hand nie
 das Ziel.
 
 ### Debug-Tasten (nur im Dev-Build)
 
-| Taste | Wirkung |
-|---|---|
+| Taste     | Wirkung                                                    |
+| --------- | ---------------------------------------------------------- |
 | `1` – `6` | Relikt der Seltenheit 1–6 sofort spawnen (`6` = legendaer) |
-| `L` | +1 Charakterlevel |
-| `K` | +10 Sekunden Restzeit |
-| `J` | Run sofort beenden |
-| `P` | Pause an/aus |
-| `0` | Spielstand zuruecksetzen |
+| `L`       | +1 Charakterlevel                                          |
+| `K`       | +10 Sekunden Restzeit                                      |
+| `J`       | Run sofort beenden                                         |
+| `P`       | Pause an/aus                                               |
+| `0`       | Spielstand zuruecksetzen                                   |
 
 Diese Tasten existieren im Production-Build nicht (siehe `DEBUG_ENABLED` in
-`src/config/GameConfig.ts`).
+`src/config/GameConfig.ts`). Die Tastatur wirkt nur, wenn das Spielfenster den
+Fokus hat — bei ausbleibender Reaktion einmal ins Bild klicken.
+
+Im Dev-Build liegt die Phaser-Instanz zusaetzlich als `window.game` in der
+Browser-Konsole (`game.scale`, `game.scene.getScene('Game')`).
 
 ---
 
@@ -69,26 +73,26 @@ sofort auch auf dem Handy sichtbar.
 
 ### Weitere Befehle
 
-| Befehl | Zweck |
-|---|---|
-| `npm run dev` | Dev-Server mit Hot Reload, im LAN erreichbar |
-| `npm run build` | Typcheck + Production-Build nach `dist/` |
-| `npm run preview` | Den Production-Build lokal testen |
-| `npm run typecheck` | Nur TypeScript pruefen |
-| `npm run lint` | ESLint |
-| `npm run format` | Prettier ueber alle Quellen |
+| Befehl              | Zweck                                        |
+| ------------------- | -------------------------------------------- |
+| `npm run dev`       | Dev-Server mit Hot Reload, im LAN erreichbar |
+| `npm run build`     | Typcheck + Production-Build nach `dist/`     |
+| `npm run preview`   | Den Production-Build lokal testen            |
+| `npm run typecheck` | Nur TypeScript pruefen                       |
+| `npm run lint`      | ESLint                                       |
+| `npm run format`    | Prettier ueber alle Quellen                  |
 
 ---
 
 ## Technik
 
-| | |
-|---|---|
-| Sprache | TypeScript (strict) |
-| Engine | [Phaser 3](https://phaser.io/) |
-| Build | [Vite](https://vite.dev/) |
-| Ziel | Mobile Browser (Hochformat), spaeter per Capacitor als App |
-| Assets | v0.1 komplett prozedural erzeugt — keine Bilddateien |
+|         |                                                            |
+| ------- | ---------------------------------------------------------- |
+| Sprache | TypeScript (strict)                                        |
+| Engine  | [Phaser 3](https://phaser.io/)                             |
+| Build   | [Vite](https://vite.dev/)                                  |
+| Ziel    | Mobile Browser (Hochformat), spaeter per Capacitor als App |
+| Assets  | v0.1 komplett prozedural erzeugt — keine Bilddateien       |
 
 Warum dieser Stack: [docs/DECISIONS.md](docs/DECISIONS.md)
 Wie der Code aufgebaut ist: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
@@ -97,16 +101,16 @@ Wie der Code aufgebaut ist: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 ## Dokumentation
 
-| Datei | Inhalt |
-|---|---|
-| [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md) | Spielidee, Regeln, Balancing, Progression |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Ordnerstruktur, Scenes, Systeme, Datenfluss |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | Meilensteine M0–M6 |
-| [docs/ART_STYLE.md](docs/ART_STYLE.md) | Farbpalette, Formensprache, Asset-Regeln |
-| [docs/CODE_STYLE.md](docs/CODE_STYLE.md) | Namenskonventionen, Regeln, Definition of Done |
-| [docs/DECISIONS.md](docs/DECISIONS.md) | Architekturentscheidungen mit Begruendung |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Branches, Commits, Pull Requests |
-| [CHANGELOG.md](CHANGELOG.md) | Was sich je Version geaendert hat |
+| Datei                                        | Inhalt                                         |
+| -------------------------------------------- | ---------------------------------------------- |
+| [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md)   | Spielidee, Regeln, Balancing, Progression      |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Ordnerstruktur, Scenes, Systeme, Datenfluss    |
+| [docs/ROADMAP.md](docs/ROADMAP.md)           | Meilensteine M0–M6                             |
+| [docs/ART_STYLE.md](docs/ART_STYLE.md)       | Farbpalette, Formensprache, Asset-Regeln       |
+| [docs/CODE_STYLE.md](docs/CODE_STYLE.md)     | Namenskonventionen, Regeln, Definition of Done |
+| [docs/DECISIONS.md](docs/DECISIONS.md)       | Architekturentscheidungen mit Begruendung      |
+| [CONTRIBUTING.md](CONTRIBUTING.md)           | Branches, Commits, Pull Requests               |
+| [CHANGELOG.md](CHANGELOG.md)                 | Was sich je Version geaendert hat              |
 
 ## Lizenz
 

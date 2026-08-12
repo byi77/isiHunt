@@ -43,7 +43,12 @@ export function createButton(
   border.strokeRoundedRect(-width / 2, -height / 2, width, height, 14);
 
   const text = scene.add
-    .text(0, 0, label, textStyle(options.fontSize ?? FontSize.body, Palette.ink, { fontStyle: 'bold' }))
+    .text(
+      0,
+      0,
+      label,
+      textStyle(options.fontSize ?? FontSize.body, Palette.ink, { fontStyle: 'bold' }),
+    )
     .setOrigin(0.5);
 
   container.add([bg, border, text]);
@@ -194,7 +199,12 @@ export function floatingScore(
   color: number,
 ): void {
   const text = scene.add
-    .text(x, y, label, textStyle(FontSize.body, `#${color.toString(16).padStart(6, '0')}`, { fontStyle: 'bold' }))
+    .text(
+      x,
+      y,
+      label,
+      textStyle(FontSize.body, `#${color.toString(16).padStart(6, '0')}`, { fontStyle: 'bold' }),
+    )
     .setOrigin(0.5)
     .setDepth(70);
 

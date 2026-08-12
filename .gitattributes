@@ -1,0 +1,26 @@
+# Zeilenenden im Repository immer LF, im Arbeitsverzeichnis nativ.
+# Verhindert, dass Windows-Checkouts jede Datei als geaendert melden.
+* text=auto eol=lf
+
+# Skripte, die unter Unix ausgefuehrt werden, brauchen zwingend LF.
+*.sh text eol=lf
+
+# Windows-Skripte brauchen CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Binaerdateien nie anfassen.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.mp3 binary
+*.ogg binary
+*.wav binary
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.aseprite binary
+*.psd binary

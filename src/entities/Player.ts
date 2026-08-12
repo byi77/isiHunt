@@ -29,7 +29,11 @@ export class Player extends Phaser.GameObjects.Container {
   ) {
     super(scene, x, y);
 
-    this.aura = scene.add.image(0, 0, TextureKey.Glow).setTint(accentColor).setScale(2.1).setAlpha(0.75);
+    this.aura = scene.add
+      .image(0, 0, TextureKey.Glow)
+      .setTint(accentColor)
+      .setScale(2.1)
+      .setAlpha(0.75);
     this.halo = scene.add.image(0, 0, TextureKey.PlayerHalo).setTint(accentColor).setAlpha(0.8);
     this.core = scene.add.image(0, 0, TextureKey.PlayerCore).setTint(0xffffff);
 

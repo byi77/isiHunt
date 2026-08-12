@@ -47,7 +47,12 @@ export class HudScene extends Phaser.Scene {
       .setOrigin(0.5, 0);
 
     this.comboText = this.add
-      .text(GAME_WIDTH / 2, 138, '', textStyle(FontSize.body, toCss(this.accent), { fontStyle: 'bold' }))
+      .text(
+        GAME_WIDTH / 2,
+        138,
+        '',
+        textStyle(FontSize.body, toCss(this.accent), { fontStyle: 'bold' }),
+      )
       .setOrigin(0.5, 0);
 
     this.timerBar = createBar(this, 60, 24, GAME_WIDTH - 120, 8, this.accent);

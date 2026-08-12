@@ -17,13 +17,13 @@ Hochformat.
 
 ## Vor dem ersten Handgriff lesen
 
-| Frage | Datei |
-|---|---|
-| Was soll das Spiel sein? | `docs/GAME_DESIGN.md` |
+| Frage                       | Datei                  |
+| --------------------------- | ---------------------- |
+| Was soll das Spiel sein?    | `docs/GAME_DESIGN.md`  |
 | Wie ist der Code aufgebaut? | `docs/ARCHITECTURE.md` |
-| Wie wird geschrieben? | `docs/CODE_STYLE.md` |
-| Warum so und nicht anders? | `docs/DECISIONS.md` |
-| Was kommt als naechstes? | `docs/ROADMAP.md` |
+| Wie wird geschrieben?       | `docs/CODE_STYLE.md`   |
+| Warum so und nicht anders?  | `docs/DECISIONS.md`    |
+| Was kommt als naechstes?    | `docs/ROADMAP.md`      |
 
 ## Die sieben Regeln
 
@@ -31,7 +31,7 @@ Vollstaendig begruendet in `docs/CODE_STYLE.md`. Kurzfassung:
 
 1. **Keine magischen Zahlen ausserhalb von `src/config/`.** Jeder
    Balancing-Wert gehoert dorthin.
-2. **Kommentare erklaeren *warum*, nie *was*.**
+2. **Kommentare erklaeren _warum_, nie _was_.**
 3. **Importe zeigen nur nach unten:** `scenes → systems → config`. Nie zurueck.
 4. **Jeder `eventBus.onEvent` braucht ein `offEvent`** im `SHUTDOWN`-Handler.
    Handler als Klassenfelder schreiben, damit die Referenz gleich bleibt.
@@ -42,13 +42,13 @@ Vollstaendig begruendet in `docs/CODE_STYLE.md`. Kurzfassung:
 
 ## Kein Code ohne Dokument
 
-| Aenderung | Zuerst aktualisieren |
-|---|---|
-| Balancing-Wert | `docs/GAME_DESIGN.md` |
-| Neue Datei / neues System | `docs/ARCHITECTURE.md` |
-| Architekturentscheidung | `docs/DECISIONS.md` (neuer ADR) |
-| Neue Farbe / Effekt | `docs/ART_STYLE.md` |
-| Feature fertig | `docs/ROADMAP.md` abhaken, `CHANGELOG.md` ergaenzen |
+| Aenderung                 | Zuerst aktualisieren                                |
+| ------------------------- | --------------------------------------------------- |
+| Balancing-Wert            | `docs/GAME_DESIGN.md`                               |
+| Neue Datei / neues System | `docs/ARCHITECTURE.md`                              |
+| Architekturentscheidung   | `docs/DECISIONS.md` (neuer ADR)                     |
+| Neue Farbe / Effekt       | `docs/ART_STYLE.md`                                 |
+| Feature fertig            | `docs/ROADMAP.md` abhaken, `CHANGELOG.md` ergaenzen |
 
 **Im selben Commit.** Ein nachgelagerter "docs update"-Commit bedeutet, dass
 die Doku dazwischen falsch war.

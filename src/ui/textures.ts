@@ -117,7 +117,9 @@ function createPlayerCore(scene: Phaser.Scene): void {
     for (let i = 0; i < spikes * 2; i++) {
       const radius = i % 2 === 0 ? outer : inner;
       const angle = (Math.PI / spikes) * i - Math.PI / 2;
-      points.push(new Phaser.Math.Vector2(c + Math.cos(angle) * radius, c + Math.sin(angle) * radius));
+      points.push(
+        new Phaser.Math.Vector2(c + Math.cos(angle) * radius, c + Math.sin(angle) * radius),
+      );
     }
 
     g.fillStyle(0xffffff, 1);

@@ -40,4 +40,10 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [BootScene, MenuScene, GameScene, HudScene, ResultScene],
 };
 
-new Phaser.Game(config);
+const game = new Phaser.Game(config);
+
+// Im Dev-Build ueber die Browser-Konsole erreichbar (`game.scale`, `game.scene`).
+// Im Production-Build entfaellt der Block vollstaendig.
+if (import.meta.env.DEV) {
+  (window as unknown as { game: Phaser.Game }).game = game;
+}

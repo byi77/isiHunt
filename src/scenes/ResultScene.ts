@@ -50,11 +50,7 @@ export class ResultScene extends Phaser.Scene {
     this.buildButtons(stats.worldId, world.accent);
   }
 
-  private buildScoreHeader(
-    stats: RunStats,
-    progression: ProgressionResult,
-    accent: number,
-  ): void {
+  private buildScoreHeader(stats: RunStats, progression: ProgressionResult, accent: number): void {
     this.add
       .text(GAME_WIDTH / 2, 96, 'RUN BEENDET', textStyle(FontSize.tiny, Palette.inkDim))
       .setOrigin(0.5)
@@ -74,7 +70,12 @@ export class ResultScene extends Phaser.Scene {
 
     if (progression.isNewBestScore) {
       this.add
-        .text(GAME_WIDTH / 2, 224, 'NEUER BESTWERT', textStyle(FontSize.small, Palette.gold, { fontStyle: 'bold' }))
+        .text(
+          GAME_WIDTH / 2,
+          224,
+          'NEUER BESTWERT',
+          textStyle(FontSize.small, Palette.gold, { fontStyle: 'bold' }),
+        )
         .setOrigin(0.5);
     }
 
@@ -92,9 +93,7 @@ export class ResultScene extends Phaser.Scene {
   private buildBreakdown(stats: RunStats): void {
     const y = 336;
 
-    this.add
-      .text(60, y, 'AUSBEUTE', textStyle(FontSize.tiny, Palette.inkDim))
-      .setLetterSpacing(6);
+    this.add.text(60, y, 'AUSBEUTE', textStyle(FontSize.tiny, Palette.inkDim)).setLetterSpacing(6);
 
     RARITIES.forEach((rarity, index) => {
       const rowY = y + 44 + index * 40;
@@ -135,7 +134,12 @@ export class ResultScene extends Phaser.Scene {
     let y = 622;
 
     this.add
-      .text(60, y, `Level ${levelProgress.level}`, textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }))
+      .text(
+        60,
+        y,
+        `Level ${levelProgress.level}`,
+        textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }),
+      )
       .setOrigin(0, 0.5);
 
     this.add

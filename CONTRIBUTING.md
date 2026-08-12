@@ -26,13 +26,13 @@ npm run typecheck && npm run lint && npm run build
 
 ## Branches
 
-| Branch | Zweck |
-|---|---|
-| `main` | Immer lauffaehig. Jeder Push deployt automatisch auf GitHub Pages. |
-| `feat/<name>` | Neues Feature |
-| `fix/<name>` | Fehlerbehebung |
-| `docs/<name>` | Nur Dokumentation |
-| `chore/<name>` | Werkzeuge, Abhaengigkeiten, Aufraeumen |
+| Branch         | Zweck                                                              |
+| -------------- | ------------------------------------------------------------------ |
+| `main`         | Immer lauffaehig. Jeder Push deployt automatisch auf GitHub Pages. |
+| `feat/<name>`  | Neues Feature                                                      |
+| `fix/<name>`   | Fehlerbehebung                                                     |
+| `docs/<name>`  | Nur Dokumentation                                                  |
+| `chore/<name>` | Werkzeuge, Abhaengigkeiten, Aufraeumen                             |
 
 Beispiel: `feat/talent-screen`, `fix/combo-timer-reset`
 
@@ -78,13 +78,13 @@ braucht, sind zwei Commits.
 
 ## Die Doku ist Teil des Codes
 
-| Aenderung | Zuerst aktualisieren |
-|---|---|
-| Balancing-Wert | `docs/GAME_DESIGN.md` |
-| Neue Datei / neues System | `docs/ARCHITECTURE.md` |
-| Architekturentscheidung | `docs/DECISIONS.md` (neuer ADR) |
-| Neue Farbe / Effekt | `docs/ART_STYLE.md` |
-| Feature fertig | `docs/ROADMAP.md` abhaken, `CHANGELOG.md` ergaenzen |
+| Aenderung                 | Zuerst aktualisieren                                |
+| ------------------------- | --------------------------------------------------- |
+| Balancing-Wert            | `docs/GAME_DESIGN.md`                               |
+| Neue Datei / neues System | `docs/ARCHITECTURE.md`                              |
+| Architekturentscheidung   | `docs/DECISIONS.md` (neuer ADR)                     |
+| Neue Farbe / Effekt       | `docs/ART_STYLE.md`                                 |
+| Feature fertig            | `docs/ROADMAP.md` abhaken, `CHANGELOG.md` ergaenzen |
 
 Doku und Code gehoeren in **denselben** Commit. Ein separater
 "docs update"-Commit bedeutet, dass die Doku dazwischen falsch war.
@@ -95,7 +95,7 @@ Vollstaendig in [docs/CODE_STYLE.md](docs/CODE_STYLE.md). Die wichtigsten
 Punkte:
 
 1. Keine magischen Zahlen ausserhalb von `src/config/`
-2. Kommentare erklaeren *warum*, nie *was*
+2. Kommentare erklaeren _warum_, nie _was_
 3. Importe zeigen nur nach unten (`scenes → systems → config`)
 4. Jeder `onEvent` braucht ein `offEvent`
 5. Alles Bewegte rechnet mit `delta`

@@ -14,13 +14,7 @@ import {
 } from './GameConfig';
 
 export type TalentId =
-  | 'reach'
-  | 'swiftness'
-  | 'magnetism'
-  | 'endurance'
-  | 'focus'
-  | 'insight'
-  | 'fortune';
+  'reach' | 'swiftness' | 'magnetism' | 'endurance' | 'focus' | 'insight' | 'fortune';
 
 export interface TalentDef {
   readonly id: TalentId;
