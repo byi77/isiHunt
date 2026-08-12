@@ -44,8 +44,11 @@ isiHunt/
 ├── public/                     Statische Dateien, 1:1 nach dist/
 │   ├── manifest.webmanifest    PWA: "Zum Home-Bildschirm"
 │   └── icon-*.png              Erzeugt von scripts/generate-icons.mjs
+├── .githooks/
+│   └── pre-commit              Zieht die Version hoch (CODE_STYLE.md 1.9)
 ├── scripts/
-│   └── generate-icons.mjs      Zeichnet die App-Icons (npm run icons)
+│   ├── generate-icons.mjs      Zeichnet die App-Icons (npm run icons)
+│   └── bump-version.mjs        Patch-Version +1, vom pre-commit-Hook gerufen
 ├── src/
 │   ├── config/                 Reine Daten, keine Logik
 │   │   ├── GameConfig.ts       Alle Balancing-Zahlen
@@ -88,6 +91,7 @@ isiHunt/
 │   │   ├── theme.ts            Farben, Schriftgroessen
 │   │   ├── depth.ts            Zeichenreihenfolge aller Ebenen
 │   │   ├── textures.ts         Prozedurale Grafiken
+│   │   ├── hitDebug.ts         Trefferflaechen sichtbar machen (?hitboxes)
 │   │   ├── textInput.ts        Echtes HTML-Eingabefeld ueber dem Canvas
 │   │   └── widgets.ts          Knoepfe, Balken, Hintergruende, Effekte
 │   ├── env.d.ts                Typen der Umgebungsvariablen
@@ -214,6 +218,27 @@ Ein Modul-Singleton (`src/core/EventBus.ts`), typisiert ueber
 2. **Jeder `onEvent` braucht ein `offEvent` im `SHUTDOWN`-Handler.** Ohne
    Abmeldung feuern Listener nach einem Scene-Restart doppelt und greifen auf
    zerstoerte Objekte zu. `HudScene` zeigt das Muster.
+
+### 6.1 Bitte und Vollzug sind zwei Ereignisse
+
+Der Pause-Knopf sitzt im HUD, anhalten kann aber nur die `GameScene`. Statt
+dass das HUD sie sich holt (`scene.get('Game')`) — was die Trennung aus
+ADR-0003 aufheben wuerde — laufen zwei Ereignisse in entgegengesetzte
+Richtungen:
+
+```
+HudScene  ──PauseRequested──▶  GameScene   "bitte anhalten"
+HudScene  ◀──RunPaused──────   GameScene   "ist angehalten"
+```
+
+Das ist kein Umweg, sondern der Punkt: **Nur die `GameScene` weiss, ob eine
+Pause ueberhaupt zulaessig ist.** Waehrend des Countdowns gibt es nichts
+anzuhalten, und im Duell darf nicht angehalten werden (sonst koennte man in
+Ruhe zielen, waehrend ein legendaeres Relikt liegt). Das HUD baut seinen
+Pause-Bildschirm deshalb erst auf `RunPaused` hin auf — auf die Tatsache, nicht
+auf die Absicht.
+
+Dieselbe Trennung gilt fuer `AbortRequested`.
 
 ## 7. Frameratenunabhaengigkeit
 

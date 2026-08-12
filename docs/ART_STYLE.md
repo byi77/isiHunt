@@ -217,3 +217,94 @@ Offen fuer M4, hier schon notiert:
   (`prefers-reduced-motion` respektieren).
 - Mindestgroesse fuer Tippziele: 44 × 44 px. Alle Knoepfe liegen deutlich
   darueber.
+
+### 8.1 Die Trefferflaeche deckt den Knopf — nicht mehr, nicht weniger
+
+> **Ein Knopf reagiert genau dort, wo er ist.**
+
+Das klingt selbstverstaendlich und hat drei Anlaeufe gekostet. Zwei Irrwege,
+damit sie nicht wiederholt werden:
+
+**Irrweg 1: Trefferflaeche ueber den Lichtschein hinaus vergroessern.** Klingt
+grosszuegig, erzeugt aber unsichtbare Flaeche. Bei zwei Knoepfen nebeneinander
+ueberlappen sie sich, und dann gewinnt in Phaser das **zuletzt erzeugte**
+Objekt (`InputPlugin.sortGameObjects`) — nicht das naeherliegende. Man tippt
+sichtbar auf den linken Knopf und bekommt den rechten.
+
+**Irrweg 2: Der Ursprung der Trefferflaeche.** Siehe 8.3 — das war der
+eigentliche Fehler.
+
+Wer die Flaeche doch einmal vergroessern will, muss vorher nachrechnen, dass
+sich keine zwei Flaechen beruehren. Im Menue liegen zwischen zwei Knoepfen nur
+10 px.
+
+### 8.2 Druckzustaende skalieren das Bild, nie die Trefferflaeche
+
+Ein Knopf, der sich beim Druecken staucht, **darf dabei nicht kleiner werden,
+als er anfassbar ist**. Phaser rechnet die Trefferflaeche in der Skalierung des
+Objekts, an dem sie haengt — ein `setScale(0.96)` auf dem interaktiven Container
+verkleinert also beides zugleich, und zwar in dem Moment, in dem der Finger
+schon aufliegt. Ein Tipp am Rand loest dann `pointerdown` aus, faellt aus der
+geschrumpften Flaeche heraus und bekommt nie ein `pointerup`. Der Knopf blinkt
+und tut nichts.
+
+> **Regel:** Sichtbares und Anfassbares sind zwei Objekte. Animiert wird immer
+> das innere, interaktiv ist immer das aeussere.
+
+Das gilt fuer jede Druck-, Hover- oder Pulsanimation, die an einem
+interaktiven Objekt haengt — nicht nur fuer Knoepfe.
+
+**Dazu:** Ein Tipp gilt, solange er auf demselben Element endet, auf dem er
+begonnen hat. Ein Daumen wandert zwischen Aufsetzen und Abheben ein paar Pixel;
+das darf einen Tipp nicht verschlucken. Nur wer bewusst wegzieht und ausserhalb
+abhebt, bricht ab.
+
+### 8.3 Der Ursprung einer Trefferflaeche liegt bei (0,0) — auch im Container
+
+Die teuerste Falle dieses Projekts, deshalb ausfuehrlich.
+
+Ein `Container` zeichnet seine Kinder **um** den Mittelpunkt herum: Sie liegen
+bei `-width/2` bis `+width/2`. Die naheliegende Trefferflaeche ist also
+
+```ts
+new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height); // FALSCH
+```
+
+und genau die ist falsch. Phaser normalisiert den Testpunkt vorher auf den
+Ursprung (`InputManager.pointWithinInteractiveObject`):
+
+```js
+x += gameObject.displayOriginX; // beim Container immer width * 0.5
+```
+
+Der Punkt kommt also **bereits verschoben** an. Ein bei `-width/2` beginnendes
+Rechteck liegt dadurch eine halbe Knopfbreite zu weit rechts.
+
+**Der Haken:** `displayOriginX` ist `width * 0.5` — aber nur, wenn `setSize()`
+gelaufen ist. Vorher ist `width` gleich 0 und der Versatz ebenfalls. Dieselbe
+Rechteck-Definition ist also je nach Aufrufreihenfolge mal richtig und mal um
+eine halbe Breite daneben. Genau daher kamen die wechselnden Fehlerbilder
+("rechts geht nicht" / "links geht nicht").
+
+**Deshalb wird nicht gerechnet, sondern gemessen.** `makeAlignedHitArea()` in
+`ui/widgets.ts` fragt das Objekt nach seinem Ursprung und legt das Rechteck
+darum:
+
+```ts
+const hitArea = makeAlignedHitArea(container, width, height);
+container.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
+```
+
+Das bleibt richtig, unabhaengig davon, wie Phaser intern normalisiert — heute
+und nach dem naechsten Update. **Neue interaktive Container benutzen diese
+Funktion**, nicht ein selbst gebautes Rechteck.
+
+**Warum die Falle so leicht zu uebersehen ist:** Bei einem `Image` stimmen
+Texturkoordinaten und `displayOrigin` ueberein — dort funktioniert die
+naheliegende Rechnung. Nur beim `Container` fallen Zeichenkoordinaten
+(um 0 herum) und Trefferflaechenkoordinaten (ab 0) auseinander.
+
+**Gegenprobe bei jeder Aenderung:** `?hitboxes` an die Adresse haengen
+(`src/ui/hitDebug.ts`). Das Werkzeug zeichnet jede Trefferflaeche, markiert
+jeden Tipp und meldet `<<< WIDERSPRUCH`, wenn Phaser ein anderes Objekt liefert,
+als die Geometrie hergibt.

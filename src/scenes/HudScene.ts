@@ -9,7 +9,7 @@
 
 import Phaser from 'phaser';
 
-import { GAME_WIDTH } from '@/config/GameConfig';
+import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { getWorld } from '@/config/worlds';
 import { eventBus, GameEvent } from '@/core/EventBus';
 import { SceneKey } from '@/scenes/SceneKey';
@@ -17,7 +17,7 @@ import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import type { BarHandle } from '@/ui/widgets';
-import { createBar } from '@/ui/widgets';
+import { createBar, createButton, createPanel } from '@/ui/widgets';
 import type { RunMode } from '@/types';
 
 export interface HudSceneData {
@@ -39,6 +39,9 @@ export class HudScene extends Phaser.Scene {
   private accent = 0xffffff;
   private scoreToBeat: number | null = null;
   private hasOvertaken = false;
+  private mode: RunMode = 'solo';
+  /** Alle Teile des Pause-Bildschirms - zusammen ein- und ausgeblendet. */
+  private pauseOverlay: Phaser.GameObjects.GameObject[] = [];
 
   constructor() {
     super({ key: SceneKey.Hud, active: false });
@@ -49,6 +52,8 @@ export class HudScene extends Phaser.Scene {
     this.accent = world.accent;
     this.scoreToBeat = data.scoreToBeat ?? null;
     this.hasOvertaken = false;
+    this.mode = data.mode ?? 'solo';
+    this.pauseOverlay = [];
 
     // Dunkle Kappe hinter der Kopfzeile: der Punktestand muss auch dann lesbar
     // bleiben, wenn gerade ein helles Relikt darunter treibt.
@@ -103,8 +108,134 @@ export class HudScene extends Phaser.Scene {
         .setOrigin(0, 0);
     }
 
+    this.buildPauseButton();
+
     this.registerEvents();
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.unregisterEvents());
+  }
+
+  // --- Pause ----------------------------------------------------------------
+
+  /**
+   * Pause-Knopf unten rechts.
+   *
+   * Nicht oben: Dort stehen Punktestand, Timer und im Duell die Vorlage - und
+   * oben ist die Ecke, in die man beim Spielen schaut. Unten rechts liegt er in
+   * Daumenreichweite und trotzdem ausserhalb des Spielfelds
+   * (PLAYFIELD_PADDING_BOTTOM haelt die unteren 120 px frei).
+   */
+  private buildPauseButton(): void {
+    createButton(this, GAME_WIDTH - 92, GAME_HEIGHT - 58, 'II', () => this.requestPause(), {
+      width: 96,
+      height: 60,
+      accent: 0x9aa3bd,
+      fontSize: FontSize.small,
+    }).container.setDepth(Depth.Overlay);
+  }
+
+  private requestPause(): void {
+    // Nur bitten - ausgefuehrt wird es in der GameScene, die als einzige weiss,
+    // ob der Run ueberhaupt laeuft (Countdown, Ende).
+    eventBus.emitEvent(GameEvent.PauseRequested, undefined);
+  }
+
+  /**
+   * Der Pause-Bildschirm.
+   *
+   * Wird beim Ereignis `RunPaused` aufgebaut und bei `RunResumed` wieder
+   * abgeraeumt - nicht beim Tippen auf den Knopf. Dadurch erscheint er genau
+   * dann, wenn die Simulation wirklich steht, und nicht schon, wenn sie darum
+   * gebeten wurde.
+   */
+  private showPauseOverlay(): void {
+    const cx = GAME_WIDTH / 2;
+    const cy = GAME_HEIGHT / 2;
+
+    const shade = this.add
+      .image(cx, cy, TextureKey.Pixel)
+      .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
+      .setTint(0x000000)
+      .setAlpha(0.72)
+      .setDepth(Depth.Overlay)
+      // Faengt Tipps ab, die sonst neben den Knoepfen ins Spielfeld gingen.
+      .setInteractive();
+
+    const panel = createPanel(this, cx, cy - 20, GAME_WIDTH - 140, 440, Palette.goldHex, {
+      alpha: 0.85,
+    });
+    panel.setDepth(Depth.Overlay);
+
+    const title = this.add
+      .text(cx, cy - 190, 'PAUSE', textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }))
+      .setOrigin(0.5)
+      .setDepth(Depth.Overlay);
+    title.setLetterSpacing(6);
+
+    this.pauseOverlay.push(shade, panel, title);
+
+    // Im Duell gibt es kein Fortsetzen: Wer pausiert, waehrend ein legendaeres
+    // Relikt erscheint, koennte in Ruhe zielen - das bricht die Fairness
+    // (config/challenge.ts). Aussteigen darf man trotzdem.
+    if (this.mode === 'challenge') {
+      const note = this.add
+        .text(
+          cx,
+          cy - 90,
+          'Im Duell laesst sich nicht pausieren.\nDer Durchgang laeuft weiter.',
+          textStyle(FontSize.small, Palette.inkDim),
+        )
+        .setOrigin(0.5)
+        .setAlign('center')
+        .setLineSpacing(6)
+        .setDepth(Depth.Overlay);
+      this.pauseOverlay.push(note);
+    }
+
+    // Im Duell laeuft die Simulation weiter, es gibt also nichts fortzusetzen -
+    // der Bildschirm wird nur wieder zugeklappt. Ein `PauseRequested` wuerde
+    // dort ein zweites `RunPaused` ausloesen und das Overlay verdoppeln.
+    const resume = createButton(
+      this,
+      cx,
+      cy + 10,
+      this.mode === 'challenge' ? 'ZURUECK INS SPIEL' : 'WEITER',
+      () => (this.mode === 'challenge' ? this.hidePauseOverlay() : this.requestPause()),
+      {
+        width: 400,
+        height: 88,
+        accent: Palette.goldHex,
+        fontSize: FontSize.body,
+      },
+    );
+    resume.container.setDepth(Depth.Overlay);
+    this.pauseOverlay.push(resume.container);
+
+    const quit = createButton(
+      this,
+      cx,
+      cy + 118,
+      this.mode === 'challenge' ? 'DUELL ABBRECHEN' : 'RUN VERLASSEN',
+      () => eventBus.emitEvent(GameEvent.AbortRequested, undefined),
+      { width: 400, height: 76, accent: 0x9aa3bd, fontSize: FontSize.small },
+    );
+    quit.container.setDepth(Depth.Overlay);
+    this.pauseOverlay.push(quit.container);
+
+    const warning = this.add
+      .text(
+        cx,
+        cy + 180,
+        'Ein abgebrochener Run wird nicht gewertet.',
+        textStyle(FontSize.tiny, Palette.danger),
+      )
+      .setOrigin(0.5)
+      .setDepth(Depth.Overlay);
+    this.pauseOverlay.push(warning);
+  }
+
+  private hidePauseOverlay(): void {
+    for (const part of this.pauseOverlay) part.destroy();
+    this.pauseOverlay = [];
   }
 
   // --- Event-Anbindung ------------------------------------------------------
@@ -183,10 +314,21 @@ export class HudScene extends Phaser.Scene {
     this.timerText.setColor(isCritical ? Palette.danger : Palette.inkDim);
   };
 
+  // Schutz gegen doppeltes Aufbauen: Ein zweites `RunPaused` - etwa durch die
+  // Debug-Taste bei bereits offenem Bildschirm - wuerde sonst einen zweiten
+  // Satz Knoepfe uebereinanderlegen, und der untere bliebe fuer immer stehen.
+  private readonly onPaused = (): void => {
+    if (this.pauseOverlay.length > 0) return;
+    this.showPauseOverlay();
+  };
+  private readonly onResumed = (): void => this.hidePauseOverlay();
+
   private registerEvents(): void {
     eventBus.onEvent(GameEvent.ScoreChanged, this.onScore);
     eventBus.onEvent(GameEvent.ComboChanged, this.onCombo);
     eventBus.onEvent(GameEvent.TimerChanged, this.onTimer);
+    eventBus.onEvent(GameEvent.RunPaused, this.onPaused);
+    eventBus.onEvent(GameEvent.RunResumed, this.onResumed);
   }
 
   /**
@@ -197,5 +339,7 @@ export class HudScene extends Phaser.Scene {
     eventBus.offEvent(GameEvent.ScoreChanged, this.onScore);
     eventBus.offEvent(GameEvent.ComboChanged, this.onCombo);
     eventBus.offEvent(GameEvent.TimerChanged, this.onTimer);
+    eventBus.offEvent(GameEvent.RunPaused, this.onPaused);
+    eventBus.offEvent(GameEvent.RunResumed, this.onResumed);
   }
 }

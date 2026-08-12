@@ -7,11 +7,12 @@
 
 import Phaser from 'phaser';
 
-import { DEBUG_ENABLED, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { APP_VERSION, DEBUG_ENABLED, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { WORLDS } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { isIos, isStandalone } from '@/core/display';
 import { SceneKey } from '@/scenes/SceneKey';
+import { attachHitDebug } from '@/ui/hitDebug';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
@@ -23,8 +24,10 @@ import {
   createBar,
   createButton,
   createDriftLayers,
+  createPanel,
   createVignette,
   createWorldBackdrop,
+  makeAlignedHitArea,
 } from '@/ui/widgets';
 
 export class MenuScene extends Phaser.Scene {
@@ -59,6 +62,9 @@ export class MenuScene extends Phaser.Scene {
     this.buildCharacterPanel(save.level);
     this.buildWorldList(save.level);
     this.buildFooter(save.bestScore);
+
+    // Nur mit ?hitboxes in der Adresse - zeigt, was Phaser fuer anfassbar haelt.
+    attachHitDebug(this);
   }
 
   private buildTitle(): void {
@@ -223,14 +229,14 @@ export class MenuScene extends Phaser.Scene {
         return;
       }
 
-      row.setSize(GAME_WIDTH - 120, rowHeight - 14);
+      const rowWidth = GAME_WIDTH - 120;
+      const rowHit = rowHeight - 14;
+
+      // Trefferflaeche am gemessenen Ursprung ausrichten - dieselbe Falle wie
+      // bei den Knoepfen, ausfuehrlich begruendet in ui/widgets.ts.
+      row.setSize(rowWidth, rowHit);
       row.setInteractive(
-        new Phaser.Geom.Rectangle(
-          -(GAME_WIDTH - 120) / 2,
-          -(rowHeight - 14) / 2,
-          GAME_WIDTH - 120,
-          rowHeight - 14,
-        ),
+        makeAlignedHitArea(row, rowWidth, rowHit),
         Phaser.Geom.Rectangle.Contains,
       );
 
@@ -305,19 +311,38 @@ export class MenuScene extends Phaser.Scene {
   /**
    * Fusszeile: Steuerungshinweis - und auf dem iPhone der einzige Weg zum
    * Vollbild, weil es dort keine Fullscreen-API gibt (core/display.ts).
+   *
+   * Der iOS-Hinweis steht bewusst in einem eigenen Kasten und nicht als
+   * Fusszeilentext: Beim Spieltest wurde er dort schlicht uebersehen, und die
+   * Rueckmeldung lautete, es gebe gar keinen Vollbild-Knopf. Der Knopf fehlt
+   * auf iOS zu Recht (ADR-0009) - dann muss aber der Ersatz auffindbar sein.
    */
   private buildHint(): void {
     if (isIos() && !isStandalone()) {
+      // Zwischen Bestwert (1138) und Steuerungshinweis (1244) - der Kasten
+      // passt genau dazwischen, ohne eines von beiden zu ueberdecken.
+      const y = GAME_HEIGHT - 88;
+
+      createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, 76, Palette.goldHex, { alpha: 0.5 });
+
       this.add
         .text(
           GAME_WIDTH / 2,
-          GAME_HEIGHT - 88,
-          'Fuer Vollbild ohne Adressleiste:\nTeilen-Symbol  ·  Zum Home-Bildschirm',
-          textStyle(FontSize.tiny, Palette.gold),
+          y - 15,
+          'VOLLBILD OHNE ADRESSLEISTE',
+          textStyle(FontSize.tiny, Palette.gold, { fontStyle: 'bold' }),
         )
         .setOrigin(0.5)
-        .setAlign('center')
-        .setLineSpacing(4);
+        .setLetterSpacing(3);
+
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          y + 15,
+          'Teilen-Symbol  ›  Zum Home-Bildschirm',
+          textStyle(FontSize.tiny, Palette.ink),
+        )
+        .setOrigin(0.5);
     }
 
     const hint = DEBUG_ENABLED
@@ -329,5 +354,12 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setWordWrapWidth(GAME_WIDTH - 80)
       .setAlign('center');
+
+    // Versionsnummer unten rechts: beim Test auf dem Handy die einzige
+    // verlaessliche Auskunft darueber, ob der neue Stand geladen wurde.
+    this.add
+      .text(GAME_WIDTH - 16, GAME_HEIGHT - 14, `v${APP_VERSION}`, textStyle(14, Palette.inkDim))
+      .setOrigin(1, 1)
+      .setAlpha(0.6);
   }
 }

@@ -204,6 +204,21 @@ wer die Bedingung schon erfuellt hat, bekommt sie beim naechsten Run.
 
 Vollstaendige Liste: `src/config/achievements.ts`.
 
+## 7.5 Einen Run verlassen
+
+Ein Run laesst sich jederzeit anhalten und verlassen. **Ein abgebrochener Run
+wird nicht gewertet** — kein XP, kein Bestwert, kein Erfolg.
+
+Das ist kein Strafmechanismus, sondern verhindert eine Auslese: Wer einen
+schlechten Lauf abbrechen und trotzdem gewertet bekommen koennte, haette einen
+Grund, jeden mittelmaessigen Run wegzuwerfen und nur die guten zu Ende zu
+spielen. Der Bestwert waere dann keine Leistung mehr, sondern Geduld.
+
+**Im Duell haelt die Simulation nicht an.** Wer anhalten koennte, waehrend ein
+legendaeres Relikt auf dem Feld liegt, duerfte in Ruhe zielen — das waere ein
+Vorteil, den der erste Spieler nicht hatte. Der Bildschirm erscheint trotzdem,
+denn Aussteigen muss moeglich bleiben; er beendet dann das ganze Duell.
+
 ## 8. Steuerung
 
 **Handy (primaer):** Finger irgendwo aufsetzen und ziehen. Die Figur laeuft

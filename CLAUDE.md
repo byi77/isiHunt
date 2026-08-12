@@ -25,7 +25,7 @@ Hochformat.
 | Warum so und nicht anders?  | `docs/DECISIONS.md`    |
 | Was kommt als naechstes?    | `docs/ROADMAP.md`      |
 
-## Die sieben Regeln
+## Die neun Regeln
 
 Vollstaendig begruendet in `docs/CODE_STYLE.md`. Kurzfassung:
 
@@ -39,6 +39,12 @@ Vollstaendig begruendet in `docs/CODE_STYLE.md`. Kurzfassung:
 6. **`systems/` kennt Phaser nicht** (Ausnahme: `SpawnSystem` nutzt
    `RandomDataGenerator` und `Geom.Rectangle`).
 7. **Nur Daten ueber den EventBus** — nie GameObjects oder Callbacks.
+8. **No-Guess-Vertrag: wir raten und schaetzen nicht.** Jede Aussage ueber den
+   Code steht auf einer gelesenen Datei, einem Werkzeugergebnis oder einer
+   ausgeschriebenen Rechnung. Was nicht geprueft wurde, wird als ungeprueft
+   benannt — nicht als wahrscheinlich verkauft.
+9. **Jeder Commit zieht die Version hoch.** Der `pre-commit`-Hook erledigt das
+   (`scripts/bump-version.mjs`); die Nummer steht im Menue unten rechts.
 
 ## Kein Code ohne Dokument
 
@@ -52,6 +58,24 @@ Vollstaendig begruendet in `docs/CODE_STYLE.md`. Kurzfassung:
 
 **Im selben Commit.** Ein nachgelagerter "docs update"-Commit bedeutet, dass
 die Doku dazwischen falsch war.
+
+## Versionierung
+
+Jeder Commit bekommt eine eigene Patch-Version. Der Hook macht das selbst:
+
+```bash
+git config core.hooksPath .githooks   # einmalig pro Arbeitskopie
+```
+
+Danach zaehlt `.githooks/pre-commit` vor jedem Commit die Version in
+`package.json` hoch und legt die Aenderung mit in denselben Commit.
+
+**Warum das nicht optional ist:** Die Nummer steht im Menue unten rechts. Beim
+Test auf dem Handy ist sie die einzige verlaessliche Auskunft darueber, ob der
+neue Stand geladen wurde — iOS-Caches sind hartnaeckig, und ein Fehlerbericht
+zu einem alten Stand kostet mehr Zeit als jede Versionsnummer.
+
+Bewusst ohne Versionssprung committen: `git commit --no-verify`.
 
 ## Befehle
 

@@ -101,3 +101,12 @@ export const SAVE_VERSION = 1;
 
 /** Debug-Tastatur nur im Dev-Build (`npm run dev`), nie im Production-Build. */
 export const DEBUG_ENABLED = import.meta.env.DEV;
+
+/**
+ * Versionsnummer, bei jedem Commit hochgezaehlt (scripts/bump-version.mjs).
+ *
+ * Sie steht im Menue, damit beim Test auf dem Handy ohne Zweifel feststeht,
+ * welcher Stand gerade laeuft - Browser-Caches auf iOS sind hartnaeckig, und
+ * ein Fehlerbericht zu einem alten Stand kostet mehr Zeit als diese Zeile.
+ */
+export const APP_VERSION = __APP_VERSION__;

@@ -151,11 +151,21 @@ export class GameScene extends Phaser.Scene {
 
     if (DEBUG_ENABLED) this.installDebugKeys();
 
+    eventBus.onEvent(GameEvent.PauseRequested, this.onPauseRequested);
+    eventBus.onEvent(GameEvent.AbortRequested, this.onAbortRequested);
+
     this.runCountdown();
 
     // Aufraeumen bei Scene-Restart, damit keine Objekte oder Listener leaken.
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.cleanup());
   }
+
+  // --- Anfragen aus dem HUD -------------------------------------------------
+
+  // Als Klassenfelder, damit `offEvent` dieselbe Referenz bekommt wie
+  // `onEvent` - sonst wird nicht abgemeldet (CODE_STYLE.md 1.4).
+  private readonly onPauseRequested = (): void => this.togglePause();
+  private readonly onAbortRequested = (): void => this.abortRun();
 
   update(_time: number, delta: number): void {
     if (this.phase !== 'running') return;
@@ -334,6 +344,12 @@ export class GameScene extends Phaser.Scene {
   }
 
   private startRun(): void {
+    // Der Countdown laeuft ueber `delayedCall` und laesst sich nicht
+    // zurueckrufen. Wer waehrenddessen abbricht, hat `phase` bereits auf
+    // 'ended' gesetzt - ohne diese Pruefung startete der Run danach trotzdem,
+    // und zwar unsichtbar unter dem schon gewechselten Bildschirm.
+    if (this.phase === 'ended') return;
+
     this.phase = 'running';
     this.spawner.reset();
     eventBus.emitEvent(GameEvent.RunStarted, {
@@ -370,7 +386,69 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * Haelt den Run an oder setzt ihn fort.
+   *
+   * Oeffentlich, weil die HudScene den Pause-Knopf traegt: Sie kennt diese
+   * Scene nicht und ruft nicht direkt hier an - der Weg geht ueber den
+   * EventBus, und `HudScene` loest ihn nur aus.
+   *
+   * Im Duell haelt die Simulation nicht an (Begruendung unten), der Bildschirm
+   * erscheint aber trotzdem - denn Aussteigen muss auch dort moeglich sein.
+   */
+  togglePause(): void {
+    // Waehrend des Countdowns gibt es nichts anzuhalten, und nach dem Ende ist
+    // die Scene bereits auf dem Weg zum naechsten Bildschirm.
+    if (this.phase !== 'running') return;
+
+    // Im Duell wird der Bildschirm gezeigt, die Simulation laeuft aber weiter:
+    // Wer anhalten koennte, waehrend ein legendaeres Relikt erscheint, duerfte
+    // in Ruhe zielen - das bricht die Fairness gegenueber dem ersten Spieler
+    // (config/challenge.ts). Aussteigen bleibt moeglich.
+    if (this.mode === 'challenge') {
+      eventBus.emitEvent(GameEvent.RunPaused, undefined);
+      return;
+    }
+
+    if (this.scene.isPaused()) {
+      this.scene.resume();
+      eventBus.emitEvent(GameEvent.RunResumed, undefined);
+    } else {
+      this.scene.pause();
+      eventBus.emitEvent(GameEvent.RunPaused, undefined);
+    }
+  }
+
+  /**
+   * Bricht den laufenden Run ab, ohne ihn zu werten.
+   *
+   * Kein XP, kein Bestwert, kein Erfolg: Ein abgebrochener Run ist kein
+   * Ergebnis. Wer bei schlechtem Lauf abbrechen und es dennoch gewertet
+   * bekommen koennte, haette einen Grund, jeden mittelmaessigen Run
+   * wegzuwerfen - das waere kein Spiel mehr, sondern eine Auslese.
+   */
+  abortRun(): void {
+    if (this.phase === 'ended') return;
+    this.phase = 'ended';
+
+    // Die Scene laeuft moeglicherweise pausiert - sonst bleibt sie es auch
+    // nach dem Wechsel und der naechste Run startet eingefroren.
+    if (this.scene.isPaused()) this.scene.resume();
+
+    // Ein abgebrochenes Duell wird ganz verworfen, nicht bei der Uebergabe
+    // fortgesetzt: Ohne den Durchgang des Aussteigers gibt es nichts zu
+    // vergleichen, und ein halber Zustand schickte die ChallengeScene in die
+    // falsche Phase.
+    if (this.mode === 'challenge') ChallengeSystem.clear();
+
+    this.scene.stop(SceneKey.Hud);
+    this.scene.start(SceneKey.Menu);
+  }
+
   private cleanup(): void {
+    eventBus.offEvent(GameEvent.PauseRequested, this.onPauseRequested);
+    eventBus.offEvent(GameEvent.AbortRequested, this.onAbortRequested);
+
     for (const orb of this.collectibles) orb.destroy();
     this.collectibles = [];
   }
@@ -391,15 +469,9 @@ export class GameScene extends Phaser.Scene {
         this.remainingMs = Math.min(this.remainingMs + ms, this.totalMs);
       },
       endRun: () => this.endRun(),
-      togglePause: () => {
-        if (this.scene.isPaused()) {
-          this.scene.resume();
-          eventBus.emitEvent(GameEvent.RunResumed, undefined);
-        } else {
-          this.scene.pause();
-          eventBus.emitEvent(GameEvent.RunPaused, undefined);
-        }
-      },
+      // Dieselbe Methode wie der Pause-Knopf im HUD: zwei Wege in denselben
+      // Zustand waeren zwei Wege, ihn kaputtzumachen.
+      togglePause: () => this.togglePause(),
       resetSave: () => {
         SaveSystem.reset();
         console.warn('[debug] Spielstand zurueckgesetzt');

@@ -8,6 +8,7 @@
 
 import Phaser from 'phaser';
 
+import { DEBUG_ENABLED } from '@/config/GameConfig';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
@@ -16,6 +17,88 @@ export interface ButtonHandle {
   container: Phaser.GameObjects.Container;
   setEnabled(enabled: boolean): void;
   setLabel(label: string): void;
+}
+
+/**
+ * Wie weit der Lichtschein ueber den Knopfrahmen hinausragt.
+ *
+ * Diese Faktoren bestimmen NICHT nur das Aussehen, sondern ueber
+ * `HIT_AREA_PADDING_*` auch die Trefferflaeche - die beiden duerfen nicht
+ * auseinanderlaufen (Begruendung unten bei der Trefferflaeche).
+ */
+const BUTTON_HALO_SCALE_X = 1.5;
+const BUTTON_HALO_SCALE_Y = 2.6;
+
+/**
+ * Wie viel vom Ueberstand des Lichtscheins zur Trefferflaeche zaehlt.
+ * 0 = nur der Rahmen, 1 = der gesamte Schein.
+ *
+ * ## Warum das 0 ist - und bleiben sollte
+ *
+ * Es war einmal 0,5, mit der Begruendung: Der Schein ragt seitlich 95 px ueber
+ * den Rahmen hinaus, wer ihn antippt trifft gefuehlt den Knopf. Das klang
+ * richtig und war falsch.
+ *
+ * Denn die Trefferflaeche wuchs damit auf 305 px, waehrend der Knopf 244 px
+ * breit blieb - **61 px unsichtbare Trefferflaeche pro Knopf**. Im Menue stehen
+ * BESTENLISTE und SPIELSTAND nebeneinander; tippte man rechts neben den
+ * Schriftzug BESTENLISTE, lag man in beiden Flaechen. Und bei mehreren Treffern
+ * gewinnt in Phaser das **zuletzt erzeugte** Objekt (`InputPlugin.sortGameObjects`)
+ * - also SPIELSTAND. Der Nutzer traf sichtbar den linken Knopf und bekam den
+ * rechten.
+ *
+ * Ein Knopf muss dort reagieren, wo er ist. Unsichtbare Trefferflaeche ist
+ * keine Grosszuegigkeit, sondern eine Falle: Sie ist per Definition nicht
+ * sichtbar und damit auch nicht vorhersehbar.
+ *
+ * **Wer das wieder erhoehen will,** muss vorher pruefen, dass sich keine zwei
+ * Flaechen beruehren - und daran denken, dass der Gewinner einer Ueberlappung
+ * von der Erzeugungsreihenfolge abhaengt, nicht von der Entfernung zum
+ * Mittelpunkt.
+ */
+const HIT_AREA_PADDING_X = 0;
+const HIT_AREA_PADDING_Y = 0;
+
+/**
+ * Rueckt die Trefferflaeche so, dass sie den Knopf wirklich deckt.
+ *
+ * ## Warum gemessen und nicht gerechnet
+ *
+ * Phaser addiert vor dem Trefferpruefen den Ursprung des Objekts auf den
+ * Testpunkt. Wie gross dieser Ursprung ist, haengt beim Container davon ab, ob
+ * und wann `setSize()` lief - er ist entweder 0 oder die halbe Breite. Beide
+ * Faelle sind im laufenden Code aufgetreten, und beide erzeugen ein anderes
+ * Fehlerbild.
+ *
+ * Statt die Regel zu erraten, wird sie hier abgefragt: Der Mittelpunkt des
+ * Knopfes MUSS ein Treffer sein. Ist er es nicht, wird das Rechteck genau um
+ * den gemessenen Ursprung verschoben - danach stimmt es zwangslaeufig.
+ *
+ * Kostet einmal pro Knopf zwei Rechteck-Vergleiche. Das ist der Preis dafuer,
+ * dass diese Klasse Fehler nicht mehr auftreten kann.
+ */
+export function makeAlignedHitArea(
+  target: Phaser.GameObjects.Container,
+  width: number,
+  height: number,
+): Phaser.Geom.Rectangle {
+  // Der Mittelpunkt in Objektkoordinaten - genau so, wie Phaser ihn beim
+  // Trefferpruefen sieht (Testpunkt + displayOrigin).
+  const centerX = target.displayOriginX;
+  const centerY = target.displayOriginY;
+
+  const hitArea = new Phaser.Geom.Rectangle(
+    centerX - width / 2,
+    centerY - height / 2,
+    width,
+    height,
+  );
+
+  if (DEBUG_ENABLED && !Phaser.Geom.Rectangle.Contains(hitArea, centerX, centerY)) {
+    console.warn(`[widgets] Trefferflaeche verfehlt den Mittelpunkt (${width}x${height}).`);
+  }
+
+  return hitArea;
 }
 
 export function createButton(
@@ -32,12 +115,14 @@ export function createButton(
 
   const container = scene.add.container(x, y);
   let enabled = true;
+  /** Liegt ein Finger auf diesem Knopf? Siehe `pointerout` weiter unten. */
+  let isPressed = false;
 
   // Weicher Schein hinter dem Knopf - hebt ihn vom Hintergrund ab, ohne eine
   // harte Kante zu brauchen.
   const halo = scene.add
     .image(0, 0, TextureKey.Glow)
-    .setDisplaySize(width * 1.5, height * 2.6)
+    .setDisplaySize(width * BUTTON_HALO_SCALE_X, height * BUTTON_HALO_SCALE_Y)
     .setTint(accent)
     .setAlpha(0.5)
     .setBlendMode(Phaser.BlendModes.ADD);
@@ -61,25 +146,107 @@ export function createButton(
     )
     .setOrigin(0.5);
 
-  container.add([halo, bg, border, text]);
-  container.setSize(width, height);
-  container.setInteractive(
-    new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height),
-    Phaser.Geom.Rectangle.Contains,
-  );
+  // Alles Sichtbare liegt in einer eigenen Gruppe INNERHALB des Containers.
+  // Nur sie wird beim Druecken gestaucht - der Container selbst behaelt seine
+  // Groesse, und damit behaelt die Trefferflaeche sie auch. Warum das noetig
+  // ist, steht bei `press` weiter unten.
+  const visuals = scene.add.container(0, 0, [halo, bg, border, text]);
 
-  const setVisualState = (alpha: number, scale: number) => {
-    bg.setAlpha(alpha);
-    container.setScale(scale);
+  container.add(visuals);
+  container.setSize(width, height);
+
+  const hitWidth = width * (1 + (BUTTON_HALO_SCALE_X - 1) * HIT_AREA_PADDING_X);
+  const hitHeight = height * (1 + (BUTTON_HALO_SCALE_Y - 1) * HIT_AREA_PADDING_Y);
+
+  /**
+   * Die Trefferflaeche - und die Falle, die dieses Projekt am meisten gekostet
+   * hat.
+   *
+   * ## Das Problem
+   *
+   * Phaser verschiebt den Testpunkt vor dem Vergleich um den Ursprung des
+   * Objekts (`InputManager.pointWithinHitArea`):
+   *
+   * ```
+   * x += gameObject.displayOriginX
+   * ```
+   *
+   * Bei einem Container ist `displayOriginX` laut Quelltext `width * 0.5` -
+   * **aber nur, wenn `width` gesetzt ist.** Vor `setSize()` ist sie 0, und je
+   * nachdem, wann und ob das passiert, ist der Versatz 0 oder eine halbe
+   * Knopfbreite. Dieselbe Rechteck-Definition ist also mal richtig und mal um
+   * `width/2` daneben - und genau daher kamen die wechselnden Symptome
+   * ("rechts geht nicht" / "links geht nicht").
+   *
+   * ## Die Loesung: nicht ausrechnen, sondern messen
+   *
+   * Statt zu schliessen, welcher Ursprung stimmt, wird er **gemessen**: Wir
+   * fragen Phaser mit `pointWithinHitArea`, ob der Mittelpunkt des Knopfes
+   * getroffen wird, und verschieben das Rechteck, bis er es wird.
+   *
+   * Das ist kein Notbehelf, sondern die einzige Variante, die unabhaengig
+   * davon funktioniert, wie Phaser intern normalisiert - heute und nach dem
+   * naechsten Update.
+   */
+  const hitArea = makeAlignedHitArea(container, hitWidth, hitHeight);
+
+  container.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
+
+  /**
+   * Druckzustand.
+   *
+   * `visuals` wird gestaucht, NIE der Container.
+   *
+   * Phaser rechnet die Trefferflaeche in der Skalierung des Objekts, an dem sie
+   * haengt. Wuerde hier `container.setScale(0.96)` stehen, schruempfte mit dem
+   * Bild auch die Trefferflaeche - und zwar genau in dem Moment, in dem der
+   * Finger schon aufliegt. Ein Tipp nahe am Rand loeste `pointerdown` aus,
+   * fiel dadurch aus der geschrumpften Flaeche heraus und bekam nie ein
+   * `pointerup`. Der Knopf blinkte auf und tat nichts.
+   *
+   * Das ist die eigentliche Ursache dafuer, dass sich die Knoepfe nach der
+   * ersten Korrektur SCHLECHTER anfuehlten als vorher: Die Trefferflaeche wurde
+   * groesser, der beim Druecken verlorene Randstreifen wuchs mit ihr, und der
+   * Streifen liegt genau dort, wo man einen Knopf trifft, wenn man ihn nicht
+   * mittig antippt.
+   */
+  const press = (pressed: boolean) => {
+    bg.setAlpha(pressed ? 0.42 : 0.16);
+    visuals.setScale(pressed ? 0.96 : 1);
   };
 
-  container.on('pointerover', () => enabled && setVisualState(0.3, 1));
-  container.on('pointerout', () => enabled && setVisualState(0.16, 1));
-  container.on('pointerdown', () => enabled && setVisualState(0.42, 0.96));
-  container.on('pointerup', () => {
+  container.on('pointerover', () => enabled && bg.setAlpha(0.3));
+
+  container.on('pointerdown', () => {
     if (!enabled) return;
-    setVisualState(0.16, 1);
+    isPressed = true;
+    press(true);
+  });
+
+  container.on('pointerup', () => {
+    if (!enabled || !isPressed) return;
+    isPressed = false;
+    press(false);
     onClick();
+  });
+
+  /**
+   * Der Finger hat die Flaeche verlassen, ohne abzuheben.
+   *
+   * Nur der Druckzustand wird zurueckgenommen - ausgeloest wird nichts. Das ist
+   * das uebliche "wegziehen zum Abbrechen". `isPressed` bleibt aber gesetzt,
+   * damit ein Finger, der zurueckwandert, den Knopf noch ausloesen kann: Auf
+   * einem Handy wandert ein Daumen zwischen Aufsetzen und Abheben leicht, und
+   * am Rand eines Knopfes ist das schnell ein Pixel zu viel.
+   */
+  container.on('pointerout', () => enabled && press(false));
+
+  // Abheben ausserhalb: der Tipp ist damit endgueltig verworfen. Ohne dieses
+  // Zuruecksetzen bliebe `isPressed` haengen, und der naechste Tipp irgendwo
+  // auf dem Bildschirm loeste den Knopf aus.
+  container.on('pointerupoutside', () => {
+    isPressed = false;
+    if (enabled) press(false);
   });
 
   return {
@@ -87,7 +254,10 @@ export function createButton(
     setEnabled(value: boolean) {
       enabled = value;
       container.setAlpha(value ? 1 : 0.35);
-      if (value) container.setInteractive();
+      // Die eigene Trefferflaeche erneut uebergeben: ein blosses
+      // setInteractive() wuerde auf die Groesse des Containers zurueckfallen
+      // und die Vergroesserung stillschweigend verwerfen.
+      if (value) container.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
       else container.disableInteractive();
     },
     setLabel(value: string) {
@@ -95,6 +265,36 @@ export function createButton(
     },
   };
 }
+
+/**
+ * Zurueck-Knopf, immer oben links.
+ *
+ * Warum ein eigenes Widget statt eines `createButton`-Aufrufs je Scene: Die
+ * Knoepfe lagen vorher unterschiedlich weit unten am Rand und sahen verschieden
+ * aus. Beim Spieltest hiess es deshalb, es gebe "nirgends einen Zurueck-Knopf"
+ * - sie waren da, nur nirgends zweimal an derselben Stelle. Eine feste Position
+ * ist auffindbar, ohne dass man sie suchen muss.
+ *
+ * Oben links und nicht unten, weil unten das Eingabefeld und die Systemtastatur
+ * liegen (siehe LeaderboardScene) - dort verschwindet jeder Knopf frueher oder
+ * spaeter unter etwas anderem.
+ */
+export function createBackButton(
+  scene: Phaser.Scene,
+  onClick: () => void,
+  options: { label?: string } = {},
+): ButtonHandle {
+  return createButton(scene, BACK_BUTTON_X, BACK_BUTTON_Y, options.label ?? '‹  ZURUECK', onClick, {
+    width: 196,
+    height: 60,
+    accent: 0x9aa3bd,
+    fontSize: FontSize.tiny,
+  });
+}
+
+/** Feste Position des Zurueck-Knopfes - gilt fuer jede Scene, die einen hat. */
+export const BACK_BUTTON_X = 138;
+export const BACK_BUTTON_Y = 60;
 
 export interface BarHandle {
   container: Phaser.GameObjects.Container;

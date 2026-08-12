@@ -231,10 +231,12 @@ export class ResultScene extends Phaser.Scene {
   private buildLeaderboardSubmit(stats: RunStats, accent: number): void {
     if (!CloudSystem.isAvailable()) return;
 
-    const y = GAME_HEIGHT - 250;
+    // Hoch genug, dass weder Knopf noch Statuszeile in NOCHMAL hineinragen:
+    // der lag mit seiner Oberkante bei 1062, dieser Knopf endete bei 1063.
+    const y = GAME_HEIGHT - 286;
 
     const status = this.add
-      .text(GAME_WIDTH / 2, y + 52, '', textStyle(FontSize.tiny, Palette.inkDim))
+      .text(GAME_WIDTH / 2, y + 44, '', textStyle(FontSize.tiny, Palette.inkDim))
       .setOrigin(0.5)
       .setWordWrapWidth(GAME_WIDTH - 140)
       .setAlign('center');

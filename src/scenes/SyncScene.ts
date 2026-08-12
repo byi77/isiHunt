@@ -32,6 +32,7 @@ import { FontSize, Palette, textStyle } from '@/ui/theme';
 import type { TextInputHandle } from '@/ui/textInput';
 import { createTextInput } from '@/ui/textInput';
 import {
+  createBackButton,
   createButton,
   createDriftLayers,
   createPanel,
@@ -68,10 +69,12 @@ export class SyncScene extends Phaser.Scene {
     createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT);
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
 
+    // Tiefer als der Zurueck-Knopf oben links, damit sich Ueberschrift und
+    // Trefferflaeche nicht in die Quere kommen.
     this.add
       .text(
         GAME_WIDTH / 2,
-        118,
+        140,
         'SPIELSTAND',
         textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
       )
@@ -93,14 +96,7 @@ export class SyncScene extends Phaser.Scene {
       .setWordWrapWidth(GAME_WIDTH - 120)
       .setAlign('center');
 
-    createButton(
-      this,
-      GAME_WIDTH / 2,
-      GAME_HEIGHT - 120,
-      'ZURUECK',
-      () => this.scene.start(SceneKey.Menu),
-      { width: 300, height: 72, accent: 0x9aa3bd, fontSize: FontSize.small },
-    );
+    createBackButton(this, () => this.scene.start(SceneKey.Menu));
 
     this.buildStart();
   }

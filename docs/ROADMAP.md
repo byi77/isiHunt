@@ -30,13 +30,46 @@ Der Prototyp funktioniert. Jetzt muss er sich **gut** anfuehlen.
       Lichtspur, Hintergrund in Schichten, Vignette
 - [x] Vollbild ohne Adressleiste (Fullscreen-API + PWA-Installation)
 - [x] App-Icon und Manifest
-- [ ] Auf echten Geraeten testen (verschiedene Groessen, iOS + Android)
+- [x] **Erster Spieltest mit der Zielgruppe** (Kinder, 9 und 11) — die
+      Rueckmeldungen haben mehr Bedienfehler zutage gefoerdert als jedes
+      eigene Testen; die Ergebnisse stehen unten unter M1.6
+- [ ] Auf weiteren Geraeten testen (verschiedene Groessen, Android)
 - [ ] Balancing nach dem ersten echten Spieltest nachziehen
 - [ ] Vibrations-Feedback bei seltenen Faengen (`navigator.vibrate`)
-- [ ] Pause-Bildschirm mit sichtbarem Knopf statt nur Debug-Taste
+- [x] Pause-Bildschirm mit sichtbarem Knopf statt nur Debug-Taste
 - [ ] Erster Start: dezente Einfuehrung ohne Textwand
 - [ ] Bildschirmschoner / Sperre waehrend eines Runs verhindern (Wake Lock)
 - [ ] Verhalten beim Wegwischen der App (Run pausieren statt weiterlaufen)
+
+## M1.6 — Nach dem ersten Spieltest _(laufend)_
+
+Der Prototyp wurde erstmals von der eigentlichen Zielgruppe gespielt. Die
+Rueckmeldungen zerfielen in drei Sorten: Bedienfehler, Erweiterungswuensche und
+Wuensche, die die Designgrundlage verschieben. Diese Phase raeumt die erste
+Sorte auf.
+
+- [ ] **Knopf-Fehler: offen.** Vier Anlaeufe, vier gefundene und beseitigte
+      Ursachen — das Symptom trat weiterhin auf. Im Browser ist die Kette
+      nachgemessen und korrekt (Trefferflaeche deckungsgleich, Umrechnung
+      fehlerfrei); auf dem iPhone ungeprueft. Naechster Schritt ist eine
+      Messung mit `?hitboxes`, keine weitere Vermutung. Details in `TODO.md`.
+- [x] Trefferflaechen werden am gemessenen Ursprung ausgerichtet statt
+      berechnet (`makeAlignedHitArea`)
+- [x] Druck-Effekt staucht nur noch die Grafik, nicht die Trefferflaeche
+- [x] Zurueck-Knopf einheitlich oben links, als eigenes Widget
+- [x] Zurueck-Knopf der Bestenliste aus dem Bereich des Namensfeldes geholt
+      (HTML-Eingabefelder liegen immer ueber dem Canvas)
+- [x] Pause und "Run verlassen" im laufenden Spiel
+- [x] iOS-Vollbildhinweis in einem eigenen Kasten statt in der Fusszeile
+- [x] Weltenauswahl der Bestenliste von 12 auf 50 CSS-px vergroessert
+- [x] Versionsnummer im Menue, bei jedem Commit hochgezaehlt — damit
+      Test-Rueckmeldungen einem Stand zuzuordnen sind
+- [x] Diagnosewerkzeug `?hitboxes` fuer Trefferflaechen
+- [ ] Ergebnis auf dem Geraet der Kinder gegenpruefen
+
+Was aus demselben Spieltest folgt, aber groesser ist — Profil, Spielzeit,
+XP-Kurve, Weltraum-Thema, Coins, Freundesliste — steht in den Meilensteinen
+M2 bis M6.
 
 ## M1.5 — Duell _(neu, teilweise fertig)_
 

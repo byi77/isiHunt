@@ -25,6 +25,15 @@ export const GameEvent = {
   RunEnded: 'run:ended',
   RunPaused: 'run:paused',
   RunResumed: 'run:resumed',
+  /**
+   * Bitte um Pause bzw. Fortsetzen - gesendet vom HUD, ausgefuehrt von der
+   * GameScene. Die Trennung ist Absicht: Das HUD traegt den Knopf, kennt die
+   * Simulation aber nicht (ADR-0003). `RunPaused`/`RunResumed` melden danach,
+   * was tatsaechlich passiert ist.
+   */
+  PauseRequested: 'run:pause-requested',
+  /** Bitte, den Run abzubrechen. Ebenfalls vom HUD ausgeloest. */
+  AbortRequested: 'run:abort-requested',
 } as const;
 
 export interface GameEventPayloads {
@@ -45,6 +54,8 @@ export interface GameEventPayloads {
   [GameEvent.RunEnded]: { stats: RunStats; progression: ProgressionResult };
   [GameEvent.RunPaused]: undefined;
   [GameEvent.RunResumed]: undefined;
+  [GameEvent.PauseRequested]: undefined;
+  [GameEvent.AbortRequested]: undefined;
 }
 
 type EventName = keyof GameEventPayloads;

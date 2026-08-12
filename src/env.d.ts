@@ -17,3 +17,11 @@ interface ImportMetaEnv {
 interface ImportMeta {
   readonly env: ImportMetaEnv;
 }
+
+/**
+ * Versionsnummer aus der package.json, zur Bauzeit eingesetzt (vite.config.ts).
+ *
+ * Kein `import` der package.json: Das zoege die ganze Datei in den Build und
+ * machte aus einer Zeichenkette eine Abhaengigkeit.
+ */
+declare const __APP_VERSION__: string;

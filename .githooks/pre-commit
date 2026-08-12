@@ -1,0 +1,36 @@
+#!/bin/sh
+#
+# Zieht vor jedem Commit die Patch-Version hoch und legt die Aenderung mit in
+# den laufenden Commit.
+#
+# Aktivieren (einmalig pro Arbeitskopie, .git/hooks ist nicht versioniert):
+#   git config core.hooksPath .githooks
+#
+# Ueberspringen, wenn eine Aenderung bewusst ohne Versionssprung soll:
+#   git commit --no-verify
+
+set -e
+
+# Merge-, Rebase- und Amend-Commits nicht hochzaehlen: Sie gehoeren zu einem
+# bereits vergebenen Stand, und ein Sprung dort erzeugt nur Konflikte.
+if [ -f .git/MERGE_HEAD ] || [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ]; then
+  exit 0
+fi
+
+# Node finden. Git-Hooks laufen unter Windows in einer minimalen Shell, in der
+# der PATH der normalen Sitzung nicht unbedingt vorhanden ist - ein blosses
+# `node` schlaegt dort mit "command not found" fehl und blockiert den Commit.
+if command -v node >/dev/null 2>&1; then
+  NODE=node
+elif [ -x "/c/Program Files/nodejs/node.exe" ]; then
+  NODE="/c/Program Files/nodejs/node.exe"
+elif [ -x "/c/Program Files (x86)/nodejs/node.exe" ]; then
+  NODE="/c/Program Files (x86)/nodejs/node.exe"
+else
+  echo "pre-commit: node nicht gefunden - Version nicht hochgezaehlt." >&2
+  echo "            Mit 'git commit --no-verify' bewusst ueberspringen." >&2
+  exit 1
+fi
+
+"$NODE" scripts/bump-version.mjs
+git add package.json

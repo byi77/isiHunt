@@ -20,7 +20,7 @@ import { createTextInput } from '@/ui/textInput';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
-  createButton,
+  createBackButton,
   createDriftLayers,
   createPanel,
   createVignette,
@@ -58,10 +58,14 @@ export class LeaderboardScene extends Phaser.Scene {
     createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT);
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
 
+    createBackButton(this, () => this.scene.start(SceneKey.Menu));
+
+    // Tiefer als der Zurueck-Knopf oben links, damit sich Ueberschrift und
+    // Trefferflaeche nicht in die Quere kommen.
     this.add
       .text(
         GAME_WIDTH / 2,
-        120,
+        140,
         'BESTENLISTE',
         textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
       )
@@ -78,15 +82,6 @@ export class LeaderboardScene extends Phaser.Scene {
 
     this.buildNameField();
 
-    createButton(
-      this,
-      GAME_WIDTH / 2,
-      GAME_HEIGHT - 84,
-      'ZURUECK',
-      () => this.scene.start(SceneKey.Menu),
-      { width: 300, height: 64, accent: 0x9aa3bd, fontSize: FontSize.small },
-    );
-
     void this.loadList();
   }
 
@@ -99,6 +94,12 @@ export class LeaderboardScene extends Phaser.Scene {
    *
    * Gespeichert wird beim Verlassen des Feldes - ohne Bestaetigungsknopf, der
    * nur vergessen werden koennte.
+   *
+   * ACHTUNG: Dieses Feld ist ein echtes HTML-`<input>` ueber dem Canvas und
+   * kennt Phasers Zeichenreihenfolge nicht - es liegt IMMER obenauf. Es darf
+   * deshalb nichts Bedienbares unter oder neben sich haben. Der Zurueck-Knopf
+   * lag frueher darunter und war nicht erreichbar, sobald die Systemtastatur
+   * aufging; er sitzt jetzt oben links (createBackButton).
    */
   private buildNameField(): void {
     const save = SaveSystem.load();
@@ -153,7 +154,33 @@ export class LeaderboardScene extends Phaser.Scene {
 
       if (!isUnlocked) return;
 
-      marker.setInteractive({ useHandCursor: true });
+      // Trefferflaeche deutlich groesser als der Punkt.
+      //
+      // Die Marker sind auf 34 % skaliert - das sind rund 12 CSS-Pixel auf dem
+      // Handy, ein Viertel des Mindestmasses aus ART_STYLE.md 8. Ein Objekt
+      // selbst interaktiv zu machen bedeutet, dass seine Skalierung auch die
+      // Trefferflaeche schrumpft; hier war der Punkt praktisch nicht zu treffen.
+      //
+      // Die Flaeche wird deshalb ueber die Textur hinaus aufgezogen. `spacing`
+      // ist der Abstand zum naechsten Marker - die Haelfte davon fuellt die
+      // Luecke, ohne den Nachbarn zu erreichen.
+      // Die Flaeche wird in Texturkoordinaten angegeben (Orb ist 64x64, der
+      // Mittelpunkt liegt bei 32/32) und von Phaser mit `scale` verrechnet -
+      // deshalb muss hier durch die Skalierung geteilt werden, damit am Ende
+      // `hitSize` Bildschirmpixel herauskommen.
+      const hitSize = Math.min(spacing - 8, 92);
+      const halfX = hitSize / 2 / marker.scaleX;
+      const halfY = hitSize / 2 / marker.scaleY;
+
+      marker.setInteractive(
+        new Phaser.Geom.Rectangle(32 - halfX, 32 - halfY, halfX * 2, halfY * 2),
+        Phaser.Geom.Rectangle.Contains,
+      );
+      // Der Handcursor gehoert in die Konfigurationsform von setInteractive und
+      // laesst sich nicht neben eine eigene Trefferflaeche stellen - hier
+      // direkt gesetzt.
+      if (marker.input) marker.input.cursor = 'pointer';
+
       marker.on('pointerup', () => {
         if (world.id === this.world.id) return;
         this.world = world;

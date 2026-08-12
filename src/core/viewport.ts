@@ -31,9 +31,72 @@
 import type Phaser from 'phaser';
 
 export function keepCanvasBoundsFresh(game: Phaser.Game): void {
-  // Nur die Canvas-Position neu vermessen - guenstig genug fuer jeden Tipp.
+  /**
+   * Canvas neu vermessen - und den Umrechnungsfaktor gleich mit.
+   *
+   * ## Die Falle
+   *
+   * `updateBounds()` allein reicht **nicht**. Es schreibt zwar die neue
+   * Canvas-Position und -Groesse nach `canvasBounds`, laesst aber
+   * `displayScale` unberuehrt. Genau dieser Faktor rechnet einen Tipp in
+   * Spielkoordinaten um:
+   *
+   * ```
+   * spielX = (seitenX - canvasBounds.left) * displayScale.x
+   * ```
+   *
+   * `displayScale` wird ausschliesslich in `refresh()` neu gebildet, als
+   * `baseSize / canvasBounds`. Wer nur `updateBounds()` aufruft, erneuert also
+   * die eine Haelfte der Rechnung und laesst die andere veralten - das Ergebnis
+   * ist schlechter als gar nichts zu tun, weil beide Werte dann aus
+   * verschiedenen Momenten stammen.
+   *
+   * Auf dem iPhone passiert das staendig: Safari aendert die Canvas-Groesse
+   * beim Ein- und Ausklappen der Adressleiste, meldet das aber ueber
+   * `visualViewport`-Ereignisse, nicht ueber ein `resize` am Fenster. Der Tipp
+   * landete dadurch neben dem, was man sieht - und zwar um so weiter, je
+   * groesser der Unterschied zwischen altem und neuem Zustand war.
+   *
+   * ## Warum das die volle `refresh()` sein muss
+   *
+   * Nachmessen allein genuegt auch dann nicht, wenn man `displayScale` von Hand
+   * nachzieht. `refresh()` ruft **zuerst** `updateScale()` auf, und das setzt
+   * die CSS-Groesse des Canvas sowie seine Zentrierung neu. Erst danach misst
+   * `updateBounds()`.
+   *
+   * Wer nur misst, misst den Canvas in seiner **alten** Groesse - Safari hat den
+   * sichtbaren Bereich laengst geaendert. Ist die gemessene Breite zu gross,
+   * wird jeder Tipp zu klein skaliert: Der Fehler ist am linken Rand null und
+   * waechst nach rechts. Genau das war zuletzt zu sehen ("links und Mitte geht,
+   * rechts nicht").
+   *
+   * `refresh()` ist teurer und feuert ein `RESIZE`-Ereignis. Deshalb wird es
+   * nur aufgerufen, wenn sich die Masse tatsaechlich geaendert haben - das ist
+   * beim Tippen fast nie der Fall, und der Vergleich kostet ein
+   * `getBoundingClientRect()`.
+   */
   const remeasure = (): void => {
-    game.scale.updateBounds();
+    const scale = game.scale;
+    const rect = scale.canvas.getBoundingClientRect();
+    const bounds = scale.canvasBounds;
+
+    // Nur wenn sich wirklich etwas verschoben oder veraendert hat. Ohne diese
+    // Bremse liefe bei jedem Tipp eine volle Neuberechnung samt RESIZE-Ereignis.
+    //
+    // `canvasBounds` rechnet den Seiten-Scrollversatz mit ein, das frische
+    // Rechteck nicht - beim Vergleich muss er deshalb wieder drauf.
+    const scrollX = window.scrollX || 0;
+    const scrollY = window.scrollY || 0;
+
+    const unveraendert =
+      Math.abs(rect.width - bounds.width) < 0.5 &&
+      Math.abs(rect.height - bounds.height) < 0.5 &&
+      Math.abs(rect.left + scrollX - bounds.left) < 0.5 &&
+      Math.abs(rect.top + scrollY - bounds.top) < 0.5;
+
+    if (unveraendert) return;
+
+    scale.refresh();
   };
 
   // Bei echten Groessenaenderungen muss zusaetzlich die Skalierung neu
