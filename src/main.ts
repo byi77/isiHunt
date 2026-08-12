@@ -42,8 +42,13 @@ const config: Phaser.Types.Core.GameConfig = {
 
 const game = new Phaser.Game(config);
 
-// Im Dev-Build ueber die Browser-Konsole erreichbar (`game.scale`, `game.scene`).
-// Im Production-Build entfaellt der Block vollstaendig.
+// Im Dev-Build ueber die Browser-Konsole erreichbar (`isiHunt.scale`,
+// `isiHunt.scene.getScene('Game')`). Im Production-Build entfaellt der Block.
+//
+// Bewusst NICHT `window.game`: Browser legen fuer jedes Element mit id einen
+// gleichnamigen Verweis auf window an, und index.html enthaelt <div id="game">.
+// `window.game` waere also schon belegt - der Name haette je nach Ladezeitpunkt
+// mal das Spiel und mal das DIV geliefert.
 if (import.meta.env.DEV) {
-  (window as unknown as { game: Phaser.Game }).game = game;
+  (window as unknown as { isiHunt: Phaser.Game }).isiHunt = game;
 }

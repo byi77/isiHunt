@@ -49,8 +49,8 @@ Diese Tasten existieren im Production-Build nicht (siehe `DEBUG_ENABLED` in
 `src/config/GameConfig.ts`). Die Tastatur wirkt nur, wenn das Spielfenster den
 Fokus hat — bei ausbleibender Reaktion einmal ins Bild klicken.
 
-Im Dev-Build liegt die Phaser-Instanz zusaetzlich als `window.game` in der
-Browser-Konsole (`game.scale`, `game.scene.getScene('Game')`).
+Im Dev-Build liegt die Phaser-Instanz zusaetzlich als `window.isiHunt` in der
+Browser-Konsole (`isiHunt.scale`, `isiHunt.scene.getScene('Game')`).
 
 ---
 
