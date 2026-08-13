@@ -35,7 +35,7 @@ export class MenuScene extends Phaser.Scene {
     super(SceneKey.Menu);
   }
 
-  create(data: { fadeIn?: boolean } = {}): void {
+  create(data: { fadeIn?: boolean; fadeColor?: number } = {}): void {
     const save = SaveSystem.load();
     if (!save.playerName) {
       this.scene.start(SceneKey.Profile, { firstStart: true });
@@ -67,7 +67,8 @@ export class MenuScene extends Phaser.Scene {
     this.buildFooter(save.bestScore);
 
     if (data.fadeIn) {
-      this.cameras.main.fadeIn(240, 0, 0, 0);
+      const fadeColor = Phaser.Display.Color.IntegerToColor(data.fadeColor ?? 0);
+      this.cameras.main.fadeIn(240, fadeColor.red, fadeColor.green, fadeColor.blue);
     }
 
     void this.showUpdateHintIfAny();
@@ -408,9 +409,10 @@ export class MenuScene extends Phaser.Scene {
     // Welten.
     const camera = this.cameras.main;
     camera.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-      if (this.scene.isActive()) this.scene.restart({ fadeIn: true });
+      if (this.scene.isActive()) this.scene.restart({ fadeIn: true, fadeColor: world.bgTop });
     });
-    camera.fadeOut(220, 0, 0, 0);
+    const fadeColor = Phaser.Display.Color.IntegerToColor(world.bgTop);
+    camera.fadeOut(220, fadeColor.red, fadeColor.green, fadeColor.blue);
     return true;
   }
 
