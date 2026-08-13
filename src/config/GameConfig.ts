@@ -24,13 +24,13 @@ function readPixel(value: string): number {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function getInitialGameHeight(): number {
+function getAvailableGameSize(): { width: number; height: number } | null {
   // Beim Build oder in einem Test gibt es kein DOM. Die Referenzhoehe bleibt
   // dann der sichere Fallback.
-  if (typeof document === 'undefined') return DESIGN_GAME_HEIGHT;
+  if (typeof document === 'undefined') return null;
 
   const parent = document.getElementById('game');
-  if (!parent) return DESIGN_GAME_HEIGHT;
+  if (!parent) return null;
 
   const style = window.getComputedStyle(parent);
   const horizontalPadding = readPixel(style.paddingLeft) + readPixel(style.paddingRight);
@@ -38,15 +38,37 @@ function getInitialGameHeight(): number {
   const availableWidth = parent.clientWidth - horizontalPadding;
   const availableHeight = parent.clientHeight - verticalPadding;
 
-  if (availableWidth <= 0 || availableHeight <= 0) return DESIGN_GAME_HEIGHT;
+  if (availableWidth <= 0 || availableHeight <= 0) return null;
+
+  return { width: availableWidth, height: availableHeight };
+}
+
+/**
+ * Berechnet die interne Hoehe aus der jetzt sichtbaren Portrait-Flaeche.
+ *
+ * iOS startet eine Home-Bildschirm-App gelegentlich mit einem vorlaeufigen,
+ * zu kleinen Viewport und vergroessert ihn kurz danach. Deshalb darf diese
+ * Berechnung nicht bei der Modul-Auswertung passieren, sondern erst direkt
+ * vor `new Phaser.Game()` (siehe `main.ts`).
+ */
+export function configureGameHeight(): number {
+  const available = getAvailableGameSize();
+  if (!available) {
+    GAME_HEIGHT = DESIGN_GAME_HEIGHT;
+    return GAME_HEIGHT;
+  }
 
   // Auf niedrigeren oder weniger schmalen Geraeten bleibt die bisherige
   // Aufloesung erhalten. Nur die bisher ungenutzte Hoehe wird freigegeben.
-  return Math.max(DESIGN_GAME_HEIGHT, Math.round((availableHeight / availableWidth) * GAME_WIDTH));
+  GAME_HEIGHT = Math.max(
+    DESIGN_GAME_HEIGHT,
+    Math.round((available.height / available.width) * GAME_WIDTH),
+  );
+  return GAME_HEIGHT;
 }
 
 /** Interne Portraithoehe fuer das aktuelle Geraet. Phaser skaliert per FIT. */
-export const GAME_HEIGHT = getInitialGameHeight();
+export let GAME_HEIGHT = DESIGN_GAME_HEIGHT;
 
 /** Sicherheitsrand, in dem keine Objekte spawnen (HUD oben, Daumen unten). */
 export const PLAYFIELD_PADDING_TOP = 170;

@@ -17,6 +17,10 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   bleibt die untere Safe Area auf iOS farbig statt weiss.
 - Der lokale Spielstand-Reset bleibt im Admin-Menue sichtbar, ist waehrend der
   laufenden Testphase aber voruebergehend deaktiviert.
+- Der Spielstart wartet in iOS-Home-Screen-Apps auf die endgueltige
+  Viewport-Hoehe, bevor Phaser die interne Spielflaeche berechnet. Dadurch
+  entsteht nach dem PWA-Start kein FIT-Balken mehr durch eine zu kleine
+  Anfangshoehe.
 
 **Geraetehoehe und Hochformat**
 

@@ -30,6 +30,58 @@
 
 import type Phaser from 'phaser';
 
+/**
+ * Wartet, bis die Hoehe des Spielcontainers nach dem Start stabil ist.
+ *
+ * In einer iOS-Home-Bildschirm-App kann `100dvh` waehrend des Launchens erst
+ * nach einigen Frames auf die echte Fensterhoehe springen. Ein Spiel, das
+ * vorher seine interne Hoehe festlegt, bekommt danach einen FIT-Balken. Zwei
+ * kurze Stabilitaetsphasen reichen fuer normale Browser; die Obergrenze ist
+ * ein Sicherheitsnetz gegen eine ausbleibende Animation.
+ */
+export function waitForViewportToSettle(): Promise<void> {
+  const MIN_WAIT_MS = 180;
+  const STABLE_FOR_MS = 90;
+  const MAX_WAIT_MS = 1200;
+
+  return new Promise((resolve) => {
+    const startedAt = performance.now();
+    let stableSince = startedAt;
+    let previous = readViewportSize();
+
+    const check = (): void => {
+      const now = performance.now();
+      const current = readViewportSize();
+
+      if (current.width !== previous.width || current.height !== previous.height) {
+        previous = current;
+        stableSince = now;
+      }
+
+      const waitedLongEnough = now - startedAt >= MIN_WAIT_MS;
+      const stayedStable = now - stableSince >= STABLE_FOR_MS;
+      const reachedSafetyLimit = now - startedAt >= MAX_WAIT_MS;
+
+      if ((waitedLongEnough && stayedStable) || reachedSafetyLimit) {
+        resolve();
+        return;
+      }
+
+      requestAnimationFrame(check);
+    };
+
+    requestAnimationFrame(check);
+  });
+}
+
+function readViewportSize(): { width: number; height: number } {
+  const game = document.getElementById('game');
+  if (!game) return { width: 0, height: 0 };
+
+  const rect = game.getBoundingClientRect();
+  return { width: Math.round(rect.width), height: Math.round(rect.height) };
+}
+
 export function keepCanvasBoundsFresh(game: Phaser.Game): void {
   /**
    * Canvas neu vermessen - und den Umrechnungsfaktor gleich mit.

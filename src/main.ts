@@ -10,9 +10,9 @@
 
 import Phaser from 'phaser';
 
-import { APP_VERSION, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { APP_VERSION, configureGameHeight, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { requestPortraitOrientationLock } from '@/core/orientation';
-import { keepCanvasBoundsFresh } from '@/core/viewport';
+import { keepCanvasBoundsFresh, waitForViewportToSettle } from '@/core/viewport';
 import { AdminScene } from '@/scenes/AdminScene';
 import { BootScene } from '@/scenes/BootScene';
 import { ChallengeScene } from '@/scenes/ChallengeScene';
@@ -27,46 +27,48 @@ import { SceneKey } from '@/scenes/SceneKey';
 import { SyncScene } from '@/scenes/SyncScene';
 import { Palette } from '@/ui/theme';
 
-const config: Phaser.Types.Core.GameConfig = {
-  type: Phaser.AUTO,
-  parent: 'game',
-  backgroundColor: Palette.backdrop,
-  scale: {
-    mode: Phaser.Scale.FIT,
-    autoCenter: Phaser.Scale.CENTER_BOTH,
-    width: GAME_WIDTH,
-    height: GAME_HEIGHT,
-  },
-  render: {
-    antialias: true,
-    // Runde Pixel: verhindert flimmernde Kanten bei nicht-ganzzahliger Skalierung.
-    roundPixels: true,
-    powerPreference: 'high-performance',
-  },
-  input: {
-    activePointers: 3,
-  },
-  // Fuer Namens- und Code-Eingabe: ein echtes HTML-Eingabefeld ueber dem
-  // Canvas. Phaser hat kein eigenes Textfeld, und nur ein echtes Feld oeffnet
-  // auf dem Handy die Systemtastatur samt Autokorrektur und Zahlenblock.
-  dom: {
-    createContainer: true,
-  },
-  // Ohne Physik-Engine: Kollision ist ein Distanztest (siehe GameScene).
-  scene: [
-    BootScene,
-    MenuScene,
-    ProfileScene,
-    GameScene,
-    HudScene,
-    ResultScene,
-    ChallengeScene,
-    LeaderboardScene,
-    SyncScene,
-    AdminScene,
-    RulerScene,
-  ],
-};
+function createGameConfig(): Phaser.Types.Core.GameConfig {
+  return {
+    type: Phaser.AUTO,
+    parent: 'game',
+    backgroundColor: Palette.backdrop,
+    scale: {
+      mode: Phaser.Scale.FIT,
+      autoCenter: Phaser.Scale.CENTER_BOTH,
+      width: GAME_WIDTH,
+      height: GAME_HEIGHT,
+    },
+    render: {
+      antialias: true,
+      // Runde Pixel: verhindert flimmernde Kanten bei nicht-ganzzahliger Skalierung.
+      roundPixels: true,
+      powerPreference: 'high-performance',
+    },
+    input: {
+      activePointers: 3,
+    },
+    // Fuer Namens- und Code-Eingabe: ein echtes HTML-Eingabefeld ueber dem
+    // Canvas. Phaser hat kein eigenes Textfeld, und nur ein echtes Feld oeffnet
+    // auf dem Handy die Systemtastatur samt Autokorrektur und Zahlenblock.
+    dom: {
+      createContainer: true,
+    },
+    // Ohne Physik-Engine: Kollision ist ein Distanztest (siehe GameScene).
+    scene: [
+      BootScene,
+      MenuScene,
+      ProfileScene,
+      GameScene,
+      HudScene,
+      ResultScene,
+      ChallengeScene,
+      LeaderboardScene,
+      SyncScene,
+      AdminScene,
+      RulerScene,
+    ],
+  };
+}
 
 // Version in die Seite schreiben, bevor Phaser startet. Sie steht damit auch
 // dann auf dem Bildschirm, wenn das Spiel selbst nicht hochkommt - beim Test
@@ -74,12 +76,12 @@ const config: Phaser.Types.Core.GameConfig = {
 const versionLabel = document.getElementById('version');
 if (versionLabel) versionLabel.textContent = `v${APP_VERSION}`;
 
-const game = new Phaser.Game(config);
-
 // Manifest und installierte Web-App sperren die Ausrichtung bereits. Die
 // Browser-API ist die zusaetzliche Moeglichkeit fuer Android; auf iOS Safari
 // darf eine Webseite diese Sperre nicht erzwingen (siehe orientation.ts).
 requestPortraitOrientationLock();
+
+let game: Phaser.Game | null = null;
 
 /**
  * Langer Druck auf die Versionsnummer oeffnet den Wartungsbildschirm.
@@ -92,7 +94,9 @@ requestPortraitOrientationLock();
  * `pointer-events` ist fuer #version aus (die Nummer soll nichts abfangen), das
  * Ereignis kommt deshalb vom Fenster und wird ueber die Position zugeordnet.
  */
-if (versionLabel) {
+function installAdminLongPress(activeGame: Phaser.Game): void {
+  if (!versionLabel) return;
+
   const LANGER_DRUCK_MS = 800;
   let timer: number | undefined;
 
@@ -112,8 +116,8 @@ if (versionLabel) {
   window.addEventListener('pointerdown', (event) => {
     if (!trifftVersion(event)) return;
     timer = window.setTimeout(() => {
-      game.scene.getScenes(true).forEach((scene) => scene.scene.stop());
-      game.scene.start(SceneKey.Admin);
+      activeGame.scene.getScenes(true).forEach((scene) => scene.scene.stop());
+      activeGame.scene.start(SceneKey.Admin);
     }, LANGER_DRUCK_MS);
   });
 
@@ -133,17 +137,29 @@ if (versionLabel) {
   });
 }
 
-// Ohne das liegen Trefferflaechen auf dem iPhone neben dem, was man sieht -
-// die Begruendung steht in core/viewport.ts.
-keepCanvasBoundsFresh(game);
+async function startGame(): Promise<void> {
+  // iOS kann die PWA-Fensterhoehe erst nach dem ersten Layout-Frame
+  // korrigieren. Erst danach darf GAME_HEIGHT fuer Phaser festgelegt werden.
+  await waitForViewportToSettle();
+  configureGameHeight();
+  game = new Phaser.Game(createGameConfig());
 
-// Im Dev-Build ueber die Browser-Konsole erreichbar (`isiHunt.scale`,
-// `isiHunt.scene.getScene('Game')`). Im Production-Build entfaellt der Block.
-//
-// Bewusst NICHT `window.game`: Browser legen fuer jedes Element mit id einen
-// gleichnamigen Verweis auf window an, und index.html enthaelt <div id="game">.
-// `window.game` waere also schon belegt - der Name haette je nach Ladezeitpunkt
-// mal das Spiel und mal das DIV geliefert.
-if (import.meta.env.DEV) {
-  (window as unknown as { isiHunt: Phaser.Game }).isiHunt = game;
+  installAdminLongPress(game);
+
+  // Ohne das liegen Trefferflaechen auf dem iPhone neben dem, was man sieht -
+  // die Begruendung steht in core/viewport.ts.
+  keepCanvasBoundsFresh(game);
+
+  // Im Dev-Build ueber die Browser-Konsole erreichbar (`isiHunt.scale`,
+  // `isiHunt.scene.getScene('Game')`). Im Production-Build entfaellt der Block.
+  //
+  // Bewusst NICHT `window.game`: Browser legen fuer jedes Element mit id einen
+  // gleichnamigen Verweis auf window an, und index.html enthaelt <div id="game">.
+  // `window.game` waere also schon belegt - der Name haette je nach Ladezeitpunkt
+  // mal das Spiel und mal das DIV geliefert.
+  if (import.meta.env.DEV) {
+    (window as unknown as { isiHunt: Phaser.Game }).isiHunt = game;
+  }
 }
+
+void startGame();
