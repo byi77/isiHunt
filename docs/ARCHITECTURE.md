@@ -322,6 +322,12 @@ Weltfarbmarker; die Weltentabs schraenken die Abfrage optional auf eine Welt
 ein. Der globale und der gefilterte Rang werden jeweils durch einen passenden
 Index in `supabase/schema.sql` unterstuetzt.
 
+Pro Cloud-Profil (`SaveData.cloudId`) gibt es genau eine Zeile. Ein Solo-Run
+ruft `submit_best_score` auf: Ein neuer Score ersetzt Score, Combo und Welt nur,
+wenn er hoeher ist; der Name wird auch bei einem unveraenderten Bestwert
+aktualisiert. Die alte Bestenliste muss beim Schemawechsel einmalig ueber
+`supabase/cleanup_leaderboard.sql` geleert werden.
+
 Nach einem Solo-Run wird das Ergebnis automatisch eingetragen, wenn ein Name
 gespeichert und der Backend-Dienst eingerichtet ist. Ein fehlender Name,
 fehlende Zugangsdaten oder ein Netzfehler veraendern den Ergebnisbildschirm

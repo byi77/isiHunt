@@ -484,6 +484,13 @@ bleiben wegen der Fairness-Regel ausgeschlossen. Damit ist die fruehere
 Entscheidung fuer einen manuellen Eintrag ersetzt; der manuelle
 Spielstand-Abgleich bleibt davon unberuehrt.
 
+**Nachtrag 2026-08-13:** Die Bestenliste speichert je `SaveData.cloudId` nur
+noch den besten Lauf. Der Client schreibt nicht mehr direkt in `scores`,
+sondern ruft `submit_best_score` auf. Die Datenbank entscheidet atomar ueber
+den hoechsten Score; dadurch entstehen bei schnellen oder parallelen Runs
+keine Duplikate. Die bisherige Liste wird einmalig und bewusst ueber
+`supabase/cleanup_leaderboard.sql` geloescht.
+
 ---
 
 ## ADR-0012 — Zugangsdaten des Clients liegen im Repository

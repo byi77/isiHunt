@@ -90,6 +90,16 @@ export class ProfileScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setLetterSpacing(5);
 
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        385,
+        `LEVEL ${levelProgress.level}`,
+        textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
+      )
+      .setOrigin(0.5)
+      .setLetterSpacing(2);
+
     let saveButton: ButtonHandle | null = null;
     const status = this.add
       .text(GAME_WIDTH / 2, 620, '', textStyle(FontSize.tiny, Palette.inkDim))

@@ -27,6 +27,11 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 - Profil mit Namensabfrage beim ersten Start, Lichtfigur und spaeterer Aenderung
   des Namens
 - Namensfeld aus der Bestenliste entfernt; der Name wird im Profil gepflegt
+- Level im Profil und im Hauptmenue prominent sichtbar
+- Weltenauswahl als vertikaler Carousel: eine Welt im Fokus, Nachbarn kleiner
+  und geblurt, Auswahl per Hoch-/Runter-Wischen
+- Bestenliste pro Cloud-Profil auf genau einen Eintrag begrenzt; nur der beste
+  Lauf bleibt, umgesetzt ueber einen atomaren Supabase-RPC
 - Solo-Runs auf 90 Sekunden verlaengert, XP-Kurve auf `floor(750 · √n)`
   umgestellt und bei Level 100 gedeckelt; alte lokale Spielstaende werden
   automatisch auf die neue Kurve migriert
@@ -36,7 +41,8 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 > **Bekannte Grenze:** Punktestaende sind manipulierbar. Das Spiel laeuft im
 > Browser, und ohne serverseitige Nachrechnung eines Runs laesst sich das
-> nicht verhindern. Eintraege sind immerhin unveraenderlich. Siehe ADR-0011.
+> nicht verhindern. Der Server schuetzt aber den Bestwert je Profil vor
+> schlechteren Nachtraegen. Siehe ADR-0011.
 
 **Duell-Modus fuer zwei Spieler**
 

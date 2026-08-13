@@ -165,8 +165,15 @@ export async function fetchLeaderboard(worldId?: string): Promise<CloudResult<Le
   };
 }
 
-/** Traegt ein Ergebnis ein. Der Name wird auf die erlaubte Laenge gekuerzt. */
+/**
+ * Meldet einen Lauf fuer dieses Profil.
+ *
+ * Die Datenbankfunktion haelt pro `playerId` genau einen Datensatz und ersetzt
+ * darin nur dann Score/Welt/Combo, wenn der neue Lauf besser ist. Die ID ist
+ * die bestehende Cloud-Kennung des Spielstands und bleibt beim Sync erhalten.
+ */
 export async function submitScore(
+  playerId: string,
   playerName: string,
   worldId: string,
   score: number,
@@ -177,15 +184,17 @@ export async function submitScore(
 
   const name = sanitizePlayerName(playerName);
   if (!name) return { ok: false, error: 'Kein Name angegeben' };
+  if (!playerId) return { ok: false, error: 'Kein Spielerprofil angegeben' };
 
   const result = await withTimeout(
-    supabase.from('scores').insert({
-      player_name: name,
-      world_id: worldId,
-      score: Math.max(0, Math.round(score)),
-      best_combo: Math.max(0, Math.round(bestCombo)),
+    supabase.rpc('submit_best_score', {
+      p_player_id: playerId,
+      p_player_name: name,
+      p_world_id: worldId,
+      p_score: Math.max(0, Math.round(score)),
+      p_best_combo: Math.max(0, Math.round(bestCombo)),
     }),
-    'Ergebnis eintragen',
+    'Bestwert eintragen',
   );
 
   if (!result.ok) return result;

@@ -22,8 +22,9 @@
 -- Rangliste ist es das nicht (siehe docs/DECISIONS.md, ADR-0011).
 --
 -- Abgesichert ist deshalb nur, was sich ohne Server absichern laesst:
--- Eintraege sind unveraenderlich (kein UPDATE, kein DELETE), Spielstaende sind
--- nur mit Kenntnis ihrer zufaelligen ID erreichbar, und Sync-Codes verfallen.
+-- Pro Spielstand-Profil gibt es genau einen Eintrag, und die Datenbankfunktion
+-- ersetzt ihn nur bei einem besseren Lauf. Spielstaende sind nur mit Kenntnis
+-- ihrer zufaelligen ID erreichbar, und Sync-Codes verfallen.
 --
 -- ============================================================================
 -- Zwei Ebenen, die man nicht verwechseln darf: GRANT und RLS
@@ -55,6 +56,7 @@ grant usage on schema public to anon, authenticated;
 
 create table if not exists public.scores (
   id           uuid primary key default gen_random_uuid(),
+  player_id    uuid        not null,
   player_name  text        not null,
   world_id     text        not null,
   score        integer     not null,
@@ -68,6 +70,16 @@ create table if not exists public.scores (
   constraint scores_combo_range check (best_combo >= 0 and best_combo <= 10000)
 );
 
+-- Migration fuer die bereits angelegte v0.1-Tabelle. Alte Zeilen haben noch
+-- keine Profil-ID und werden mit cleanup_leaderboard.sql bewusst entfernt.
+alter table public.scores add column if not exists player_id uuid;
+
+-- Partial, damit das Schema vor der einmaligen Bereinigung wiederholbar bleibt.
+-- Nach der Bereinigung setzt cleanup_leaderboard.sql die Spalte auf NOT NULL.
+create unique index if not exists scores_player_id_uidx
+  on public.scores (player_id)
+  where player_id is not null;
+
 -- Index fuer die gefilterte Bestenliste je Welt.
 create index if not exists scores_world_rank_idx
   on public.scores (world_id, score desc, created_at asc);
@@ -76,9 +88,10 @@ create index if not exists scores_world_rank_idx
 create index if not exists scores_rank_idx
   on public.scores (score desc, created_at asc);
 
--- Lesen und Eintragen erlaubt, Aendern und Loeschen nicht - schon auf der
--- Rechteebene, unabhaengig von den Regeln darunter.
-grant select, insert on public.scores to anon, authenticated;
+-- Lesen erlaubt. Schreiben laeuft ausschliesslich ueber die Funktion unten,
+-- damit niemand am Bestwert-Prinzip vorbei direkt neue Zeilen eintragen kann.
+grant select on public.scores to anon, authenticated;
+revoke insert, update, delete on public.scores from anon, authenticated;
 
 alter table public.scores enable row level security;
 
@@ -89,13 +102,59 @@ create policy "Bestenliste ist oeffentlich lesbar"
   using (true);
 
 drop policy if exists "Jeder darf ein Ergebnis eintragen" on public.scores;
-create policy "Jeder darf ein Ergebnis eintragen"
-  on public.scores for insert
-  to anon, authenticated
-  with check (true);
 
--- Bewusst KEINE update- oder delete-Regel: ohne sie verweigert RLS beides.
--- Ein eingetragenes Ergebnis ist damit unveraenderlich.
+-- Bewusst KEINE insert-, update- oder delete-Regel: ohne sie verweigert RLS
+-- direkte Aenderungen. Der RPC unten laeuft kontrolliert als security definer.
+
+create or replace function public.submit_best_score(
+  p_player_id   uuid,
+  p_player_name text,
+  p_world_id    text,
+  p_score       integer,
+  p_best_combo  integer
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if p_player_id is null or char_length(trim(p_player_name)) not between 1 and 16 then
+    raise exception 'Ungueltiges Spielerprofil';
+  end if;
+
+  insert into public.scores (player_id, player_name, world_id, score, best_combo)
+  values (
+    p_player_id,
+    trim(p_player_name),
+    p_world_id,
+    greatest(0, p_score),
+    greatest(0, p_best_combo)
+  )
+  on conflict (player_id) where (player_id is not null) do update
+  set player_name = excluded.player_name,
+      score = greatest(public.scores.score, excluded.score),
+      best_combo = case
+        when excluded.score > public.scores.score then excluded.best_combo
+        else public.scores.best_combo
+      end,
+      world_id = case
+        when excluded.score > public.scores.score then excluded.world_id
+        else public.scores.world_id
+      end,
+      created_at = case
+        when excluded.score > public.scores.score then excluded.created_at
+        else public.scores.created_at
+      end;
+
+  return true;
+end;
+$$;
+
+revoke execute on function public.submit_best_score(uuid, text, text, integer, integer)
+  from public;
+grant execute on function public.submit_best_score(uuid, text, text, integer, integer)
+  to anon, authenticated;
 
 -- ============================================================================
 -- 2. Spielstaende

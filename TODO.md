@@ -208,16 +208,20 @@ ausschliesslich an der Auslieferung, nicht am Code.
 - [x] Profil: Name beim ersten Start abfragen, Icon dazu, im Profil
       aenderbar
 - [x] Name im Startmenue anzeigen
+- [x] Weltenauswahl als vertikalen Carousel mit einer scharfen Welt sowie
+      geblurten Nachbarn und Hoch-/Runter-Wischbewegung bauen
 - [x] Namensfeld aus der Bestenliste entfernen (zieht ins Profil)
-- [x] Levelanzeige nicht mehr direkt im Menue, sondern ins Profil verschieben
-      — das Menue soll mit Name und Spielstart oeffnen, nicht mit einer Statistik
+- [x] Levelanzeige im Profil und Hauptmenue prominent sichtbar
 - [x] `RUN_DURATION_MS` 60 s → 90 s
 - [x] Designziel 2 in `GAME_DESIGN.md` anpassen ("in 90 Sekunden gespielt")
 - [x] XP-Kurve: `floor(80 · n^1.45)` → `floor(750 · √n)`
 - [x] `MAX_LEVEL = 100`, Deckelung in `ProgressionSystem.applyRun()`
-- [ ] **Bestenliste leeren** (Eingriff in Supabase — Eintraege sind auf
-      Rechteebene unveraenderlich, kein Knopf im Spiel). Entschieden am
-      2026-08-13: ja, sauberer Schnitt beim Wechsel auf 90 Sekunden.
+- [ ] **Bestenliste leeren**: einmaliger, bewusst manueller Datenbankwechsel
+      ueber `supabase/cleanup_leaderboard.sql`. Entschieden am 2026-08-13.
+- [x] Bestenliste auf einen Eintrag je `cloudId` umstellen: nur der beste Run
+      bleibt; Name und Welt werden beim neuen Bestwert aktualisiert
+- [ ] Einmalige Bereinigung ueber `supabase/cleanup_leaderboard.sql` ausfuehren
+      (loescht die bisherigen Eintraege, danach ist `player_id` Pflicht)
 
 > Die gemeinsame Bestenliste und der automatische Eintrag standen hier — beides
 > ist am 2026-08-13 nach **Phase 1.3** vorgezogen worden.

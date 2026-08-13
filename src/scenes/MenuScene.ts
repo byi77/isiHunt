@@ -26,7 +26,6 @@ import {
   createPanel,
   createVignette,
   createWorldBackdrop,
-  makeAlignedHitArea,
 } from '@/ui/widgets';
 
 export class MenuScene extends Phaser.Scene {
@@ -63,7 +62,7 @@ export class MenuScene extends Phaser.Scene {
 
     this.buildTitle();
     this.buildFullscreenToggle();
-    this.buildProfilePanel(save.playerName);
+    this.buildProfilePanel(save.playerName, save.level);
     this.buildWorldList(save.level);
     this.buildFooter(save.bestScore);
 
@@ -167,8 +166,8 @@ export class MenuScene extends Phaser.Scene {
     );
   }
 
-  /** Name und Lichtfigur - Fortschrittszahlen liegen jetzt im Profil. */
-  private buildProfilePanel(playerName: string): void {
+  /** Name, Lichtfigur und die wichtigste Fortschrittszahl. */
+  private buildProfilePanel(playerName: string, level: number): void {
     const y = 270;
     const width = GAME_WIDTH - 120;
 
@@ -183,11 +182,20 @@ export class MenuScene extends Phaser.Scene {
     this.add.image(112, y, TextureKey.PlayerCore).setTint(Palette.goldHex).setScale(0.34);
 
     this.add
-      .text(172, y - 14, playerName, textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }))
+      .text(172, y - 26, playerName, textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }))
       .setOrigin(0, 0.5);
 
     this.add
-      .text(172, y + 18, 'DEIN PROFIL', textStyle(FontSize.tiny, Palette.inkDim))
+      .text(
+        172,
+        y + 4,
+        `LEVEL ${level}`,
+        textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
+      )
+      .setOrigin(0, 0.5);
+
+    this.add
+      .text(172, y + 29, 'DEIN PROFIL', textStyle(FontSize.tiny, Palette.inkDim))
       .setOrigin(0, 0.5)
       .setLetterSpacing(3);
 
@@ -199,89 +207,154 @@ export class MenuScene extends Phaser.Scene {
     });
   }
 
-  /** Weltenliste mit Sperr-Zustand. */
+  /** Vertikaler Welten-Carousel mit Sperr-Zustand. */
   private buildWorldList(level: number): void {
-    const startY = 372;
-    const rowHeight = 98;
+    const centerY = 530;
+    const step = 112;
+    const selectedIndex = Math.max(
+      0,
+      WORLDS.findIndex((world) => world.id === this.selectedWorld.id),
+    );
 
-    this.add
-      .text(60, startY - 32, 'WELTEN', textStyle(FontSize.tiny, Palette.inkDim))
-      .setLetterSpacing(6);
+    this.add.text(60, 350, 'WELTEN', textStyle(FontSize.tiny, Palette.inkDim)).setLetterSpacing(6);
 
     WORLDS.forEach((world, index) => {
-      const y = startY + index * rowHeight;
-      const isUnlocked = world.unlockLevel <= level;
-      const isSelected = world.id === this.selectedWorld.id;
+      const offset = index - selectedIndex;
+      if (Math.abs(offset) > 1) return;
 
-      const row = this.add.container(GAME_WIDTH / 2, y + rowHeight / 2 - 18);
+      const y = centerY + offset * step;
+      const isUnlocked = world.unlockLevel <= level;
+      const isSelected = offset === 0;
+      const width = isSelected ? GAME_WIDTH - 100 : GAME_WIDTH - 190;
+      const height = isSelected ? 106 : 76;
+      const alpha = isUnlocked ? (isSelected ? 1 : 0.42) : isSelected ? 0.5 : 0.18;
+      const card = this.add.container(GAME_WIDTH / 2, y);
 
       const bg = this.add
         .image(0, 0, TextureKey.Pixel)
-        .setDisplaySize(GAME_WIDTH - 120, rowHeight - 14)
+        .setDisplaySize(width, height)
         .setTint(world.accent)
-        .setAlpha(isSelected ? 0.22 : 0.08);
+        .setAlpha(isSelected ? 0.22 : 0.1);
 
       const border = this.add.graphics();
-      border.lineStyle(isSelected ? 3 : 1.5, world.accent, isUnlocked ? 0.9 : 0.25);
-      border.strokeRoundedRect(
-        -(GAME_WIDTH - 120) / 2,
-        -(rowHeight - 14) / 2,
-        GAME_WIDTH - 120,
-        rowHeight - 14,
-        12,
-      );
+      border.lineStyle(isSelected ? 3 : 1.5, world.accent, isUnlocked ? 0.9 : 0.3);
+      border.strokeRoundedRect(-width / 2, -height / 2, width, height, 12);
+
+      card.add([bg, border]);
+
+      // Weicher Lichtschein ersetzt auf Canvas-Fallbacks den teuren Blur. Auf
+      // WebGL bekommen die Nachbarkarten zusaetzlich einen echten Weichzeichner.
+      if (!isSelected) {
+        card.add(
+          this.add
+            .image(0, 0, TextureKey.Glow)
+            .setDisplaySize(width * 1.08, height * 2.1)
+            .setTint(world.accent)
+            .setAlpha(0.14)
+            .setBlendMode(Phaser.BlendModes.ADD),
+        );
+        if (this.game.renderer.type === Phaser.WEBGL) {
+          card.initPostPipeline();
+          card.postFX.addBlur(1, 1.5, 1.5, 1.2, 0, 4);
+        }
+      }
 
       // Farbmarke am linken Rand - macht die Welt auch ohne Lesen erkennbar.
       const swatch = this.add
         .image(-(GAME_WIDTH - 120) / 2 + 14, 0, TextureKey.Pixel)
-        .setDisplaySize(5, rowHeight - 40)
+        .setDisplaySize(5, height - 34)
         .setTint(world.accent)
         .setAlpha(isUnlocked ? 1 : 0.3);
+      swatch.x = -width / 2 + 18;
 
-      const name = this.add
-        .text(
-          -(GAME_WIDTH - 120) / 2 + 34,
-          -15,
-          world.name,
-          textStyle(FontSize.body, isUnlocked ? toCss(world.accent) : Palette.inkDim, {
-            fontStyle: 'bold',
-          }),
-        )
-        .setOrigin(0, 0.5);
+      const name = this.add.text(
+        isSelected ? -width / 2 + 42 : 0,
+        isSelected ? -16 : 0,
+        world.name,
+        textStyle(
+          isSelected ? FontSize.body : FontSize.small,
+          isUnlocked ? toCss(world.accent) : Palette.inkDim,
+          { fontStyle: 'bold' },
+        ),
+      );
+      name.setOrigin(isSelected ? 0 : 0.5, 0.5);
 
-      const subtitle = this.add
-        .text(
-          -(GAME_WIDTH - 120) / 2 + 34,
-          15,
-          isUnlocked ? world.flavor : `Freigeschaltet ab Level ${world.unlockLevel}`,
-          textStyle(FontSize.tiny, Palette.inkDim),
-        )
-        .setOrigin(0, 0.5);
-      subtitle.setWordWrapWidth(GAME_WIDTH - 210);
+      card.add([swatch, name]);
 
-      row.add([bg, border, swatch, name, subtitle]);
+      if (isSelected) {
+        const subtitle = this.add
+          .text(
+            -width / 2 + 42,
+            18,
+            isUnlocked ? world.flavor : `Freigeschaltet ab Level ${world.unlockLevel}`,
+            textStyle(FontSize.tiny, Palette.inkDim),
+          )
+          .setOrigin(0, 0.5);
+        subtitle.setWordWrapWidth(width - 76);
+        card.add(subtitle);
+      } else if (!isUnlocked) {
+        card.add(
+          this.add
+            .text(0, 25, `AB LEVEL ${world.unlockLevel}`, textStyle(FontSize.tiny, Palette.inkDim))
+            .setOrigin(0.5),
+        );
+      }
 
-      if (!isUnlocked) {
-        row.setAlpha(0.5);
+      card.setAlpha(alpha);
+      card.setScale(isSelected ? 1 : 0.86);
+    });
+
+    this.add
+      .text(GAME_WIDTH / 2, 730, 'HOCH / RUNTER WISCHEN', textStyle(FontSize.tiny, Palette.inkDim))
+      .setOrigin(0.5)
+      .setLetterSpacing(3);
+
+    let startY = 0;
+    let startX = 0;
+    const selectorTop = 370;
+    const selectorBottom = 700;
+
+    const onPointerDown = (pointer: Phaser.Input.Pointer): void => {
+      if (pointer.y < selectorTop || pointer.y > selectorBottom) return;
+      startY = pointer.y;
+      startX = pointer.x;
+    };
+
+    const onPointerUp = (pointer: Phaser.Input.Pointer): void => {
+      if (startY === 0) return;
+
+      const deltaY = pointer.y - startY;
+      const deltaX = pointer.x - startX;
+      startY = 0;
+
+      if (Math.abs(deltaY) > 30 && Math.abs(deltaY) > Math.abs(deltaX)) {
+        this.selectWorld(selectedIndex + (deltaY < 0 ? 1 : -1), level);
         return;
       }
 
-      const rowWidth = GAME_WIDTH - 120;
-      const rowHit = rowHeight - 14;
+      if (Math.abs(deltaY) < 24 && pointer.y >= selectorTop && pointer.y <= selectorBottom) {
+        const offset = Math.round((pointer.y - centerY) / step);
+        this.selectWorld(selectedIndex + offset, level);
+      }
+    };
 
-      // Trefferflaeche am gemessenen Ursprung ausrichten - dieselbe Falle wie
-      // bei den Knoepfen, ausfuehrlich begruendet in ui/widgets.ts.
-      row.setSize(rowWidth, rowHit);
-      row.setInteractive(makeAlignedHitArea(row, rowWidth, rowHit), Phaser.Geom.Rectangle.Contains);
-
-      row.on('pointerup', () => {
-        SaveSystem.update((data) => {
-          data.lastWorldId = world.id;
-        });
-        // Neu aufbauen ist hier billiger und fehlerfreier als selektives Update.
-        this.scene.restart();
-      });
+    this.input.on('pointerdown', onPointerDown);
+    this.input.on('pointerup', onPointerUp);
+    this.events.once('shutdown', () => {
+      this.input.off('pointerdown', onPointerDown);
+      this.input.off('pointerup', onPointerUp);
     });
+  }
+
+  private selectWorld(index: number, level: number): void {
+    const world = WORLDS[index];
+    if (!world || world.unlockLevel > level || world.id === this.selectedWorld.id) return;
+
+    SaveSystem.update((data) => {
+      data.lastWorldId = world.id;
+    });
+    // Der Hintergrund und alle Kartenzustaende werden gemeinsam neu aufgebaut.
+    this.scene.restart();
   }
 
   private buildFooter(bestScore: number): void {
