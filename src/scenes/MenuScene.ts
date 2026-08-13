@@ -30,12 +30,16 @@ import {
 
 export class MenuScene extends Phaser.Scene {
   private selectedWorld!: WorldDef;
+  private worldBackdrop!: Phaser.GameObjects.Container;
+  private worldCarousel: Phaser.GameObjects.Container | null = null;
+  private worldInputCleanup: (() => void) | null = null;
+  private worldListDecorations: Phaser.GameObjects.GameObject[] = [];
 
   constructor() {
     super(SceneKey.Menu);
   }
 
-  create(data: { fadeIn?: boolean; fadeColor?: number } = {}): void {
+  create(): void {
     const save = SaveSystem.load();
     if (!save.playerName) {
       this.scene.start(SceneKey.Profile, { firstStart: true });
@@ -48,7 +52,7 @@ export class MenuScene extends Phaser.Scene {
       unlocked[unlocked.length - 1] ??
       WORLDS[0]!;
 
-    createWorldBackdrop(
+    this.worldBackdrop = createWorldBackdrop(
       this,
       GAME_WIDTH,
       GAME_HEIGHT,
@@ -66,15 +70,12 @@ export class MenuScene extends Phaser.Scene {
     this.buildWorldList(save.level);
     this.buildFooter(save.bestScore);
 
-    if (data.fadeIn) {
-      const fadeColor = Phaser.Display.Color.IntegerToColor(data.fadeColor ?? 0);
-      this.cameras.main.fadeIn(240, fadeColor.red, fadeColor.green, fadeColor.blue);
-    }
-
     void this.showUpdateHintIfAny();
 
     // Nur mit ?hitboxes in der Adresse - zeigt, was Phaser fuer anfassbar haelt.
     attachHitDebug(this);
+
+    this.events.once('shutdown', () => this.cleanupWorldList());
   }
 
   /**
@@ -214,6 +215,8 @@ export class MenuScene extends Phaser.Scene {
 
   /** Vertikaler Welten-Carousel mit Sperr-Zustand. */
   private buildWorldList(level: number): void {
+    this.cleanupWorldList();
+
     const centerY = 530;
     const step = 112;
     const selectedIndex = Math.max(
@@ -221,9 +224,13 @@ export class MenuScene extends Phaser.Scene {
       WORLDS.findIndex((world) => world.id === this.selectedWorld.id),
     );
 
-    this.add.text(60, 350, 'WELTEN', textStyle(FontSize.tiny, Palette.inkDim)).setLetterSpacing(6);
+    const worldLabel = this.add
+      .text(60, 350, 'WELTEN', textStyle(FontSize.tiny, Palette.inkDim))
+      .setLetterSpacing(6);
+    this.worldListDecorations.push(worldLabel);
 
     const carousel = this.add.container(0, 0);
+    this.worldCarousel = carousel;
     const cardWidth = GAME_WIDTH - 120;
     const cardHeight = 96;
     const wheelCards: Array<{
@@ -359,10 +366,11 @@ export class MenuScene extends Phaser.Scene {
 
     updateWheel(0);
 
-    this.add
+    const swipeHint = this.add
       .text(GAME_WIDTH / 2, 730, 'HOCH / RUNTER WISCHEN', textStyle(FontSize.tiny, Palette.inkDim))
       .setOrigin(0.5)
       .setLetterSpacing(3);
+    this.worldListDecorations.push(swipeHint);
 
     let startY = 0;
     let startX = 0;
@@ -411,11 +419,20 @@ export class MenuScene extends Phaser.Scene {
     this.input.on('pointerdown', onPointerDown);
     this.input.on('pointermove', onPointerMove);
     this.input.on('pointerup', onPointerUp);
-    this.events.once('shutdown', () => {
+    this.worldInputCleanup = () => {
       this.input.off('pointerdown', onPointerDown);
       this.input.off('pointermove', onPointerMove);
       this.input.off('pointerup', onPointerUp);
-    });
+    };
+  }
+
+  private cleanupWorldList(): void {
+    this.worldInputCleanup?.();
+    this.worldInputCleanup = null;
+    this.worldCarousel?.destroy(true);
+    this.worldCarousel = null;
+    for (const decoration of this.worldListDecorations) decoration.destroy();
+    this.worldListDecorations = [];
   }
 
   private selectWorld(index: number, level: number): boolean {
@@ -426,16 +443,38 @@ export class MenuScene extends Phaser.Scene {
       data.lastWorldId = world.id;
     });
 
-    // Erst ausblenden, dann den neuen Weltenhintergrund aufbauen. So gibt es
-    // keinen harten Farbsprung zwischen zwei unterschiedlich gefaerbten
-    // Welten.
-    const camera = this.cameras.main;
-    camera.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
-      if (this.scene.isActive()) this.scene.restart({ fadeIn: true, fadeColor: world.bgTop });
-    });
-    const fadeColor = Phaser.Display.Color.IntegerToColor(world.bgTop);
-    camera.fadeOut(220, fadeColor.red, fadeColor.green, fadeColor.blue);
+    this.selectedWorld = world;
+    this.transitionWorldBackdrop(world);
+    this.buildWorldList(level);
     return true;
+  }
+
+  private transitionWorldBackdrop(world: WorldDef): void {
+    const previous = this.worldBackdrop;
+    const next = createWorldBackdrop(
+      this,
+      GAME_WIDTH,
+      GAME_HEIGHT,
+      world.bgTop,
+      world.bgBottom,
+      world.accent,
+    );
+    next.setAlpha(0);
+    this.worldBackdrop = next;
+
+    this.tweens.add({
+      targets: previous,
+      alpha: 0,
+      duration: 260,
+      ease: 'Sine.InOut',
+    });
+    this.tweens.add({
+      targets: next,
+      alpha: 1,
+      duration: 320,
+      ease: 'Sine.InOut',
+      onComplete: () => previous.destroy(true),
+    });
   }
 
   private buildFooter(bestScore: number): void {

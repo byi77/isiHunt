@@ -417,11 +417,13 @@ export function createWorldBackdrop(
   top: number,
   bottom: number,
   accent: number,
-): void {
+): Phaser.GameObjects.Container {
+  const backdrop = scene.add.container(0, 0).setDepth(Depth.Backdrop);
+
   const base = scene.add.graphics();
   base.fillGradientStyle(top, top, bottom, bottom, 1);
   base.fillRect(0, 0, width, height);
-  base.setDepth(Depth.Backdrop);
+  backdrop.add(base);
 
   // Die Raender ausserhalb des Spielfelds mitfaerben.
   //
@@ -439,13 +441,14 @@ export function createWorldBackdrop(
   paintSafeAreaBackdrop(top, bottom);
 
   // Horizontschein im oberen Drittel - die Lichtquelle der Welt.
-  scene.add
-    .image(width / 2, height * 0.3, TextureKey.Glow)
-    .setDisplaySize(width * 1.9, height * 0.85)
-    .setTint(accent)
-    .setAlpha(0.3)
-    .setBlendMode(Phaser.BlendModes.ADD)
-    .setDepth(Depth.BackdropGlow);
+  backdrop.add(
+    scene.add
+      .image(width / 2, height * 0.3, TextureKey.Glow)
+      .setDisplaySize(width * 1.9, height * 0.85)
+      .setTint(accent)
+      .setAlpha(0.3)
+      .setBlendMode(Phaser.BlendModes.ADD),
+  );
 
   // Farbwolken in fester Anordnung: bewusst nicht zufaellig, damit jede Welt
   // bei jedem Start gleich aussieht und wiedererkennbar bleibt.
@@ -457,14 +460,17 @@ export function createWorldBackdrop(
   ];
 
   for (const cloud of clouds) {
-    scene.add
-      .image(width * cloud.x, height * cloud.y, TextureKey.Glow)
-      .setDisplaySize(width * cloud.scale, width * cloud.scale)
-      .setTint(accent)
-      .setAlpha(cloud.alpha)
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setDepth(Depth.BackdropClouds);
+    backdrop.add(
+      scene.add
+        .image(width * cloud.x, height * cloud.y, TextureKey.Glow)
+        .setDisplaySize(width * cloud.scale, width * cloud.scale)
+        .setTint(accent)
+        .setAlpha(cloud.alpha)
+        .setBlendMode(Phaser.BlendModes.ADD),
+    );
   }
+
+  return backdrop;
 }
 
 /**
