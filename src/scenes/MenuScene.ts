@@ -219,6 +219,8 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(60, 350, 'WELTEN', textStyle(FontSize.tiny, Palette.inkDim)).setLetterSpacing(6);
 
     const carousel = this.add.container(0, 0);
+    const cardWidth = GAME_WIDTH - 120;
+    const cardHeight = 96;
     const wheelCards: Array<{
       card: Phaser.GameObjects.Container;
       offset: number;
@@ -232,103 +234,86 @@ export class MenuScene extends Phaser.Scene {
       const y = centerY + offset * step;
       const isUnlocked = world.unlockLevel <= level;
       const isSelected = offset === 0;
-      const width = isSelected ? GAME_WIDTH - 100 : GAME_WIDTH - 190;
-      const height = isSelected ? 106 : 76;
       const card = this.add.container(GAME_WIDTH / 2, y);
 
       const bg = this.add
         .image(0, 0, TextureKey.Pixel)
-        .setDisplaySize(width, height)
+        .setDisplaySize(cardWidth, cardHeight)
         .setTint(world.accent)
-        .setAlpha(isSelected ? 0.22 : 0.1);
+        .setAlpha(0.18);
 
       const border = this.add.graphics();
       border.lineStyle(isSelected ? 3 : 1.5, world.accent, isUnlocked ? 0.9 : 0.3);
-      border.strokeRoundedRect(-width / 2, -height / 2, width, height, 12);
+      border.strokeRoundedRect(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight, 12);
 
       card.add([bg, border]);
 
-      // Weicher Lichtschein ersetzt auf Canvas-Fallbacks den teuren Blur. Auf
-      // WebGL bekommen die Nachbarkarten zusaetzlich einen echten Weichzeichner.
-      if (!isSelected) {
-        card.add(
-          this.add
-            .image(0, 0, TextureKey.Glow)
-            .setDisplaySize(width * 1.08, height * 2.1)
-            .setTint(world.accent)
-            .setAlpha(0.08)
-            .setBlendMode(Phaser.BlendModes.ADD),
-        );
-        if (this.game.renderer.type === Phaser.WEBGL) {
-          card.initPostPipeline();
-          card.postFX.addBlur(1, 0.7, 0.7, 0.4, 0, 2);
-        }
-      }
+      // Ein sanfter Schein fuer jede Karte. Kein Post-FX-Blur: Auf mobilen
+      // WebGL-Renderern fuellte der Blur den Container mit Schwarz.
+      card.add(
+        this.add
+          .image(0, 0, TextureKey.Glow)
+          .setDisplaySize(cardWidth * 1.08, cardHeight * 2.1)
+          .setTint(world.accent)
+          .setAlpha(0.06)
+          .setBlendMode(Phaser.BlendModes.ADD),
+      );
 
       // Farbmarke am linken Rand - macht die Welt auch ohne Lesen erkennbar.
       const swatch = this.add
-        .image(-(GAME_WIDTH - 120) / 2 + 14, 0, TextureKey.Pixel)
-        .setDisplaySize(5, height - 34)
+        .image(-cardWidth / 2 + 18, 0, TextureKey.Pixel)
+        .setDisplaySize(5, cardHeight - 34)
         .setTint(world.accent)
         .setAlpha(isUnlocked ? 1 : 0.3);
-      swatch.x = -width / 2 + 18;
 
       const name = this.add.text(
-        isSelected ? -width / 2 + 42 : 0,
-        isSelected ? -16 : 0,
+        -cardWidth / 2 + 42,
+        -14,
         world.name,
-        textStyle(
-          isSelected ? FontSize.body : FontSize.small,
-          isUnlocked ? toCss(world.accent) : Palette.inkDim,
-          { fontStyle: 'bold' },
-        ),
+        textStyle(FontSize.body, isUnlocked ? toCss(world.accent) : Palette.inkDim, {
+          fontStyle: 'bold',
+        }),
       );
-      name.setOrigin(isSelected ? 0 : 0.5, 0.5);
+      name.setOrigin(0, 0.5);
 
       card.add([swatch, name]);
 
-      if (isSelected) {
-        const subtitle = this.add
-          .text(
-            -width / 2 + 42,
-            18,
-            isUnlocked ? world.flavor : `Freigeschaltet ab Level ${world.unlockLevel}`,
-            textStyle(FontSize.tiny, Palette.inkDim),
-          )
-          .setOrigin(0, 0.5);
-        subtitle.setWordWrapWidth(width - 76);
-        card.add(subtitle);
-      } else if (!isUnlocked) {
-        card.add(
-          this.add
-            .text(0, 25, `AB LEVEL ${world.unlockLevel}`, textStyle(FontSize.tiny, Palette.inkDim))
-            .setOrigin(0.5),
-        );
-      }
+      const subtitle = this.add
+        .text(
+          -cardWidth / 2 + 42,
+          18,
+          isUnlocked ? world.flavor : `Freigeschaltet ab Level ${world.unlockLevel}`,
+          textStyle(FontSize.tiny, Palette.inkDim),
+        )
+        .setOrigin(0, 0.5);
+      subtitle.setWordWrapWidth(cardWidth - 76);
+      card.add(subtitle);
 
       carousel.add(card);
       wheelCards.push({ card, offset, opacity: isUnlocked ? 1 : 0.5 });
     });
 
     // Die Karten liegen auf einer senkrechten Kreisbahn statt auf einer
-    // geraden Liste. Dadurch kippen die Nachbarn beim Drehen seitlich weg,
-    // werden kleiner und kommen beim Heranziehen weich in die Mitte.
+    // geraden Liste. Die Karten selbst bleiben dabei immer gerade: Nur ihre
+    // Hoehe, Groesse und Tiefe aendern sich wie bei einem echten Wheel.
     const dragState = { offset: 0 };
+    const wheelRadius = 140;
+    const wheelAngle = 0.8;
     const updateWheel = (dragY: number): void => {
       dragState.offset = dragY;
       const progress = dragY / step;
 
       for (const entry of wheelCards) {
         const position = Phaser.Math.Clamp(entry.offset + progress, -1.35, 1.35);
-        const radians = position * (Math.PI / 2);
+        const radians = position * wheelAngle;
         const curve = Math.sin(radians);
         const depth = Math.max(0, Math.cos(radians));
 
-        entry.card.x = GAME_WIDTH / 2 + curve * 18;
-        entry.card.y = centerY + curve * step;
-        entry.card.setScale(0.78 + depth * 0.22);
-        entry.card.setAlpha(entry.opacity * (0.56 + depth * 0.44));
-        entry.card.setAngle(-curve * 7);
+        entry.card.x = GAME_WIDTH / 2 + curve * 12;
+        entry.card.y = centerY + curve * wheelRadius;
+        entry.card.setScale(0.72 + depth * 0.28);
+        entry.card.setAlpha(entry.opacity * (0.72 + depth * 0.28));
+        entry.card.setAngle(0);
         entry.card.setDepth(Math.round(depth * 20));
       }
 
