@@ -130,6 +130,7 @@ export class ProfileScene extends Phaser.Scene {
       }
 
       SaveSystem.setPlayerName(name);
+      if (CloudSystem.isAvailable()) void CloudSystem.syncSaveSafely();
       this.scene.start(SceneKey.Menu);
     };
 

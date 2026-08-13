@@ -172,6 +172,8 @@ Run-Ende ──▶ ScoreSystem.toRunStats() ──▶ ProgressionSystem.applyRun
 
 **Wichtig:** Der Spielstand wird **einmal pro Run** geschrieben, nicht bei
 jedem Fang. Das haelt `localStorage`-Zugriffe aus der Frame-Schleife heraus.
+Nach einem Solo-Run versucht `ResultScene` den aktuellen lokalen Stand
+asynchron hochzuladen; ein Fehler bleibt lokal und blockiert den Run nicht.
 
 Im Duell-Modus faellt dieser letzte Schritt komplett weg: `GameScene.endRun()`
 uebergibt an `ChallengeSystem` statt an `ProgressionSystem`, und der Spielstand
@@ -353,10 +355,11 @@ Zweitgeraet kurz eine Runde gespielt hat. Deshalb stehen beide Staende mit
 Level, Bestwert und Anzahl Runs nebeneinander, und uebernommen wird erst auf
 ausdrueckliche Ansage.
 
-**Spielstaende werden nur auf Ansage hochgeladen.** Der automatische Upload
-gilt ausschliesslich fuer Solo-Ergebnisse der Bestenliste; ein automatischer
-Spielstand-Abgleich waere eine andere, gefaehrliche Entscheidung und findet
-nicht statt.
+**Der Upload ist automatisch, die Uebernahme nicht.** Nach jedem Solo-Run und
+bei Rueckkehr des Netzes wird der lokale Stand hochgeladen, sofern der Cloud-
+Stand nicht sichtbar weiter ist. Erkennt `MenuScene` einen besseren Cloud-
+Stand, zeigt sie Level, Bestwert und Runs und fragt vor dem Ueberschreiben.
+Offline-Runs bleiben bis dahin in `localStorage` erhalten.
 
 ### Die GRANT-Falle
 

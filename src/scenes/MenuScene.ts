@@ -16,6 +16,7 @@ import { SceneKey } from '@/scenes/SceneKey';
 import { attachHitDebug } from '@/ui/hitDebug';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
+import type { RemoteSave } from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
@@ -34,6 +35,11 @@ export class MenuScene extends Phaser.Scene {
   private worldCarousel: Phaser.GameObjects.Container | null = null;
   private worldInputCleanup: (() => void) | null = null;
   private worldListDecorations: Phaser.GameObjects.GameObject[] = [];
+  private savePromptObjects: Phaser.GameObjects.GameObject[] = [];
+  private saveSyncBusy = false;
+  private readonly onlineHandler = (): void => {
+    void this.checkCloudSave();
+  };
 
   constructor() {
     super(SceneKey.Menu);
@@ -71,11 +77,141 @@ export class MenuScene extends Phaser.Scene {
     this.buildFooter();
 
     void this.showUpdateHintIfAny();
+    void this.checkCloudSave();
+    window.addEventListener('online', this.onlineHandler);
 
     // Nur mit ?hitboxes in der Adresse - zeigt, was Phaser fuer anfassbar haelt.
     attachHitDebug(this);
 
-    this.events.once('shutdown', () => this.cleanupWorldList());
+    this.events.once('shutdown', () => {
+      this.cleanupWorldList();
+      window.removeEventListener('online', this.onlineHandler);
+      this.clearSavePrompt();
+    });
+  }
+
+  /**
+   * Prueft den bekannten Cloud-Stand. Offline bleibt das lokale Ergebnis
+   * unangetastet; bei Rueckkehr des Netzes wird dieselbe Pruefung erneut
+   * ausgefuehrt. Ein besserer Cloud-Stand braucht eine sichtbare Entscheidung.
+   */
+  private async checkCloudSave(): Promise<void> {
+    if (this.saveSyncBusy || !CloudSystem.isAvailable() || !this.scene.isActive()) return;
+    this.saveSyncBusy = true;
+
+    const local = SaveSystem.load();
+    if (!local.cloudId) {
+      await CloudSystem.pushSave();
+      this.saveSyncBusy = false;
+      return;
+    }
+
+    const result = await CloudSystem.fetchSave(local.cloudId);
+    if (!this.scene.isActive()) {
+      this.saveSyncBusy = false;
+      return;
+    }
+
+    if (!result.ok) {
+      // Kein Netz: spaeter bzw. beim naechsten Run erneut versuchen. Der lokale
+      // Stand bleibt die ganze Zeit erhalten.
+      this.saveSyncBusy = false;
+      return;
+    }
+
+    if (!result.value) {
+      // Die Kennung ist lokal noch vorhanden, der Datensatz wurde aber etwa
+      // nach einer Backend-Bereinigung entfernt. Den lokalen Stand neu anlegen.
+      await CloudSystem.pushSave();
+      this.saveSyncBusy = false;
+      return;
+    }
+
+    if (CloudSystem.isRemoteAhead(local, result.value)) {
+      this.showRemoteSavePrompt(result.value);
+    } else if (CloudSystem.isLocalAhead(local, result.value)) {
+      await CloudSystem.pushSave();
+    }
+
+    this.saveSyncBusy = false;
+  }
+
+  private showRemoteSavePrompt(remote: RemoteSave): void {
+    if (this.savePromptObjects.length > 0) return;
+
+    const overlay = this.add
+      .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, Palette.backdrop, 0.88)
+      .setOrigin(0)
+      .setDepth(100);
+    // Das Overlay ist auch als Eingabeflaeche aktiv: Die darunterliegende
+    // Weltenauswahl darf waehrend der Cloud-Entscheidung nicht aus Versehen
+    // einen weiteren Bildschirm oeffnen.
+    overlay.setInteractive();
+    const panel = createPanel(this, GAME_WIDTH / 2, 650, GAME_WIDTH - 100, 430, Palette.goldHex, {
+      alpha: 0.98,
+      radius: 24,
+    }).setDepth(101);
+
+    const title = this.add
+      .text(
+        GAME_WIDTH / 2,
+        490,
+        'NEUERER SPIELSTAND GEFUNDEN',
+        textStyle(FontSize.body, Palette.gold),
+      )
+      .setOrigin(0.5)
+      .setDepth(102)
+      .setLetterSpacing(2);
+    const details = this.add
+      .text(
+        GAME_WIDTH / 2,
+        565,
+        `Cloud: Level ${remote.level}  ·  Bestwert ${remote.bestScore.toLocaleString('de-DE')}\n${remote.totalRuns} Runs\n\nSoll dieser Stand uebernommen werden?`,
+        textStyle(FontSize.small, Palette.ink),
+      )
+      .setOrigin(0.5)
+      .setAlign('center')
+      .setDepth(102);
+
+    const adopt = createButton(
+      this,
+      GAME_WIDTH / 2,
+      725,
+      'CLOUD-STAND NEHMEN',
+      () => {
+        const local = SaveSystem.load();
+        if (!local.cloudId) return;
+        SaveSystem.adoptRemote(remote.data, local.cloudId);
+        this.clearSavePrompt();
+        this.scene.restart();
+      },
+      { width: 430, height: 74, accent: Palette.goldHex, fontSize: FontSize.small },
+    );
+    adopt.container.setDepth(102);
+
+    const keepLocal = createButton(
+      this,
+      GAME_WIDTH / 2,
+      820,
+      'DIESEN STAND BEHALTEN',
+      () => {
+        if (this.saveSyncBusy) return;
+        this.saveSyncBusy = true;
+        void CloudSystem.pushSave().then((result) => {
+          this.saveSyncBusy = false;
+          if (result.ok) this.clearSavePrompt();
+        });
+      },
+      { width: 430, height: 68, accent: 0x9aa3bd, fontSize: FontSize.tiny },
+    );
+    keepLocal.container.setDepth(102);
+
+    this.savePromptObjects = [overlay, panel, title, details, adopt.container, keepLocal.container];
+  }
+
+  private clearSavePrompt(): void {
+    for (const object of this.savePromptObjects) object.destroy();
+    this.savePromptObjects = [];
   }
 
   /**
@@ -510,8 +646,8 @@ export class MenuScene extends Phaser.Scene {
       { width: 440, height: 76, accent: Palette.goldHex, fontSize: FontSize.body },
     );
 
-    // Online-Knoepfe nur zeigen, wenn ein Dienst eingerichtet ist - ein Knopf,
-    // der zuverlaessig in eine Fehlermeldung fuehrt, ist schlimmer als keiner.
+    // Bestenliste nur zeigen, wenn ein Dienst eingerichtet ist. Einstellungen
+    // bleiben lokal sichtbar, damit die Profiluebertragung auffindbar bleibt.
     if (CloudSystem.isAvailable()) {
       const y = GAME_HEIGHT - 212;
       createButton(this, 196, y, 'BESTENLISTE', () => this.scene.start(SceneKey.Leaderboard), {
@@ -520,23 +656,35 @@ export class MenuScene extends Phaser.Scene {
         accent: 0x9aa3bd,
         fontSize: FontSize.tiny,
       });
-      createButton(this, 524, y, 'SPIELSTAND', () => this.scene.start(SceneKey.Sync), {
+      createButton(this, 524, y, 'EINSTELLUNGEN', () => this.scene.start(SceneKey.Settings), {
         width: 244,
         height: 66,
         accent: 0x9aa3bd,
         fontSize: FontSize.tiny,
       });
+    } else {
+      createButton(
+        this,
+        GAME_WIDTH / 2,
+        GAME_HEIGHT - 212,
+        'EINSTELLUNGEN',
+        () => this.scene.start(SceneKey.Settings),
+        {
+          width: 300,
+          height: 66,
+          accent: 0x9aa3bd,
+          fontSize: FontSize.tiny,
+        },
+      );
     }
 
     this.buildHint();
   }
 
   /**
-   * Fusszeile: Steuerungshinweis - und auf dem iPhone der einzige Weg zum
-   * Vollbild, weil es dort keine Fullscreen-API gibt (core/display.ts).
-   *
-   * Der iOS-Hinweis steht bewusst in einem eigenen Kasten und nicht als
-   * Der Hinweis steht bewusst als eigener Kasten: Beim Spieltest wurde ein
+   * Fusszeile: Auf dem iPhone der einzige Weg zum Vollbild, weil es dort keine
+   * Fullscreen-API gibt (core/display.ts). Der Hinweis steht bewusst als
+   * eigener Kasten: Beim Spieltest wurde ein
    * Fusszeilentext dort schlicht uebersehen, und die
    * Rueckmeldung lautete, es gebe gar keinen Vollbild-Knopf. Der Knopf fehlt
    * auf iOS zu Recht (ADR-0009) - dann muss aber der Ersatz auffindbar sein.

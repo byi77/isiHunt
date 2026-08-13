@@ -1,6 +1,6 @@
 # TODO — offene Arbeiten
 
-**Stand:** 2026-08-13 · abgeleitet aus dem Spieltest-Feedback von Emre (11) und
+**Stand:** 2026-08-14 · abgeleitet aus dem Spieltest-Feedback von Emre (11) und
 Simay (9)
 
 Reihenfolge nach Nutzen, nicht nach Aufwand.
@@ -34,6 +34,10 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
   getrennt. **Nach Phase 1.3 vorgezogen, dringend.**
 - **Jeder Run wird automatisch eingetragen** (Variante B, ohne Filterung auf
   Bestwerte). Der Knopf im Ergebnisbildschirm entfaellt.
+- **Spielstaende werden automatisch gesichert.** Offline bleibt `localStorage`
+  massgeblich; ein besserer Cloud-Stand wird vor der Uebernahme angezeigt.
+- **`SPIELSTAND` wird zu `EINSTELLUNGEN`.** Die Profiluebertragung bleibt dort
+  als kindgerechter Unterpunkt erhalten.
 
 ### Noch offen — erst bei der jeweiligen Phase noetig
 
@@ -272,15 +276,17 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
       `GAME_HEIGHT` und wachsen mit.
 - [x] **Zwischenloesung umgesetzt (2026-08-13):** Die Streifen tragen die
       Randfarben der Welt statt Schwarz.
-- [ ] **Noch offen:** Hintergrundelemente (Sterne, Nebel) in die Streifen
-      ziehen, damit sie nicht nur einfarbig sind. _Aufwand: gering_
-- [ ] **Werkzeug steht bereit:** Das Pixel-Lineal (`RulerScene`) macht die
+- [x] **Safe-Area-Hintergrund:** Sterne und ein subtiler Nebelschein liegen
+      jetzt auch in den DOM-Streifen ausserhalb des Canvas.
+- [x] **Werkzeug:** Das Pixel-Lineal (`RulerScene`) macht die
       Bewertung messbar — "von 0 bis 160" statt "oben ist was".
 - [x] `docs/GAME_DESIGN.md` 9 anpassen (variable Hoehe dokumentiert)
 - [x] Hochformat erzwingen: Manifest, best-effort Screen-Orientation-Lock und
       Landscape-Fallback fuer Browser ohne Orientierungs-API
-- [ ] Tablet-Layout: iPad-Breite optional besser nutzen, ohne die
-      einhaendige Hochformat-Bedienung auf iPhones zu veraendern
+- [x] Tablet-Kompatibilitaet geprueft: iPad nutzt weiterhin ein zentriertes,
+      unveraendertes Hochformat-Layout. Eine breitere Nutzung wird bewusst mit
+      dem spaeteren nativen Layout geplant, damit iPhone-Bedienung und
+      Koordinaten nicht auseinanderlaufen.
 
 ## Phase 3 — Themenwechsel ins Weltall
 

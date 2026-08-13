@@ -14,12 +14,10 @@
  * braucht das Spiel weder Anmeldung noch personenbezogene Daten - und es gibt
  * nichts, was jemand vergessen oder verlieren koennte ausser dem Geraet selbst.
  *
- * ## Was hier bewusst NICHT passiert
- *
- * Spielstaende werden **nicht automatisch** hochgeladen. Der Abgleich ist immer
- * eine bewusste Handlung im Sync-Bildschirm. Ein Hintergrund-Upload muesste
- * bei jedem Konflikt still entscheiden, welcher Stand gewinnt - und die falsche
- * Entscheidung kostet Wochen Fortschritt.
+ * Spielstaende werden nach einem Solo-Run automatisch hochgeladen. Ein
+ * Netzwerkfehler bleibt dabei folgenlos: Der lokale Stand ist die Quelle, und
+ * der naechste Start bzw. eine neue Verbindung versucht den Upload erneut.
+ * Sobald ein Cloud-Stand weiter ist, entscheidet aber immer der Spieler.
  */
 
 import { createClient } from '@supabase/supabase-js';
@@ -68,6 +66,26 @@ export interface RemoteSaveSummary {
 
 export interface RemoteSave extends RemoteSaveSummary {
   data: SaveData;
+}
+
+/** Vergleicht die Fortschrittsmarker, die fuer den Nutzer sichtbar sind. */
+export function isRemoteAhead(local: SaveData, remote: RemoteSave): boolean {
+  return (
+    remote.level > local.level ||
+    remote.bestScore > local.bestScore ||
+    remote.totalRuns > local.totalRuns ||
+    remote.data.totalScore > local.totalScore
+  );
+}
+
+/** Das Gegenstueck fuer einen sicheren Upload nach Offline-Zeit. */
+export function isLocalAhead(local: SaveData, remote: RemoteSave): boolean {
+  return (
+    local.level > remote.level ||
+    local.bestScore > remote.bestScore ||
+    local.totalRuns > remote.totalRuns ||
+    local.totalScore > remote.data.totalScore
+  );
 }
 
 // --- Client ------------------------------------------------------------------
@@ -247,6 +265,34 @@ export async function pushSave(): Promise<CloudResult<string>> {
   if (result.value.error) return { ok: false, error: result.value.error.message };
 
   return { ok: true, value: cloudId };
+}
+
+/**
+ * Upload fuer automatische Abgleiche. Vor dem Schreiben wird der aktuelle
+ * Cloud-Stand gelesen, damit ein anderer Startpunkt nicht still ueberschrieben
+ * wird, waehrend dieses Geraet noch offen war.
+ */
+export async function syncSaveSafely(): Promise<
+  CloudResult<'uploaded' | 'unchanged' | 'remote-ahead'>
+> {
+  if (!getClient()) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+
+  const local = SaveSystem.load();
+  if (!local.cloudId) {
+    const uploaded = await pushSave();
+    return uploaded.ok ? { ok: true, value: 'uploaded' } : uploaded;
+  }
+
+  const remote = await fetchSave(local.cloudId);
+  if (!remote.ok) return remote;
+  if (remote.value && isRemoteAhead(local, remote.value)) {
+    return { ok: true, value: 'remote-ahead' };
+  }
+
+  // Ist der lokale Stand gleich oder weiter, darf der automatische Upload
+  // fortgesetzt werden. So werden auch Namensaenderungen nachgezogen.
+  const uploaded = await pushSave();
+  return uploaded.ok ? { ok: true, value: 'uploaded' } : uploaded;
 }
 
 /** Holt einen Spielstand, ohne ihn zu uebernehmen - der Aufrufer entscheidet. */

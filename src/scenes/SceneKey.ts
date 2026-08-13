@@ -13,6 +13,8 @@ export const SceneKey = {
   Leaderboard: 'Leaderboard',
   /** Spielstand-Abgleich zwischen Geraeten. */
   Sync: 'Sync',
+  /** Einstellungen, darunter die Profiluebertragung zwischen Geraeten. */
+  Settings: 'Settings',
   /**
    * Wartungsbildschirm: Version, Neuladen erzwingen, Spielstand zuruecksetzen.
    * Absichtlich versteckt - erreichbar ueber langen Druck auf die

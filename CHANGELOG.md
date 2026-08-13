@@ -40,6 +40,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 **Online: Bestenliste und Spielstand-Abgleich** (Supabase)
 
+- Spielstaende werden nach Solo-Runs automatisch gesichert; Offline-Runs
+  bleiben lokal und werden beim naechsten erreichbaren Abgleich nachgeladen.
+- Der Menuepunkt `SPIELSTAND` heisst jetzt `EINSTELLUNGEN`; die
+  Profiluebertragung auf ein anderes Geraet liegt dort als kindgerechte Option.
+- Ein weiterentwickelter Cloud-Stand wird beim Start angezeigt und nur nach
+  ausdruecklicher Entscheidung uebernommen.
 - gemeinsame Bestenliste ueber alle Welten, Top 10, eigener Eintrag
   hervorgehoben; Weltentabs bleiben als Filter erhalten
 - Weltfarbe als Marker pro Zeile, damit die Herkunft in der Gesamtliste

@@ -413,8 +413,10 @@ Supabase als Backend. **Keine Anmeldung**: Ein Spielstand gehoert einer
 zufaelligen UUID, die nur lokal liegt. Fuer den Umzug erzeugt das erste Geraet
 einen sechsstelligen Code mit 15 Minuten Gueltigkeit.
 
-Hochgeladen wird ausschliesslich auf Ansage, und bei zwei vorhandenen
-Staenden entscheidet der Nutzer nach einem Vergleich.
+Der lokale Stand wird nach Solo-Runs automatisch hochgeladen, sobald der
+Backend-Dienst erreichbar ist. Bei zwei vorhandenen Staenden entscheidet der
+Nutzer nach einem sichtbaren Vergleich; ein besserer Cloud-Stand wird nie
+still ueberschrieben.
 
 ### Begruendung
 
@@ -432,9 +434,11 @@ Eingabe bildet sie zusaetzlich auf ihre Zwillinge ab.
 Moeglichkeiten — ratbar, wenn man beliebig lange Zeit hat. Nach 15 Minuten ist
 ein Treffer wertlos.
 
-**Gegen automatischen Abgleich im Hintergrund:** Er muesste bei jedem Konflikt
-still entscheiden, welcher Stand gewinnt. Die falsche Entscheidung kostet
-Wochen Fortschritt, und der Nutzer bemerkt sie erst, wenn es zu spaet ist.
+**Gegen automatische Konfliktuebernahme im Hintergrund:** Sie muesste bei
+jedem Konflikt still entscheiden, welcher Stand gewinnt. Die falsche
+Entscheidung kostet Wochen Fortschritt, und der Nutzer bemerkt sie erst, wenn
+es zu spaet ist. Ein fehlertoleranter Upload ist davon getrennt: Er speichert
+Offline-Runs nach, solange der Cloud-Stand nicht weiter ist.
 
 ### Ehrliche Grenze: die Bestenliste ist manipulierbar
 
@@ -483,6 +487,14 @@ Netzfehler bleibt der Ergebnisbildschirm still und unveraendert. Duell-Runden
 bleiben wegen der Fairness-Regel ausgeschlossen. Damit ist die fruehere
 Entscheidung fuer einen manuellen Eintrag ersetzt; der manuelle
 Spielstand-Abgleich bleibt davon unberuehrt.
+
+**Nachtrag 2026-08-14 — automatische Spielstand-Sicherung:** Der Button
+`SPIELSTAND` im Hauptmenue wurde zu `EINSTELLUNGEN`; die Geraeteuebertragung
+bleibt dort als kindgerechte Option erhalten. Ein Solo-Run laedt den lokalen
+Stand automatisch hoch. Bei fehlendem Netz bleibt `localStorage` die
+massgebliche Quelle; beim naechsten Start oder nach Rueckkehr des Netzes wird
+erneut geprueft. Ein weiterentwickelter Cloud-Stand verlangt eine sichtbare
+Entscheidung.
 
 **Nachtrag 2026-08-13:** Die Bestenliste speichert je `SaveData.cloudId` nur
 noch den besten Lauf. Der Client schreibt nicht mehr direkt in `scores`,

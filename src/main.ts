@@ -24,6 +24,7 @@ import { MenuScene } from '@/scenes/MenuScene';
 import { ProfileScene } from '@/scenes/ProfileScene';
 import { ResultScene } from '@/scenes/ResultScene';
 import { RulerScene } from '@/scenes/RulerScene';
+import { SettingsScene } from '@/scenes/SettingsScene';
 import { SceneKey } from '@/scenes/SceneKey';
 import { SyncScene } from '@/scenes/SyncScene';
 import { Palette } from '@/ui/theme';
@@ -64,6 +65,7 @@ function createGameConfig(): Phaser.Types.Core.GameConfig {
       ResultScene,
       ChallengeScene,
       LeaderboardScene,
+      SettingsScene,
       SyncScene,
       AdminScene,
       RulerScene,

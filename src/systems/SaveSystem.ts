@@ -1,9 +1,9 @@
 /**
  * Persistenz ueber localStorage.
  *
- * Gekapselt hinter einer schmalen API, damit ein spaeterer Wechsel auf Cloud-
- * Saves (siehe docs/ROADMAP.md, M5) nur diese Datei anfasst. Alles Lesende
- * geht ueber `load()`, alles Schreibende ueber `save()`.
+ * Gekapselt hinter einer schmalen API, damit der lokale Offline-Stand und der
+ * spaetere Cloud-Abgleich getrennt bleiben. Alles Lesende geht ueber `load()`,
+ * alles Schreibende ueber `save()`.
  */
 
 import { MAX_LEVEL, SAVE_KEY, SAVE_VERSION, xpForLevel } from '@/config/GameConfig';
@@ -148,8 +148,8 @@ export function reset(): SaveData {
 /**
  * Liefert die Cloud-Kennung und legt sie beim ersten Aufruf an.
  *
- * Bewusst traege: Wer nie synchronisiert, bekommt keine Kennung und hinterlaesst
- * damit auch nichts, was sich einem Geraet zuordnen liesse.
+ * Bewusst traege: Wer nie spielt bzw. keinen automatischen Upload ausloest,
+ * bekommt keine Kennung und hinterlaesst damit auch nichts im Online-Speicher.
  */
 export function ensureCloudId(): string {
   const existing = load().cloudId;

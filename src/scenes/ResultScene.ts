@@ -50,6 +50,7 @@ export class ResultScene extends Phaser.Scene {
     this.buildBreakdown(stats);
     this.buildProgression(progression, world.accent);
     this.submitLeaderboardScore(stats);
+    this.uploadSave();
     this.buildButtons(stats.worldId, world.accent);
   }
 
@@ -242,5 +243,15 @@ export class ResultScene extends Phaser.Scene {
         // Online-Eintraege duerfen den Ergebnisbildschirm niemals stoeren.
       },
     );
+  }
+
+  /**
+   * Der Run ist bereits lokal gespeichert. Der Cloud-Versuch darf bei
+   * schlechtem oder fehlendem Netz weder den Ergebnisbildschirm noch den Run
+   * beeinflussen; MenuScene prueft beim naechsten Start erneut.
+   */
+  private uploadSave(): void {
+    if (!CloudSystem.isAvailable()) return;
+    void CloudSystem.syncSaveSafely();
   }
 }
