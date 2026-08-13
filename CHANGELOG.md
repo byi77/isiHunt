@@ -21,6 +21,8 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   Viewport-Hoehe, bevor Phaser die interne Spielflaeche berechnet. Dadurch
   entsteht nach dem PWA-Start kein FIT-Balken mehr durch eine zu kleine
   Anfangshoehe.
+- Der Bestwert steht jetzt im Profilblock des Hauptmenues und direkt neben dem
+  Level im Profilbildschirm; die doppelte Anzeige unten im Menue entfaellt.
 
 **Geraetehoehe und Hochformat**
 

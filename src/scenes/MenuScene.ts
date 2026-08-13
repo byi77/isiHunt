@@ -66,9 +66,9 @@ export class MenuScene extends Phaser.Scene {
 
     this.buildTitle();
     this.buildFullscreenToggle();
-    this.buildProfilePanel(save.playerName, save.level);
+    this.buildProfilePanel(save.playerName, save.level, save.bestScore);
     this.buildWorldList(save.level);
-    this.buildFooter(save.bestScore);
+    this.buildFooter();
 
     void this.showUpdateHintIfAny();
 
@@ -172,8 +172,8 @@ export class MenuScene extends Phaser.Scene {
     );
   }
 
-  /** Name, Lichtfigur und die wichtigste Fortschrittszahl. */
-  private buildProfilePanel(playerName: string, level: number): void {
+  /** Name, Lichtfigur, Level und Bestwert direkt im Profilblock. */
+  private buildProfilePanel(playerName: string, level: number, bestScore: number): void {
     const y = 270;
     const width = GAME_WIDTH - 120;
 
@@ -201,7 +201,12 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0, 0.5);
 
     this.add
-      .text(172, y + 29, 'DEIN PROFIL', textStyle(FontSize.tiny, Palette.inkDim))
+      .text(
+        172,
+        y + 29,
+        `BESTWERT ${bestScore.toLocaleString('de-DE')}`,
+        textStyle(FontSize.tiny, Palette.inkDim),
+      )
       .setOrigin(0, 0.5)
       .setLetterSpacing(3);
 
@@ -477,7 +482,7 @@ export class MenuScene extends Phaser.Scene {
     });
   }
 
-  private buildFooter(bestScore: number): void {
+  private buildFooter(): void {
     createButton(
       this,
       GAME_WIDTH / 2,
@@ -522,15 +527,6 @@ export class MenuScene extends Phaser.Scene {
         fontSize: FontSize.tiny,
       });
     }
-
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        GAME_HEIGHT - 142,
-        `Bestwert: ${bestScore.toLocaleString('de-DE')}`,
-        textStyle(FontSize.small, Palette.inkDim),
-      )
-      .setOrigin(0.5);
 
     this.buildHint();
   }

@@ -92,13 +92,22 @@ export class ProfileScene extends Phaser.Scene {
 
     this.add
       .text(
-        GAME_WIDTH / 2,
+        190,
         385,
         `LEVEL ${levelProgress.level}`,
         textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
       )
-      .setOrigin(0.5)
+      .setOrigin(0, 0.5)
       .setLetterSpacing(2);
+
+    this.add
+      .text(
+        GAME_WIDTH - 190,
+        385,
+        `BESTWERT ${save.bestScore.toLocaleString('de-DE')}`,
+        textStyle(FontSize.small, Palette.ink, { fontStyle: 'bold' }),
+      )
+      .setOrigin(1, 0.5);
 
     let saveButton: ButtonHandle | null = null;
     const status = this.add
