@@ -33,8 +33,8 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 **Wartung und Safe Area**
 
-- Zurueck-Navigation liegt jetzt auf allen Unterseiten unten rechts; die
-  Versionsangabe sitzt mittig am unteren Bildschirmrand.
+- Zurueck-Navigation liegt jetzt auf allen Unterseiten unten links; die
+  Versionsangabe sitzt unten rechts am Bildschirmrand.
 - Der Wartungsmodus wird durch drei kurze Tipps auf die Versionsangabe und
   anschliessend langes Gedrueckthalten geoeffnet.
 

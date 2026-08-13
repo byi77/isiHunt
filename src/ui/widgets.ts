@@ -8,7 +8,7 @@
 
 import Phaser from 'phaser';
 
-import { DEBUG_ENABLED, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { DEBUG_ENABLED, GAME_HEIGHT } from '@/config/GameConfig';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
@@ -267,7 +267,7 @@ export function createButton(
 }
 
 /**
- * Zurueck-Knopf, immer unten rechts.
+ * Zurueck-Knopf, immer unten links.
  *
  * Warum ein eigenes Widget statt eines `createButton`-Aufrufs je Scene: Die
  * Knoepfe lagen vorher unterschiedlich weit unten am Rand und sahen verschieden
@@ -275,7 +275,7 @@ export function createButton(
  * - sie waren da, nur nirgends zweimal an derselben Stelle. Eine feste Position
  * ist auffindbar, ohne dass man sie suchen muss.
  *
- * Unten rechts bleibt der Knopf auf allen Unterseiten an derselben Stelle und
+ * Unten links bleibt der Knopf auf allen Unterseiten an derselben Stelle und
  * aus dem Hauptfluss der Inhalte heraus.
  */
 export function createBackButton(
@@ -292,7 +292,7 @@ export function createBackButton(
 }
 
 /** Feste Position des Zurueck-Knopfes - gilt fuer jede Scene, die einen hat. */
-export const BACK_BUTTON_X = GAME_WIDTH - 138;
+export const BACK_BUTTON_X = 138;
 export const BACK_BUTTON_Y = GAME_HEIGHT - 84;
 
 export interface BarHandle {

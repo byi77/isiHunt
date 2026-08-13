@@ -214,15 +214,14 @@
         bottom: env(safe-area-inset-bottom, 0px);
       }
 
-      /* Versionsnummer mittig ganz unten, ausserhalb des Canvas.
+      /* Versionsnummer unten rechts, ausserhalb des Canvas.
 
          Bewusst im DOM und nicht nur im Spiel gezeichnet: Wenn Phaser gar
          nicht erst startet, ist sie trotzdem da - und beim Test auf dem Handy
          beantwortet sie ohne Umweg, welcher Stand geladen wurde. */
       #version {
         position: fixed;
-        left: 50%;
-        transform: translateX(-50%);
+        right: calc(env(safe-area-inset-right, 0px) + 6px);
         bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
         z-index: 10;
         pointer-events: none;
