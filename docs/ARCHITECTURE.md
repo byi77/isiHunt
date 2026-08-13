@@ -388,12 +388,14 @@ musste also existieren, und es konnte nur an den Rechten liegen.
 
 ## 9. Assets
 
-Das Spiel laedt **keine Bilddateien**. Alle Spielgrafiken entstehen in
-`src/ui/textures.ts` aus Phaser-Graphics, werden weiss gezeichnet und zur
-Laufzeit getintet.
+Die Spielgrafiken entstehen weiterhin groesstenteils in `src/ui/textures.ts`
+aus Phaser-Graphics, werden weiss gezeichnet und zur Laufzeit getintet. Das
+Boot laedt zusaetzlich das Logo und je Welt eine echte Planetentextur aus
+`public/assets/`; diese grossen Kulissenbilder bleiben farbig und werden nur
+ueber Alpha zurueckgenommen.
 
-Vorteile: keine Ladezeit, keine Asset-Pipeline, eine Textur bedient sechs
-Seltenheiten und fuenf Welten.
+Vorteile: Die Kernobjekte behalten ihre tintbare, schnelle Textur-Pipeline;
+die wenigen Rasterassets sind klar auf Logo und Hintergrundkulisse begrenzt.
 
 Der Austausch gegen echte Assets aendert **nur** `textures.ts` — die
 Texture-Keys bleiben. Das gilt auch fuer die sechs levelbasierten
@@ -430,6 +432,6 @@ Ehrlich benannt, damit sie nicht ueberrascht:
 | Kein Test-Setup                                     | ab erster Regressionsangst                          | Vitest, M2                                 |
 | Kollisionstest ist O(n) ueber alle Objekte          | > ~200 Objekte                                      | Raeumliches Gitter                         |
 | Keine Ton-Ebene                                     | M4                                                  | `SoundSystem` neben den anderen Systems    |
-| HUD-Layout nutzt 720×variable Portraithoehe        | nie (FIT skaliert)                                  | —                                          |
+| HUD-Layout nutzt 720×variable Portraithoehe         | nie (FIT skaliert)                                  | —                                          |
 | **Bestenliste ist manipulierbar**                   | sobald sie oeffentlich beworben wird                | Runs serverseitig nachrechnen (ADR-0011)   |
 | Sync ueberschreibt, statt zusammenzufuehren         | wenn auf beiden Geraeten regelmaessig gespielt wird | Feldweises Zusammenfuehren monotoner Werte |

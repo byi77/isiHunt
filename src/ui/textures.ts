@@ -29,6 +29,12 @@ export const TextureKey = {
   PlayerCoreCrown: 'tex-player-core-crown',
   PlayerHalo: 'tex-player-halo',
   Pixel: 'tex-pixel',
+  Logo: 'asset-isihunt-logo',
+  PlanetSternenweide: 'asset-planet-sternenweide',
+  PlanetEisring: 'asset-planet-eisring',
+  PlanetGlutnebel: 'asset-planet-glutnebel',
+  PlanetNullsektor: 'asset-planet-nullsektor',
+  PlanetSonnenkrone: 'asset-planet-sonnenkrone',
 } as const;
 
 export type TextureKeyValue = (typeof TextureKey)[keyof typeof TextureKey];

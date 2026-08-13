@@ -8,7 +8,7 @@
 
 import Phaser from 'phaser';
 
-import { DEBUG_ENABLED } from '@/config/GameConfig';
+import { DEBUG_ENABLED, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
@@ -267,7 +267,7 @@ export function createButton(
 }
 
 /**
- * Zurueck-Knopf, immer oben links.
+ * Zurueck-Knopf, immer unten rechts.
  *
  * Warum ein eigenes Widget statt eines `createButton`-Aufrufs je Scene: Die
  * Knoepfe lagen vorher unterschiedlich weit unten am Rand und sahen verschieden
@@ -275,9 +275,8 @@ export function createButton(
  * - sie waren da, nur nirgends zweimal an derselben Stelle. Eine feste Position
  * ist auffindbar, ohne dass man sie suchen muss.
  *
- * Oben links und nicht unten, weil unten das Eingabefeld und die Systemtastatur
- * liegen (siehe LeaderboardScene) - dort verschwindet jeder Knopf frueher oder
- * spaeter unter etwas anderem.
+ * Unten rechts bleibt der Knopf auf allen Unterseiten an derselben Stelle und
+ * aus dem Hauptfluss der Inhalte heraus.
  */
 export function createBackButton(
   scene: Phaser.Scene,
@@ -293,8 +292,8 @@ export function createBackButton(
 }
 
 /** Feste Position des Zurueck-Knopfes - gilt fuer jede Scene, die einen hat. */
-export const BACK_BUTTON_X = 138;
-export const BACK_BUTTON_Y = 60;
+export const BACK_BUTTON_X = GAME_WIDTH - 138;
+export const BACK_BUTTON_Y = GAME_HEIGHT - 84;
 
 export interface BarHandle {
   container: Phaser.GameObjects.Container;
@@ -471,15 +470,23 @@ export function createWorldBackdrop(
       { x: 0.9, y: 0.82, size: 115, alpha: 0.08 },
     ],
   ];
+  const planetTextures: readonly string[] = [
+    TextureKey.PlanetSternenweide,
+    TextureKey.PlanetEisring,
+    TextureKey.PlanetGlutnebel,
+    TextureKey.PlanetNullsektor,
+    TextureKey.PlanetSonnenkrone,
+  ];
   const planets = planetLayouts[spaceVariant % planetLayouts.length] ?? planetLayouts[0]!;
+  const planetTexture =
+    planetTextures[spaceVariant % planetTextures.length] ?? TextureKey.PlanetSternenweide;
   for (const planet of planets) {
     backdrop.add(
       scene.add
-        .image(width * planet.x, height * planet.y, TextureKey.Orb)
+        .image(width * planet.x, height * planet.y, planetTexture)
         .setDisplaySize(planet.size, planet.size)
-        .setTint(accent)
         .setAlpha(planet.alpha)
-        .setBlendMode(Phaser.BlendModes.ADD),
+        .setBlendMode(Phaser.BlendModes.NORMAL),
     );
   }
 

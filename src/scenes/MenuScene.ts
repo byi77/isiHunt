@@ -257,23 +257,16 @@ export class MenuScene extends Phaser.Scene {
       .setAlpha(0.35)
       .setBlendMode(Phaser.BlendModes.ADD);
 
-    const title = this.add
-      .text(
-        GAME_WIDTH / 2,
-        96,
-        'isiHunt',
-        textStyle(FontSize.title, Palette.gold, { fontStyle: 'bold' }),
-      )
-      .setOrigin(0.5);
+    const title = this.add.image(GAME_WIDTH / 2, 104, TextureKey.Logo).setDisplaySize(400, 225);
 
     this.add
-      .text(GAME_WIDTH / 2, 152, 'JAGE DAS LICHT', textStyle(FontSize.tiny, Palette.inkDim))
+      .text(GAME_WIDTH / 2, 184, 'JAGE DAS LICHT', textStyle(FontSize.tiny, Palette.inkDim))
       .setOrigin(0.5)
       .setLetterSpacing(8);
 
     this.tweens.add({
       targets: title,
-      y: 92,
+      y: 100,
       duration: 2200,
       yoyo: true,
       repeat: -1,
@@ -317,9 +310,31 @@ export class MenuScene extends Phaser.Scene {
     coins: number,
   ): void {
     const y = 270;
-    const width = GAME_WIDTH - 120;
+    const width = GAME_WIDTH - 80;
+    const rowBounds = [
+      { center: y - 26, height: FontSize.body },
+      { center: y + 2, height: FontSize.body },
+      { center: y + 28, height: FontSize.tiny },
+      { center: y + 49, height: FontSize.tiny },
+    ];
+    const panelPadding = 25;
+    const panelTop =
+      Math.min(...rowBounds.map((row) => row.center - row.height / 2)) - panelPadding;
+    const panelBottom =
+      Math.max(...rowBounds.map((row) => row.center + row.height / 2)) + panelPadding;
+    const panelCenter = (panelTop + panelBottom) / 2;
 
-    createPanel(this, GAME_WIDTH / 2, y, width, 126, this.selectedWorld.accent, { alpha: 0.58 });
+    createPanel(
+      this,
+      GAME_WIDTH / 2,
+      panelCenter,
+      width,
+      panelBottom - panelTop,
+      this.selectedWorld.accent,
+      {
+        alpha: 0.58,
+      },
+    );
 
     this.add
       .image(112, y, TextureKey.PlayerHalo)
@@ -362,7 +377,7 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0, 0.5)
       .setLetterSpacing(3);
 
-    createButton(this, GAME_WIDTH - 148, y, 'PROFIL', () => this.scene.start(SceneKey.Profile), {
+    createButton(this, 520, panelCenter, 'PROFIL', () => this.scene.start(SceneKey.Profile), {
       width: 170,
       height: 62,
       accent: this.selectedWorld.accent,

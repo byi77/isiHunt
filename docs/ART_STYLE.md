@@ -128,12 +128,14 @@ Webfont-Laden, kein Layoutsprung, funktioniert offline.
 Labels in Grossbuchstaben mit **6–8 px Laufweite** — das ist der
 "UI-Rahmen"-Look, der die Anzeige von Spielinhalten trennt.
 
-## 6. Aktuelle Assets: prozedural
+## 6. Aktuelle Assets: prozedural und rasterbasiert
 
-**Es gibt keine Bilddateien im Spiel.** Alle Texturen entstehen beim Start in
-`src/ui/textures.ts`.
+Spielrelevante Relikte, Raumschiffe und UI-Grundformen entstehen weiterhin
+beim Start in `src/ui/textures.ts`. Die grossen Hintergrundplaneten und das
+Logo sind dagegen echte PNG-Assets in `public/assets/`, weil Oberflaechen-
+details und die Markenform davon profitieren.
 
-Einzige Ausnahme sind die **App-Icons** fuer Manifest und iOS-Home-Bildschirm:
+Weitere Rasterassets sind die **App-Icons** fuer Manifest und iOS-Home-Bildschirm:
 Dort verlangt das Betriebssystem echte PNG-Dateien. Sie werden von
 `scripts/generate-icons.mjs` gezeichnet — derselbe vierzackige Stern in Gold
 auf dem Grundton, nur vorab statt zur Laufzeit. Wer das Motiv aendert, aendert
@@ -142,6 +144,10 @@ eine Zahl im Skript und laesst `npm run icons` laufen.
 Der Stern nimmt bewusst nur 30 % der Icon-Breite ein: Android schneidet
 "maskable" Icons zu einem Kreis zu und garantiert nur die inneren 80 % der
 Flaeche.
+
+Die weiteren Rasterassets liegen unter `public/assets/`: `isihunt-logo.png`
+und je eine Planetentextur fuer Sternenweide, Eisring, Glutnebel, Nullsektor
+und Sonnenkrone. Sie werden im `BootScene` vor dem Menue geladen.
 
 | Key               | Was                                                    | Groesse |
 | ----------------- | ------------------------------------------------------ | ------- |
@@ -158,6 +164,10 @@ Flaeche.
 
 **Alles wird weiss gezeichnet und zur Laufzeit getintet.** Deshalb bedient
 eine Textur alle Seltenheiten und Welten.
+
+Das gilt fuer die tintbaren Spielobjekte. Die Hintergrundplaneten bleiben
+farbig und sehr transparent; sie sind Kulisse und keine Relikte. Beim Boot
+werden Logo und Planetentexturen vor dem Menue geladen.
 
 Die sechs Raumschiff-Skins werden ebenfalls prozedural aus derselben weissen
 Grundform gebaut. Sie schalten bei Level 5, 15, 30, 50, 75 und 100 zusätzliche
@@ -184,14 +194,14 @@ fuenf Ebenen (Reihenfolge in `src/ui/depth.ts`):
 | -------------------- | ------------------------------------------------------------------------------------------------- |
 | Grundverlauf         | Farbstimmung der Welt                                                                             |
 | Horizontschein       | die Lichtquelle der Welt, oberes Drittel                                                          |
-| Hintergrundplaneten  | zwei sehr transparente Planeten als feste Himmelsmarken je Welt                              |
-| Farbwolken           | vier weiche Flecken in **fester** Anordnung je Welt — jede Welt bleibt wiedererkennbar              |
+| Hintergrundplaneten  | zwei sehr transparente Planeten als feste Himmelsmarken je Welt                                   |
+| Farbwolken           | vier weiche Flecken in **fester** Anordnung je Welt — jede Welt bleibt wiedererkennbar            |
 | Zwei Parallax-Ebenen | die hintere kleiner, dunkler, langsamer; der Geschwindigkeitsunterschied _ist_ der Tiefeneindruck |
 | Lichtstaub           | steigt auf, traegt die Stimmung                                                                   |
 
 Darueber liegt eine **Vignette**, die den Blick zur Bildmitte zieht.
 
-## 7. Regeln fuer echte Assets (ab M4)
+## 7. Regeln fuer weitere echte Assets
 
 Wenn Platzhalter durch echte Grafiken ersetzt werden:
 

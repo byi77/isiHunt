@@ -92,7 +92,8 @@ requestPortraitOrientationLock();
 let game: Phaser.Game | null = null;
 
 /**
- * Langer Druck auf die Versionsnummer oeffnet den Wartungsbildschirm.
+ * Dreimal tippen und danach lange auf die Versionsnummer druecken oeffnet
+ * den Wartungsbildschirm.
  *
  * Der Zugang liegt am DOM-Element und nicht an einem Knopf im Spiel: Er soll
  * auffindbar sein fuer den, der davon weiss, und unauffaellig fuer alle
@@ -105,8 +106,12 @@ let game: Phaser.Game | null = null;
 function installAdminLongPress(activeGame: Phaser.Game): void {
   if (!versionLabel) return;
 
+  const ERFORDERLICHE_TIPPS = 3;
+  const TIPP_FENSTER_MS = 1200;
   const LANGER_DRUCK_MS = 800;
-  let timer: number | undefined;
+  let holdTimer: number | undefined;
+  let resetTapTimer: number | undefined;
+  let tapCount = 0;
 
   const trifftVersion = (event: PointerEvent): boolean => {
     const box = versionLabel.getBoundingClientRect();
@@ -123,25 +128,46 @@ function installAdminLongPress(activeGame: Phaser.Game): void {
 
   window.addEventListener('pointerdown', (event) => {
     if (!trifftVersion(event)) return;
-    timer = window.setTimeout(() => {
+    if (tapCount < ERFORDERLICHE_TIPPS) return;
+
+    holdTimer = window.setTimeout(() => {
       activeGame.scene.getScenes(true).forEach((scene) => scene.scene.stop());
       activeGame.scene.start(SceneKey.Admin);
+      tapCount = 0;
     }, LANGER_DRUCK_MS);
   });
 
-  const abbrechen = (): void => {
-    if (timer !== undefined) window.clearTimeout(timer);
-    timer = undefined;
+  const abbrechen = (event: PointerEvent): void => {
+    if (holdTimer !== undefined) {
+      window.clearTimeout(holdTimer);
+      holdTimer = undefined;
+    }
+
+    if (!trifftVersion(event) || tapCount >= ERFORDERLICHE_TIPPS) return;
+
+    tapCount += 1;
+    if (resetTapTimer !== undefined) window.clearTimeout(resetTapTimer);
+    resetTapTimer = window.setTimeout(() => {
+      tapCount = 0;
+      resetTapTimer = undefined;
+    }, TIPP_FENSTER_MS);
   };
 
   window.addEventListener('pointerup', abbrechen);
-  window.addEventListener('pointercancel', abbrechen);
+  window.addEventListener('pointercancel', (event) => {
+    if (holdTimer !== undefined) window.clearTimeout(holdTimer);
+    holdTimer = undefined;
+    if (trifftVersion(event)) tapCount = 0;
+  });
 
   // Abbrechen erst, wenn der Finger die Nummer wirklich verlaesst. Ein
   // `pointermove`-Abbruch ohne diese Pruefung wuerde schon am Zittern eines
   // aufliegenden Daumens scheitern.
   window.addEventListener('pointermove', (event) => {
-    if (timer !== undefined && !trifftVersion(event)) abbrechen();
+    if (holdTimer !== undefined && !trifftVersion(event)) {
+      window.clearTimeout(holdTimer);
+      holdTimer = undefined;
+    }
   });
 }
 

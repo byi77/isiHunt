@@ -17,8 +17,8 @@ export const SceneKey = {
   Settings: 'Settings',
   /**
    * Wartungsbildschirm: Version, Neuladen erzwingen, Spielstand zuruecksetzen.
-   * Absichtlich versteckt - erreichbar ueber langen Druck auf die
-   * Versionsnummer.
+   * Absichtlich versteckt - erreichbar ueber drei Tipps und langen Druck auf
+   * die Versionsnummer.
    */
   Admin: 'Admin',
   /**

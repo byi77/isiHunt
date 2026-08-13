@@ -9,11 +9,20 @@ import Phaser from 'phaser';
 
 import { APP_VERSION } from '@/config/GameConfig';
 import { SceneKey } from '@/scenes/SceneKey';
-import { createTextures } from '@/ui/textures';
+import { createTextures, TextureKey } from '@/ui/textures';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
     super(SceneKey.Boot);
+  }
+
+  preload(): void {
+    this.load.image(TextureKey.Logo, './assets/isihunt-logo.png');
+    this.load.image(TextureKey.PlanetSternenweide, './assets/planet-sternenweide.png');
+    this.load.image(TextureKey.PlanetEisring, './assets/planet-eisring.png');
+    this.load.image(TextureKey.PlanetGlutnebel, './assets/planet-glutnebel.png');
+    this.load.image(TextureKey.PlanetNullsektor, './assets/planet-nullsektor.png');
+    this.load.image(TextureKey.PlanetSonnenkrone, './assets/planet-sonnenkrone.png');
   }
 
   create(): void {

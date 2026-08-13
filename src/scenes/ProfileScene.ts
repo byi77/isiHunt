@@ -94,14 +94,14 @@ export class ProfileScene extends Phaser.Scene {
       .setScale(0.82);
 
     this.add
-      .text(GAME_WIDTH / 2, 480, 'DEIN NAME', textStyle(FontSize.tiny, Palette.inkDim))
+      .text(GAME_WIDTH / 2, 525, 'DEIN NAME', textStyle(FontSize.tiny, Palette.inkDim))
       .setOrigin(0.5)
       .setLetterSpacing(5);
 
     this.add
       .text(
         190,
-        365,
+        410,
         `LEVEL ${levelProgress.level}`,
         textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
       )
@@ -111,7 +111,7 @@ export class ProfileScene extends Phaser.Scene {
     this.add
       .text(
         190,
-        405,
+        447,
         `BESTWERT ${save.bestScore.toLocaleString('de-DE')}`,
         textStyle(FontSize.small, Palette.ink, { fontStyle: 'bold' }),
       )
@@ -120,7 +120,7 @@ export class ProfileScene extends Phaser.Scene {
     this.add
       .text(
         190,
-        438,
+        480,
         `COINS ${save.coins.toLocaleString('de-DE')}`,
         textStyle(FontSize.small, Palette.ink),
       )
@@ -151,7 +151,7 @@ export class ProfileScene extends Phaser.Scene {
       this.scene.start(SceneKey.Menu);
     };
 
-    const input = createTextInput(this, GAME_WIDTH / 2, 530, {
+    const input = createTextInput(this, GAME_WIDTH / 2, 565, {
       placeholder: 'Name eingeben',
       maxLength: PLAYER_NAME_MAX_LENGTH,
       width: 420,

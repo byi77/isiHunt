@@ -24,8 +24,15 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 - Das Raumschiff wechselt bei Level 5, 15, 30, 50, 75 und 100 auf jeweils
   sichtbar ausgebaute Skins; im Duell bleibt die Darstellung fairerweise
   neutral.
+- Echte Planetentexturen je Raumzone und ein neues isiHunt-Logo wurden als
+  vorab geladene PNG-Assets eingebaut.
 
 **Wartung und Safe Area**
+
+- Zurueck-Navigation liegt jetzt auf allen Unterseiten unten rechts; die
+  Versionsangabe sitzt mittig am unteren Bildschirmrand.
+- Der Wartungsmodus wird durch drei kurze Tipps auf die Versionsangabe und
+  anschliessend langes Gedrueckthalten geoeffnet.
 
 - Der Spielverlauf fuellt jetzt auch den gepaddeten Spielcontainer; dadurch
   bleibt die untere Safe Area auf iOS farbig statt weiss.

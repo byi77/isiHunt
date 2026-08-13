@@ -298,6 +298,7 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
 - [x] Relikte als Planeten (Rotation als Illusion — Phaser ist 2D)
 - [x] Hintergrund: weltabhaengige Sternfarben, Nebelkompositionen und
       Planetenlayouts
+- [x] Echte Planetentexturen je Welt und neues isiHunt-Logo als PNG-Assets
 - [x] Skins fuer die Figur, freigeschaltet ab Level 5/15/30/50/75/100
 
 > **Phase-3-Start 2026-08-14:** ADR-0013 ist angenommen. Raumschiff,
@@ -308,8 +309,8 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
 - [x] `GAME_DESIGN.md`: Pitch, Zielgruppe, Referenz
 - [x] `ART_STYLE.md`: Formensprache, Assets, Welten-Farbtabelle
 
-> **Unantastbar:** Die sechs Seltenheitsfarben. Texturen bleiben weiss und
-> werden getintet — farbige Planeten brechen das Seltenheitssystem.
+> **Unantastbar:** Die sechs Seltenheitsfarben. Spielobjekt-Texturen bleiben
+> weiss und werden getintet — farbige Hintergrundplaneten sind reine Kulisse.
 
 ## Phase 3.5 — Ton _(neu 2026-08-13, aus M4 vorgezogen)_
 
