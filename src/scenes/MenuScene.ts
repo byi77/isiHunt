@@ -239,9 +239,9 @@ export class MenuScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       190,
-      `NEUE VERSION v${info.available}  ·  JETZT LADEN`,
+      `NEUE VERSION VERFUEGBAR  ·  v${info.available}  ·  JETZT LADEN`,
       () => forceReload(),
-      { width: 520, height: 44, accent: Palette.goldHex, fontSize: FontSize.tiny },
+      { width: 600, height: 62, accent: Palette.goldHex, fontSize: FontSize.small },
     );
 
     banner.container.setAlpha(0);
@@ -395,11 +395,6 @@ export class MenuScene extends Phaser.Scene {
       0,
       WORLDS.findIndex((world) => world.id === this.selectedWorld.id),
     );
-
-    const worldLabel = this.add
-      .text(60, 350, 'WELTEN', textStyle(FontSize.tiny, Palette.inkDim))
-      .setLetterSpacing(6);
-    this.worldListDecorations.push(worldLabel);
 
     const carousel = this.add.container(0, 0);
     this.worldCarousel = carousel;

@@ -35,6 +35,8 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 - Zurueck-Navigation liegt jetzt auf allen Unterseiten unten links; die
   Versionsangabe sitzt unten rechts am Bildschirmrand.
+- Der Update-Hinweis im Hauptmenue ist jetzt als grosser, klarer Ladebutton
+  gestaltet; die unauffaellige Ueberschrift der Weltenauswahl wurde entfernt.
 - Der Wartungsmodus wird durch drei kurze Tipps auf die Versionsangabe und
   anschliessend langes Gedrueckthalten geoeffnet.
 
