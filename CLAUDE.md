@@ -80,13 +80,13 @@ Aenderung → commit (Version +1) → push → CI + Deploy → Pages → Handy
 
 Deshalb sichert jede Bruchstelle inzwischen sich selbst ab:
 
-| Bruchstelle                | Absicherung                                          |
-| -------------------------- | ---------------------------------------------------- |
+| Bruchstelle                | Absicherung                                            |
+| -------------------------- | ------------------------------------------------------ |
 | Version nicht hochgezaehlt | `pre-commit` zaehlt hoch, `pre-push` und CI blockieren |
-| Kaputter Code gepusht      | `pre-push` faehrt `npm run verify`                   |
-| CI rot, Deploy trotzdem    | der Deploy faehrt `verify` selbst und bricht ab      |
-| `index.html` aus dem Cache | `no-cache`-Meta                                      |
-| Deploy kommt nicht an      | `npm run deploy:check` fragt den Server              |
+| Kaputter Code gepusht      | `pre-push` faehrt `npm run verify`                     |
+| CI rot, Deploy trotzdem    | der Deploy faehrt `verify` selbst und bricht ab        |
+| `index.html` aus dem Cache | `no-cache`-Meta                                        |
+| Deploy kommt nicht an      | `npm run deploy:check` fragt den Server                |
 
 **Pflicht nach jedem Push:**
 

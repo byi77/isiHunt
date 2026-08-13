@@ -28,6 +28,7 @@ import Phaser from 'phaser';
 import { APP_VERSION, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { checkForUpdate, forceReload } from '@/core/updateCheck';
 import type { UpdateInfo } from '@/core/updateCheck';
+import { formatLayout, measureLayout } from '@/core/layoutReport';
 import { isIos, isStandalone } from '@/core/display';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as SaveSystem from '@/systems/SaveSystem';
@@ -63,15 +64,45 @@ export class AdminScene extends Phaser.Scene {
       .setLetterSpacing(6);
 
     this.buildVersionPanel();
+    this.buildLayoutPanel();
     this.buildActions();
 
     this.statusText = this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 180, '', textStyle(FontSize.tiny, Palette.inkDim))
+      .text(GAME_WIDTH / 2, GAME_HEIGHT - 120, '', textStyle(FontSize.tiny, Palette.inkDim))
       .setOrigin(0.5)
       .setWordWrapWidth(GAME_WIDTH - 120)
       .setAlign('center');
 
     void this.lookForUpdate();
+  }
+
+  /**
+   * Die tatsaechlichen Layout-Werte des Geraets.
+   *
+   * Ein Browser-Simulator kennt keine sicheren Raender - nur hier stehen die
+   * echten Zahlen. Ohne sie bliebe die Frage "warum verschwindet der
+   * Zurueck-Knopf unter der Notch" eine Vermutung.
+   */
+  private buildLayoutPanel(): void {
+    const y = 530;
+    createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, 190, 0x9aa3bd, { alpha: 0.5 });
+
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        y - 76,
+        'LAYOUT AUF DIESEM GERAET',
+        textStyle(FontSize.tiny, Palette.inkDim),
+      )
+      .setOrigin(0.5)
+      .setLetterSpacing(3);
+
+    const report = measureLayout(this.game.canvas);
+
+    this.add
+      .text(84, y - 44, formatLayout(report), textStyle(15, Palette.ink))
+      .setOrigin(0, 0)
+      .setLineSpacing(4);
   }
 
   /** Was laeuft, wie es gestartet wurde - die Angaben fuer einen Fehlerbericht. */
@@ -109,7 +140,7 @@ export class AdminScene extends Phaser.Scene {
   }
 
   private buildActions(): void {
-    createButton(this, GAME_WIDTH / 2, 520, 'NEU LADEN ERZWINGEN', () => forceReload(), {
+    createButton(this, GAME_WIDTH / 2, 730, 'NEU LADEN ERZWINGEN', () => forceReload(), {
       width: 460,
       height: 84,
       accent: Palette.goldHex,
@@ -119,7 +150,7 @@ export class AdminScene extends Phaser.Scene {
     this.add
       .text(
         GAME_WIDTH / 2,
-        580,
+        790,
         'Holt das Spiel frisch vom Server, am Cache vorbei.',
         textStyle(FontSize.tiny, Palette.inkDim),
       )
@@ -128,7 +159,7 @@ export class AdminScene extends Phaser.Scene {
     const reset = createButton(
       this,
       GAME_WIDTH / 2,
-      700,
+      900,
       'SPIELSTAND ZURUECKSETZEN',
       () => {
         // Zwei Tipps: Der erste bewaffnet, der zweite fuehrt aus. Ein

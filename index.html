@@ -60,12 +60,28 @@
         font-family: 'Trebuchet MS', 'Segoe UI', system-ui, sans-serif;
       }
 
-      /* Als installierte App reicht der Hintergrund bis unter Notch und
-         Home-Indicator. Ohne diese Angabe blitzt dort Weiss durch. */
-      @supports (padding: env(safe-area-inset-top)) {
-        body {
-          background: #0b1020;
-        }
+      /* Das Spielfeld haelt sich aus den sicheren Raendern heraus.
+
+         `viewport-fit=cover` laesst die Seite bis unter Dynamic Island und
+         Home-Indicator reichen - der Hintergrund soll ja durchgehen. Der
+         Canvas darf das aber nicht: Auf einem iPhone 16 Pro verschwand der
+         Zurueck-Knopf (Spiel-y 30..90) hinter der Island.
+
+         Deshalb bekommt der Container ein Padding in Hoehe der sicheren
+         Raender. Der Hintergrund bleibt randlos, das Spielfeld rutscht
+         hinein - genau so weit, wie das Geraet es verlangt.
+
+         Warum nicht am `body`: Dessen Hoehe ist `100dvh`; ein Padding dort
+         wuerde die Seite ueber den Bildschirm hinaus wachsen lassen. `#game`
+         rechnet mit `border-box` und bleibt dadurch in der Hoehe. */
+      #game {
+        width: 100%;
+        height: 100%;
+        box-sizing: border-box;
+        padding-top: env(safe-area-inset-top, 0px);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+        padding-left: env(safe-area-inset-left, 0px);
+        padding-right: env(safe-area-inset-right, 0px);
       }
 
       /* `dvh` = dynamische Viewport-Hoehe: waechst und schrumpft mit Safaris
@@ -80,13 +96,23 @@
         }
       }
 
-      #game {
-        width: 100%;
-        height: 100%;
-      }
-
       #game canvas {
         display: block;
+      }
+
+      /* Messpunkte fuer die sicheren Raender - unsichtbar, siehe <body>. */
+      .safe-probe {
+        position: fixed;
+        left: 0;
+        width: 1px;
+        height: 1px;
+        pointer-events: none;
+      }
+      #safe-top {
+        top: env(safe-area-inset-top, 0px);
+      }
+      #safe-bottom {
+        bottom: env(safe-area-inset-bottom, 0px);
       }
 
       /* Versionsnummer unten rechts, ausserhalb des Canvas.
@@ -121,6 +147,13 @@
   </head>
   <body>
     <div id="game"></div>
+    <!-- Zwei Messpunkte fuer die sicheren Raender.
+         `env(safe-area-inset-*)` laesst sich aus JavaScript nicht direkt lesen.
+         Diese beiden 1-Pixel-Marken stehen genau auf der Grenze; ihre Position
+         verraet die Werte. Nur so kommen echte Zahlen in den
+         Wartungsbildschirm - ein Browser-Simulator kennt keine Notch. -->
+    <div class="safe-probe" id="safe-top"></div>
+    <div class="safe-probe" id="safe-bottom"></div>
     <div id="boot">isiHunt wird geladen …</div>
     <!-- Version, sobald das Spiel bootet. Steht ausserhalb des Canvas, damit
          sie auch dann sichtbar ist, wenn Phaser gar nicht erst startet. -->

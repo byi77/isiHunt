@@ -259,6 +259,24 @@ begonnen hat. Ein Daumen wandert zwischen Aufsetzen und Abheben ein paar Pixel;
 das darf einen Tipp nicht verschlucken. Nur wer bewusst wegzieht und ausserhalb
 abhebt, bricht ab.
 
+### 8.4 Das Spielfeld haelt sich aus den sicheren Raendern heraus
+
+`viewport-fit=cover` laesst die Seite bis unter Dynamic Island und
+Home-Indicator reichen — das ist fuer den **Hintergrund** richtig, damit dort
+nichts durchblitzt. Fuer das **Spielfeld** ist es falsch: Auf einem iPhone 16
+Pro verschwand der Zurueck-Knopf (Spiel-y 30..90) hinter der Island.
+
+Deshalb bekommt `#game` ein Padding in Hoehe der sicheren Raender
+(`env(safe-area-inset-*)`, mit `box-sizing: border-box`). Der Hintergrund
+bleibt randlos, das Spielfeld rutscht genau so weit hinein, wie das Geraet es
+verlangt.
+
+**Warum das nie am Schreibtisch auffaellt:** Ein Browser-Simulator kann
+iPhone-Groessen nachstellen, aber **keine sicheren Raender** — die entstehen
+erst durch echte Notch-Hardware. Diese Klasse Fehler ist nur auf dem Geraet zu
+finden; deshalb zeigt der Wartungsbildschirm die gemessenen Werte an
+(`core/layoutReport.ts`).
+
 **Und:** Jedes DOM-Element ueber dem Canvas — Eingabefelder, die
 Versionsnummer — braucht **mindestens 60 Spielpixel Abstand** zu allem
 Bedienbaren. Solche Elemente kennen Phasers Zeichenreihenfolge nicht, liegen

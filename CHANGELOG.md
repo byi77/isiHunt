@@ -66,6 +66,22 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   `location.reload()` genuegt auf iOS nicht — der Standalone-Modus beantwortet
   die Anfrage weiterhin aus seinem eigenen Speicher
 
+### Behoben — dritte Runde (iPhone 16 Pro)
+
+- **Der Zurueck-Knopf verschwand hinter der Dynamic Island.** `viewport-fit=cover`
+  laesst die Seite bis unter die Island reichen — richtig fuer den Hintergrund,
+  falsch fuer das Spielfeld. `#game` bekommt jetzt ein Padding in Hoehe der
+  sicheren Raender; der Hintergrund bleibt randlos, das Spielfeld rutscht
+  hinein. Das verschiebt **das ganze Spiel**, nicht nur einen Knopf
+- **Der Wartungsbildschirm zeigt die Layout-Werte des Geraets**: Fenstergroesse,
+  sichere Raender, Balken oben und unten, Massstab. Ein Browser-Simulator kann
+  iPhone-Groessen nachstellen, aber keine sicheren Raender — diese Klasse
+  Fehler ist nur auf dem Geraet zu finden
+- **Das Code-Feld lag weiterhin auf dem Knopf.** Der Abstand ist von 74 auf
+  172 Spielpixel erhoeht. Zwei Anlaeufe mit "rechnerisch reicht das" sind
+  gescheitert; im Dev-Build meldet der Bildschirm jetzt die **tatsaechliche**
+  Position des Feldes, statt sie zu berechnen
+
 ### Behoben — zweite Runde
 
 - **Die Versionsnummer stand zweimal unten rechts.** Sie war in derselben

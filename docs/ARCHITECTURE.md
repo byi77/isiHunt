@@ -63,6 +63,7 @@ isiHunt/
 │   ├── core/
 │   │   ├── EventBus.ts         Typisierter Event-Bus zwischen Scenes
 │   │   ├── display.ts          Vollbild- und Installationszustand des Browsers
+│   │   ├── layoutReport.ts     Misst sichere Raender und Canvas-Lage
 │   │   ├── updateCheck.ts      Liegt eine neuere Fassung bereit?
 │   │   └── viewport.ts         Haelt Phasers Canvas-Position aktuell
 │   ├── entities/               Spielobjekte

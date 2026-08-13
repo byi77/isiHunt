@@ -22,7 +22,8 @@
 import Phaser from 'phaser';
 
 import { SYNC_CODE_LENGTH } from '@/config/backend';
-import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { DEBUG_ENABLED, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { measureDomElement } from '@/core/layoutReport';
 import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
@@ -91,7 +92,7 @@ export class SyncScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.statusText = this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 210, '', textStyle(FontSize.tiny, Palette.inkDim))
+      .text(GAME_WIDTH / 2, GAME_HEIGHT - 140, '', textStyle(FontSize.tiny, Palette.inkDim))
       .setOrigin(0.5)
       .setWordWrapWidth(GAME_WIDTH - 120)
       .setAlign('center');
@@ -173,20 +174,40 @@ export class SyncScene extends Phaser.Scene {
     });
     this.keep(this.codeInput.element);
 
-    // Abstand zum Eingabefeld: 74 px, das sind auf einem iPhone rund 40 CSS-px
-    // und damit etwa eine Fingerbreite.
+    // Wo das Feld WIRKLICH liegt, statt wo es liegen sollte.
     //
-    // Vorher lag der Knopf bei y=880 und damit nur 24 px unter dem Feld - auf
-    // dem Geraet 13 CSS-px. Das Feld ist ein echtes HTML-Element ueber dem
-    // Canvas: Es kennt Phasers Zeichenreihenfolge nicht, liegt immer obenauf
-    // und wird bei offener Systemtastatur zusaetzlich verschoben. Der Knopf war
-    // dadurch praktisch nicht zu treffen.
+    // Phaser haengt DOM-Elemente in einen eigenen Container, der unabhaengig
+    // vom Canvas skaliert wird. Nachgerechnet lag hier zwischen Feld und Knopf
+    // reichlich Luft - auf dem Geraet ueberlappten sie trotzdem. Diese Messung
+    // beendet das Raten (docs/CODE_STYLE.md 1.8).
+    if (DEBUG_ENABLED) {
+      this.time.delayedCall(100, () => {
+        const node = this.codeInput?.element.node;
+        if (!(node instanceof HTMLElement)) return;
+
+        const box = measureDomElement(node, this.game.canvas);
+        if (box) {
+          console.warn(
+            `[SyncScene] Code-Feld liegt bei Spiel-y ${box.top.toFixed(0)}..${box.bottom.toFixed(0)}` +
+              ` (gezeichnet fuer 746..818), Knopf ab 892`,
+          );
+        }
+      });
+    }
+
+    // Grosszuegiger Abstand zum Eingabefeld: 172 px zwischen gezeichneter
+    // Feldunterkante (818) und Knopfoberkante (990).
     //
-    // Regel fuer jedes DOM-Element ueber dem Canvas: mindestens 60 px Abstand
-    // zu allem Bedienbaren. Dieselbe Ursache traf schon den Zurueck-Knopf der
-    // Bestenliste.
+    // Die Zahl ist bewusst hoch. Zwei Anlaeufe mit "rechnerisch reicht das"
+    // sind gescheitert: erst 24 px, dann 74 px - beide Male lag das Feld auf
+    // dem Geraet trotzdem auf dem Knopf. Phaser haengt DOM-Elemente in einen
+    // eigenen Container, dessen Position nicht zwingend zum Canvas passt, und
+    // bei offener Systemtastatur schiebt iOS zusaetzlich.
+    //
+    // Solange die genaue Ursache nicht gemessen ist (die Ausgabe oben liefert
+    // sie), ist Abstand die einzige belastbare Massnahme.
     this.keep(
-      createButton(this, GAME_WIDTH / 2, 930, 'CODE EINLOESEN', () => void this.redeem(), {
+      createButton(this, GAME_WIDTH / 2, 1028, 'CODE EINLOESEN', () => void this.redeem(), {
         width: 440,
         height: 76,
         accent: 0x9aa3bd,

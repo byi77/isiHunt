@@ -7,19 +7,19 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 
 ## Ueberblick
 
-| Phase   | Inhalt                                        | Aufwand      |
-| ------- | --------------------------------------------- | ------------ |
-| 1       | Bedienbarkeit — **abgeschlossen**             | —            |
-| 1.1     | Zwei UI-Fehler, Wartungsbildschirm — **fertig** | —          |
-| 1.2     | Update-Erkennung — **gebaut, ungeprueft**     | Test noetig  |
-| 2       | Profil, 90 s, XP-Kurve, Level 100, Bestenliste | mittel       |
-| **2.5** | Balken oben/unten — Bildschirm ganz nutzen    | mittel+      |
-| 3       | Weltraum statt Fantasy                        | mittel       |
-| **3.5** | Ton (aus M4 vorgezogen)                       | mittel       |
-| **3.6** | Dynamic Island — braucht native App           | Entscheidung |
-| 4       | Bonus, Coins, Talentbaum                      | mittel       |
-| 5       | Modi, Hindernisse                             | mittel       |
-| 6       | Freunde, Realtime, Manipulationsschutz        | hoch         |
+| Phase   | Inhalt                                          | Aufwand      |
+| ------- | ----------------------------------------------- | ------------ |
+| 1       | Bedienbarkeit — **abgeschlossen**               | —            |
+| 1.1     | Zwei UI-Fehler, Wartungsbildschirm — **fertig** | —            |
+| 1.2     | Update-Erkennung — **gebaut, ungeprueft**       | Test noetig  |
+| 2       | Profil, 90 s, XP-Kurve, Level 100, Bestenliste  | mittel       |
+| **2.5** | Balken oben/unten — Bildschirm ganz nutzen      | mittel+      |
+| 3       | Weltraum statt Fantasy                          | mittel       |
+| **3.5** | Ton (aus M4 vorgezogen)                         | mittel       |
+| **3.6** | Dynamic Island — braucht native App             | Entscheidung |
+| 4       | Bonus, Coins, Talentbaum                        | mittel       |
+| 5       | Modi, Hindernisse                               | mittel       |
+| 6       | Freunde, Realtime, Manipulationsschutz          | hoch         |
 
 **Fett = neu am 2026-08-13.**
 
@@ -160,16 +160,16 @@ ausschliesslich an der Auslieferung, nicht am Code.
 - [ ] **Bestenliste modusuebergreifend machen.** _(neu 2026-08-13)_
 
       **Ist-Zustand, geprueft:** Sie ist **pro Welt getrennt**, nicht
-      uebergreifend. `scores.world_id` ist Pflichtfeld,
-      `fetchLeaderboard(worldId)` filtert mit `.eq('world_id', worldId)`, und
-      `LeaderboardScene` hat Weltentabs zum Umschalten. Fuenf Welten = fuenf
-      getrennte Listen.
+          uebergreifend. `scores.world_id` ist Pflichtfeld,
+          `fetchLeaderboard(worldId)` filtert mit `.eq('world_id', worldId)`, und
+          `LeaderboardScene` hat Weltentabs zum Umschalten. Fuenf Welten = fuenf
+          getrennte Listen.
 
-      **Modi:** Duell-Runden gehen gar nicht in die Liste (Fairness-Regel 3,
-      `config/challenge.ts`) — dort gibt es also nichts zusammenzufuehren.
-      Eingetragen wird ausschliesslich aus dem Solo-Ergebnisbildschirm.
+          **Modi:** Duell-Runden gehen gar nicht in die Liste (Fairness-Regel 3,
+          `config/challenge.ts`) — dort gibt es also nichts zusammenzufuehren.
+          Eingetragen wird ausschliesslich aus dem Solo-Ergebnisbildschirm.
 
-      **Zu tun:**
+          **Zu tun:**
   - [ ] Eine Gesamtliste ueber alle Welten als Standardansicht
   - [ ] `world_id` bleibt in der Datenbank (Herkunft geht sonst verloren) und
         wird in der Zeile angezeigt — als Farbmarke, nicht als Text
@@ -179,12 +179,13 @@ ausschliesslich an der Auslieferung, nicht am Code.
   - [ ] Index ergaenzen: `scores (score desc, created_at asc)` — der
         vorhandene `scores_world_rank_idx` greift ohne `world_id`-Filter nicht
 
-      **Vorbehalt, der eine Entscheidung braucht:** Die Welten sind heute
-      mechanisch identisch (`GAME_DESIGN.md` 7.3), eine Gesamtliste ist also
-      fair. Sobald die Weltmodifikatoren aus Phase 5 kommen — Sonnenhort mit
-      doppelter Legendaer-Chance — ist sie es **nicht mehr**. Dann braucht es
-      entweder eine Normalisierung oder wieder getrennte Listen.
-      _Aufwand: mittel_
+    **Vorbehalt, der eine Entscheidung braucht:** Die Welten sind heute
+    mechanisch identisch (`GAME_DESIGN.md` 7.3), eine Gesamtliste ist also
+    fair. Sobald die Weltmodifikatoren aus Phase 5 kommen — Sonnenhort mit
+    doppelter Legendaer-Chance — ist sie es **nicht mehr**. Dann braucht es
+    entweder eine Normalisierung oder wieder getrennte Listen.
+    _Aufwand: mittel_
+
 - [ ] XP-Tabelle in `GAME_DESIGN.md` 7.1 ersetzen
 
 **Zielwerte, nachgerechnet:** Level 10 nach 16 Runs ≈ 29 min · Level 100 nach
