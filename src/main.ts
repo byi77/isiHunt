@@ -41,6 +41,9 @@ function createGameConfig(): Phaser.Types.Core.GameConfig {
       autoCenter: Phaser.Scale.CENTER_BOTH,
       width: GAME_WIDTH,
       height: GAME_HEIGHT,
+      // Das gesamte Spielfeld statt nur des Canvas in den Vollbildmodus
+      // schicken. So bleibt die HTML-Laufschrift im Safe-Area-Bereich dabei.
+      fullscreenTarget: 'game',
     },
     render: {
       antialias: true,

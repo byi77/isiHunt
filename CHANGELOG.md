@@ -410,6 +410,10 @@ Erster spielbarer Prototyp.
 
 - Impressum mit Programmiererangabe und persoenlichem Dank an Emre und Simay
 
+**Vollbild**
+
+- Safe-Area-Laufschrift bleibt jetzt auch im Browser-Vollbild sichtbar
+
 **Steuerung**
 
 - Touch: Figur laeuft zum Finger, mit Abbremsen nahe am Ziel
