@@ -28,6 +28,7 @@ import Phaser from 'phaser';
 import { APP_VERSION, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { checkForUpdate, forceReload } from '@/core/updateCheck';
 import type { UpdateInfo } from '@/core/updateCheck';
+import { measureDevice, readWebStorageLine } from '@/core/deviceReport';
 import { formatLayout, measureLayout } from '@/core/layoutReport';
 import { isIos, isStandalone } from '@/core/display';
 import { SceneKey } from '@/scenes/SceneKey';
@@ -80,7 +81,7 @@ export class AdminScene extends Phaser.Scene {
       .setLetterSpacing(6);
 
     this.buildVersionPanel();
-    this.buildLayoutPanel();
+    void this.buildLayoutPanel();
     this.buildActions();
 
     this.statusText = this.add
@@ -99,14 +100,14 @@ export class AdminScene extends Phaser.Scene {
    * echten Zahlen. Ohne sie bliebe die Frage "warum verschwindet der
    * Zurueck-Knopf unter der Notch" eine Vermutung.
    */
-  private buildLayoutPanel(): void {
-    const y = 530;
-    createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, 190, 0x9aa3bd, { alpha: 0.5 });
+  private async buildLayoutPanel(): Promise<void> {
+    const y = 560;
+    createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, 360, 0x9aa3bd, { alpha: 0.5 });
 
     this.add
       .text(
         GAME_WIDTH / 2,
-        y - 76,
+        y - 160,
         'LAYOUT AUF DIESEM GERAET',
         textStyle(FontSize.tiny, Palette.inkDim),
       )
@@ -116,15 +117,35 @@ export class AdminScene extends Phaser.Scene {
     const report = measureLayout(this.game.canvas);
 
     this.add
-      .text(84, y - 44, formatLayout(report), textStyle(15, Palette.ink))
+      .text(84, y - 145, formatLayout(report), textStyle(15, Palette.ink))
       .setOrigin(0, 0)
       .setLineSpacing(4);
+
+    this.add
+      .text(84, y - 8, 'GERAET / BROWSER', textStyle(FontSize.tiny, Palette.inkDim))
+      .setOrigin(0, 0)
+      .setLetterSpacing(3);
+
+    const device = measureDevice();
+    const deviceText = this.add
+      .text(
+        84,
+        y + 18,
+        [...device.lines, device.storageLine].join('\n'),
+        textStyle(14, Palette.ink),
+      )
+      .setOrigin(0, 0)
+      .setLineSpacing(3)
+      .setName('deviceReport');
+
+    const storageLine = await readWebStorageLine();
+    if (this.scene.isActive()) deviceText.setText([...device.lines, storageLine].join('\n'));
   }
 
   /** Was laeuft, wie es gestartet wurde - die Angaben fuer einen Fehlerbericht. */
   private buildVersionPanel(): void {
-    const y = 300;
-    createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, 190, Palette.goldHex, { alpha: 0.5 });
+    const y = 270;
+    createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, 170, Palette.goldHex, { alpha: 0.5 });
 
     this.add
       .text(GAME_WIDTH / 2, y - 58, `v${APP_VERSION}`, textStyle(FontSize.large, Palette.ink))
@@ -156,7 +177,7 @@ export class AdminScene extends Phaser.Scene {
   }
 
   private buildActions(): void {
-    createButton(this, GAME_WIDTH / 2, 730, 'NEU LADEN ERZWINGEN', () => forceReload(), {
+    createButton(this, GAME_WIDTH / 2, 820, 'NEU LADEN ERZWINGEN', () => forceReload(), {
       width: 460,
       height: 84,
       accent: Palette.goldHex,
@@ -166,7 +187,7 @@ export class AdminScene extends Phaser.Scene {
     this.add
       .text(
         GAME_WIDTH / 2,
-        790,
+        880,
         'Holt das Spiel frisch vom Server, am Cache vorbei.',
         textStyle(FontSize.tiny, Palette.inkDim),
       )
@@ -177,7 +198,7 @@ export class AdminScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      1030,
+      1100,
       'PIXEL-LINEAL ANZEIGEN',
       () => {
         this.scene.start(SceneKey.Menu);
@@ -189,7 +210,7 @@ export class AdminScene extends Phaser.Scene {
     const reset = createButton(
       this,
       GAME_WIDTH / 2,
-      900,
+      970,
       'SPIELSTAND ZURUECKSETZEN',
       () => {
         // Zwei Tipps: Der erste bewaffnet, der zweite fuehrt aus. Ein

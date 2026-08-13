@@ -39,6 +39,8 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   gestaltet; die unauffaellige Ueberschrift der Weltenauswahl wurde entfernt.
 - Im Profil stehen Level, Bestwert und Coins jetzt mittig; die Beschriftung des
   Namensfeldes hat wieder ausreichend Abstand zum Eingabefeld.
+- Der Wartungsmodus zeigt im Layout-Block jetzt auch erkannte Geraete-,
+  Display-, Browser-, CPU-, Netzwerk- und Webspeicher-Daten.
 - Der Wartungsmodus wird durch drei kurze Tipps auf die Versionsangabe und
   anschliessend langes Gedrueckthalten geoeffnet.
 
