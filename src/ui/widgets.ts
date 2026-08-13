@@ -12,6 +12,7 @@ import { DEBUG_ENABLED, GAME_HEIGHT } from '@/config/GameConfig';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
+import * as SoundSystem from '@/systems/SoundSystem';
 
 export interface ButtonHandle {
   container: Phaser.GameObjects.Container;
@@ -227,6 +228,7 @@ export function createButton(
     if (!enabled || !isPressed) return;
     isPressed = false;
     press(false);
+    SoundSystem.playUiClick();
     onClick();
   });
 

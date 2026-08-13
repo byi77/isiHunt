@@ -114,8 +114,8 @@ Aus dem Prototyp wird ein Produkt.
 
 - [ ] Echte Grafiken statt prozeduraler Platzhalter
 - [ ] Eigene Schrift statt System-Font
-- [ ] Ton: Fang-Sounds je Seltenheit, Level-Aufstieg, Hintergrundmusik
-- [ ] Ton stummschaltbar, Zustand gespeichert
+- [x] Ton: Fang-Sounds je Seltenheit, Level-Aufstieg, Run-Ende und UI-Klicks
+- [x] Ton stummschaltbar, Zustand gespeichert (Phase 3.5 vorgezogen)
 - [x] App-Icon und PWA-Manifest ("Zum Home-Bildschirm") — in M1 vorgezogen
 - [ ] Startbildschirm der installierten App (Splash Screen)
 - [ ] Ladebildschirm, sobald es etwas zu laden gibt

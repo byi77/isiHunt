@@ -26,6 +26,8 @@ export interface SaveData {
   collected: Record<RarityId, number>;
   unlockedAchievements: string[];
   lastWorldId: string;
+  /** Audio-Feedback in den Einstellungen ein- oder ausgeschaltet. */
+  soundEnabled: boolean;
 
   /** Anzeigename im Profil und in der Bestenliste. Leer beim ersten Start. */
   playerName: string;

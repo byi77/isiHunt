@@ -111,6 +111,23 @@ bedeuten.
 **Grenze:** Kein Effekt darf laenger als **800 ms** dauern. Bei einem Run von
 90 Sekunden ist alles Laengere im Weg.
 
+## 4.1 Ton
+
+Ton ist Rueckmeldung, kein Dauerteppich. `src/systems/SoundSystem.ts` erzeugt
+kurze WebAudio-Oszillator-Toene ohne Audiodateien:
+
+| Ereignis    | Klangidee                                                                    |
+| ----------- | ---------------------------------------------------------------------------- |
+| Button      | kurzer, trockener Dreieckston                                                |
+| Reliktfang  | steigende Tonhoehe je Seltenheit; seltene Relikte bekommen einen zweiten Ton |
+| Combo-Stufe | zweistufiger, hoeherer Signalton                                             |
+| Run-Start   | kurzer Aufwaertston                                                          |
+| Run-Ende    | ruhiger Abschluss; Levelaufstieg bekommt eine eigene Aufwaertfolge           |
+
+Die sechs Seltenheitsfarben bleiben visuell unantastbar; Ton ergaenzt sie nur.
+Der Ton ist in den Einstellungen abschaltbar und wird im Spielstand gespeichert.
+Auf iOS wird der AudioContext erst nach der ersten Nutzergeste entsperrt.
+
 ## 5. Schrift
 
 v0.1 nutzt System-Fonts (`Trebuchet MS`, `Segoe UI`, `system-ui`). Kein

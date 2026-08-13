@@ -13,6 +13,7 @@ import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
+import * as SoundSystem from '@/systems/SoundSystem';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import {
   createBackButton,
@@ -104,6 +105,29 @@ export class SettingsScene extends Phaser.Scene {
         .setOrigin(0.5)
         .setAlign('center');
     }
+
+    createPanel(this, GAME_WIDTH / 2, 760, GAME_WIDTH - 120, 180, world.accent, {
+      alpha: 0.5,
+      radius: 20,
+    });
+
+    this.add
+      .text(GAME_WIDTH / 2, 700, 'TON', textStyle(FontSize.body, Palette.gold))
+      .setOrigin(0.5)
+      .setLetterSpacing(3);
+
+    const soundButton = createButton(
+      this,
+      GAME_WIDTH / 2,
+      770,
+      SoundSystem.isEnabled() ? 'TON: AN' : 'TON: AUS',
+      () => {
+        const enabled = !SoundSystem.isEnabled();
+        SoundSystem.setEnabled(enabled);
+        soundButton.setLabel(enabled ? 'TON: AN' : 'TON: AUS');
+      },
+      { width: 360, height: 70, accent: world.accent, fontSize: FontSize.body },
+    );
 
     this.add
       .text(

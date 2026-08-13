@@ -319,20 +319,23 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
 > Rueckmeldung: Ein Knopf, der klickt, fuehlt sich getroffen an — das haette
 > bei der Trefferflaechen-Suche sogar diagnostisch geholfen.
 
-- [ ] `SoundSystem` neben den anderen Systemen (`ARCHITECTURE.md` 10 sieht es
+- [x] `SoundSystem` neben den anderen Systemen (`ARCHITECTURE.md` 10 sieht es
       dort bereits vor)
-- [ ] **Knopf-Klick** — kurz und trocken, bei jedem `pointerup` in `widgets.ts`
-- [ ] **Fang-Sounds je Seltenheit**, Tonhoehe steigend mit dem Wert;
+- [x] **Knopf-Klick** — kurz und trocken, bei jedem `pointerup` in `widgets.ts`
+- [x] **Fang-Sounds je Seltenheit**, Tonhoehe steigend mit dem Wert;
       legendaer bekommt einen eigenen Klang
-- [ ] **Combo-Stufe erreicht**, **Levelaufstieg**, **Run-Ende**
-- [ ] Stummschalter, Zustand im Spielstand (`reconcile()` braucht dafuer keine
+- [x] **Combo-Stufe erreicht**, **Levelaufstieg**, **Run-Ende**
+- [x] Stummschalter, Zustand im Spielstand (`reconcile()` braucht dafuer keine
       Migration)
-- [ ] **Toene prozedural erzeugen** (WebAudio-Oszillatoren) statt Dateien zu
+- [x] **Toene prozedural erzeugen** (WebAudio-Oszillatoren) statt Dateien zu
       laden — passt zu ADR-0004: keine Assets, keine Ladezeit, alles im Code
-- [ ] **Fallstrick iOS:** Audio startet erst nach einer Nutzergeste. Der
+- [x] **Fallstrick iOS:** Audio startet erst nach einer Nutzergeste. Der
       AudioContext muss beim ersten Tipp entsperrt werden, sonst bleibt es
       stumm — und zwar lautlos, ohne Fehlermeldung
-- [ ] `ART_STYLE.md` um einen Abschnitt Ton ergaenzen
+- [x] `ART_STYLE.md` um einen Abschnitt Ton ergaenzen
+
+> **Erledigt am 2026-08-14:** Phase 3.5 ist mit prozeduralen WebAudio-Toenen,
+> gespeicherter Ton-Einstellung und iOS-Freischaltung beim ersten Tipp gebaut.
 
 ## Phase 3.6 — Dynamic Island _(neu 2026-08-13)_
 

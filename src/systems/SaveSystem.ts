@@ -26,6 +26,7 @@ export function createDefaultSave(): SaveData {
     collected: emptyRarityCounts(),
     unlockedAchievements: [],
     lastWorldId: DEFAULT_WORLD_ID,
+    soundEnabled: true,
     playerName: '',
     cloudId: null,
   };
@@ -70,6 +71,7 @@ function reconcile(raw: Partial<SaveData>): SaveData {
     ...raw,
     version: SAVE_VERSION,
     coins: Math.max(0, raw.coins ?? base.coins),
+    soundEnabled: raw.soundEnabled ?? base.soundEnabled,
     collected: { ...base.collected, ...(raw.collected ?? {}) },
     talents: { ...base.talents, ...(raw.talents ?? {}) },
     unlockedAchievements: raw.unlockedAchievements ?? base.unlockedAchievements,
