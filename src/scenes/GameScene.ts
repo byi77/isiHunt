@@ -145,6 +145,7 @@ export class GameScene extends Phaser.Scene {
     this.scene.launch(SceneKey.Hud, {
       worldId: this.world.id,
       mode: this.mode,
+      durationMs: this.totalMs,
       playerLabel: this.mode === 'challenge' ? challengePlayerLabel(this.playerIndex) : null,
       scoreToBeat: this.mode === 'challenge' ? ChallengeSystem.scoreToBeat() : null,
     });

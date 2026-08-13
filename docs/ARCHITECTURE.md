@@ -75,7 +75,8 @@ isiHunt/
 │   ├── scenes/
 │   │   ├── SceneKey.ts         Scene-Namen zentral
 │   │   ├── BootScene.ts        Texturen erzeugen
-│   │   ├── MenuScene.ts        Charakter, Welten, Start, Duell
+│   │   ├── MenuScene.ts        Name, Welten, Start, Duell
+│   │   ├── ProfileScene.ts     Name und Lichtfigur beim ersten Start
 │   │   ├── GameScene.ts        Die Simulation (Solo und Duell)
 │   │   ├── HudScene.ts         Anzeige waehrend des Runs
 │   │   ├── ChallengeScene.ts   Duell: Einfuehrung, Uebergabe, Ergebnis
@@ -227,10 +228,10 @@ Ein Modul-Singleton (`src/core/EventBus.ts`), typisiert ueber
 
 ## 5.1 Zwei Versionsnummern, und warum es zwei sein muessen
 
-| Wo                     | Sagt aus                          |
-| ---------------------- | --------------------------------- |
-| `APP_VERSION` im Code  | welcher Stand **geladen** wurde   |
-| `version.json` am Netz | welcher Stand **verfuegbar** ist  |
+| Wo                     | Sagt aus                         |
+| ---------------------- | -------------------------------- |
+| `APP_VERSION` im Code  | welcher Stand **geladen** wurde  |
+| `version.json` am Netz | welcher Stand **verfuegbar** ist |
 
 Die eingebaute Nummer allein kann einen haengenden Cache nicht aufdecken - sie
 stammt ja aus genau dem Stand, der da haengt. Erst der Vergleich mit der Datei

@@ -136,8 +136,12 @@ Aus dem Prototyp wird ein Produkt.
 ## M6 — Als App
 
 - [ ] Capacitor einrichten
-- [ ] Android-Build
-- [ ] iOS-Build
+- [ ] Android-Build und APK-Test auf den eigenen Geraeten
+- [ ] **iOS-Build ohne eigenen Mac:** macOS-CI/Cloud-Build einrichten
+      (z. B. GitHub Actions mit macOS-Runner oder ein vergleichbarer Dienst)
+- [ ] Apple-Developer-Konto sowie Zertifikate und Signierung fuer den iOS-Build
+- [ ] **TestFlight einrichten** und die iOS-App auf dem eigenen iPhone und dem
+      iPhone des Sohnes testen
 - [ ] Store-Material (Beschreibung, Bilder, Datenschutz)
 
 ---

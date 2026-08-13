@@ -105,7 +105,7 @@ Bekaeme jedes Relikt einen Strahlenkranz, hoerte er auf, Seltenheit zu
 bedeuten.
 
 **Grenze:** Kein Effekt darf laenger als **800 ms** dauern. Bei einem Run von
-60 Sekunden ist alles Laengere im Weg.
+90 Sekunden ist alles Laengere im Weg.
 
 ## 5. Schrift
 

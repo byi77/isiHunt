@@ -23,10 +23,8 @@ export const CHALLENGE_PLAYER_COUNT = 2;
 /**
  * Laenge eines Duell-Durchgangs in Millisekunden.
  *
- * Bewusst laenger als ein Solo-Run (60 s): Im Duell zaehlt nur ein einziger
- * Durchgang pro Person. Je kuerzer der ist, desto staerker entscheidet der
- * Zufall der letzten Sekunden. Mehr Zeit heisst mehr Spawns heisst weniger
- * Streuung - das Ergebnis bildet Koennen ab statt Glueck.
+ * Im Duell zaehlt nur ein einziger Durchgang pro Person. Mehr Zeit heisst mehr
+ * Spawns und weniger Streuung - das Ergebnis bildet Koennen ab statt Glueck.
  */
 export const CHALLENGE_DURATION_MS = 90_000;
 

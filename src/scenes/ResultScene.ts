@@ -149,7 +149,9 @@ export class ResultScene extends Phaser.Scene {
       .text(
         GAME_WIDTH - 60,
         y,
-        `${levelProgress.xpInLevel} / ${levelProgress.xpNeeded} XP`,
+        levelProgress.xpNeeded === 0
+          ? 'MAX LEVEL'
+          : `${levelProgress.xpInLevel} / ${levelProgress.xpNeeded} XP`,
         textStyle(FontSize.tiny, Palette.inkDim),
       )
       .setOrigin(1, 0.5);

@@ -206,6 +206,11 @@ versioniert, `reconcile()` fuellt fehlende Felder auf.
   Bestenliste akzeptabel — bei einer Online-Bestenliste (M5) muss die
   Bewertung serverseitig erfolgen.
 
+**Nachtrag 2026-08-14 — Phase 2:** Mit `SAVE_VERSION = 2` wird die neue
+90-Sekunden-Spielzeit und XP-Kurve eingefuehrt. Alte Spielstaende werden ueber
+ihren bisherigen Level-plus-XP-Gesamtstand auf die neue Kurve abgebildet; der
+Fortschritt wird nicht einfach verworfen. Level 100 ist das neue Maximum.
+
 ---
 
 ## ADR-0007 — Lizenz MIT (vorlaeufig)

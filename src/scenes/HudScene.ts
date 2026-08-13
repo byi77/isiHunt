@@ -22,6 +22,7 @@ import type { RunMode } from '@/types';
 
 export interface HudSceneData {
   worldId: string;
+  durationMs: number;
   mode?: RunMode;
   /** Im Duell: wer gerade spielt. Sonst null. */
   playerLabel?: string | null;
@@ -92,7 +93,12 @@ export class HudScene extends Phaser.Scene {
     this.timerBar.setRatio(1);
 
     this.timerText = this.add
-      .text(GAME_WIDTH - 60, 40, '60', textStyle(FontSize.small, Palette.inkDim))
+      .text(
+        GAME_WIDTH - 60,
+        40,
+        String(Math.ceil(data.durationMs / 1000)),
+        textStyle(FontSize.small, Palette.inkDim),
+      )
       .setOrigin(1, 0);
 
     // Im zweiten Duell-Durchgang steht links, was zu schlagen ist. Ohne diese

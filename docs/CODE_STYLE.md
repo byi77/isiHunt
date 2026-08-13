@@ -111,8 +111,8 @@ Quellen steht:
 
 ```
 Nein  "Das duerfte am Spawn-Intervall liegen."
-Ja    "SPAWN_INTERVAL_MS ist 700 (GameConfig.ts:24), bei 60 s ergibt das
-       maximal 85 Spawns pro Run."
+Ja    "SPAWN_INTERVAL_MS ist 620 (GameConfig.ts), bei 90 s ergeben sich ohne
+       Endspurt maximal rund 145 Spawns pro Run."
 
 Nein  "Der Wert ist ungefaehr 1.5x."
 Ja    "RARITY_EPIC.scoreMultiplier ist 2.5 (rarities.ts:31)."
@@ -156,26 +156,26 @@ Aenderung → commit (Version +1) → push → GitHub Actions → Pages → Hand
 
 Jedes Glied kann reissen, und keines meldet sich von selbst:
 
-| Riss                          | Wirkung                                          |
-| ----------------------------- | ------------------------------------------------ |
-| nicht gepusht                 | Actions laeuft nie, Geraet bleibt auf altem Stand |
-| CI rot                        | Deploy laeuft trotzdem — der Fehler faellt nicht auf |
-| `index.html` aus dem Cache    | Geraet laedt weiter die alten, gehashten Dateien  |
-| Version nicht hochgezaehlt    | neuer Build ist vom alten nicht zu unterscheiden  |
+| Riss                       | Wirkung                                              |
+| -------------------------- | ---------------------------------------------------- |
+| nicht gepusht              | Actions laeuft nie, Geraet bleibt auf altem Stand    |
+| CI rot                     | Deploy laeuft trotzdem — der Fehler faellt nicht auf |
+| `index.html` aus dem Cache | Geraet laedt weiter die alten, gehashten Dateien     |
+| Version nicht hochgezaehlt | neuer Build ist vom alten nicht zu unterscheiden     |
 
 #### Was dagegen eingerichtet ist
 
 Jede Bruchstelle sichert sich selbst ab. Keine der Massnahmen verlaesst sich
 darauf, dass jemand daran denkt:
 
-| Wo             | Was                                                                       |
-| -------------- | ------------------------------------------------------------------------- |
-| `pre-commit`   | zaehlt die Patch-Version hoch (`scripts/bump-version.mjs`)                |
-| `pre-push`     | blockiert bei unveraenderter Version **und** faehrt `npm run verify`      |
-| CI             | prueft den Versionssprung gegen `HEAD~1` — unabhaengig von lokalen Hooks  |
+| Wo             | Was                                                                        |
+| -------------- | -------------------------------------------------------------------------- |
+| `pre-commit`   | zaehlt die Patch-Version hoch (`scripts/bump-version.mjs`)                 |
+| `pre-push`     | blockiert bei unveraenderter Version **und** faehrt `npm run verify`       |
+| CI             | prueft den Versionssprung gegen `HEAD~1` — unabhaengig von lokalen Hooks   |
 | Deploy         | faehrt `verify` selbst und bricht ab, statt einen roten Stand auszuliefern |
-| `index.html`   | `no-cache` — die einzige Datei ohne Inhalts-Hash                          |
-| `deploy:check` | fragt den Server, welche Version wirklich liegt                           |
+| `index.html`   | `no-cache` — die einzige Datei ohne Inhalts-Hash                           |
+| `deploy:check` | fragt den Server, welche Version wirklich liegt                            |
 
 Zwei Dinge sind daran wesentlich:
 

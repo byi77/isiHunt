@@ -2,12 +2,14 @@
 export const SceneKey = {
   Boot: 'Boot',
   Menu: 'Menu',
+  /** Profil: Name und Spielericon; beim ersten Start verpflichtend. */
+  Profile: 'Profile',
   Game: 'Game',
   Hud: 'Hud',
   Result: 'Result',
   /** Alle Nicht-Spiel-Phasen eines Duells: Einfuehrung, Uebergabe, Ergebnis. */
   Challenge: 'Challenge',
-  /** Online-Bestenliste je Welt. */
+  /** Online-Bestenliste: Gesamtansicht und Weltfilter. */
   Leaderboard: 'Leaderboard',
   /** Spielstand-Abgleich zwischen Geraeten. */
   Sync: 'Sync',

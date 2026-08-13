@@ -1,5 +1,5 @@
 /**
- * Online-Bestenliste je Welt.
+ * Online-Bestenliste: gemeinsame Gesamtansicht mit Weltfiltern.
  *
  * Die Liste laedt beim Betreten und bei jedem Weltwechsel. Waehrenddessen
  * bleibt der Bildschirm bedienbar - ein haengender Netzaufruf darf nie dazu
@@ -8,7 +8,6 @@
 
 import Phaser from 'phaser';
 
-import { PLAYER_NAME_MAX_LENGTH } from '@/config/backend';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { getWorld, WORLDS } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
@@ -16,7 +15,6 @@ import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
 import type { LeaderboardEntry } from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
-import { createTextInput } from '@/ui/textInput';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
@@ -91,59 +89,7 @@ export class LeaderboardScene extends Phaser.Scene {
       .setWordWrapWidth(GAME_WIDTH - 140)
       .setAlign('center');
 
-    this.buildNameField();
-
     void this.loadList();
-  }
-
-  /**
-   * Namensfeld.
-   *
-   * Der Name liegt hier und nicht in einem Einstellungsmenue, weil er genau
-   * einen Zweck hat: Er steht in dieser Liste. Wer ihn aendern will, sieht
-   * sofort, wo die Aenderung landet.
-   *
-   * Gespeichert wird beim Verlassen des Feldes - ohne Bestaetigungsknopf, der
-   * nur vergessen werden koennte.
-   *
-   * ACHTUNG: Dieses Feld ist ein echtes HTML-`<input>` ueber dem Canvas und
-   * kennt Phasers Zeichenreihenfolge nicht - es liegt IMMER obenauf. Es darf
-   * deshalb nichts Bedienbares unter oder neben sich haben. Der Zurueck-Knopf
-   * lag frueher darunter und war nicht erreichbar, sobald die Systemtastatur
-   * aufging; er sitzt jetzt oben links (createBackButton).
-   */
-  private buildNameField(): void {
-    const save = SaveSystem.load();
-
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        1042,
-        'DEIN NAME IN DER LISTE',
-        textStyle(FontSize.tiny, Palette.inkDim),
-      )
-      .setOrigin(0.5)
-      .setLetterSpacing(4);
-
-    const input = createTextInput(this, GAME_WIDTH / 2, 1104, {
-      placeholder: 'Name eingeben',
-      maxLength: PLAYER_NAME_MAX_LENGTH,
-      width: 400,
-      accent: this.backdropWorld.accent,
-    });
-
-    input.setValue(save.playerName);
-
-    const persist = (): void => {
-      const cleaned = CloudSystem.sanitizePlayerName(input.getValue());
-      if (cleaned !== SaveSystem.load().playerName) SaveSystem.setPlayerName(cleaned);
-      input.setValue(cleaned);
-    };
-
-    input.element.node.addEventListener('blur', persist);
-    // Auch beim Verlassen der Scene sichern: auf dem Handy tippt man haeufig
-    // direkt auf "Zurueck", ohne das Feld vorher zu verlassen.
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, persist);
   }
 
   /**

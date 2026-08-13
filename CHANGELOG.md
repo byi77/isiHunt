@@ -24,7 +24,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   Passwort oder E-Mail**; der Code gilt 15 Minuten
 - Sind zwei Spielstaende vorhanden, werden beide mit Level, Bestwert und
   Anzahl Runs gegenuebergestellt — uebernommen wird erst auf Ansage
-- Namensfeld in der Bestenliste, echtes Eingabefeld mit Systemtastatur
+- Profil mit Namensabfrage beim ersten Start, Lichtfigur und spaeterer Aenderung
+  des Namens
+- Namensfeld aus der Bestenliste entfernt; der Name wird im Profil gepflegt
+- Solo-Runs auf 90 Sekunden verlaengert, XP-Kurve auf `floor(750 · √n)`
+  umgestellt und bei Level 100 gedeckelt; alte lokale Spielstaende werden
+  automatisch auf die neue Kurve migriert
 - Ohne Zugangsdaten laeuft das Spiel unveraendert weiter; der automatische
   Eintrag wird dann einfach uebersprungen
 - Datenbankschema samt Rechten und Zugriffsregeln in `supabase/schema.sql`

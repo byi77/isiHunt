@@ -13,7 +13,7 @@ Achievement-System fuer alle, die dranbleiben.
 
 ## Was das Spiel ist
 
-- **Ein Run dauert 60 Sekunden.** Relikte tauchen auf, driften und verblassen.
+- **Ein Run dauert 90 Sekunden.** Relikte tauchen auf, driften und verblassen.
 - **Seltenheit bestimmt alles.** Grau bis Orange — je seltener, desto mehr
   Punkte, desto schneller, desto kuerzer sichtbar. Die Farbskala ist bewusst die
   aus MMOs bekannte Item-Qualitaet.

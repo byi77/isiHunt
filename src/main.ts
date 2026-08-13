@@ -18,6 +18,7 @@ import { GameScene } from '@/scenes/GameScene';
 import { HudScene } from '@/scenes/HudScene';
 import { LeaderboardScene } from '@/scenes/LeaderboardScene';
 import { MenuScene } from '@/scenes/MenuScene';
+import { ProfileScene } from '@/scenes/ProfileScene';
 import { ResultScene } from '@/scenes/ResultScene';
 import { RulerScene } from '@/scenes/RulerScene';
 import { SceneKey } from '@/scenes/SceneKey';
@@ -53,6 +54,7 @@ const config: Phaser.Types.Core.GameConfig = {
   scene: [
     BootScene,
     MenuScene,
+    ProfileScene,
     GameScene,
     HudScene,
     ResultScene,

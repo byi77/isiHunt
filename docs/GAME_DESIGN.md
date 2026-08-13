@@ -11,7 +11,7 @@ zuerst beschrieben, dann implementiert.
 
 > **isiHunt** ist ein farbenfroher 2D-Arcade-Collector fuer den Handy-Browser.
 > Du steuerst eine Lichtgestalt durch Fantasy-Welten und faengst Relikte, bevor
-> sie verblassen. Ein Run dauert eine Minute — aber Level, Talente und Erfolge
+> sie verblassen. Ein Run dauert 90 Sekunden — aber Level, Talente und Erfolge
 > ziehen sich ueber Wochen.
 
 ## 2. Designziele
@@ -21,7 +21,7 @@ kommt nicht ins Spiel.
 
 1. **In 5 Sekunden verstanden.** Keine Tutorial-Texte. Wer die Farben sieht,
    weiss, was wertvoll ist.
-2. **In 60 Sekunden gespielt.** Ein Run passt in die Bahnfahrt, die
+2. **In 90 Sekunden gespielt.** Ein Run passt in die Bahnfahrt, die
    Kaffeepause, die Werbepause.
 3. **Ueber Wochen belohnt.** Wer haeufiger spielt, kommt sichtbar weiter —
    ohne dass Gelegenheitsspieler abgehaengt werden.
@@ -36,18 +36,18 @@ setzt voraus, dass "Orange = extrem selten" bereits verinnerlicht ist.
 **Referenz:** World of Warcraft — nicht als Genre, sondern als _Grammatik_:
 Item-Qualitaetsfarben, Erfahrungsbalken, Talentpunkte, Zonen mit
 Levelanforderung, Erfolge. Das sind erprobte Fortschrittsmuster, die hier auf
-eine Arcade-Schleife von einer Minute komprimiert werden.
+eine kurze Arcade-Schleife komprimiert werden.
 
 ## 4. Core Loop
 
 ```
-Menue  →  Run (60 s)  →  Ergebnis  →  Menue
+Menue  →  Run (90 s)  →  Ergebnis  →  Menue
              ↑                          │
              └──────  "Nochmal"  ───────┘
 ```
 
-Daneben steht der **Duell-Modus** (Abschnitt 4.1) als zweite, kuerzere
-Schleife fuer zwei Personen an einem Geraet.
+Daneben steht der **Duell-Modus** (Abschnitt 4.1) als zweite Schleife fuer zwei
+Personen an einem Geraet.
 
 **Im Run, alle paar Sekunden:**
 
@@ -75,11 +75,10 @@ Menue → Einfuehrung → Spieler 1 (90 s) → Uebergabe → Spieler 2 (90 s) �
                             └──────────────  "Revanche"  ─────────────────┘
 ```
 
-**Warum 90 statt 60 Sekunden.** Im Solo-Modus glaettet sich Pech ueber viele
-Runs hinweg. Im Duell zaehlt genau _ein_ Durchgang pro Person — je kuerzer der
-ist, desto staerker entscheidet der Zufall der letzten Sekunden. 90 Sekunden
-bedeuten rund 50 % mehr Spawns und damit spuerbar weniger Streuung: das
-Ergebnis bildet Koennen ab statt Glueck.
+**Warum 90 Sekunden.** Im Solo-Modus glaettet sich Pech ueber viele Runs
+hinweg. Im Duell zaehlt genau _ein_ Durchgang pro Person — mehr Zeit bedeutet
+mehr Spawns und damit spuerbar weniger Streuung. Das Ergebnis bildet Koennen
+ab statt Glueck.
 
 **Drei Fairness-Regeln.** Sie sind der Kern des Modus, nicht Beiwerk:
 
@@ -147,20 +146,21 @@ wird **Flow**, nicht Fehlerfreiheit.
 
 ### 7.1 Charakterlevel
 
-XP fuer den Aufstieg von Level _n_: `floor(80 · n^1.45)`
+XP fuer den Aufstieg von Level _n_: `floor(750 · √n)`.
+Ab Level 100 wird kein weiterer XP-Fortschritt gesammelt.
 
 | Level | XP fuer naechstes | kumuliert |
 | ----- | ----------------- | --------- |
-| 1     | 80                | 80        |
-| 2     | 219               | 299       |
-| 3     | 385               | 684       |
-| 5     | 819               | 2 176     |
-| 10    | 2 244             | 9 271     |
-| 15    | 4 034             | 24 133    |
+| 1     | 750               | 750       |
+| 2     | 1 060             | 1 810     |
+| 3     | 1 299             | 3 109     |
+| 5     | 1 677             | 6 286     |
+| 10    | 2 371             | 16 849    |
+| 15    | 2 904             | 30 348    |
 
-Ein durchschnittlicher Run bringt grob 400–900 XP. Die ersten Level fallen in
-den ersten Runs, danach flacht es ab — bewusst, damit Neulinge sofort
-Levelaufstiege erleben.
+Ein durchschnittlicher 90-Sekunden-Run bringt grob 900 XP. Level 10 liegt damit
+bei rund 17 Runs, Level 100 bei rund 552 Runs — weiterhin sofortige Aufstiege
+am Anfang, aber ein langer Weg bis zum Maximum.
 
 Jeder Levelaufstieg gibt **1 Talentpunkt**.
 

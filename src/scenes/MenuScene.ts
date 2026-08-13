@@ -1,8 +1,8 @@
 /**
- * Startbildschirm: Charakterfortschritt, Weltenauswahl, Start.
+ * Startbildschirm: Profil, Weltenauswahl, Start.
  *
- * Der Bildschirm ist die "Charakteruebersicht" des Spiels - hier sieht man auf
- * einen Blick, wo man steht, und was das naechste Level freischaltet.
+ * Der Bildschirm ist der schnelle Einstieg: Name, Welt und Jagd. Die
+ * Fortschrittszahlen liegen im Profil und unterbrechen den Start nicht.
  */
 
 import Phaser from 'phaser';
@@ -16,13 +16,11 @@ import { SceneKey } from '@/scenes/SceneKey';
 import { attachHitDebug } from '@/ui/hitDebug';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
-import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   createAmbientMotes,
-  createBar,
   createButton,
   createDriftLayers,
   createPanel,
@@ -40,6 +38,11 @@ export class MenuScene extends Phaser.Scene {
 
   create(): void {
     const save = SaveSystem.load();
+    if (!save.playerName) {
+      this.scene.start(SceneKey.Profile, { firstStart: true });
+      return;
+    }
+
     const unlocked = WORLDS.filter((w) => w.unlockLevel <= save.level);
     this.selectedWorld =
       unlocked.find((w) => w.id === save.lastWorldId) ??
@@ -60,7 +63,7 @@ export class MenuScene extends Phaser.Scene {
 
     this.buildTitle();
     this.buildFullscreenToggle();
-    this.buildCharacterPanel(save.level);
+    this.buildProfilePanel(save.playerName);
     this.buildWorldList(save.level);
     this.buildFooter(save.bestScore);
 
@@ -164,43 +167,41 @@ export class MenuScene extends Phaser.Scene {
     );
   }
 
-  /** Level, XP-Balken und offene Talentpunkte. */
-  private buildCharacterPanel(level: number): void {
-    const save = SaveSystem.load();
-    const progress = ProgressionSystem.getLevelProgress(save);
-    const y = 232;
+  /** Name und Lichtfigur - Fortschrittszahlen liegen jetzt im Profil. */
+  private buildProfilePanel(playerName: string): void {
+    const y = 270;
+    const width = GAME_WIDTH - 120;
+
+    createPanel(this, GAME_WIDTH / 2, y, width, 108, this.selectedWorld.accent, { alpha: 0.58 });
 
     this.add
-      .text(60, y, `Level ${level}`, textStyle(FontSize.large, Palette.ink, { fontStyle: 'bold' }))
+      .image(112, y, TextureKey.PlayerHalo)
+      .setTint(this.selectedWorld.accent)
+      .setScale(0.48)
+      .setAlpha(0.8);
+
+    this.add.image(112, y, TextureKey.PlayerCore).setTint(Palette.goldHex).setScale(0.34);
+
+    this.add
+      .text(172, y - 14, playerName, textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }))
       .setOrigin(0, 0.5);
 
     this.add
-      .text(
-        GAME_WIDTH - 60,
-        y,
-        `${progress.xpInLevel} / ${progress.xpNeeded} XP`,
-        textStyle(FontSize.small, Palette.inkDim),
-      )
-      .setOrigin(1, 0.5);
+      .text(172, y + 18, 'DEIN PROFIL', textStyle(FontSize.tiny, Palette.inkDim))
+      .setOrigin(0, 0.5)
+      .setLetterSpacing(3);
 
-    const bar = createBar(this, 60, y + 34, GAME_WIDTH - 120, 10, this.selectedWorld.accent);
-    bar.setRatio(progress.ratio);
-
-    if (save.talentPoints > 0) {
-      this.add
-        .text(
-          60,
-          y + 62,
-          `${save.talentPoints} Talentpunkt${save.talentPoints === 1 ? '' : 'e'} verfuegbar  (Vergabe folgt)`,
-          textStyle(FontSize.tiny, Palette.gold),
-        )
-        .setOrigin(0, 0.5);
-    }
+    createButton(this, GAME_WIDTH - 148, y, 'PROFIL', () => this.scene.start(SceneKey.Profile), {
+      width: 170,
+      height: 62,
+      accent: this.selectedWorld.accent,
+      fontSize: FontSize.tiny,
+    });
   }
 
   /** Weltenliste mit Sperr-Zustand. */
   private buildWorldList(level: number): void {
-    const startY = 352;
+    const startY = 372;
     const rowHeight = 98;
 
     this.add

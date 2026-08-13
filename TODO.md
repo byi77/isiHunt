@@ -7,20 +7,20 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 
 ## Ueberblick
 
-| Phase   | Inhalt                                              | Aufwand      |
-| ------- | --------------------------------------------------- | ------------ |
-| 1       | Bedienbarkeit — **abgeschlossen**                   | —            |
-| 1.1     | Zwei UI-Fehler, Wartungsbildschirm — **fertig**     | —            |
-| 1.2     | Update-Erkennung — **gebaut, ungeprueft**           | Test noetig  |
+| Phase   | Inhalt                                                   | Aufwand      |
+| ------- | -------------------------------------------------------- | ------------ |
+| 1       | Bedienbarkeit — **abgeschlossen**                        | —            |
+| 1.1     | Zwei UI-Fehler, Wartungsbildschirm — **fertig**          | —            |
+| 1.2     | Update-Erkennung — **gebaut, ungeprueft**                | Test noetig  |
 | **1.3** | **Bestenliste: gemeinsam + automatisch — abgeschlossen** | —            |
-| 2       | Profil, 90 s, XP-Kurve, Level 100                   | mittel       |
-| **2.5** | Balken oben/unten — Bildschirm ganz nutzen          | mittel+      |
-| 3       | Weltraum statt Fantasy                              | mittel       |
-| **3.5** | Ton (aus M4 vorgezogen)                             | mittel       |
-| **3.6** | Dynamic Island — braucht native App                 | Entscheidung |
-| 4       | Bonus, Coins, Talentbaum                            | mittel       |
-| 5       | Modi, Hindernisse                                   | mittel       |
-| 6       | Freunde, Realtime, Manipulationsschutz              | hoch         |
+| 2       | Profil, 90 s, XP-Kurve, Level 100                        | mittel       |
+| **2.5** | Balken oben/unten — Bildschirm ganz nutzen               | mittel+      |
+| 3       | Weltraum statt Fantasy                                   | mittel       |
+| **3.5** | Ton (aus M4 vorgezogen)                                  | mittel       |
+| **3.6** | Dynamic Island — braucht native App                      | Entscheidung |
+| 4       | Bonus, Coins, Talentbaum                                 | mittel       |
+| 5       | Modi, Hindernisse                                        | mittel       |
+| 6       | Freunde, Realtime, Manipulationsschutz                   | hoch         |
 
 **Fett = neu am 2026-08-13.**
 
@@ -40,7 +40,9 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 - **2.5 Balken:** flexibles Spielfeld oder nur die Balken einfaerben? Ersteres
   betrifft alle Scenes und verschiebt das Balancing.
 - **3 Weltraum:** sollen die Dokumente jetzt umgeschrieben werden?
-- **3.6 Dynamic Island:** braucht eine native App (M6 vorziehen?).
+- **3.6 Dynamic Island:** braucht eine native App (M6 vorziehen?). Fuer iOS
+  haben wir keinen eigenen Mac: Build spaeter ueber macOS-CI/Cloud und Test
+  auf den iPhones per TestFlight einplanen.
 - **5 Hindernisse:** ab welcher Welt darf ein Hindernis bestrafen?
 - **6 Manipulationsschutz:** vor oder nach Ranked-Modus und Rekord-Meldungen?
 
@@ -191,7 +193,7 @@ ausschliesslich an der Auslieferung, nicht am Code.
 
 **Noch offen — erst nach dem Test auf dem Geraet entscheiden:**
 
-- [ ] **Messen:** Version in der Home-Bildschirm-App ablesen. Erscheint der
+- [x] **Messen:** Version in der Home-Bildschirm-App ablesen. Erscheint der
       Update-Hinweis dort? Funktioniert "Neu laden erzwingen"?
 - [ ] **Nur falls das nicht reicht:** Service Worker mit
       `updateViaCache: 'none'`. Dann ist das Update-Verhalten steuerbar statt
@@ -201,19 +203,18 @@ ausschliesslich an der Auslieferung, nicht am Code.
 - [ ] `manifest.webmanifest`: `start_url` mit Versionsparameter — erzwingt
       einen neuen Cache-Schluessel. _Wirkung ungeprueft_
 
-## Phase 2 — Identitaet, Spielzeit, Fortschritt
+## Phase 2 — Identitaet, Spielzeit, Fortschritt _(in Arbeit)_
 
-- [ ] Profil: Name beim ersten Start abfragen, Icon dazu, in Einstellungen
+- [x] Profil: Name beim ersten Start abfragen, Icon dazu, im Profil
       aenderbar
-- [ ] Name im Startmenue anzeigen
-- [ ] Namensfeld aus der Bestenliste entfernen (zieht ins Profil)
-- [ ] Levelanzeige nicht mehr direkt im Menue, sondern erst hinter "Jagd
-      beginnen" — das Menue soll mit Name und Spielstart oeffnen, nicht mit
-      einer Statistik
-- [ ] `RUN_DURATION_MS` 60 s → 90 s
-- [ ] Designziel 2 in `GAME_DESIGN.md` anpassen ("in 60 Sekunden gespielt")
-- [ ] XP-Kurve: `floor(80 · n^1.45)` → `floor(750 · √n)`
-- [ ] `MAX_LEVEL = 100`, Deckelung in `ProgressionSystem.applyRun()`
+- [x] Name im Startmenue anzeigen
+- [x] Namensfeld aus der Bestenliste entfernen (zieht ins Profil)
+- [x] Levelanzeige nicht mehr direkt im Menue, sondern ins Profil verschieben
+      — das Menue soll mit Name und Spielstart oeffnen, nicht mit einer Statistik
+- [x] `RUN_DURATION_MS` 60 s → 90 s
+- [x] Designziel 2 in `GAME_DESIGN.md` anpassen ("in 90 Sekunden gespielt")
+- [x] XP-Kurve: `floor(80 · n^1.45)` → `floor(750 · √n)`
+- [x] `MAX_LEVEL = 100`, Deckelung in `ProgressionSystem.applyRun()`
 - [ ] **Bestenliste leeren** (Eingriff in Supabase — Eintraege sind auf
       Rechteebene unveraenderlich, kein Knopf im Spiel). Entschieden am
       2026-08-13: ja, sauberer Schnitt beim Wechsel auf 90 Sekunden.
@@ -221,10 +222,14 @@ ausschliesslich an der Auslieferung, nicht am Code.
 > Die gemeinsame Bestenliste und der automatische Eintrag standen hier — beides
 > ist am 2026-08-13 nach **Phase 1.3** vorgezogen worden.
 
-- [ ] XP-Tabelle in `GAME_DESIGN.md` 7.1 ersetzen
+- [x] XP-Tabelle in `GAME_DESIGN.md` 7.1 ersetzen
 
-**Zielwerte, nachgerechnet:** Level 10 nach 16 Runs ≈ 29 min · Level 100 nach
-560 Runs ≈ 17 h · Grundlage 900 XP je 90-s-Run, 110 s je Durchgang.
+> Die Bestenliste wird erst nach ausdruecklicher Bestaetigung geleert. Das ist
+> eine einmalige, nicht rueckgaengige Datenbankaktion und kein lokaler
+> Code-Schritt.
+
+**Zielwerte, nachgerechnet:** Level 10 nach 17 Runs ≈ 31 min · Level 100 nach
+552 Runs ≈ 17 h · Grundlage 900 XP je 90-s-Run, 110 s je Durchgang.
 
 **Entschieden am 2026-08-13:** Ueberschuessige Talentpunkte werden zu **Coins**.
 99 Punkte stehen 32 Talentraengen gegenueber — ab etwa Level 33 ist alles

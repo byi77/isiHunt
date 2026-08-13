@@ -6,7 +6,7 @@
  */
 
 import { ACHIEVEMENTS } from '@/config/achievements';
-import { TALENT_POINTS_PER_LEVEL, xpForLevel } from '@/config/GameConfig';
+import { MAX_LEVEL, TALENT_POINTS_PER_LEVEL, xpForLevel } from '@/config/GameConfig';
 import { WORLDS } from '@/config/worlds';
 import * as SaveSystem from '@/systems/SaveSystem';
 import type { ProgressionResult, RunStats, SaveData } from '@/types';
@@ -21,6 +21,10 @@ export interface LevelProgress {
 }
 
 export function getLevelProgress(save: SaveData): LevelProgress {
+  if (save.level >= MAX_LEVEL) {
+    return { level: MAX_LEVEL, xpInLevel: 0, xpNeeded: 0, ratio: 1 };
+  }
+
   const xpNeeded = xpForLevel(save.level);
   return {
     level: save.level,
@@ -55,11 +59,17 @@ export function applyRun(run: RunStats): ProgressionResult {
     // XP verrechnen; mehrere Levelaufstiege in einem Run sind moeglich.
     data.xp += run.xpGained;
     let guard = 0;
-    while (data.xp >= xpForLevel(data.level) && guard < 100) {
+    while (data.level < MAX_LEVEL && data.xp >= xpForLevel(data.level) && guard < MAX_LEVEL) {
       data.xp -= xpForLevel(data.level);
       data.level += 1;
       data.talentPoints += TALENT_POINTS_PER_LEVEL;
       guard += 1;
+    }
+
+    // Auf Maximalstufe gibt es keinen unsichtbar anwachsenden XP-Vorrat.
+    if (data.level >= MAX_LEVEL) {
+      data.level = MAX_LEVEL;
+      data.xp = 0;
     }
   });
 
@@ -100,8 +110,11 @@ function evaluateAchievements(save: SaveData, run: RunStats): string[] {
 /** Debug-Hilfe: gewaehrt Level, ohne einen Run spielen zu muessen. */
 export function grantLevels(count: number): SaveData {
   return SaveSystem.update((data) => {
-    data.level += count;
-    data.talentPoints += count * TALENT_POINTS_PER_LEVEL;
+    const currentLevel = Math.min(MAX_LEVEL, Math.max(1, data.level));
+    const nextLevel = Math.min(MAX_LEVEL, currentLevel + Math.max(0, count));
+    const gained = nextLevel - currentLevel;
+    data.level = nextLevel;
+    data.talentPoints += gained * TALENT_POINTS_PER_LEVEL;
     data.xp = 0;
   });
 }

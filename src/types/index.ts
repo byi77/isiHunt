@@ -25,7 +25,7 @@ export interface SaveData {
   unlockedAchievements: string[];
   lastWorldId: string;
 
-  /** Anzeigename in der Bestenliste. Leer, solange keiner gesetzt wurde. */
+  /** Anzeigename im Profil und in der Bestenliste. Leer beim ersten Start. */
   playerName: string;
   /**
    * Kennung dieses Spielstands im Online-Speicher.

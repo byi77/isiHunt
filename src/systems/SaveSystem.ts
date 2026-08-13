@@ -6,7 +6,7 @@
  * geht ueber `load()`, alles Schreibende ueber `save()`.
  */
 
-import { SAVE_KEY, SAVE_VERSION } from '@/config/GameConfig';
+import { MAX_LEVEL, SAVE_KEY, SAVE_VERSION, xpForLevel } from '@/config/GameConfig';
 import { emptyRarityCounts } from '@/config/rarities';
 import { DEFAULT_WORLD_ID } from '@/config/worlds';
 import type { SaveData } from '@/types';
@@ -78,9 +78,28 @@ function reconcile(raw: Partial<SaveData>): SaveData {
  * Migriert einen Spielstand auf SAVE_VERSION.
  * Neue Versionen hier ergaenzen - niemals alte Zweige loeschen.
  */
+function legacyXpForLevel(level: number): number {
+  return Math.floor(80 * Math.pow(level, 1.45));
+}
+
+/** Uebersetzt die alte XP-Kurve in die neue, ohne Fortschritt zu verschenken. */
 function migrate(raw: Partial<SaveData>): SaveData {
-  // Version 1 ist die erste - es gibt (noch) nichts zu migrieren.
-  return reconcile(raw);
+  const save = reconcile(raw);
+  if ((raw.version ?? 1) >= SAVE_VERSION) return save;
+
+  let totalXp = save.xp;
+  for (let level = 1; level < save.level; level++) totalXp += legacyXpForLevel(level);
+
+  let level = 1;
+  let xp = totalXp;
+  while (level < MAX_LEVEL && xp >= xpForLevel(level)) {
+    xp -= xpForLevel(level);
+    level += 1;
+  }
+
+  save.level = level;
+  save.xp = level >= MAX_LEVEL ? 0 : xp;
+  return save;
 }
 
 let cache: SaveData | null = null;
@@ -160,7 +179,7 @@ export function setPlayerName(name: string): void {
  * denselben Eintrag, und der naechste Abgleich funktioniert in beide Richtungen.
  */
 export function adoptRemote(remote: Partial<SaveData>, cloudId: string): SaveData {
-  const merged = reconcile(remote);
+  const merged = migrate(remote);
   merged.cloudId = cloudId;
   save(merged);
   return merged;

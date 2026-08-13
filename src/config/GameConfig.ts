@@ -15,7 +15,7 @@ export const PLAYFIELD_PADDING_BOTTOM = 120;
 export const PLAYFIELD_PADDING_X = 60;
 
 /** Laenge eines Solo-Runs in Millisekunden. Das Duell rechnet eigen (config/challenge.ts). */
-export const RUN_DURATION_MS = 60_000;
+export const RUN_DURATION_MS = 90_000;
 
 /** Countdown vor dem Start (3 - 2 - 1 - LOS). */
 export const COUNTDOWN_STEPS = 3;
@@ -86,8 +86,12 @@ export const COMBO_TIERS: readonly { readonly minCombo: number; readonly multipl
 
 // --- Progression ------------------------------------------------------------
 
-/** XP fuer den Aufstieg von `level` auf `level + 1`. */
-export const xpForLevel = (level: number): number => Math.floor(80 * Math.pow(level, 1.45));
+/** Hoechste erreichbare Charakterstufe. */
+export const MAX_LEVEL = 100;
+
+/** XP fuer den Aufstieg von `level` auf `level + 1`; auf Maximalstufe 0. */
+export const xpForLevel = (level: number): number =>
+  level >= MAX_LEVEL ? 0 : Math.floor(750 * Math.sqrt(level));
 
 /** Talentpunkte pro Levelaufstieg. */
 export const TALENT_POINTS_PER_LEVEL = 1;
@@ -95,7 +99,7 @@ export const TALENT_POINTS_PER_LEVEL = 1;
 // --- Persistenz -------------------------------------------------------------
 
 export const SAVE_KEY = 'isihunt.save.v1';
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 // --- Entwicklung ------------------------------------------------------------
 
