@@ -199,8 +199,10 @@ Spielstaende stabil.
 | Nullsektor   | 10       | Violett, Leere | Planeten blinken kurz weg                    |
 | Sonnenkrone  | 15       | Gold, Stern    | doppelte Legendaer-Chance, halbe Lebensdauer |
 
-In v0.1 unterscheiden sich die Welten nur optisch. Das ist Absicht: erst muss
-sich die Grundmechanik gut anfuehlen, dann kommt Varianz dazu (M3).
+In v0.1 unterscheiden sich die Welten mechanisch nur optisch. Jede Zone hat
+dafuer eine eigene feste Stern-/Nebelkomposition und zwei transparente
+Hintergrundplaneten. Das ist Absicht: erst muss sich die Grundmechanik gut
+anfuehlen, dann kommt Varianz dazu (M3).
 
 ### 7.4 Erfolge
 

@@ -21,6 +21,12 @@ export const TextureKey = {
   Ring: 'tex-ring',
   Vignette: 'tex-vignette',
   PlayerCore: 'tex-player-core',
+  PlayerCoreIon: 'tex-player-core-ion',
+  PlayerCoreComet: 'tex-player-core-comet',
+  PlayerCoreRanger: 'tex-player-core-ranger',
+  PlayerCorePulse: 'tex-player-core-pulse',
+  PlayerCoreNova: 'tex-player-core-nova',
+  PlayerCoreCrown: 'tex-player-core-crown',
   PlayerHalo: 'tex-player-halo',
   Pixel: 'tex-pixel',
 } as const;
@@ -37,8 +43,25 @@ export function createTextures(scene: Phaser.Scene): void {
   createRays(scene);
   createRing(scene);
   createVignette(scene);
-  createPlayerCore(scene);
+  createPlayerCore(scene, TextureKey.PlayerCore, 0);
+  createPlayerCore(scene, TextureKey.PlayerCoreIon, 1);
+  createPlayerCore(scene, TextureKey.PlayerCoreComet, 2);
+  createPlayerCore(scene, TextureKey.PlayerCoreRanger, 3);
+  createPlayerCore(scene, TextureKey.PlayerCorePulse, 4);
+  createPlayerCore(scene, TextureKey.PlayerCoreNova, 5);
+  createPlayerCore(scene, TextureKey.PlayerCoreCrown, 6);
   createPlayerHalo(scene);
+}
+
+/** Liefert den Skin fuer das aktuelle Charakterlevel. */
+export function playerTextureForLevel(level: number): TextureKeyValue {
+  if (level >= 100) return TextureKey.PlayerCoreCrown;
+  if (level >= 75) return TextureKey.PlayerCoreNova;
+  if (level >= 50) return TextureKey.PlayerCorePulse;
+  if (level >= 30) return TextureKey.PlayerCoreRanger;
+  if (level >= 15) return TextureKey.PlayerCoreComet;
+  if (level >= 5) return TextureKey.PlayerCoreIon;
+  return TextureKey.PlayerCore;
 }
 
 function withGraphics(
@@ -227,10 +250,10 @@ function createVignette(scene: Phaser.Scene): void {
 }
 
 /** Die Spielfigur: ein kleines, nach oben ausgerichtetes Licht-Raumschiff. */
-function createPlayerCore(scene: Phaser.Scene): void {
+function createPlayerCore(scene: Phaser.Scene, key: string, skin: number): void {
   const size = 96;
 
-  withGraphics(scene, TextureKey.PlayerCore, size, size, (g) => {
+  withGraphics(scene, key, size, size, (g) => {
     const c = size / 2;
     const hull = [
       new Phaser.Math.Vector2(c, 8),
@@ -256,6 +279,36 @@ function createPlayerCore(scene: Phaser.Scene): void {
     g.fillStyle(0xffffff, 0.8);
     g.fillTriangle(31, 76, 39, 76, 35, 91);
     g.fillTriangle(57, 76, 65, 76, 61, 91);
+
+    // Jeder Skin bekommt ein zusaetzliches, leicht lesbares Bauteil. Die
+    // Grundsilhouette bleibt gleich, damit das Schiff in der Spielbewegung
+    // sofort als dieselbe Figur erkannt wird.
+    if (skin >= 1) {
+      g.fillStyle(0xffffff, 0.5);
+      g.fillTriangle(9, 59, 27, 48, 23, 66);
+      g.fillTriangle(87, 59, 69, 48, 73, 66);
+    }
+    if (skin >= 2) {
+      g.fillStyle(0xffffff, 0.7);
+      g.fillTriangle(c, 3, 53, 23, 43, 23);
+    }
+    if (skin >= 3) {
+      g.lineStyle(2, 0xffffff, 0.75);
+      g.strokeEllipse(c, 53, 48, 16);
+    }
+    if (skin >= 4) {
+      g.fillStyle(0xffffff, 0.42);
+      g.fillTriangle(4, 75, 27, 63, 29, 78);
+      g.fillTriangle(92, 75, 69, 63, 67, 78);
+    }
+    if (skin >= 5) {
+      g.lineStyle(2.5, 0xffffff, 0.65);
+      g.strokeCircle(c, 18, 10);
+    }
+    if (skin >= 6) {
+      g.fillStyle(0xffffff, 0.6);
+      g.fillTriangle(c, 0, 53, 12, 43, 12);
+    }
   });
 }
 

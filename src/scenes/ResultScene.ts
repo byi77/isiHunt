@@ -35,7 +35,15 @@ export class ResultScene extends Phaser.Scene {
     const { stats, progression } = data;
     const world = getWorld(stats.worldId);
 
-    createWorldBackdrop(this, GAME_WIDTH, GAME_HEIGHT, world.bgTop, world.bgBottom, world.accent);
+    createWorldBackdrop(
+      this,
+      GAME_WIDTH,
+      GAME_HEIGHT,
+      world.bgTop,
+      world.bgBottom,
+      world.accent,
+      world.spaceVariant,
+    );
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
 
     // Abdunkeln, damit die Zahlen im Vordergrund stehen.

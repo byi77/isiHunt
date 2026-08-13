@@ -63,8 +63,9 @@ export class LeaderboardScene extends Phaser.Scene {
       this.backdropWorld.bgTop,
       this.backdropWorld.bgBottom,
       this.backdropWorld.accent,
+      this.backdropWorld.spaceVariant,
     );
-    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT);
+    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, this.backdropWorld.spaceVariant);
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
 
     createBackButton(this, () => this.scene.start(SceneKey.Menu));

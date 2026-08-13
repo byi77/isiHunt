@@ -38,6 +38,7 @@ import * as SaveSystem from '@/systems/SaveSystem';
 import { ScoreSystem } from '@/systems/ScoreSystem';
 import { SpawnSystem } from '@/systems/SpawnSystem';
 import { Depth } from '@/ui/depth';
+import { playerTextureForLevel } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import {
   burst,
@@ -112,8 +113,9 @@ export class GameScene extends Phaser.Scene {
       this.world.bgTop,
       this.world.bgBottom,
       this.world.accent,
+      this.world.spaceVariant,
     );
-    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT);
+    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, this.world.spaceVariant);
     createAmbientMotes(this, GAME_WIDTH, GAME_HEIGHT, this.world.accent);
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
 
@@ -123,6 +125,7 @@ export class GameScene extends Phaser.Scene {
       this.playfield.centerY,
       this.stats,
       this.world.accent,
+      this.mode === 'challenge' ? undefined : playerTextureForLevel(save.level),
     );
 
     this.input_ = new InputController(this);

@@ -417,6 +417,7 @@ export function createWorldBackdrop(
   top: number,
   bottom: number,
   accent: number,
+  spaceVariant = 0,
 ): Phaser.GameObjects.Container {
   const backdrop = scene.add.container(0, 0).setDepth(Depth.Backdrop);
 
@@ -440,6 +441,48 @@ export function createWorldBackdrop(
   // Phaser nicht zeichnen. Die Farbe muss ins DOM.
   paintSafeAreaBackdrop(top, bottom);
 
+  // Jede Raumzone bekommt eine eigene, feste Himmelskomposition. Die Formen
+  // bleiben bewusst weich und transparent: Sie geben Orientierung, ohne
+  // Sammelobjekte oder HUD zu ueberstrahlen.
+  const planetLayouts: readonly {
+    x: number;
+    y: number;
+    size: number;
+    alpha: number;
+  }[][] = [
+    [
+      { x: 0.16, y: 0.25, size: 210, alpha: 0.1 },
+      { x: 0.84, y: 0.72, size: 105, alpha: 0.08 },
+    ],
+    [
+      { x: 0.8, y: 0.2, size: 150, alpha: 0.1 },
+      { x: 0.2, y: 0.78, size: 250, alpha: 0.07 },
+    ],
+    [
+      { x: 0.14, y: 0.68, size: 270, alpha: 0.1 },
+      { x: 0.86, y: 0.28, size: 120, alpha: 0.08 },
+    ],
+    [
+      { x: 0.78, y: 0.56, size: 220, alpha: 0.09 },
+      { x: 0.24, y: 0.18, size: 95, alpha: 0.08 },
+    ],
+    [
+      { x: 0.18, y: 0.22, size: 300, alpha: 0.1 },
+      { x: 0.9, y: 0.82, size: 115, alpha: 0.08 },
+    ],
+  ];
+  const planets = planetLayouts[spaceVariant % planetLayouts.length] ?? planetLayouts[0]!;
+  for (const planet of planets) {
+    backdrop.add(
+      scene.add
+        .image(width * planet.x, height * planet.y, TextureKey.Orb)
+        .setDisplaySize(planet.size, planet.size)
+        .setTint(accent)
+        .setAlpha(planet.alpha)
+        .setBlendMode(Phaser.BlendModes.ADD),
+    );
+  }
+
   // Horizontschein im oberen Drittel - die Lichtquelle der Welt.
   backdrop.add(
     scene.add
@@ -452,12 +495,44 @@ export function createWorldBackdrop(
 
   // Farbwolken in fester Anordnung: bewusst nicht zufaellig, damit jede Welt
   // bei jedem Start gleich aussieht und wiedererkennbar bleibt.
-  const clouds: readonly { x: number; y: number; scale: number; alpha: number }[] = [
-    { x: 0.18, y: 0.16, scale: 0.9, alpha: 0.22 },
-    { x: 0.86, y: 0.34, scale: 1.2, alpha: 0.16 },
-    { x: 0.3, y: 0.62, scale: 1.5, alpha: 0.13 },
-    { x: 0.76, y: 0.85, scale: 1.1, alpha: 0.18 },
+  const cloudLayouts: readonly {
+    x: number;
+    y: number;
+    scale: number;
+    alpha: number;
+  }[][] = [
+    [
+      { x: 0.18, y: 0.16, scale: 0.9, alpha: 0.22 },
+      { x: 0.86, y: 0.34, scale: 1.2, alpha: 0.16 },
+      { x: 0.3, y: 0.62, scale: 1.5, alpha: 0.13 },
+      { x: 0.76, y: 0.85, scale: 1.1, alpha: 0.18 },
+    ],
+    [
+      { x: 0.72, y: 0.12, scale: 1.5, alpha: 0.18 },
+      { x: 0.2, y: 0.38, scale: 0.85, alpha: 0.14 },
+      { x: 0.78, y: 0.64, scale: 1.1, alpha: 0.2 },
+      { x: 0.28, y: 0.9, scale: 1.35, alpha: 0.12 },
+    ],
+    [
+      { x: 0.24, y: 0.14, scale: 1.3, alpha: 0.2 },
+      { x: 0.88, y: 0.4, scale: 0.9, alpha: 0.15 },
+      { x: 0.16, y: 0.66, scale: 1.55, alpha: 0.18 },
+      { x: 0.72, y: 0.88, scale: 1.05, alpha: 0.13 },
+    ],
+    [
+      { x: 0.82, y: 0.2, scale: 1.25, alpha: 0.16 },
+      { x: 0.18, y: 0.44, scale: 1.05, alpha: 0.2 },
+      { x: 0.76, y: 0.7, scale: 1.45, alpha: 0.12 },
+      { x: 0.28, y: 0.92, scale: 0.9, alpha: 0.16 },
+    ],
+    [
+      { x: 0.24, y: 0.1, scale: 1.55, alpha: 0.2 },
+      { x: 0.86, y: 0.34, scale: 1.05, alpha: 0.14 },
+      { x: 0.22, y: 0.72, scale: 1.2, alpha: 0.18 },
+      { x: 0.76, y: 0.9, scale: 1.4, alpha: 0.13 },
+    ],
   ];
+  const clouds = cloudLayouts[spaceVariant % cloudLayouts.length] ?? cloudLayouts[0]!;
 
   for (const cloud of clouds) {
     backdrop.add(
@@ -480,7 +555,14 @@ export function createWorldBackdrop(
  * Geschwindigkeitsdifferenz ist der gesamte Parallax-Effekt - er kostet nichts
  * und gibt dem Spielfeld sofort eine Tiefenachse.
  */
-export function createDriftLayers(scene: Phaser.Scene, width: number, height: number): void {
+export function createDriftLayers(
+  scene: Phaser.Scene,
+  width: number,
+  height: number,
+  spaceVariant = 0,
+): void {
+  const starTints = [0xffffff, 0xc4ecff, 0xffd7b0, 0xe8d1ff, 0xfff1b8] as const;
+  const starTint = starTints[spaceVariant % starTints.length] ?? 0xffffff;
   const layers: readonly {
     count: number;
     scale: number;
@@ -498,7 +580,7 @@ export function createDriftLayers(scene: Phaser.Scene, width: number, height: nu
         .image(Phaser.Math.Between(0, width), Phaser.Math.Between(0, height), TextureKey.Spark)
         .setScale(layer.scale)
         .setAlpha(layer.alpha)
-        .setTint(0xffffff)
+        .setTint(starTint)
         .setDepth(layer.depth);
 
       // Jeder Punkt bekommt eine eigene Dauer - sonst bewegt sich die Ebene

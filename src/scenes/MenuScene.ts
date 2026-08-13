@@ -18,7 +18,7 @@ import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
 import type { RemoteSave } from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
-import { TextureKey } from '@/ui/textures';
+import { playerTextureForLevel, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   createAmbientMotes,
@@ -65,8 +65,9 @@ export class MenuScene extends Phaser.Scene {
       this.selectedWorld.bgTop,
       this.selectedWorld.bgBottom,
       this.selectedWorld.accent,
+      this.selectedWorld.spaceVariant,
     );
-    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT);
+    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, this.selectedWorld.spaceVariant);
     createAmbientMotes(this, GAME_WIDTH, GAME_HEIGHT, this.selectedWorld.accent);
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
 
@@ -326,7 +327,7 @@ export class MenuScene extends Phaser.Scene {
       .setScale(0.48)
       .setAlpha(0.8);
 
-    this.add.image(112, y, TextureKey.PlayerCore).setTint(Palette.goldHex).setScale(0.34);
+    this.add.image(112, y, playerTextureForLevel(level)).setTint(Palette.goldHex).setScale(0.34);
 
     this.add
       .text(172, y - 26, playerName, textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }))
@@ -614,6 +615,7 @@ export class MenuScene extends Phaser.Scene {
       world.bgTop,
       world.bgBottom,
       world.accent,
+      world.spaceVariant,
     );
     next.setAlpha(0);
     this.worldBackdrop = next;

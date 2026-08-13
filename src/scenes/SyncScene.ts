@@ -66,8 +66,16 @@ export class SyncScene extends Phaser.Scene {
     this.transient = [];
 
     const world = getWorld(SaveSystem.load().lastWorldId);
-    createWorldBackdrop(this, GAME_WIDTH, GAME_HEIGHT, world.bgTop, world.bgBottom, world.accent);
-    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT);
+    createWorldBackdrop(
+      this,
+      GAME_WIDTH,
+      GAME_HEIGHT,
+      world.bgTop,
+      world.bgBottom,
+      world.accent,
+      world.spaceVariant,
+    );
+    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, world.spaceVariant);
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
 
     // Tiefer als der Zurueck-Knopf oben links, damit sich Ueberschrift und

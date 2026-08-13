@@ -16,7 +16,7 @@ import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
-import { TextureKey } from '@/ui/textures';
+import { playerTextureForLevel, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   createBackButton,
@@ -44,8 +44,16 @@ export class ProfileScene extends Phaser.Scene {
     const world = getWorld(save.lastWorldId);
     const levelProgress = ProgressionSystem.getLevelProgress(save);
 
-    createWorldBackdrop(this, GAME_WIDTH, GAME_HEIGHT, world.bgTop, world.bgBottom, world.accent);
-    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT);
+    createWorldBackdrop(
+      this,
+      GAME_WIDTH,
+      GAME_HEIGHT,
+      world.bgTop,
+      world.bgBottom,
+      world.accent,
+      world.spaceVariant,
+    );
+    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, world.spaceVariant);
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
 
     if (!firstStart) createBackButton(this, () => this.scene.start(SceneKey.Menu));
@@ -81,7 +89,7 @@ export class ProfileScene extends Phaser.Scene {
       .setAlpha(0.8);
 
     this.add
-      .image(GAME_WIDTH / 2, 310, TextureKey.PlayerCore)
+      .image(GAME_WIDTH / 2, 310, playerTextureForLevel(save.level))
       .setTint(Palette.goldHex)
       .setScale(0.82);
 

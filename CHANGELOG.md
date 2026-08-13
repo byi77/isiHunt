@@ -19,6 +19,11 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   werden als tintbare Planeten mit Orbit dargestellt.
 - Die Raumzonen heissen jetzt Sternenweide, Eisring, Glutnebel, Nullsektor und
   Sonnenkrone.
+- Jede Raumzone hat eine eigene feste Stern-/Nebelkomposition mit passenden
+  Hintergrundplaneten und Sternfarben.
+- Das Raumschiff wechselt bei Level 5, 15, 30, 50, 75 und 100 auf jeweils
+  sichtbar ausgebaute Skins; im Duell bleibt die Darstellung fairerweise
+  neutral.
 
 **Wartung und Safe Area**
 

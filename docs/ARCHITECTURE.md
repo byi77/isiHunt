@@ -396,7 +396,9 @@ Vorteile: keine Ladezeit, keine Asset-Pipeline, eine Textur bedient sechs
 Seltenheiten und fuenf Welten.
 
 Der Austausch gegen echte Assets aendert **nur** `textures.ts` — die
-Texture-Keys bleiben. Siehe [ART_STYLE.md](ART_STYLE.md).
+Texture-Keys bleiben. Das gilt auch fuer die sechs levelbasierten
+Raumschiff-Skins; `playerTextureForLevel` waehlt sie zentral. Siehe
+[ART_STYLE.md](ART_STYLE.md).
 
 **Ausnahme App-Icons.** Manifest und iOS-Home-Bildschirm brauchen echte
 PNG-Dateien; iOS akzeptiert fuer `apple-touch-icon` kein SVG. Sie werden

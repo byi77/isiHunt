@@ -31,8 +31,16 @@ export class SettingsScene extends Phaser.Scene {
   create(): void {
     const world = getWorld(SaveSystem.load().lastWorldId);
 
-    createWorldBackdrop(this, GAME_WIDTH, GAME_HEIGHT, world.bgTop, world.bgBottom, world.accent);
-    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT);
+    createWorldBackdrop(
+      this,
+      GAME_WIDTH,
+      GAME_HEIGHT,
+      world.bgTop,
+      world.bgBottom,
+      world.accent,
+      world.spaceVariant,
+    );
+    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, world.spaceVariant);
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
 

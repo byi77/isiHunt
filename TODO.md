@@ -296,12 +296,13 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
 - [x] ADR-0013: Themen- und Zielgruppenwechsel (mit verworfener Alternative)
 - [x] `tex-player-core`: Raumschiff statt vierzackiger Stern
 - [x] Relikte als Planeten (Rotation als Illusion — Phaser ist 2D)
-- [ ] Hintergrund: Sternenfelder, Nebel, Planeten je Welt
-- [ ] Skins fuer die Figur, freigeschaltet ab Level 5/15/30/50/75/100
+- [x] Hintergrund: weltabhaengige Sternfarben, Nebelkompositionen und
+      Planetenlayouts
+- [x] Skins fuer die Figur, freigeschaltet ab Level 5/15/30/50/75/100
 
 > **Phase-3-Start 2026-08-14:** ADR-0013 ist angenommen. Raumschiff,
-> Planeten-Relikte und Raumzonen-Namen sind umgesetzt. Sternenfelder,
-> Nebel/Planeten je Welt und Level-Skins bleiben die naechsten Teilaufgaben.
+> Planeten-Relikte, Raumzonen-Namen, weltabhaengige Raumkulissen und
+> Level-Skins sind umgesetzt.
 
 - [x] `worlds.ts`: Fantasy-Namen → Weltraum-Regionen
 - [x] `GAME_DESIGN.md`: Pitch, Zielgruppe, Referenz

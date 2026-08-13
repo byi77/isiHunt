@@ -44,11 +44,11 @@ Leitfarbe faerbt Figur-Aura, HUD-Akzente und Schwebepartikel.
 
 | Welt         | Oben      | Unten     | Leitfarbe |
 | ------------ | --------- | --------- | --------- |
-| Silberhain   | `#123021` | `#061410` | `#4ade80` |
-| Frostzinne   | `#11294d` | `#050d1c` | `#7dd3fc` |
-| Glutmark     | `#431407` | `#1a0703` | `#fb923c` |
-| Leerenbluete | `#2e1065` | `#0f0524` | `#c084fc` |
-| Sonnenhort   | `#4a3308` | `#1a1103` | `#fcd34d` |
+| Sternenweide | `#123021` | `#061410` | `#4ade80` |
+| Eisring      | `#11294d` | `#050d1c` | `#7dd3fc` |
+| Glutnebel    | `#431407` | `#1a0703` | `#fb923c` |
+| Nullsektor   | `#2e1065` | `#0f0524` | `#c084fc` |
+| Sonnenkrone  | `#4a3308` | `#1a1103` | `#fcd34d` |
 
 **Regel fuer neue Welten:** Der Hintergrund darf nie heller als etwa 25 %
 Helligkeit sein, und die Leitfarbe muss sich von allen sechs
@@ -159,6 +159,10 @@ Flaeche.
 **Alles wird weiss gezeichnet und zur Laufzeit getintet.** Deshalb bedient
 eine Textur alle Seltenheiten und Welten.
 
+Die sechs Raumschiff-Skins werden ebenfalls prozedural aus derselben weissen
+Grundform gebaut. Sie schalten bei Level 5, 15, 30, 50, 75 und 100 zusätzliche
+Silhouetten-Details frei und behalten dadurch die klare Lesbarkeit im Spiel.
+
 ### 6.1 Warum Facetten und Splitter
 
 Zwei Formentscheidungen mit Absicht dahinter:
@@ -180,7 +184,8 @@ fuenf Ebenen (Reihenfolge in `src/ui/depth.ts`):
 | -------------------- | ------------------------------------------------------------------------------------------------- |
 | Grundverlauf         | Farbstimmung der Welt                                                                             |
 | Horizontschein       | die Lichtquelle der Welt, oberes Drittel                                                          |
-| Farbwolken           | vier weiche Flecken in **fester** Anordnung — jede Welt bleibt wiedererkennbar                    |
+| Hintergrundplaneten  | zwei sehr transparente Planeten als feste Himmelsmarken je Welt                              |
+| Farbwolken           | vier weiche Flecken in **fester** Anordnung je Welt — jede Welt bleibt wiedererkennbar              |
 | Zwei Parallax-Ebenen | die hintere kleiner, dunkler, langsamer; der Geschwindigkeitsunterschied _ist_ der Tiefeneindruck |
 | Lichtstaub           | steigt auf, traegt die Stimmung                                                                   |
 

@@ -14,6 +14,7 @@ import { PLAYER_ACCEL_RESPONSE, PLAYER_TRAIL_MIN_SPEED } from '@/config/GameConf
 import type { PlayerStats } from '@/config/talents';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
+import type { TextureKeyValue } from '@/ui/textures';
 
 export class Player extends Phaser.GameObjects.Container {
   private readonly core: Phaser.GameObjects.Image;
@@ -28,6 +29,7 @@ export class Player extends Phaser.GameObjects.Container {
     y: number,
     private stats: PlayerStats,
     accentColor: number,
+    textureKey: TextureKeyValue = TextureKey.PlayerCore,
   ) {
     super(scene, x, y);
 
@@ -37,7 +39,7 @@ export class Player extends Phaser.GameObjects.Container {
       .setScale(2.1)
       .setAlpha(0.75);
     this.halo = scene.add.image(0, 0, TextureKey.PlayerHalo).setTint(accentColor).setAlpha(0.8);
-    this.core = scene.add.image(0, 0, TextureKey.PlayerCore).setTint(0xffffff);
+    this.core = scene.add.image(0, 0, textureKey).setTint(0xffffff);
 
     this.add([this.aura, this.halo, this.core]);
     this.setDepth(Depth.Player);

@@ -62,8 +62,16 @@ export class ChallengeScene extends Phaser.Scene {
   }
 
   private buildBackground(world: WorldDef): void {
-    createWorldBackdrop(this, GAME_WIDTH, GAME_HEIGHT, world.bgTop, world.bgBottom, world.accent);
-    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT);
+    createWorldBackdrop(
+      this,
+      GAME_WIDTH,
+      GAME_HEIGHT,
+      world.bgTop,
+      world.bgBottom,
+      world.accent,
+      world.spaceVariant,
+    );
+    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, world.spaceVariant);
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
   }
 
