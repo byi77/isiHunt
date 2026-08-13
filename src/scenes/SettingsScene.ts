@@ -153,13 +153,13 @@ export class SettingsScene extends Phaser.Scene {
     this.add
       .text(
         GAME_WIDTH / 2,
-        1010,
+        1025,
         'BESONDERER DANK AN EMRE UND SIMAY\n' +
           'Fuer eure aussergewoehnliche Unterstuetzung mit Planung,\n' +
           'Tipps, Ideen, Testen, Verifizieren und Validieren.\n' +
           'Eure Neugier und ehrlichen Rueckmeldungen machen isiHunt\n' +
           'mutiger, schoener und immer ein bisschen besser.',
-        textStyle(FontSize.tiny, Palette.inkDim, { lineSpacing: 5 }),
+        textStyle(FontSize.small, Palette.inkDim, { lineSpacing: 3 }),
       )
       .setOrigin(0.5)
       .setAlign('center');
