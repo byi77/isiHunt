@@ -44,9 +44,9 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 - **2.5 Balken:** flexibles Spielfeld oder nur die Balken einfaerben? Ersteres
   betrifft alle Scenes und verschiebt das Balancing.
 - **3 Weltraum:** sollen die Dokumente jetzt umgeschrieben werden?
-- **3.6 Dynamic Island:** braucht eine native App (M6 vorziehen?). Fuer iOS
-  haben wir keinen eigenen Mac: Build spaeter ueber macOS-CI/Cloud und Test
-  auf den iPhones per TestFlight einplanen.
+- **3.6 Dynamic Island:** native Umsetzung wird **nach Phase 4** angegangen.
+  Vorbereitung und Planung beginnt jetzt; fuer iOS ohne eigenen Mac laufen
+  Build und Signierung spaeter ueber macOS-CI/Cloud und TestFlight.
 - **5 Hindernisse:** ab welcher Welt darf ein Hindernis bestrafen?
 - **6 Manipulationsschutz:** vor oder nach Ranked-Modus und Rekord-Meldungen?
 
@@ -349,20 +349,23 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
 > Erreichbar waere sie erst mit Capacitor (M6), und auch dann nur ueber ein
 > natives Plugin.
 
-- [ ] **Entscheidung noetig:** Soll das Spiel dafuer nativ werden, also M6
-      vorgezogen? Ohne das ist der Wunsch technisch nicht erfuellbar.
+- [x] **Entscheidung:** Native Umsetzung kommt nach Phase 4. Die Vorbereitung
+      wird jetzt dokumentiert, aber der Web-Stand bleibt bis dahin aktiv.
 - [ ] **Was ohne native App geht** — und optisch in dieselbe Richtung zielt:
-  - [ ] Der Bereich _um_ die Island gehoert der Seite. Ein bewusst gestalteter
-        Streifen dort (Farbverlauf, treibende Lichtpunkte) laesst die Island
-        eingebettet wirken statt wie ein Loch
+  - [x] Der Bereich _um_ die Island gehoert der Seite: Safe-Area-Laufband im
+        Menue und Restzeit-Anzeige waehrend des Runs.
   - [ ] `theme-color` je Zustand umschalten — faerbt auf iOS die Statusleiste
         und damit die Umgebung der Island. Im Menue ruhig, im Run in der
         Weltfarbe, bei einem legendaeren Fang kurz aufleuchtend.
         _Aufwand: gering, Wirkung sichtbar_
-  - [ ] Der `safe-area-inset-top`-Bereich wird bisher nur freigehalten
-        (`index.html`) — er koennte Punktzahl oder Timer tragen
+  - [x] Der `safe-area-inset-top`-Bereich wird im Web-Stand fuer Laufband und
+        Restzeit genutzt; die Systemuhr bleibt unangetastet.
 - [ ] Erst mit M6 (Capacitor): Live Activity mit Punktestand und Restzeit
-      waehrend eines Runs
+      waehrend eines Runs; bis dahin wird die Anzeige als Prototyp beobachtet.
+
+> **Entscheidung fuer die native Live Activity:** Zunaechst soll sie waehrend
+> des gesamten Runs sichtbar bleiben und laufend sinnvolle Informationen zeigen.
+> Welche Inhalte dauerhaft bleiben, wird nach dem ersten Test entschieden.
 
 ## Phase 4 — Belohnung
 

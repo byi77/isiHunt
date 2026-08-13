@@ -49,6 +49,9 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 - Farbige Planeten (gruen, blau, lila, orange) haben jetzt mehrstimmige,
   deutlich epischere Fangklaenge; das Scrollen durch die Welten spielt einen
   eigenen Auswahlton.
+- Der Bereich oberhalb von Spielpixel 0 wird jetzt auf Geraeten mit Safe Area
+  genutzt: Im Menue laeuft dort eine dezente Infozeile, waehrend des Runs steht
+  dort die verbleibende Zeit in Sekunden.
 - Der Wartungsmodus wird durch drei kurze Tipps auf die Versionsangabe und
   anschliessend langes Gedrueckthalten geoeffnet.
 

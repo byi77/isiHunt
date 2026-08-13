@@ -18,6 +18,7 @@ import { getWorld } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
+import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { Depth } from '@/ui/depth';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
@@ -40,6 +41,7 @@ export class ChallengeScene extends Phaser.Scene {
   }
 
   create(): void {
+    SafeAreaSystem.showStatic('DUELL');
     const state = ChallengeSystem.getState();
 
     // Ohne Duell-Zustand gibt es nichts anzuzeigen. Kann nur passieren, wenn

@@ -35,6 +35,7 @@ import { SceneKey } from '@/scenes/SceneKey';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
+import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { ScoreSystem } from '@/systems/ScoreSystem';
 import { SpawnSystem } from '@/systems/SpawnSystem';
 import { Depth } from '@/ui/depth';
@@ -82,6 +83,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   create(data: GameSceneData): void {
+    SafeAreaSystem.hide();
     const save = SaveSystem.load();
 
     this.mode = data.mode ?? 'solo';

@@ -87,6 +87,7 @@ isiHunt/
 │   │   └── ResultScene.ts      Auswertung eines Solo-Runs
 │   ├── systems/                Regeln ohne Darstellung
 │   │   ├── SaveSystem.ts       localStorage, versioniert
+│   │   ├── SafeAreaSystem.ts    Safe-Area-Laufband und Run-Restzeit
 │   │   ├── ProgressionSystem.ts XP, Level, Talentpunkte, Erfolge
 │   │   ├── ScoreSystem.ts      Punkte + Combo eines Runs
 │   │   ├── ChallengeSystem.ts  Duell-Zustand: Seed, Punktstaende, Sieger

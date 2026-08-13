@@ -28,6 +28,7 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { measureLayout } from '@/core/layoutReport';
 import { SceneKey } from '@/scenes/SceneKey';
+import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { Depth } from '@/ui/depth';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import { createButton } from '@/ui/widgets';
@@ -43,6 +44,7 @@ export class RulerScene extends Phaser.Scene {
   }
 
   create(): void {
+    SafeAreaSystem.showStatic('PIXEL-LINEAL');
     this.drawGrid();
     this.drawSafeAreaMarkers();
 

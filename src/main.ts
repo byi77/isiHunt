@@ -27,6 +27,7 @@ import { RulerScene } from '@/scenes/RulerScene';
 import { SettingsScene } from '@/scenes/SettingsScene';
 import { SceneKey } from '@/scenes/SceneKey';
 import { SyncScene } from '@/scenes/SyncScene';
+import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
 import { Palette } from '@/ui/theme';
 
@@ -88,6 +89,7 @@ if (isStandalone()) document.documentElement.classList.add('standalone-app');
 // Der AudioContext darf auf iOS erst nach einer Nutzergeste laufen. Das
 // SoundSystem wartet deshalb auf den ersten Tipp und bleibt ansonsten still.
 SoundSystem.initialize();
+SafeAreaSystem.initialize();
 
 // Manifest und installierte Web-App sperren die Ausrichtung bereits. Die
 // Browser-API ist die zusaetzliche Moeglichkeit fuer Android; auf iOS Safari

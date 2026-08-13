@@ -33,6 +33,7 @@ import { formatLayout, measureLayout } from '@/core/layoutReport';
 import { isIos, isStandalone } from '@/core/display';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as SaveSystem from '@/systems/SaveSystem';
+import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import {
@@ -59,6 +60,7 @@ export class AdminScene extends Phaser.Scene {
   }
 
   create(): void {
+    SafeAreaSystem.showStatic('WARTUNG');
     this.resetArmed = false;
 
     // Schlichter Hintergrund statt Weltkulisse: Das hier ist Werkzeug, kein

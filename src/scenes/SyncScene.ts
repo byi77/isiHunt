@@ -29,6 +29,7 @@ import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
 import type { RemoteSave } from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
+import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import type { TextInputHandle } from '@/ui/textInput';
 import { createTextInput } from '@/ui/textInput';
@@ -61,6 +62,7 @@ export class SyncScene extends Phaser.Scene {
   }
 
   create(): void {
+    SafeAreaSystem.showStatic('PROFIL UEBERTRAGEN');
     this.busy = false;
     this.pending = null;
     this.transient = [];

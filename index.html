@@ -199,6 +199,39 @@
         display: block;
       }
 
+      /* Dezentes Laufband im Bereich oberhalb von Spielpixel 0. Es wird nur
+         eingeblendet, wenn #safe-top auf dem echten Geraet eine Hoehe meldet;
+         auf Desktop und normalen Browser-Viewports stoert es den Canvas nicht. */
+      #safe-area-content {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: env(safe-area-inset-top, 0px);
+        z-index: 2;
+        display: none;
+        align-items: flex-end;
+        justify-content: center;
+        box-sizing: border-box;
+        padding: 0 18px 5px;
+        overflow: hidden;
+        color: rgba(244, 241, 232, 0.72);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        line-height: 1;
+        text-align: center;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+        pointer-events: none;
+        text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
+        transition: color 300ms ease, opacity 300ms ease;
+      }
+
+      html.has-safe-top #safe-area-content {
+        display: flex;
+      }
+
       /* Messpunkte fuer die sicheren Raender - unsichtbar, siehe <body>. */
       .safe-probe {
         position: fixed;
@@ -288,6 +321,7 @@
     <div id="orientation-lock" aria-live="polite">
       <span>Bitte halte das Handy hochkant, um isiHunt zu spielen.</span>
     </div>
+    <div id="safe-area-content" aria-hidden="true"></div>
     <!-- Zwei Messpunkte fuer die sicheren Raender.
          `env(safe-area-inset-*)` laesst sich aus JavaScript nicht direkt lesen.
          Diese beiden 1-Pixel-Marken stehen genau auf der Grenze; ihre Position

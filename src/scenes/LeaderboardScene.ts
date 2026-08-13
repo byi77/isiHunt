@@ -15,6 +15,7 @@ import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
 import type { LeaderboardEntry } from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
+import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { planetTextureForVariant, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
@@ -49,6 +50,7 @@ export class LeaderboardScene extends Phaser.Scene {
   }
 
   create(data: { worldId?: string } = {}): void {
+    SafeAreaSystem.showStatic('RANGLISTE');
     const save = SaveSystem.load();
 
     this.filter = data.worldId ? (WORLDS.find((w) => w.id === data.worldId) ?? null) : null;

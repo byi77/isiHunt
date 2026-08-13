@@ -18,6 +18,7 @@ import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
 import type { RemoteSave } from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
+import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
 import { playerTextureForLevel, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
@@ -47,6 +48,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create(): void {
+    SafeAreaSystem.showMenuTicker();
     const save = SaveSystem.load();
     if (!save.playerName) {
       this.scene.start(SceneKey.Profile, { firstStart: true });

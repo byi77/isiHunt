@@ -16,6 +16,7 @@ import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
+import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { playerTextureForLevel, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
@@ -39,6 +40,7 @@ export class ProfileScene extends Phaser.Scene {
   }
 
   create(data: ProfileSceneData = {}): void {
+    SafeAreaSystem.showStatic('DEIN PROFIL');
     const save = SaveSystem.load();
     const firstStart = data.firstStart ?? false;
     const world = getWorld(save.lastWorldId);

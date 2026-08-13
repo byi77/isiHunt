@@ -16,6 +16,7 @@ import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
+import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { planetTextureForVariant, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import { createBar, createButton, createVignette, createWorldBackdrop } from '@/ui/widgets';
@@ -32,6 +33,7 @@ export class ResultScene extends Phaser.Scene {
   }
 
   create(data: ResultSceneData): void {
+    SafeAreaSystem.showStatic('RUN BEENDET');
     const { stats, progression } = data;
     const world = getWorld(stats.worldId);
 

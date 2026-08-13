@@ -13,6 +13,7 @@ import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
+import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import {
@@ -30,6 +31,7 @@ export class SettingsScene extends Phaser.Scene {
   }
 
   create(): void {
+    SafeAreaSystem.showStatic('EINSTELLUNGEN');
     const world = getWorld(SaveSystem.load().lastWorldId);
 
     createWorldBackdrop(
