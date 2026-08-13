@@ -223,6 +223,32 @@ export async function submitScore(
   return { ok: true, value: true };
 }
 
+/** Aktualisiert den Anzeigenamen des bereits vorhandenen eigenen Bestwerts. */
+export async function updateLeaderboardName(
+  playerId: string,
+  playerName: string,
+): Promise<CloudResult<true>> {
+  const supabase = getClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+
+  const name = sanitizePlayerName(playerName);
+  if (!name) return { ok: false, error: 'Kein Name angegeben' };
+  if (!playerId) return { ok: false, error: 'Kein Spielerprofil angegeben' };
+
+  const result = await withTimeout(
+    supabase.rpc('rename_best_score', {
+      p_player_id: playerId,
+      p_player_name: name,
+    }),
+    'Ranglistenname aktualisieren',
+  );
+
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  return { ok: true, value: true };
+}
+
 /**
  * Bereinigt einen Spielernamen.
  *

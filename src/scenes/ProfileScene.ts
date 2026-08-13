@@ -147,7 +147,15 @@ export class ProfileScene extends Phaser.Scene {
       }
 
       SaveSystem.setPlayerName(name);
-      if (CloudSystem.isAvailable()) void CloudSystem.syncSaveSafely();
+      if (CloudSystem.isAvailable()) {
+        const playerId = SaveSystem.ensureCloudId();
+        // Spielstand und bestehenden Ranglisteneintrag parallel aktualisieren.
+        // Gibt es noch keinen Bestwert, bleibt der Ranglistenteil ein No-op.
+        void Promise.all([
+          CloudSystem.syncSaveSafely(),
+          CloudSystem.updateLeaderboardName(playerId, name),
+        ]);
+      }
       this.scene.start(SceneKey.Menu);
     };
 
