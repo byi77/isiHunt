@@ -131,6 +131,39 @@ export class SettingsScene extends Phaser.Scene {
       { width: 360, height: 70, accent: world.accent, fontSize: FontSize.body },
     );
 
+    createPanel(this, GAME_WIDTH / 2, 985, GAME_WIDTH - 120, 240, world.accent, {
+      alpha: 0.5,
+      radius: 20,
+    });
+
+    this.add
+      .text(GAME_WIDTH / 2, 900, 'IMPRESSUM', textStyle(FontSize.body, Palette.gold))
+      .setOrigin(0.5)
+      .setLetterSpacing(3);
+
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        942,
+        'PROGRAMMIERT VON  YAVUZ ISIK',
+        textStyle(FontSize.small, Palette.ink, { fontStyle: 'bold' }),
+      )
+      .setOrigin(0.5);
+
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        1010,
+        'BESONDERER DANK AN EMRE UND SIMAY\n' +
+          'Fuer eure aussergewoehnliche Unterstuetzung mit Planung,\n' +
+          'Tipps, Ideen, Testen, Verifizieren und Validieren.\n' +
+          'Eure Neugier und ehrlichen Rueckmeldungen machen isiHunt\n' +
+          'mutiger, schoener und immer ein bisschen besser.',
+        textStyle(FontSize.tiny, Palette.inkDim, { lineSpacing: 5 }),
+      )
+      .setOrigin(0.5)
+      .setAlign('center');
+
     this.add
       .text(
         GAME_WIDTH / 2,

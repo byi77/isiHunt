@@ -406,6 +406,10 @@ Erster spielbarer Prototyp.
 - 15 Erfolge, geprueft nach jedem Run
 - Spielstand in `localStorage`, versioniert und gegen defekte Daten abgesichert
 
+**Einstellungen**
+
+- Impressum mit Programmiererangabe und persoenlichem Dank an Emre und Simay
+
 **Steuerung**
 
 - Touch: Figur laeuft zum Finger, mit Abbremsen nahe am Ziel
