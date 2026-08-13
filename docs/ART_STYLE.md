@@ -149,6 +149,10 @@ Die weiteren Rasterassets liegen unter `public/assets/`: `isihunt-logo.png`
 und je eine Planetentextur fuer Sternenweide, Eisring, Glutnebel, Nullsektor
 und Sonnenkrone. Sie werden im `BootScene` vor dem Menue geladen.
 
+Die einsammelbaren Relikte verwenden diese echten Planetensprites passend zur
+Welt. Die Seltenheitsfarbe kommt ueber Glow, Strahlenkranz und Fang-Effekte
+hinzu, damit die sechs Seltenheitsfarben eindeutig bleiben.
+
 | Key               | Was                                                    | Groesse |
 | ----------------- | ------------------------------------------------------ | ------- |
 | `tex-pixel`       | 1×1 weiss, Basis fuer Flaechen und Balken              | 1×1     |

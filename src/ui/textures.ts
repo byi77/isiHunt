@@ -1,13 +1,9 @@
 /**
- * Prozedural erzeugte Texturen.
+ * Prozedurale Grundtexturen und zentrale Asset-Keys.
  *
- * Bewusste Entscheidung fuer v0.1: Das Spiel laedt KEINE Bilddateien. Alle
- * Grafiken werden beim Start aus Phaser-Graphics gerendert. Vorteile:
- * - Sofort lauffaehig, kein Asset-Pipeline-Setup, keine Ladezeit.
- * - Alles wird weiss gezeichnet und zur Laufzeit getintet -> eine Textur
- *   bedient alle sechs Seltenheiten und alle fuenf Welten.
- * Ersetzt werden diese Platzhalter spaeter durch echte Assets, ohne dass sich
- * Spielcode aendert (gleiche Texture-Keys). Siehe docs/ART_STYLE.md.
+ * Spielobjekte wie Glow, Strahlen und Raumschiffe werden weiterhin aus
+ * Phaser-Graphics gerendert. Die echten Planetensprites und das Logo werden
+ * im BootScene geladen; die Auswahl bleibt ueber diese Keys zentral.
  */
 
 import Phaser from 'phaser';
@@ -68,6 +64,18 @@ export function playerTextureForLevel(level: number): TextureKeyValue {
   if (level >= 15) return TextureKey.PlayerCoreComet;
   if (level >= 5) return TextureKey.PlayerCoreIon;
   return TextureKey.PlayerCore;
+}
+
+/** Liefert die echte Planetentextur fuer eine Raumzonen-Komposition. */
+export function planetTextureForVariant(spaceVariant: number): TextureKeyValue {
+  const planets: readonly TextureKeyValue[] = [
+    TextureKey.PlanetSternenweide,
+    TextureKey.PlanetEisring,
+    TextureKey.PlanetGlutnebel,
+    TextureKey.PlanetNullsektor,
+    TextureKey.PlanetSonnenkrone,
+  ];
+  return planets[spaceVariant % planets.length] ?? TextureKey.PlanetSternenweide;
 }
 
 function withGraphics(

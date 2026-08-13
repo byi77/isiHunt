@@ -16,7 +16,7 @@ import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
-import { TextureKey } from '@/ui/textures';
+import { planetTextureForVariant, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import { createBar, createButton, createVignette, createWorldBackdrop } from '@/ui/widgets';
 import type { ProgressionResult, RunStats } from '@/types';
@@ -55,7 +55,7 @@ export class ResultScene extends Phaser.Scene {
       .setAlpha(0.45);
 
     this.buildScoreHeader(stats, progression, world.accent);
-    this.buildBreakdown(stats);
+    this.buildBreakdown(stats, world.spaceVariant);
     this.buildProgression(progression, world.accent);
     this.submitLeaderboardScore(stats);
     this.uploadSave();
@@ -102,7 +102,7 @@ export class ResultScene extends Phaser.Scene {
   }
 
   /** Wie viele Relikte je Seltenheit - die Zeile mit dem Sammel-Kick. */
-  private buildBreakdown(stats: RunStats): void {
+  private buildBreakdown(stats: RunStats, spaceVariant: number): void {
     const y = 336;
 
     this.add.text(60, y, 'AUSBEUTE', textStyle(FontSize.tiny, Palette.inkDim)).setLetterSpacing(6);
@@ -112,9 +112,8 @@ export class ResultScene extends Phaser.Scene {
       const count = stats.collected[rarity.id];
 
       this.add
-        .image(72, rowY, TextureKey.Orb)
-        .setTint(rarity.color)
-        .setScale(0.33)
+        .image(72, rowY, planetTextureForVariant(spaceVariant))
+        .setScale(0.055)
         .setAlpha(count > 0 ? 1 : 0.28);
 
       this.add

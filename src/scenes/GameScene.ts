@@ -38,7 +38,7 @@ import * as SaveSystem from '@/systems/SaveSystem';
 import { ScoreSystem } from '@/systems/ScoreSystem';
 import { SpawnSystem } from '@/systems/SpawnSystem';
 import { Depth } from '@/ui/depth';
-import { playerTextureForLevel } from '@/ui/textures';
+import { planetTextureForVariant, playerTextureForLevel } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import {
   burst,
@@ -247,7 +247,9 @@ export class GameScene extends Phaser.Scene {
   // --- Spielhandlungen ------------------------------------------------------
 
   private spawnCollectible(x: number, y: number, rarity: RarityDef): void {
-    this.collectibles.push(new Collectible(this, x, y, rarity));
+    this.collectibles.push(
+      new Collectible(this, x, y, rarity, planetTextureForVariant(this.world.spaceVariant)),
+    );
   }
 
   /** Distanztest statt Physik-Body - exakt, billig und leicht nachvollziehbar. */

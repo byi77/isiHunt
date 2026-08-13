@@ -12,6 +12,7 @@ import { RARITY_RAYS_MIN_POINTS } from '@/config/GameConfig';
 import type { RarityDef } from '@/config/rarities';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
+import type { TextureKeyValue } from '@/ui/textures';
 
 /** Zeitfenster am Lebensende, in dem das Relikt sichtbar verblasst. */
 const FADE_OUT_MS = 700;
@@ -28,19 +29,29 @@ export class Collectible extends Phaser.GameObjects.Container {
   private ageMs = 0;
   private collected = false;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, rarity: RarityDef) {
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    y: number,
+    rarity: RarityDef,
+    planetTexture: TextureKeyValue,
+  ) {
     super(scene, x, y);
 
     this.rarity = rarity;
     this.radius = rarity.radius;
 
-    const orbTextureRadius = 30; // siehe createOrb()
-    const scale = rarity.radius / orbTextureRadius;
+    // Die PNG-Planeten sind 512x512 und haben damit einen Radius von 256.
+    // Glow und Strahlen bleiben auf der alten Reliktgroesse, damit die
+    // Seltenheitsfarbe auch bei den echten Oberflaechen klar lesbar bleibt.
+    const planetTextureRadius = 256;
+    const planetScale = rarity.radius / planetTextureRadius;
+    const effectScale = rarity.radius / 30;
 
     this.glow = scene.add
       .image(0, 0, TextureKey.Glow)
       .setTint(rarity.color)
-      .setScale(scale * 1.5)
+      .setScale(effectScale * 1.5)
       .setAlpha(0.9)
       .setBlendMode(Phaser.BlendModes.ADD);
 
@@ -51,12 +62,12 @@ export class Collectible extends Phaser.GameObjects.Container {
         ? scene.add
             .image(0, 0, TextureKey.Rays)
             .setTint(rarity.color)
-            .setScale(scale * 0.75)
+            .setScale(effectScale * 0.75)
             .setAlpha(0.45)
             .setBlendMode(Phaser.BlendModes.ADD)
         : null;
 
-    this.orb = scene.add.image(0, 0, TextureKey.Orb).setTint(rarity.color).setScale(scale);
+    this.orb = scene.add.image(0, 0, planetTexture).setScale(planetScale);
 
     this.add(this.rays ? [this.rays, this.glow, this.orb] : [this.glow, this.orb]);
     this.setDepth(Depth.Collectible);

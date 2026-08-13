@@ -309,8 +309,9 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
 - [x] `GAME_DESIGN.md`: Pitch, Zielgruppe, Referenz
 - [x] `ART_STYLE.md`: Formensprache, Assets, Welten-Farbtabelle
 
-> **Unantastbar:** Die sechs Seltenheitsfarben. Spielobjekt-Texturen bleiben
-> weiss und werden getintet — farbige Hintergrundplaneten sind reine Kulisse.
+> **Unantastbar:** Die sechs Seltenheitsfarben. Planetensprites duerfen ihre
+> Weltdetails behalten; die Seltenheit wird weiterhin durch Glow, Strahlenkranz
+> und Fang-Effekte eindeutig angezeigt.
 
 ## Phase 3.5 — Ton _(neu 2026-08-13, aus M4 vorgezogen)_
 

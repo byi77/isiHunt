@@ -26,6 +26,10 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   neutral.
 - Echte Planetentexturen je Raumzone und ein neues isiHunt-Logo wurden als
   vorab geladene PNG-Assets eingebaut.
+- Die einsammelbaren Relikte zeigen jetzt diese echten Planetensprites passend
+  zur Welt; die Seltenheitsfarben bleiben ueber Glow und Strahlenkranz lesbar.
+- Das Logo nutzt ausschliesslich Gelb, Weiss, Cyan, Blau und Gruen — ohne Rot,
+  Orange oder andere rotnahe Akzentfarben.
 
 **Wartung und Safe Area**
 

@@ -15,7 +15,7 @@ import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
 import type { LeaderboardEntry } from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
-import { TextureKey } from '@/ui/textures';
+import { planetTextureForVariant, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   createBackButton,
@@ -113,9 +113,8 @@ export class LeaderboardScene extends Phaser.Scene {
       const isActive = world.id === this.filter?.id;
 
       const marker = this.add
-        .image(x, y, TextureKey.Orb)
-        .setTint(world.accent)
-        .setScale(isActive ? 0.5 : 0.34)
+        .image(x, y, planetTextureForVariant(world.spaceVariant))
+        .setScale(isActive ? 0.06 : 0.04)
         .setAlpha(isUnlocked ? (isActive ? 1 : 0.5) : 0.18);
 
       if (!isUnlocked) return;
@@ -255,7 +254,10 @@ export class LeaderboardScene extends Phaser.Scene {
       const world = getWorld(entry.worldId);
 
       this.listItems.push(
-        this.add.image(112, y, TextureKey.Orb).setTint(world.accent).setScale(0.22).setAlpha(0.95),
+        this.add
+          .image(112, y, planetTextureForVariant(world.spaceVariant))
+          .setScale(0.035)
+          .setAlpha(0.95),
         this.add
           .text(76, y, `${index + 1}`, textStyle(FontSize.small, rankColor, { fontStyle: 'bold' }))
           .setOrigin(0, 0.5),
