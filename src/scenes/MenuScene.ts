@@ -72,7 +72,7 @@ export class MenuScene extends Phaser.Scene {
 
     this.buildTitle();
     this.buildFullscreenToggle();
-    this.buildProfilePanel(save.playerName, save.level, save.bestScore);
+    this.buildProfilePanel(save.playerName, save.level, save.bestScore, save.coins);
     this.buildWorldList(save.level);
     this.buildFooter();
 
@@ -309,7 +309,12 @@ export class MenuScene extends Phaser.Scene {
   }
 
   /** Name, Lichtfigur, Level und Bestwert direkt im Profilblock. */
-  private buildProfilePanel(playerName: string, level: number, bestScore: number): void {
+  private buildProfilePanel(
+    playerName: string,
+    level: number,
+    bestScore: number,
+    coins: number,
+  ): void {
     const y = 270;
     const width = GAME_WIDTH - 120;
 
@@ -340,7 +345,7 @@ export class MenuScene extends Phaser.Scene {
       .text(
         172,
         y + 29,
-        `BESTWERT ${bestScore.toLocaleString('de-DE')}`,
+        `BESTWERT ${bestScore.toLocaleString('de-DE')}  ·  COINS ${coins.toLocaleString('de-DE')}`,
         textStyle(FontSize.tiny, Palette.inkDim),
       )
       .setOrigin(0, 0.5)

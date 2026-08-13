@@ -17,6 +17,7 @@ export function createDefaultSave(): SaveData {
     level: 1,
     xp: 0,
     talentPoints: 0,
+    coins: 0,
     talents: {},
     bestScore: 0,
     bestCombo: 0,
@@ -68,6 +69,7 @@ function reconcile(raw: Partial<SaveData>): SaveData {
     ...base,
     ...raw,
     version: SAVE_VERSION,
+    coins: Math.max(0, raw.coins ?? base.coins),
     collected: { ...base.collected, ...(raw.collected ?? {}) },
     talents: { ...base.talents, ...(raw.talents ?? {}) },
     unlockedAchievements: raw.unlockedAchievements ?? base.unlockedAchievements,
@@ -85,20 +87,25 @@ function legacyXpForLevel(level: number): number {
 /** Uebersetzt die alte XP-Kurve in die neue, ohne Fortschritt zu verschenken. */
 function migrate(raw: Partial<SaveData>): SaveData {
   const save = reconcile(raw);
-  if ((raw.version ?? 1) >= SAVE_VERSION) return save;
+  const rawVersion = raw.version ?? 1;
+  if (rawVersion >= SAVE_VERSION) return save;
 
-  let totalXp = save.xp;
-  for (let level = 1; level < save.level; level++) totalXp += legacyXpForLevel(level);
+  // Version 1 hatte noch die alte XP-Kurve. Version 2 bekam bereits die
+  // aktuelle Kurve; Version 3 fuegt nur das Coins-Feld hinzu.
+  if (rawVersion < 2) {
+    let totalXp = save.xp;
+    for (let level = 1; level < save.level; level++) totalXp += legacyXpForLevel(level);
 
-  let level = 1;
-  let xp = totalXp;
-  while (level < MAX_LEVEL && xp >= xpForLevel(level)) {
-    xp -= xpForLevel(level);
-    level += 1;
+    let level = 1;
+    let xp = totalXp;
+    while (level < MAX_LEVEL && xp >= xpForLevel(level)) {
+      xp -= xpForLevel(level);
+      level += 1;
+    }
+
+    save.level = level;
+    save.xp = level >= MAX_LEVEL ? 0 : xp;
   }
-
-  save.level = level;
-  save.xp = level >= MAX_LEVEL ? 0 : xp;
   return save;
 }
 

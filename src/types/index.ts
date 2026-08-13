@@ -15,6 +15,8 @@ export interface SaveData {
   /** XP innerhalb des aktuellen Levels, nicht kumulativ. */
   xp: number;
   talentPoints: number;
+  /** Waehrung fuer spaetere Belohnungen und ueberschuessige Talentpunkte. */
+  coins: number;
   talents: TalentRanks;
   bestScore: number;
   bestCombo: number;
@@ -80,6 +82,7 @@ export interface ProgressionResult {
   levelsGained: number;
   newLevel: number;
   talentPointsGained: number;
+  coinsGained: number;
   unlockedWorldIds: string[];
   unlockedAchievementIds: string[];
   isNewBestScore: boolean;

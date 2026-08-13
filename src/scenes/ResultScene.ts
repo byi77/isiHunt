@@ -173,10 +173,17 @@ export class ResultScene extends Phaser.Scene {
     const highlights: { text: string; color: string }[] = [];
 
     if (progression.levelsGained > 0) {
-      highlights.push({
-        text: `Levelaufstieg! +${progression.talentPointsGained} Talentpunkt${progression.talentPointsGained === 1 ? '' : 'e'}`,
-        color: Palette.gold,
-      });
+      if (progression.coinsGained > 0) {
+        highlights.push({
+          text: `Alle Talente ausgebaut - +${progression.coinsGained} Coins`,
+          color: Palette.gold,
+        });
+      } else {
+        highlights.push({
+          text: `Levelaufstieg! +${progression.talentPointsGained} Talentpunkt${progression.talentPointsGained === 1 ? '' : 'e'}`,
+          color: Palette.gold,
+        });
+      }
     }
 
     for (const worldId of progression.unlockedWorldIds) {

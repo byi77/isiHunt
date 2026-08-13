@@ -6,7 +6,13 @@
  */
 
 import { ACHIEVEMENTS } from '@/config/achievements';
-import { MAX_LEVEL, TALENT_POINTS_PER_LEVEL, xpForLevel } from '@/config/GameConfig';
+import {
+  COINS_PER_EXTRA_TALENT_POINT,
+  MAX_LEVEL,
+  TALENT_POINTS_PER_LEVEL,
+  xpForLevel,
+} from '@/config/GameConfig';
+import { TALENTS } from '@/config/talents';
 import { WORLDS } from '@/config/worlds';
 import * as SaveSystem from '@/systems/SaveSystem';
 import type { ProgressionResult, RunStats, SaveData } from '@/types';
@@ -18,6 +24,20 @@ export interface LevelProgress {
   xpNeeded: number;
   /** 0 bis 1. */
   ratio: number;
+}
+
+function allTalentsMaxed(ranks: SaveData['talents']): boolean {
+  return TALENTS.every((talent) => (ranks[talent.id] ?? 0) >= talent.maxRank);
+}
+
+function grantTalentReward(data: SaveData): 'talentPoint' | 'coins' {
+  if (allTalentsMaxed(data.talents)) {
+    data.coins += COINS_PER_EXTRA_TALENT_POINT;
+    return 'coins';
+  }
+
+  data.talentPoints += TALENT_POINTS_PER_LEVEL;
+  return 'talentPoint';
 }
 
 export function getLevelProgress(save: SaveData): LevelProgress {
@@ -44,6 +64,8 @@ export function applyRun(run: RunStats): ProgressionResult {
   const before = SaveSystem.load();
   const levelBefore = before.level;
   const isNewBestScore = run.score > before.bestScore;
+  let talentPointsGained = 0;
+  let coinsGained = 0;
 
   const after = SaveSystem.update((data) => {
     data.totalRuns += 1;
@@ -62,7 +84,8 @@ export function applyRun(run: RunStats): ProgressionResult {
     while (data.level < MAX_LEVEL && data.xp >= xpForLevel(data.level) && guard < MAX_LEVEL) {
       data.xp -= xpForLevel(data.level);
       data.level += 1;
-      data.talentPoints += TALENT_POINTS_PER_LEVEL;
+      if (grantTalentReward(data) === 'coins') coinsGained += COINS_PER_EXTRA_TALENT_POINT;
+      else talentPointsGained += TALENT_POINTS_PER_LEVEL;
       guard += 1;
     }
 
@@ -85,7 +108,8 @@ export function applyRun(run: RunStats): ProgressionResult {
   return {
     levelsGained,
     newLevel: after.level,
-    talentPointsGained: levelsGained * TALENT_POINTS_PER_LEVEL,
+    talentPointsGained,
+    coinsGained,
     unlockedWorldIds,
     unlockedAchievementIds,
     isNewBestScore,
@@ -114,7 +138,7 @@ export function grantLevels(count: number): SaveData {
     const nextLevel = Math.min(MAX_LEVEL, currentLevel + Math.max(0, count));
     const gained = nextLevel - currentLevel;
     data.level = nextLevel;
-    data.talentPoints += gained * TALENT_POINTS_PER_LEVEL;
+    for (let index = 0; index < gained; index++) grantTalentReward(data);
     data.xp = 0;
   });
 }

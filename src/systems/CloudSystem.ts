@@ -74,7 +74,8 @@ export function isRemoteAhead(local: SaveData, remote: RemoteSave): boolean {
     remote.level > local.level ||
     remote.bestScore > local.bestScore ||
     remote.totalRuns > local.totalRuns ||
-    remote.data.totalScore > local.totalScore
+    remote.data.totalScore > local.totalScore ||
+    Number(remote.data.coins ?? 0) > local.coins
   );
 }
 
@@ -84,7 +85,8 @@ export function isLocalAhead(local: SaveData, remote: RemoteSave): boolean {
     local.level > remote.level ||
     local.bestScore > remote.bestScore ||
     local.totalRuns > remote.totalRuns ||
-    local.totalScore > remote.data.totalScore
+    local.totalScore > remote.data.totalScore ||
+    local.coins > Number(remote.data.coins ?? 0)
   );
 }
 

@@ -104,7 +104,7 @@ export class ProfileScene extends Phaser.Scene {
       .text(
         GAME_WIDTH - 190,
         385,
-        `BESTWERT ${save.bestScore.toLocaleString('de-DE')}`,
+        `BESTWERT ${save.bestScore.toLocaleString('de-DE')}\nCOINS ${save.coins.toLocaleString('de-DE')}`,
         textStyle(FontSize.small, Palette.ink, { fontStyle: 'bold' }),
       )
       .setOrigin(1, 0.5);

@@ -243,13 +243,16 @@ ausschliesslich an der Auslieferung, nicht am Code.
 99 Punkte stehen 32 Talentraengen gegenueber — ab etwa Level 33 ist alles
 ausgebaut, die restlichen 67 haetten sonst kein Ziel.
 
-- [ ] `ProgressionSystem`: Sind alle Talente auf Maximalrang, wird der Punkt
+- [x] `ProgressionSystem`: Sind alle Talente auf Maximalrang, wird der Punkt
       nicht vergeben, sondern in Coins gutgeschrieben
-- [ ] Umrechnungskurs gehoert nach `GameConfig.ts`, nicht in die Logik
-- [ ] Der Ergebnisbildschirm muss das erklaeren ("Alle Talente ausgebaut —
+- [x] Umrechnungskurs steht in `GameConfig.ts` (10 Coins je Punkt)
+- [x] Der Ergebnisbildschirm erklaert die Umwandlung ("Alle Talente ausgebaut -
       +N Coins"), sonst wirkt ein ausbleibender Talentpunkt wie ein Fehler
-- [ ] Setzt das Coin-System aus Phase 4 voraus. Bis dahin: Punkte weiter
-      vergeben und beim Einbau der Coins rueckwirkend umrechnen
+- [x] Coins-Feld und Migration sind als kleiner Unterbau von Phase 4 vorhanden;
+      weitere Coin-Quellen und die Talentbaum-Oberflaeche bleiben Phase 4.
+
+> **Erledigt am 2026-08-14:** Coins-Feld, Migration, Umrechnung (10 Coins je
+> ueberschuessigem Talentpunkt) und die Rueckmeldung im Ergebnis sind gebaut.
 
 ## Phase 2.5 — Bildschirm ganz nutzen _(neu 2026-08-13)_
 

@@ -162,7 +162,9 @@ Ein durchschnittlicher 90-Sekunden-Run bringt grob 900 XP. Level 10 liegt damit
 bei rund 17 Runs, Level 100 bei rund 552 Runs — weiterhin sofortige Aufstiege
 am Anfang, aber ein langer Weg bis zum Maximum.
 
-Jeder Levelaufstieg gibt **1 Talentpunkt**.
+Jeder Levelaufstieg gibt **1 Talentpunkt**, solange noch mindestens ein Talent
+nicht voll ausgebaut ist. Danach wird der Punkt automatisch in **10 Coins**
+umgewandelt. So bleibt jeder weitere Levelaufstieg eine Belohnung.
 
 ### 7.2 Talente
 

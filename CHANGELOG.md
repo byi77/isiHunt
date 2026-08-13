@@ -40,6 +40,9 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 **Online: Bestenliste und Spielstand-Abgleich** (Supabase)
 
+- Coins werden im Spielstand gespeichert; bei voll ausgebautem Talentbaum
+  werden ueberschuessige Talentpunkte automatisch in Coins umgewandelt.
+- Der Ergebnisbildschirm erklaert diese Umwandlung sichtbar.
 - Spielstaende werden nach Solo-Runs automatisch gesichert; Offline-Runs
   bleiben lokal und werden beim naechsten erreichbaren Abgleich nachgeladen.
 - Der Menuepunkt `SPIELSTAND` heisst jetzt `EINSTELLUNGEN`; die

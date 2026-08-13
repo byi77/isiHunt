@@ -156,11 +156,13 @@ export const xpForLevel = (level: number): number =>
 
 /** Talentpunkte pro Levelaufstieg. */
 export const TALENT_POINTS_PER_LEVEL = 1;
+/** Umrechnung fuer einen Levelaufstieg bei voll ausgebautem Talentbaum. */
+export const COINS_PER_EXTRA_TALENT_POINT = 10;
 
 // --- Persistenz -------------------------------------------------------------
 
 export const SAVE_KEY = 'isihunt.save.v1';
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 // --- Entwicklung ------------------------------------------------------------
 
