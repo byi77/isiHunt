@@ -173,8 +173,20 @@ export class SyncScene extends Phaser.Scene {
     });
     this.keep(this.codeInput.element);
 
+    // Abstand zum Eingabefeld: 74 px, das sind auf einem iPhone rund 40 CSS-px
+    // und damit etwa eine Fingerbreite.
+    //
+    // Vorher lag der Knopf bei y=880 und damit nur 24 px unter dem Feld - auf
+    // dem Geraet 13 CSS-px. Das Feld ist ein echtes HTML-Element ueber dem
+    // Canvas: Es kennt Phasers Zeichenreihenfolge nicht, liegt immer obenauf
+    // und wird bei offener Systemtastatur zusaetzlich verschoben. Der Knopf war
+    // dadurch praktisch nicht zu treffen.
+    //
+    // Regel fuer jedes DOM-Element ueber dem Canvas: mindestens 60 px Abstand
+    // zu allem Bedienbaren. Dieselbe Ursache traf schon den Zurueck-Knopf der
+    // Bestenliste.
     this.keep(
-      createButton(this, GAME_WIDTH / 2, 880, 'CODE EINLOESEN', () => void this.redeem(), {
+      createButton(this, GAME_WIDTH / 2, 930, 'CODE EINLOESEN', () => void this.redeem(), {
         width: 440,
         height: 76,
         accent: 0x9aa3bd,

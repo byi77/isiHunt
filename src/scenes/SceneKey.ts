@@ -11,6 +11,12 @@ export const SceneKey = {
   Leaderboard: 'Leaderboard',
   /** Spielstand-Abgleich zwischen Geraeten. */
   Sync: 'Sync',
+  /**
+   * Wartungsbildschirm: Version, Neuladen erzwingen, Spielstand zuruecksetzen.
+   * Absichtlich versteckt - erreichbar ueber langen Druck auf die
+   * Versionsnummer.
+   */
+  Admin: 'Admin',
 } as const;
 
 export type SceneKeyValue = (typeof SceneKey)[keyof typeof SceneKey];

@@ -11,6 +11,7 @@ import Phaser from 'phaser';
 
 import { APP_VERSION, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { keepCanvasBoundsFresh } from '@/core/viewport';
+import { AdminScene } from '@/scenes/AdminScene';
 import { BootScene } from '@/scenes/BootScene';
 import { ChallengeScene } from '@/scenes/ChallengeScene';
 import { GameScene } from '@/scenes/GameScene';
@@ -18,6 +19,7 @@ import { HudScene } from '@/scenes/HudScene';
 import { LeaderboardScene } from '@/scenes/LeaderboardScene';
 import { MenuScene } from '@/scenes/MenuScene';
 import { ResultScene } from '@/scenes/ResultScene';
+import { SceneKey } from '@/scenes/SceneKey';
 import { SyncScene } from '@/scenes/SyncScene';
 import { Palette } from '@/ui/theme';
 
@@ -56,6 +58,7 @@ const config: Phaser.Types.Core.GameConfig = {
     ChallengeScene,
     LeaderboardScene,
     SyncScene,
+    AdminScene,
   ],
 };
 
@@ -66,6 +69,58 @@ const versionLabel = document.getElementById('version');
 if (versionLabel) versionLabel.textContent = `v${APP_VERSION}`;
 
 const game = new Phaser.Game(config);
+
+/**
+ * Langer Druck auf die Versionsnummer oeffnet den Wartungsbildschirm.
+ *
+ * Der Zugang liegt am DOM-Element und nicht an einem Knopf im Spiel: Er soll
+ * auffindbar sein fuer den, der davon weiss, und unauffaellig fuer alle
+ * anderen - ein sichtbares "Spielstand zuruecksetzen" waere fuer ein Kind eine
+ * Falle.
+ *
+ * `pointer-events` ist fuer #version aus (die Nummer soll nichts abfangen), das
+ * Ereignis kommt deshalb vom Fenster und wird ueber die Position zugeordnet.
+ */
+if (versionLabel) {
+  const LANGER_DRUCK_MS = 800;
+  let timer: number | undefined;
+
+  const trifftVersion = (event: PointerEvent): boolean => {
+    const box = versionLabel.getBoundingClientRect();
+    // Grosszuegiger Rand: Die Nummer selbst ist winzig, und getroffen werden
+    // soll sie mit dem Daumen (ART_STYLE.md 8).
+    const rand = 24;
+    return (
+      event.clientX >= box.left - rand &&
+      event.clientX <= box.right + rand &&
+      event.clientY >= box.top - rand &&
+      event.clientY <= box.bottom + rand
+    );
+  };
+
+  window.addEventListener('pointerdown', (event) => {
+    if (!trifftVersion(event)) return;
+    timer = window.setTimeout(() => {
+      game.scene.getScenes(true).forEach((scene) => scene.scene.stop());
+      game.scene.start(SceneKey.Admin);
+    }, LANGER_DRUCK_MS);
+  });
+
+  const abbrechen = (): void => {
+    if (timer !== undefined) window.clearTimeout(timer);
+    timer = undefined;
+  };
+
+  window.addEventListener('pointerup', abbrechen);
+  window.addEventListener('pointercancel', abbrechen);
+
+  // Abbrechen erst, wenn der Finger die Nummer wirklich verlaesst. Ein
+  // `pointermove`-Abbruch ohne diese Pruefung wuerde schon am Zittern eines
+  // aufliegenden Daumens scheitern.
+  window.addEventListener('pointermove', (event) => {
+    if (timer !== undefined && !trifftVersion(event)) abbrechen();
+  });
+}
 
 // Ohne das liegen Trefferflaechen auf dem iPhone neben dem, was man sieht -
 // die Begruendung steht in core/viewport.ts.

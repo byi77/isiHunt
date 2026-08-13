@@ -63,6 +63,7 @@ isiHunt/
 │   ├── core/
 │   │   ├── EventBus.ts         Typisierter Event-Bus zwischen Scenes
 │   │   ├── display.ts          Vollbild- und Installationszustand des Browsers
+│   │   ├── updateCheck.ts      Liegt eine neuere Fassung bereit?
 │   │   └── viewport.ts         Haelt Phasers Canvas-Position aktuell
 │   ├── entities/               Spielobjekte
 │   │   ├── Player.ts
@@ -79,6 +80,7 @@ isiHunt/
 │   │   ├── ChallengeScene.ts   Duell: Einfuehrung, Uebergabe, Ergebnis
 │   │   ├── LeaderboardScene.ts Online-Bestenliste je Welt
 │   │   ├── SyncScene.ts        Spielstand-Abgleich zwischen Geraeten
+│   │   ├── AdminScene.ts       Wartung: Version, Neuladen, Reset (versteckt)
 │   │   └── ResultScene.ts      Auswertung eines Solo-Runs
 │   ├── systems/                Regeln ohne Darstellung
 │   │   ├── SaveSystem.ts       localStorage, versioniert
@@ -220,6 +222,30 @@ Ein Modul-Singleton (`src/core/EventBus.ts`), typisiert ueber
 2. **Jeder `onEvent` braucht ein `offEvent` im `SHUTDOWN`-Handler.** Ohne
    Abmeldung feuern Listener nach einem Scene-Restart doppelt und greifen auf
    zerstoerte Objekte zu. `HudScene` zeigt das Muster.
+
+## 5.1 Zwei Versionsnummern, und warum es zwei sein muessen
+
+| Wo                     | Sagt aus                          |
+| ---------------------- | --------------------------------- |
+| `APP_VERSION` im Code  | welcher Stand **geladen** wurde   |
+| `version.json` am Netz | welcher Stand **verfuegbar** ist  |
+
+Die eingebaute Nummer allein kann einen haengenden Cache nicht aufdecken - sie
+stammt ja aus genau dem Stand, der da haengt. Erst der Vergleich mit der Datei
+auf dem Server macht den Unterschied sichtbar.
+
+`version.json` entsteht beim Build (`vite.config.ts`, Plugin
+`isihunt-version-manifest`) und wird in `core/updateCheck.ts` mit Cache-Buster
+geladen. Weicht sie ab, bietet das Menue einen Hinweis an; erzwungen wird
+nichts.
+
+**Warum eine eigene Datei und nicht die `index.html`:** Sie laesst sich einzeln
+und ohne Cache abfragen, ohne das Spiel neu zu starten.
+
+**Warum das im Browser nicht auffiel:** Dort genuegt ein hartes Neuladen. Als
+App vom Home-Bildschirm gibt es weder Adressleiste noch Reload-Knopf - deshalb
+der Wartungsbildschirm (`AdminScene`), erreichbar ueber langen Druck auf die
+Versionsnummer.
 
 ### 6.1 Bitte und Vollzug sind zwei Ereignisse
 

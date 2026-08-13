@@ -10,8 +10,8 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 | Phase   | Inhalt                                        | Aufwand      |
 | ------- | --------------------------------------------- | ------------ |
 | 1       | Bedienbarkeit — **abgeschlossen**             | —            |
-| **1.1** | Zwei UI-Fehler, Admin-Modus                   | gering       |
-| **1.2** | Home-Bildschirm-App aktualisiert nicht        | offen        |
+| 1.1     | Zwei UI-Fehler, Wartungsbildschirm — **fertig** | —          |
+| 1.2     | Update-Erkennung — **gebaut, ungeprueft**     | Test noetig  |
 | 2       | Profil, 90 s, XP-Kurve, Level 100, Bestenliste | mittel       |
 | **2.5** | Balken oben/unten — Bildschirm ganz nutzen    | mittel+      |
 | 3       | Weltraum statt Fantasy                        | mittel       |
@@ -90,32 +90,22 @@ ausschliesslich an der Auslieferung, nicht am Code.
 - [x] Versionsnummer im Menue (damit Test-Rueckmeldungen zuordenbar sind)
 - [x] **Auf dem Geraet gegengeprueft** — v0.1.3 sichtbar, Knoepfe reagieren
 
-### Phase 1.1 — Sofort, kleine Fehler _(neu 2026-08-13)_
+### Phase 1.1 — Sofort, kleine Fehler _(erledigt 2026-08-13)_
 
-- [ ] **BUG: Version steht zweimal unten rechts.** Belegt: sie wird an zwei
-      Stellen gezeichnet — im DOM (`main.ts:66` → `index.html` `#version`) und
-      zusaetzlich im Canvas (`MenuScene.ts:358`). Beides in derselben Sitzung
-      eingebaut, beides unten rechts.
-      **Loesung:** die Canvas-Variante entfernen. Die DOM-Variante bleibt, weil
-      sie auch dann sichtbar ist, wenn Phaser gar nicht startet — genau dafuer
-      war sie gedacht. _Aufwand: sehr gering_
+- [x] **BUG: Version stand zweimal unten rechts.** Sie war doppelt eingebaut —
+      im DOM (`main.ts`) und zusaetzlich im Canvas (`MenuScene`). Die
+      Canvas-Variante ist entfernt; das DOM gewinnt, weil es die Nummer auch
+      zeigt, wenn Phaser gar nicht startet.
 
-- [ ] **BUG: Code-Feld sitzt auf dem Knopf "CODE EINLOESEN".** Nachgerechnet:
-      Feld `746..818`, Knopf `842..918` — rechnerisch 24 Spielpixel Luft, auf
-      dem iPhone aber nur rund **13 CSS-px**. Zu wenig fuer ein
-      HTML-Eingabefeld, das ueber dem Canvas liegt und bei offener
-      Systemtastatur zusaetzlich verschoben wird.
-      **Loesung:** Abstand auf mindestens 60 Spielpixel vergroessern. Gilt als
-      Regel fuer jedes DOM-Element ueber dem Canvas — dieselbe Ursache wie beim
-      Zurueck-Knopf der Bestenliste. _Aufwand: sehr gering_
+- [x] **BUG: Code-Feld sass auf dem Knopf "CODE EINLOESEN".** Nachgemessen:
+      24 Spielpixel Abstand = rund 13 CSS-px auf dem iPhone. Jetzt 74 px,
+      etwa eine Fingerbreite.
+      **Regel daraus:** Jedes DOM-Element ueber dem Canvas braucht mindestens
+      60 Spielpixel Abstand zu allem Bedienbaren.
 
-- [ ] **Admin-Modus / manuelles Update.** Ein Bildschirm mit Version,
-      "Neu laden erzwingen", Spielstand zuruecksetzen und Debug-Schaltern.
-      Vom Home-Bildschirm aus laesst sich sonst nicht hart neu laden — dort
-      gibt es weder Adressleiste noch Reload-Knopf.
-      Erreichbar ueber eine unauffaellige Geste (langer Druck auf die
-      Versionsnummer), damit Kinder nicht versehentlich hineingeraten.
-      _Aufwand: gering_ · haengt mit Phase 1.2 zusammen
+- [x] **Wartungsbildschirm** (`AdminScene`): Version, Startweg (Browser oder
+      Home-Bildschirm), "Neu laden erzwingen", Spielstand zuruecksetzen mit
+      Doppelbestaetigung. Erreichbar ueber langen Druck auf die Versionsnummer.
 
 ### Phase 1.2 — Warum die Home-Bildschirm-App nicht aktualisiert _(neu)_
 
@@ -128,20 +118,27 @@ ausschliesslich an der Auslieferung, nicht am Code.
 > dort nicht so greift wie im Browser, ist durch die Beobachtung belegt — die
 > genaue Regel dahinter nicht.
 
-- [ ] **Zuerst messen, nicht raten:** Version in der Home-Bildschirm-App
-      ablesen und mit `npm run deploy:check` vergleichen. Erst dann
-      entscheiden, welche der folgenden Massnahmen noetig ist.
-- [ ] **Naheliegendste Massnahme:** Beim Start die Live-Version abfragen
-      (kleine `version.json` neben der `index.html`, Zeitstempel als
-      Cache-Buster) und bei Abweichung einen Hinweis zeigen: "Neue Version
-      verfuegbar — jetzt laden". Der Nutzer ist damit nicht mehr darauf
-      angewiesen, dass der Cache von selbst nachgibt.
-- [ ] **Falls das nicht reicht:** Service Worker mit `updateViaCache: 'none'`.
-      Dann ist das Update-Verhalten steuerbar statt Safaris Gutduenken
-      ueberlassen. Braucht einen ADR — neue Abhaengigkeit, neuer Lebenszyklus.
-- [ ] `manifest.webmanifest`: `start_url` mit Versionsparameter (`./?v=0.1.3`)
-      — erzwingt einen neuen Cache-Schluessel.
-      _Aufwand: sehr gering, Wirkung ungeprueft_
+- [x] **`version.json` beim Build erzeugen** (`vite.config.ts`, Plugin
+      `isihunt-version-manifest`) — sie sagt, welcher Stand verfuegbar ist
+- [x] **Update-Erkennung** (`core/updateCheck.ts`): laedt `version.json` mit
+      Cache-Buster und vergleicht mit `APP_VERSION`. Jeder Fehler wird
+      verschluckt — ohne Netz verhaelt sich das Spiel wie vorher
+- [x] **Hinweis im Menue**, wenn eine neuere Fassung bereitliegt. Nur als
+      Angebot, nie selbsttaetig
+- [x] **`forceReload()`** haengt einen neuen Suchteil an die Adresse. Ein
+      blosses `location.reload()` genuegt auf iOS nicht
+
+**Noch offen — erst nach dem Test auf dem Geraet entscheiden:**
+
+- [ ] **Messen:** Version in der Home-Bildschirm-App ablesen. Erscheint der
+      Update-Hinweis dort? Funktioniert "Neu laden erzwingen"?
+- [ ] **Nur falls das nicht reicht:** Service Worker mit
+      `updateViaCache: 'none'`. Dann ist das Update-Verhalten steuerbar statt
+      Safaris Gutduenken ueberlassen. Braucht einen ADR — neue Abhaengigkeit,
+      neuer Lebenszyklus. **Bewusst noch nicht gebaut**, solange die einfachere
+      Loesung ungeprueft ist.
+- [ ] `manifest.webmanifest`: `start_url` mit Versionsparameter — erzwingt
+      einen neuen Cache-Schluessel. _Wirkung ungeprueft_
 
 ## Phase 2 — Identitaet, Spielzeit, Fortschritt
 

@@ -259,6 +259,13 @@ begonnen hat. Ein Daumen wandert zwischen Aufsetzen und Abheben ein paar Pixel;
 das darf einen Tipp nicht verschlucken. Nur wer bewusst wegzieht und ausserhalb
 abhebt, bricht ab.
 
+**Und:** Jedes DOM-Element ueber dem Canvas — Eingabefelder, die
+Versionsnummer — braucht **mindestens 60 Spielpixel Abstand** zu allem
+Bedienbaren. Solche Elemente kennen Phasers Zeichenreihenfolge nicht, liegen
+immer obenauf und werden bei offener Systemtastatur zusaetzlich verschoben.
+Zweimal hat das bereits einen Knopf unbedienbar gemacht: den Zurueck-Knopf der
+Bestenliste und "CODE EINLOESEN" im Spielstand-Bildschirm.
+
 ### 8.3 Der Ursprung einer Trefferflaeche liegt bei (0,0) — auch im Container
 
 Die teuerste Falle dieses Projekts, deshalb ausfuehrlich.

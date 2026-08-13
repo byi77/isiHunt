@@ -48,6 +48,35 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 - Auf dem iPhone stattdessen ein Hinweis auf "Zum Home-Bildschirm" — Safari
   kennt dort keine Fullscreen-API
 
+**Wartungsbildschirm und Update-Erkennung**
+
+- **`version.json`** entsteht beim Build und liegt neben der `index.html`. Sie
+  sagt, welcher Stand **verfuegbar** ist — die eingebaute Nummer sagt nur,
+  welcher **geladen** wurde. Erst der Vergleich deckt einen haengenden Cache auf
+- **Hinweis im Menue**, wenn eine neuere Fassung bereitliegt: ein Tipp laedt
+  sie. Nur als Angebot, nie selbsttaetig — ein Neustart mitten im Run waere das
+  Gegenteil von hilfreich
+- **Wartungsbildschirm** (`AdminScene`) mit Version, Startweg (Browser oder
+  Home-Bildschirm), "Neu laden erzwingen" und Spielstand zuruecksetzen.
+  Erreichbar ueber **langen Druck auf die Versionsnummer** — auffindbar fuer
+  den, der davon weiss, unauffaellig fuer alle anderen. Ein sichtbarer
+  Reset-Knopf waere fuer ein Kind eine Falle
+- Das Zuruecksetzen braucht **zwei Tipps**; der erste bewaffnet nur
+- `forceReload()` haengt einen neuen Suchteil an die Adresse. Ein blosses
+  `location.reload()` genuegt auf iOS nicht — der Standalone-Modus beantwortet
+  die Anfrage weiterhin aus seinem eigenen Speicher
+
+### Behoben — zweite Runde
+
+- **Die Versionsnummer stand zweimal unten rechts.** Sie war in derselben
+  Sitzung doppelt eingebaut worden: im DOM (`main.ts`) und zusaetzlich im Canvas
+  (`MenuScene`). Die Canvas-Variante ist entfernt; das DOM gewinnt, weil es die
+  Nummer auch dann zeigt, wenn Phaser gar nicht erst startet
+- **Das Code-Feld sass auf dem Knopf "CODE EINLOESEN".** Nachgemessen: 24
+  Spielpixel Abstand, auf dem iPhone rund 13 CSS-px. Zu wenig fuer ein
+  HTML-Eingabefeld, das ueber dem Canvas liegt und bei offener Systemtastatur
+  zusaetzlich verschoben wird. Jetzt 74 px — rund eine Fingerbreite
+
 **Versionierung und Auslieferung**
 
 > Anlass: Vier Runden Fehlersuche an den Trefferflaechen liefen gegen einen

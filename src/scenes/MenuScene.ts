@@ -7,10 +7,11 @@
 
 import Phaser from 'phaser';
 
-import { APP_VERSION, DEBUG_ENABLED, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { DEBUG_ENABLED, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { WORLDS } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { isIos, isStandalone } from '@/core/display';
+import { checkForUpdate, forceReload } from '@/core/updateCheck';
 import { SceneKey } from '@/scenes/SceneKey';
 import { attachHitDebug } from '@/ui/hitDebug';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
@@ -63,8 +64,43 @@ export class MenuScene extends Phaser.Scene {
     this.buildWorldList(save.level);
     this.buildFooter(save.bestScore);
 
+    void this.showUpdateHintIfAny();
+
     // Nur mit ?hitboxes in der Adresse - zeigt, was Phaser fuer anfassbar haelt.
     attachHitDebug(this);
+  }
+
+  /**
+   * Hinweis, wenn auf dem Server eine neuere Fassung liegt.
+   *
+   * Im Menue und nicht im Run: Ein Neuladen mitten im Spiel waere das Gegenteil
+   * von hilfreich. Und nur als Angebot - entschieden wird per Tipp, nicht
+   * selbsttaetig.
+   *
+   * Ohne Netz oder ohne `version.json` (Dev-Server) passiert schlicht nichts.
+   */
+  private async showUpdateHintIfAny(): Promise<void> {
+    const info = await checkForUpdate();
+    if (!info || !this.scene.isActive()) return;
+
+    // y=190, Hoehe 44: der freie Streifen zwischen Untertitel (bis 164) und
+    // Level-Zeile (ab 219). Knapp, aber der Hinweis soll oben stehen, wo man
+    // ihn beim Oeffnen sieht - weiter unten wuerde er zwischen Weltenliste und
+    // Startknopf gequetscht.
+    //
+    // 44 px liegen genau auf dem Mindestmass aus ART_STYLE.md 8; seitlich ist
+    // die Flaeche mit 520 px dagegen sehr grosszuegig.
+    const banner = createButton(
+      this,
+      GAME_WIDTH / 2,
+      190,
+      `NEUE VERSION v${info.available}  ·  JETZT LADEN`,
+      () => forceReload(),
+      { width: 520, height: 44, accent: Palette.goldHex, fontSize: FontSize.tiny },
+    );
+
+    banner.container.setAlpha(0);
+    this.tweens.add({ targets: banner.container, alpha: 1, duration: 320, ease: 'Quad.Out' });
   }
 
   private buildTitle(): void {
@@ -352,11 +388,9 @@ export class MenuScene extends Phaser.Scene {
       .setWordWrapWidth(GAME_WIDTH - 80)
       .setAlign('center');
 
-    // Versionsnummer unten rechts: beim Test auf dem Handy die einzige
-    // verlaessliche Auskunft darueber, ob der neue Stand geladen wurde.
-    this.add
-      .text(GAME_WIDTH - 16, GAME_HEIGHT - 14, `v${APP_VERSION}`, textStyle(14, Palette.inkDim))
-      .setOrigin(1, 1)
-      .setAlpha(0.6);
+    // Hier stand einmal eine zweite Versionsnummer. Sie ist entfernt: Die
+    // Anzeige lebt im DOM (`index.html` -> #version, gesetzt in main.ts) und
+    // war dadurch doppelt zu sehen. Das DOM gewinnt, weil es die Nummer auch
+    // dann zeigt, wenn Phaser gar nicht erst startet - genau dafuer war sie da.
   }
 }
