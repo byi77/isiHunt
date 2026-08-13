@@ -64,45 +64,51 @@ function createPixel(scene: Phaser.Scene): void {
   });
 }
 
-/**
- * Der Relikt-Koerper: ein geschliffener Edelstein statt einer flachen Kugel.
- *
- * Aufbau von aussen nach innen: weicher Hof, Facettenring (acht Segmente mit
- * wechselnder Helligkeit), Kernflaeche, Glanzpunkt. Die Facetten sind der
- * Grund, warum sich das Relikt beim Drehen lebendig anfuehlt - eine glatte
- * Kugel sieht rotiert identisch aus.
- */
+/** Planet als einsammelbares Relikt: Kontinente, Atmosphaerenrand und Orbit. */
 function createOrb(scene: Phaser.Scene): void {
   const size = 64;
   const c = size / 2;
-  const facets = 8;
 
   withGraphics(scene, TextureKey.Orb, size, size, (g) => {
-    g.fillStyle(0xffffff, 0.18);
+    g.fillStyle(0xffffff, 0.22);
     g.fillCircle(c, c, 31);
+    g.fillStyle(0xffffff, 0.78);
+    g.fillCircle(c, c, 26);
 
-    // Facettenkranz: jedes zweite Segment heller - ergibt den Schliff-Eindruck.
-    for (let i = 0; i < facets; i++) {
-      const from = (Math.PI * 2 * i) / facets;
-      const to = (Math.PI * 2 * (i + 1)) / facets;
+    // Abstrakte Kontinente bleiben tintbar und machen die Rotation lesbar.
+    const continents: Phaser.Math.Vector2[][] = [
+      [
+        new Phaser.Math.Vector2(24, 20),
+        new Phaser.Math.Vector2(34, 17),
+        new Phaser.Math.Vector2(39, 25),
+        new Phaser.Math.Vector2(31, 30),
+        new Phaser.Math.Vector2(22, 27),
+      ],
+      [
+        new Phaser.Math.Vector2(42, 36),
+        new Phaser.Math.Vector2(50, 33),
+        new Phaser.Math.Vector2(54, 43),
+        new Phaser.Math.Vector2(45, 49),
+        new Phaser.Math.Vector2(39, 44),
+      ],
+      [
+        new Phaser.Math.Vector2(17, 40),
+        new Phaser.Math.Vector2(27, 38),
+        new Phaser.Math.Vector2(31, 48),
+        new Phaser.Math.Vector2(22, 53),
+        new Phaser.Math.Vector2(16, 49),
+      ],
+    ];
 
-      g.fillStyle(0xffffff, i % 2 === 0 ? 0.85 : 0.55);
-      g.beginPath();
-      g.moveTo(c, c);
-      g.arc(c, c, 28, from, to, false);
-      g.closePath();
-      g.fillPath();
-    }
+    g.fillStyle(0xffffff, 0.35);
+    for (const continent of continents) g.fillPoints(continent, true);
 
-    g.fillStyle(0xffffff, 1);
-    g.fillCircle(c, c, 17);
-
-    // Glanzpunkt oben links - verankert die Lichtquelle im ganzen Spiel.
     g.fillStyle(0xffffff, 0.95);
-    g.fillCircle(c - 7, c - 8, 5.5);
-
-    g.lineStyle(2.5, 0xffffff, 0.9);
-    g.strokeCircle(c, c, 29.5);
+    g.fillCircle(c - 8, c - 9, 4.5);
+    g.lineStyle(2.5, 0xffffff, 0.95);
+    g.strokeCircle(c, c, 27.5);
+    g.lineStyle(1.5, 0xffffff, 0.55);
+    g.strokeEllipse(c, c, 61, 19);
   });
 }
 
@@ -220,43 +226,36 @@ function createVignette(scene: Phaser.Scene): void {
   });
 }
 
-/** Die Spielfigur: ein vierzackiger Lichtstern ("isi" = Licht). */
+/** Die Spielfigur: ein kleines, nach oben ausgerichtetes Licht-Raumschiff. */
 function createPlayerCore(scene: Phaser.Scene): void {
   const size = 96;
-  const c = size / 2;
 
   withGraphics(scene, TextureKey.PlayerCore, size, size, (g) => {
-    const points: Phaser.Math.Vector2[] = [];
-    const spikes = 4;
-    const outer = 44;
-    const inner = 15;
-
-    for (let i = 0; i < spikes * 2; i++) {
-      const radius = i % 2 === 0 ? outer : inner;
-      const angle = (Math.PI / spikes) * i - Math.PI / 2;
-      points.push(
-        new Phaser.Math.Vector2(c + Math.cos(angle) * radius, c + Math.sin(angle) * radius),
-      );
-    }
-
+    const c = size / 2;
+    const hull = [
+      new Phaser.Math.Vector2(c, 8),
+      new Phaser.Math.Vector2(64, 38),
+      new Phaser.Math.Vector2(84, 78),
+      new Phaser.Math.Vector2(60, 70),
+      new Phaser.Math.Vector2(c, 88),
+      new Phaser.Math.Vector2(36, 70),
+      new Phaser.Math.Vector2(12, 78),
+      new Phaser.Math.Vector2(32, 38),
+    ];
     g.fillStyle(0xffffff, 1);
-    g.fillPoints(points, true);
+    g.fillPoints(hull, true);
 
-    // Zweiter, gedrehter Stern in halber Groesse - gibt der Figur Tiefe.
-    const innerPoints: Phaser.Math.Vector2[] = [];
-    for (let i = 0; i < spikes * 2; i++) {
-      const radius = i % 2 === 0 ? 24 : 9;
-      const angle = (Math.PI / spikes) * i - Math.PI / 2 + Math.PI / spikes;
-      innerPoints.push(
-        new Phaser.Math.Vector2(c + Math.cos(angle) * radius, c + Math.sin(angle) * radius),
-      );
-    }
+    // Cockpit und Fluegel setzen sich als hellere Formen vom Rumpf ab.
+    g.fillStyle(0xffffff, 0.62);
+    g.fillTriangle(c, 18, 55, 48, 41, 48);
+    g.fillStyle(0xffffff, 0.42);
+    g.fillTriangle(18, 68, 37, 54, 38, 72);
+    g.fillTriangle(78, 68, 59, 54, 58, 72);
 
-    g.fillStyle(0xffffff, 0.7);
-    g.fillPoints(innerPoints, true);
-
-    g.fillStyle(0xffffff, 0.6);
-    g.fillCircle(c, c, 12);
+    // Zwei Triebwerke: Die bestehende Aura laesst sie wie Lichtduesen wirken.
+    g.fillStyle(0xffffff, 0.8);
+    g.fillTriangle(31, 76, 39, 76, 35, 91);
+    g.fillTriangle(57, 76, 65, 76, 61, 91);
   });
 }
 

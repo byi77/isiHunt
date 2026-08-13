@@ -541,3 +541,41 @@ ist.
 - Wer die Werte lieber nicht im Repository haette, legt sie als
   Repository-Secrets an und reicht sie in `deploy.yml` durch. Der Code aendert
   sich dafuer nicht.
+
+---
+
+## ADR-0013 - Themenwechsel von Fantasy zu Weltraum
+
+**Datum:** 2026-08-14 · **Status:** Angenommen
+
+### Kontext
+
+Die bisherige Fantasy-Sprache mit Wald, Gletschern und Relikten war ein
+Platzhalter fuer die Spielmechanik. Die Kernschleife funktioniert inzwischen:
+90-Sekunden-Runs, Weltenauswahl, Progression und automatische Sicherung sind
+stabil. Phase 3 gibt dem Spiel jetzt eine eigene visuelle Identitaet.
+
+### Entscheidung
+
+isiHunt wird als Weltraum-Arcade weiterentwickelt. Die Spielfigur ist ein
+kleines Licht-Raumschiff, die einsammelbaren Relikte werden als Planeten
+dargestellt und die Welten werden zu Raumzonen. Die sechs Seltenheitsfarben
+bleiben unveraendert, weil sie die wichtigste Lesesprache fuer den Wert sind.
+
+Die bestehenden Welt-IDs bleiben unveraendert. Dadurch bleiben lokale
+Spielstaende, Freischaltungen und gespeicherte Bestenlisten-Weltmarker
+kompatibel; nur Namen, Beschreibungen und die Darstellung wechseln.
+
+### Verworfene Alternative
+
+Ein kompletter Neustart mit neuen IDs und einer neuen Spielstandsstruktur
+waere technisch sauber, wuerde aber bestehende Fortschritte und Weltmarker
+brechen. Der visuelle Wechsel liefert denselben Nutzen ohne Datenmigration.
+
+### Konsequenzen
+
+- Die prozeduralen Texture-Keys bleiben stabil; nur ihre Formen aendern sich.
+- Hintergrundsterne und Nebel werden zur gemeinsamen Sprache aller Raumzonen.
+- Mechanische Weltmodifikatoren bleiben getrennt und werden erst spaeter
+  implementiert; der Themenwechsel veraendert das Balancing nicht.
+- Echte Raumschiff-/Planeten-Skins koennen spaeter je nach Level folgen.

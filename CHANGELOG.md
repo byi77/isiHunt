@@ -11,6 +11,15 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+**Phase 3: Weltraum-Thema**
+
+- ADR-0013 legt den Wechsel von Fantasy zu Weltraum fest; Welt-IDs bleiben
+  fuer bestehende Spielstaende unveraendert.
+- Die Spielfigur ist jetzt ein Licht-Raumschiff und einsammelbare Relikte
+  werden als tintbare Planeten mit Orbit dargestellt.
+- Die Raumzonen heissen jetzt Sternenweide, Eisring, Glutnebel, Nullsektor und
+  Sonnenkrone.
+
 **Wartung und Safe Area**
 
 - Der Spielverlauf fuellt jetzt auch den gepaddeten Spielcontainer; dadurch

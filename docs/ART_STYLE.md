@@ -70,11 +70,15 @@ Definiert in `src/ui/theme.ts`. Scenes definieren **keine** eigenen Farben.
 
 ## 3. Formensprache
 
+Phase 3 ersetzt die Fantasy-Symbole durch eine tintbare Weltraum-Sprache:
+Die Figur ist ein Licht-Raumschiff, Relikte werden als Planeten mit
+Atmosphaerenrand und Orbit gelesen. Die Texture-Keys bleiben dabei stabil.
+
 - **Kreise und Sterne, keine Rechtecke.** Alles Spielbare ist rund oder
   strahlenfoermig. Rechtecke sind der Oberflaeche vorbehalten.
-- **Die Figur ist ein vierzackiger Stern** mit rotierendem Ring. Der Ring hat
+- **Die Figur ist ein Licht-Raumschiff** mit rotierendem Ring. Der Ring hat
   exakt den Radius, in dem eingesammelt wird — das Feedback muss ehrlich sein.
-- **Relikte sind Kugeln** mit Glanzpunkt oben links und Ring aussen.
+- **Planeten sind Relikte** mit Atmosphaerenrand, Kontinenten und Orbit.
 - **Weiche Ecken** in der Oberflaeche: Radius 12–14 px.
 
 ## 4. Bewegung
@@ -139,18 +143,18 @@ Der Stern nimmt bewusst nur 30 % der Icon-Breite ein: Android schneidet
 "maskable" Icons zu einem Kreis zu und garantiert nur die inneren 80 % der
 Flaeche.
 
-| Key               | Was                                                             | Groesse |
-| ----------------- | --------------------------------------------------------------- | ------- |
-| `tex-pixel`       | 1×1 weiss, Basis fuer Flaechen und Balken                       | 1×1     |
-| `tex-orb`         | Relikt als geschliffener Stein: acht Facetten, Kern, Glanzpunkt | 64×64   |
-| `tex-glow`        | weicher Lichtschein (konzentrische Kreise)                      | 128×128 |
-| `tex-spark`       | rundes Partikel fuer Schwebestaub                               | 16×16   |
-| `tex-shard`       | vierzackiger Splitter fuer Fang-Explosionen                     | 24×24   |
-| `tex-rays`        | Strahlenkranz hinter seltenen Relikten                          | 160×160 |
-| `tex-ring`        | Ring fuer die Schockwelle beim Fang                             | 128×128 |
-| `tex-vignette`    | radiale Randabdunklung                                          | 256×256 |
-| `tex-player-core` | zwei ineinander gedrehte vierzackige Sterne                     | 96×96   |
-| `tex-player-halo` | Ring mit vier Segmenten und Markern                             | 128×128 |
+| Key               | Was                                                    | Groesse |
+| ----------------- | ------------------------------------------------------ | ------- |
+| `tex-pixel`       | 1×1 weiss, Basis fuer Flaechen und Balken              | 1×1     |
+| `tex-orb`         | Planet als Relikt: Atmosphaerenrand, Kontinente, Orbit | 64×64   |
+| `tex-glow`        | weicher Lichtschein (konzentrische Kreise)             | 128×128 |
+| `tex-spark`       | rundes Partikel fuer Schwebestaub                      | 16×16   |
+| `tex-shard`       | vierzackiger Splitter fuer Fang-Explosionen            | 24×24   |
+| `tex-rays`        | Strahlenkranz hinter seltenen Relikten                 | 160×160 |
+| `tex-ring`        | Ring fuer die Schockwelle beim Fang                    | 128×128 |
+| `tex-vignette`    | radiale Randabdunklung                                 | 256×256 |
+| `tex-player-core` | Licht-Raumschiff mit Cockpit, Fluegeln und Triebwerken | 96×96   |
+| `tex-player-halo` | Ring mit vier Segmenten und Markern                    | 128×128 |
 
 **Alles wird weiss gezeichnet und zur Laufzeit getintet.** Deshalb bedient
 eine Textur alle Seltenheiten und Welten.

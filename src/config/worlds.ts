@@ -1,5 +1,5 @@
 /**
- * Welten = Zonen. Jede Welt hat eine eigene Farbstimmung und wird ueber das
+ * Welten = Raumzonen. Jede Welt hat eine eigene Farbstimmung und wird ueber das
  * Charakterlevel freigeschaltet - analog zu neuen Gebieten in einem MMO.
  *
  * Mechanisch sind die Welten in v0.1 identisch (bewusst: erst Feel, dann
@@ -26,53 +26,53 @@ export interface WorldDef {
 export const WORLDS: readonly WorldDef[] = [
   {
     id: 'silberhain',
-    name: 'Silberhain',
+    name: 'Sternenweide',
     unlockLevel: 1,
     bgTop: 0x123021,
     bgBottom: 0x061410,
     accent: 0x4ade80,
-    flavor: 'Ein stiller Wald, in dem die Blaetter von innen leuchten.',
-    plannedModifier: 'Keine - die Lernwelt.',
+    flavor: 'Ruhige Nebelbahnen mit jungen Sternen und sanften Lichtstroemen.',
+    plannedModifier: 'Keine - die Lernzone.',
   },
   {
     id: 'frostzinne',
-    name: 'Frostzinne',
+    name: 'Eisring',
     unlockLevel: 3,
     bgTop: 0x11294d,
     bgBottom: 0x050d1c,
     accent: 0x7dd3fc,
-    flavor: 'Gletscherhallen, in denen jeder Atemzug gefriert.',
-    plannedModifier: 'Relikte gleiten weiter - Bewegung mit Traegheit.',
+    flavor: 'Ein Planet aus Eis, umkreist von splittrigen Kristallringen.',
+    plannedModifier: 'Planeten driften weiter - Bewegung mit Traegheit.',
   },
   {
     id: 'glutmark',
-    name: 'Glutmark',
+    name: 'Glutnebel',
     unlockLevel: 6,
     bgTop: 0x431407,
     bgBottom: 0x1a0703,
     accent: 0xfb923c,
-    flavor: 'Verbrannte Ebenen unter einem Himmel aus Asche.',
-    plannedModifier: 'Relikte verglühen schneller - kuerzere Zeitfenster.',
+    flavor: 'Heisse Gaswolken, in denen jeder Kurs zum Wettlauf wird.',
+    plannedModifier: 'Planeten vergluehen schneller - kuerzere Zeitfenster.',
   },
   {
     id: 'leerenbluete',
-    name: 'Leerenbluete',
+    name: 'Nullsektor',
     unlockLevel: 10,
     bgTop: 0x2e1065,
     bgBottom: 0x0f0524,
     accent: 0xc084fc,
-    flavor: 'Zwischen den Welten wachsen Blueten aus purer Leere.',
-    plannedModifier: 'Relikte blinken kurz aus der Sichtbarkeit.',
+    flavor: 'Ein stiller Raumriss, in dem Sterne kurz aus der Sicht fallen.',
+    plannedModifier: 'Planeten blinken kurz aus der Sichtbarkeit.',
   },
   {
     id: 'sonnenhort',
-    name: 'Sonnenhort',
+    name: 'Sonnenkrone',
     unlockLevel: 15,
     bgTop: 0x4a3308,
     bgBottom: 0x1a1103,
     accent: 0xfcd34d,
-    flavor: 'Die Quelle allen Lichts. Hier endet die Jagd - oder beginnt neu.',
-    plannedModifier: 'Doppelte Legendaer-Chance, halbierte Lebensdauer.',
+    flavor: 'Die leuchtende Krone eines Sterns - dort beginnt die naechste Reise.',
+    plannedModifier: 'Doppelte Chance auf seltene Planeten, halbe Lebensdauer.',
   },
 ];
 

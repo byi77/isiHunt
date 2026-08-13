@@ -10,7 +10,7 @@ zuerst beschrieben, dann implementiert.
 ## 1. Pitch
 
 > **isiHunt** ist ein farbenfroher 2D-Arcade-Collector fuer den Handy-Browser.
-> Du steuerst eine Lichtgestalt durch Fantasy-Welten und faengst Relikte, bevor
+> Du steuerst ein Licht-Raumschiff durch Raumzonen und sammelst Planeten, bevor
 > sie verblassen. Ein Run dauert 90 Sekunden — aber Level, Talente und Erfolge
 > ziehen sich ueber Wochen.
 
@@ -187,13 +187,17 @@ zwei gleichwertige Bauweisen, keine dominante.
 
 ### 7.3 Welten
 
+Seit Phase 3 sind die Raumzonen sichtbar umbenannt: Sternenweide, Eisring,
+Glutnebel, Nullsektor und Sonnenkrone. Die Welt-IDs bleiben fuer bestehende
+Spielstaende stabil.
+
 | Welt         | Ab Level | Stimmung       | Geplante Besonderheit                        |
 | ------------ | -------- | -------------- | -------------------------------------------- |
-| Silberhain   | 1        | Gruen, Wald    | keine — die Lernwelt                         |
-| Frostzinne   | 3        | Blau, Eis      | Relikte gleiten weiter                       |
-| Glutmark     | 6        | Orange, Asche  | kuerzere Zeitfenster                         |
-| Leerenbluete | 10       | Violett, Leere | Relikte blinken kurz weg                     |
-| Sonnenhort   | 15       | Gold, Licht    | doppelte Legendaer-Chance, halbe Lebensdauer |
+| Sternenweide | 1        | Gruen, Nebel   | keine - die Lernzone                         |
+| Eisring      | 3        | Blau, Eis      | Planeten gleiten weiter                      |
+| Glutnebel    | 6        | Orange, Gas    | kuerzere Zeitfenster                         |
+| Nullsektor   | 10       | Violett, Leere | Planeten blinken kurz weg                    |
+| Sonnenkrone  | 15       | Gold, Stern    | doppelte Legendaer-Chance, halbe Lebensdauer |
 
 In v0.1 unterscheiden sich die Welten nur optisch. Das ist Absicht: erst muss
 sich die Grundmechanik gut anfuehlen, dann kommt Varianz dazu (M3).
