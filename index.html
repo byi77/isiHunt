@@ -234,6 +234,12 @@
           opacity 300ms ease;
       }
 
+      /* Nur der Knoten innerhalb von #game darf sichtbar sein: Das ist im
+         Browser und im Fullscreen derselbe sichere Anzeigeplatz. */
+      body > #safe-area-content {
+        display: none !important;
+      }
+
       /* Messpunkte fuer die sicheren Raender - unsichtbar, siehe <body>. */
       .safe-probe {
         position: fixed;
@@ -319,7 +325,9 @@
   </head>
   <body>
     <div id="page-backdrop" aria-hidden="true"></div>
-    <div id="game"></div>
+    <div id="game">
+      <div id="safe-area-content" aria-hidden="true">ISI HUNT - JAGE DAS LICHT</div>
+    </div>
     <div id="orientation-lock" aria-live="polite">
       <span>Bitte halte das Handy hochkant, um isiHunt zu spielen.</span>
     </div>
