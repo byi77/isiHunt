@@ -86,14 +86,14 @@ export class ProfileScene extends Phaser.Scene {
       .setScale(0.82);
 
     this.add
-      .text(GAME_WIDTH / 2, 430, 'DEIN NAME', textStyle(FontSize.tiny, Palette.inkDim))
+      .text(GAME_WIDTH / 2, 480, 'DEIN NAME', textStyle(FontSize.tiny, Palette.inkDim))
       .setOrigin(0.5)
       .setLetterSpacing(5);
 
     this.add
       .text(
         190,
-        385,
+        365,
         `LEVEL ${levelProgress.level}`,
         textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
       )
@@ -102,12 +102,21 @@ export class ProfileScene extends Phaser.Scene {
 
     this.add
       .text(
-        GAME_WIDTH - 190,
-        385,
-        `BESTWERT ${save.bestScore.toLocaleString('de-DE')}\nCOINS ${save.coins.toLocaleString('de-DE')}`,
+        190,
+        405,
+        `BESTWERT ${save.bestScore.toLocaleString('de-DE')}`,
         textStyle(FontSize.small, Palette.ink, { fontStyle: 'bold' }),
       )
-      .setOrigin(1, 0.5);
+      .setOrigin(0, 0.5);
+
+    this.add
+      .text(
+        190,
+        438,
+        `COINS ${save.coins.toLocaleString('de-DE')}`,
+        textStyle(FontSize.small, Palette.ink),
+      )
+      .setOrigin(0, 0.5);
 
     let saveButton: ButtonHandle | null = null;
     const status = this.add

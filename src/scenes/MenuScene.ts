@@ -318,7 +318,7 @@ export class MenuScene extends Phaser.Scene {
     const y = 270;
     const width = GAME_WIDTH - 120;
 
-    createPanel(this, GAME_WIDTH / 2, y, width, 108, this.selectedWorld.accent, { alpha: 0.58 });
+    createPanel(this, GAME_WIDTH / 2, y, width, 126, this.selectedWorld.accent, { alpha: 0.58 });
 
     this.add
       .image(112, y, TextureKey.PlayerHalo)
@@ -335,7 +335,7 @@ export class MenuScene extends Phaser.Scene {
     this.add
       .text(
         172,
-        y + 4,
+        y + 2,
         `LEVEL ${level}`,
         textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
       )
@@ -344,8 +344,18 @@ export class MenuScene extends Phaser.Scene {
     this.add
       .text(
         172,
-        y + 29,
-        `BESTWERT ${bestScore.toLocaleString('de-DE')}  ·  COINS ${coins.toLocaleString('de-DE')}`,
+        y + 28,
+        `BESTWERT ${bestScore.toLocaleString('de-DE')}`,
+        textStyle(FontSize.tiny, Palette.inkDim),
+      )
+      .setOrigin(0, 0.5)
+      .setLetterSpacing(3);
+
+    this.add
+      .text(
+        172,
+        y + 49,
+        `COINS ${coins.toLocaleString('de-DE')}`,
         textStyle(FontSize.tiny, Palette.inkDim),
       )
       .setOrigin(0, 0.5)
@@ -624,10 +634,15 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private buildFooter(): void {
+    // Der Hinweis endet bei y=730. Die Hauptaktionen folgen mit sichtbarem
+    // Abstand und bleiben auch auf sehr hohen Handydisplays in diesem Block,
+    // statt weit unten aus dem Blickfeld zu rutschen.
+    const actionsY = Math.min(GAME_HEIGHT - 390, 840);
+
     createButton(
       this,
       GAME_WIDTH / 2,
-      GAME_HEIGHT - 390,
+      actionsY,
       'JAGD BEGINNEN',
       () => {
         this.scene.start(SceneKey.Game, { worldId: this.selectedWorld.id });
@@ -642,7 +657,7 @@ export class MenuScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      GAME_HEIGHT - 296,
+      actionsY + 94,
       'DUELL ZU ZWEIT',
       () => {
         ChallengeSystem.start(this.selectedWorld.id);
@@ -654,7 +669,7 @@ export class MenuScene extends Phaser.Scene {
     // Bestenliste nur zeigen, wenn ein Dienst eingerichtet ist. Einstellungen
     // bleiben lokal sichtbar, damit die Profiluebertragung auffindbar bleibt.
     if (CloudSystem.isAvailable()) {
-      const y = GAME_HEIGHT - 212;
+      const y = actionsY + 178;
       createButton(this, 196, y, 'BESTENLISTE', () => this.scene.start(SceneKey.Leaderboard), {
         width: 244,
         height: 66,
@@ -671,7 +686,7 @@ export class MenuScene extends Phaser.Scene {
       createButton(
         this,
         GAME_WIDTH / 2,
-        GAME_HEIGHT - 212,
+        actionsY + 178,
         'EINSTELLUNGEN',
         () => this.scene.start(SceneKey.Settings),
         {
