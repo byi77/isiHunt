@@ -40,6 +40,9 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 **Online: Bestenliste und Spielstand-Abgleich** (Supabase)
 
+- Der Menüpunkt `BESTENLISTE` heißt jetzt `RANGLISTE`; er hat die Größe des
+  Hauptbuttons und steht unter `DUELL ZU ZWEIT`. `EINSTELLUNGEN` steht allein
+  mittig am unteren Menübereich.
 - Coins werden im Spielstand gespeichert; bei voll ausgebautem Talentbaum
   werden ueberschuessige Talentpunkte automatisch in Coins umgewandelt.
 - Der Ergebnisbildschirm erklaert diese Umwandlung sichtbar.

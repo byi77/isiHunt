@@ -666,37 +666,37 @@ export class MenuScene extends Phaser.Scene {
       { width: 440, height: 76, accent: Palette.goldHex, fontSize: FontSize.body },
     );
 
-    // Bestenliste nur zeigen, wenn ein Dienst eingerichtet ist. Einstellungen
-    // bleiben lokal sichtbar, damit die Profiluebertragung auffindbar bleibt.
+    // Die Rangliste ist ein grosser Hauptbutton direkt unter dem Duell. Die
+    // Einstellungen bleiben ein kleiner, einzelner Button ganz unten mittig.
     if (CloudSystem.isAvailable()) {
-      const y = actionsY + 178;
-      createButton(this, 196, y, 'BESTENLISTE', () => this.scene.start(SceneKey.Leaderboard), {
-        width: 244,
-        height: 66,
-        accent: 0x9aa3bd,
-        fontSize: FontSize.tiny,
-      });
-      createButton(this, 524, y, 'EINSTELLUNGEN', () => this.scene.start(SceneKey.Settings), {
-        width: 244,
-        height: 66,
-        accent: 0x9aa3bd,
-        fontSize: FontSize.tiny,
-      });
-    } else {
       createButton(
         this,
         GAME_WIDTH / 2,
-        actionsY + 178,
-        'EINSTELLUNGEN',
-        () => this.scene.start(SceneKey.Settings),
+        actionsY + 188,
+        'RANGLISTE',
+        () => this.scene.start(SceneKey.Leaderboard),
         {
-          width: 300,
-          height: 66,
+          width: 440,
           accent: 0x9aa3bd,
-          fontSize: FontSize.tiny,
+          fontSize: FontSize.body,
         },
       );
     }
+
+    const settingsY = GAME_HEIGHT - 165;
+    createButton(
+      this,
+      GAME_WIDTH / 2,
+      settingsY,
+      'EINSTELLUNGEN',
+      () => this.scene.start(SceneKey.Settings),
+      {
+        width: CloudSystem.isAvailable() ? 244 : 300,
+        height: 66,
+        accent: 0x9aa3bd,
+        fontSize: FontSize.tiny,
+      },
+    );
 
     this.buildHint();
   }
