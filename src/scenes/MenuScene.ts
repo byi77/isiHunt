@@ -218,6 +218,8 @@ export class MenuScene extends Phaser.Scene {
 
     this.add.text(60, 350, 'WELTEN', textStyle(FontSize.tiny, Palette.inkDim)).setLetterSpacing(6);
 
+    const carousel = this.add.container(0, 0);
+
     WORLDS.forEach((world, index) => {
       const offset = index - selectedIndex;
       if (Math.abs(offset) > 1) return;
@@ -227,7 +229,7 @@ export class MenuScene extends Phaser.Scene {
       const isSelected = offset === 0;
       const width = isSelected ? GAME_WIDTH - 100 : GAME_WIDTH - 190;
       const height = isSelected ? 106 : 76;
-      const alpha = isUnlocked ? (isSelected ? 1 : 0.42) : isSelected ? 0.5 : 0.18;
+      const alpha = isUnlocked ? (isSelected ? 1 : 0.62) : isSelected ? 0.5 : 0.24;
       const card = this.add.container(GAME_WIDTH / 2, y);
 
       const bg = this.add
@@ -250,12 +252,12 @@ export class MenuScene extends Phaser.Scene {
             .image(0, 0, TextureKey.Glow)
             .setDisplaySize(width * 1.08, height * 2.1)
             .setTint(world.accent)
-            .setAlpha(0.14)
+            .setAlpha(0.08)
             .setBlendMode(Phaser.BlendModes.ADD),
         );
         if (this.game.renderer.type === Phaser.WEBGL) {
           card.initPostPipeline();
-          card.postFX.addBlur(1, 1.5, 1.5, 1.2, 0, 4);
+          card.postFX.addBlur(1, 0.7, 0.7, 0.4, 0, 2);
         }
       }
 
@@ -301,7 +303,8 @@ export class MenuScene extends Phaser.Scene {
       }
 
       card.setAlpha(alpha);
-      card.setScale(isSelected ? 1 : 0.86);
+      card.setScale(isSelected ? 1 : 0.92);
+      carousel.add(card);
     });
 
     this.add
@@ -311,21 +314,31 @@ export class MenuScene extends Phaser.Scene {
 
     let startY = 0;
     let startX = 0;
+    let activePointerId: number | null = null;
     const selectorTop = 370;
     const selectorBottom = 700;
 
     const onPointerDown = (pointer: Phaser.Input.Pointer): void => {
-      if (pointer.y < selectorTop || pointer.y > selectorBottom) return;
+      if (activePointerId !== null || pointer.y < selectorTop || pointer.y > selectorBottom) return;
+      activePointerId = pointer.id;
       startY = pointer.y;
       startX = pointer.x;
     };
 
+    const onPointerMove = (pointer: Phaser.Input.Pointer): void => {
+      if (pointer.id !== activePointerId) return;
+      carousel.y = pointer.y - startY;
+    };
+
     const onPointerUp = (pointer: Phaser.Input.Pointer): void => {
-      if (startY === 0) return;
+      if (pointer.id !== activePointerId) return;
 
       const deltaY = pointer.y - startY;
       const deltaX = pointer.x - startX;
+      activePointerId = null;
       startY = 0;
+
+      this.tweens.add({ targets: carousel, y: 0, duration: 140, ease: 'Quad.Out' });
 
       if (Math.abs(deltaY) > 30 && Math.abs(deltaY) > Math.abs(deltaX)) {
         this.selectWorld(selectedIndex + (deltaY < 0 ? 1 : -1), level);
@@ -339,9 +352,11 @@ export class MenuScene extends Phaser.Scene {
     };
 
     this.input.on('pointerdown', onPointerDown);
+    this.input.on('pointermove', onPointerMove);
     this.input.on('pointerup', onPointerUp);
     this.events.once('shutdown', () => {
       this.input.off('pointerdown', onPointerDown);
+      this.input.off('pointermove', onPointerMove);
       this.input.off('pointerup', onPointerUp);
     });
   }
