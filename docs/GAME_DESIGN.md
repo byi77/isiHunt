@@ -236,11 +236,16 @@ gehalten wird.
 
 ## 9. Spielfeld
 
-720 × 1280 interne Aufloesung, Hochformat, per FIT auf jedes Geraet skaliert.
+720 px feste interne Breite, variable interne Portraithoehe (mindestens
+1280 px), per FIT auf die verfuegbare sichere Geraeteflaeche skaliert. Auf
+hohen, schmalen Handys wird die zusaetzliche Hoehe als echte Spielflaeche
+genutzt; die Rundendauer bleibt unveraendert.
 
 - Oben **170 px** frei fuer das HUD.
 - Unten **120 px** frei — dort liegt die Hand.
 - Seitlich je **60 px**.
+- Querformat wird nicht unterstuetzt; Manifest und Laufzeit fordern
+  Hochformat an. Browser ohne Orientierungs-API zeigen einen Hochkant-Hinweis.
 
 Relikte spawnen nie naeher als **150 px** an der Figur: Ein legendaeres Relikt
 darf nicht als Geschenk direkt unter dem Daumen erscheinen.

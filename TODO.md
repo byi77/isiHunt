@@ -216,11 +216,11 @@ ausschliesslich an der Auslieferung, nicht am Code.
 - [x] Designziel 2 in `GAME_DESIGN.md` anpassen ("in 90 Sekunden gespielt")
 - [x] XP-Kurve: `floor(80 · n^1.45)` → `floor(750 · √n)`
 - [x] `MAX_LEVEL = 100`, Deckelung in `ProgressionSystem.applyRun()`
-- [ ] **Bestenliste leeren**: einmaliger, bewusst manueller Datenbankwechsel
+- [x] **Bestenliste leeren**: einmaliger, bewusst manueller Datenbankwechsel
       ueber `supabase/cleanup_leaderboard.sql`. Entschieden am 2026-08-13.
 - [x] Bestenliste auf einen Eintrag je `cloudId` umstellen: nur der beste Run
       bleibt; Name und Welt werden beim neuen Bestwert aktualisiert
-- [ ] Einmalige Bereinigung ueber `supabase/cleanup_leaderboard.sql` ausfuehren
+- [x] Einmalige Bereinigung ueber `supabase/cleanup_leaderboard.sql` ausfuehren
       (loescht die bisherigen Eintraege, danach ist `player_id` Pflicht)
 
 > Die gemeinsame Bestenliste und der automatische Eintrag standen hier — beides
@@ -249,7 +249,7 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
 
 ## Phase 2.5 — Bildschirm ganz nutzen _(neu 2026-08-13)_
 
-> **Nachgerechnet:** Das Spielfeld ist 720 × 1280, also 9:16. Moderne iPhones
+> **Ausgangslage:** Das Referenzlayout ist 720 × 1280, also 9:16. Moderne iPhones
 > sind deutlich schmaler:
 >
 > | Geraet            | Viewport  | Canvas nach FIT | Balken gesamt |
@@ -259,26 +259,28 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
 > | iPhone 14 Pro     | 393 × 852 | 393 × 699       | 153 px        |
 > | iPhone 15 Pro Max | 430 × 932 | 430 × 764       | 168 px        |
 >
-> Die Balken sind also **kein Fehler**, sondern die Folge von
-> `Phaser.Scale.FIT` bei fest gewaehltem 9:16. Auf dem SE gibt es keine, auf
-> neueren Geraeten rund 150 px.
+> Die frueheren Balken waren die Folge von `Phaser.Scale.FIT` bei fest
+> gewaehltem 9:16. Die interne Hoehe waechst jetzt auf hohen, schmalen
+> Geraeten mit der verfuegbaren sicheren Portrait-Flaeche.
 
-- [ ] **Spielfeld an das Geraet anpassen statt einzupassen.** Statt fester
-      1280 px die verfuegbare Hoehe uebernehmen. Betrifft `main.ts`
-      (Scale-Modus), `GameConfig.ts` (`GAME_HEIGHT` wird variabel) und jedes
-      Layout, das mit `GAME_HEIGHT - x` rechnet — das sind alle Scenes.
-      _Aufwand: mittel bis hoch, breite Wirkung_
-- [ ] **Vorher entscheiden:** Mehr Hoehe heisst mehr Spielflaeche und damit
-      laengere Laufwege. Das verschiebt das Balancing und muss zusammen mit der
-      Rundendauer aus Phase 2 gerechnet werden.
+- [x] **Spielfeld an das Geraet anpassen statt einzupassen.** Die Breite bleibt
+      720 px, die interne Hoehe uebernimmt beim Start die verfuegbare
+      Portrait-Flaeche (mindestens 1280 px). Die zusaetzliche Hoehe ist echte
+      Spielflaeche; die Rundendauer bleibt unveraendert.
+- [x] **Entscheidung:** Mehr Hoehe bedeutet laengere Laufwege. Das ist bewusst
+      akzeptiert; Spawn-Grenzen und untere Layout-Elemente verwenden bereits
+      `GAME_HEIGHT` und wachsen mit.
 - [x] **Zwischenloesung umgesetzt (2026-08-13):** Die Streifen tragen die
-      Randfarben der Welt statt Schwarz. Der Bruch ist damit weg; die Frage,
-      ob das Spielfeld selbst mitwachsen soll, bleibt offen.
+      Randfarben der Welt statt Schwarz.
 - [ ] **Noch offen:** Hintergrundelemente (Sterne, Nebel) in die Streifen
       ziehen, damit sie nicht nur einfarbig sind. _Aufwand: gering_
 - [ ] **Werkzeug steht bereit:** Das Pixel-Lineal (`RulerScene`) macht die
       Bewertung messbar — "von 0 bis 160" statt "oben ist was".
-- [ ] `docs/GAME_DESIGN.md` 9 anpassen (dort steht die feste Aufloesung)
+- [x] `docs/GAME_DESIGN.md` 9 anpassen (variable Hoehe dokumentiert)
+- [x] Hochformat erzwingen: Manifest, best-effort Screen-Orientation-Lock und
+      Landscape-Fallback fuer Browser ohne Orientierungs-API
+- [ ] Tablet-Layout: iPad-Breite optional besser nutzen, ohne die
+      einhaendige Hochformat-Bedienung auf iPhones zu veraendern
 
 ## Phase 3 — Themenwechsel ins Weltall
 

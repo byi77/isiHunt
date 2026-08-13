@@ -425,6 +425,6 @@ Ehrlich benannt, damit sie nicht ueberrascht:
 | Kein Test-Setup                                     | ab erster Regressionsangst                          | Vitest, M2                                 |
 | Kollisionstest ist O(n) ueber alle Objekte          | > ~200 Objekte                                      | Raeumliches Gitter                         |
 | Keine Ton-Ebene                                     | M4                                                  | `SoundSystem` neben den anderen Systems    |
-| HUD-Layout ist fest auf 720×1280                    | nie (FIT skaliert)                                  | —                                          |
+| HUD-Layout nutzt 720×variable Portraithoehe        | nie (FIT skaliert)                                  | —                                          |
 | **Bestenliste ist manipulierbar**                   | sobald sie oeffentlich beworben wird                | Runs serverseitig nachrechnen (ADR-0011)   |
 | Sync ueberschreibt, statt zusammenzufuehren         | wenn auf beiden Geraeten regelmaessig gespielt wird | Feldweises Zusammenfuehren monotoner Werte |

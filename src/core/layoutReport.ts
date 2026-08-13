@@ -19,6 +19,8 @@
  * ihre Position verraet die Werte.
  */
 
+import { GAME_HEIGHT } from '@/config/GameConfig';
+
 export interface LayoutReport {
   /** Sichtbare Seitenhoehe in CSS-Pixeln. */
   readonly viewportHeight: number;
@@ -63,7 +65,7 @@ export function measureLayout(canvas: HTMLCanvasElement): LayoutReport {
     barBottom: viewportHeight - rect.bottom,
     canvasTop: rect.top,
     canvasHeight: rect.height,
-    scale: rect.height / 1280,
+    scale: rect.height / GAME_HEIGHT,
     // Der obere Spielfeldrand liegt bei Spiel-y 0. Beginnt der Canvas ueber der
     // sicheren Grenze, ist alles darueber verdeckt.
     clippedByNotch: rect.top < safeTop,
@@ -90,7 +92,7 @@ export function measureDomElement(
   if (box.height === 0) return null;
 
   const canvasBox = canvas.getBoundingClientRect();
-  const scale = canvasBox.height / 1280;
+  const scale = canvasBox.height / GAME_HEIGHT;
   if (scale === 0) return null;
 
   return {

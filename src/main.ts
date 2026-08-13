@@ -1,15 +1,17 @@
 /**
  * Einstiegspunkt: Phaser konfigurieren und starten.
  *
- * Skalierung: Das Spiel rendert immer intern in GAME_WIDTH x GAME_HEIGHT
- * (720x1280, Hochformat). Phaser skaliert das per FIT auf das Geraet und
- * zentriert es. Dadurch gilt jede Koordinate im Code auf jedem Handy gleich -
- * es gibt keine geraetabhaengigen Layout-Sonderfaelle.
+ * Skalierung: Das Spiel rendert intern in GAME_WIDTH x GAME_HEIGHT. Die Breite
+ * bleibt 720, die Hoehe wird beim Start aus der verfuegbaren Portrait-Flaeche
+ * berechnet (mindestens 1280). Phaser skaliert das per FIT auf das Geraet und
+ * zentriert es. Szenen, die mit GAME_HEIGHT arbeiten, nutzen dadurch die
+ * zusaetzliche Hoehe ohne geraeteabhaengige Sonderkoordinaten.
  */
 
 import Phaser from 'phaser';
 
 import { APP_VERSION, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { requestPortraitOrientationLock } from '@/core/orientation';
 import { keepCanvasBoundsFresh } from '@/core/viewport';
 import { AdminScene } from '@/scenes/AdminScene';
 import { BootScene } from '@/scenes/BootScene';
@@ -73,6 +75,11 @@ const versionLabel = document.getElementById('version');
 if (versionLabel) versionLabel.textContent = `v${APP_VERSION}`;
 
 const game = new Phaser.Game(config);
+
+// Manifest und installierte Web-App sperren die Ausrichtung bereits. Die
+// Browser-API ist die zusaetzliche Moeglichkeit fuer Android; auf iOS Safari
+// darf eine Webseite diese Sperre nicht erzwingen (siehe orientation.ts).
+requestPortraitOrientationLock();
 
 /**
  * Langer Druck auf die Versionsnummer oeffnet den Wartungsbildschirm.

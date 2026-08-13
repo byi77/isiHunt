@@ -11,6 +11,15 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+**Geraetehoehe und Hochformat**
+
+- Die interne Portraithoehe waechst auf hohen, schmalen Handys mit der
+  verfuegbaren sicheren Flaeche; die zusaetzliche Hoehe wird als Spielfeld
+  genutzt und hinterlaesst keine FIT-Streifen im Canvas.
+- Hochformat wird ueber das PWA-Manifest und die Screen-Orientation-API
+  angefordert. Browser ohne diese API zeigen im Querformat einen klaren
+  Hochkant-Hinweis statt eines seitlich unbedienbaren Spiels.
+
 **Online: Bestenliste und Spielstand-Abgleich** (Supabase)
 
 - gemeinsame Bestenliste ueber alle Welten, Top 10, eigener Eintrag

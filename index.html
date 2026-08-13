@@ -190,11 +190,51 @@
         text-transform: uppercase;
         font-size: 14px;
       }
+
+      /* iOS Safari bietet fuer normale Webseiten keine Orientierungs-Sperre.
+         Wenn der Benutzer das Handy trotzdem quer haelt, bleibt das Spiel
+         unsichtbar und erklaert den Zustand, statt ein seitlich unbedienbares
+         Spielfeld zu zeigen. Installierte PWAs werden ueber das Manifest
+         bereits auf Hochformat festgelegt. */
+      #orientation-lock {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        place-items: center;
+        padding: 32px;
+        box-sizing: border-box;
+        color: #f5f1e8;
+        background: #0b1020;
+        text-align: center;
+        font-size: 18px;
+        line-height: 1.45;
+      }
+
+      #orientation-lock span {
+        display: block;
+        max-width: 320px;
+      }
+
+      @media (orientation: landscape) and (pointer: coarse) {
+        #orientation-lock {
+          display: grid;
+        }
+
+        #game,
+        #version,
+        #boot {
+          visibility: hidden;
+        }
+      }
     </style>
   </head>
   <body>
     <div id="page-backdrop" aria-hidden="true"></div>
     <div id="game"></div>
+    <div id="orientation-lock" aria-live="polite">
+      <span>Bitte halte das Handy hochkant, um isiHunt zu spielen.</span>
+    </div>
     <!-- Zwei Messpunkte fuer die sicheren Raender.
          `env(safe-area-inset-*)` laesst sich aus JavaScript nicht direkt lesen.
          Diese beiden 1-Pixel-Marken stehen genau auf der Grenze; ihre Position

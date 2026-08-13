@@ -5,9 +5,48 @@
  * Balancing dreht, steht hier oder in einer der anderen config/-Dateien.
  */
 
-/** Interne Aufloesung. Phaser skaliert per FIT auf jedes Geraet (siehe main.ts). */
+/** Feste Breite fuer die interne Hochformat-Aufloesung. */
 export const GAME_WIDTH = 720;
-export const GAME_HEIGHT = 1280;
+
+/**
+ * Mindesthoehe und Referenzhoehe des Layouts.
+ *
+ * Auf einem schmalen, hohen Handy wuerde `FIT` bei 720 x 1280 oben und unten
+ * grosse Streifen lassen. Die Breite bleibt die Referenz, die interne Hoehe
+ * waechst dagegen bis zur tatsaechlich verfuegbaren Portrait-Flaeche. Das
+ * Layout benutzt `GAME_HEIGHT` bereits fuer alle unteren Elemente und das
+ * Spielfeld - deshalb wird die zusaetzliche Hoehe automatisch sinnvoll genutzt.
+ */
+const DESIGN_GAME_HEIGHT = 1280;
+
+function readPixel(value: string): number {
+  const parsed = Number.parseFloat(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function getInitialGameHeight(): number {
+  // Beim Build oder in einem Test gibt es kein DOM. Die Referenzhoehe bleibt
+  // dann der sichere Fallback.
+  if (typeof document === 'undefined') return DESIGN_GAME_HEIGHT;
+
+  const parent = document.getElementById('game');
+  if (!parent) return DESIGN_GAME_HEIGHT;
+
+  const style = window.getComputedStyle(parent);
+  const horizontalPadding = readPixel(style.paddingLeft) + readPixel(style.paddingRight);
+  const verticalPadding = readPixel(style.paddingTop) + readPixel(style.paddingBottom);
+  const availableWidth = parent.clientWidth - horizontalPadding;
+  const availableHeight = parent.clientHeight - verticalPadding;
+
+  if (availableWidth <= 0 || availableHeight <= 0) return DESIGN_GAME_HEIGHT;
+
+  // Auf niedrigeren oder weniger schmalen Geraeten bleibt die bisherige
+  // Aufloesung erhalten. Nur die bisher ungenutzte Hoehe wird freigegeben.
+  return Math.max(DESIGN_GAME_HEIGHT, Math.round((availableHeight / availableWidth) * GAME_WIDTH));
+}
+
+/** Interne Portraithoehe fuer das aktuelle Geraet. Phaser skaliert per FIT. */
+export const GAME_HEIGHT = getInitialGameHeight();
 
 /** Sicherheitsrand, in dem keine Objekte spawnen (HUD oben, Daumen unten). */
 export const PLAYFIELD_PADDING_TOP = 170;
