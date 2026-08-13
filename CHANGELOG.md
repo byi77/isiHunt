@@ -23,6 +23,8 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   Anfangshoehe.
 - Der Bestwert steht jetzt im Profilblock des Hauptmenues und direkt neben dem
   Level im Profilbildschirm; die doppelte Anzeige unten im Menue entfaellt.
+- Der technische Steuerungshinweis am unteren Bildschirmrand wurde aus dem
+  Hauptmenue entfernt.
 
 **Geraetehoehe und Hochformat**
 

@@ -7,7 +7,7 @@
 
 import Phaser from 'phaser';
 
-import { DEBUG_ENABLED, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { WORLDS } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { isIos, isStandalone } from '@/core/display';
@@ -536,14 +536,14 @@ export class MenuScene extends Phaser.Scene {
    * Vollbild, weil es dort keine Fullscreen-API gibt (core/display.ts).
    *
    * Der iOS-Hinweis steht bewusst in einem eigenen Kasten und nicht als
-   * Fusszeilentext: Beim Spieltest wurde er dort schlicht uebersehen, und die
+   * Der Hinweis steht bewusst als eigener Kasten: Beim Spieltest wurde ein
+   * Fusszeilentext dort schlicht uebersehen, und die
    * Rueckmeldung lautete, es gebe gar keinen Vollbild-Knopf. Der Knopf fehlt
    * auf iOS zu Recht (ADR-0009) - dann muss aber der Ersatz auffindbar sein.
    */
   private buildHint(): void {
     if (isIos() && !isStandalone()) {
-      // Zwischen Bestwert (1138) und Steuerungshinweis (1244) - der Kasten
-      // passt genau dazwischen, ohne eines von beiden zu ueberdecken.
+      // Der Kasten sitzt am unteren Rand des Menues.
       const y = GAME_HEIGHT - 88;
 
       createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, 76, Palette.goldHex, { alpha: 0.5 });
@@ -567,16 +567,6 @@ export class MenuScene extends Phaser.Scene {
         )
         .setOrigin(0.5);
     }
-
-    const hint = DEBUG_ENABLED
-      ? 'Ziehen zum Steuern  ·  am PC: WASD / Pfeiltasten  ·  Debug: 1-6, L, K, J, P, 0'
-      : 'Ziehen zum Steuern  ·  am PC: WASD / Pfeiltasten';
-
-    this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 36, hint, textStyle(FontSize.tiny, Palette.inkDim))
-      .setOrigin(0.5)
-      .setWordWrapWidth(GAME_WIDTH - 80)
-      .setAlign('center');
 
     // Hier stand einmal eine zweite Versionsnummer. Sie ist entfernt: Die
     // Anzeige lebt im DOM (`index.html` -> #version, gesetzt in main.ts) und
