@@ -48,11 +48,10 @@ Rueckmeldungen zerfielen in drei Sorten: Bedienfehler, Erweiterungswuensche und
 Wuensche, die die Designgrundlage verschieben. Diese Phase raeumt die erste
 Sorte auf.
 
-- [ ] **Knopf-Fehler: offen.** Vier Anlaeufe, vier gefundene und beseitigte
-      Ursachen — das Symptom trat weiterhin auf. Im Browser ist die Kette
-      nachgemessen und korrekt (Trefferflaeche deckungsgleich, Umrechnung
-      fehlerfrei); auf dem iPhone ungeprueft. Naechster Schritt ist eine
-      Messung mit `?hitboxes`, keine weitere Vermutung. Details in `TODO.md`.
+- [x] **Knopf-Fehler behoben.** Ursache war die Auslieferung, nicht der Code:
+      Auf dem Handy lief durchgehend v0.1.0, waehrend lokal laengst korrigiert
+      war. Mit v0.1.3 auf dem Geraet gegengeprueft — die Knoepfe reagieren.
+      Die Absicherung dagegen steht in `CODE_STYLE.md` 1.9.
 - [x] Trefferflaechen werden am gemessenen Ursprung ausgerichtet statt
       berechnet (`makeAlignedHitArea`)
 - [x] Druck-Effekt staucht nur noch die Grafik, nicht die Trefferflaeche

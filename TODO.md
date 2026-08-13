@@ -9,9 +9,10 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 
 | Phase   | Inhalt                                        | Aufwand      |
 | ------- | --------------------------------------------- | ------------ |
-| **1.1** | Doppelte Versionsanzeige, Admin-Modus         | gering       |
+| 1       | Bedienbarkeit — **abgeschlossen**             | —            |
+| **1.1** | Zwei UI-Fehler, Admin-Modus                   | gering       |
 | **1.2** | Home-Bildschirm-App aktualisiert nicht        | offen        |
-| 2       | Profil, 90 s Rundendauer, XP-Kurve, Level 100 | mittel       |
+| 2       | Profil, 90 s, XP-Kurve, Level 100, Bestenliste | mittel       |
 | **2.5** | Balken oben/unten — Bildschirm ganz nutzen    | mittel+      |
 | 3       | Weltraum statt Fantasy                        | mittel       |
 | **3.5** | Ton (aus M4 vorgezogen)                       | mittel       |
@@ -22,17 +23,27 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 
 **Fett = neu am 2026-08-13.**
 
-Zwei Punkte brauchen eine Entscheidung, bevor Code entsteht:
+### Entschieden (2026-08-13)
 
-- **3.6 Dynamic Island** ist aus einer Web-App heraus nicht erreichbar. Sie
-  setzt eine native App voraus (M6, Capacitor). Ohne diese Entscheidung bleibt
-  nur die Gestaltung des Bereichs _um_ die Island herum.
-- **2.5 Balken** bedeutet mehr Spielflaeche und verschiebt damit das Balancing
-  — gehoert zusammen mit der Rundendauer aus Phase 2 gerechnet.
+- **Phase 1 ist abgeschlossen.** Auf dem Handy laeuft v0.1.3, die Knoepfe
+  reagieren. Der Fehler lag an der Auslieferung, nicht am Code.
+- **Bestenliste wird geleert** beim Wechsel auf 90 Sekunden.
+- **Ueberschuessige Talentpunkte werden zu Coins.**
+- **Bestenliste soll uebergreifend sein** — geprueft: sie ist heute pro Welt
+  getrennt. Eingeplant in Phase 2.
+
+### Noch offen — erst bei der jeweiligen Phase noetig
+
+- **2.5 Balken:** flexibles Spielfeld oder nur die Balken einfaerben? Ersteres
+  betrifft alle Scenes und verschiebt das Balancing.
+- **3 Weltraum:** sollen die Dokumente jetzt umgeschrieben werden?
+- **3.6 Dynamic Island:** braucht eine native App (M6 vorziehen?).
+- **5 Hindernisse:** ab welcher Welt darf ein Hindernis bestrafen?
+- **6 Manipulationsschutz:** vor oder nach Ranked-Modus und Rekord-Meldungen?
 
 ---
 
-## ZUERST — Ursache geklaert: das Handy lief nie auf dem korrigierten Stand
+## Erledigt — der Knopf-Fehler lag an der Auslieferung
 
 > **Aufgeloest am 2026-08-13.** Auf dem Testgeraet lief durchgehend **v0.1.0**,
 > waehrend lokal laengst korrigiert war. Alle vier Fehlersuchrunden liefen
@@ -60,17 +71,16 @@ nachgewiesene Ursache, auch wenn keine das gemeldete Symptom ausgeloest hat:
 - [x] Vergroesserte Flaechen erzeugten Ueberlappung → falscher Knopf gewann
 - [x] Ausrichtung wird gemessen statt gerechnet (`makeAlignedHitArea`)
 
-**Offen:**
+**Bestaetigt am 2026-08-13:** Auf dem Handy laeuft v0.1.3, die Version ist
+sichtbar, **die Knoepfe reagieren gut**. Der Fehler ist damit erledigt — er lag
+ausschliesslich an der Auslieferung, nicht am Code.
 
-- [ ] Auf dem Handy gegenpruefen — **zuerst die Versionsnummer unten rechts
-      ablesen.** Steht dort nicht die aktuelle, ist der Deploy das Problem und
-      nicht der Code.
-- [ ] Erst wenn die Version stimmt und es weiterhin hakt: `?hitboxes` oeffnen
-      und einen Fehlgriff abfotografieren
+- [x] Auf dem Geraet gegengeprueft (Browser)
+- [ ] Offen bleibt nur der Sonderfall Home-Bildschirm-App → Phase 1.2
 
 ---
 
-## Phase 1 — Bedienbarkeit _(fertig bis auf den Knopf-Fehler)_
+## Phase 1 — Bedienbarkeit _(abgeschlossen 2026-08-13)_
 
 - [x] Einheitlicher Zurueck-Knopf oben links (`createBackButton`)
 - [x] Zurueck-Knopf der Bestenliste aus dem Bereich des Namensfeldes geholt
@@ -78,7 +88,7 @@ nachgewiesene Ursache, auch wenn keine das gemeldete Symptom ausgeloest hat:
 - [x] iOS-Vollbildhinweis in einem eigenen Kasten
 - [x] Weltenauswahl der Bestenliste von 12 auf 50 CSS-px vergroessert
 - [x] Versionsnummer im Menue (damit Test-Rueckmeldungen zuordenbar sind)
-- [ ] **Auf dem Geraet der Kinder gegenpruefen** ← Voraussetzung fuer Phase 2
+- [x] **Auf dem Geraet gegengeprueft** — v0.1.3 sichtbar, Knoepfe reagieren
 
 ### Phase 1.1 — Sofort, kleine Fehler _(neu 2026-08-13)_
 
@@ -89,6 +99,15 @@ nachgewiesene Ursache, auch wenn keine das gemeldete Symptom ausgeloest hat:
       **Loesung:** die Canvas-Variante entfernen. Die DOM-Variante bleibt, weil
       sie auch dann sichtbar ist, wenn Phaser gar nicht startet — genau dafuer
       war sie gedacht. _Aufwand: sehr gering_
+
+- [ ] **BUG: Code-Feld sitzt auf dem Knopf "CODE EINLOESEN".** Nachgerechnet:
+      Feld `746..818`, Knopf `842..918` — rechnerisch 24 Spielpixel Luft, auf
+      dem iPhone aber nur rund **13 CSS-px**. Zu wenig fuer ein
+      HTML-Eingabefeld, das ueber dem Canvas liegt und bei offener
+      Systemtastatur zusaetzlich verschoben wird.
+      **Loesung:** Abstand auf mindestens 60 Spielpixel vergroessern. Gilt als
+      Regel fuer jedes DOM-Element ueber dem Canvas — dieselbe Ursache wie beim
+      Zurueck-Knopf der Bestenliste. _Aufwand: sehr gering_
 
 - [ ] **Admin-Modus / manuelles Update.** Ein Bildschirm mit Version,
       "Neu laden erzwingen", Spielstand zuruecksetzen und Debug-Schaltern.
@@ -138,15 +157,53 @@ nachgewiesene Ursache, auch wenn keine das gemeldete Symptom ausgeloest hat:
 - [ ] XP-Kurve: `floor(80 · n^1.45)` → `floor(750 · √n)`
 - [ ] `MAX_LEVEL = 100`, Deckelung in `ProgressionSystem.applyRun()`
 - [ ] **Bestenliste leeren** (Eingriff in Supabase — Eintraege sind auf
-      Rechteebene unveraenderlich, kein Knopf im Spiel)
+      Rechteebene unveraenderlich, kein Knopf im Spiel). Entschieden am
+      2026-08-13: ja, sauberer Schnitt beim Wechsel auf 90 Sekunden.
+
+- [ ] **Bestenliste modusuebergreifend machen.** _(neu 2026-08-13)_
+
+      **Ist-Zustand, geprueft:** Sie ist **pro Welt getrennt**, nicht
+      uebergreifend. `scores.world_id` ist Pflichtfeld,
+      `fetchLeaderboard(worldId)` filtert mit `.eq('world_id', worldId)`, und
+      `LeaderboardScene` hat Weltentabs zum Umschalten. Fuenf Welten = fuenf
+      getrennte Listen.
+
+      **Modi:** Duell-Runden gehen gar nicht in die Liste (Fairness-Regel 3,
+      `config/challenge.ts`) — dort gibt es also nichts zusammenzufuehren.
+      Eingetragen wird ausschliesslich aus dem Solo-Ergebnisbildschirm.
+
+      **Zu tun:**
+  - [ ] Eine Gesamtliste ueber alle Welten als Standardansicht
+  - [ ] `world_id` bleibt in der Datenbank (Herkunft geht sonst verloren) und
+        wird in der Zeile angezeigt — als Farbmarke, nicht als Text
+  - [ ] Weltentabs bleiben als Filter erhalten, aber nicht mehr als einzige
+        Ansicht
+  - [ ] `fetchLeaderboard()` ohne `worldId` aufrufbar machen
+  - [ ] Index ergaenzen: `scores (score desc, created_at asc)` — der
+        vorhandene `scores_world_rank_idx` greift ohne `world_id`-Filter nicht
+
+      **Vorbehalt, der eine Entscheidung braucht:** Die Welten sind heute
+      mechanisch identisch (`GAME_DESIGN.md` 7.3), eine Gesamtliste ist also
+      fair. Sobald die Weltmodifikatoren aus Phase 5 kommen — Sonnenhort mit
+      doppelter Legendaer-Chance — ist sie es **nicht mehr**. Dann braucht es
+      entweder eine Normalisierung oder wieder getrennte Listen.
+      _Aufwand: mittel_
 - [ ] XP-Tabelle in `GAME_DESIGN.md` 7.1 ersetzen
 
 **Zielwerte, nachgerechnet:** Level 10 nach 16 Runs ≈ 29 min · Level 100 nach
 560 Runs ≈ 17 h · Grundlage 900 XP je 90-s-Run, 110 s je Durchgang.
 
-**Offen:** Was passiert mit ueberschuessigen Talentpunkten? 99 Punkte stehen 32
-Talentraengen gegenueber — ab etwa Level 33 ist alles ausgebaut. Vorschlag:
-Ueberschuss wird zu Coins (Phase 4).
+**Entschieden am 2026-08-13:** Ueberschuessige Talentpunkte werden zu **Coins**.
+99 Punkte stehen 32 Talentraengen gegenueber — ab etwa Level 33 ist alles
+ausgebaut, die restlichen 67 haetten sonst kein Ziel.
+
+- [ ] `ProgressionSystem`: Sind alle Talente auf Maximalrang, wird der Punkt
+      nicht vergeben, sondern in Coins gutgeschrieben
+- [ ] Umrechnungskurs gehoert nach `GameConfig.ts`, nicht in die Logik
+- [ ] Der Ergebnisbildschirm muss das erklaeren ("Alle Talente ausgebaut —
+      +N Coins"), sonst wirkt ein ausbleibender Talentpunkt wie ein Fehler
+- [ ] Setzt das Coin-System aus Phase 4 voraus. Bis dahin: Punkte weiter
+      vergeben und beim Einbau der Coins rueckwirkend umrechnen
 
 ## Phase 2.5 — Bildschirm ganz nutzen _(neu 2026-08-13)_
 
