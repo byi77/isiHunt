@@ -115,13 +115,76 @@ export function playUiClick(): void {
 
 function playCollected(rarityId: RarityId): void {
   const frequency = RARITY_FREQUENCIES[rarityId];
-  const isRare = rarityId === 'rare' || rarityId === 'epic' || rarityId === 'legendary';
+  const epicTier =
+    rarityId === 'legendary'
+      ? 4
+      : rarityId === 'epic'
+        ? 3
+        : rarityId === 'rare'
+          ? 2
+          : rarityId === 'uncommon'
+            ? 1
+            : 0;
 
+  if (epicTier === 0) {
+    scheduleTone({ frequency, duration: 0.09, type: 'sine', volume: 0.04 });
+    return;
+  }
+
+  // Farbige Planeten bekommen einen musikalischen Klang statt eines einzelnen
+  // Piepsers: Koerper unten, Quinte in der Mitte und ein heller Oberton. Je
+  // seltener der Planet, desto laenger und groesser wird die kleine Fanfare.
+  const root = frequency * (epicTier === 1 ? 0.82 : 0.7);
+  const duration = 0.11 + epicTier * 0.025;
+  const volume = 0.034 + epicTier * 0.004;
+  const notes: ToneSpec[] = [
+    { frequency: root, duration: duration + 0.1, type: 'sawtooth', volume: 0.018 },
+    { frequency, duration, type: 'triangle', volume },
+    {
+      frequency: frequency * 1.5,
+      duration: duration + 0.04,
+      delay: 0.045,
+      type: 'sine',
+      volume: 0.032,
+    },
+  ];
+
+  if (epicTier >= 2) {
+    notes.push({
+      frequency: frequency * 2,
+      duration: duration + 0.08,
+      delay: 0.1,
+      type: 'triangle',
+      volume: 0.028 + epicTier * 0.004,
+    });
+  }
+
+  if (epicTier >= 3) {
+    notes.push({
+      frequency: frequency * 2.5,
+      duration: 0.2,
+      delay: 0.17,
+      type: 'sine',
+      volume: 0.025 + epicTier * 0.004,
+    });
+  }
+
+  if (epicTier === 4) {
+    notes.push(
+      { frequency: frequency * 3, duration: 0.24, delay: 0.23, type: 'triangle', volume: 0.035 },
+      { frequency: root * 0.5, duration: 0.3, type: 'sine', volume: 0.022 },
+    );
+  }
+
+  playSequence(notes);
+}
+
+/** Kurzer, klarer Schritt beim Wechsel der Welt im Wheel-Carousel. */
+export function playWorldSelect(spaceVariant: number): void {
+  const root = 300 + Math.max(0, spaceVariant) * 42;
   playSequence([
-    { frequency, duration: 0.09, type: isRare ? 'triangle' : 'sine', volume: 0.04 },
-    ...(isRare
-      ? [{ frequency: frequency * 1.5, duration: 0.13, delay: 0.06, type: 'sine' as const }]
-      : []),
+    { frequency: root, duration: 0.055, type: 'triangle', volume: 0.026 },
+    { frequency: root * 1.5, duration: 0.1, delay: 0.045, type: 'sine', volume: 0.032 },
   ]);
 }
 

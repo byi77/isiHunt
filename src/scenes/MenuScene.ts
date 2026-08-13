@@ -18,6 +18,7 @@ import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
 import type { RemoteSave } from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
+import * as SoundSystem from '@/systems/SoundSystem';
 import { playerTextureForLevel, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
@@ -612,6 +613,7 @@ export class MenuScene extends Phaser.Scene {
 
     this.selectedWorld = world;
     this.transitionWorldBackdrop(world);
+    SoundSystem.playWorldSelect(world.spaceVariant);
     this.buildWorldList(level);
     return true;
   }

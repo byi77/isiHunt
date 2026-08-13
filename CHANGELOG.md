@@ -46,6 +46,9 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 - Phase 3.5: prozedurale WebAudio-Toene fuer Klicks, Faenge, Combo-Stufen,
   Run-Start, Run-Ende und Levelaufstieg; der Ton ist in den Einstellungen
   abschaltbar und bleibt gespeichert.
+- Farbige Planeten (gruen, blau, lila, orange) haben jetzt mehrstimmige,
+  deutlich epischere Fangklaenge; das Scrollen durch die Welten spielt einen
+  eigenen Auswahlton.
 - Der Wartungsmodus wird durch drei kurze Tipps auf die Versionsangabe und
   anschliessend langes Gedrueckthalten geoeffnet.
 

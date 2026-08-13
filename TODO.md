@@ -323,7 +323,9 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
       dort bereits vor)
 - [x] **Knopf-Klick** — kurz und trocken, bei jedem `pointerup` in `widgets.ts`
 - [x] **Fang-Sounds je Seltenheit**, Tonhoehe steigend mit dem Wert;
+      gruen/blau/lila/orange bekommen mehrstimmige, epischere Fanfaren;
       legendaer bekommt einen eigenen Klang
+- [x] Weltwechsel im Hoch-/Runter-Wheel bekommt einen kurzen Auswahlton
 - [x] **Combo-Stufe erreicht**, **Levelaufstieg**, **Run-Ende**
 - [x] Stummschalter, Zustand im Spielstand (`reconcile()` braucht dafuer keine
       Migration)
