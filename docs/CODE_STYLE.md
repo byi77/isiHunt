@@ -135,12 +135,47 @@ Schritt, der sie pruefen wuerde. Eine Hypothese ohne Pruefschritt ist geraten.
 (Abschnitt 5) ist abgehakt und nachgewiesen. Nicht geprueft heisst nicht
 fertig — was uebersprungen wurde, wird gesagt.
 
-### 1.9 Jeder Commit zieht die Version hoch
+### 1.9 Jeder Commit zieht die Version hoch, jeder Push liefert sie aus
 
-**Kein Commit ohne eigene Versionsnummer.** Der `pre-commit`-Hook
-(`.githooks/pre-commit`) ruft `scripts/bump-version.mjs`, zaehlt die
-Patch-Version in `package.json` hoch und legt die Aenderung mit in denselben
-Commit.
+**Der teuerste Fehler dieses Projekts war kein Programmierfehler.**
+
+Vier Runden Fehlersuche an den Trefferflaechen liefen gegen einen Stand, den
+das Testgeraet nie geladen hatte: Auf dem Handy lief weiterhin v0.1.0, waehrend
+lokal laengst korrigiert war. Jede Rueckmeldung ("jetzt geht nur noch links")
+beschrieb korrekt den **alten** Code — und schickte die Suche in eine neue
+falsche Richtung.
+
+Kein Werkzeug haette das gefunden. Eine Zahl auf dem Bildschirm haette es in
+einer Sekunde beantwortet.
+
+#### Die Kette
+
+```
+Aenderung → commit (Version +1) → push → GitHub Actions → Pages → Handy
+```
+
+Jedes Glied kann reissen, und keines meldet sich von selbst:
+
+| Riss                          | Wirkung                                          |
+| ----------------------------- | ------------------------------------------------ |
+| nicht gepusht                 | Actions laeuft nie, Geraet bleibt auf altem Stand |
+| CI rot                        | Deploy laeuft trotzdem — der Fehler faellt nicht auf |
+| `index.html` aus dem Cache    | Geraet laedt weiter die alten, gehashten Dateien  |
+| Version nicht hochgezaehlt    | neuer Build ist vom alten nicht zu unterscheiden  |
+
+#### Was dagegen eingerichtet ist
+
+- **`.githooks/pre-commit`** zaehlt die Patch-Version hoch
+  (`scripts/bump-version.mjs`) und legt sie in denselben Commit.
+- **`.githooks/pre-push`** blockiert Pushes, deren Version der auf dem Remote
+  entspricht — ein Deploy ohne unterscheidbare Nummer waere wertlos.
+- **`index.html` ist `no-cache`.** Die JS- und CSS-Dateien tragen einen
+  Inhalts-Hash und duerfen gecacht werden; die `index.html` ist die einzige
+  Stelle, die auf die neuen Hashes zeigt. Liegt sie im Cache, kommt der Deploy
+  nicht an.
+- **Die Nummer steht im DOM**, nicht nur im Canvas (`index.html` → `#version`,
+  gesetzt in `main.ts`). Sie ist damit auch sichtbar, wenn Phaser gar nicht
+  erst startet.
 
 Einmalig pro Arbeitskopie aktivieren — `.git/hooks` ist nicht versioniert:
 
@@ -148,21 +183,21 @@ Einmalig pro Arbeitskopie aktivieren — `.git/hooks` ist nicht versioniert:
 git config core.hooksPath .githooks
 ```
 
-**Warum das eine Regel ist und keine Bequemlichkeit.** Die Nummer wird zur
-Bauzeit ins Spiel gereicht (`vite.config.ts` → `__APP_VERSION__` →
-`APP_VERSION`) und steht im Menue unten rechts. Beim Test auf einem echten
-Geraet ist sie die einzige verlaessliche Auskunft darueber, welcher Stand
-gerade laeuft.
+#### Pflicht nach jedem Push
 
-Ohne sie beginnt jeder Fehlerbericht mit einer offenen Frage: Ist das der neue
-Stand oder haengt noch der alte im Cache? Genau diese Frage hat in der
-Fehlersuche an den Trefferflaechen mehrere Runden gekostet — Rueckmeldungen
-liessen sich keinem Stand sicher zuordnen. Eine Zahl auf dem Bildschirm
-beantwortet das in einer Sekunde.
+```bash
+gh run list --limit 3
+```
 
-Bewusst ohne Sprung committen: `git commit --no-verify`. Merge-, Rebase- und
-Amend-Commits ueberspringt der Hook selbst — sie gehoeren zu einem bereits
-vergebenen Stand.
+Beide Laeufe — CI **und** Deploy — muessen gruen sein. Danach die
+Versionsnummer auf dem Testgeraet ablesen.
+
+> **Ein Fehlerbericht ohne Versionsnummer ist wertlos.** Bevor eine
+> Rueckmeldung ausgewertet wird, muss feststehen, welcher Stand sie erzeugt hat.
+
+Bewusst uebergehen: `git commit --no-verify` bzw. `git push --no-verify`.
+Merge-, Rebase- und Amend-Commits ueberspringt der pre-commit-Hook selbst — sie
+gehoeren zu einem bereits vergebenen Stand.
 
 ## 2. Namenskonventionen
 

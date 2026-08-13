@@ -48,14 +48,25 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 - Auf dem iPhone stattdessen ein Hinweis auf "Zum Home-Bildschirm" — Safari
   kennt dort keine Fullscreen-API
 
-**Versionierung**
+**Versionierung und Auslieferung**
+
+> Anlass: Vier Runden Fehlersuche an den Trefferflaechen liefen gegen einen
+> Stand, den das Testgeraet nie geladen hatte — dort lief durchgehend v0.1.0.
+> Jede Rueckmeldung beschrieb korrekt den **alten** Code.
 
 - Jeder Commit zieht die Patch-Version hoch (`.githooks/pre-commit` →
   `scripts/bump-version.mjs`), einmalig zu aktivieren mit
   `git config core.hooksPath .githooks`
-- Die Nummer steht im Menue unten rechts. Sie beantwortet beim Test auf dem
-  Handy die Frage, die jede Fehlersuche aufhaelt: laeuft der neue Stand oder
-  haengt noch der alte im Cache?
+- **`.githooks/pre-push` blockiert Pushes ohne Versionssprung.** Ein Deploy,
+  dessen Nummer sich nicht vom Vorgaenger unterscheidet, ist auf dem Geraet
+  nicht ueberpruefbar
+- **`index.html` ist `no-cache`.** JS und CSS tragen einen Inhalts-Hash und
+  duerfen gecacht werden; die `index.html` ist die einzige Stelle, die auf die
+  neuen Hashes zeigt — aus dem Cache blockiert sie jeden Deploy
+- **Die Nummer steht im DOM** (unten rechts), nicht nur im Canvas: sichtbar
+  auch dann, wenn Phaser gar nicht erst startet
+- `npm run verify` faehrt dieselbe Kette wie die CI, inklusive `format:check` —
+  dessen Fehlen in der lokalen Pruefung hatte die CI rot gemacht
 - `scripts/bump-version.mjs` ersetzt gezielt nur die Versionszeile, statt die
   `package.json` neu zu serialisieren — sonst wuerde jeder Commit die
   Formatierung umschreiben

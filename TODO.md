@@ -8,37 +8,41 @@ Arbeitsliste. Reihenfolge nach Nutzen, nicht nach Aufwand.
 
 ---
 
-## ZUERST — der Knopf-Fehler ist NICHT bestaetigt behoben
+## ZUERST — Ursache geklaert: das Handy lief nie auf dem korrigierten Stand
 
-> **Status: offen.** Vier Anlaeufe, jedes Mal wurde eine echte Ursache
-> gefunden und behoben, aber das Symptom trat weiterhin auf. Der letzte Stand
-> ist im Browser nachgemessen und dort korrekt — auf dem iPhone **ungeprueft**.
+> **Aufgeloest am 2026-08-13.** Auf dem Testgeraet lief durchgehend **v0.1.0**,
+> waehrend lokal laengst korrigiert war. Alle vier Fehlersuchrunden liefen
+> gegen einen Stand, den das Handy nie geladen hatte — jede Rueckmeldung
+> beschrieb korrekt den **alten** Code und schickte die Suche in eine neue
+> falsche Richtung.
 
-**Was gemessen und belegt ist** (Edge headless, echtes Spiel, echte Phaser-API):
+**Was daraus folgt** (eingebaut, siehe `CODE_STYLE.md` 1.9):
 
-| Schicht                     | Messergebnis                           |
-| --------------------------- | -------------------------------------- |
-| Trefferflaeche je Knopf     | `74..318` = deckungsgleich mit sichtbar |
-| CSS → Spielkoordinate       | Fehler links 0,0 · rechts 0,0          |
-| Tipp am rechten Knopfrand   | trifft den richtigen Knopf             |
-| `viewport.ts` beim Tippen   | veraendert weder bounds noch scale     |
+- [x] `pre-push`-Hook blockiert Pushes ohne Versionssprung
+- [x] `index.html` als `no-cache` — sie ist die einzige Datei ohne Inhalts-Hash
+      und damit die einzige, die einen Deploy blockieren kann
+- [x] Versionsnummer im DOM statt nur im Canvas (auch sichtbar, wenn Phaser
+      nicht startet)
+- [x] `npm run verify` fuehrt dieselbe Kette wie die CI, inklusive
+      `format:check` — dessen Fehlen hatte die CI rot gemacht, ohne dass es
+      lokal auffiel
 
-**Was behoben wurde** (jeweils eine echte, nachgewiesene Ursache):
+**Die Korrekturen an den Trefferflaechen bleiben gueltig** — jede behob eine
+nachgewiesene Ursache, auch wenn keine das gemeldete Symptom ausgeloest hat:
 
 - [x] Trefferflaeche wanderte mit dem Druck-Effekt (Container wurde skaliert)
 - [x] Trefferflaeche war um `displayOriginX` verschoben
 - [x] `updateBounds()` ohne `displayScale`-Nachzug
 - [x] Vergroesserte Flaechen erzeugten Ueberlappung → falscher Knopf gewann
-- [x] Ausrichtung wird jetzt gemessen statt gerechnet (`makeAlignedHitArea`)
+- [x] Ausrichtung wird gemessen statt gerechnet (`makeAlignedHitArea`)
 
-**Naechster Schritt — nicht raten, messen:**
+**Offen:**
 
-- [ ] Auf dem iPhone mit `?hitboxes` oeffnen und einen Fehlgriff abfotografieren
-- [ ] Die Zeile `<<< WIDERSPRUCH` entscheidet:
-  - erscheint sie → Phaser meldet ein anderes Objekt als die Geometrie hergibt
-  - `Tipp Spiel` weicht ab → Umrechnung, `dScale` sagt warum
-  - beides sauber → der Fehler liegt ausserhalb von Phaser (DOM/Safari)
-- [ ] Erst mit dieser Zahl weiterarbeiten
+- [ ] Auf dem Handy gegenpruefen — **zuerst die Versionsnummer unten rechts
+      ablesen.** Steht dort nicht die aktuelle, ist der Deploy das Problem und
+      nicht der Code.
+- [ ] Erst wenn die Version stimmt und es weiterhin hakt: `?hitboxes` oeffnen
+      und einen Fehlgriff abfotografieren
 
 ---
 

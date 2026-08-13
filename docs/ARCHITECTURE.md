@@ -45,7 +45,8 @@ isiHunt/
 │   ├── manifest.webmanifest    PWA: "Zum Home-Bildschirm"
 │   └── icon-*.png              Erzeugt von scripts/generate-icons.mjs
 ├── .githooks/
-│   └── pre-commit              Zieht die Version hoch (CODE_STYLE.md 1.9)
+│   ├── pre-commit              Zieht die Version hoch (CODE_STYLE.md 1.9)
+│   └── pre-push                Kein Push ohne Versionssprung
 ├── scripts/
 │   ├── generate-icons.mjs      Zeichnet die App-Icons (npm run icons)
 │   └── bump-version.mjs        Patch-Version +1, vom pre-commit-Hook gerufen

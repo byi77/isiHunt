@@ -9,6 +9,20 @@
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <meta name="theme-color" content="#0b1020" />
+
+    <!-- Diese Datei nie aus dem Cache nehmen.
+
+         Die JS- und CSS-Dateien tragen einen Inhalts-Hash im Namen und duerfen
+         deshalb beliebig lange gecacht werden. Die index.html darf das NICHT:
+         Sie ist die einzige Stelle, die auf die neuen Hashes verweist. Liegt
+         sie im Cache, laedt das Geraet weiter die alten Dateien - der Deploy
+         ist draussen und kommt trotzdem nicht an.
+
+         Genau das ist passiert: Auf dem iPhone lief v0.1.0 weiter, waehrend
+         lokal laengst korrigiert war, und vier Fehlersuchrunden liefen gegen
+         einen Stand, den das Geraet nie geladen hat. -->
+    <meta http-equiv="Cache-Control" content="no-cache, must-revalidate" />
+
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -75,6 +89,23 @@
         display: block;
       }
 
+      /* Versionsnummer unten rechts, ausserhalb des Canvas.
+
+         Bewusst im DOM und nicht nur im Spiel gezeichnet: Wenn Phaser gar
+         nicht erst startet, ist sie trotzdem da - und beim Test auf dem Handy
+         beantwortet sie ohne Umweg, welcher Stand geladen wurde. */
+      #version {
+        position: fixed;
+        right: calc(env(safe-area-inset-right, 0px) + 6px);
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
+        z-index: 10;
+        pointer-events: none;
+        color: #9aa3bd;
+        opacity: 0.55;
+        font-size: 11px;
+        letter-spacing: 0.06em;
+      }
+
       /* Wird von main.ts entfernt, sobald Phaser bootet. */
       #boot {
         position: fixed;
@@ -91,6 +122,9 @@
   <body>
     <div id="game"></div>
     <div id="boot">isiHunt wird geladen …</div>
+    <!-- Version, sobald das Spiel bootet. Steht ausserhalb des Canvas, damit
+         sie auch dann sichtbar ist, wenn Phaser gar nicht erst startet. -->
+    <div id="version"></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

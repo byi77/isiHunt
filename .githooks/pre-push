@@ -1,0 +1,69 @@
+#!/bin/sh
+#
+# Verhindert Pushes, die keine neue Spielversion mitbringen.
+#
+# ## Warum es diesen Hook gibt
+#
+# Ein ganzer Testabend ging verloren, weil auf dem Handy weiterhin v0.1.0 lief,
+# waehrend lokal laengst korrigiert war. Vier Fehlersuchrunden liefen gegen
+# einen Stand, den das Geraet nie gesehen hat.
+#
+# Der pre-commit-Hook allein reicht dafuer nicht: Er zaehlt die Version zwar
+# hoch, aber niemand zwingt dazu, den Commit auch zu pushen - und auf dem Handy
+# haengt weiter der alte Stand. Dieser Hook prueft deshalb an der Stelle, an der
+# es zaehlt: beim Verlassen des Rechners.
+#
+# ## Was geprueft wird
+#
+# Die Version in package.json muss sich gegenueber dem Stand unterscheiden, der
+# auf dem Remote liegt. Ist sie gleich, wuerde der Deploy einen Build
+# ausliefern, den man auf dem Geraet nicht von seinem Vorgaenger unterscheiden
+# kann.
+#
+# Bewusst uebergehen: git push --no-verify
+
+set -e
+
+remote="$1"
+
+# Node finden - Git-Hooks laufen unter Windows in einer minimalen Shell.
+if command -v node >/dev/null 2>&1; then
+  NODE=node
+elif [ -x "/c/Program Files/nodejs/node.exe" ]; then
+  NODE="/c/Program Files/nodejs/node.exe"
+elif [ -x "/c/Program Files (x86)/nodejs/node.exe" ]; then
+  NODE="/c/Program Files (x86)/nodejs/node.exe"
+else
+  echo "pre-push: node nicht gefunden - Versionspruefung uebersprungen." >&2
+  exit 0
+fi
+
+lese_version() {
+  "$NODE" -e "process.stdout.write(JSON.parse(require('fs').readFileSync(0,'utf8')).version)"
+}
+
+lokal=$(cat package.json | lese_version)
+
+# Version auf dem Remote holen. Schlaegt das fehl (neuer Branch, kein Netz),
+# wird nicht blockiert - der Hook soll schuetzen, nicht im Weg stehen.
+if ! entfernt=$(git show "$remote/$(git rev-parse --abbrev-ref HEAD):package.json" 2>/dev/null | lese_version); then
+  exit 0
+fi
+
+if [ "$lokal" = "$entfernt" ]; then
+  echo "" >&2
+  echo "  PUSH ABGEBROCHEN: Version unveraendert ($lokal)." >&2
+  echo "" >&2
+  echo "  Der Deploy wuerde einen Build ausliefern, der auf dem Geraet nicht" >&2
+  echo "  von seinem Vorgaenger zu unterscheiden ist. Genau daran ist schon" >&2
+  echo "  ein Testabend gescheitert (siehe docs/CODE_STYLE.md 1.9)." >&2
+  echo "" >&2
+  echo "  Behebung:  node scripts/bump-version.mjs && git add package.json" >&2
+  echo "             git commit --amend --no-edit" >&2
+  echo "" >&2
+  echo "  Bewusst uebergehen:  git push --no-verify" >&2
+  echo "" >&2
+  exit 1
+fi
+
+echo "pre-push: Version $entfernt -> $lokal"

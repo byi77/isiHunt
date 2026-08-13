@@ -9,7 +9,7 @@
 
 import Phaser from 'phaser';
 
-import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { APP_VERSION, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { keepCanvasBoundsFresh } from '@/core/viewport';
 import { BootScene } from '@/scenes/BootScene';
 import { ChallengeScene } from '@/scenes/ChallengeScene';
@@ -58,6 +58,12 @@ const config: Phaser.Types.Core.GameConfig = {
     SyncScene,
   ],
 };
+
+// Version in die Seite schreiben, bevor Phaser startet. Sie steht damit auch
+// dann auf dem Bildschirm, wenn das Spiel selbst nicht hochkommt - beim Test
+// auf einem fremden Geraet ist das die erste Frage: welcher Stand laeuft da?
+const versionLabel = document.getElementById('version');
+if (versionLabel) versionLabel.textContent = `v${APP_VERSION}`;
 
 const game = new Phaser.Game(config);
 

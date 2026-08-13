@@ -7,6 +7,7 @@
 
 import Phaser from 'phaser';
 
+import { APP_VERSION } from '@/config/GameConfig';
 import { SceneKey } from '@/scenes/SceneKey';
 import { createTextures } from '@/ui/textures';
 
@@ -20,6 +21,10 @@ export class BootScene extends Phaser.Scene {
 
     // Ladehinweis aus index.html entfernen, sobald wirklich gerendert wird.
     document.getElementById('boot')?.remove();
+
+    // Version in die Konsole, bevor irgendetwas anderes passiert. Bei einem
+    // Fehlerbericht vom Handy ist das die erste Frage: Welcher Stand lief da?
+    console.warn(`isiHunt v${APP_VERSION}`);
 
     this.scene.start(SceneKey.Menu);
   }

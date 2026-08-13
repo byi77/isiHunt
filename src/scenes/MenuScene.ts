@@ -235,10 +235,7 @@ export class MenuScene extends Phaser.Scene {
       // Trefferflaeche am gemessenen Ursprung ausrichten - dieselbe Falle wie
       // bei den Knoepfen, ausfuehrlich begruendet in ui/widgets.ts.
       row.setSize(rowWidth, rowHit);
-      row.setInteractive(
-        makeAlignedHitArea(row, rowWidth, rowHit),
-        Phaser.Geom.Rectangle.Contains,
-      );
+      row.setInteractive(makeAlignedHitArea(row, rowWidth, rowHit), Phaser.Geom.Rectangle.Contains);
 
       row.on('pointerup', () => {
         SaveSystem.update((data) => {
