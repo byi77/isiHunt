@@ -155,8 +155,8 @@ export class SettingsScene extends Phaser.Scene {
         GAME_WIDTH / 2,
         1025,
         'BESONDERER DANK AN EMRE UND SIMAY\n' +
-          'Fuer eure aussergewoehnliche Unterstuetzung mit Planung,\n' +
-          'Tipps, Ideen, Testen, Verifizieren und Validieren.\n' +
+          'Fuer eure aussergewoehnliche Unterstuetzung bei der Planung,\n' +
+          'mit Vorschlaegen und Ideen, beim Testen und Bugfixen.\n' +
           'Eure Neugier und ehrlichen Rueckmeldungen machen isiHunt\n' +
           'mutiger, schoener und immer ein bisschen besser.',
         textStyle(FontSize.small, Palette.inkDim, { lineSpacing: 3 }),
