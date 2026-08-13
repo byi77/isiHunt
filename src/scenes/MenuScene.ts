@@ -35,7 +35,7 @@ export class MenuScene extends Phaser.Scene {
     super(SceneKey.Menu);
   }
 
-  create(): void {
+  create(data: { fadeIn?: boolean } = {}): void {
     const save = SaveSystem.load();
     if (!save.playerName) {
       this.scene.start(SceneKey.Profile, { firstStart: true });
@@ -65,6 +65,10 @@ export class MenuScene extends Phaser.Scene {
     this.buildProfilePanel(save.playerName, save.level);
     this.buildWorldList(save.level);
     this.buildFooter(save.bestScore);
+
+    if (data.fadeIn) {
+      this.cameras.main.fadeIn(240, 0, 0, 0);
+    }
 
     void this.showUpdateHintIfAny();
 
@@ -398,8 +402,15 @@ export class MenuScene extends Phaser.Scene {
     SaveSystem.update((data) => {
       data.lastWorldId = world.id;
     });
-    // Der Hintergrund und alle Kartenzustaende werden gemeinsam neu aufgebaut.
-    this.scene.restart();
+
+    // Erst ausblenden, dann den neuen Weltenhintergrund aufbauen. So gibt es
+    // keinen harten Farbsprung zwischen zwei unterschiedlich gefaerbten
+    // Welten.
+    const camera = this.cameras.main;
+    camera.once(Phaser.Cameras.Scene2D.Events.FADE_OUT_COMPLETE, () => {
+      if (this.scene.isActive()) this.scene.restart({ fadeIn: true });
+    });
+    camera.fadeOut(220, 0, 0, 0);
     return true;
   }
 
