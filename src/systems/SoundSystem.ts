@@ -26,6 +26,7 @@ interface ToneSpec {
 
 let audioContext: AudioContext | null = null;
 let initialized = false;
+let resumePromise: Promise<boolean> | null = null;
 
 function soundEnabled(): boolean {
   return SaveSystem.load().soundEnabled;
@@ -46,17 +47,49 @@ function getAudioContext(): AudioContext | null {
   }
 }
 
+function primeAudioContext(context: AudioContext): void {
+  // iOS akzeptiert `resume()` allein nicht in jedem PWA-Zustand. Ein lautloser
+  // Ein-Frame-Buffer innerhalb derselben Nutzergeste entsperrt den Ausgang
+  // zusaetzlich und kostet praktisch keine Laufzeit.
+  try {
+    const buffer = context.createBuffer(1, 1, context.sampleRate);
+    const source = context.createBufferSource();
+    const gain = context.createGain();
+    gain.gain.value = 0.0001;
+    source.buffer = buffer;
+    source.connect(gain);
+    gain.connect(context.destination);
+    source.start(0);
+  } catch {
+    // Ein blockierter oder bereits geschlossener Kontext bleibt lautlos.
+  }
+}
+
+function resumeAudioContext(): Promise<boolean> {
+  const context = getAudioContext();
+  if (!context) return Promise.resolve(false);
+  if (context.state === 'running') return Promise.resolve(true);
+  if (context.state === 'closed') return Promise.resolve(false);
+  if (resumePromise) return resumePromise;
+
+  resumePromise = context
+    .resume()
+    .then(() => context.state === 'running')
+    .catch(() => false)
+    .finally(() => {
+      resumePromise = null;
+    });
+  return resumePromise;
+}
+
 function unlock(): void {
   if (!soundEnabled()) return;
 
   const context = getAudioContext();
   if (!context) return;
 
-  if (context.state === 'suspended') void context.resume().catch(() => undefined);
-  if (context.state === 'running') {
-    window.removeEventListener('pointerdown', unlock, true);
-    window.removeEventListener('keydown', unlock, true);
-  }
+  primeAudioContext(context);
+  void resumeAudioContext();
 }
 
 function scheduleTone(spec: ToneSpec): void {
@@ -85,15 +118,9 @@ function scheduleTone(spec: ToneSpec): void {
     oscillator.stop(start + spec.duration + 0.02);
   };
 
-  if (context.state === 'running') {
-    play();
-    return;
-  }
-
-  void context
-    .resume()
-    .then(play)
-    .catch(() => undefined);
+  void resumeAudioContext().then((ready) => {
+    if (ready) play();
+  });
 }
 
 function playSequence(specs: readonly ToneSpec[]): void {
@@ -235,6 +262,7 @@ export function initialize(): void {
 
   registerEventListeners();
   window.addEventListener('pointerdown', unlock, true);
+  window.addEventListener('touchstart', unlock, true);
   window.addEventListener('keydown', unlock, true);
 }
 
@@ -249,5 +277,7 @@ export function setEnabled(enabled: boolean): void {
 
   if (!enabled && audioContext?.state === 'running') {
     void audioContext.suspend().catch(() => undefined);
+  } else if (enabled) {
+    unlock();
   }
 }

@@ -55,6 +55,9 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 - Falls iOS keinen oberen Safe-Area-Wert meldet, bleibt die Anzeige dank eines
   28-Pixel-Fallbacks trotzdem sichtbar; der Canvas wird entsprechend nach unten
   verschoben.
+- Die Audio-Freischaltung ist robuster gegen iOS-PWA-Unterbrechungen; nach
+  App-Wechsel oder Sperrbildschirm kann der Sound beim nächsten Tipp wieder
+  aufgenommen werden.
 - Der Wartungsmodus wird durch drei kurze Tipps auf die Versionsangabe und
   anschliessend langes Gedrueckthalten geoeffnet.
 
