@@ -13,16 +13,20 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 **Online: Bestenliste und Spielstand-Abgleich** (Supabase)
 
-- Bestenliste je Welt, Top 10, eigener Eintrag hervorgehoben
-- Eintragen auf Knopfdruck im Ergebnisbildschirm — bewusst nicht automatisch,
-  sonst flutet jeder Uebungslauf die Liste
+- gemeinsame Bestenliste ueber alle Welten, Top 10, eigener Eintrag
+  hervorgehoben; Weltentabs bleiben als Filter erhalten
+- Weltfarbe als Marker pro Zeile, damit die Herkunft in der Gesamtliste
+  sichtbar bleibt
+- Jeder Solo-Run wird automatisch eingetragen, wenn ein Name gesetzt ist;
+  ohne Namen, ohne Backend oder bei einem Fehler bleibt der Ergebnisbildschirm
+  unveraendert
 - Spielstand zwischen Geraeten per sechsstelligem Code, **ohne Konto,
   Passwort oder E-Mail**; der Code gilt 15 Minuten
 - Sind zwei Spielstaende vorhanden, werden beide mit Level, Bestwert und
   Anzahl Runs gegenuebergestellt — uebernommen wird erst auf Ansage
 - Namensfeld in der Bestenliste, echtes Eingabefeld mit Systemtastatur
-- Ohne Zugangsdaten laeuft das Spiel unveraendert weiter; die Online-Knoepfe
-  erscheinen dann gar nicht erst
+- Ohne Zugangsdaten laeuft das Spiel unveraendert weiter; der automatische
+  Eintrag wird dann einfach uebersprungen
 - Datenbankschema samt Rechten und Zugriffsregeln in `supabase/schema.sql`
 
 > **Bekannte Grenze:** Punktestaende sind manipulierbar. Das Spiel laeuft im

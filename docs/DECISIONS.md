@@ -465,6 +465,20 @@ Liste oeffentlich beworben wird, muss die Bewertung auf einen Server.
   Seite. Feldweises Zusammenfuehren waere moeglich, ist aber bei XP und
   Talenten nicht eindeutig — bewusst offen gelassen.
 
+**Nachtrag 2026-08-13 — Phase 1.3:** Die Bestenliste ist standardmaessig eine
+gemeinsame Top-10-Liste ueber alle Welten. `world_id` bleibt erhalten und wird
+pro Zeile als Weltfarbmarker gezeigt; die Weltentabs sind optionale Filter.
+Neben dem bestehenden Index fuer Weltfilter gibt es deshalb einen zweiten
+Index auf `(score desc, created_at asc)` fuer die Gesamtliste.
+
+Ausserdem wird ein Solo-Ergebnis automatisch eingetragen, sobald ein Name
+gesetzt und der Backend-Dienst verfuegbar ist. Der bisherige Knopf im
+Ergebnisbildschirm entfaellt. Ohne Namen, ohne Dienst oder bei einem
+Netzfehler bleibt der Ergebnisbildschirm still und unveraendert. Duell-Runden
+bleiben wegen der Fairness-Regel ausgeschlossen. Damit ist die fruehere
+Entscheidung fuer einen manuellen Eintrag ersetzt; der manuelle
+Spielstand-Abgleich bleibt davon unberuehrt.
+
 ---
 
 ## ADR-0012 — Zugangsdaten des Clients liegen im Repository

@@ -68,9 +68,13 @@ create table if not exists public.scores (
   constraint scores_combo_range check (best_combo >= 0 and best_combo <= 10000)
 );
 
--- Die einzige Abfrage der Bestenliste: beste Ergebnisse je Welt.
+-- Index fuer die gefilterte Bestenliste je Welt.
 create index if not exists scores_world_rank_idx
   on public.scores (world_id, score desc, created_at asc);
+
+-- Index fuer die gemeinsame Bestenliste ueber alle Welten.
+create index if not exists scores_rank_idx
+  on public.scores (score desc, created_at asc);
 
 -- Lesen und Eintragen erlaubt, Aendern und Loeschen nicht - schon auf der
 -- Rechteebene, unabhaengig von den Regeln darunter.

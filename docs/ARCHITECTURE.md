@@ -79,7 +79,7 @@ isiHunt/
 │   │   ├── GameScene.ts        Die Simulation (Solo und Duell)
 │   │   ├── HudScene.ts         Anzeige waehrend des Runs
 │   │   ├── ChallengeScene.ts   Duell: Einfuehrung, Uebergabe, Ergebnis
-│   │   ├── LeaderboardScene.ts Online-Bestenliste je Welt
+│   │   ├── LeaderboardScene.ts Online-Bestenliste, Gesamtansicht + Weltfilter
 │   │   ├── SyncScene.ts        Spielstand-Abgleich zwischen Geraeten
 │   │   ├── AdminScene.ts       Wartung: Version, Neuladen, Reset (versteckt)
 │   │   ├── RulerScene.ts       Pixel-Lineal ueber dem Spielfeld
@@ -315,6 +315,17 @@ eine Fehlermeldung fuehrt, ist schlimmer als keiner.
 zufaelligen UUID, die nur lokal liegt. Fuer das zweite Geraet erzeugt das
 erste einen sechsstelligen Code, der 15 Minuten gilt.
 
+Die Bestenliste zeigt standardmaessig die besten Ergebnisse **ueber alle
+Welten**. Jede Zeile traegt weiterhin ihre `world_id`, dargestellt als
+Weltfarbmarker; die Weltentabs schraenken die Abfrage optional auf eine Welt
+ein. Der globale und der gefilterte Rang werden jeweils durch einen passenden
+Index in `supabase/schema.sql` unterstuetzt.
+
+Nach einem Solo-Run wird das Ergebnis automatisch eingetragen, wenn ein Name
+gespeichert und der Backend-Dienst eingerichtet ist. Ein fehlender Name,
+fehlende Zugangsdaten oder ein Netzfehler veraendern den Ergebnisbildschirm
+nicht. Duell-Runden werden weiterhin nicht eingetragen.
+
 ```
 Geraet A                     Supabase                    Geraet B
    │                            │                            │
@@ -335,8 +346,10 @@ Zweitgeraet kurz eine Runde gespielt hat. Deshalb stehen beide Staende mit
 Level, Bestwert und Anzahl Runs nebeneinander, und uebernommen wird erst auf
 ausdrueckliche Ansage.
 
-**Hochgeladen wird nur auf Ansage.** Es gibt keinen Hintergrund-Upload — der
-muesste bei jedem Konflikt still entscheiden.
+**Spielstaende werden nur auf Ansage hochgeladen.** Der automatische Upload
+gilt ausschliesslich fuer Solo-Ergebnisse der Bestenliste; ein automatischer
+Spielstand-Abgleich waere eine andere, gefaehrliche Entscheidung und findet
+nicht statt.
 
 ### Die GRANT-Falle
 

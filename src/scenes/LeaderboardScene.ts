@@ -10,7 +10,7 @@ import Phaser from 'phaser';
 
 import { PLAYER_NAME_MAX_LENGTH } from '@/config/backend';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
-import { WORLDS } from '@/config/worlds';
+import { getWorld, WORLDS } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
@@ -31,7 +31,16 @@ const LIST_TOP = 430;
 const ROW_HEIGHT = 58;
 
 export class LeaderboardScene extends Phaser.Scene {
-  private world!: WorldDef;
+  /**
+   * Welt, nach der gefiltert wird - `null` heisst: alle Welten zusammen.
+   *
+   * Die Gesamtansicht ist der Normalfall. Eine Liste je Welt zersplittert den
+   * Wettbewerb: Bei fuenf Welten und drei Spielern steht ueberall jeder auf
+   * Platz eins, und niemand vergleicht sich mit irgendwem.
+   */
+  private filter: WorldDef | null = null;
+  /** Welt, deren Farben den Hintergrund stellen - auch in der Gesamtansicht. */
+  private backdropWorld!: WorldDef;
   private listItems: Phaser.GameObjects.GameObject[] = [];
   private statusText!: Phaser.GameObjects.Text;
   /** Zaehlt Ladevorgaenge, damit eine veraltete Antwort nichts ueberschreibt. */
@@ -41,9 +50,11 @@ export class LeaderboardScene extends Phaser.Scene {
     super(SceneKey.Leaderboard);
   }
 
-  create(): void {
+  create(data: { worldId?: string } = {}): void {
     const save = SaveSystem.load();
-    this.world = WORLDS.find((w) => w.id === save.lastWorldId) ?? WORLDS[0]!;
+
+    this.filter = data.worldId ? (WORLDS.find((w) => w.id === data.worldId) ?? null) : null;
+    this.backdropWorld = this.filter ?? WORLDS.find((w) => w.id === save.lastWorldId) ?? WORLDS[0]!;
     this.listItems = [];
     this.requestId = 0;
 
@@ -51,9 +62,9 @@ export class LeaderboardScene extends Phaser.Scene {
       this,
       GAME_WIDTH,
       GAME_HEIGHT,
-      this.world.bgTop,
-      this.world.bgBottom,
-      this.world.accent,
+      this.backdropWorld.bgTop,
+      this.backdropWorld.bgBottom,
+      this.backdropWorld.accent,
     );
     createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT);
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
@@ -118,7 +129,7 @@ export class LeaderboardScene extends Phaser.Scene {
       placeholder: 'Name eingeben',
       maxLength: PLAYER_NAME_MAX_LENGTH,
       width: 400,
-      accent: this.world.accent,
+      accent: this.backdropWorld.accent,
     });
 
     input.setValue(save.playerName);
@@ -135,16 +146,24 @@ export class LeaderboardScene extends Phaser.Scene {
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, persist);
   }
 
-  /** Waagerechte Auswahl der Welten - nur freigeschaltete sind anwaehlbar. */
+  /**
+   * Waagerechte Auswahl: erst "alle Welten", dann die einzelnen.
+   *
+   * Der erste Punkt ist die Gesamtansicht und damit die Voreinstellung. Die
+   * uebrigen filtern - nur freigeschaltete sind anwaehlbar.
+   */
   private buildWorldTabs(): void {
     const level = SaveSystem.load().level;
     const y = 220;
-    const spacing = (GAME_WIDTH - 120) / WORLDS.length;
+    // Ein Platz mehr als Welten: der erste gehoert der Gesamtansicht.
+    const spacing = (GAME_WIDTH - 120) / (WORLDS.length + 1);
+
+    this.buildAllTab(60 + spacing * 0.5, y, spacing);
 
     WORLDS.forEach((world, index) => {
-      const x = 60 + spacing * (index + 0.5);
+      const x = 60 + spacing * (index + 1.5);
       const isUnlocked = world.unlockLevel <= level;
-      const isActive = world.id === this.world.id;
+      const isActive = world.id === this.filter?.id;
 
       const marker = this.add
         .image(x, y, TextureKey.Orb)
@@ -182,30 +201,60 @@ export class LeaderboardScene extends Phaser.Scene {
       if (marker.input) marker.input.cursor = 'pointer';
 
       marker.on('pointerup', () => {
-        if (world.id === this.world.id) return;
-        this.world = world;
+        if (world.id === this.filter?.id) return;
         // Neu aufbauen statt selektiv aendern - der Hintergrund wechselt mit.
-        this.scene.restart();
+        this.scene.restart({ worldId: world.id });
       });
     });
 
+    const title = this.filter?.name ?? 'ALLE WELTEN';
+    const color = this.filter ? toCss(this.filter.accent) : Palette.gold;
+
     this.add
-      .text(
-        GAME_WIDTH / 2,
-        y + 52,
-        this.world.name,
-        textStyle(FontSize.body, toCss(this.world.accent), { fontStyle: 'bold' }),
-      )
+      .text(GAME_WIDTH / 2, y + 52, title, textStyle(FontSize.body, color, { fontStyle: 'bold' }))
       .setOrigin(0.5);
 
     this.add
       .text(
         GAME_WIDTH / 2,
         y + 90,
-        'Welt antippen zum Wechseln',
+        this.filter ? 'Stern links antippen fuer alle Welten' : 'Welt antippen zum Filtern',
         textStyle(FontSize.tiny, Palette.inkDim),
       )
       .setOrigin(0.5);
+  }
+
+  /**
+   * Der Punkt ganz links: alle Welten zusammen.
+   *
+   * Bewusst als Stern und nicht als weiterer Kreis - er ist keine Welt,
+   * sondern deren Summe, und das soll man ohne Lesen sehen.
+   */
+  private buildAllTab(x: number, y: number, spacing: number): void {
+    const isActive = this.filter === null;
+
+    const marker = this.add
+      .image(x, y, TextureKey.Shard)
+      .setTint(Palette.goldHex)
+      .setScale(isActive ? 1.5 : 1.05)
+      .setAlpha(isActive ? 1 : 0.5);
+
+    // Dieselbe grosszuegige Trefferflaeche wie bei den Welt-Punkten: Die
+    // Textur ist winzig, getroffen wird sie mit dem Daumen (ART_STYLE.md 8).
+    const hitSize = Math.min(spacing - 8, 92);
+    const halfX = hitSize / 2 / marker.scaleX;
+    const halfY = hitSize / 2 / marker.scaleY;
+
+    marker.setInteractive(
+      new Phaser.Geom.Rectangle(12 - halfX, 12 - halfY, halfX * 2, halfY * 2),
+      Phaser.Geom.Rectangle.Contains,
+    );
+    if (marker.input) marker.input.cursor = 'pointer';
+
+    marker.on('pointerup', () => {
+      if (this.filter === null) return;
+      this.scene.restart({});
+    });
   }
 
   private async loadList(): Promise<void> {
@@ -213,7 +262,7 @@ export class LeaderboardScene extends Phaser.Scene {
     this.clearList();
     this.statusText.setText('Wird geladen ...').setColor(Palette.inkDim);
 
-    const result = await CloudSystem.fetchLeaderboard(this.world.id);
+    const result = await CloudSystem.fetchLeaderboard(this.filter?.id);
 
     // Zwischenzeitlich wurde die Welt gewechselt oder die Scene verlassen -
     // diese Antwort ist nicht mehr die aktuelle.
@@ -227,8 +276,9 @@ export class LeaderboardScene extends Phaser.Scene {
     }
 
     if (result.value.length === 0) {
+      const scope = this.filter ? 'dieser Welt' : 'den Welten';
       this.statusText
-        .setText('Noch kein Eintrag in dieser Welt.\nSpiel einen Run und trag dich ein.')
+        .setText(`Noch kein Eintrag in ${scope}.\nSpiel einen Run mit Namen und sei dabei.`)
         .setColor(Palette.inkDim);
       return;
     }
@@ -255,8 +305,10 @@ export class LeaderboardScene extends Phaser.Scene {
       }
 
       const rankColor = isPodium ? Palette.gold : Palette.inkDim;
+      const world = getWorld(entry.worldId);
 
       this.listItems.push(
+        this.add.image(112, y, TextureKey.Orb).setTint(world.accent).setScale(0.22).setAlpha(0.95),
         this.add
           .text(76, y, `${index + 1}`, textStyle(FontSize.small, rankColor, { fontStyle: 'bold' }))
           .setOrigin(0, 0.5),

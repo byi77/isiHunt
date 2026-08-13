@@ -7,19 +7,20 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 
 ## Ueberblick
 
-| Phase   | Inhalt                                          | Aufwand      |
-| ------- | ----------------------------------------------- | ------------ |
-| 1       | Bedienbarkeit — **abgeschlossen**               | —            |
-| 1.1     | Zwei UI-Fehler, Wartungsbildschirm — **fertig** | —            |
-| 1.2     | Update-Erkennung — **gebaut, ungeprueft**       | Test noetig  |
-| 2       | Profil, 90 s, XP-Kurve, Level 100, Bestenliste  | mittel       |
-| **2.5** | Balken oben/unten — Bildschirm ganz nutzen      | mittel+      |
-| 3       | Weltraum statt Fantasy                          | mittel       |
-| **3.5** | Ton (aus M4 vorgezogen)                         | mittel       |
-| **3.6** | Dynamic Island — braucht native App             | Entscheidung |
-| 4       | Bonus, Coins, Talentbaum                        | mittel       |
-| 5       | Modi, Hindernisse                               | mittel       |
-| 6       | Freunde, Realtime, Manipulationsschutz          | hoch         |
+| Phase   | Inhalt                                              | Aufwand      |
+| ------- | --------------------------------------------------- | ------------ |
+| 1       | Bedienbarkeit — **abgeschlossen**                   | —            |
+| 1.1     | Zwei UI-Fehler, Wartungsbildschirm — **fertig**     | —            |
+| 1.2     | Update-Erkennung — **gebaut, ungeprueft**           | Test noetig  |
+| **1.3** | **Bestenliste: gemeinsam + automatisch — abgeschlossen** | —            |
+| 2       | Profil, 90 s, XP-Kurve, Level 100                   | mittel       |
+| **2.5** | Balken oben/unten — Bildschirm ganz nutzen          | mittel+      |
+| 3       | Weltraum statt Fantasy                              | mittel       |
+| **3.5** | Ton (aus M4 vorgezogen)                             | mittel       |
+| **3.6** | Dynamic Island — braucht native App                 | Entscheidung |
+| 4       | Bonus, Coins, Talentbaum                            | mittel       |
+| 5       | Modi, Hindernisse                                   | mittel       |
+| 6       | Freunde, Realtime, Manipulationsschutz              | hoch         |
 
 **Fett = neu am 2026-08-13.**
 
@@ -30,7 +31,9 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 - **Bestenliste wird geleert** beim Wechsel auf 90 Sekunden.
 - **Ueberschuessige Talentpunkte werden zu Coins.**
 - **Bestenliste soll uebergreifend sein** — geprueft: sie ist heute pro Welt
-  getrennt. Eingeplant in Phase 2.
+  getrennt. **Nach Phase 1.3 vorgezogen, dringend.**
+- **Jeder Run wird automatisch eingetragen** (Variante B, ohne Filterung auf
+  Bestwerte). Der Knopf im Ergebnisbildschirm entfaellt.
 
 ### Noch offen — erst bei der jeweiligen Phase noetig
 
@@ -120,6 +123,51 @@ ausschliesslich an der Auslieferung, nicht am Code.
       Das Spielfeld ist 9:16, moderne Handys sind schmaler — der harte Balken
       war der sichtbare Bruch dazwischen.
 
+### Phase 1.3 — Bestenliste _(abgeschlossen 2026-08-13)_
+
+> Von Phase 2 hierher gezogen. Beides zusammen, weil das eine ohne das andere
+> wenig bringt: Eine gemeinsame Liste, die sich nur auf Knopfdruck fuellt,
+> bleibt leer.
+
+- [x] **Gemeinsame Liste ueber alle Welten** als Standardansicht.
+      **Geprueft:** Heute ist sie pro Welt getrennt — `scores.world_id` ist
+      Pflichtfeld, `fetchLeaderboard(worldId)` filtert mit
+      `.eq('world_id', ...)`, und `LeaderboardScene` hat Weltentabs. Fuenf
+      Welten = fuenf getrennte Listen.
+  - [x] `fetchLeaderboard()` ohne `worldId` aufrufbar machen
+  - [x] `world_id` bleibt in der Datenbank (die Herkunft ginge sonst verloren)
+        und erscheint in der Zeile als Farbmarke, nicht als Text
+  - [x] Weltentabs bleiben als Filter erhalten, sind aber nicht mehr die
+        einzige Ansicht
+  - [x] Neuer Index: `scores (score desc, created_at asc)` — der vorhandene
+        `scores_world_rank_idx` greift ohne `world_id`-Filter nicht
+
+- [x] **Automatisch eintragen nach jedem Run** _(entschieden: jeder Run,
+      Variante B)_
+  - [x] Der Knopf "IN DIE BESTENLISTE" im Ergebnisbildschirm entfaellt
+  - [x] **Die bisherige Begruendung wird damit widerlegt** und ersetzt, nicht
+        umgangen: In `ResultScene.ts` steht heute "Automatisch waere bequemer,
+        wuerde die Liste aber mit jedem Uebungslauf fluten. Ein Eintrag soll
+        eine Entscheidung sein."
+  - [x] **Voraussetzung:** Ohne Namen geht kein Eintrag. Der Name muss also
+        beim ersten Start abgefragt werden → haengt an Phase 2 (Profil).
+        Bis dahin: eintragen nur, wenn ein Name gesetzt ist
+  - [x] Fehlschlaege bleiben still — ein misslungener Eintrag darf den
+        Ergebnisbildschirm nicht stoeren (`CloudResult` wirft ohnehin nie)
+  - [x] Duell-Runden weiterhin **nicht** eintragen (Fairness-Regel 3)
+
+- [x] **Top 10 statt Top 5.** **Geprueft: `LEADERBOARD_LIMIT` steht bereits auf
+      10** (`config/backend.ts:31`), und `fetchLeaderboard` benutzt den Wert.
+      Nachgerechnet passen auch alle zehn Zeilen auf den Schirm (Platz 10 bei
+      y=952, das Namensfeld beginnt erst bei 1042).
+      Die Anzahl sichtbarer Zeilen haengt weiterhin von der Datenbank ab; der
+      Code laedt jetzt bis zu zehn Eintraege.
+
+> **Vorbehalt zur Gesamtliste:** Sie ist fair, **solange die Welten mechanisch
+> gleich sind** (`GAME_DESIGN.md` 7.3). Mit den Weltmodifikatoren aus Phase 5 —
+> Sonnenhort mit doppelter Legendaer-Chance — endet das. Dann braucht es eine
+> Normalisierung oder wieder getrennte Listen.
+
 ### Phase 1.2 — Warum die Home-Bildschirm-App nicht aktualisiert _(neu)_
 
 > **Geprueft: Es gibt keinen Service Worker im Projekt** (kein `serviceWorker`,
@@ -170,34 +218,8 @@ ausschliesslich an der Auslieferung, nicht am Code.
       Rechteebene unveraenderlich, kein Knopf im Spiel). Entschieden am
       2026-08-13: ja, sauberer Schnitt beim Wechsel auf 90 Sekunden.
 
-- [ ] **Bestenliste modusuebergreifend machen.** _(neu 2026-08-13)_
-
-      **Ist-Zustand, geprueft:** Sie ist **pro Welt getrennt**, nicht
-              uebergreifend. `scores.world_id` ist Pflichtfeld,
-              `fetchLeaderboard(worldId)` filtert mit `.eq('world_id', worldId)`, und
-              `LeaderboardScene` hat Weltentabs zum Umschalten. Fuenf Welten = fuenf
-              getrennte Listen.
-
-              **Modi:** Duell-Runden gehen gar nicht in die Liste (Fairness-Regel 3,
-              `config/challenge.ts`) — dort gibt es also nichts zusammenzufuehren.
-              Eingetragen wird ausschliesslich aus dem Solo-Ergebnisbildschirm.
-
-              **Zu tun:**
-  - [ ] Eine Gesamtliste ueber alle Welten als Standardansicht
-  - [ ] `world_id` bleibt in der Datenbank (Herkunft geht sonst verloren) und
-        wird in der Zeile angezeigt — als Farbmarke, nicht als Text
-  - [ ] Weltentabs bleiben als Filter erhalten, aber nicht mehr als einzige
-        Ansicht
-  - [ ] `fetchLeaderboard()` ohne `worldId` aufrufbar machen
-  - [ ] Index ergaenzen: `scores (score desc, created_at asc)` — der
-        vorhandene `scores_world_rank_idx` greift ohne `world_id`-Filter nicht
-
-    **Vorbehalt, der eine Entscheidung braucht:** Die Welten sind heute
-    mechanisch identisch (`GAME_DESIGN.md` 7.3), eine Gesamtliste ist also
-    fair. Sobald die Weltmodifikatoren aus Phase 5 kommen — Sonnenhort mit
-    doppelter Legendaer-Chance — ist sie es **nicht mehr**. Dann braucht es
-    entweder eine Normalisierung oder wieder getrennte Listen.
-    _Aufwand: mittel_
+> Die gemeinsame Bestenliste und der automatische Eintrag standen hier — beides
+> ist am 2026-08-13 nach **Phase 1.3** vorgezogen worden.
 
 - [ ] XP-Tabelle in `GAME_DESIGN.md` 7.1 ersetzen
 

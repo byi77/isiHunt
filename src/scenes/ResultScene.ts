@@ -49,7 +49,7 @@ export class ResultScene extends Phaser.Scene {
     this.buildScoreHeader(stats, progression, world.accent);
     this.buildBreakdown(stats);
     this.buildProgression(progression, world.accent);
-    this.buildLeaderboardSubmit(stats, world.accent);
+    this.submitLeaderboardScore(stats);
     this.buildButtons(stats.worldId, world.accent);
   }
 
@@ -223,57 +223,19 @@ export class ResultScene extends Phaser.Scene {
   }
 
   /**
-   * Eintrag in die Bestenliste - auf Knopfdruck, nicht automatisch.
-   *
-   * Automatisch waere bequemer, wuerde die Liste aber mit jedem Uebungslauf
-   * fluten. Ein Eintrag soll eine Entscheidung sein.
+   * Jeder Solo-Run wird automatisch eingetragen, sofern ein Name vorhanden
+   * ist. Ohne Namen oder ohne Backend bleibt der Bildschirm unveraendert.
+   * Fehler sind bewusst still: Die Bestenliste ist eine Zugabe, kein Teil des
+   * Runs.
    */
-  private buildLeaderboardSubmit(stats: RunStats, accent: number): void {
+  private submitLeaderboardScore(stats: RunStats): void {
     if (!CloudSystem.isAvailable()) return;
 
-    // Hoch genug, dass weder Knopf noch Statuszeile in NOCHMAL hineinragen:
-    // der lag mit seiner Oberkante bei 1062, dieser Knopf endete bei 1063.
-    const y = GAME_HEIGHT - 286;
+    const name = CloudSystem.sanitizePlayerName(SaveSystem.load().playerName);
+    if (!name) return;
 
-    const status = this.add
-      .text(GAME_WIDTH / 2, y + 44, '', textStyle(FontSize.tiny, Palette.inkDim))
-      .setOrigin(0.5)
-      .setWordWrapWidth(GAME_WIDTH - 140)
-      .setAlign('center');
-
-    const button = createButton(
-      this,
-      GAME_WIDTH / 2,
-      y,
-      'IN DIE BESTENLISTE',
-      () => {
-        const name = SaveSystem.load().playerName;
-
-        if (!name) {
-          status
-            .setText('Setze zuerst einen Namen - unten in der Bestenliste.')
-            .setColor(Palette.gold);
-          return;
-        }
-
-        button.setEnabled(false);
-        status.setText('Wird eingetragen ...').setColor(Palette.inkDim);
-
-        void CloudSystem.submitScore(name, stats.worldId, stats.score, stats.bestCombo).then(
-          (result) => {
-            if (!this.scene.isActive()) return;
-
-            if (result.ok) {
-              button.setLabel('EINGETRAGEN');
-              status.setText(`Als "${name}" eingetragen.`).setColor(Palette.success);
-            } else {
-              button.setEnabled(true);
-              status.setText(result.error).setColor(Palette.danger);
-            }
-          },
-        );
-      },
-      { width: 400, height: 66, accent, fontSize: FontSize.tiny },
-    );
+    void CloudSystem.submitScore(name, stats.worldId, stats.score, stats.bestCombo).catch(() => {
+      // Online-Eintraege duerfen den Ergebnisbildschirm niemals stoeren.
+    });
   }
 }

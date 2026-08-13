@@ -54,6 +54,8 @@ export interface LeaderboardEntry {
   score: number;
   bestCombo: number;
   createdAt: string;
+  /** In welcher Welt der Lauf stattfand - in der Gesamtliste als Farbmarke. */
+  worldId: string;
 }
 
 /** Kurzfassung eines Spielstands - genug, um zwei Staende zu unterscheiden. */
@@ -112,17 +114,36 @@ async function withTimeout<T>(operation: PromiseLike<T>, label: string): Promise
 
 // --- Bestenliste -------------------------------------------------------------
 
-/** Beste Ergebnisse einer Welt, absteigend. */
-export async function fetchLeaderboard(worldId: string): Promise<CloudResult<LeaderboardEntry[]>> {
+/**
+ * Beste Ergebnisse, absteigend.
+ *
+ * Ohne `worldId` ueber **alle** Welten hinweg - das ist der Normalfall. Eine
+ * Liste je Welt zersplittert den Wettbewerb: Bei fuenf Welten und drei
+ * Spielern steht ueberall jeder auf Platz eins, und niemand vergleicht sich
+ * mit irgendwem.
+ *
+ * Mit `worldId` wird gefiltert; das ist der Sonderfall fuer die Weltentabs.
+ *
+ * **Ehrliche Grenze:** Eine Gesamtliste setzt voraus, dass die Welten
+ * mechanisch gleich sind. Heute sind sie das (GAME_DESIGN.md 7.3). Mit den
+ * Weltmodifikatoren aus M3 - Sonnenhort mit doppelter Legendaer-Chance - endet
+ * das, und die Liste braucht entweder eine Normalisierung oder wieder eine
+ * Trennung.
+ */
+export async function fetchLeaderboard(worldId?: string): Promise<CloudResult<LeaderboardEntry[]>> {
   const supabase = getClient();
   if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
 
+  let query = supabase
+    .from('scores')
+    .select('player_name, score, best_combo, created_at, world_id');
+
+  if (worldId) query = query.eq('world_id', worldId);
+
   const result = await withTimeout(
-    supabase
-      .from('scores')
-      .select('player_name, score, best_combo, created_at')
-      .eq('world_id', worldId)
+    query
       .order('score', { ascending: false })
+      // Bei Gleichstand gewinnt, wer es zuerst geschafft hat.
       .order('created_at', { ascending: true })
       .limit(LEADERBOARD_LIMIT),
     'Bestenliste laden',
@@ -139,6 +160,7 @@ export async function fetchLeaderboard(worldId: string): Promise<CloudResult<Lea
       score: Number(row.score),
       bestCombo: Number(row.best_combo),
       createdAt: String(row.created_at),
+      worldId: String(row.world_id),
     })),
   };
 }
