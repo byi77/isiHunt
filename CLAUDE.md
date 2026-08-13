@@ -62,47 +62,48 @@ die Doku dazwischen falsch war.
 
 ## Versionierung und Deploy
 
-Zwei Hooks, einmalig pro Arbeitskopie zu aktivieren (`.git/hooks` ist nicht
-versioniert):
+Einmalig pro Arbeitskopie aktivieren (`.git/hooks` ist nicht versioniert):
 
 ```bash
 git config core.hooksPath .githooks
 ```
 
-| Hook         | Wirkung                                                        |
-| ------------ | -------------------------------------------------------------- |
-| `pre-commit` | zaehlt die Patch-Version hoch und legt sie in denselben Commit  |
-| `pre-push`   | blockiert Pushes, deren Version der auf dem Remote entspricht   |
-
-Die Nummer steht **unten rechts auf dem Bildschirm** (DOM, nicht Canvas) und
-zusaetzlich im Menue.
-
 **Warum das keine Formsache ist.** Ein kompletter Testabend ging verloren, weil
 auf dem Handy weiterhin v0.1.0 lief, waehrend lokal laengst korrigiert war —
 vier Fehlersuchrunden gegen einen Stand, den das Geraet nie geladen hatte.
 
-Die Kette muss deshalb ganz durchlaufen:
+Die Kette muss ganz durchlaufen, und **jedes Glied kann reissen**:
 
 ```
-Aenderung → commit (Version +1) → push → GitHub Actions → Pages → Handy
+Aenderung → commit (Version +1) → push → CI + Deploy → Pages → Handy
 ```
 
-**Jedes Glied kann reissen**, und ohne sichtbare Versionsnummer merkt es
-niemand:
+Deshalb sichert jede Bruchstelle inzwischen sich selbst ab:
 
-- nicht gepusht → Actions laeuft nie
-- CI rot → Deploy laeuft trotzdem, aber der Fehler bleibt unbemerkt
-- `index.html` aus dem Cache → das Geraet laedt weiter die alten Dateien
+| Bruchstelle                | Absicherung                                          |
+| -------------------------- | ---------------------------------------------------- |
+| Version nicht hochgezaehlt | `pre-commit` zaehlt hoch, `pre-push` und CI blockieren |
+| Kaputter Code gepusht      | `pre-push` faehrt `npm run verify`                   |
+| CI rot, Deploy trotzdem    | der Deploy faehrt `verify` selbst und bricht ab      |
+| `index.html` aus dem Cache | `no-cache`-Meta                                      |
+| Deploy kommt nicht an      | `npm run deploy:check` fragt den Server              |
 
-Nach jedem Push gilt deshalb: **Deploy-Ergebnis pruefen und die Versionsnummer
-auf dem Geraet ablesen**, bevor eine Rueckmeldung ausgewertet wird. Ein
-Fehlerbericht ohne Versionsnummer ist wertlos.
+**Pflicht nach jedem Push:**
 
 ```bash
-gh run list --limit 3        # lief CI und Deploy durch?
+npm run deploy:wait     # wartet, bis die neue Version live ist
 ```
 
-Bewusst uebergehen: `git commit --no-verify` bzw. `git push --no-verify`.
+Das Skript holt die `index.html` vom Server, folgt ihr zum gehashten Bundle und
+vergleicht die Version mit der lokalen — denselben Weg geht auch der Browser.
+Erst wenn das gruen ist, sind Rueckmeldungen vom Geraet verwertbar.
+
+> **Ein Fehlerbericht ohne Versionsnummer ist wertlos.** Die Nummer steht unten
+> rechts auf dem Bildschirm (im DOM, nicht im Canvas — sichtbar auch dann, wenn
+> Phaser nicht startet).
+
+Bewusst uebergehen: `git commit --no-verify` bzw. `git push --no-verify`. Die
+CI-Pruefung laesst sich damit **nicht** umgehen.
 
 ## Befehle
 

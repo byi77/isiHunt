@@ -30,13 +30,31 @@ jobs:
           cache: npm
 
       - run: npm ci
-      - run: npm run build
+
+      # Dieselben Pruefungen wie die CI, hier aber als Sperre vor dem Deploy.
+      #
+      # Vorher lief der Deploy auch bei roter CI durch - beide Workflows starten
+      # unabhaengig voneinander auf denselben Push. Ein Stand mit rotem
+      # `format:check` ging so live, ohne dass es jemandem auffiel.
+      - name: Pruefen (blockiert den Deploy bei Fehlern)
+        run: npm run verify
 
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
         with:
           path: ./dist
+
+      # Steht im Actions-Log und in der Zusammenfassung des Laufs. Damit laesst
+      # sich spaeter nachlesen, welche Version dieser Deploy ausgeliefert hat -
+      # ohne das Bundle vom Server holen zu muessen.
+      - name: Ausgelieferte Version protokollieren
+        run: |
+          version=$(node -p "require('./package.json').version")
+          echo "Ausgeliefert: v$version"
+          echo "### isiHunt v$version ausgeliefert" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Pruefen mit \`npm run deploy:check\` oder auf dem Geraet unten rechts." >> "$GITHUB_STEP_SUMMARY"
 
   deploy:
     name: Deploy

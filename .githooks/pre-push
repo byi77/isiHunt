@@ -67,3 +67,27 @@ if [ "$lokal" = "$entfernt" ]; then
 fi
 
 echo "pre-push: Version $entfernt -> $lokal"
+
+# --- Dieselben Pruefungen wie die CI, aber VOR dem Push -----------------------
+#
+# Der vorige Push ging mit roter CI raus: `format:check` fehlte in der lokalen
+# Kette, also lief hier alles gruen und auf GitHub nicht. Der Deploy lief
+# trotzdem durch - der Fehler fiel niemandem auf.
+#
+# Ein roter Lauf nach dem Push kostet eine Runde. Hier kostet er nichts.
+
+echo "pre-push: fahre npm run verify ..."
+
+if ! npm run verify >/tmp/isihunt-verify.log 2>&1; then
+  echo "" >&2
+  echo "  PUSH ABGEBROCHEN: npm run verify ist rot." >&2
+  echo "" >&2
+  tail -n 30 /tmp/isihunt-verify.log >&2
+  echo "" >&2
+  echo "  Vollstaendige Ausgabe: /tmp/isihunt-verify.log" >&2
+  echo "  Formatierung automatisch richten:  npm run format" >&2
+  echo "" >&2
+  exit 1
+fi
+
+echo "pre-push: verify gruen"

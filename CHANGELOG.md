@@ -57,9 +57,20 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 - Jeder Commit zieht die Patch-Version hoch (`.githooks/pre-commit` →
   `scripts/bump-version.mjs`), einmalig zu aktivieren mit
   `git config core.hooksPath .githooks`
-- **`.githooks/pre-push` blockiert Pushes ohne Versionssprung.** Ein Deploy,
-  dessen Nummer sich nicht vom Vorgaenger unterscheidet, ist auf dem Geraet
-  nicht ueberpruefbar
+- **`.githooks/pre-push` blockiert Pushes ohne Versionssprung** und faehrt
+  ausserdem `npm run verify` — der vorige Push ging mit roter CI raus, weil
+  `format:check` in der lokalen Kette fehlte
+- **Der Deploy prueft sich selbst.** Vorher liefen CI und Deploy unabhaengig auf
+  denselben Push; eine rote CI hielt den Deploy nicht auf. Jetzt faehrt der
+  Deploy `verify` und bricht ab, statt einen roten Stand auszuliefern
+- **Die CI prueft den Versionssprung** gegen `HEAD~1` — unabhaengig davon, ob
+  die lokalen Hooks eingerichtet sind oder mit `--no-verify` uebergangen wurden
+- **`npm run deploy:check` / `deploy:wait`** (`scripts/check-deploy.mjs`) fragt
+  den Server: laedt die `index.html`, folgt ihr zum gehashten Bundle und liest
+  die ausgelieferte Version — denselben Weg geht auch der Browser. Damit meldet
+  sich die Kette von selbst, statt auf Aufmerksamkeit angewiesen zu sein
+- Der Deploy-Workflow schreibt die ausgelieferte Version in die
+  Lauf-Zusammenfassung
 - **`index.html` ist `no-cache`.** JS und CSS tragen einen Inhalts-Hash und
   duerfen gecacht werden; die `index.html` ist die einzige Stelle, die auf die
   neuen Hashes zeigt — aus dem Cache blockiert sie jeden Deploy

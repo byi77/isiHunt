@@ -49,7 +49,8 @@ isiHunt/
 │   └── pre-push                Kein Push ohne Versionssprung
 ├── scripts/
 │   ├── generate-icons.mjs      Zeichnet die App-Icons (npm run icons)
-│   └── bump-version.mjs        Patch-Version +1, vom pre-commit-Hook gerufen
+│   ├── bump-version.mjs        Patch-Version +1, vom pre-commit-Hook gerufen
+│   └── check-deploy.mjs        Liegt der lokale Stand wirklich live? (deploy:check)
 ├── src/
 │   ├── config/                 Reine Daten, keine Logik
 │   │   ├── GameConfig.ts       Alle Balancing-Zahlen

@@ -26,12 +26,18 @@ export default tseslint.config(
     // Build-Skripte laufen in Node, nicht im Browser. Dort sind `Buffer` und
     // `console` selbstverstaendlich - und Ausgabe ist ihr Zweck, keine
     // vergessene Debug-Zeile.
+    //
+    // `fetch`, `URL` und die Timer sind seit Node 18 ebenfalls global; das
+    // Projekt verlangt >= 20 (siehe package.json "engines").
     files: ['scripts/**/*.mjs'],
     languageOptions: {
       globals: {
         Buffer: 'readonly',
         console: 'readonly',
         process: 'readonly',
+        fetch: 'readonly',
+        URL: 'readonly',
+        setTimeout: 'readonly',
       },
     },
     rules: {

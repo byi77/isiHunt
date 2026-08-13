@@ -18,11 +18,40 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Zwei Commits, damit die Version gegen ihren Vorgaenger geprueft
+          # werden kann (siehe Schritt "Versionssprung pruefen").
+          fetch-depth: 2
 
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
+
+      # Der lokale pre-push-Hook prueft dasselbe - aber nur, wenn er
+      # eingerichtet ist und nicht mit --no-verify uebergangen wurde. Hier
+      # greift die Pruefung unabhaengig davon.
+      #
+      # Grund: Ein Deploy, dessen Versionsnummer sich nicht vom Vorgaenger
+      # unterscheidet, ist auf dem Geraet nicht ueberpruefbar. Genau daran ist
+      # ein kompletter Testabend gescheitert (docs/CODE_STYLE.md 1.9).
+      - name: Versionssprung pruefen
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          neu=$(node -p "require('./package.json').version")
+          alt=$(git show HEAD~1:package.json 2>/dev/null | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).version" || echo "")
+
+          if [ -z "$alt" ]; then
+            echo "Kein Vorgaenger gefunden - Pruefung uebersprungen."
+            exit 0
+          fi
+
+          echo "Version: $alt -> $neu"
+
+          if [ "$alt" = "$neu" ]; then
+            echo "::error::Version unveraendert ($neu). Ein Deploy ohne neue Nummer ist auf dem Geraet nicht von seinem Vorgaenger zu unterscheiden. Siehe docs/CODE_STYLE.md 1.9."
+            exit 1
+          fi
 
       - name: Abhaengigkeiten installieren
         run: npm ci

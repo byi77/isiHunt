@@ -165,17 +165,26 @@ Jedes Glied kann reissen, und keines meldet sich von selbst:
 
 #### Was dagegen eingerichtet ist
 
-- **`.githooks/pre-commit`** zaehlt die Patch-Version hoch
-  (`scripts/bump-version.mjs`) und legt sie in denselben Commit.
-- **`.githooks/pre-push`** blockiert Pushes, deren Version der auf dem Remote
-  entspricht — ein Deploy ohne unterscheidbare Nummer waere wertlos.
-- **`index.html` ist `no-cache`.** Die JS- und CSS-Dateien tragen einen
-  Inhalts-Hash und duerfen gecacht werden; die `index.html` ist die einzige
-  Stelle, die auf die neuen Hashes zeigt. Liegt sie im Cache, kommt der Deploy
-  nicht an.
-- **Die Nummer steht im DOM**, nicht nur im Canvas (`index.html` → `#version`,
-  gesetzt in `main.ts`). Sie ist damit auch sichtbar, wenn Phaser gar nicht
-  erst startet.
+Jede Bruchstelle sichert sich selbst ab. Keine der Massnahmen verlaesst sich
+darauf, dass jemand daran denkt:
+
+| Wo             | Was                                                                       |
+| -------------- | ------------------------------------------------------------------------- |
+| `pre-commit`   | zaehlt die Patch-Version hoch (`scripts/bump-version.mjs`)                |
+| `pre-push`     | blockiert bei unveraenderter Version **und** faehrt `npm run verify`      |
+| CI             | prueft den Versionssprung gegen `HEAD~1` — unabhaengig von lokalen Hooks  |
+| Deploy         | faehrt `verify` selbst und bricht ab, statt einen roten Stand auszuliefern |
+| `index.html`   | `no-cache` — die einzige Datei ohne Inhalts-Hash                          |
+| `deploy:check` | fragt den Server, welche Version wirklich liegt                           |
+
+Zwei Dinge sind daran wesentlich:
+
+**Der Deploy prueft selbst.** Vorher liefen CI und Deploy unabhaengig auf
+denselben Push — eine rote CI hielt den Deploy nicht auf. Genau so ging ein
+Stand mit rotem `format:check` live.
+
+**Die CI prueft die Version.** Der lokale Hook greift nur, wenn er eingerichtet
+ist und niemand `--no-verify` benutzt hat. Die CI-Pruefung greift immer.
 
 Einmalig pro Arbeitskopie aktivieren — `.git/hooks` ist nicht versioniert:
 
@@ -186,18 +195,23 @@ git config core.hooksPath .githooks
 #### Pflicht nach jedem Push
 
 ```bash
-gh run list --limit 3
+npm run deploy:wait
 ```
 
-Beide Laeufe — CI **und** Deploy — muessen gruen sein. Danach die
-Versionsnummer auf dem Testgeraet ablesen.
+Das Skript (`scripts/check-deploy.mjs`) laedt die `index.html` vom Server, folgt
+ihr zum gehashten Bundle und liest die ausgelieferte Version — denselben Weg
+geht auch der Browser. Es endet erst, wenn die Live-Version der lokalen
+entspricht, und nennt bei Misserfolg die Pruefreihenfolge.
+
+Damit ist die Kette geschlossen: Sie meldet sich jetzt von selbst.
 
 > **Ein Fehlerbericht ohne Versionsnummer ist wertlos.** Bevor eine
 > Rueckmeldung ausgewertet wird, muss feststehen, welcher Stand sie erzeugt hat.
+> Die Nummer steht unten rechts auf dem Bildschirm.
 
-Bewusst uebergehen: `git commit --no-verify` bzw. `git push --no-verify`.
-Merge-, Rebase- und Amend-Commits ueberspringt der pre-commit-Hook selbst — sie
-gehoeren zu einem bereits vergebenen Stand.
+Bewusst uebergehen: `git commit --no-verify` bzw. `git push --no-verify`. Die
+CI-Pruefungen laufen trotzdem. Merge-, Rebase- und Amend-Commits ueberspringt
+der pre-commit-Hook selbst — sie gehoeren zu einem bereits vergebenen Stand.
 
 ## 2. Namenskonventionen
 
