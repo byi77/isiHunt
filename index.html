@@ -157,7 +157,9 @@
           var(--world-bottom) 70%,
           var(--world-bottom) 100%
         );
-        padding-top: env(safe-area-inset-top, 0px);
+        /* Mindestens 28 px fuer die obere Statuszeile; auf iPhones gewinnt
+           der echte Safe-Area-Abstand der Dynamic Island. */
+        padding-top: max(28px, env(safe-area-inset-top, 0px));
         padding-bottom: env(safe-area-inset-bottom, 0px);
         padding-left: env(safe-area-inset-left, 0px);
         padding-right: env(safe-area-inset-right, 0px);
@@ -199,15 +201,16 @@
         display: block;
       }
 
-      /* Dezentes Laufband im Bereich oberhalb von Spielpixel 0. Es wird nur
-         eingeblendet, wenn #safe-top auf dem echten Geraet eine Hoehe meldet;
-         auf Desktop und normalen Browser-Viewports stoert es den Canvas nicht. */
+      /* Dezentes Laufband im Bereich oberhalb von Spielpixel 0. Der Streifen
+         hat einen 28-px-Fallback, weil iOS in manchen PWA-/Browserstaenden
+         trotz sichtbarer Statuszone 0 fuer safe-area-inset-top meldet. */
       #safe-area-content {
         position: fixed;
         top: 0;
         left: 0;
         right: 0;
-        height: env(safe-area-inset-top, 0px);
+        min-height: 28px;
+        height: max(28px, env(safe-area-inset-top, 0px));
         z-index: 2;
         display: none;
         align-items: flex-end;
@@ -215,8 +218,9 @@
         box-sizing: border-box;
         padding: 0 18px 5px;
         overflow: hidden;
-        color: rgba(244, 241, 232, 0.72);
-        font-size: 10px;
+        background: linear-gradient(to bottom, rgba(11, 16, 32, 0.48), transparent);
+        color: rgba(244, 241, 232, 0.9);
+        font-size: 11px;
         font-weight: 700;
         letter-spacing: 0.16em;
         line-height: 1;
@@ -225,11 +229,9 @@
         text-overflow: ellipsis;
         pointer-events: none;
         text-shadow: 0 1px 8px rgba(0, 0, 0, 0.5);
-        transition: color 300ms ease, opacity 300ms ease;
-      }
-
-      html.has-safe-top #safe-area-content {
-        display: flex;
+        transition:
+          color 300ms ease,
+          opacity 300ms ease;
       }
 
       /* Messpunkte fuer die sicheren Raender - unsichtbar, siehe <body>. */

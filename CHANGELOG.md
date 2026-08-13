@@ -52,6 +52,9 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 - Der Bereich oberhalb von Spielpixel 0 wird jetzt auf Geraeten mit Safe Area
   genutzt: Im Menue laeuft dort eine dezente Infozeile, waehrend des Runs steht
   dort die verbleibende Zeit in Sekunden.
+- Falls iOS keinen oberen Safe-Area-Wert meldet, bleibt die Anzeige dank eines
+  28-Pixel-Fallbacks trotzdem sichtbar; der Canvas wird entsprechend nach unten
+  verschoben.
 - Der Wartungsmodus wird durch drei kurze Tipps auf die Versionsangabe und
   anschliessend langes Gedrueckthalten geoeffnet.
 
