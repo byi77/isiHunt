@@ -294,6 +294,28 @@ export class MenuScene extends Phaser.Scene {
       subtitle.setWordWrapWidth(cardWidth - 76);
       card.add(subtitle);
 
+      if (!isUnlocked) {
+        // Zentrales Schloss: Die Welt bleibt lesbar, aber der Zustand ist
+        // ohne Text sofort erkennbar. Der dunkle Kreis gibt dem Symbol auf
+        // jeder Weltfarbe einen ruhigen, klaren Kontrast.
+        const lock = this.add.graphics();
+        lock.fillStyle(Palette.backdrop, 0.88);
+        lock.fillRoundedRect(-34, -34, 68, 68, 16);
+        lock.lineStyle(2, world.accent, 0.65);
+        lock.strokeRoundedRect(-34, -34, 68, 68, 16);
+
+        lock.lineStyle(4, Palette.goldHex, 1);
+        lock.beginPath();
+        lock.arc(0, -5, 13, Math.PI, 0, false);
+        lock.strokePath();
+        lock.fillStyle(Palette.goldHex, 1);
+        lock.fillRoundedRect(-17, -5, 34, 27, 6);
+        lock.fillStyle(Palette.backdrop, 1);
+        lock.fillCircle(0, 7, 3.5);
+        lock.fillRect(-1.5, 7, 3, 8);
+        card.add(lock);
+      }
+
       carousel.add(card);
       wheelCards.push({ card, offset, opacity: isUnlocked ? 1 : 0.5 });
     });
