@@ -17,7 +17,9 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
-    this.load.image(TextureKey.Logo, './assets/isihunt-logo.png');
+    // Neue Dateiversion, damit installierte iOS-Web-Apps nicht die alte
+    // zwischengespeicherte Logo-PNG mit Hintergrund wiederverwenden.
+    this.load.image(TextureKey.Logo, './assets/isihunt-logo-v2.png');
     this.load.image(TextureKey.PlanetSternenweide, './assets/planet-sternenweide.png');
     this.load.image(TextureKey.PlanetEisring, './assets/planet-eisring.png');
     this.load.image(TextureKey.PlanetGlutnebel, './assets/planet-glutnebel.png');

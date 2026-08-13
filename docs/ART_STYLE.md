@@ -145,7 +145,7 @@ Der Stern nimmt bewusst nur 30 % der Icon-Breite ein: Android schneidet
 "maskable" Icons zu einem Kreis zu und garantiert nur die inneren 80 % der
 Flaeche.
 
-Die weiteren Rasterassets liegen unter `public/assets/`: `isihunt-logo.png`
+Die weiteren Rasterassets liegen unter `public/assets/`: `isihunt-logo-v2.png`
 und je eine Planetentextur fuer Sternenweide, Eisring, Glutnebel, Nullsektor
 und Sonnenkrone. Sie werden im `BootScene` vor dem Menue geladen.
 
