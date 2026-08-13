@@ -42,6 +42,14 @@
 
     <title>isiHunt</title>
     <style>
+      /* Randfarben der aktuellen Welt. Gesetzt von `createWorldBackdrop`
+         (src/ui/widgets.ts) bei jedem Szenenaufbau; die Vorgabe gilt, solange
+         noch keine Welt geladen ist. */
+      :root {
+        --world-top: #0b1020;
+        --world-bottom: #0b1020;
+      }
+
       html,
       body {
         margin: 0;
@@ -50,7 +58,22 @@
         /* Fallback fuer aeltere Browser; dvh gewinnt direkt darunter. */
         height: 100%;
         overflow: hidden;
-        background: #0b1020;
+
+        /* Der Verlauf fuellt die Streifen oben und unten, die das Spielfeld
+           freilaesst - es ist 9:16, moderne Handys sind schmaler. Oben trifft
+           er die obere, unten die untere Verlaufsfarbe der Welt, sodass die
+           Naht zum Spielfeld verschwindet.
+
+           Vorher standen dort harte schwarze Balken neben einem farbigen
+           Verlauf. */
+        background: linear-gradient(
+          to bottom,
+          var(--world-top) 0%,
+          var(--world-top) 30%,
+          var(--world-bottom) 70%,
+          var(--world-bottom) 100%
+        );
+        transition: background 400ms ease;
         /* Kein Scroll-Bounce / Pull-to-Refresh waehrend des Spielens. */
         overscroll-behavior: none;
         touch-action: none;

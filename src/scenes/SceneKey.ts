@@ -17,6 +17,11 @@ export const SceneKey = {
    * Versionsnummer.
    */
   Admin: 'Admin',
+  /**
+   * Pixel-Lineal ueber dem Spielfeld. Macht aus "da ist ein Balken" die Aussage
+   * "von 0 bis 160 ist schwarz" - eine Zahl statt einer Beschreibung.
+   */
+  Ruler: 'Ruler',
 } as const;
 
 export type SceneKeyValue = (typeof SceneKey)[keyof typeof SceneKey];

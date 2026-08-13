@@ -66,7 +66,23 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   `location.reload()` genuegt auf iOS nicht — der Standalone-Modus beantwortet
   die Anfrage weiterhin aus seinem eigenen Speicher
 
+**Pixel-Lineal** _(im Wartungsbildschirm)_
+
+- Legt ein beschriftetes Raster ueber das Menue: waagerechte Linien alle 100
+  Spielpixel, feine Striche alle 50, senkrechte alle 100
+- Zeichnet zusaetzlich die **sicheren Raender** ein und nennt die Balkenhoehen
+- Damit wird aus "oben ist ein Balken" die Aussage "von 0 bis 160 ist
+  schwarz" — eine Zahl, die sich nachrechnen laesst, statt einer Beschreibung,
+  die eine Rueckfrage kostet
+
 ### Behoben — dritte Runde (iPhone 16 Pro)
+
+- **Die Streifen ausserhalb des Spielfelds sind nicht mehr schwarz.** Das
+  Spielfeld ist 9:16, moderne Handys sind schmaler — oben und unten bleiben
+  rund 160 CSS-px frei. Dort stand ein harter schwarzer Balken neben einem
+  farbigen Verlauf. Die Streifen tragen jetzt die Randfarben der aktuellen
+  Welt (`--world-top` / `--world-bottom`, gesetzt von `createWorldBackdrop`),
+  sodass die Naht verschwindet
 
 - **Der Zurueck-Knopf verschwand hinter der Dynamic Island.** `viewport-fit=cover`
   laesst die Seite bis unter die Island reichen — richtig fuer den Hintergrund,

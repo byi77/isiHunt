@@ -107,6 +107,19 @@ ausschliesslich an der Auslieferung, nicht am Code.
       Home-Bildschirm), "Neu laden erzwingen", Spielstand zuruecksetzen mit
       Doppelbestaetigung. Erreichbar ueber langen Druck auf die Versionsnummer.
 
+- [x] **Layout-Werte im Wartungsbildschirm**: Fenstergroesse, sichere Raender,
+      Balken oben und unten, Massstab. Ein Browser-Simulator kennt keine
+      sicheren Raender — diese Zahlen gibt es nur auf dem Geraet.
+
+- [x] **Pixel-Lineal** (`RulerScene`, ueber den Wartungsbildschirm): Raster mit
+      Beschriftung alle 100 Spielpixel, feine Striche alle 50, dazu die
+      sicheren Raender. Macht aus "oben ist ein Balken" die Aussage "von 0 bis
+      160 ist schwarz".
+
+- [x] **Streifen ausserhalb des Spielfelds tragen die Weltfarbe** statt Schwarz.
+      Das Spielfeld ist 9:16, moderne Handys sind schmaler — der harte Balken
+      war der sichtbare Bruch dazwischen.
+
 ### Phase 1.2 — Warum die Home-Bildschirm-App nicht aktualisiert _(neu)_
 
 > **Geprueft: Es gibt keinen Service Worker im Projekt** (kein `serviceWorker`,
@@ -160,16 +173,16 @@ ausschliesslich an der Auslieferung, nicht am Code.
 - [ ] **Bestenliste modusuebergreifend machen.** _(neu 2026-08-13)_
 
       **Ist-Zustand, geprueft:** Sie ist **pro Welt getrennt**, nicht
-          uebergreifend. `scores.world_id` ist Pflichtfeld,
-          `fetchLeaderboard(worldId)` filtert mit `.eq('world_id', worldId)`, und
-          `LeaderboardScene` hat Weltentabs zum Umschalten. Fuenf Welten = fuenf
-          getrennte Listen.
+              uebergreifend. `scores.world_id` ist Pflichtfeld,
+              `fetchLeaderboard(worldId)` filtert mit `.eq('world_id', worldId)`, und
+              `LeaderboardScene` hat Weltentabs zum Umschalten. Fuenf Welten = fuenf
+              getrennte Listen.
 
-          **Modi:** Duell-Runden gehen gar nicht in die Liste (Fairness-Regel 3,
-          `config/challenge.ts`) — dort gibt es also nichts zusammenzufuehren.
-          Eingetragen wird ausschliesslich aus dem Solo-Ergebnisbildschirm.
+              **Modi:** Duell-Runden gehen gar nicht in die Liste (Fairness-Regel 3,
+              `config/challenge.ts`) — dort gibt es also nichts zusammenzufuehren.
+              Eingetragen wird ausschliesslich aus dem Solo-Ergebnisbildschirm.
 
-          **Zu tun:**
+              **Zu tun:**
   - [ ] Eine Gesamtliste ueber alle Welten als Standardansicht
   - [ ] `world_id` bleibt in der Datenbank (Herkunft geht sonst verloren) und
         wird in der Zeile angezeigt — als Farbmarke, nicht als Text
@@ -227,10 +240,13 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
 - [ ] **Vorher entscheiden:** Mehr Hoehe heisst mehr Spielflaeche und damit
       laengere Laufwege. Das verschiebt das Balancing und muss zusammen mit der
       Rundendauer aus Phase 2 gerechnet werden.
-- [ ] **Guenstige Zwischenloesung:** Die Balken in der Weltfarbe fuellen statt
-      schwarz zu lassen und Hintergrundelemente hineinziehen. Der Bildschirm
-      wirkt gefuellt, ohne dass sich am Spielfeld etwas aendert.
-      _Aufwand: gering_
+- [x] **Zwischenloesung umgesetzt (2026-08-13):** Die Streifen tragen die
+      Randfarben der Welt statt Schwarz. Der Bruch ist damit weg; die Frage,
+      ob das Spielfeld selbst mitwachsen soll, bleibt offen.
+- [ ] **Noch offen:** Hintergrundelemente (Sterne, Nebel) in die Streifen
+      ziehen, damit sie nicht nur einfarbig sind. _Aufwand: gering_
+- [ ] **Werkzeug steht bereit:** Das Pixel-Lineal (`RulerScene`) macht die
+      Bewertung messbar — "von 0 bis 160" statt "oben ist was".
 - [ ] `docs/GAME_DESIGN.md` 9 anpassen (dort steht die feste Aufloesung)
 
 ## Phase 3 — Themenwechsel ins Weltall

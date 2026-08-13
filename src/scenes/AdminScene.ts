@@ -34,7 +34,13 @@ import { SceneKey } from '@/scenes/SceneKey';
 import * as SaveSystem from '@/systems/SaveSystem';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
-import { createBackButton, createButton, createPanel, createVignette } from '@/ui/widgets';
+import {
+  createBackButton,
+  createButton,
+  createPanel,
+  createVignette,
+  paintSafeAreaBackdrop,
+} from '@/ui/widgets';
 
 export class AdminScene extends Phaser.Scene {
   private statusText!: Phaser.GameObjects.Text;
@@ -54,6 +60,10 @@ export class AdminScene extends Phaser.Scene {
       .image(GAME_WIDTH / 2, GAME_HEIGHT / 2, TextureKey.Pixel)
       .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
       .setTint(Palette.backdrop);
+
+    // Auch die Streifen ausserhalb des Spielfelds auf den Grundton setzen -
+    // sonst bliebe hier die Farbe der zuletzt gezeigten Welt stehen.
+    paintSafeAreaBackdrop(Palette.backdrop, Palette.backdrop);
 
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
@@ -155,6 +165,20 @@ export class AdminScene extends Phaser.Scene {
         textStyle(FontSize.tiny, Palette.inkDim),
       )
       .setOrigin(0.5);
+
+    // Lineal ueber dem Menue: Damit lassen sich Layout-Fehler in Zahlen
+    // beschreiben statt in Worten ("von 0 bis 160 ist schwarz").
+    createButton(
+      this,
+      GAME_WIDTH / 2,
+      1030,
+      'PIXEL-LINEAL ANZEIGEN',
+      () => {
+        this.scene.start(SceneKey.Menu);
+        this.scene.launch(SceneKey.Ruler);
+      },
+      { width: 460, height: 72, accent: 0x9aa3bd, fontSize: FontSize.small },
+    );
 
     const reset = createButton(
       this,

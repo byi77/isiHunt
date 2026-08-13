@@ -19,6 +19,7 @@ import { HudScene } from '@/scenes/HudScene';
 import { LeaderboardScene } from '@/scenes/LeaderboardScene';
 import { MenuScene } from '@/scenes/MenuScene';
 import { ResultScene } from '@/scenes/ResultScene';
+import { RulerScene } from '@/scenes/RulerScene';
 import { SceneKey } from '@/scenes/SceneKey';
 import { SyncScene } from '@/scenes/SyncScene';
 import { Palette } from '@/ui/theme';
@@ -59,6 +60,7 @@ const config: Phaser.Types.Core.GameConfig = {
     LeaderboardScene,
     SyncScene,
     AdminScene,
+    RulerScene,
   ],
 };
 

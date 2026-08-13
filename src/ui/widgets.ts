@@ -11,7 +11,7 @@ import Phaser from 'phaser';
 import { DEBUG_ENABLED } from '@/config/GameConfig';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
-import { FontSize, Palette, textStyle } from '@/ui/theme';
+import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 
 export interface ButtonHandle {
   container: Phaser.GameObjects.Container;
@@ -387,6 +387,23 @@ export function createPanel(
 }
 
 /**
+ * Faerbt die Streifen ausserhalb des Spielfelds in den Randfarben der Welt.
+ *
+ * Umgesetzt ueber zwei CSS-Variablen, die `index.html` fuer den Seitenkoerper
+ * auswertet. Ein Farbverlauf statt zweier Flaechen: Er trifft oben exakt die
+ * obere und unten exakt die untere Verlaufsfarbe des Spielfelds, sodass die
+ * Naht verschwindet.
+ *
+ * Wird bei jedem Weltwechsel neu gesetzt - der Aufruf sitzt deshalb in
+ * `createWorldBackdrop`, das ohnehin jede Scene beim Aufbau ruft.
+ */
+export function paintSafeAreaBackdrop(top: number, bottom: number): void {
+  const style = document.documentElement.style;
+  style.setProperty('--world-top', toCss(top));
+  style.setProperty('--world-bottom', toCss(bottom));
+}
+
+/**
  * Vollflaechiger Hintergrund einer Welt.
  *
  * Drei Schichten statt einer Flaeche: Grundverlauf, ein Lichtschein am Horizont
@@ -405,6 +422,21 @@ export function createWorldBackdrop(
   base.fillGradientStyle(top, top, bottom, bottom, 1);
   base.fillRect(0, 0, width, height);
   base.setDepth(Depth.Backdrop);
+
+  // Die Raender ausserhalb des Spielfelds mitfaerben.
+  //
+  // Das Spielfeld ist 9:16, moderne Handys sind schmaler - oben und unten
+  // bleiben Streifen frei (auf einem iPhone 16 Pro rund 160 CSS-px). Ohne
+  // diesen Anstrich stehen dort harte schwarze Balken neben einem farbigen
+  // Verlauf; der Bruch faellt sofort auf.
+  //
+  // Die Streifen bekommen deshalb die Randfarbe der Welt - oben `top`, unten
+  // `bottom`. Der Uebergang wird dadurch unsichtbar, und der Bildschirm wirkt
+  // gefuellt, ohne dass sich am Spielfeld etwas aendert.
+  //
+  // Warum am Seitenkoerper und nicht im Canvas: Ausserhalb des Canvas kann
+  // Phaser nicht zeichnen. Die Farbe muss ins DOM.
+  paintSafeAreaBackdrop(top, bottom);
 
   // Horizontschein im oberen Drittel - die Lichtquelle der Welt.
   scene.add
