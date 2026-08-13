@@ -153,6 +153,26 @@
         }
       }
 
+      /* WebKit-Sonderfall fuer installierte Home-Screen-Apps:
+         Bei `viewport-fit=cover` kann `100dvh` die untere Safe Area
+         faelschlich abziehen. Der dann entstehende Bereich liegt ausserhalb
+         der Web-Seite und kann von Canvas, #game oder #page-backdrop nicht
+         eingefaerbt werden. Im Standalone-Modus ist `100vh` die belastbare
+         Umgehung, weil es die Safe Area mitnimmt. */
+      @media (display-mode: standalone) {
+        html,
+        body {
+          height: 100vh;
+          min-height: 100vh;
+        }
+      }
+
+      html.standalone-app,
+      html.standalone-app body {
+        height: 100vh;
+        min-height: 100vh;
+      }
+
       #game canvas {
         display: block;
       }

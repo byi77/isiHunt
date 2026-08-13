@@ -11,6 +11,7 @@
 import Phaser from 'phaser';
 
 import { APP_VERSION, configureGameHeight, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { isStandalone } from '@/core/display';
 import { requestPortraitOrientationLock } from '@/core/orientation';
 import { keepCanvasBoundsFresh, waitForViewportToSettle } from '@/core/viewport';
 import { AdminScene } from '@/scenes/AdminScene';
@@ -75,6 +76,11 @@ function createGameConfig(): Phaser.Types.Core.GameConfig {
 // auf einem fremden Geraet ist das die erste Frage: welcher Stand laeuft da?
 const versionLabel = document.getElementById('version');
 if (versionLabel) versionLabel.textContent = `v${APP_VERSION}`;
+
+// Alte iOS-Versionen melden installierte Web-Apps nicht immer ueber
+// `display-mode: standalone`. Die Klasse aktiviert deshalb dieselbe 100vh-
+// Umgehung auch fuer `navigator.standalone`.
+if (isStandalone()) document.documentElement.classList.add('standalone-app');
 
 // Manifest und installierte Web-App sperren die Ausrichtung bereits. Die
 // Browser-API ist die zusaetzliche Moeglichkeit fuer Android; auf iOS Safari

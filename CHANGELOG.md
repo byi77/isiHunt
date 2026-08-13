@@ -25,6 +25,9 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   Level im Profilbildschirm; die doppelte Anzeige unten im Menue entfaellt.
 - Der technische Steuerungshinweis am unteren Bildschirmrand wurde aus dem
   Hauptmenue entfernt.
+- Fuer installierte iOS-Web-Apps wird die WebKit-Viewport-Umgehung mit
+  `100vh` aktiviert, damit die System-Safe-Area nicht als weisser Bereich
+  ausserhalb der Web-Seite erscheint.
 
 **Geraetehoehe und Hochformat**
 
