@@ -102,6 +102,7 @@
           var(--world-bottom) 70%,
           var(--world-bottom) 100%
         );
+        transition: background 400ms ease;
       }
 
       /* Das Spielfeld haelt sich aus den sicheren Raendern heraus.
@@ -124,6 +125,16 @@
         box-sizing: border-box;
         position: relative;
         z-index: 1;
+        /* Auch der Container selbst traegt den Weltverlauf. Auf iOS kann
+           eine feste Hintergrundschicht hinter einem gepaddeten Element in
+           der unteren Safe Area sonst weiss durchscheinen. */
+        background: linear-gradient(
+          to bottom,
+          var(--world-top) 0%,
+          var(--world-top) 30%,
+          var(--world-bottom) 70%,
+          var(--world-bottom) 100%
+        );
         padding-top: env(safe-area-inset-top, 0px);
         padding-bottom: env(safe-area-inset-bottom, 0px);
         padding-left: env(safe-area-inset-left, 0px);

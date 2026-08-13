@@ -47,6 +47,12 @@ export class AdminScene extends Phaser.Scene {
   /** Zweiter Tipp bestaetigt das Zuruecksetzen - Absicht statt Versehen. */
   private resetArmed = false;
 
+  /**
+   * Voruebergehend aus: Die Reset-Logik bleibt fuer spaetere Wartung erhalten,
+   * darf aber im laufenden Testbetrieb nicht versehentlich benutzt werden.
+   */
+  private static readonly RESET_ENABLED = false;
+
   constructor() {
     super(SceneKey.Admin);
   }
@@ -207,6 +213,11 @@ export class AdminScene extends Phaser.Scene {
         fontSize: FontSize.small,
       },
     );
+
+    if (!AdminScene.RESET_ENABLED) {
+      reset.setEnabled(false);
+      reset.setLabel('RESET VORUEBERGEHEND DEAKTIVIERT');
+    }
   }
 
   /**

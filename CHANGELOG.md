@@ -11,6 +11,13 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+**Wartung und Safe Area**
+
+- Der Spielverlauf fuellt jetzt auch den gepaddeten Spielcontainer; dadurch
+  bleibt die untere Safe Area auf iOS farbig statt weiss.
+- Der lokale Spielstand-Reset bleibt im Admin-Menue sichtbar, ist waehrend der
+  laufenden Testphase aber voruebergehend deaktiviert.
+
 **Geraetehoehe und Hochformat**
 
 - Die interne Portraithoehe waechst auf hohen, schmalen Handys mit der
