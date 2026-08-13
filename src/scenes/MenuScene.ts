@@ -219,6 +219,11 @@ export class MenuScene extends Phaser.Scene {
     this.add.text(60, 350, 'WELTEN', textStyle(FontSize.tiny, Palette.inkDim)).setLetterSpacing(6);
 
     const carousel = this.add.container(0, 0);
+    const wheelCards: Array<{
+      card: Phaser.GameObjects.Container;
+      offset: number;
+      opacity: number;
+    }> = [];
 
     WORLDS.forEach((world, index) => {
       const offset = index - selectedIndex;
@@ -229,7 +234,6 @@ export class MenuScene extends Phaser.Scene {
       const isSelected = offset === 0;
       const width = isSelected ? GAME_WIDTH - 100 : GAME_WIDTH - 190;
       const height = isSelected ? 106 : 76;
-      const alpha = isUnlocked ? (isSelected ? 1 : 0.62) : isSelected ? 0.5 : 0.24;
       const card = this.add.container(GAME_WIDTH / 2, y);
 
       const bg = this.add
@@ -302,10 +306,46 @@ export class MenuScene extends Phaser.Scene {
         );
       }
 
-      card.setAlpha(alpha);
-      card.setScale(isSelected ? 1 : 0.92);
       carousel.add(card);
+      wheelCards.push({ card, offset, opacity: isUnlocked ? 1 : 0.5 });
     });
+
+    // Die Karten liegen auf einer senkrechten Kreisbahn statt auf einer
+    // geraden Liste. Dadurch kippen die Nachbarn beim Drehen seitlich weg,
+    // werden kleiner und kommen beim Heranziehen weich in die Mitte.
+    const dragState = { offset: 0 };
+    const updateWheel = (dragY: number): void => {
+      dragState.offset = dragY;
+      const progress = dragY / step;
+
+      for (const entry of wheelCards) {
+        const position = Phaser.Math.Clamp(entry.offset + progress, -1.35, 1.35);
+        const radians = position * (Math.PI / 2);
+        const curve = Math.sin(radians);
+        const depth = Math.max(0, Math.cos(radians));
+
+        entry.card.x = GAME_WIDTH / 2 + curve * 18;
+        entry.card.y = centerY + curve * step;
+        entry.card.setScale(0.78 + depth * 0.22);
+        entry.card.setAlpha(entry.opacity * (0.56 + depth * 0.44));
+        entry.card.setAngle(-curve * 7);
+        entry.card.setDepth(Math.round(depth * 20));
+      }
+
+      carousel.sort('depth');
+    };
+
+    const snapWheelBack = (): void => {
+      this.tweens.add({
+        targets: dragState,
+        offset: 0,
+        duration: 160,
+        ease: 'Cubic.Out',
+        onUpdate: () => updateWheel(dragState.offset),
+      });
+    };
+
+    updateWheel(0);
 
     this.add
       .text(GAME_WIDTH / 2, 730, 'HOCH / RUNTER WISCHEN', textStyle(FontSize.tiny, Palette.inkDim))
@@ -327,7 +367,7 @@ export class MenuScene extends Phaser.Scene {
 
     const onPointerMove = (pointer: Phaser.Input.Pointer): void => {
       if (pointer.id !== activePointerId) return;
-      carousel.y = pointer.y - startY;
+      updateWheel(pointer.y - startY);
     };
 
     const onPointerUp = (pointer: Phaser.Input.Pointer): void => {
@@ -338,17 +378,22 @@ export class MenuScene extends Phaser.Scene {
       activePointerId = null;
       startY = 0;
 
-      this.tweens.add({ targets: carousel, y: 0, duration: 140, ease: 'Quad.Out' });
-
       if (Math.abs(deltaY) > 30 && Math.abs(deltaY) > Math.abs(deltaX)) {
-        this.selectWorld(selectedIndex + (deltaY < 0 ? 1 : -1), level);
+        if (!this.selectWorld(selectedIndex + (deltaY < 0 ? 1 : -1), level)) {
+          snapWheelBack();
+        }
         return;
       }
 
       if (Math.abs(deltaY) < 24 && pointer.y >= selectorTop && pointer.y <= selectorBottom) {
         const offset = Math.round((pointer.y - centerY) / step);
-        this.selectWorld(selectedIndex + offset, level);
+        if (!this.selectWorld(selectedIndex + offset, level)) {
+          snapWheelBack();
+        }
+        return;
       }
+
+      snapWheelBack();
     };
 
     this.input.on('pointerdown', onPointerDown);
@@ -361,15 +406,16 @@ export class MenuScene extends Phaser.Scene {
     });
   }
 
-  private selectWorld(index: number, level: number): void {
+  private selectWorld(index: number, level: number): boolean {
     const world = WORLDS[index];
-    if (!world || world.unlockLevel > level || world.id === this.selectedWorld.id) return;
+    if (!world || world.unlockLevel > level || world.id === this.selectedWorld.id) return false;
 
     SaveSystem.update((data) => {
       data.lastWorldId = world.id;
     });
     // Der Hintergrund und alle Kartenzustaende werden gemeinsam neu aufgebaut.
     this.scene.restart();
+    return true;
   }
 
   private buildFooter(bestScore: number): void {
