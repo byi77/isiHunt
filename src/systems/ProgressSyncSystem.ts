@@ -6,6 +6,7 @@ import * as SaveSystem from '@/systems/SaveSystem';
 import type { ProgressEvent, ProgressionResult, RunStats } from '@/types';
 
 const OUTBOX_KEY = 'isihunt.progress-events';
+let flushPromise: Promise<void> | null = null;
 
 function createEventId(): string {
   if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
@@ -55,7 +56,7 @@ export function enqueueRun(stats: RunStats, progression: ProgressionResult): voi
 }
 
 /** Überträgt wartende Runs in Reihenfolge; Fehler bleiben in der Outbox. */
-export async function flush(): Promise<void> {
+async function flushPending(): Promise<void> {
   if (!AuthSystem.isSignedIn()) return;
 
   const pending = readOutbox();
@@ -83,6 +84,14 @@ export async function flush(): Promise<void> {
     data.pendingDailyCoins = 0;
     data.pendingDailyScore = 0;
   });
+}
+
+/** Teilt einen laufenden Abgleich, damit Käufe nicht dazwischenlaufen. */
+export function flush(): Promise<void> {
+  flushPromise ??= flushPending().finally(() => {
+    flushPromise = null;
+  });
+  return flushPromise;
 }
 
 export function pendingCount(): number {

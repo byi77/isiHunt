@@ -16,6 +16,7 @@ import type { SceneKeyValue } from '@/scenes/SceneKey';
 import * as AuthSystem from '@/systems/AuthSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
+import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { Depth } from '@/ui/depth';
@@ -167,6 +168,9 @@ export class TalentScene extends Phaser.Scene {
     this.busy = true;
     let error = '';
     if (AuthSystem.isSignedIn()) {
+      // Lokale Runs und Tagesboni muessen vor dem atomaren Serverkauf
+      // angekommen sein, sonst zeigt die Scene mehr Coins als der Server.
+      await ProgressSyncSystem.flush();
       const result = await CloudSystem.purchaseTalent(id);
       if (result.ok && result.value) {
         SaveSystem.adoptProfileProgress(result.value.data);
