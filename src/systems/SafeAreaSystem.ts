@@ -38,6 +38,10 @@ function installIosSafeTopFallback(): void {
     '--app-safe-top',
     `max(env(safe-area-inset-top, 0px), ${fallback}px)`,
   );
+  // Der System-Blur des iPhone reicht optisch etwas unter die gemeldete Safe
+  // Area. Die fruehere untere Home-Indicator-Reserve wird deshalb oben als
+  // Freiraum vor dem Laufband genutzt; die Gesamthoehe bleibt praktisch gleich.
+  document.documentElement.style.setProperty('--ticker-clearance', isIphone ? '32px' : '8px');
 }
 
 function write(message: string): void {

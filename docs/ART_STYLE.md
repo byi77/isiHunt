@@ -307,11 +307,13 @@ nichts durchblitzt. Text und Spielfeld duerfen dagegen nicht hinter Dynamic
 Island, Uhr oder Home-Indicator liegen.
 
 Der dunkle App-Kopf beginnt deshalb am Displayrand. Sein Lauftext startet erst
-nach `safe-area-inset-top`; anschliessend folgen 32 px fuer Laufband
-beziehungsweise Restzeit. Weil WebKit diesen Wert in einzelnen installierten
-Apps als 0 meldet, setzt `SafeAreaSystem` auf iPhones zusaetzlich einen nach
-Bildschirmgeneration abgestuften Mindestwert. Seitliche und untere Raender
-nutzen weiterhin `env(safe-area-inset-*)` mit `box-sizing: border-box`.
+nach `safe-area-inset-top` und einem kleinen Abstand zum iOS-Systemblur;
+anschliessend folgen 32 px fuer Laufband beziehungsweise Restzeit. Weil WebKit
+den oberen Wert in einzelnen installierten Apps als 0 meldet, setzt
+`SafeAreaSystem` auf iPhones zusaetzlich einen nach Bildschirmgeneration
+abgestuften Mindestwert. Seitliche Raender nutzen weiterhin
+`env(safe-area-inset-*)`. Unten reicht der Canvas bis zum Displayrand; die
+Bedienelemente halten ihren Sicherheitsabstand innerhalb des Spiels.
 
 **Warum das nie am Schreibtisch auffaellt:** Ein Browser-Simulator kann
 iPhone-Groessen nachstellen, aber **keine sicheren Raender** — die entstehen

@@ -51,6 +51,7 @@
         --world-top: #0b1020;
         --world-bottom: #0b1020;
         --ticker-height: 32px;
+        --ticker-clearance: 0px;
         --app-safe-top: env(safe-area-inset-top, 0px);
       }
 
@@ -162,8 +163,13 @@
           var(--world-bottom) 100%
         );
         /* Statusbereich plus Laufband bleiben oberhalb von Spielpixel 0. */
-        padding-top: calc(var(--app-safe-top) + var(--ticker-height));
-        padding-bottom: env(safe-area-inset-bottom, 0px);
+        padding-top: calc(
+          var(--app-safe-top) + var(--ticker-clearance) + var(--ticker-height)
+        );
+        /* Der Canvas-Hintergrund reicht bis zum Displayrand. Bedienbare
+           Elemente halten ihren Abstand intern; ein Padding hier erzeugt in
+           iOS-Home-Screen-Apps einen sichtbaren unteren Balken. */
+        padding-bottom: 0;
         padding-left: env(safe-area-inset-left, 0px);
         padding-right: env(safe-area-inset-right, 0px);
       }
@@ -212,17 +218,17 @@
         top: 0;
         left: 0;
         right: 0;
-        height: calc(var(--app-safe-top) + var(--ticker-height));
+        height: calc(var(--app-safe-top) + var(--ticker-clearance) + var(--ticker-height));
         z-index: 2;
         display: flex;
         align-items: center;
         justify-content: center;
         box-sizing: border-box;
-        padding: var(--app-safe-top) 18px 0;
+        padding: calc(var(--app-safe-top) + var(--ticker-clearance)) 18px 0;
         overflow: hidden;
         background: #0b1020;
-        color: rgba(244, 241, 232, 0.9);
-        font-size: 11px;
+        color: #f4f1e8;
+        font-size: 12px;
         font-weight: 700;
         letter-spacing: 0.16em;
         line-height: 1;
@@ -230,7 +236,8 @@
         white-space: nowrap;
         text-overflow: ellipsis;
         pointer-events: none;
-        text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+        text-shadow: none;
+        transform: translateZ(0);
         transition:
           color 300ms ease,
           opacity 300ms ease;
