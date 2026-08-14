@@ -48,6 +48,7 @@ import type { TalentId } from '@/config/talents';
 export type CloudResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
 export interface LeaderboardEntry {
+  playerId: string;
   playerName: string;
   level: number;
   score: number;
@@ -172,7 +173,7 @@ export async function fetchLeaderboard(worldId?: string): Promise<CloudResult<Le
 
   let query = supabase
     .from('scores')
-    .select('player_name, player_level, score, best_combo, created_at, world_id');
+    .select('player_id, player_name, player_level, score, best_combo, created_at, world_id');
 
   if (worldId) query = query.eq('world_id', worldId);
 
@@ -188,10 +189,17 @@ export async function fetchLeaderboard(worldId?: string): Promise<CloudResult<Le
   if (!result.ok) return result;
   if (result.value.error) return { ok: false, error: result.value.error.message };
 
-  const rows = result.value.data ?? [];
+  const seenPlayerIds = new Set<string>();
+  const rows = (result.value.data ?? []).filter((row) => {
+    const playerId = String(row.player_id ?? '');
+    if (!playerId || seenPlayerIds.has(playerId)) return false;
+    seenPlayerIds.add(playerId);
+    return true;
+  });
   return {
     ok: true,
     value: rows.map((row) => ({
+      playerId: String(row.player_id),
       playerName: String(row.player_name),
       level: Math.max(1, Number(row.player_level ?? 1)),
       score: Number(row.score),
@@ -266,6 +274,30 @@ export async function updateLeaderboardName(
   if (result.value.error) return { ok: false, error: result.value.error.message };
 
   return { ok: true, value: true };
+}
+
+/** Prueft einen Spielernamen vor dem Speichern gegen Profile und Bestenliste. */
+export async function isPlayerNameAvailable(
+  playerName: string,
+  playerId: string | null = null,
+): Promise<CloudResult<boolean>> {
+  const supabase = getClient();
+  if (!supabase) return { ok: true, value: true };
+
+  const name = sanitizePlayerName(playerName);
+  if (!name) return { ok: false, error: 'Kein Name angegeben' };
+
+  const result = await withTimeout(
+    supabase.rpc('is_player_name_available', {
+      p_player_name: name,
+      p_player_id: playerId,
+    }),
+    'Spielername prüfen',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  return { ok: true, value: result.value.data === true };
 }
 
 /**

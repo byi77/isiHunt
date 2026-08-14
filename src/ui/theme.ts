@@ -16,6 +16,8 @@ export const Palette = {
   goldHex: 0xffd479,
   danger: '#ff6b6b',
   success: '#7ee787',
+  dailyHex: 0x46d7c3,
+  achievementHex: 0xc084fc,
 } as const;
 
 /**

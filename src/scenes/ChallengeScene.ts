@@ -124,7 +124,7 @@ export class ChallengeScene extends Phaser.Scene {
             `Du spielst ${seconds} Sekunden.`,
             'Der Seed ist heute für alle gleich.',
             'Keine Talente - gleiche Voraussetzungen.',
-            'Einmal täglich: mindestens 100 Bonus-Coins.',
+            'Einmal täglich: mindestens 400 Bonus-Coins.',
             'Der Tageslauf ändert deinen Spielstand nicht.',
           ]
         : kind === 'bot'

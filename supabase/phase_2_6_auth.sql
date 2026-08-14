@@ -22,6 +22,24 @@ alter table public.scores drop constraint if exists scores_level_range;
 alter table public.scores add constraint scores_level_range
   check (player_level between 1 and 100);
 
+-- Ein sichtbarer Spielername darf nur einmal in der Bestenliste vorkommen.
+-- Vorhandene Doppelungen werden auf den jeweils besseren Bestwert reduziert.
+with ranked_names as (
+  select id,
+         row_number() over (
+           partition by lower(trim(player_name))
+           order by score desc, created_at asc, id asc
+         ) as duplicate_rank
+  from public.scores
+)
+delete from public.scores as duplicate
+using ranked_names
+where duplicate.id = ranked_names.id
+  and ranked_names.duplicate_rank > 1;
+
+create unique index if not exists scores_player_name_normalized_uidx
+  on public.scores (lower(trim(player_name)));
+
 -- ============================================================================
 -- 1. Auth-Profil und gemeinsamer Profilstand
 -- ============================================================================
@@ -42,6 +60,38 @@ alter table public.profiles add column if not exists alias_normalized text;
 create unique index if not exists profiles_alias_normalized_idx
   on public.profiles (alias_normalized)
   where alias_normalized is not null;
+
+-- Verfügbarkeit wird zusätzlich in allen Schreibfunktionen geprüft. Ein
+-- separater RPC erlaubt dem Client, Konflikte vor dem Speichern freundlich
+-- anzuzeigen, ohne die Tabellen direkt freizugeben.
+create or replace function public.is_player_name_available(
+  p_player_name text,
+  p_player_id uuid default null
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  safe_name text := lower(trim(coalesce(p_player_name, '')));
+begin
+  if char_length(safe_name) not between 1 and 16 then return false; end if;
+
+  return not exists (
+    select 1 from public.profiles
+    where lower(trim(player_name)) = safe_name
+      and (p_player_id is null or id <> p_player_id)
+  ) and not exists (
+    select 1 from public.scores
+    where lower(trim(player_name)) = safe_name
+      and (p_player_id is null or player_id <> p_player_id)
+  );
+end;
+$$;
+
+revoke execute on function public.is_player_name_available(text, uuid) from public;
+grant execute on function public.is_player_name_available(text, uuid) to anon, authenticated;
 
 create table if not exists public.profile_progress (
   profile_id  uuid primary key references public.profiles (id) on delete cascade,
@@ -182,6 +232,10 @@ declare
 begin
   if uid is null then raise exception 'Anmeldung erforderlich'; end if;
 
+  if not public.is_player_name_available(p_data->>'playerName', uid) then
+    raise exception 'Spielername bereits vergeben';
+  end if;
+
   insert into public.profiles (id, player_name)
   values (uid, left(trim(coalesce(p_data->>'playerName', '')), 16))
   on conflict (id) do nothing;
@@ -217,17 +271,35 @@ begin
   values (uid)
   on conflict (id) do nothing;
 
+  select data into old_data from public.saves where id = p_cloud_id;
   if not exists (select 1 from public.profile_progress where profile_id = uid) then
-    select data into old_data from public.saves where id = p_cloud_id;
     if old_data is not null then
       insert into public.profile_progress (profile_id, data, total_xp)
       values (uid, old_data, greatest(0, coalesce(p_total_xp, 0)));
+    end if;
+  end if;
 
-      if exists (select 1 from public.scores where player_id = uid) then
-        delete from public.scores where player_id = p_cloud_id;
-      else
-        update public.scores set player_id = uid where player_id = p_cloud_id;
-      end if;
+  -- Auch wenn das Login-Profil bereits einen Stand besitzt, muss ein alter
+  -- anonymer Ranglisteneintrag mit demselben Gerätprofil zusammengeführt
+  -- werden. Sonst kann derselbe sichtbare Spielername zweimal auftauchen.
+  if p_cloud_id is not null and p_cloud_id <> uid then
+    if exists (select 1 from public.scores where player_id = uid) then
+      update public.scores as current_score
+      set score = greatest(current_score.score, old_score.score),
+          player_level = case when old_score.score > current_score.score
+            then old_score.player_level else current_score.player_level end,
+          best_combo = case when old_score.score > current_score.score
+            then old_score.best_combo else current_score.best_combo end,
+          world_id = case when old_score.score > current_score.score
+            then old_score.world_id else current_score.world_id end,
+          created_at = case when old_score.score > current_score.score
+            then old_score.created_at else current_score.created_at end
+      from public.scores as old_score
+      where current_score.player_id = uid
+        and old_score.player_id = p_cloud_id;
+      delete from public.scores where player_id = p_cloud_id;
+    else
+      update public.scores set player_id = uid where player_id = p_cloud_id;
     end if;
   end if;
 
@@ -250,6 +322,9 @@ declare
 begin
   if uid is null then raise exception 'Anmeldung erforderlich'; end if;
   if char_length(safe_name) not between 1 and 16 then raise exception 'Ungültiger Name'; end if;
+  if not public.is_player_name_available(safe_name, uid) then
+    raise exception 'Spielername bereits vergeben';
+  end if;
 
   update public.profiles set player_name = safe_name, updated_at = now() where id = uid;
   update public.profile_progress
@@ -427,7 +502,7 @@ begin
   if p_daily_key !~ '^\d{4}-\d{2}-\d{2}$' then
     raise exception 'Ungültiger Tageslauf';
   end if;
-  safe_bonus := 100 + least(100, floor(safe_score / 5000.0)::integer * 50);
+  safe_bonus := 400 + least(100, floor(safe_score / 5000.0)::integer * 50);
 
   select data into current_data
   from public.profile_progress where profile_id = uid for update;
@@ -614,6 +689,9 @@ begin
   if p_player_id is null or char_length(trim(p_player_name)) not between 1 and 16 then
     raise exception 'Ungültiges Spielerprofil';
   end if;
+  if not public.is_player_name_available(trim(p_player_name), p_player_id) then
+    raise exception 'Spielername bereits vergeben';
+  end if;
 
   insert into public.scores (
     player_id, player_name, world_id, player_level, score, best_combo
@@ -659,6 +737,9 @@ begin
   end if;
   if p_player_id is null or char_length(trim(p_player_name)) not between 1 and 16 then
     raise exception 'Ungültiger Spielername';
+  end if;
+  if not public.is_player_name_available(trim(p_player_name), p_player_id) then
+    raise exception 'Spielername bereits vergeben';
   end if;
   update public.scores set player_name = trim(p_player_name) where player_id = p_player_id;
   return true;

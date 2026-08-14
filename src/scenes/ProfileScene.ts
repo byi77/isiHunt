@@ -152,25 +152,55 @@ export class ProfileScene extends Phaser.Scene {
       if (name.length > 0) status.setText('');
     };
 
-    const saveProfile = (): void => {
+    let saving = false;
+    const saveProfile = async (): Promise<void> => {
+      if (saving) return;
       const name = CloudSystem.sanitizePlayerName(input.getValue());
       if (!name) {
         status.setText('Bitte gib einen Namen ein.').setColor(Palette.gold);
         return;
       }
 
+      const currentPlayerId = AuthSystem.currentUserId() ?? SaveSystem.load().cloudId;
+      if (CloudSystem.isAvailable() && navigator.onLine) {
+        saving = true;
+        saveButton?.setEnabled(false);
+        const availability = await CloudSystem.isPlayerNameAvailable(name, currentPlayerId);
+        if (!availability.ok) {
+          saving = false;
+          saveButton?.setEnabled(true);
+          status.setText(availability.error).setColor(Palette.gold);
+          return;
+        }
+        if (!availability.value) {
+          saving = false;
+          saveButton?.setEnabled(true);
+          status.setText('Dieser Spielername ist bereits vergeben.').setColor(Palette.gold);
+          return;
+        }
+      }
+
       SaveSystem.setPlayerName(name);
       if (CloudSystem.isAvailable()) {
         if (AuthSystem.isSignedIn()) {
-          void Promise.all([CloudSystem.updateProfileName(name), ProgressSyncSystem.flush()]);
+          const result = await CloudSystem.updateProfileName(name);
+          if (!result.ok) {
+            saving = false;
+            saveButton?.setEnabled(true);
+            status.setText(result.error).setColor(Palette.gold);
+            return;
+          }
+          await ProgressSyncSystem.flush();
         } else {
           const playerId = SaveSystem.ensureCloudId();
-          // Spielstand und bestehenden Ranglisteneintrag parallel aktualisieren.
-          // Gibt es noch keinen Bestwert, bleibt der Ranglistenteil ein No-op.
-          void Promise.all([
-            CloudSystem.syncSaveSafely(),
-            CloudSystem.updateLeaderboardName(playerId, name),
-          ]);
+          const result = await CloudSystem.updateLeaderboardName(playerId, name);
+          if (!result.ok) {
+            saving = false;
+            saveButton?.setEnabled(true);
+            status.setText(result.error).setColor(Palette.gold);
+            return;
+          }
+          await CloudSystem.syncSaveSafely();
         }
       }
       this.scene.start(SceneKey.Menu);

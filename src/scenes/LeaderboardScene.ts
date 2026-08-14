@@ -12,6 +12,7 @@ import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { getWorld, WORLDS } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
+import * as AuthSystem from '@/systems/AuthSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
 import type { LeaderboardEntry } from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
@@ -236,11 +237,11 @@ export class LeaderboardScene extends Phaser.Scene {
   }
 
   private renderList(entries: readonly LeaderboardEntry[]): void {
-    const ownName = SaveSystem.load().playerName;
+    const ownId = AuthSystem.currentUserId() ?? SaveSystem.load().cloudId;
 
     entries.forEach((entry, index) => {
       const y = LIST_TOP + index * ROW_HEIGHT;
-      const isOwn = ownName.length > 0 && entry.playerName === ownName;
+      const isOwn = ownId !== null && entry.playerId === ownId;
       const isPodium = index < 3;
 
       if (isOwn) {

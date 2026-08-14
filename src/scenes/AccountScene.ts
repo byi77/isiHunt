@@ -324,7 +324,10 @@ export class AccountScene extends Phaser.Scene {
       return;
     }
 
-    if (!remote.value && local.cloudId) {
+    if (local.cloudId) {
+      // Immer pruefen: Auch ein bereits angelegtes Login-Profil kann noch
+      // einen alten anonymen Ranglisteneintrag besitzen. Der Claim-RPC fuehrt
+      // diesen Eintrag zusammen, ohne den vorhandenen Profilstand zu ersetzen.
       remote = await CloudSystem.claimCloudProfile(local.cloudId);
       if (!remote.ok) {
         this.busy = false;

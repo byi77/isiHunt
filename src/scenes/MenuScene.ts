@@ -19,6 +19,7 @@ import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
 import type { RemoteSave } from '@/systems/CloudSystem';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
+import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
@@ -26,6 +27,7 @@ import { playerTextureForLevel, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   createAmbientMotes,
+  createBar,
   createButton,
   createDriftLayers,
   createPanel,
@@ -118,7 +120,14 @@ export class MenuScene extends Phaser.Scene {
       // lesen. Ein Remote-Stand wird nur übernommen, wenn er weiter ist; eine
       // noch nicht gesendete Outbox bleibt dadurch erhalten.
       await ProgressSyncSystem.flush();
-      const profile = await CloudSystem.fetchProfileProgress();
+      // Alte anonyme Ranglisteneintraege werden beim Menuebesuch mit dem
+      // Loginprofil zusammengefuehrt, damit ein sichtbarer Name nicht doppelt
+      // auftaucht. Der vorhandene Profilstand bleibt dabei unveraendert.
+      const claimed = local.cloudId
+        ? await CloudSystem.claimCloudProfile(local.cloudId)
+        : ({ ok: true, value: null } as const);
+      const profile =
+        claimed.ok && claimed.value ? claimed : await CloudSystem.fetchProfileProgress();
       if (profile.ok && profile.value) {
         const remote: RemoteSave = {
           data: profile.value.data,
@@ -348,11 +357,13 @@ export class MenuScene extends Phaser.Scene {
   ): void {
     const y = 270;
     const width = GAME_WIDTH - 80;
+    const levelProgress = ProgressionSystem.getLevelProgress(SaveSystem.load());
     const rowBounds = [
       { center: y - 26, height: FontSize.body },
       { center: y + 2, height: FontSize.body },
       { center: y + 28, height: FontSize.tiny },
       { center: y + 49, height: FontSize.tiny },
+      { center: y + 80, height: 20 },
     ];
     const panelPadding = 25;
     const panelTop =
@@ -413,6 +424,20 @@ export class MenuScene extends Phaser.Scene {
       )
       .setOrigin(0, 0.5)
       .setLetterSpacing(3);
+
+    this.add
+      .text(
+        172,
+        y + 73,
+        levelProgress.xpNeeded === 0
+          ? 'MAX LEVEL'
+          : `${levelProgress.xpNeeded - levelProgress.xpInLevel} XP BIS LEVEL ${levelProgress.level + 1}`,
+        textStyle(FontSize.tiny, Palette.inkDim, { fontStyle: 'bold' }),
+      )
+      .setOrigin(0, 0.5);
+
+    const xpBar = createBar(this, 172, y + 88, 280, 8, this.selectedWorld.accent);
+    xpBar.setRatio(levelProgress.ratio);
 
     createButton(this, 520, panelCenter, 'PROFIL', () => this.scene.start(SceneKey.Profile), {
       width: 170,
@@ -538,8 +563,11 @@ export class MenuScene extends Phaser.Scene {
     const wheelRadius = 140;
     const wheelAngle = 0.8;
     const updateWheel = (dragY: number): void => {
-      dragState.offset = dragY;
-      const progress = dragY / step;
+      // Ein Fingerzug darf nur genau eine Welt vor- oder zurueckschalten.
+      // Ohne diese Begrenzung konnten die Karten bei langen Wischbewegungen
+      // weit ueber den Nachbarbereich hinauslaufen.
+      dragState.offset = Phaser.Math.Clamp(dragY, -step, step);
+      const progress = dragState.offset / step;
 
       for (const entry of wheelCards) {
         const position = Phaser.Math.Clamp(entry.offset + progress, -1.35, 1.35);
@@ -610,7 +638,7 @@ export class MenuScene extends Phaser.Scene {
       }
 
       if (Math.abs(deltaY) < 24 && pointer.y >= selectorTop && pointer.y <= selectorBottom) {
-        const offset = Math.round((pointer.y - centerY) / step);
+        const offset = Phaser.Math.Clamp(Math.round((pointer.y - centerY) / step), -1, 1);
         if (!this.selectWorld(selectedIndex + offset, level)) {
           snapWheelBack();
         }
@@ -705,7 +733,7 @@ export class MenuScene extends Phaser.Scene {
         width: columnWidth,
         height: 76,
         accent: this.selectedWorld.accent,
-        fontSize: FontSize.body,
+        fontSize: FontSize.small,
       },
     );
 
@@ -718,7 +746,7 @@ export class MenuScene extends Phaser.Scene {
         ChallengeSystem.start(this.selectedWorld.id);
         this.scene.start(SceneKey.Challenge);
       },
-      { width: columnWidth, height: 76, accent: Palette.goldHex, fontSize: FontSize.body },
+      { width: columnWidth, height: 76, accent: Palette.goldHex, fontSize: FontSize.small },
     );
 
     createButton(
@@ -733,8 +761,8 @@ export class MenuScene extends Phaser.Scene {
       {
         width: columnWidth,
         height: 76,
-        accent: this.selectedWorld.accent,
-        fontSize: FontSize.tiny,
+        accent: Palette.dailyHex,
+        fontSize: FontSize.small,
       },
     );
 
@@ -744,7 +772,12 @@ export class MenuScene extends Phaser.Scene {
       actionsY + actionSpacing,
       'ERFOLGE',
       () => this.scene.start(SceneKey.Achievements),
-      { width: columnWidth, height: 76, accent: Palette.goldHex, fontSize: FontSize.tiny },
+      {
+        width: columnWidth,
+        height: 76,
+        accent: Palette.achievementHex,
+        fontSize: FontSize.small,
+      },
     );
 
     createButton(
@@ -753,7 +786,7 @@ export class MenuScene extends Phaser.Scene {
       actionsY + actionSpacing * 2,
       'TALENTBAUM',
       () => this.scene.start(SceneKey.Talents, { returnTo: SceneKey.Menu }),
-      { width: columnWidth, height: 76, accent: 0xb782ff, fontSize: FontSize.tiny },
+      { width: columnWidth, height: 76, accent: 0xb782ff, fontSize: FontSize.small },
     );
 
     const leaderboardButton = createButton(
@@ -762,7 +795,7 @@ export class MenuScene extends Phaser.Scene {
       actionsY + actionSpacing * 2,
       'RANGLISTE',
       () => this.scene.start(SceneKey.Leaderboard),
-      { width: columnWidth, height: 76, accent: 0x9aa3bd, fontSize: FontSize.tiny },
+      { width: columnWidth, height: 76, accent: 0x9aa3bd, fontSize: FontSize.small },
     );
     leaderboardButton.setEnabled(hasLeaderboard);
 
@@ -776,7 +809,7 @@ export class MenuScene extends Phaser.Scene {
         width: CloudSystem.isAvailable() ? 244 : 300,
         height: 66,
         accent: 0x9aa3bd,
-        fontSize: FontSize.tiny,
+        fontSize: FontSize.small,
       },
     );
 
