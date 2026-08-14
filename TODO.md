@@ -484,6 +484,18 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
 > aus supabase/phase_2_6_auth.sql noch einmal im Supabase SQL Editor
 > ausgefuehrt werden.
 
+### Balancing noch nachtesten
+
+- [ ] **Phase-5-Schwierigkeit:** Weltmodifikatoren und Hindernisse mit den
+      Kindern testen; Spawnrate, Lebensdauer, Blinkdauer, Bremswirkung und
+      Zeitstrafe so einstellen, dass die Welten fordernd, aber nicht frustrierend
+      werden.
+- [ ] **Coin-/Talent-Balance:** Coin-Einnahmen pro Runde, Relikt und Levelaufstieg
+      gegen Talentkosten und Resetkosten prüfen; Ziel bleibt ungefähr ein
+      sinnvoller Talent-Rang nach etwa fünf normalen Runden.
+- [ ] **Talentpunkte-Migration:** prüfen, dass alte Talentpunkte genau einmal
+      korrekt in Coins überführt werden und keine doppelten Gutschriften entstehen.
+
 ## Phase 5 — Herausforderung
 
 - [x] Tages-Herausforderung mit festem Seed (UTC-Tag + Welt bilden den Seed)
