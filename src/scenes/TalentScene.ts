@@ -171,10 +171,20 @@ export class TalentScene extends Phaser.Scene {
       // Lokale Runs und Tagesboni muessen vor dem atomaren Serverkauf
       // angekommen sein, sonst zeigt die Scene mehr Coins als der Server.
       await ProgressSyncSystem.flush();
-      const result = await CloudSystem.purchaseTalent(id);
-      if (result.ok && result.value) {
-        SaveSystem.adoptProfileProgress(result.value.data);
-      } else error = result.ok ? 'Profilstand nicht erhalten.' : result.error;
+      const currentProfile = await CloudSystem.fetchProfileProgress();
+      if (!currentProfile.ok) {
+        error = currentProfile.error;
+      } else if (!currentProfile.value) {
+        error = 'Profilstand nicht erhalten.';
+      } else {
+        // Die Kaufpruefung muss genau auf demselben Stand laufen, den der
+        // Server selbst verwendet. So bleiben lokale und Cloud-Coins gleich.
+        SaveSystem.adoptProfileProgress(currentProfile.value.data);
+        const result = await CloudSystem.purchaseTalent(id);
+        if (result.ok && result.value) {
+          SaveSystem.adoptProfileProgress(result.value.data);
+        } else error = result.ok ? 'Profilstand nicht erhalten.' : result.error;
+      }
     } else {
       if (!ProgressionSystem.purchaseTalent(id)) error = 'Nicht genug Coins für diesen Rang.';
     }
