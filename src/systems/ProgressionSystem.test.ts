@@ -8,7 +8,13 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { COINS_PER_LEVEL, MAX_LEVEL, xpForLevel } from '@/config/GameConfig';
+import {
+  COINS_PER_LEVEL,
+  MAX_LEVEL,
+  SAVE_KEY,
+  SAVE_VERSION,
+  xpForLevel,
+} from '@/config/GameConfig';
 import { emptyRarityCounts } from '@/config/rarities';
 import { DEFAULT_WORLD_ID, WORLDS } from '@/config/worlds';
 import type { RarityId } from '@/config/rarities';
@@ -256,6 +262,26 @@ describe('grantLevels', () => {
     const save = Progression.grantLevels(-3);
 
     expect(save.level).toBe(6);
+  });
+});
+
+describe('Spielstand-Migration', () => {
+  it('schreibt die einmalige Talentpunkte- und Levelcoin-Umwandlung fest', async () => {
+    const legacy = { ...SaveSystem.load(), version: 3, level: 4, coins: 10, talentPoints: 2 };
+    window.localStorage.setItem(SAVE_KEY, JSON.stringify(legacy));
+
+    vi.resetModules();
+    const migratedSystem = await import('@/systems/SaveSystem');
+    const migrated = migratedSystem.load();
+
+    // 10 vorhandene Coins + 20 fuer Talentpunkte + 60 fuer Level 2-4.
+    expect(migrated.coins).toBe(90);
+    expect(migrated.talentPoints).toBe(0);
+    expect(migrated.version).toBe(SAVE_VERSION);
+
+    vi.resetModules();
+    const reloadedSystem = await import('@/systems/SaveSystem');
+    expect(reloadedSystem.load().coins).toBe(90);
   });
 });
 

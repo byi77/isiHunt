@@ -20,6 +20,10 @@ import {
   PLAYFIELD_PADDING_TOP,
   PLAYFIELD_PADDING_X,
   RARITY_IMPACT_MIN_POINTS,
+  WORLD_BRAKE_DURATION_MS,
+  WORLD_BRAKE_FACTOR,
+  WORLD_INERTIA_FACTOR,
+  WORLD_PENALTY_MS,
 } from '@/config/GameConfig';
 import type { RarityDef } from '@/config/rarities';
 import { resolveStats } from '@/config/talents';
@@ -133,7 +137,7 @@ export class GameScene extends Phaser.Scene {
       this.world.accent,
       nonProgressionMode ? undefined : playerTextureForLevel(save.level),
     );
-    this.player.setWorldInertia(this.world.modifier === 'inertia' ? 0.62 : 1);
+    this.player.setWorldInertia(this.world.modifier === 'inertia' ? WORLD_INERTIA_FACTOR : 1);
 
     this.input_ = new InputController(this);
     this.scoring = new ScoreSystem(
@@ -297,10 +301,10 @@ export class GameScene extends Phaser.Scene {
 
       obstacle.markHit();
       if (obstacle.kind === 'brake') {
-        this.player.applySlow(1100);
+        this.player.applySlow(WORLD_BRAKE_DURATION_MS, WORLD_BRAKE_FACTOR);
         floatingScore(this, obstacle.x, obstacle.y, 'VERLANGSAMT', 0x38bdf8);
       } else {
-        this.remainingMs = Math.max(0, this.remainingMs - 1400);
+        this.remainingMs = Math.max(0, this.remainingMs - WORLD_PENALTY_MS);
         this.scoring.registerMiss();
         floatingScore(this, obstacle.x, obstacle.y, '-1,4 s', 0xa855f7);
         this.cameras.main.shake(120, 0.004);

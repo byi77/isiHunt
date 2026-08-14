@@ -486,6 +486,10 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
 
 ### Balancing noch nachtesten
 
+> Erste technische Runde umgesetzt: Die Phase-5-Strafen wurden reduziert und
+> die Solo-Grundbelohnung auf 30 Coins angehoben. Die offenen Punkte brauchen
+> noch echte Runs mit Emre und Simay, bevor sie als abgeschlossen gelten.
+
 - [ ] **Phase-5-Schwierigkeit:** Weltmodifikatoren und Hindernisse mit den
       Kindern testen; Spawnrate, Lebensdauer, Blinkdauer, Bremswirkung und
       Zeitstrafe so einstellen, dass die Welten fordernd, aber nicht frustrierend

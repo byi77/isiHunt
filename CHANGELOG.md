@@ -27,6 +27,10 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   seltene Planeten.
 - Sichtbare Hindernisse: Bremsfelder in mittleren Welten und Zeitverlust in
   den späten Welten; die Einstiegswelt bleibt frei davon.
+- Erste Balancing-Runde: Hindernischance, Trägheit, Lebensdauer und Strafen
+  abgeschwächt; die Grundbelohnung pro Solo-Runde steigt auf 30 Coins.
+- Lokale Altspielstände schreiben ihre Talentpunkte- und Levelcoin-Migration
+  sofort fest, damit sie nach einem Neustart nicht doppelt gutgeschrieben wird.
 
 **Phase 4: Belohnung**
 

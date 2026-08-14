@@ -127,6 +127,23 @@ export const SPAWN_MIN_DISTANCE_TO_PLAYER = 150;
  */
 export const SPAWN_POSITION_CANDIDATES = 12;
 
+// --- Phase-5-Balancing ------------------------------------------------------
+
+/** Hindernisse starten als seltene Warnung und bleiben bis zum Endspurt lesbar. */
+export const WORLD_OBSTACLE_BASE_CHANCE = 0.03;
+export const WORLD_OBSTACLE_END_CHANCE = 0.08;
+/** Bremsfelder sollen einen Fehler spürbar, aber nicht runentscheidend machen. */
+export const WORLD_BRAKE_DURATION_MS = 700;
+export const WORLD_BRAKE_FACTOR = 0.72;
+/** Späte Welten bestrafen einen Treffer mit einem kurzen Zeitverlust. */
+export const WORLD_PENALTY_MS = 800;
+/** Abgeschwächte Weltunterschiede gegenüber dem ersten Phase-5-Prototyp. */
+export const WORLD_INERTIA_FACTOR = 0.8;
+export const WORLD_DRIFT_MULTIPLIER = 1.15;
+export const WORLD_SHORT_LIFETIME_SCALE = 0.85;
+export const WORLD_RARE_LIFETIME_SCALE = 0.75;
+export const WORLD_RARE_PROMOTION_CHANCE = 0.18;
+
 // --- Combo ------------------------------------------------------------------
 
 /**
@@ -159,7 +176,7 @@ export const TALENT_POINTS_PER_LEVEL = 1;
 /** Veraltete Umrechnung fuer Spielstände aus der Talentpunkt-Phase. */
 export const COINS_PER_EXTRA_TALENT_POINT = 10;
 /** Grundbelohnung fuer jede abgeschlossene Solo-Runde. */
-export const COINS_PER_RUN = 25;
+export const COINS_PER_RUN = 30;
 /** Coins fuer jedes im Solo-Run eingesammelte Relikt. */
 export const COINS_PER_COLLECTED_RELIC = 1;
 /** Einmalige Belohnung je neu freigeschaltetem Achievement. */

@@ -35,6 +35,12 @@ import {
   SPAWN_MIN_DISTANCE_TO_PLAYER,
   SPAWN_POSITION_CANDIDATES,
   SPAWN_RAMP_FACTOR,
+  WORLD_OBSTACLE_BASE_CHANCE,
+  WORLD_OBSTACLE_END_CHANCE,
+  WORLD_DRIFT_MULTIPLIER,
+  WORLD_RARE_LIFETIME_SCALE,
+  WORLD_RARE_PROMOTION_CHANCE,
+  WORLD_SHORT_LIFETIME_SCALE,
 } from '@/config/GameConfig';
 import { RARITIES, rollRarity } from '@/config/rarities';
 import type { RarityDef } from '@/config/rarities';
@@ -91,7 +97,11 @@ export class SpawnSystem {
     // Hindernisse erscheinen anfangs selten und werden gegen Ende etwas
     // wahrscheinlicher, damit die Welt erst lesbar bleibt und dann Druck macht.
     const obstacleRoll = this.rng.frac();
-    const obstacleChance = this.obstacleMode === 'none' ? 0 : 0.07 + runProgress * 0.1;
+    const obstacleChance =
+      this.obstacleMode === 'none'
+        ? 0
+        : WORLD_OBSTACLE_BASE_CHANCE +
+          (WORLD_OBSTACLE_END_CHANCE - WORLD_OBSTACLE_BASE_CHANCE) * runProgress;
 
     if (activeCount >= MAX_ACTIVE_COLLECTIBLES) return null;
 
@@ -111,8 +121,12 @@ export class SpawnSystem {
       kind: 'collectible',
       rarity,
       lifetimeScale:
-        this.modifier === 'rare_bonus' ? 0.5 : this.modifier === 'short_lived' ? 0.7 : 1,
-      driftMultiplier: this.modifier === 'inertia' ? 1.35 : 1,
+        this.modifier === 'rare_bonus'
+          ? WORLD_RARE_LIFETIME_SCALE
+          : this.modifier === 'short_lived'
+            ? WORLD_SHORT_LIFETIME_SCALE
+            : 1,
+      driftMultiplier: this.modifier === 'inertia' ? WORLD_DRIFT_MULTIPLIER : 1,
       blinking: this.modifier === 'blink',
     };
   }
@@ -125,7 +139,8 @@ export class SpawnSystem {
 
   private rollWorldRarity(): RarityDef {
     const rarity = rollRarity(this.rng);
-    if (this.modifier !== 'rare_bonus' || this.rng.frac() >= 0.35) return rarity;
+    if (this.modifier !== 'rare_bonus' || this.rng.frac() >= WORLD_RARE_PROMOTION_CHANCE)
+      return rarity;
 
     // Sonnenkrone verdoppelt praktisch die Chance auf seltene Planeten, ohne
     // die Seltenheits-Tabelle selbst zu verfälschen. Ein einmaliger Aufstieg

@@ -136,7 +136,16 @@ export function load(): SaveData {
 
   try {
     const stored = window.localStorage.getItem(SAVE_KEY);
-    cache = stored ? migrate(JSON.parse(stored) as Partial<SaveData>) : createDefaultSave();
+    const raw = stored ? (JSON.parse(stored) as Partial<SaveData>) : null;
+    const rawVersion = raw?.version ?? SAVE_VERSION;
+    cache = raw ? migrate(raw) : createDefaultSave();
+
+    // Migrationen müssen sofort persistiert werden. Sonst würde ein alter
+    // Spielstand nach jedem Browser-/App-Neustart erneut Talentpunkte und
+    // Level-Coins umwandeln und die Währung vervielfachen.
+    if (raw && rawVersion < SAVE_VERSION) {
+      window.localStorage.setItem(SAVE_KEY, JSON.stringify(cache));
+    }
   } catch (error) {
     // Privater Modus, volles Quota, kaputtes JSON: nie den Start blockieren.
     console.warn('[SaveSystem] Spielstand nicht lesbar, starte neu.', error);
