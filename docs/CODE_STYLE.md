@@ -82,13 +82,21 @@ Gilt auch fuer Annaeherungen und Zerfallsraten, nicht nur fuer Geschwindigkeit.
 
 ### 1.6 Systeme kennen Phaser nicht
 
-`ProgressionSystem`, `ScoreSystem` und die Achievement-Praedikate enthalten
-reine Logik. Sie laufen ohne Spiel und sind dadurch pruefbar. Wer dort einen
-Tween oder ein GameObject einbaut, zerstoert genau diese Eigenschaft.
+`ProgressionSystem`, `ScoreSystem`, `ChallengeSystem` und die
+Achievement-Praedikate enthalten reine Logik. Sie laufen ohne Spiel und sind
+dadurch pruefbar. Wer dort einen Tween oder ein GameObject einbaut, zerstoert
+genau diese Eigenschaft.
 
 `SpawnSystem` ist die bewusste Ausnahme: es nutzt Phasers
 `RandomDataGenerator` (seedbar) und `Geom.Rectangle` — beides reine
 Datenstrukturen, kein Rendering.
+
+**Auch ein winziger Import zaehlt.** `ScoreSystem` holte sich Phaser fuer ein
+einzelnes `Math.Clamp`. Das sah harmlos aus, zog aber beim Laden des Moduls die
+komplette Engine samt Canvas-Erkennung mit — im Test brach die Datei mit
+`getContext() is not implemented` ab, lange bevor eine einzige Zeile eigener
+Logik lief. Ersetzt durch `Math.min(Math.max(x, 0), 1)`. Die Regel meint nicht
+"kein Rendering", sondern **kein Import**.
 
 ### 1.7 Nur Daten ueber den EventBus
 
@@ -259,9 +267,8 @@ separater "docs update"-Commit bedeutet, dass die Doku schon einmal falsch war.
 
 Ein Feature ist fertig, wenn **alle** Punkte zutreffen:
 
-- [ ] `npm run typecheck` laeuft ohne Fehler
-- [ ] `npm run lint` laeuft ohne Fehler
-- [ ] `npm run build` erzeugt einen Build
+- [ ] `npm run verify` ist gruen (Typecheck, Lint, Formatierung, Tests, Build)
+- [ ] Neue Logik in `systems/` hat Tests (siehe ARCHITECTURE.md 9.2)
 - [ ] Auf einem echten Handy getestet (nicht nur im Browser-Emulator)
 - [ ] Keine neuen Konsolenfehler
 - [ ] Alle neuen Zahlen stehen in `config/`

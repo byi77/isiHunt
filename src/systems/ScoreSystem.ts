@@ -8,8 +8,6 @@
  * Ketten trotzdem zu einer echten Leistung.
  */
 
-import Phaser from 'phaser';
-
 import { COMBO_TIERS } from '@/config/GameConfig';
 import { emptyRarityCounts } from '@/config/rarities';
 import type { RarityDef, RarityId } from '@/config/rarities';
@@ -94,7 +92,10 @@ export class ScoreSystem {
   /** Anteil des verbleibenden Combo-Fensters (1 = gerade gefangen, 0 = gleich weg). */
   get comboTimerRatio(): number {
     if (this.combo === 0) return 0;
-    return Phaser.Math.Clamp(this.comboTimerMs / this.comboGraceMs, 0, 1);
+    // Bewusst ohne Phaser.Math.Clamp: der Import zog die komplette Engine samt
+    // Canvas-Erkennung herein und machte die Datei ausserhalb des Browsers
+    // unbenutzbar. Siehe Regel 6 in CLAUDE.md - systems/ kennt Phaser nicht.
+    return Math.min(Math.max(this.comboTimerMs / this.comboGraceMs, 0), 1);
   }
 
   get currentScore(): number {

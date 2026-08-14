@@ -115,9 +115,15 @@ npm run dev
 npm run verify
 ```
 
-Typecheck, Lint, **Formatierung** und Build in der Reihenfolge, die auch die CI
-faehrt. Vor jedem Commit muss das gruen sein — `format:check` gehoert dazu, sein
-Fehlen hat schon eine rote CI erzeugt, obwohl lokal alles durchlief.
+Typecheck, Lint, **Formatierung**, **Tests** und Build in der Reihenfolge, die
+auch die CI faehrt. Vor jedem Commit muss das gruen sein — `format:check`
+gehoert dazu, sein Fehlen hat schon eine rote CI erzeugt, obwohl lokal alles
+durchlief.
+
+```bash
+npm run test          # einmalig
+npm run test:watch    # laeuft mit
+```
 
 ## Sprache
 
@@ -158,6 +164,14 @@ src/ui/         theme, textures (prozedural), widgets
 Auf einem echten Handy testen, nicht nur im Browser-Emulator. `npm run dev`
 gibt eine Netzwerk-Adresse aus; Handy und PC muessen im selben WLAN sein.
 
-Ein automatisiertes Test-Setup gibt es noch nicht (geplant in M2, Vitest).
-`ProgressionSystem`, `ScoreSystem` und die Achievement-Praedikate sind bereits
-reine Logik und dafuer vorbereitet.
+**Automatisiert:** Vitest deckt `ScoreSystem`, `ProgressionSystem` und
+`ChallengeSystem` ab (`npm run test`, Details in `docs/ARCHITECTURE.md` 9.2).
+Neue Logik in `systems/` bekommt Tests; Scenes, Entities und Darstellung sind
+nicht abgedeckt und bleiben Handarbeit auf dem Geraet.
+
+Zwei Fallen beim Testschreiben:
+
+- **Kein Phaser-Import in `systems/`.** Er zieht die Canvas-Erkennung mit und
+  laesst die Datei ausserhalb des Browsers gar nicht erst laden.
+- **`SaveSystem` cached im Modul.** `localStorage.clear()` allein setzt nichts
+  zurueck — das Modul muss per `vi.resetModules()` neu geladen werden.

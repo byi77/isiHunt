@@ -22,8 +22,15 @@ Konkret:
 | **Scenes**   | ja            | `GameScene`, `HudScene` — Orchestrierung         |
 | **UI**       | ja            | `widgets.ts`, `textures.ts` — Darstellung        |
 
-`ProgressionSystem` und die Achievement-Praedikate laufen ohne laufendes
-Spiel — sie sind dadurch ohne Testharness pruefbar.
+`ProgressionSystem`, `ScoreSystem`, `ChallengeSystem` und die
+Achievement-Praedikate laufen ohne laufendes Spiel. Genau daraus zieht die
+Testbarkeit ihren Nutzen: Sie sind mit Vitest abgedeckt (Abschnitt 9.2), ohne
+dass dafuer eine Phaser-Instanz hochgefahren werden muesste.
+
+Einzig `SpawnSystem` kennt Phaser noch — es braucht `RandomDataGenerator` und
+`Geom.Rectangle`. `ScoreSystem` hatte den Import fuer ein einzelnes
+`Math.Clamp`; er ist einer Standardrechnung gewichen, weil er die komplette
+Engine samt Canvas-Erkennung in eine reine Rechendatei zog.
 
 ## 2. Ordnerstruktur
 
@@ -31,7 +38,7 @@ Spiel — sie sind dadurch ohne Testharness pruefbar.
 isiHunt/
 ├── .github/
 │   ├── workflows/
-│   │   ├── ci.yml              Typecheck + Lint + Build bei jedem Push
+│   │   ├── ci.yml              Typecheck + Lint + Tests + Build bei jedem Push
 │   │   └── deploy.yml          Build → GitHub Pages bei Push auf main
 │   └── PULL_REQUEST_TEMPLATE.md
 ├── docs/
@@ -89,8 +96,11 @@ isiHunt/
 │   │   ├── SaveSystem.ts       localStorage, versioniert
 │   │   ├── SafeAreaSystem.ts    Safe-Area-Laufband und Run-Restzeit
 │   │   ├── ProgressionSystem.ts XP, Level, Talentpunkte, Erfolge
+│   │   ├── ProgressionSystem.test.ts
 │   │   ├── ScoreSystem.ts      Punkte + Combo eines Runs
+│   │   ├── ScoreSystem.test.ts
 │   │   ├── ChallengeSystem.ts  Duell-Zustand: Seed, Punktstaende, Sieger
+│   │   ├── ChallengeSystem.test.ts
 │   │   ├── CloudSystem.ts      Bestenliste und Spielstand ueber Supabase
 │   │   └── SpawnSystem.ts      Wann und wo etwas erscheint
 │   ├── types/
@@ -197,7 +207,9 @@ Modus kaputt, und zwar auf eine Weise, die niemand beim Spielen bemerkt.
 
 **Geprueft** wurde das durch zwei Durchgaenge desselben Duells ohne Eingabe: 12
 Spawns, identisch in Seltenheit, Position und Spielzeit. Ein automatisierter
-Test dafuer gehoert zu Vitest in M2 — genau diese Eigenschaft bricht sonst
+Test dafuer steht weiterhin aus (ROADMAP.md, M2): Die Vitest-Suite deckt den
+Duell-Zustand ab — Seed-Vergabe, Rundenwechsel, Sieger — aber nicht, dass
+derselbe Seed dieselbe Abfolge erzeugt. Genau diese Eigenschaft bricht sonst
 unbemerkt bei der naechsten Aenderung am Spawning.
 
 ## 5. Kollision ohne Physik-Engine
@@ -423,6 +435,39 @@ Punktzahlen → Vignette → Einblendungen.
 Vorher lagen diese Zahlen als `setDepth(60)` in Entities, Scenes und Widgets
 verstreut. Wer eine neue Ebene einzog, musste alle Dateien durchsuchen.
 
+## 9.2 Tests
+
+**Vitest, `jsdom`, Testdatei neben der Quelldatei** (`ScoreSystem.test.ts` neben
+`ScoreSystem.ts`). Erfasst wird `src/**/*.test.ts`; gefahren wird `npm run test`.
+
+`jsdom` statt `node`, weil `SaveSystem` auf `window.localStorage` zugreift. Die
+Progression laeuft dadurch gegen die echte Persistenz statt gegen eine Attrappe
+— eine Attrappe haette den Modul-Cache in `SaveSystem` nicht mit abgebildet, und
+genau der ist die Stelle, an der Tests unbemerkt voneinander abhaengig werden.
+
+| Datei                        | Deckt ab                                                            |
+| ---------------------------- | ------------------------------------------------------------------- |
+| `ScoreSystem.test.ts`        | Multiplikatorstufen, Combo-Zerfall, Rundung, Run-Statistik          |
+| `ProgressionSystem.test.ts`  | XP-Kurve, mehrfache Aufstiege, Maximalstufe, Welten, Erfolge        |
+| `ChallengeSystem.test.ts`    | Seed-Vergabe, Rundenwechsel, Sieger und Gleichstand                 |
+
+**Zwei Regeln, die die Tests brauchbar halten:**
+
+1. **Erwartungen kommen aus der Config, nicht aus abgetippten Zahlen.** Ein Test
+   liest `COMBO_TIERS` oder `xpForLevel()` und rechnet damit. Ein
+   Balancing-Wechsel faerbt die Suite deshalb nicht rot — ein Bruch der Regel
+   dahinter schon. Anders herum waere jede Balancing-Aenderung eine Runde
+   Testpflege, und Tests, die staendig im Weg stehen, werden abgeschaltet.
+2. **Zustand wird vor jedem Test zurueckgesetzt.** `SaveSystem` und
+   `ChallengeSystem` sind Modul-Singletons. Beim `SaveSystem` reicht
+   `localStorage.clear()` nicht — der Modul-Cache ueberlebt es. Dort wird per
+   `vi.resetModules()` das Modul selbst neu geladen.
+
+**Was nicht abgedeckt ist:** Scenes, Entities, Eingabe und Darstellung. Dafuer
+braeuchte es einen echten Browser; die Grenze steht in Abschnitt 10. Ebenso
+offen bleibt der Determinismus-Test des Duells (Abschnitt 4.1) — geprueft ist
+der Duell-*Zustand*, nicht die Gleichheit der Spawn-Abfolge bei gleichem Seed.
+
 ## 10. Grenzen der aktuellen Architektur
 
 Ehrlich benannt, damit sie nicht ueberrascht:
@@ -430,7 +475,7 @@ Ehrlich benannt, damit sie nicht ueberrascht:
 | Grenze                                              | Ab wann relevant                                    | Loesung                                    |
 | --------------------------------------------------- | --------------------------------------------------- | ------------------------------------------ |
 | Kein Object Pooling — jedes Relikt wird neu erzeugt | > 100 gleichzeitige Objekte                         | Pool in `SpawnSystem`                      |
-| Kein Test-Setup                                     | ab erster Regressionsangst                          | Vitest, M2                                 |
+| Tests decken nur `systems/`, nicht Scenes/Entities  | ab Regressionen in Darstellung oder Eingabe         | Browser-Automatisierung, offen             |
 | Kollisionstest ist O(n) ueber alle Objekte          | > ~200 Objekte                                      | Raeumliches Gitter                         |
 | Ton nur prozedural, keine Audiodateien              | Musik oder komplexe Klangkulisse                    | Dateien/Audio-Mixer in M4                  |
 | HUD-Layout nutzt 720×variable Portraithoehe         | nie (FIT skaliert)                                  | —                                          |

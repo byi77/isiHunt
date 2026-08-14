@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite';
 import type { Plugin } from 'vite';
 import { fileURLToPath, URL } from 'node:url';
@@ -67,5 +68,11 @@ export default defineConfig({
         },
       },
     },
+  },
+  test: {
+    // `jsdom` statt `node`, weil SaveSystem auf `window.localStorage` zugreift.
+    // Die Tests laufen damit gegen die echte Persistenz statt gegen Attrappen.
+    environment: 'jsdom',
+    include: ['src/**/*.test.ts'],
   },
 });

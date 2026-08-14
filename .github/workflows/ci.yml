@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   verify:
-    name: Typecheck, Lint, Build
+    name: Typecheck, Lint, Tests, Build
     runs-on: ubuntu-latest
 
     steps:
@@ -64,6 +64,9 @@ jobs:
 
       - name: Formatierung pruefen
         run: npm run format:check
+
+      - name: Tests
+        run: npm run test
 
       - name: Build
         run: npm run build

@@ -11,6 +11,15 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+**Tests**
+
+- Vitest eingerichtet (`npm run test`, `npm run test:watch`). 58 Tests decken
+  `ScoreSystem`, `ProgressionSystem` und `ChallengeSystem` ab: Combo-Zerfall
+  und Multiplikatorstufen, XP-Kurve und Maximalstufe, Weltenfreischaltung,
+  Erfolge sowie Sieger- und Gleichstandsermittlung im Duell.
+- Die Tests haengen in `npm run verify` und laufen dadurch bei jedem Push
+  (`pre-push`), in der CI und vor jedem Deploy.
+
 **Phase 3: Weltraum-Thema**
 
 - ADR-0013 legt den Wechsel von Fantasy zu Weltraum fest; Welt-IDs bleiben
@@ -365,6 +374,15 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- **`ScoreSystem` importiert Phaser nicht mehr.** Der Import bestand fuer ein
+  einzelnes `Math.Clamp`, zog aber die komplette Engine samt Canvas-Erkennung
+  mit und machte die Datei ausserhalb eines Browsers unbenutzbar. Ersetzt durch
+  eine Standardrechnung; damit gilt Regel 1.6 (Systeme kennen Phaser nicht)
+  wieder ohne Ausnahme fuer diese Datei.
+- Die CI fuehrt jetzt einen eigenen Test-Schritt aus. Sie ruft die Stufen
+  einzeln auf statt `verify`, wodurch neue Tests dort sonst nie gelaufen waeren
+  — dasselbe Muster, das zuvor schon einen Push mit rotem `format:check`
+  durchgelassen hat.
 - **Spawn-System ist deterministisch geworden.** Der Zufallsgenerator wird
   jetzt unabhaengig vom Spielverlauf verbraucht: ein volles Spielfeld haelt
   den Takt nicht mehr an, und die Positionssuche bricht nicht mehr frueh ab.
