@@ -12,7 +12,7 @@
 
 import Phaser from 'phaser';
 
-import { CHALLENGE_DURATION_MS, challengePlayerLabel } from '@/config/challenge';
+import { CHALLENGE_DURATION_MS } from '@/config/challenge';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { getWorld } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
@@ -57,7 +57,7 @@ export class ChallengeScene extends Phaser.Scene {
     if (ChallengeSystem.isComplete()) {
       this.buildResult(state, world);
     } else if (state.rounds.length === 0) {
-      this.buildIntro(world);
+      this.buildIntro(state, world);
     } else {
       this.buildHandover(state, world);
     }
@@ -79,16 +79,40 @@ export class ChallengeScene extends Phaser.Scene {
 
   // --- Phase 1: Einfuehrung ---------------------------------------------------
 
-  private buildIntro(world: WorldDef): void {
-    this.buildHeading('DUELL', `${challengePlayerLabel(0)} gegen ${challengePlayerLabel(1)}`);
+  private buildIntro(state: ChallengeState, world: WorldDef): void {
+    const kind = ChallengeSystem.kind();
+    const title =
+      kind === 'daily' ? 'TAGES-HERAUSFORDERUNG' : kind === 'bot' ? 'BOT-DUELL' : 'DUELL';
+    const subtitle =
+      kind === 'daily'
+        ? 'Jeden Tag ein fester Lauf für alle.'
+        : kind === 'bot'
+          ? `Du spielst gegen den ${state.botDifficulty ?? 'normalen'} Bot.`
+          : 'Spieler 1 gegen Spieler 2';
+    this.buildHeading(title, subtitle);
 
     const seconds = Math.round(CHALLENGE_DURATION_MS / 1000);
-    const rules: readonly string[] = [
-      `Jeder spielt ${seconds} Sekunden.`,
-      'Beide jagen exakt dieselben Relikte.',
-      'Keine Talente - gleiche Voraussetzungen.',
-      'Das Duell ändert euren Spielstand nicht.',
-    ];
+    const rules: readonly string[] =
+      kind === 'daily'
+        ? [
+            `Du spielst ${seconds} Sekunden.`,
+            'Der Seed ist heute für alle gleich.',
+            'Keine Talente - gleiche Voraussetzungen.',
+            'Der Tageslauf ändert deinen Spielstand nicht.',
+          ]
+        : kind === 'bot'
+          ? [
+              `Du spielst ${seconds} Sekunden.`,
+              'Der Bot passt sich an deinen Lauf an.',
+              'Keine Talente - gleiche Voraussetzungen.',
+              'Das Bot-Duell ändert deinen Spielstand nicht.',
+            ]
+          : [
+              `Jeder spielt ${seconds} Sekunden.`,
+              'Beide jagen exakt dieselben Relikte.',
+              'Keine Talente - gleiche Voraussetzungen.',
+              'Das Duell ändert euren Spielstand nicht.',
+            ];
 
     createPanel(this, GAME_WIDTH / 2, 560, GAME_WIDTH - 120, 260, world.accent);
 
@@ -111,8 +135,12 @@ export class ChallengeScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       GAME_HEIGHT - 250,
-      `${challengePlayerLabel(0).toUpperCase()} STARTET`,
-      () => this.scene.start(SceneKey.Game, { worldId: world.id, mode: 'challenge' }),
+      kind === 'daily'
+        ? 'TAGESLAUF STARTEN'
+        : kind === 'bot'
+          ? 'BOT-DUELL STARTEN'
+          : 'SPIELER 1 STARTET',
+      () => this.scene.start(SceneKey.Game, { worldId: world.id, mode: kind }),
       { width: 460, accent: world.accent, fontSize: FontSize.large },
     );
 
@@ -127,7 +155,7 @@ export class ChallengeScene extends Phaser.Scene {
     const finished = state.rounds[finishedIndex];
     if (!finished) return;
 
-    this.buildHeading('GERÄT WEITERGEBEN', `${challengePlayerLabel(nextIndex)} ist dran`);
+    this.buildHeading('GERÄT WEITERGEBEN', `${ChallengeSystem.playerLabel(nextIndex)} ist dran`);
 
     createPanel(this, GAME_WIDTH / 2, 500, GAME_WIDTH - 120, 230, world.accent);
 
@@ -135,7 +163,7 @@ export class ChallengeScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         424,
-        `${challengePlayerLabel(finishedIndex)} hat vorgelegt`,
+        `${ChallengeSystem.playerLabel(finishedIndex)} hat vorgelegt`,
         textStyle(FontSize.small, Palette.inkDim),
       )
       .setOrigin(0.5);
@@ -165,7 +193,7 @@ export class ChallengeScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       GAME_HEIGHT - 250,
-      `${challengePlayerLabel(nextIndex).toUpperCase()} IST BEREIT`,
+      `${ChallengeSystem.playerLabel(nextIndex).toUpperCase()} IST BEREIT`,
       () => this.scene.start(SceneKey.Game, { worldId: world.id, mode: 'challenge' }),
       { width: 460, accent: world.accent, fontSize: FontSize.large },
     );
@@ -176,55 +204,26 @@ export class ChallengeScene extends Phaser.Scene {
   // --- Phase 3: Ergebnis ------------------------------------------------------
 
   private buildResult(state: ChallengeState, world: WorldDef): void {
+    if (ChallengeSystem.kind() === 'daily') {
+      const round = state.rounds[0];
+      this.buildHeading('TAGESLAUF GESCHAFFT', 'Dein Ergebnis bleibt lokal auf diesem Gerät.');
+      if (round) this.buildResultCard(round, 0, world, false);
+      this.buildResultButtons(world);
+      return;
+    }
+
     const winner = ChallengeSystem.winnerIndex();
 
     this.buildHeading(
-      winner === null ? 'UNENTSCHIEDEN' : `${challengePlayerLabel(winner).toUpperCase()} GEWINNT`,
+      winner === null
+        ? 'UNENTSCHIEDEN'
+        : `${ChallengeSystem.playerLabel(winner).toUpperCase()} GEWINNT`,
       winner === null ? 'Punktgleich - das muss wiederholt werden.' : 'Gut gejagt.',
     );
 
     state.rounds.forEach((round, index) => {
-      const y = 470 + index * 190;
       const isWinner = winner === index;
-      const color = isWinner ? Palette.goldHex : world.accent;
-
-      createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, 158, color, {
-        alpha: isWinner ? 0.75 : 0.45,
-      });
-
-      this.add
-        .text(
-          104,
-          y - 44,
-          challengePlayerLabel(index),
-          textStyle(FontSize.body, isWinner ? Palette.gold : Palette.ink, { fontStyle: 'bold' }),
-        )
-        .setOrigin(0, 0.5);
-
-      if (isWinner) {
-        this.add
-          .text(GAME_WIDTH - 104, y - 44, 'SIEG', textStyle(FontSize.tiny, Palette.gold))
-          .setOrigin(1, 0.5)
-          .setLetterSpacing(4);
-      }
-
-      this.add
-        .text(
-          104,
-          y + 18,
-          round.score.toLocaleString('de-DE'),
-          textStyle(FontSize.heading, Palette.ink, { fontStyle: 'bold' }),
-        )
-        .setOrigin(0, 0.5);
-
-      this.add
-        .text(
-          GAME_WIDTH - 104,
-          y + 24,
-          `${relics(round.totalCollected)}  ·  Kette ${round.bestCombo}`,
-          textStyle(FontSize.tiny, Palette.inkDim),
-        )
-        .setOrigin(1, 0.5);
+      this.buildResultCard(round, index, world, isWinner);
     });
 
     // Abstand zwischen den beiden Ergebnissen - die eigentliche Pointe.
@@ -241,18 +240,64 @@ export class ChallengeScene extends Phaser.Scene {
         .setOrigin(0.5);
     }
 
+    this.buildResultButtons(world);
+  }
+
+  private buildResultCard(
+    round: ChallengeState['rounds'][number],
+    index: number,
+    world: WorldDef,
+    isWinner: boolean,
+  ): void {
+    const y = 470 + index * 190;
+    const color = isWinner ? Palette.goldHex : world.accent;
+    createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, 158, color, {
+      alpha: isWinner ? 0.75 : 0.45,
+    });
+    this.add
+      .text(
+        104,
+        y - 44,
+        ChallengeSystem.playerLabel(index),
+        textStyle(FontSize.body, isWinner ? Palette.gold : Palette.ink, { fontStyle: 'bold' }),
+      )
+      .setOrigin(0, 0.5);
+    if (isWinner) {
+      this.add
+        .text(GAME_WIDTH - 104, y - 44, 'SIEG', textStyle(FontSize.tiny, Palette.gold))
+        .setOrigin(1, 0.5)
+        .setLetterSpacing(4);
+    }
+    this.add
+      .text(
+        104,
+        y + 18,
+        round.score.toLocaleString('de-DE'),
+        textStyle(FontSize.heading, Palette.ink, { fontStyle: 'bold' }),
+      )
+      .setOrigin(0, 0.5);
+    this.add
+      .text(
+        GAME_WIDTH - 104,
+        y + 24,
+        `${relics(round.totalCollected)}  ·  Kette ${round.bestCombo}`,
+        textStyle(FontSize.tiny, Palette.inkDim),
+      )
+      .setOrigin(1, 0.5);
+  }
+
+  private buildResultButtons(world: WorldDef): void {
     createButton(
       this,
       GAME_WIDTH / 2,
       GAME_HEIGHT - 250,
-      'REVANCHE',
+      'NOCH EINMAL',
       () => {
         ChallengeSystem.rematch();
         this.scene.restart();
       },
       { width: 460, accent: world.accent, fontSize: FontSize.large },
     );
-
     this.buildBackToMenu('ZUM MENÜ');
   }
 

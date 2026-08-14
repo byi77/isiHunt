@@ -17,6 +17,12 @@ import type { TextureKeyValue } from '@/ui/textures';
 /** Zeitfenster am Lebensende, in dem das Relikt sichtbar verblasst. */
 const FADE_OUT_MS = 700;
 
+export interface CollectibleOptions {
+  lifetimeScale?: number;
+  driftMultiplier?: number;
+  blinking?: boolean;
+}
+
 export class Collectible extends Phaser.GameObjects.Container {
   readonly rarity: RarityDef;
   readonly radius: number;
@@ -25,6 +31,8 @@ export class Collectible extends Phaser.GameObjects.Container {
   private readonly glow: Phaser.GameObjects.Image;
   private readonly rays: Phaser.GameObjects.Image | null;
   private readonly velocity: Phaser.Math.Vector2;
+  private readonly lifetimeMs: number;
+  private readonly blinking: boolean;
 
   private ageMs = 0;
   private collected = false;
@@ -35,11 +43,15 @@ export class Collectible extends Phaser.GameObjects.Container {
     y: number,
     rarity: RarityDef,
     planetTexture: TextureKeyValue,
+    options: CollectibleOptions = {},
   ) {
     super(scene, x, y);
 
     this.rarity = rarity;
     this.radius = rarity.radius;
+    this.lifetimeMs = rarity.lifetimeMs * (options.lifetimeScale ?? 1);
+    this.blinking = options.blinking ?? false;
+    const driftMultiplier = options.driftMultiplier ?? 1;
 
     // Die PNG-Planeten sind 512x512 und haben damit einen Radius von 256.
     // Glow und Strahlen bleiben auf der alten Reliktgroesse, damit die
@@ -76,8 +88,8 @@ export class Collectible extends Phaser.GameObjects.Container {
     // Zufaellige Driftrichtung mit der seltenheitsabhaengigen Geschwindigkeit.
     const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
     this.velocity = new Phaser.Math.Vector2(
-      Math.cos(angle) * rarity.driftSpeed,
-      Math.sin(angle) * rarity.driftSpeed,
+      Math.cos(angle) * rarity.driftSpeed * driftMultiplier,
+      Math.sin(angle) * rarity.driftSpeed * driftMultiplier,
     );
 
     this.setScale(0);
@@ -102,7 +114,7 @@ export class Collectible extends Phaser.GameObjects.Container {
   }
 
   get isExpired(): boolean {
-    return !this.collected && this.ageMs >= this.rarity.lifetimeMs;
+    return !this.collected && this.ageMs >= this.lifetimeMs;
   }
 
   /**
@@ -153,12 +165,17 @@ export class Collectible extends Phaser.GameObjects.Container {
     // zu einer einzigen drehenden Scheibe zu vermischen.
     if (this.rays) this.rays.rotation -= dtSec * 0.35;
 
-    const remaining = this.rarity.lifetimeMs - this.ageMs;
+    const remaining = this.lifetimeMs - this.ageMs;
     if (remaining <= FADE_OUT_MS) {
       const ratio = Phaser.Math.Clamp(remaining / FADE_OUT_MS, 0, 1);
       this.setAlpha(ratio);
       // Zusaetzliches Blinken, damit das Ablaufen nicht nur ueber Alpha laeuft.
       this.setScale(0.75 + ratio * 0.25);
+    } else if (this.blinking) {
+      // Nullsektor macht Relikte kurz unsichtbar, aber nicht unberechenbar:
+      // der Sammelradius bleibt unverändert und der Effekt ist rhythmisch.
+      const blink = (this.ageMs % 720) / 720;
+      this.setAlpha(blink > 0.62 && blink < 0.78 ? 0.12 : 1);
     }
   }
 

@@ -36,13 +36,21 @@ import {
   SPAWN_POSITION_CANDIDATES,
   SPAWN_RAMP_FACTOR,
 } from '@/config/GameConfig';
-import { rollRarity } from '@/config/rarities';
+import { RARITIES, rollRarity } from '@/config/rarities';
 import type { RarityDef } from '@/config/rarities';
+
+export type WorldModifier = 'none' | 'inertia' | 'short_lived' | 'blink' | 'rare_bonus';
+export type ObstacleMode = 'none' | 'brake' | 'penalty';
 
 export interface SpawnRequest {
   x: number;
   y: number;
+  kind: 'collectible' | 'obstacle';
   rarity: RarityDef;
+  lifetimeScale?: number;
+  driftMultiplier?: number;
+  blinking?: boolean;
+  obstacleMode?: Exclude<ObstacleMode, 'none'>;
 }
 
 export class SpawnSystem {
@@ -51,6 +59,8 @@ export class SpawnSystem {
   constructor(
     private readonly rng: Phaser.Math.RandomDataGenerator,
     private readonly bounds: Phaser.Geom.Rectangle,
+    private readonly modifier: WorldModifier = 'none',
+    private readonly obstacleMode: ObstacleMode = 'none',
   ) {}
 
   /**
@@ -75,17 +85,65 @@ export class SpawnSystem {
     // Bewusst VOR der Kapazitaetspruefung: der Verbrauch muss gleich bleiben,
     // auch wenn der Spawn gleich verworfen wird.
     const position = this.findPosition(playerX, playerY);
-    const rarity = rollRarity(this.rng);
+    const rarity = this.rollWorldRarity();
+
+    // Der Zufallsverbrauch ist immer gleich, auch wenn das Feld voll ist.
+    // Hindernisse erscheinen anfangs selten und werden gegen Ende etwas
+    // wahrscheinlicher, damit die Welt erst lesbar bleibt und dann Druck macht.
+    const obstacleRoll = this.rng.frac();
+    const obstacleChance = this.obstacleMode === 'none' ? 0 : 0.07 + runProgress * 0.1;
 
     if (activeCount >= MAX_ACTIVE_COLLECTIBLES) return null;
 
-    return { x: position.x, y: position.y, rarity };
+    if (obstacleRoll < obstacleChance) {
+      return {
+        x: position.x,
+        y: position.y,
+        kind: 'obstacle',
+        rarity,
+        obstacleMode: this.obstacleMode === 'none' ? undefined : this.obstacleMode,
+      };
+    }
+
+    return {
+      x: position.x,
+      y: position.y,
+      kind: 'collectible',
+      rarity,
+      lifetimeScale:
+        this.modifier === 'rare_bonus' ? 0.5 : this.modifier === 'short_lived' ? 0.7 : 1,
+      driftMultiplier: this.modifier === 'inertia' ? 1.35 : 1,
+      blinking: this.modifier === 'blink',
+    };
   }
 
   /** Erzwingt einen Spawn - fuer Debug-Tasten und spaetere Ereignisse. */
   forceSpawn(rarity: RarityDef, playerX: number, playerY: number): SpawnRequest {
     const position = this.findPosition(playerX, playerY);
-    return { x: position.x, y: position.y, rarity };
+    return { x: position.x, y: position.y, kind: 'collectible', rarity };
+  }
+
+  private rollWorldRarity(): RarityDef {
+    const rarity = rollRarity(this.rng);
+    if (this.modifier !== 'rare_bonus' || this.rng.frac() >= 0.35) return rarity;
+
+    // Sonnenkrone verdoppelt praktisch die Chance auf seltene Planeten, ohne
+    // die Seltenheits-Tabelle selbst zu verfälschen. Ein einmaliger Aufstieg
+    // bewahrt die sichtbare Staffelung und bleibt deterministisch.
+    const promoted: Record<string, string> = {
+      poor: 'common',
+      common: 'uncommon',
+      uncommon: 'rare',
+      rare: 'epic',
+      epic: 'legendary',
+    };
+    const promotedId = promoted[rarity.id];
+    if (!promotedId) return rarity;
+
+    // rollRarity kennt die Tabelle bereits; die ID wird hier nur über den
+    // bekannten Ergebniswert gesucht, damit keine zweite Balancing-Tabelle
+    // entsteht.
+    return rollRarityFromId(promotedId) ?? rarity;
   }
 
   /**
@@ -123,4 +181,8 @@ export class SpawnSystem {
   reset(): void {
     this.timerMs = 0;
   }
+}
+
+function rollRarityFromId(id: string): RarityDef | null {
+  return RARITIES.find((rarity) => rarity.id === id) ?? null;
 }

@@ -18,6 +18,16 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+**Phase 5: Herausforderung**
+
+- Tages-Herausforderung mit UTC-Tagesseed je Welt.
+- Bot-Duell mit deterministischer Bewertung und drei internen
+  Schwierigkeitsstufen.
+- Weltmodifikatoren für Trägheit, kurze Lebensdauer, Sichtbarkeitsblinken und
+  seltene Planeten.
+- Sichtbare Hindernisse: Bremsfelder in mittleren Welten und Zeitverlust in
+  den späten Welten; die Einstiegswelt bleibt frei davon.
+
 **Phase 4: Belohnung**
 
 - Auffaelligere Punkte-Popups mit sichtbarem x2-Serienbonus ab drei gleichen

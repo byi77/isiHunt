@@ -2,9 +2,9 @@
  * Welten = Raumzonen. Jede Welt hat eine eigene Farbstimmung und wird ueber das
  * Charakterlevel freigeschaltet - analog zu neuen Gebieten in einem MMO.
  *
- * Mechanisch sind die Welten in v0.1 identisch (bewusst: erst Feel, dann
- * Varianz). Der `modifier`-Text ist die geplante Besonderheit je Welt, siehe
- * docs/ROADMAP.md, Meilenstein M3.
+ * Jede Welt hat neben der Farbstimmung eine kleine, klar lesbare Regel. Die
+ * technischen Werte liegen direkt an der Welt, der Text bleibt bewusst
+ * kindgerecht und sichtbar im Menue.
  */
 
 export interface WorldDef {
@@ -21,8 +21,12 @@ export interface WorldDef {
   readonly spaceVariant: number;
   /** Kurzer Stimmungstext fuers Menue. */
   readonly flavor: string;
-  /** Geplante mechanische Besonderheit (noch nicht implementiert). */
+  /** Kindgerechte Beschreibung der mechanischen Besonderheit. */
   readonly plannedModifier: string;
+  /** Technische Umsetzung des Weltmodifikators. */
+  readonly modifier: 'none' | 'inertia' | 'short_lived' | 'blink' | 'rare_bonus';
+  /** Hindernisse bremsen zuerst und bestrafen spaeter. */
+  readonly obstacleMode: 'none' | 'brake' | 'penalty';
 }
 
 export const WORLDS: readonly WorldDef[] = [
@@ -36,6 +40,8 @@ export const WORLDS: readonly WorldDef[] = [
     spaceVariant: 0,
     flavor: 'Ruhige Nebelbahnen mit jungen Sternen und sanften Lichtströmen.',
     plannedModifier: 'Keine - die Lernzone.',
+    modifier: 'none',
+    obstacleMode: 'none',
   },
   {
     id: 'frostzinne',
@@ -47,6 +53,8 @@ export const WORLDS: readonly WorldDef[] = [
     spaceVariant: 1,
     flavor: 'Ein Planet aus Eis, umkreist von splittrigen Kristallringen.',
     plannedModifier: 'Planeten driften weiter - Bewegung mit Trägheit.',
+    modifier: 'inertia',
+    obstacleMode: 'brake',
   },
   {
     id: 'glutmark',
@@ -58,6 +66,8 @@ export const WORLDS: readonly WorldDef[] = [
     spaceVariant: 2,
     flavor: 'Heisse Gaswolken, in denen jeder Kurs zum Wettlauf wird.',
     plannedModifier: 'Planeten verglühen schneller - kürzere Zeitfenster.',
+    modifier: 'short_lived',
+    obstacleMode: 'brake',
   },
   {
     id: '__LEERENBLÜTE__',
@@ -69,6 +79,8 @@ export const WORLDS: readonly WorldDef[] = [
     spaceVariant: 3,
     flavor: 'Ein stiller Raumriss, in dem Sterne kurz aus der Sicht fallen.',
     plannedModifier: 'Planeten blinken kurz aus der Sichtbarkeit.',
+    modifier: 'blink',
+    obstacleMode: 'penalty',
   },
   {
     id: 'sonnenhort',
@@ -80,6 +92,8 @@ export const WORLDS: readonly WorldDef[] = [
     spaceVariant: 4,
     flavor: 'Die leuchtende Krone eines Sterns - dort beginnt die nächste Reise.',
     plannedModifier: 'Doppelte Chance auf seltene Planeten, halbe Lebensdauer.',
+    modifier: 'rare_bonus',
+    obstacleMode: 'penalty',
   },
 ];
 

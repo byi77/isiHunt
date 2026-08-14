@@ -684,10 +684,14 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private buildFooter(): void {
-    // Der Hinweis endet bei y=730. Die Hauptaktionen folgen mit sichtbarem
-    // Abstand und bleiben auch auf sehr hohen Handydisplays in diesem Block,
-    // statt weit unten aus dem Blickfeld zu rutschen.
-    const actionsY = Math.min(GAME_HEIGHT - 390, 840);
+    // Phase 5 hat zwei zusätzliche, klar getrennte Spielmodi. Der komplette
+    // Aktionsblock wird deshalb aus seiner Anzahl berechnet, damit kein neuer
+    // Button jemals den Einstellungsbutton überlagert.
+    const hasLeaderboard = CloudSystem.isAvailable();
+    const actionSpacing = 84;
+    const settingsY = GAME_HEIGHT - 110;
+    const actionCount = hasLeaderboard ? 4 : 3;
+    const actionsY = Math.max(790, Math.min(900, settingsY - actionCount * actionSpacing - 20));
 
     createButton(
       this,
@@ -699,6 +703,7 @@ export class MenuScene extends Phaser.Scene {
       },
       {
         width: 440,
+        height: 76,
         accent: this.selectedWorld.accent,
         fontSize: FontSize.large,
       },
@@ -707,7 +712,7 @@ export class MenuScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      actionsY + 94,
+      actionsY + actionSpacing,
       'DUELL ZU ZWEIT',
       () => {
         ChallengeSystem.start(this.selectedWorld.id);
@@ -716,13 +721,37 @@ export class MenuScene extends Phaser.Scene {
       { width: 440, height: 76, accent: Palette.goldHex, fontSize: FontSize.body },
     );
 
+    createButton(
+      this,
+      GAME_WIDTH / 2 - 115,
+      actionsY + actionSpacing * 2,
+      'TAGESLAUF',
+      () => {
+        ChallengeSystem.startDaily(this.selectedWorld.id);
+        this.scene.start(SceneKey.Challenge);
+      },
+      { width: 210, height: 76, accent: this.selectedWorld.accent, fontSize: FontSize.tiny },
+    );
+
+    createButton(
+      this,
+      GAME_WIDTH / 2 + 115,
+      actionsY + actionSpacing * 2,
+      'BOT-DUELL',
+      () => {
+        ChallengeSystem.startBot(this.selectedWorld.id);
+        this.scene.start(SceneKey.Challenge);
+      },
+      { width: 210, height: 76, accent: 0xa855f7, fontSize: FontSize.tiny },
+    );
+
     // Die Rangliste ist ein grosser Hauptbutton direkt unter dem Duell. Die
     // Einstellungen bleiben ein kleiner, einzelner Button ganz unten mittig.
     if (CloudSystem.isAvailable()) {
       createButton(
         this,
         GAME_WIDTH / 2,
-        actionsY + 188,
+        actionsY + actionSpacing * 3,
         'RANGLISTE',
         () => this.scene.start(SceneKey.Leaderboard),
         {
@@ -733,7 +762,6 @@ export class MenuScene extends Phaser.Scene {
       );
     }
 
-    const settingsY = GAME_HEIGHT - 165;
     createButton(
       this,
       GAME_WIDTH / 2,

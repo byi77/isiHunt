@@ -60,7 +60,10 @@ export interface RunStats {
  *
  * `solo` schreibt Progression, `challenge` nicht - siehe config/challenge.ts.
  */
-export type RunMode = 'solo' | 'challenge';
+export type RunMode = 'solo' | 'challenge' | 'daily' | 'bot';
+
+export type ChallengeKind = 'duel' | 'daily' | 'bot';
+export type BotDifficulty = 'easy' | 'normal' | 'hard';
 
 /** Das Ergebnis eines einzelnen Duell-Durchgangs. */
 export interface ChallengeRound {
@@ -78,6 +81,10 @@ export interface ChallengeState {
   seed: string;
   worldId: string;
   rounds: ChallengeRound[];
+  /** Spielart: klassisches Duell, Tageslauf oder Bot-Gegner. */
+  kind?: ChallengeKind;
+  botDifficulty?: BotDifficulty;
+  dailyKey?: string;
 }
 
 /** Was ein Run an Progression ausgeloest hat - fuer den Ergebnisbildschirm. */

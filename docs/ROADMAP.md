@@ -118,11 +118,11 @@ Zusammenführung statt des bisherigen vollständigen Ersetzens.
 
 Bisher unterscheiden sich die Welten nur farblich.
 
-- [ ] Weltmodifikatoren implementieren (siehe GAME_DESIGN.md, 7.3)
+- [x] Weltmodifikatoren implementieren (siehe GAME_DESIGN.md, 7.3)
 - [ ] Eigene Hintergrundelemente je Welt (Parallax)
 - [ ] Weltspezifische Seltenheitsverteilungen pruefen
 - [ ] Zweiter Spielmodus: Endlos ohne Timer
-- [ ] Tages-Herausforderung mit festem Seed
+- [x] Tages-Herausforderung mit festem Seed
 
 ## M4 — Anmutung
 

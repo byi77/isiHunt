@@ -19,7 +19,7 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 | 3       | Weltraum statt Fantasy                                   | mittel       |
 | **3.5** | Ton (aus M4 vorgezogen)                                  | mittel       |
 | **3.6** | Dynamic Island — braucht native App                      | Entscheidung |
-| **4**   | **Bonus, Coins, Talentbaum — abgeschlossen**              | —            |
+| **4**   | **Bonus, Coins, Talentbaum — abgeschlossen**             | —            |
 | 5       | Modi, Hindernisse                                        | mittel       |
 | 6       | Freunde, Realtime, Manipulationsschutz                   | hoch         |
 
@@ -51,7 +51,7 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 - **2.6 Login & Mehrgeräte-Profil:** wird vor dem Abschluss von Phase 4
   priorisiert. Der bisherige Sync-Code bleibt als Migration und Notfallweg;
   der neue Standard wird ein Backend-Profil mit Login.
-- **5 Hindernisse:** ab welcher Welt darf ein Hindernis bestrafen?
+- **5 Hindernisse:** entschieden und umgesetzt — ab Nullsektor bestrafen
 - **6 Manipulationsschutz:** vor oder nach Ranked-Modus und Rekord-Meldungen?
 
 ### Querschnitt
@@ -486,10 +486,12 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
 
 ## Phase 5 — Herausforderung
 
-- [ ] Tages-Herausforderung mit festem Seed (Technik steht seit dem Duell)
-- [ ] Duell gegen Bot mit Fehlerrate je Schwierigkeitsgrad
-- [ ] Weltmodifikatoren umsetzen (stehen als `plannedModifier` in `worlds.ts`)
-- [ ] Hindernisse: bremsend in fruehen Welten, bestrafend in spaeten
+- [x] Tages-Herausforderung mit festem Seed (UTC-Tag + Welt bilden den Seed)
+- [x] Duell gegen Bot mit drei deterministischen Schwierigkeitsstufen
+- [x] Weltmodifikatoren umgesetzt: Trägheit, kürzere Lebensdauer, Blinken und
+      erhöhte seltene Planeten
+- [x] Hindernisse: keine in Sternenweide, bremsend in Eisring/Glutnebel,
+      zeitbestrafend in Nullsektor/Sonnenkrone
 - [ ] `GAME_DESIGN.md` §10 praezisieren (nicht streichen): kein Misserfolg in
       den Einstiegswelten
 - [ ] ~~Ranked-Modus~~ — blockiert, siehe Phase 6

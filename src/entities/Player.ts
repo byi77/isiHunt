@@ -22,6 +22,9 @@ export class Player extends Phaser.GameObjects.Container {
   private readonly aura: Phaser.GameObjects.Image;
   private readonly trail: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly velocity = new Phaser.Math.Vector2();
+  private slowRemainingMs = 0;
+  private slowFactor = 1;
+  private inertiaFactor = 1;
 
   constructor(
     scene: Phaser.Scene,
@@ -86,18 +89,30 @@ export class Player extends Phaser.GameObjects.Container {
     this.syncHaloToRadius();
   }
 
+  setWorldInertia(factor: number): void {
+    this.inertiaFactor = Phaser.Math.Clamp(factor, 0.35, 1);
+  }
+
+  applySlow(durationMs: number, factor = 0.55): void {
+    this.slowRemainingMs = Math.max(this.slowRemainingMs, durationMs);
+    this.slowFactor = Math.min(this.slowFactor, Phaser.Math.Clamp(factor, 0.3, 1));
+  }
+
   /**
    * @param dtSec Vergangene Zeit in Sekunden.
    * @param direction Bewegungsrichtung, Laenge 0..1 (0 = Stillstand).
    * @param bounds Spielfeldgrenzen, in denen die Figur bleiben muss.
    */
   move(dtSec: number, direction: Phaser.Math.Vector2, bounds: Phaser.Geom.Rectangle): void {
-    const desiredX = direction.x * this.stats.moveSpeed;
-    const desiredY = direction.y * this.stats.moveSpeed;
+    this.slowRemainingMs = Math.max(0, this.slowRemainingMs - dtSec * 1000);
+    if (this.slowRemainingMs === 0) this.slowFactor = 1;
+    const desiredSpeed = this.stats.moveSpeed * this.slowFactor;
+    const desiredX = direction.x * desiredSpeed;
+    const desiredY = direction.y * desiredSpeed;
 
     // Exponentielle Annaeherung ist frameratenunabhaengig - anders als ein
     // fester Lerp-Faktor, der bei 120 Hz doppelt so schnell reagieren wuerde.
-    const t = 1 - Math.exp(-PLAYER_ACCEL_RESPONSE * dtSec);
+    const t = 1 - Math.exp(-PLAYER_ACCEL_RESPONSE * this.inertiaFactor * dtSec);
     this.velocity.x += (desiredX - this.velocity.x) * t;
     this.velocity.y += (desiredY - this.velocity.y) * t;
 

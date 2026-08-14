@@ -28,6 +28,8 @@ export const Depth = {
 
   /** Einsammelbare Relikte. */
   Collectible: 20,
+  /** Welt-Hindernisse liegen zwischen Relikten und der Figur. */
+  Obstacle: 30,
   /** Strahlenkranz seltener Relikte - hinter dem Relikt selbst. */
   CollectibleRays: 18,
   /** Die Spielfigur. */

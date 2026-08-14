@@ -9,7 +9,7 @@
 
 import Phaser from 'phaser';
 
-import { CHALLENGE_DURATION_MS, challengePlayerLabel } from '@/config/challenge';
+import { CHALLENGE_DURATION_MS } from '@/config/challenge';
 import {
   COUNTDOWN_STEP_MS,
   COUNTDOWN_STEPS,
@@ -28,6 +28,7 @@ import { getWorld } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { eventBus, GameEvent } from '@/core/EventBus';
 import { Collectible } from '@/entities/Collectible';
+import { Obstacle } from '@/entities/Obstacle';
 import { Player } from '@/entities/Player';
 import { DebugKeys } from '@/input/DebugKeys';
 import { InputController } from '@/input/InputController';
@@ -69,6 +70,7 @@ export class GameScene extends Phaser.Scene {
   private scoring!: ScoreSystem;
 
   private collectibles: Collectible[] = [];
+  private obstacles: Obstacle[] = [];
   private playfield!: Phaser.Geom.Rectangle;
   private playerPosition = new Phaser.Math.Vector2();
 
@@ -91,15 +93,17 @@ export class GameScene extends Phaser.Scene {
 
     // Im Duell mit Grundwerten spielen: Talente des Geraetebesitzers waeren ein
     // Vorteil, den der Gast nicht ausgleichen kann (config/challenge.ts).
-    this.stats = resolveStats(this.mode === 'challenge' ? {} : save.talents);
+    const nonProgressionMode = this.mode !== 'solo';
+    this.stats = resolveStats(nonProgressionMode ? {} : save.talents);
 
-    const challenge = this.mode === 'challenge' ? ChallengeSystem.getState() : null;
+    const challenge = nonProgressionMode ? ChallengeSystem.getState() : null;
     this.playerIndex = challenge ? ChallengeSystem.currentPlayerIndex() : 0;
 
-    this.totalMs = this.mode === 'challenge' ? CHALLENGE_DURATION_MS : this.stats.runDurationMs;
+    this.totalMs = nonProgressionMode ? CHALLENGE_DURATION_MS : this.stats.runDurationMs;
     this.remainingMs = this.totalMs;
     this.phase = 'countdown';
     this.collectibles = [];
+    this.obstacles = [];
 
     this.playfield = new Phaser.Geom.Rectangle(
       PLAYFIELD_PADDING_X,
@@ -127,8 +131,9 @@ export class GameScene extends Phaser.Scene {
       this.playfield.centerY,
       this.stats,
       this.world.accent,
-      this.mode === 'challenge' ? undefined : playerTextureForLevel(save.level),
+      nonProgressionMode ? undefined : playerTextureForLevel(save.level),
     );
+    this.player.setWorldInertia(this.world.modifier === 'inertia' ? 0.62 : 1);
 
     this.input_ = new InputController(this);
     this.scoring = new ScoreSystem(
@@ -144,6 +149,8 @@ export class GameScene extends Phaser.Scene {
         ? new Phaser.Math.RandomDataGenerator([challenge.seed])
         : new Phaser.Math.RandomDataGenerator(),
       this.playfield,
+      this.world.modifier,
+      this.world.obstacleMode,
     );
 
     // HUD als eigene Scene parallel starten - siehe Kommentar in EventBus.ts.
@@ -151,8 +158,8 @@ export class GameScene extends Phaser.Scene {
       worldId: this.world.id,
       mode: this.mode,
       durationMs: this.totalMs,
-      playerLabel: this.mode === 'challenge' ? challengePlayerLabel(this.playerIndex) : null,
-      scoreToBeat: this.mode === 'challenge' ? ChallengeSystem.scoreToBeat() : null,
+      playerLabel: nonProgressionMode ? ChallengeSystem.playerLabel(this.playerIndex) : null,
+      scoreToBeat: nonProgressionMode ? ChallengeSystem.scoreToBeat() : null,
     });
 
     if (DEBUG_ENABLED) this.installDebugKeys();
@@ -181,6 +188,7 @@ export class GameScene extends Phaser.Scene {
     this.updatePlayer(dtSec);
     this.updateCombo(delta);
     this.updateCollectibles(dtSec, delta);
+    this.updateObstacles(delta);
     this.updateSpawning(delta);
     this.updateTimer(delta);
   }
@@ -228,12 +236,17 @@ export class GameScene extends Phaser.Scene {
     const request = this.spawner.update(
       deltaMs,
       progress,
-      this.collectibles.length,
+      this.collectibles.length + this.obstacles.length,
       this.player.x,
       this.player.y,
     );
 
-    if (request) this.spawnCollectible(request.x, request.y, request.rarity);
+    if (!request) return;
+    if (request.kind === 'obstacle' && request.obstacleMode) {
+      this.spawnObstacle(request.x, request.y, request.obstacleMode);
+    } else {
+      this.spawnCollectible(request.x, request.y, request.rarity, request);
+    }
   }
 
   private updateTimer(deltaMs: number): void {
@@ -248,10 +261,53 @@ export class GameScene extends Phaser.Scene {
 
   // --- Spielhandlungen ------------------------------------------------------
 
-  private spawnCollectible(x: number, y: number, rarity: RarityDef): void {
+  private spawnCollectible(
+    x: number,
+    y: number,
+    rarity: RarityDef,
+    options: { lifetimeScale?: number; driftMultiplier?: number; blinking?: boolean } = {},
+  ): void {
     this.collectibles.push(
-      new Collectible(this, x, y, rarity, planetTextureForVariant(this.world.spaceVariant)),
+      new Collectible(
+        this,
+        x,
+        y,
+        rarity,
+        planetTextureForVariant(this.world.spaceVariant),
+        options,
+      ),
     );
+  }
+
+  private spawnObstacle(x: number, y: number, kind: 'brake' | 'penalty'): void {
+    this.obstacles.push(new Obstacle(this, x, y, kind, this.world.accent));
+  }
+
+  private updateObstacles(deltaMs: number): void {
+    for (let index = this.obstacles.length - 1; index >= 0; index -= 1) {
+      const obstacle = this.obstacles[index];
+      if (!obstacle) continue;
+      obstacle.tick(deltaMs, this.playfield);
+
+      const reach = this.player.collectRadius + obstacle.radius;
+      const touching =
+        Phaser.Math.Distance.Squared(this.player.x, this.player.y, obstacle.x, obstacle.y) <=
+        reach * reach;
+      if (!touching || !obstacle.canHit()) continue;
+
+      obstacle.markHit();
+      if (obstacle.kind === 'brake') {
+        this.player.applySlow(1100);
+        floatingScore(this, obstacle.x, obstacle.y, 'VERLANGSAMT', 0x38bdf8);
+      } else {
+        this.remainingMs = Math.max(0, this.remainingMs - 1400);
+        this.scoring.registerMiss();
+        floatingScore(this, obstacle.x, obstacle.y, '-1,4 s', 0xa855f7);
+        this.cameras.main.shake(120, 0.004);
+      }
+      obstacle.destroy();
+      this.obstacles.splice(index, 1);
+    }
   }
 
   /** Distanztest statt Physik-Body - exakt, billig und leicht nachvollziehbar. */
@@ -312,12 +368,12 @@ export class GameScene extends Phaser.Scene {
   private runCountdown(): void {
     // Im Duell zuerst zeigen, wer gerade spielt - nach der Geraeteuebergabe ist
     // das die wichtigste Information auf dem Bildschirm.
-    if (this.mode === 'challenge') {
+    if (this.mode !== 'solo') {
       this.add
         .text(
           GAME_WIDTH / 2,
           GAME_HEIGHT / 2 - 110,
-          challengePlayerLabel(this.playerIndex).toUpperCase(),
+          ChallengeSystem.playerLabel(this.playerIndex).toUpperCase(),
           textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
         )
         .setOrigin(0.5)
@@ -378,7 +434,7 @@ export class GameScene extends Phaser.Scene {
 
     // Ein Duell-Durchgang laesst den Spielstand unberuehrt: die Haelfte der
     // Durchgaenge spielt jemand, dem er nicht gehoert (config/challenge.ts).
-    if (this.mode === 'challenge') {
+    if (this.mode !== 'solo') {
       ChallengeSystem.submitRound(stats);
 
       this.time.delayedCall(450, () => {
@@ -417,7 +473,7 @@ export class GameScene extends Phaser.Scene {
     // Wer anhalten koennte, waehrend ein legendaeres Relikt erscheint, duerfte
     // in Ruhe zielen - das bricht die Fairness gegenueber dem ersten Spieler
     // (config/challenge.ts). Aussteigen bleibt moeglich.
-    if (this.mode === 'challenge') {
+    if (this.mode !== 'solo') {
       eventBus.emitEvent(GameEvent.RunPaused, undefined);
       return;
     }
@@ -451,7 +507,7 @@ export class GameScene extends Phaser.Scene {
     // fortgesetzt: Ohne den Durchgang des Aussteigers gibt es nichts zu
     // vergleichen, und ein halber Zustand schickte die ChallengeScene in die
     // falsche Phase.
-    if (this.mode === 'challenge') ChallengeSystem.clear();
+    if (this.mode !== 'solo') ChallengeSystem.clear();
 
     this.scene.stop(SceneKey.Hud);
     this.scene.start(SceneKey.Menu);
@@ -463,6 +519,8 @@ export class GameScene extends Phaser.Scene {
 
     for (const orb of this.collectibles) orb.destroy();
     this.collectibles = [];
+    for (const obstacle of this.obstacles) obstacle.destroy();
+    this.obstacles = [];
   }
 
   // --- Debug ----------------------------------------------------------------
@@ -471,7 +529,7 @@ export class GameScene extends Phaser.Scene {
     new DebugKeys(this, {
       spawnRarity: (rarity) => {
         const request = this.spawner.forceSpawn(rarity, this.player.x, this.player.y);
-        this.spawnCollectible(request.x, request.y, rarity);
+        this.spawnCollectible(request.x, request.y, rarity, request);
       },
       grantLevel: () => {
         ProgressionSystem.grantLevels(1);
