@@ -225,7 +225,7 @@ export class AccountScene extends Phaser.Scene {
     if (!result.value) {
       this.busy = false;
       this.setStatus(
-        'Profil angelegt. Bitte prüfe die Alias-Konfiguration im Backend.',
+        'Profil angelegt, aber noch nicht freigeschaltet. Bitte „Confirm email“ in Supabase ausschalten und das Profil danach neu anlegen.',
         Palette.success,
       );
       return;

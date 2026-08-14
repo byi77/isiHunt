@@ -42,6 +42,20 @@ function aliasToAuthEmail(alias: string): string {
   return `${normalizeAlias(alias)}@${domain}`;
 }
 
+function readableAuthError(message: string, fallback: string): string {
+  const normalized = message.toLowerCase();
+  if (normalized.includes('email not confirmed')) {
+    return 'Profil noch nicht freigeschaltet: In Supabase „Confirm email“ ausschalten und das Profil danach neu anlegen.';
+  }
+  if (normalized.includes('invalid login credentials')) {
+    return 'Alias oder Passwort ist nicht korrekt.';
+  }
+  if (normalized.includes('email address') && normalized.includes('invalid')) {
+    return 'Alias-Login im Backend ist noch nicht korrekt konfiguriert.';
+  }
+  return message || fallback;
+}
+
 function client() {
   return CloudSystem.getSupabaseClient();
 }
@@ -108,7 +122,12 @@ export async function refresh(): Promise<CloudResult<Session | null>> {
 
   const result = await request(supabase.auth.getSession(), 'Sitzung laden');
   if (!result.ok) return result;
-  if (result.value.error) return { ok: false, error: result.value.error.message };
+  if (result.value.error) {
+    return {
+      ok: false,
+      error: readableAuthError(result.value.error.message, 'Profil konnte nicht angelegt werden'),
+    };
+  }
 
   session = result.value.data.session;
   return { ok: true, value: session };
@@ -165,7 +184,10 @@ export async function signIn(alias: string, password: string): Promise<CloudResu
   );
   if (!result.ok) return result;
   if (result.value.error || !result.value.data.session) {
-    return { ok: false, error: result.value.error?.message ?? 'Alias oder Passwort ungültig' };
+    return {
+      ok: false,
+      error: readableAuthError(result.value.error?.message ?? '', 'Alias oder Passwort ungültig'),
+    };
   }
 
   session = result.value.data.session;
