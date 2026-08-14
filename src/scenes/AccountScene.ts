@@ -82,9 +82,12 @@ export class AccountScene extends Phaser.Scene {
       .setWordWrapWidth(GAME_WIDTH - 190)
       .setAlign('center');
 
+    const signedInBeforeRefresh = AuthSystem.isSignedIn();
     this.buildCurrentState(world.accent);
     void AuthSystem.refresh().then((result) => {
-      if (result.ok && result.value && this.scene.isActive()) this.scene.restart();
+      if (!this.scene.isActive()) return;
+      const signedInAfterRefresh = result.ok && result.value !== null;
+      if (signedInAfterRefresh !== signedInBeforeRefresh) this.scene.restart();
     });
     this.events.once('shutdown', () => {
       this.aliasInput?.destroy();
