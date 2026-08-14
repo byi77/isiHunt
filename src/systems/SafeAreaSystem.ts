@@ -12,7 +12,6 @@ let area: HTMLElement | null = null;
 let tickerTimer: number | undefined;
 let tickerItems: readonly string[] = [];
 let tickerIndex = 0;
-const TICKER_HEIGHT_PX = 32;
 
 /**
  * WebKit meldet `safe-area-inset-top` in installierten Apps auf einzelnen
@@ -39,34 +38,6 @@ function installIosSafeTopFallback(): void {
     '--app-safe-top',
     `max(env(safe-area-inset-top, 0px), ${fallback}px)`,
   );
-}
-
-/**
- * Der Canvas kann im hohen iPhone-Viewport zusaetzlich vertikal zentriert
- * werden. Das Laufband soll dann nicht am Displayrand kleben, sondern direkt
- * ueber dem sichtbaren Canvas beginnen. Das vermeidet gleichzeitig den
- * grossen Leerraum vor dem Logo und ein Ueberlappen der Canvas-Oberkante.
- */
-function alignTickerToCanvas(): void {
-  if (!area) return;
-
-  const game = document.getElementById('game');
-  const canvas = game?.querySelector<HTMLCanvasElement>('canvas');
-  if (!game || !canvas) return;
-
-  const gameTop = game.getBoundingClientRect().top;
-  const canvasTop = canvas.getBoundingClientRect().top - gameTop;
-  if (canvasTop <= TICKER_HEIGHT_PX) return;
-
-  const safeTop = Number.parseFloat(
-    window.getComputedStyle(document.documentElement).getPropertyValue('--app-safe-top'),
-  );
-  const desiredTop = Math.max(Number.isFinite(safeTop) ? safeTop : 0, canvasTop - TICKER_HEIGHT_PX);
-
-  area.style.top = `${Math.round(desiredTop)}px`;
-  area.style.height = `${TICKER_HEIGHT_PX}px`;
-  area.style.minHeight = `${TICKER_HEIGHT_PX}px`;
-  area.style.padding = '0 18px';
 }
 
 function write(message: string): void {
@@ -129,16 +100,4 @@ export function initialize(): void {
 
   installIosSafeTopFallback();
   registerGameEvents();
-
-  window.addEventListener('resize', alignTickerToCanvas);
-  window.addEventListener('orientationchange', alignTickerToCanvas);
-
-  // Phaser erzeugt den Canvas erst nach dem Start. Mehrere Frames decken den
-  // ersten Layoutsprung der installierten iOS-App ab.
-  let attempts = 0;
-  const measureAfterBoot = (): void => {
-    alignTickerToCanvas();
-    if (attempts++ < 12) window.requestAnimationFrame(measureAfterBoot);
-  };
-  window.requestAnimationFrame(measureAfterBoot);
 }
