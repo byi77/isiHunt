@@ -26,6 +26,17 @@ set -e
 
 remote="$1"
 
+# In das Repo-Wurzelverzeichnis wechseln - und zwar in Gits normalisierte
+# Schreibweise.
+#
+# Git startet Hooks unter Windows mit kleingeschriebenem Laufwerksbuchstaben
+# ("c:\Git\isiHunt"). Vitest legt seine Module unter "C:/..." im Cache ab,
+# sucht den Test-Runner aber ueber "c:/..." - fuer Nodes Modul-Aufloesung sind
+# das zwei verschiedene Pfade. Ergebnis: "Vitest failed to find the runner",
+# und zwar ausschliesslich im Hook. Manuell laeuft dieselbe Suite gruen, was
+# die Suche danach teuer macht.
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
 # Node finden - Git-Hooks laufen unter Windows in einer minimalen Shell.
 if command -v node >/dev/null 2>&1; then
   NODE=node

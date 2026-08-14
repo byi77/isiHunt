@@ -374,6 +374,14 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- **Der `pre-push`-Hook wechselt jetzt in Gits normalisiertes
+  Wurzelverzeichnis.** Git startet Hooks unter Windows mit kleingeschriebenem
+  Laufwerksbuchstaben; Vitest legte seine Module daraufhin unter `C:/...` ab,
+  suchte den Runner aber ueber `c:/...` und brach mit "failed to find the
+  runner" ab — ausschliesslich im Hook, waehrend dieselbe Suite in jeder Shell
+  gruen lief.
+- Die Testeinstellungen stehen jetzt in einer eigenen `vitest.config.ts`, die
+  Alias und `define` per `mergeConfig` aus der Vite-Config erbt.
 - **`ScoreSystem` importiert Phaser nicht mehr.** Der Import bestand fuer ein
   einzelnes `Math.Clamp`, zog aber die komplette Engine samt Canvas-Erkennung
   mit und machte die Datei ausserhalb eines Browsers unbenutzbar. Ersetzt durch

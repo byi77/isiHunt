@@ -175,3 +175,7 @@ Zwei Fallen beim Testschreiben:
   laesst die Datei ausserhalb des Browsers gar nicht erst laden.
 - **`SaveSystem` cached im Modul.** `localStorage.clear()` allein setzt nichts
   zurueck — das Modul muss per `vi.resetModules()` neu geladen werden.
+- **Werkzeuge in Hooks im Hook pruefen, nicht in der Konsole.** Git startet
+  Hooks mit kleingeschriebenem Laufwerksbuchstaben; Vitest fand dadurch seinen
+  Runner nicht, obwohl dieselbe Suite in jeder Shell gruen lief
+  (`docs/ARCHITECTURE.md` 9.2).

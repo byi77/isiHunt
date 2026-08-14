@@ -439,6 +439,8 @@ verstreut. Wer eine neue Ebene einzog, musste alle Dateien durchsuchen.
 
 **Vitest, `jsdom`, Testdatei neben der Quelldatei** (`ScoreSystem.test.ts` neben
 `ScoreSystem.ts`). Erfasst wird `src/**/*.test.ts`; gefahren wird `npm run test`.
+Die Einstellungen stehen in `vitest.config.ts` und erben Alias und `define` per
+`mergeConfig` aus der Vite-Config.
 
 `jsdom` statt `node`, weil `SaveSystem` auf `window.localStorage` zugreift. Die
 Progression laeuft dadurch gegen die echte Persistenz statt gegen eine Attrappe
@@ -467,6 +469,23 @@ genau der ist die Stelle, an der Tests unbemerkt voneinander abhaengig werden.
 braeuchte es einen echten Browser; die Grenze steht in Abschnitt 10. Ebenso
 offen bleibt der Determinismus-Test des Duells (Abschnitt 4.1) — geprueft ist
 der Duell-*Zustand*, nicht die Gleichheit der Spawn-Abfolge bei gleichem Seed.
+
+### Die Falle mit dem Laufwerksbuchstaben
+
+Git startet Hooks unter Windows mit **kleingeschriebenem** Laufwerksbuchstaben
+(`c:\Git\isiHunt`), die Konsole dagegen mit grossem. Vitest legt Module unter
+`C:/...` im Cache ab und sucht den Test-Runner ueber `c:/...` — fuer Nodes
+Modul-Aufloesung sind das zwei verschiedene Pfade. Die Suite bricht dann mit
+`Vitest failed to find the runner` ab.
+
+Das Tueckische daran: Der Fehler tritt **ausschliesslich** im Hook auf.
+Manuell, in Bash, in PowerShell, unter Hook-`PATH` und mit Hook-Variablen
+laeuft dieselbe Suite gruen — die Ursache liegt in keiner Umgebungsvariablen,
+sondern in einer Zeichenkette. Der `pre-push`-Hook beginnt deshalb mit
+`cd "$(git rev-parse --show-toplevel)"`.
+
+Wer ein weiteres Werkzeug in einen Hook haengt, prueft es **im Hook**, nicht in
+der Konsole.
 
 ## 10. Grenzen der aktuellen Architektur
 
