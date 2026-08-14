@@ -172,7 +172,7 @@ export const TALENT_RESET_COST = 250;
 // --- Persistenz -------------------------------------------------------------
 
 export const SAVE_KEY = 'isihunt.save.v1';
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 // --- Entwicklung ------------------------------------------------------------
 

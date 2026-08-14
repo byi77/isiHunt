@@ -7,6 +7,7 @@
  */
 
 import {
+  COINS_PER_LEVEL,
   COINS_PER_EXTRA_TALENT_POINT,
   MAX_LEVEL,
   SAVE_KEY,
@@ -119,6 +120,11 @@ function migrate(raw: Partial<SaveData>): SaveData {
     // vorhandene Punkte werden beim Wechsel in Coins umgewandelt.
     save.coins += save.talentPoints * COINS_PER_EXTRA_TALENT_POINT;
     save.talentPoints = 0;
+  }
+  if (rawVersion < 5) {
+    // Beim Wechsel auf die reine Coin-Waehrung werden die bisher nicht
+    // gutgeschriebenen Level-Coins einmalig nachgetragen.
+    save.coins += Math.max(0, save.level - 1) * COINS_PER_LEVEL;
   }
   return save;
 }

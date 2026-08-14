@@ -262,7 +262,7 @@ describe('grantLevels', () => {
 describe('Talentkäufe', () => {
   it('kauft Ränge mit Coins und berechnet den kostenpflichtigen Reset', () => {
     SaveSystem.update((data) => {
-      data.coins = 1300;
+      data.coins = 1100;
     });
 
     expect(Progression.purchaseTalent('reach')).not.toBeNull();

@@ -125,11 +125,40 @@ grant execute on function public.profile_level_from_xp(bigint) to authenticated;
 
 create or replace function public.get_profile_progress()
 returns setof public.profile_progress
-language sql
-stable
-security invoker
+language plpgsql
+security definer
+set search_path = public
 as $$
-  select * from public.profile_progress where profile_id = auth.uid();
+declare
+  uid uuid := auth.uid();
+  current_data jsonb;
+  retro_coins integer;
+begin
+  if uid is null then raise exception 'Anmeldung erforderlich'; end if;
+
+  select data into current_data
+  from public.profile_progress where profile_id = uid for update;
+  if current_data is null then return; end if;
+
+  -- Einmalige Nachvergütung für Profile aus Version 4: Beim damaligen
+  -- Wechsel auf Coins wurden Level-Coins noch nicht rückwirkend vergeben.
+  if coalesce((current_data->>'version')::integer, 1) < 5 then
+    retro_coins := greatest(0, coalesce((current_data->>'level')::integer, 1) - 1) * 20;
+    current_data := jsonb_set(
+      current_data,
+      '{coins}',
+      to_jsonb(coalesce((current_data->>'coins')::integer, 0) + retro_coins),
+      true
+    );
+    current_data := jsonb_set(current_data, '{talentPoints}', '0'::jsonb, true);
+    current_data := jsonb_set(current_data, '{version}', '5'::jsonb, true);
+    update public.profile_progress
+    set data = current_data, updated_at = now()
+    where profile_id = uid;
+  end if;
+
+  return query select * from public.profile_progress where profile_id = uid;
+end;
 $$;
 
 revoke execute on function public.get_profile_progress() from public;
@@ -301,14 +330,17 @@ begin
   if coalesce((current_data->>'version')::integer, 1) < 4 then
     current_coins := current_coins + coalesce((current_data->>'talentPoints')::integer, 0) * 10;
   end if;
-  talent_cost := 400 + current_rank * 100;
+  if coalesce((current_data->>'version')::integer, 1) < 5 then
+    current_coins := current_coins + greatest(0, coalesce((current_data->>'level')::integer, 1) - 1) * 20;
+  end if;
+  talent_cost := 300 + current_rank * 100;
   if current_coins < talent_cost then raise exception 'Nicht genug Coins'; end if;
   if current_rank >= max_rank then raise exception 'Talent bereits maximiert'; end if;
 
   next_data := jsonb_set(current_data, array['talents', p_talent_id], to_jsonb(current_rank + 1), true);
   next_data := jsonb_set(next_data, '{coins}', to_jsonb(current_coins - talent_cost), true);
   next_data := jsonb_set(next_data, '{talentPoints}', '0'::jsonb, true);
-  next_data := jsonb_set(next_data, '{version}', '4'::jsonb, true);
+  next_data := jsonb_set(next_data, '{version}', '5'::jsonb, true);
   update public.profile_progress
   set data = next_data, updated_at = now()
   where profile_id = uid;
@@ -340,11 +372,14 @@ begin
   if coalesce((current_data->>'version')::integer, 1) < 4 then
     current_coins := current_coins + coalesce((current_data->>'talentPoints')::integer, 0) * 10;
   end if;
+  if coalesce((current_data->>'version')::integer, 1) < 5 then
+    current_coins := current_coins + greatest(0, coalesce((current_data->>'level')::integer, 1) - 1) * 20;
+  end if;
   if current_coins < 250 then raise exception 'Nicht genug Coins für den Reset'; end if;
   next_data := jsonb_set(current_data, '{talents}', '{}'::jsonb, true);
   next_data := jsonb_set(next_data, '{coins}', to_jsonb(current_coins - 250), true);
   next_data := jsonb_set(next_data, '{talentPoints}', '0'::jsonb, true);
-  next_data := jsonb_set(next_data, '{version}', '4'::jsonb, true);
+  next_data := jsonb_set(next_data, '{version}', '5'::jsonb, true);
   update public.profile_progress
   set data = next_data, updated_at = now()
   where profile_id = uid;
@@ -404,6 +439,33 @@ begin
 
   select data, total_xp into current_data, total_xp_value
   from public.profile_progress where profile_id = uid for update;
+
+  -- Auch bei einem direkten Offline-Upload darf ein altes Profil die
+  -- einmalige Level-Coins-Nachvergütung nicht verlieren.
+  if coalesce((current_data->>'version')::integer, 1) < 4 then
+    current_data := jsonb_set(
+      current_data,
+      '{coins}',
+      to_jsonb(
+        coalesce((current_data->>'coins')::integer, 0)
+        + coalesce((current_data->>'talentPoints')::integer, 0) * 10
+      ),
+      true
+    );
+  end if;
+  if coalesce((current_data->>'version')::integer, 1) < 5 then
+    current_data := jsonb_set(
+      current_data,
+      '{coins}',
+      to_jsonb(
+        coalesce((current_data->>'coins')::integer, 0)
+        + greatest(0, coalesce((current_data->>'level')::integer, 1) - 1) * 20
+      ),
+      true
+    );
+    current_data := jsonb_set(current_data, '{talentPoints}', '0'::jsonb, true);
+    current_data := jsonb_set(current_data, '{version}', '5'::jsonb, true);
+  end if;
   total_xp_value := total_xp_value + greatest(0, p_xp_gained);
   select level, xp into next_level, next_xp
   from public.profile_level_from_xp(total_xp_value);
