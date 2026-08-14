@@ -142,8 +142,8 @@ export class GameScene extends Phaser.Scene {
     this.input_ = new InputController(this);
     this.scoring = new ScoreSystem(
       this.stats.comboGraceMs,
-      this.stats.scoreMultiplier,
-      this.stats.xpMultiplier,
+      this.stats.scoreMultiplier * this.world.rewardMultiplier,
+      this.stats.xpMultiplier * this.world.rewardMultiplier,
     );
 
     // Nur im Duell wird geseedet - beide Spieler bekommen dieselbe Abfolge.
@@ -155,6 +155,7 @@ export class GameScene extends Phaser.Scene {
       this.playfield,
       this.world.modifier,
       this.world.obstacleMode,
+      this.world.difficultyScale,
     );
 
     // HUD als eigene Scene parallel starten - siehe Kommentar in EventBus.ts.
@@ -443,6 +444,7 @@ export class GameScene extends Phaser.Scene {
     // Durchgaenge spielt jemand, dem er nicht gehoert (config/challenge.ts).
     if (this.mode !== 'solo') {
       ChallengeSystem.submitRound(stats);
+      if (this.mode === 'daily') ChallengeSystem.completeDaily(stats);
 
       this.time.delayedCall(450, () => {
         this.scene.stop(SceneKey.Hud);

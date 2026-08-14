@@ -67,6 +67,7 @@ export class SpawnSystem {
     private readonly bounds: Phaser.Geom.Rectangle,
     private readonly modifier: WorldModifier = 'none',
     private readonly obstacleMode: ObstacleMode = 'none',
+    private readonly difficultyScale = 1,
   ) {}
 
   /**
@@ -102,10 +103,11 @@ export class SpawnSystem {
         ? 0
         : WORLD_OBSTACLE_BASE_CHANCE +
           (WORLD_OBSTACLE_END_CHANCE - WORLD_OBSTACLE_BASE_CHANCE) * runProgress;
+    const scaledObstacleChance = Math.min(0.24, obstacleChance * this.difficultyScale);
 
     if (activeCount >= MAX_ACTIVE_COLLECTIBLES) return null;
 
-    if (obstacleRoll < obstacleChance) {
+    if (obstacleRoll < scaledObstacleChance) {
       return {
         x: position.x,
         y: position.y,
@@ -115,17 +117,18 @@ export class SpawnSystem {
       };
     }
 
+    const worldLifetimeScale = Math.max(0.55, 1 - (this.difficultyScale - 1) * 0.35);
     return {
       x: position.x,
       y: position.y,
       kind: 'collectible',
       rarity,
       lifetimeScale:
-        this.modifier === 'rare_bonus'
+        (this.modifier === 'rare_bonus'
           ? WORLD_RARE_LIFETIME_SCALE
           : this.modifier === 'short_lived'
             ? WORLD_SHORT_LIFETIME_SCALE
-            : 1,
+            : 1) * worldLifetimeScale,
       driftMultiplier: this.modifier === 'inertia' ? WORLD_DRIFT_MULTIPLIER : 1,
       blinking: this.modifier === 'blink',
     };

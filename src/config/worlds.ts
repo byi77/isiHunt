@@ -27,6 +27,10 @@ export interface WorldDef {
   readonly modifier: 'none' | 'inertia' | 'short_lived' | 'blink' | 'rare_bonus';
   /** Hindernisse bremsen zuerst und bestrafen spaeter. */
   readonly obstacleMode: 'none' | 'brake' | 'penalty';
+  /** Erschwernis fuer Spawn-Dichte und Sichtfenster. */
+  readonly difficultyScale: number;
+  /** Bonus auf Punkte und XP als Gegenleistung fuer die Erschwernis. */
+  readonly rewardMultiplier: number;
 }
 
 export const WORLDS: readonly WorldDef[] = [
@@ -42,6 +46,8 @@ export const WORLDS: readonly WorldDef[] = [
     plannedModifier: 'Keine - die Lernzone.',
     modifier: 'none',
     obstacleMode: 'none',
+    difficultyScale: 1,
+    rewardMultiplier: 1,
   },
   {
     id: 'frostzinne',
@@ -55,6 +61,8 @@ export const WORLDS: readonly WorldDef[] = [
     plannedModifier: 'Planeten driften weiter - Bewegung mit Trägheit.',
     modifier: 'inertia',
     obstacleMode: 'brake',
+    difficultyScale: 1,
+    rewardMultiplier: 1,
   },
   {
     id: 'glutmark',
@@ -68,6 +76,8 @@ export const WORLDS: readonly WorldDef[] = [
     plannedModifier: 'Planeten verglühen schneller - kürzere Zeitfenster.',
     modifier: 'short_lived',
     obstacleMode: 'brake',
+    difficultyScale: 1,
+    rewardMultiplier: 1,
   },
   {
     id: '__LEERENBLÜTE__',
@@ -81,6 +91,8 @@ export const WORLDS: readonly WorldDef[] = [
     plannedModifier: 'Planeten blinken kurz aus der Sichtbarkeit.',
     modifier: 'blink',
     obstacleMode: 'penalty',
+    difficultyScale: 1,
+    rewardMultiplier: 1,
   },
   {
     id: 'sonnenhort',
@@ -94,6 +106,83 @@ export const WORLDS: readonly WorldDef[] = [
     plannedModifier: 'Doppelte Chance auf seltene Planeten, halbe Lebensdauer.',
     modifier: 'rare_bonus',
     obstacleMode: 'penalty',
+    difficultyScale: 1,
+    rewardMultiplier: 1,
+  },
+  {
+    id: 'mondschmiede',
+    name: 'Mondschmiede',
+    unlockLevel: 22,
+    bgTop: 0x172554,
+    bgBottom: 0x080f2e,
+    accent: 0x818cf8,
+    spaceVariant: 5,
+    flavor: 'Schwere Monde ziehen jede Bewegung aus ihrer geraden Bahn.',
+    plannedModifier: 'Mehr Trägheit und deutlichere Hindernisse.',
+    modifier: 'inertia',
+    obstacleMode: 'penalty',
+    difficultyScale: 1.12,
+    rewardMultiplier: 1.08,
+  },
+  {
+    id: 'kristallbruch',
+    name: 'Kristallbruch',
+    unlockLevel: 30,
+    bgTop: 0x164e63,
+    bgBottom: 0x082f49,
+    accent: 0x22d3ee,
+    spaceVariant: 6,
+    flavor: 'Splitter rasen durch die Bahn und lassen Relikte schneller verblassen.',
+    plannedModifier: 'Kürzere Sichtfenster und mehr Hindernisse.',
+    modifier: 'short_lived',
+    obstacleMode: 'penalty',
+    difficultyScale: 1.25,
+    rewardMultiplier: 1.16,
+  },
+  {
+    id: 'sturmgrenze',
+    name: 'Sturmgrenze',
+    unlockLevel: 40,
+    bgTop: 0x3b0764,
+    bgBottom: 0x160b2b,
+    accent: 0xe879f9,
+    spaceVariant: 7,
+    flavor: 'Im kosmischen Sturm wechseln Sichtbarkeit und Richtung ständig.',
+    plannedModifier: 'Blinkende Relikte, starke Trägheit und harte Hindernisse.',
+    modifier: 'blink',
+    obstacleMode: 'penalty',
+    difficultyScale: 1.4,
+    rewardMultiplier: 1.25,
+  },
+  {
+    id: 'lichtkern',
+    name: 'Lichtkern',
+    unlockLevel: 55,
+    bgTop: 0x713f12,
+    bgBottom: 0x271100,
+    accent: 0xfbbf24,
+    spaceVariant: 8,
+    flavor: 'Der Kern leuchtet hell – seltene Relikte sind hier besonders wertvoll.',
+    plannedModifier: 'Sehr schnelle Relikte, viele Hindernisse, bessere Beute.',
+    modifier: 'rare_bonus',
+    obstacleMode: 'penalty',
+    difficultyScale: 1.55,
+    rewardMultiplier: 1.35,
+  },
+  {
+    id: 'horizonttor',
+    name: 'Horizonttor',
+    unlockLevel: 75,
+    bgTop: 0x312e81,
+    bgBottom: 0x110b39,
+    accent: 0xa78bfa,
+    spaceVariant: 9,
+    flavor: 'Hinter dem letzten Tor wartet die dichteste und schnellste Jagd.',
+    plannedModifier: 'Maximale Geschwindigkeit und die höchste Belohnung.',
+    modifier: 'short_lived',
+    obstacleMode: 'penalty',
+    difficultyScale: 1.7,
+    rewardMultiplier: 1.5,
   },
 ];
 

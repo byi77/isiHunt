@@ -2,6 +2,7 @@
 
 import * as AuthSystem from '@/systems/AuthSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
+import * as SaveSystem from '@/systems/SaveSystem';
 import type { ProgressEvent, ProgressionResult, RunStats } from '@/types';
 
 const OUTBOX_KEY = 'isihunt.progress-events';
@@ -70,6 +71,18 @@ export async function flush(): Promise<void> {
   }
 
   writeOutbox(remaining);
+
+  const local = SaveSystem.load();
+  if (!local.pendingDailyKey || local.pendingDailyCoins <= 0) return;
+  const daily = await CloudSystem.claimDailyBonus(local.pendingDailyKey, local.pendingDailyScore);
+  if (!daily.ok || !daily.value) return;
+
+  SaveSystem.adoptProfileProgress(daily.value.data);
+  SaveSystem.update((data) => {
+    data.pendingDailyKey = null;
+    data.pendingDailyCoins = 0;
+    data.pendingDailyScore = 0;
+  });
 }
 
 export function pendingCount(): number {

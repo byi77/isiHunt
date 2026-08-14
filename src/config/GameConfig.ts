@@ -185,6 +185,12 @@ export const COINS_PER_ACHIEVEMENT = 25;
 export const COINS_PER_LEVEL = 20;
 /** Kosten eines Talent-Resets. */
 export const TALENT_RESET_COST = 250;
+/** Fester Bonus für den ersten abgeschlossenen Tageslauf des Tages. */
+export const DAILY_COMPLETION_BONUS_COINS = 100;
+/** Zusätzlicher Bonus je erreichter Punktestufe, gedeckelt gegen Überfarmung. */
+export const DAILY_SCORE_BONUS_STEP = 5_000;
+export const DAILY_SCORE_BONUS_COINS = 50;
+export const DAILY_SCORE_BONUS_CAP = 100;
 
 // --- Persistenz -------------------------------------------------------------
 

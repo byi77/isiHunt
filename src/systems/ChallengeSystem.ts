@@ -12,6 +12,13 @@
  */
 
 import { CHALLENGE_PLAYER_COUNT } from '@/config/challenge';
+import {
+  DAILY_COMPLETION_BONUS_COINS,
+  DAILY_SCORE_BONUS_CAP,
+  DAILY_SCORE_BONUS_COINS,
+  DAILY_SCORE_BONUS_STEP,
+} from '@/config/GameConfig';
+import * as SaveSystem from '@/systems/SaveSystem';
 import type { BotDifficulty, ChallengeKind, ChallengeState, RunStats } from '@/types';
 
 let state: ChallengeState | null = null;
@@ -28,8 +35,10 @@ function createSeed(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-function dailyKey(): string {
-  return new Date().toISOString().slice(0, 10);
+export function dailyKeyForToday(date = new Date()): string {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
 }
 
 function dailySeed(worldId: string, key: string): string {
@@ -67,9 +76,44 @@ export function start(worldId: string): ChallengeState {
 }
 
 export function startDaily(worldId: string): ChallengeState {
-  const key = dailyKey();
-  state = { seed: dailySeed(worldId, key), worldId, rounds: [], kind: 'daily', dailyKey: key };
+  const key = dailyKeyForToday();
+  state = {
+    seed: dailySeed(worldId, key),
+    worldId,
+    rounds: [],
+    kind: 'daily',
+    dailyKey: key,
+    dailyCompleted: SaveSystem.load().lastDailyKey === key,
+  };
   return state;
+}
+
+export function completeDaily(stats: RunStats): number {
+  if (!state || state.kind !== 'daily' || !state.dailyKey) return 0;
+  const key = state.dailyKey;
+  if (SaveSystem.load().lastDailyKey === key) {
+    state.dailyCompleted = true;
+    return 0;
+  }
+
+  const scoreBonus = Math.min(
+    DAILY_SCORE_BONUS_CAP,
+    Math.floor(Math.max(0, stats.score) / DAILY_SCORE_BONUS_STEP) * DAILY_SCORE_BONUS_COINS,
+  );
+  const reward = DAILY_COMPLETION_BONUS_COINS + scoreBonus;
+  SaveSystem.update((data) => {
+    data.lastDailyKey = key;
+    data.dailyBestScore = Math.max(data.dailyBestScore, stats.score);
+    data.totalDailyRuns += 1;
+    data.coins += reward;
+    data.totalCoinsEarned += reward;
+    data.pendingDailyKey = key;
+    data.pendingDailyCoins = reward;
+    data.pendingDailyScore = stats.score;
+  });
+  state.dailyCompleted = true;
+  state.dailyRewardCoins = reward;
+  return reward;
 }
 
 export function startBot(worldId: string, difficulty: BotDifficulty = 'normal'): ChallengeState {

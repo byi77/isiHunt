@@ -81,6 +81,32 @@ export class ChallengeScene extends Phaser.Scene {
 
   private buildIntro(state: ChallengeState, world: WorldDef): void {
     const kind = ChallengeSystem.kind();
+    if (kind === 'daily' && state.dailyCompleted) {
+      this.buildHeading('TAGESLAUF ERLEDIGT', 'Morgen wartet eine neue Herausforderung auf dich.');
+      createPanel(this, GAME_WIDTH / 2, 560, GAME_WIDTH - 120, 260, world.accent);
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          520,
+          'Diesen Tageslauf hast du heute bereits gespielt.',
+          textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }),
+        )
+        .setOrigin(0.5)
+        .setWordWrapWidth(GAME_WIDTH - 180)
+        .setAlign('center');
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          610,
+          'Ein neuer Lauf und ein neuer Bonus werden morgen freigeschaltet.',
+          textStyle(FontSize.small, Palette.inkDim),
+        )
+        .setOrigin(0.5)
+        .setWordWrapWidth(GAME_WIDTH - 180)
+        .setAlign('center');
+      this.buildBackToMenu('ZURÜCK ZUM MENÜ');
+      return;
+    }
     const title =
       kind === 'daily' ? 'TAGES-HERAUSFORDERUNG' : kind === 'bot' ? 'BOT-DUELL' : 'DUELL';
     const subtitle =
@@ -98,6 +124,7 @@ export class ChallengeScene extends Phaser.Scene {
             `Du spielst ${seconds} Sekunden.`,
             'Der Seed ist heute für alle gleich.',
             'Keine Talente - gleiche Voraussetzungen.',
+            'Einmal täglich: mindestens 100 Bonus-Coins.',
             'Der Tageslauf ändert deinen Spielstand nicht.',
           ]
         : kind === 'bot'
@@ -206,8 +233,16 @@ export class ChallengeScene extends Phaser.Scene {
   private buildResult(state: ChallengeState, world: WorldDef): void {
     if (ChallengeSystem.kind() === 'daily') {
       const round = state.rounds[0];
-      this.buildHeading('TAGESLAUF GESCHAFFT', 'Dein Ergebnis bleibt lokal auf diesem Gerät.');
+      this.buildHeading('TAGESLAUF GESCHAFFT', 'Morgen wartet der nächste Lauf auf dich.');
       if (round) this.buildResultCard(round, 0, world, false);
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          700,
+          `TAGESBONUS  +${state.dailyRewardCoins ?? 0} COINS`,
+          textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
+        )
+        .setOrigin(0.5);
       this.buildResultButtons(world);
       return;
     }
@@ -287,6 +322,10 @@ export class ChallengeScene extends Phaser.Scene {
   }
 
   private buildResultButtons(world: WorldDef): void {
+    if (ChallengeSystem.kind() === 'daily') {
+      this.buildBackToMenu('ZURÜCK ZUM MENÜ');
+      return;
+    }
     createButton(
       this,
       GAME_WIDTH / 2,

@@ -406,6 +406,57 @@ $$;
 revoke execute on function public.reset_talents() from public;
 grant execute on function public.reset_talents() to authenticated;
 
+-- Ein Tageslauf kann pro Profil und Kalendertag nur einmal belohnt werden.
+create or replace function public.claim_daily_bonus(
+  p_daily_key text,
+  p_score integer
+)
+returns setof public.profile_progress
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  current_data jsonb;
+  next_data jsonb;
+  safe_bonus integer;
+  safe_score integer := greatest(0, p_score);
+begin
+  if uid is null then raise exception 'Anmeldung erforderlich'; end if;
+  if p_daily_key !~ '^\d{4}-\d{2}-\d{2}$' then
+    raise exception 'Ungültiger Tageslauf';
+  end if;
+  safe_bonus := 100 + least(100, floor(safe_score / 5000.0)::integer * 50);
+
+  select data into current_data
+  from public.profile_progress where profile_id = uid for update;
+  if current_data is null then raise exception 'Profilstand noch nicht angelegt'; end if;
+
+  if current_data->>'lastDailyKey' = p_daily_key then
+    return query select * from public.profile_progress where profile_id = uid;
+    return;
+  end if;
+
+  next_data := current_data || jsonb_build_object(
+    'lastDailyKey', p_daily_key,
+    'dailyBestScore', greatest(coalesce((current_data->>'dailyBestScore')::integer, 0), safe_score),
+    'totalDailyRuns', coalesce((current_data->>'totalDailyRuns')::integer, 0) + 1,
+    'coins', coalesce((current_data->>'coins')::integer, 0) + safe_bonus,
+    'totalCoinsEarned', coalesce((current_data->>'totalCoinsEarned')::bigint, 0) + safe_bonus,
+    'version', 5
+  );
+
+  update public.profile_progress
+  set data = next_data, updated_at = now()
+  where profile_id = uid;
+  return query select * from public.profile_progress where profile_id = uid;
+end;
+$$;
+
+revoke execute on function public.claim_daily_bonus(text, integer) from public;
+grant execute on function public.claim_daily_bonus(text, integer) to authenticated;
+
 drop function if exists public.submit_progress_event(uuid, text, integer, integer, integer, integer, integer, jsonb, text[]);
 
 create or replace function public.submit_progress_event(

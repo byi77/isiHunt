@@ -531,6 +531,26 @@ export async function resetTalents(): Promise<CloudResult<RemoteProfileProgress 
   return { ok: true, value: readProfileProgress(result.value.data) };
 }
 
+/** Beansprucht den einmaligen Tagesbonus atomar im gemeinsamen Profil. */
+export async function claimDailyBonus(
+  dailyKey: string,
+  score: number,
+): Promise<CloudResult<RemoteProfileProgress | null>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const result = await withTimeout(
+    authenticated.value.rpc('claim_daily_bonus', {
+      p_daily_key: dailyKey,
+      p_score: Math.max(0, Math.round(score)),
+    }),
+    'Tagesbonus synchronisieren',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+  return { ok: true, value: readProfileProgress(result.value.data) };
+}
+
 /** Überträgt genau ein neues Solo-Ereignis. Wiederholungen sind idempotent. */
 export async function submitProgressEvent(
   event: ProgressEvent,

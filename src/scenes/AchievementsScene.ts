@@ -11,6 +11,7 @@ import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   createBackButton,
+  createButton,
   createDriftLayers,
   createPanel,
   createVignette,
@@ -22,7 +23,7 @@ export class AchievementsScene extends Phaser.Scene {
     super(SceneKey.Achievements);
   }
 
-  create(): void {
+  create(data: { page?: number } = {}): void {
     SafeAreaSystem.showStatic('ERFOLGE');
     const save = SaveSystem.load();
     const world = getWorld(save.lastWorldId);
@@ -58,22 +59,26 @@ export class AchievementsScene extends Phaser.Scene {
         GAME_WIDTH / 2,
         165,
         `${unlocked} von ${ACHIEVEMENTS.length} freigeschaltet`,
-        textStyle(FontSize.small, toCss(world.accent), { fontStyle: 'bold' }),
+        textStyle(FontSize.body, toCss(world.accent), { fontStyle: 'bold' }),
       )
       .setOrigin(0.5);
 
+    const pageSize = 10;
+    const pageCount = Math.ceil(ACHIEVEMENTS.length / pageSize);
+    const page = Math.min(pageCount - 1, Math.max(0, data.page ?? 0));
+    const pageAchievements = ACHIEVEMENTS.slice(page * pageSize, (page + 1) * pageSize);
     const columnX = [190, 530] as const;
-    const rowTop = 250;
-    const rowStep = 112;
-    ACHIEVEMENTS.forEach((achievement, index) => {
-      const column = index < 8 ? 0 : 1;
-      const row = column === 0 ? index : index - 8;
+    const rowTop = 285;
+    const rowStep = 145;
+    pageAchievements.forEach((achievement, index) => {
+      const column = index < 5 ? 0 : 1;
+      const row = column === 0 ? index : index - 5;
       const isUnlocked = save.unlockedAchievements.includes(achievement.id);
       const accent = isUnlocked ? Palette.goldHex : 0x69738d;
       const x = columnX[column];
       const y = rowTop + row * rowStep;
 
-      createPanel(this, x, y, 316, 92, accent, { alpha: isUnlocked ? 0.58 : 0.38, radius: 14 });
+      createPanel(this, x, y, 316, 112, accent, { alpha: isUnlocked ? 0.58 : 0.38, radius: 14 });
       this.add
         .text(x - 136, y - 27, isUnlocked ? '✓' : '○', textStyle(FontSize.body, toCss(accent)))
         .setOrigin(0, 0.5);
@@ -81,7 +86,7 @@ export class AchievementsScene extends Phaser.Scene {
         .text(
           x - 102,
           y - 25,
-          achievement.name,
+          `RANG ${achievement.rank} · ${achievement.name}`,
           textStyle(FontSize.tiny, isUnlocked ? Palette.ink : Palette.inkDim, {
             fontStyle: 'bold',
           }),
@@ -89,10 +94,39 @@ export class AchievementsScene extends Phaser.Scene {
         .setOrigin(0, 0.5)
         .setWordWrapWidth(230);
       this.add
-        .text(x - 102, y + 14, achievement.description, textStyle(14, Palette.inkDim))
+        .text(x - 102, y + 17, achievement.description, textStyle(FontSize.tiny, Palette.inkDim))
         .setOrigin(0, 0.5)
         .setWordWrapWidth(230)
         .setLineSpacing(2);
     });
+
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT - 190,
+        `SEITE ${page + 1} / ${pageCount}`,
+        textStyle(FontSize.tiny, Palette.inkDim),
+      )
+      .setOrigin(0.5);
+
+    const previous = createButton(
+      this,
+      GAME_WIDTH / 2 - 145,
+      GAME_HEIGHT - 190,
+      '‹',
+      () => this.scene.restart({ page: page - 1 }),
+      { width: 76, height: 64, accent: world.accent, fontSize: FontSize.heading },
+    );
+    previous.setEnabled(page > 0);
+
+    const next = createButton(
+      this,
+      GAME_WIDTH / 2 + 145,
+      GAME_HEIGHT - 190,
+      '›',
+      () => this.scene.restart({ page: page + 1 }),
+      { width: 76, height: 64, accent: world.accent, fontSize: FontSize.heading },
+    );
+    next.setEnabled(page < pageCount - 1);
   }
 }

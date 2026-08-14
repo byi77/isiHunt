@@ -29,6 +29,14 @@ export interface SaveData {
   totalCoinsEarned: number;
   /** Alle für Talente und Resets ausgegebenen Coins. */
   coinsSpent: number;
+  /** Lokaler Schlüssel des zuletzt abgeschlossenen Tageslaufs. */
+  lastDailyKey: string | null;
+  dailyBestScore: number;
+  totalDailyRuns: number;
+  /** Cloud-Nachholung, falls der Tagesbonus offline verdient wurde. */
+  pendingDailyKey: string | null;
+  pendingDailyCoins: number;
+  pendingDailyScore: number;
   /** Ueber alle Runs eingesammelte Relikte je Seltenheit. */
   collected: Record<RarityId, number>;
   unlockedAchievements: string[];
@@ -93,6 +101,8 @@ export interface ChallengeState {
   kind?: ChallengeKind;
   botDifficulty?: BotDifficulty;
   dailyKey?: string;
+  dailyCompleted?: boolean;
+  dailyRewardCoins?: number;
 }
 
 /** Was ein Run an Progression ausgeloest hat - fuer den Ergebnisbildschirm. */
