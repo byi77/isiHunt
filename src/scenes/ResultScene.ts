@@ -14,7 +14,9 @@ import { RARITIES } from '@/config/rarities';
 import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
+import * as AuthSystem from '@/systems/AuthSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
+import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { planetTextureForVariant, TextureKey } from '@/ui/textures';
@@ -59,6 +61,7 @@ export class ResultScene extends Phaser.Scene {
     this.buildScoreHeader(stats, progression, world.accent);
     this.buildBreakdown(stats, world.spaceVariant);
     this.buildProgression(progression, world.accent);
+    ProgressSyncSystem.enqueueRun(stats, progression);
     this.submitLeaderboardScore(stats);
     this.uploadSave();
     this.buildButtons(stats.worldId, world.accent);
@@ -253,7 +256,7 @@ export class ResultScene extends Phaser.Scene {
     const name = CloudSystem.sanitizePlayerName(SaveSystem.load().playerName);
     if (!name) return;
 
-    const playerId = SaveSystem.ensureCloudId();
+    const playerId = AuthSystem.currentUserId() ?? SaveSystem.ensureCloudId();
     void CloudSystem.submitScore(playerId, name, stats.worldId, stats.score, stats.bestCombo).catch(
       () => {
         // Online-Eintraege duerfen den Ergebnisbildschirm niemals stoeren.
@@ -268,6 +271,7 @@ export class ResultScene extends Phaser.Scene {
    */
   private uploadSave(): void {
     if (!CloudSystem.isAvailable()) return;
-    void CloudSystem.syncSaveSafely();
+    void ProgressSyncSystem.flush();
+    if (!AuthSystem.isSignedIn()) void CloudSystem.syncSaveSafely();
   }
 }

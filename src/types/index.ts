@@ -89,3 +89,17 @@ export interface ProgressionResult {
   unlockedAchievementIds: string[];
   isNewBestScore: boolean;
 }
+
+/** Ein abgeschlossener Solo-Run für den geräteübergreifenden Abgleich. */
+export interface ProgressEvent {
+  eventId: string;
+  worldId: string;
+  score: number;
+  bestCombo: number;
+  xpGained: number;
+  coinsGained: number;
+  talentPointsGained: number;
+  collected: Record<RarityId, number>;
+  unlockedAchievementIds: string[];
+  createdAt: string;
+}

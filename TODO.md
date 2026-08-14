@@ -15,6 +15,7 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 | **1.3** | **Bestenliste: gemeinsam + automatisch — abgeschlossen** | —            |
 | 2       | Profil, 90 s, XP-Kurve, Level 100                        | mittel       |
 | **2.5** | Balken oben/unten — Bildschirm ganz nutzen               | mittel+      |
+| **2.6** | **Login & Mehrgeräte-Profil**                            | **hoch**     |
 | 3       | Weltraum statt Fantasy                                   | mittel       |
 | **3.5** | Ton (aus M4 vorgezogen)                                  | mittel       |
 | **3.6** | Dynamic Island — braucht native App                      | Entscheidung |
@@ -47,6 +48,9 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 - **3.6 Dynamic Island:** native Umsetzung wird **nach Phase 4** angegangen.
   Vorbereitung und Planung beginnt jetzt; fuer iOS ohne eigenen Mac laufen
   Build und Signierung spaeter ueber macOS-CI/Cloud und TestFlight.
+- **2.6 Login & Mehrgeräte-Profil:** wird vor dem Abschluss von Phase 4
+  priorisiert. Der bisherige Sync-Code bleibt als Migration und Notfallweg;
+  der neue Standard wird ein Backend-Profil mit Login.
 - **5 Hindernisse:** ab welcher Welt darf ein Hindernis bestrafen?
 - **6 Manipulationsschutz:** vor oder nach Ranked-Modus und Rekord-Meldungen?
 
@@ -296,6 +300,63 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
       dem spaeteren nativen Layout geplant, damit iPhone-Bedienung und
       Koordinaten nicht auseinanderlaufen.
 
+## Phase 2.6 — Login & Mehrgeräte-Profil _(priorisiert, App integriert)_
+
+> **Ziel:** Ein Profil kann dauerhaft auf mehreren eigenen Geräten genutzt
+> werden, zum Beispiel auf iPhone und iPad. Beide Geräte melden sich mit
+> demselben Profil an; Offline-Runs werden später sicher zusammengeführt.
+>
+> **Warum:** Der heutige Sync-Code ist ein einmaliger Spielstand-Umzug. Zwei
+> Geräte können danach zwar dieselbe `cloudId` kennen, aber ein vollständiger
+> Upload kann den Stand des anderen Geräts ersetzen. Das ist für ein dauerhaft
+> gemeinsames Profil nicht ausreichend.
+
+### Technischer Plan
+
+- [x] **Supabase Auth einführen:** Login und Sitzung werden vom Backend
+      verwaltet. E-Mail/Passwort ist der erste plattformübergreifende Weg;
+      Apple-Login kann später für die native App ergänzt werden. Die E-Mail
+      bleibt privat und erscheint nie in Rangliste oder Profilanzeige.
+- [x] **Profil-Tabelle und RLS-Skript anlegen:** `profiles.id` referenziert
+      `auth.users.id`; Name, Erstellungs- und Änderungszeitpunkt liegen im
+      Backend. `SaveData.cloudId` wird auf diese Profil-ID migriert.
+- [ ] **SQL in Supabase ausführen und prüfen:** RLS erlaubt Lesen und Schreiben des
+      eigenen Profils nur über `auth.uid()`. Ranglisten-Schreiben bleibt eine
+      kontrollierte RPC; fremde Spielstände und Login-Daten bleiben verborgen.
+- [x] **Login-UX in der App:** Auf dem ersten Gerät Profil anlegen oder
+      einloggen; auf einem weiteren Gerät einloggen und Profil laden. Der
+      Offline-Spielstart bleibt möglich, wenn das Netz vorübergehend fehlt.
+- [x] **Offline-Outbox je Gerät:** abgeschlossene Solo-Runs werden lokal mit
+      eindeutiger `event_id` vorgemerkt und bei Start, Rückkehr des Netzes und
+      nach einem Run übertragen. Wiederholtes Senden darf nichts doppelt zählen.
+- [x] **Zusammenführung statt Komplettüberschreiben:** XP und Coins aus
+      bestätigten Solo-Runs werden addiert, Erfolge vereinigt, Bestwert und
+      Best-Combo maximiert. Talentkäufe werden serverseitig atomar geprüft.
+- [x] **Profiländerungen synchronisieren:** Namensänderungen werden auf allen
+      Geräten sichtbar und aktualisieren auch den Ranglisteneintrag.
+- [x] **Migration ohne Verlust vorbereiten:** Bestehende `cloudId`-Profile können nach dem
+      ersten Login übernommen werden. Der alte Sync-Code bleibt zunächst als
+      einmaliger Migrations- und Notfallweg erhalten.
+- [ ] **Tests mit iPhone und iPad:** beide Geräte offline bespielen, danach
+      verbinden; Level, Coins, Bestwert, Erfolge, Name und Wiederholungen prüfen.
+
+### Lieferreihenfolge
+
+1. Supabase Auth, `profiles` und RLS.
+2. Login, Sitzung und Migration des bestehenden lokalen Profils.
+3. Ereignisse, Offline-Outbox und idempotente Zusammenführung.
+4. Gerätewechsel-UI als Übergang; danach kann der alte Sync-Code entfallen.
+5. Echter iPhone-/iPad-Test; erst danach weitere Phase-4-Fortschrittsquellen
+   als synchronisierte Ereignisse anschließen.
+
+**SQL-Migration:** `supabase/phase_2_6_auth.sql` nach `schema.sql` im
+Supabase SQL Editor ausführen. Ohne diesen Schritt bleibt der Login-Code
+bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
+
+> **Native Anschluss:** Das Auth-Modell funktioniert zunächst als Web-App und
+> später in Capacitor/TestFlight. Der native Build bleibt für Phase 6 geplant;
+> die Mehrgeräte-Datenstruktur muss dafür nicht neu erfunden werden.
+
 ## Phase 3 — Themenwechsel ins Weltall
 
 - [x] ADR-0013: Themen- und Zielgruppenwechsel (mit verworfener Alternative)
@@ -430,8 +491,8 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
 - [ ] **Punkte serverseitig bewerten** (Supabase Edge Function, Run nachspielen)
       — Vorbedingung fuer Ranked und Rekord-Meldungen
 - [ ] Realtime-Sync der Bestenliste
-- [ ] ADR-0014: dauerhafte Identitaeten fuer die Freundesliste (kehrt ADR-0011
-      "kein Konto" teilweise um)
+- [ ] Freundesliste auf die dauerhafte Profil-/Geräteidentität aus Phase 2.6
+      aufsetzen (kein zweites Identitätssystem)
 - [ ] Freundesliste mit Online/Offline, Rekord, Coins
 - [ ] Duell per geteiltem Link (ADR-0010 Schritt 1)
 - [ ] Rekord-Meldung im laufenden Spiel; echte Push-Meldung nur fuer

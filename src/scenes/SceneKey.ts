@@ -15,6 +15,8 @@ export const SceneKey = {
   Sync: 'Sync',
   /** Einstellungen, darunter die Profiluebertragung zwischen Geraeten. */
   Settings: 'Settings',
+  /** Freiwilliger Login fuer ein gemeinsames Profil auf mehreren Geraeten. */
+  Account: 'Account',
   /**
    * Wartungsbildschirm: Version, Neuladen erzwingen, Spielstand zuruecksetzen.
    * Absichtlich versteckt - erreichbar ueber drei Tipps und langen Druck auf

@@ -8,11 +8,9 @@
  * Dienst, keine Zugangsdaten - darf dazu fuehren, dass man nicht mehr spielen
  * kann. Online ist eine Zugabe, kein Bestandteil der Schleife.
  *
- * **2. Kein Konto, kein Passwort, keine E-Mail.** Ein Spielstand gehoert einer
- * zufaelligen UUID, die nur lokal liegt. Wer ihn auf ein zweites Geraet holen
- * will, laesst sich einen kurzen Code geben und tippt ihn dort ein. Damit
- * braucht das Spiel weder Anmeldung noch personenbezogene Daten - und es gibt
- * nichts, was jemand vergessen oder verlieren koennte ausser dem Geraet selbst.
+ * **2. Das Netz darf den Start nicht erzwingen.** Ohne Login bleibt der lokale
+ * Spielstand gültig. Wer dasselbe Profil auf mehreren Geräten nutzen möchte,
+ * kann sich freiwillig über Supabase Auth anmelden.
  *
  * Spielstaende werden nach einem Solo-Run automatisch hochgeladen. Ein
  * Netzwerkfehler bleibt dabei folgenlos: Der lokale Stand ist die Quelle, und
@@ -33,8 +31,9 @@ import {
   SYNC_CODE_ALPHABET,
   SYNC_CODE_LENGTH,
 } from '@/config/backend';
+import { xpForLevel } from '@/config/GameConfig';
 import * as SaveSystem from '@/systems/SaveSystem';
-import type { SaveData } from '@/types';
+import type { ProgressEvent, SaveData } from '@/types';
 
 // --- Ergebnistypen ----------------------------------------------------------
 
@@ -68,6 +67,12 @@ export interface RemoteSave extends RemoteSaveSummary {
   data: SaveData;
 }
 
+export interface RemoteProfileProgress {
+  data: SaveData;
+  totalXp: number;
+  updatedAt: string;
+}
+
 /** Vergleicht die Fortschrittsmarker, die fuer den Nutzer sichtbar sind. */
 export function isRemoteAhead(local: SaveData, remote: RemoteSave): boolean {
   return (
@@ -90,22 +95,31 @@ export function isLocalAhead(local: SaveData, remote: RemoteSave): boolean {
   );
 }
 
+function totalXpForSave(save: SaveData): number {
+  let total = save.xp;
+  for (let level = 1; level < save.level; level++) total += xpForLevel(level);
+  return total;
+}
+
 // --- Client ------------------------------------------------------------------
 
 let client: SupabaseClient | null = null;
 
-function getClient(): SupabaseClient | null {
+export function getSupabaseClient(): SupabaseClient | null {
   if (!isBackendConfigured) return null;
 
   client ??= createClient(BACKEND_URL, BACKEND_ANON_KEY, {
     auth: {
-      // Ohne Anmeldung gibt es keine Sitzung zu behalten oder zu erneuern.
-      persistSession: false,
-      autoRefreshToken: false,
+      persistSession: true,
+      autoRefreshToken: true,
     },
   });
 
   return client;
+}
+
+function getClient(): SupabaseClient | null {
+  return getSupabaseClient();
 }
 
 export function isAvailable(): boolean {
@@ -353,6 +367,140 @@ export async function fetchSave(cloudId: string): Promise<CloudResult<RemoteSave
       updatedAt: String(row.updated_at),
     },
   };
+}
+
+// --- Auth-Profil und Mehrgeräte-Fortschritt -------------------------------
+
+async function requireAuthenticatedClient(): Promise<CloudResult<SupabaseClient>> {
+  const supabase = getClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+
+  const result = await withTimeout(supabase.auth.getUser(), 'Login prüfen');
+  if (!result.ok) return result;
+  if (result.value.error || !result.value.data.user) {
+    return { ok: false, error: 'Bitte zuerst anmelden' };
+  }
+
+  return { ok: true, value: supabase };
+}
+
+function readProfileProgress(raw: unknown): RemoteProfileProgress | null {
+  const row = Array.isArray(raw) ? raw[0] : raw;
+  if (!row || typeof row !== 'object') return null;
+
+  const value = row as {
+    data?: unknown;
+    total_xp?: unknown;
+    updated_at?: unknown;
+  };
+  if (!value.data || typeof value.data !== 'object') return null;
+
+  return {
+    data: value.data as SaveData,
+    totalXp: Number(value.total_xp ?? 0),
+    updatedAt: String(value.updated_at ?? ''),
+  };
+}
+
+/** Lädt den gemeinsamen Profilstand des angemeldeten Benutzers. */
+export async function fetchProfileProgress(): Promise<CloudResult<RemoteProfileProgress | null>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const result = await withTimeout(
+    authenticated.value.rpc('get_profile_progress'),
+    'Profilstand laden',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  return { ok: true, value: readProfileProgress(result.value.data) };
+}
+
+/** Erstellt den gemeinsamen Stand, falls das Profil noch keinen besitzt. */
+export async function initializeProfileProgress(
+  save: SaveData = SaveSystem.load(),
+): Promise<CloudResult<RemoteProfileProgress | null>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const result = await withTimeout(
+    authenticated.value.rpc('initialize_profile_progress', {
+      p_data: save,
+      p_total_xp: totalXpForSave(save),
+    }),
+    'Profilstand anlegen',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  return { ok: true, value: readProfileProgress(result.value.data) };
+}
+
+/** Übernimmt ein bestehendes, anonymes Cloud-Profil nach dem Login. */
+export async function claimCloudProfile(
+  cloudId: string,
+): Promise<CloudResult<RemoteProfileProgress | null>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const result = await withTimeout(
+    authenticated.value.rpc('claim_cloud_profile', {
+      p_cloud_id: cloudId,
+      p_total_xp: totalXpForSave(SaveSystem.load()),
+    }),
+    'Bestehendes Profil übernehmen',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  return { ok: true, value: readProfileProgress(result.value.data) };
+}
+
+/**
+ * Schreibt eine Profiländerung und synchronisiert den Ranglistennamen.
+ * Die Datenbank bindet die Änderung an auth.uid().
+ */
+export async function updateProfileName(name: string): Promise<CloudResult<true>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const safeName = sanitizePlayerName(name);
+  if (!safeName) return { ok: false, error: 'Kein Name angegeben' };
+
+  const result = await withTimeout(
+    authenticated.value.rpc('update_profile_name', { p_player_name: safeName }),
+    'Profilnamen speichern',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+  return { ok: true, value: true };
+}
+
+/** Überträgt genau ein neues Solo-Ereignis. Wiederholungen sind idempotent. */
+export async function submitProgressEvent(
+  event: ProgressEvent,
+): Promise<CloudResult<RemoteProfileProgress | null>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const result = await withTimeout(
+    authenticated.value.rpc('submit_progress_event', {
+      p_event_id: event.eventId,
+      p_world_id: event.worldId,
+      p_score: Math.max(0, Math.round(event.score)),
+      p_best_combo: Math.max(0, Math.round(event.bestCombo)),
+      p_xp_gained: Math.max(0, Math.round(event.xpGained)),
+      p_coins_gained: Math.max(0, Math.round(event.coinsGained)),
+      p_talent_points_gained: Math.max(0, Math.round(event.talentPointsGained)),
+      p_collected: event.collected,
+      p_achievement_ids: event.unlockedAchievementIds,
+    }),
+    'Fortschritt synchronisieren',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+  return { ok: true, value: readProfileProgress(result.value.data) };
 }
 
 // --- Sync-Codes --------------------------------------------------------------

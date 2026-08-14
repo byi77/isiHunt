@@ -14,9 +14,11 @@ import { isIos, isStandalone } from '@/core/display';
 import { checkForUpdate, forceReload } from '@/core/updateCheck';
 import { SceneKey } from '@/scenes/SceneKey';
 import { attachHitDebug } from '@/ui/hitDebug';
+import * as AuthSystem from '@/systems/AuthSystem';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
 import type { RemoteSave } from '@/systems/CloudSystem';
+import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
@@ -104,6 +106,31 @@ export class MenuScene extends Phaser.Scene {
     this.saveSyncBusy = true;
 
     const local = SaveSystem.load();
+    if (AuthSystem.isSignedIn()) {
+      // Erst lokale Offline-Runs ablegen, dann den gemeinsamen Profilstand
+      // lesen. Ein Remote-Stand wird nur übernommen, wenn er weiter ist; eine
+      // noch nicht gesendete Outbox bleibt dadurch erhalten.
+      await ProgressSyncSystem.flush();
+      const profile = await CloudSystem.fetchProfileProgress();
+      if (profile.ok && profile.value) {
+        const remote: RemoteSave = {
+          data: profile.value.data,
+          level: profile.value.data.level,
+          bestScore: profile.value.data.bestScore,
+          totalRuns: profile.value.data.totalRuns,
+          updatedAt: profile.value.updatedAt,
+        };
+        if (CloudSystem.isRemoteAhead(local, remote)) {
+          SaveSystem.adoptRemote(remote.data, local.cloudId ?? AuthSystem.currentUserId()!);
+          this.saveSyncBusy = false;
+          this.scene.restart();
+          return;
+        }
+      }
+      this.saveSyncBusy = false;
+      return;
+    }
+
     if (!local.cloudId) {
       await CloudSystem.pushSave();
       this.saveSyncBusy = false;

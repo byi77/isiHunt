@@ -14,6 +14,8 @@ import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
+import * as AuthSystem from '@/systems/AuthSystem';
+import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
@@ -150,13 +152,17 @@ export class ProfileScene extends Phaser.Scene {
 
       SaveSystem.setPlayerName(name);
       if (CloudSystem.isAvailable()) {
-        const playerId = SaveSystem.ensureCloudId();
-        // Spielstand und bestehenden Ranglisteneintrag parallel aktualisieren.
-        // Gibt es noch keinen Bestwert, bleibt der Ranglistenteil ein No-op.
-        void Promise.all([
-          CloudSystem.syncSaveSafely(),
-          CloudSystem.updateLeaderboardName(playerId, name),
-        ]);
+        if (AuthSystem.isSignedIn()) {
+          void Promise.all([CloudSystem.updateProfileName(name), ProgressSyncSystem.flush()]);
+        } else {
+          const playerId = SaveSystem.ensureCloudId();
+          // Spielstand und bestehenden Ranglisteneintrag parallel aktualisieren.
+          // Gibt es noch keinen Bestwert, bleibt der Ranglistenteil ein No-op.
+          void Promise.all([
+            CloudSystem.syncSaveSafely(),
+            CloudSystem.updateLeaderboardName(playerId, name),
+          ]);
+        }
       }
       this.scene.start(SceneKey.Menu);
     };

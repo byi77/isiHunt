@@ -98,6 +98,21 @@ Der Fortschritt bekommt seine Oberflaeche.
       bei der naechsten Aenderung am Spawning (ARCHITECTURE.md 4.1)
 - [ ] Level-Aufstieg im Run feiern, nicht erst im Ergebnis
 
+## M2.5 — Login & Mehrgeräte-Profil _(priorisiert)_
+
+Der bisherige Sync-Code ist ein einmaliger Umzug. Für iPhone und iPad mit
+demselben Profil braucht es ein Backend-Profil mit Login und eine
+Zusammenführung statt des bisherigen vollständigen Ersetzens.
+
+- [x] Supabase Auth mit E-Mail/Passwort und Profil-Tabelle
+- [x] RLS- und RPC-Skript: jedes Profil sieht und ändert nur seine eigenen Daten
+- [x] Offline-Outbox für Solo-Run-Ereignisse mit eindeutiger `event_id`
+- [x] Serverseitige, idempotente Zusammenführung von XP, Coins, Erfolgen und
+      Bestwerten
+- [x] Migration des bestehenden `cloudId`-Profils ohne Fortschrittsverlust
+- [ ] SQL-Migration in Supabase ausführen und mit echten Konten prüfen
+- [ ] Paralleler iPhone-/iPad-Test mit Offline-Runs und Netzrückkehr
+
 ## M3 — Welten mit Charakter
 
 Bisher unterscheiden sich die Welten nur farblich.
@@ -124,6 +139,7 @@ Aus dem Prototyp wird ein Produkt.
 
 - [x] **Online-Bestenliste je Welt** ueber Supabase, Top 10
 - [x] **Spielstand geraeteuebergreifend** per Sync-Code, ohne Konto
+      _(bleibt als einmaliger Umzug und Migrationsweg erhalten)_
 - [x] Konflikt zweier Spielstaende wird gezeigt statt still entschieden
 - [ ] Ergebnisbild zum Teilen erzeugen
 - [ ] Duell ueber zwei Geraete per geteiltem Link (ADR-0010, Schritt 1)
@@ -131,7 +147,8 @@ Aus dem Prototyp wird ein Produkt.
 - [ ] **Punkte serverseitig bewerten** — solange das fehlt, ist die
       Bestenliste manipulierbar (ADR-0011). Vor jeder oeffentlichen Bewerbung
       der Liste noetig.
-- [ ] Spielstaende zusammenfuehren statt ersetzen
+- [ ] Spielstaende dauerhaft ueber das gemeinsame Login-Profil zusammenfuehren
+      _(M2.5, vor Phase 4 priorisiert)_
 
 ## M6 — Als App
 

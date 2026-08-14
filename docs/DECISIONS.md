@@ -579,3 +579,46 @@ brechen. Der visuelle Wechsel liefert denselben Nutzen ohne Datenmigration.
 - Mechanische Weltmodifikatoren bleiben getrennt und werden erst spaeter
   implementiert; der Themenwechsel veraendert das Balancing nicht.
 - Echte Raumschiff-/Planeten-Skins koennen spaeter je nach Level folgen.
+
+---
+
+## ADR-0014 — Login und dauerhaftes Profil auf mehreren Geräten
+
+**Datum:** 2026-08-14 · **Status:** Geplant, Phase 2.6 priorisiert
+
+### Kontext
+
+Der bestehende sechsstellige Sync-Code ist für einen einmaligen Gerätewechsel
+geeignet. Nach dem Einlösen kennen beide Geräte zwar dieselbe `cloudId`, aber
+der nächste vollständige Upload kann den Fortschritt des anderen Geräts
+ersetzen. Gewünscht ist ein gemeinsames Profil auf iPhone und iPad.
+
+### Entscheidung für die Planung
+
+Supabase Auth verwaltet ein plattformübergreifendes Login. Eine Zeile in
+`profiles` gehört zu `auth.users.id`; alle Geräte, die sich mit diesem Login
+anmelden, gehören zum selben Profil. Das Backend speichert Fortschritts-
+ereignisse mit eindeutiger `event_id` und führt sie idempotent zusammen.
+
+Der erste Weg ist E-Mail/Passwort. Die E-Mail bleibt privat und wird weder im
+Profil noch in der Rangliste angezeigt. Apple-Login kann später für die native
+App ergänzt werden. Ein Pflichtkonto ist erst aktiv, wenn diese Phase gebaut
+ist; bestehende lokale Profile bleiben bis dahin nutzbar.
+
+### Konfliktregeln
+
+- XP und Coins aus bestätigten Solo-Runs werden genau einmal gutgeschrieben.
+- Erfolge werden als Mengenunion behandelt.
+- Bestwert und Best-Combo nehmen jeweils den höheren Wert.
+- Namensänderungen werden als bewusste letzte Änderung gespeichert und auf
+  allen Geräten angezeigt.
+- Talentkäufe werden serverseitig atomar gegen verfügbare Punkte geprüft.
+- Offline-Runs bleiben in einer lokalen Outbox, bis der Server sie bestätigt.
+
+### Migration und Konsequenzen
+
+Bestehende `cloudId`-Profile können nach dem ersten Login übernommen werden;
+der alte Sync-Code bleibt zunächst als einmaliger Migrations- und Notfallweg.
+Supabase erhält dafür Profil-, Ereignis- und RLS-Regeln. Der spätere
+Capacitor-/TestFlight-Weg verwendet dieselbe Profil-ID und benötigt keine
+zweite Synchronisationsarchitektur.

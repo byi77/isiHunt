@@ -11,6 +11,17 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+**Phase 2.6: Login und Mehrgeräte-Profil**
+
+- Freiwilliger Supabase-Login in den Einstellungen mit E-Mail/Passwort.
+- Gemeinsamer Profilstand für iPhone und iPad; das lokale Spiel bleibt ohne
+  Login und offline nutzbar.
+- Offline-Outbox für angemeldete Solo-Runs mit eindeutiger Ereignis-ID sowie
+  serverseitige idempotente Zusammenführung von XP, Coins, Erfolgen und
+  Bestwerten.
+- SQL-Migration unter `supabase/phase_2_6_auth.sql`; sie muss nach
+  `schema.sql` im Supabase SQL Editor ausgeführt werden.
+
 **Tests**
 
 - Vitest eingerichtet (`npm run test`, `npm run test:watch`). 58 Tests decken

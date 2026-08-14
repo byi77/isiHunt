@@ -11,6 +11,7 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
+import * as AuthSystem from '@/systems/AuthSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
@@ -61,41 +62,51 @@ export class SettingsScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
 
-    createPanel(this, GAME_WIDTH / 2, 430, GAME_WIDTH - 120, 380, world.accent, {
+    createPanel(this, GAME_WIDTH / 2, 430, GAME_WIDTH - 120, 430, world.accent, {
       alpha: 0.58,
       radius: 20,
     });
 
     this.add
-      .text(GAME_WIDTH / 2, 300, 'PROFIL AUF ANDERES GERÄT', textStyle(FontSize.body, Palette.gold))
+      .text(GAME_WIDTH / 2, 275, 'PROFIL & SYNCHRONISATION', textStyle(FontSize.body, Palette.gold))
       .setOrigin(0.5)
       .setLetterSpacing(2);
 
     this.add
       .text(
         GAME_WIDTH / 2,
-        380,
-        'Nimm deinen Spielstand mit auf ein anderes Handy.\nDu bekommst einen kurzen Code und entscheidest selbst,\nwelcher Spielstand behalten wird.',
+        340,
+        'Melde dich auf iPhone und iPad mit demselben Profil an.\nOhne Login bleibt dein Spiel vollständig offline nutzbar.',
         textStyle(FontSize.small, Palette.ink),
       )
       .setOrigin(0.5)
       .setAlign('center');
 
+    const accountButton = createButton(
+      this,
+      GAME_WIDTH / 2,
+      465,
+      AuthSystem.isSignedIn() ? 'PROFIL ÖFFNEN' : 'ANMELDEN / PROFIL ANLEGEN',
+      () => this.scene.start(SceneKey.Account),
+      { width: 460, height: 76, accent: world.accent, fontSize: FontSize.small },
+    );
+
     const transferButton = createButton(
       this,
       GAME_WIDTH / 2,
-      540,
-      'PROFIL ÜBERTRAGEN',
+      565,
+      'EINMALIGER GERÄTE-TRANSFER',
       () => this.scene.start(SceneKey.Sync),
-      { width: 440, height: 82, accent: world.accent, fontSize: FontSize.body },
+      { width: 460, height: 64, accent: 0x9aa3bd, fontSize: FontSize.tiny },
     );
 
     if (!CloudSystem.isAvailable()) {
+      accountButton.setEnabled(false);
       transferButton.setEnabled(false);
       this.add
         .text(
           GAME_WIDTH / 2,
-          640,
+          625,
           'Die Profilübertragung ist gerade nicht verfügbar.',
           textStyle(FontSize.tiny, Palette.inkDim),
         )

@@ -16,6 +16,7 @@ import { isStandalone } from '@/core/display';
 import { requestPortraitOrientationLock } from '@/core/orientation';
 import { keepCanvasBoundsFresh, waitForViewportToSettle } from '@/core/viewport';
 import { AdminScene } from '@/scenes/AdminScene';
+import { AccountScene } from '@/scenes/AccountScene';
 import { BootScene } from '@/scenes/BootScene';
 import { ChallengeScene } from '@/scenes/ChallengeScene';
 import { GameScene } from '@/scenes/GameScene';
@@ -29,6 +30,7 @@ import { SettingsScene } from '@/scenes/SettingsScene';
 import { SceneKey } from '@/scenes/SceneKey';
 import { SyncScene } from '@/scenes/SyncScene';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
+import * as AuthSystem from '@/systems/AuthSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
 import { Palette } from '@/ui/theme';
 
@@ -75,6 +77,7 @@ function createGameConfig(): Phaser.Types.Core.GameConfig {
       ChallengeScene,
       LeaderboardScene,
       SettingsScene,
+      AccountScene,
       SyncScene,
       AdminScene,
       RulerScene,
@@ -97,6 +100,7 @@ if (isStandalone()) document.documentElement.classList.add('standalone-app');
 // SoundSystem wartet deshalb auf den ersten Tipp und bleibt ansonsten still.
 SoundSystem.initialize();
 SafeAreaSystem.initialize();
+AuthSystem.initialize();
 
 // Manifest und installierte Web-App sperren die Ausrichtung bereits. Die
 // Browser-API ist die zusaetzliche Moeglichkeit fuer Android; auf iOS Safari

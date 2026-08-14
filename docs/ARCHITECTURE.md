@@ -374,6 +374,29 @@ Stand nicht sichtbar weiter ist. Erkennt `MenuScene` einen besseren Cloud-
 Stand, zeigt sie Level, Bestwert und Runs und fragt vor dem Ueberschreiben.
 Offline-Runs bleiben bis dahin in `localStorage` erhalten.
 
+### 8.2 Geplantes Login und Mehrgeräte-Profil (Phase 2.6)
+
+Der aktuelle `cloudId`- und Sync-Code bildet einen **Spielstand-Umzug** ab,
+aber noch kein Profil, auf dem mehrere Geräte dauerhaft spielen. Die geplante
+Lösung trennt deshalb Backend-Profil und lokale Installation:
+
+- Supabase Auth verwaltet die Sitzung. Eine E-Mail-Adresse wird nicht in
+  Profilanzeige oder Rangliste veröffentlicht.
+- `profiles.id` referenziert `auth.users.id`; RLS erlaubt nur Zugriff auf das
+  eigene Profil.
+- `progress_events` nimmt abgeschlossene Solo-Runs mit eindeutiger `event_id`
+  entgegen. Wiederholungen nach Netzfehlern bleiben dadurch folgenlos.
+- Jedes Gerät hält eine lokale Outbox. Offline bleibt der Run spielbar; bei
+  Netzrückkehr werden Ereignisse hochgeladen und der gemeinsame Stand gelesen.
+- Der Server aggregiert XP und Coins, vereinigt Erfolge und nimmt Maximum für
+  Bestwert und Best-Combo. Talentkäufe werden atomar geprüft.
+
+Das vorhandene `saves`-Ersetzen bleibt zunächst als bewusst ausgelöste
+Migration erhalten. Ein weiteres Gerät meldet sich einfach mit demselben
+Login an. Der spätere native Capacitor-/TestFlight-Weg kann dieselbe
+Profil-ID verwenden; Apple-Login ist dabei eine spätere Ergänzung, nicht die
+Voraussetzung für die erste Web-Version.
+
 ### Die GRANT-Falle
 
 Supabase-Tabellen brauchen **zwei** Ebenen, die man leicht verwechselt:

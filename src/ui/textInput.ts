@@ -26,6 +26,7 @@ export interface TextInputHandle {
 export interface TextInputOptions {
   placeholder?: string;
   maxLength?: number;
+  inputType?: 'text' | 'email' | 'password';
   width?: number;
   accent?: number;
   /** Grossbuchstaben erzwingen und Autokorrektur abschalten - fuer Codes. */
@@ -43,7 +44,7 @@ export function createTextInput(
   const accent = options.accent ?? Palette.goldHex;
 
   const input = document.createElement('input');
-  input.type = 'text';
+  input.type = options.inputType ?? 'text';
   input.placeholder = options.placeholder ?? '';
   if (options.maxLength) input.maxLength = options.maxLength;
 
@@ -54,6 +55,13 @@ export function createTextInput(
     input.autocomplete = 'off';
     input.spellcheck = false;
     input.setAttribute('autocorrect', 'off');
+  }
+
+  if (input.type === 'email') {
+    input.autocomplete = 'email';
+    input.inputMode = 'email';
+  } else if (input.type === 'password') {
+    input.autocomplete = 'current-password';
   }
 
   Object.assign(input.style, {
