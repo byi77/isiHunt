@@ -218,7 +218,7 @@
         box-sizing: border-box;
         padding: 0 18px 8px;
         overflow: hidden;
-        background: rgba(11, 16, 32, 0.86);
+        background: #0b1020;
         color: rgba(244, 241, 232, 0.9);
         font-size: 11px;
         font-weight: 700;
@@ -232,6 +232,19 @@
         transition:
           color 300ms ease,
           opacity 300ms ease;
+      }
+
+      /* iOS meldet in installierten Web-Apps nicht auf jedem Modell den
+         Dynamic-Island-Abstand ueber `env(...)`. Ein fester Mindestwert hält
+         die Laufzeile sicher unter der Island; der Canvas beginnt darunter.
+         Auf Geraeten mit echtem Safe-Area-Wert gewinnt der groessere Wert. */
+      html.ios-device #game {
+        padding-top: max(60px, env(safe-area-inset-top, 0px));
+      }
+
+      html.ios-device #safe-area-content {
+        min-height: 60px;
+        height: max(60px, env(safe-area-inset-top, 0px));
       }
 
       /* Nur der Knoten innerhalb von #game darf sichtbar sein: Das ist im

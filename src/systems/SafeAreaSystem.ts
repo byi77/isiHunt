@@ -7,6 +7,7 @@
  */
 
 import { eventBus, GameEvent } from '@/core/EventBus';
+import { isIos } from '@/core/display';
 
 let area: HTMLElement | null = null;
 let tickerTimer: number | undefined;
@@ -96,6 +97,7 @@ export function initialize(): void {
   area = document.getElementById('safe-area-content');
   if (!area) return;
 
+  document.documentElement.classList.toggle('ios-device', isIos());
   updateAvailability();
   registerGameEvents();
   window.addEventListener('resize', updateAvailability);
