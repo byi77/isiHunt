@@ -33,6 +33,9 @@ function soundEnabled(): boolean {
 }
 
 function getAudioContext(): AudioContext | null {
+  if (audioContext?.state === 'closed') {
+    audioContext = null;
+  }
   if (audioContext) return audioContext;
 
   const AudioContextConstructor =
@@ -69,13 +72,22 @@ function resumeAudioContext(): Promise<boolean> {
   const context = getAudioContext();
   if (!context) return Promise.resolve(false);
   if (context.state === 'running') return Promise.resolve(true);
-  if (context.state === 'closed') return Promise.resolve(false);
+  if (context.state === 'closed') {
+    audioContext = null;
+    return Promise.resolve(false);
+  }
   if (resumePromise) return resumePromise;
 
+  // Manche Safari-Versionen brauchen den lautlosen Puffer direkt vor dem
+  // resume()-Aufruf. Beides passiert innerhalb derselben Nutzergeste.
+  primeAudioContext(context);
   resumePromise = context
     .resume()
     .then(() => context.state === 'running')
-    .catch(() => false)
+    .catch(() => {
+      if (context.state === 'closed') audioContext = null;
+      return false;
+    })
     .finally(() => {
       resumePromise = null;
     });
@@ -101,21 +113,27 @@ function scheduleTone(spec: ToneSpec): void {
   const play = (): void => {
     if (!soundEnabled()) return;
 
-    const start = context.currentTime + (spec.delay ?? 0);
-    const gain = context.createGain();
-    const oscillator = context.createOscillator();
-    const volume = spec.volume ?? 0.045;
+    try {
+      const start = context.currentTime + (spec.delay ?? 0);
+      const gain = context.createGain();
+      const oscillator = context.createOscillator();
+      const volume = spec.volume ?? 0.045;
 
-    oscillator.type = spec.type ?? 'sine';
-    oscillator.frequency.setValueAtTime(spec.frequency, start);
-    gain.gain.setValueAtTime(0.0001, start);
-    gain.gain.exponentialRampToValueAtTime(volume, start + 0.012);
-    gain.gain.exponentialRampToValueAtTime(0.0001, start + spec.duration);
+      oscillator.type = spec.type ?? 'sine';
+      oscillator.frequency.setValueAtTime(spec.frequency, start);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(volume, start + 0.012);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + spec.duration);
 
-    oscillator.connect(gain);
-    gain.connect(context.destination);
-    oscillator.start(start);
-    oscillator.stop(start + spec.duration + 0.02);
+      oscillator.connect(gain);
+      gain.connect(context.destination);
+      oscillator.start(start);
+      oscillator.stop(start + spec.duration + 0.02);
+    } catch {
+      // Audio darf das Spiel niemals unterbrechen. Der naechste Tipp versucht
+      // automatisch erneut, den Kontext zu aktivieren.
+      if ((context as AudioContext).state === 'closed') audioContext = null;
+    }
   };
 
   void resumeAudioContext().then((ready) => {
@@ -262,8 +280,14 @@ export function initialize(): void {
 
   registerEventListeners();
   window.addEventListener('pointerdown', unlock, true);
+  window.addEventListener('pointerup', unlock, true);
   window.addEventListener('touchstart', unlock, true);
+  window.addEventListener('touchend', unlock, true);
+  window.addEventListener('click', unlock, true);
   window.addEventListener('keydown', unlock, true);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') unlock();
+  });
 }
 
 export function isEnabled(): boolean {
