@@ -82,7 +82,7 @@ export class AchievementsScene extends Phaser.Scene {
         alpha: isUnlocked ? 0.58 : 0.38,
         radius: 14,
       });
-      addTrophy(this, x - 134, y - 4, achievement.rank, isUnlocked);
+      addTrophy(this, x - 134, y - 4, isUnlocked);
 
       const rankBadge = this.add.graphics();
       rankBadge.fillStyle(isUnlocked ? Palette.goldHex : 0x69738d, isUnlocked ? 0.2 : 0.16);
@@ -149,45 +149,120 @@ export class AchievementsScene extends Phaser.Scene {
   }
 }
 
-/** Kleiner Pokal als Vektor-Element, damit der Rang auf jedem Geraet sichtbar bleibt. */
-function addTrophy(
-  scene: Phaser.Scene,
-  x: number,
-  y: number,
-  rank: number,
-  unlocked: boolean,
-): void {
-  const color = unlocked ? Palette.goldHex : 0x69738d;
+/** Detaillierter Pokal als Vektor-Element, damit er auf jedem Geraet sauber bleibt. */
+function addTrophy(scene: Phaser.Scene, x: number, y: number, unlocked: boolean): void {
+  const primary = unlocked ? 0xf0b52f : 0x69738d;
+  const secondary = unlocked ? 0xb87316 : 0x4b556d;
+  const highlight = unlocked ? 0xfff0a0 : 0xaeb6c7;
   const trophy = scene.add.container(x, y);
 
   const glow = scene.add.graphics();
-  glow.fillStyle(color, unlocked ? 0.14 : 0.08);
+  glow.fillStyle(primary, unlocked ? 0.13 : 0.06);
   glow.fillCircle(0, 0, 27);
 
+  const shadow = scene.add.graphics();
+  shadow.fillStyle(0x050817, 0.34);
+  shadow.fillEllipse(0, 21, 34, 7);
+
   const cup = scene.add.graphics();
-  cup.fillStyle(color, unlocked ? 1 : 0.72);
-  cup.fillRoundedRect(-12, -20, 24, 18, 5);
-  cup.fillRoundedRect(-15, 10, 30, 6, 2);
-  cup.fillRect(-3, -3, 6, 15);
-  cup.lineStyle(4, color, unlocked ? 1 : 0.72);
+  cup.fillGradientStyle(highlight, primary, highlight, secondary, unlocked ? 1 : 0.78);
+  cup.fillPoints(
+    [
+      { x: -14, y: -20 },
+      { x: 14, y: -20 },
+      { x: 11, y: -8 },
+      { x: 7, y: 0 },
+      { x: 3, y: 6 },
+      { x: -3, y: 6 },
+      { x: -7, y: 0 },
+      { x: -11, y: -8 },
+    ],
+    true,
+  );
+  cup.fillStyle(primary, unlocked ? 1 : 0.78);
+  cup.fillRoundedRect(-16, -23, 32, 5, 2);
+  cup.fillGradientStyle(primary, secondary, primary, secondary, unlocked ? 1 : 0.78);
+  cup.fillRoundedRect(-4, 5, 8, 11, 2);
+  cup.fillRoundedRect(-10, 14, 20, 5, 2);
+  cup.fillRoundedRect(-17, 19, 34, 6, 2);
+
+  cup.lineStyle(4, primary, unlocked ? 1 : 0.78);
   cup.beginPath();
-  cup.moveTo(-12, -16);
-  cup.lineTo(-19, -16);
-  cup.lineTo(-19, -7);
+  cup.moveTo(-12, -18);
+  cup.lineTo(-20, -18);
+  cup.lineTo(-20, -9);
   cup.lineTo(-12, -4);
-  cup.moveTo(12, -16);
-  cup.lineTo(19, -16);
-  cup.lineTo(19, -7);
+  cup.moveTo(12, -18);
+  cup.lineTo(20, -18);
+  cup.lineTo(20, -9);
   cup.lineTo(12, -4);
   cup.strokePath();
 
-  const rankLabel = scene.add
-    .text(
-      0,
-      -11,
-      String(rank),
-      textStyle(FontSize.tiny, toCss(Palette.backdrop), { fontStyle: 'bold' }),
-    )
-    .setOrigin(0.5);
-  trophy.add([glow, cup, rankLabel]);
+  const detail = scene.add.graphics();
+  detail.lineStyle(2, highlight, unlocked ? 0.9 : 0.55);
+  detail.beginPath();
+  detail.moveTo(-9, -17);
+  detail.lineTo(-7, -8);
+  detail.lineTo(-4, -2);
+  detail.strokePath();
+  detail.lineStyle(2, secondary, unlocked ? 0.9 : 0.55);
+  detail.beginPath();
+  detail.moveTo(9, -17);
+  detail.lineTo(7, -8);
+  detail.lineTo(4, -2);
+  detail.strokePath();
+  detail.lineStyle(2, highlight, unlocked ? 0.95 : 0.6);
+  detail.beginPath();
+  detail.moveTo(-13, 22);
+  detail.lineTo(13, 22);
+  detail.strokePath();
+
+  const emblem = scene.add.graphics();
+  emblem.fillStyle(highlight, unlocked ? 0.95 : 0.5);
+  emblem.fillPoints(
+    [
+      { x: 0, y: -13 },
+      { x: 3, y: -7 },
+      { x: 9, y: -7 },
+      { x: 4, y: -3 },
+      { x: 6, y: 3 },
+      { x: 0, y: 0 },
+      { x: -6, y: 3 },
+      { x: -4, y: -3 },
+      { x: -9, y: -7 },
+      { x: -3, y: -7 },
+    ],
+    true,
+  );
+
+  const sparkles = scene.add.graphics();
+  sparkles.fillStyle(highlight, unlocked ? 0.9 : 0.35);
+  sparkles.fillPoints(
+    [
+      { x: -25, y: -17 },
+      { x: -23, y: -12 },
+      { x: -18, y: -10 },
+      { x: -23, y: -8 },
+      { x: -25, y: -3 },
+      { x: -27, y: -8 },
+      { x: -32, y: -10 },
+      { x: -27, y: -12 },
+    ],
+    true,
+  );
+  sparkles.fillPoints(
+    [
+      { x: 25, y: -12 },
+      { x: 27, y: -8 },
+      { x: 31, y: -6 },
+      { x: 27, y: -4 },
+      { x: 25, y: 0 },
+      { x: 23, y: -4 },
+      { x: 19, y: -6 },
+      { x: 23, y: -8 },
+    ],
+    true,
+  );
+
+  trophy.add([glow, shadow, cup, detail, emblem, sparkles]);
 }
