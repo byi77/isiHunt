@@ -13,10 +13,29 @@ let tickerTimer: number | undefined;
 let tickerItems: readonly string[] = [];
 let tickerIndex = 0;
 
+/**
+ * Die Safe Area ist auf iOS nicht immer identisch mit `env(...)`: Besonders
+ * installierte Web-Apps melden den Wert gelegentlich zu klein. Die Oberkante
+ * des Canvas ist dagegen der echte Beginn von Spielpixel 0 und damit die
+ * belastbare Unterkante fuer die Laufzeile.
+ */
+function updateTickerLayout(): void {
+  if (!area) return;
+
+  const canvas = document.querySelector<HTMLCanvasElement>('#game canvas');
+  const canvasTop = canvas?.getBoundingClientRect().top ?? 0;
+  if (canvasTop <= 0) return;
+
+  const height = Math.round(canvasTop);
+  area.style.height = `${height}px`;
+  area.style.minHeight = `${height}px`;
+}
+
 function updateAvailability(): void {
   const probe = document.getElementById('safe-top');
   const hasSafeTop = (probe?.getBoundingClientRect().top ?? 0) > 0;
   document.documentElement.classList.toggle('has-safe-top', hasSafeTop);
+  updateTickerLayout();
 }
 
 function write(message: string): void {
@@ -44,7 +63,7 @@ export function showMenuTicker(): void {
   tickerItems = [
     'JAGE DAS LICHT  ·  SAMMLE PLANETEN',
     'KETTEN BRINGEN MEHR PUNKTE',
-    'NEÜ WELTEN WARTEN AUF DICH',
+    'NEUE WELTEN WARTEN AUF DICH',
     'SCHAFFE DEINEN BESTWERT',
   ];
   showNextTickerItem();
@@ -81,4 +100,14 @@ export function initialize(): void {
   registerGameEvents();
   window.addEventListener('resize', updateAvailability);
   window.addEventListener('orientationchange', updateAvailability);
+
+  // Phaser erzeugt den Canvas erst nach dem App-Start. Mehrere Frames decken
+  // sowohl den normalen Browserstart als auch den verzögerten iOS-PWA-Layout-
+  // Sprung ab.
+  let attempts = 0;
+  const measureAfterBoot = (): void => {
+    updateTickerLayout();
+    if (attempts++ < 10) window.requestAnimationFrame(measureAfterBoot);
+  };
+  window.requestAnimationFrame(measureAfterBoot);
 }
