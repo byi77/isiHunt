@@ -83,7 +83,7 @@ isiHunt/
 │   │   ├── LeaderboardScene.ts Online-Bestenliste, Gesamtansicht + Weltfilter
 │   │   ├── SyncScene.ts        Spielstand-Abgleich zwischen Geraeten
 │   │   ├── AdminScene.ts       Wartung: Version, Neuladen, Reset (versteckt)
-│   │   ├── RulerScene.ts       Pixel-Lineal ueber dem Spielfeld
+│   │   ├── RulerScene.ts       CSS-Pixel-Lineal über dem gesamten Viewport
 │   │   └── ResultScene.ts      Auswertung eines Solo-Runs
 │   ├── systems/                Regeln ohne Darstellung
 │   │   ├── SaveSystem.ts       localStorage, versioniert

@@ -125,10 +125,10 @@ ausschliesslich an der Auslieferung, nicht am Code.
       Balken oben und unten, Massstab. Ein Browser-Simulator kennt keine
       sicheren Raender — diese Zahlen gibt es nur auf dem Geraet.
 
-- [x] **Pixel-Lineal** (`RulerScene`, ueber den Wartungsbildschirm): Raster mit
-      Beschriftung alle 100 Spielpixel, feine Striche alle 50, dazu die
-      sicheren Raender. Macht aus "oben ist ein Balken" die Aussage "von 0 bis
-      160 ist schwarz".
+- [x] **Pixel-Lineal** (`RulerScene`, über den Wartungsbildschirm): festes
+      DOM-Raster über den kompletten Viewport. Bildschirmrand oben ist CSS-y 0,
+      die Skala reicht bis zur exakten Unterkante; Safe Area und Spielfeld sind
+      zusätzlich markiert.
 
 - [x] **Streifen ausserhalb des Spielfelds tragen die Weltfarbe** statt Schwarz.
       Das Spielfeld ist 9:16, moderne Handys sind schmaler — der harte Balken

@@ -175,8 +175,10 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 **Pixel-Lineal** _(im Wartungsbildschirm)_
 
-- Legt ein beschriftetes Raster ueber das Menue: waagerechte Linien alle 100
-  Spielpixel, feine Striche alle 50, senkrechte alle 100
+- Legt ein beschriftetes Raster über den gesamten Bildschirm: `0` liegt am
+  tatsächlichen oberen Viewport-Rand hinter Uhr/Dynamic Island, die letzte
+  Linie an der unteren Displaykante. Gemessen wird in CSS-Pixeln, unabhängig
+  von Position und Skalierung des Spielfelds
 - Zeichnet zusaetzlich die **sicheren Raender** ein und nennt die Balkenhoehen
 - Damit wird aus "oben ist ein Balken" die Aussage "von 0 bis 160 ist
   schwarz" — eine Zahl, die sich nachrechnen laesst, statt einer Beschreibung,
