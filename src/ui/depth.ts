@@ -23,6 +23,9 @@ export const Depth = {
   /** Aufsteigender Lichtstaub. */
   AmbientMotes: -80,
 
+  /** Alle interaktiven UI-Buttons liegen sicher über normalen Texten. */
+  UI: 150,
+
   /** Einsammelbare Relikte. */
   Collectible: 20,
   /** Strahlenkranz seltener Relikte - hinter dem Relikt selbst. */

@@ -114,7 +114,11 @@ export function createButton(
   const height = options.height ?? 92;
   const accent = options.accent ?? Palette.goldHex;
 
-  const container = scene.add.container(x, y);
+  // Buttons liegen immer über normalen Texten und Statusanzeigen. Dadurch
+  // kann eine Meldung niemals die sichtbare Schaltfläche oder deren
+  // Interaktion verdecken. Spezielle Dialoge dürfen diese Ebene danach noch
+  // gezielt überschreiben.
+  const container = scene.add.container(x, y).setDepth(Depth.UI);
   let enabled = true;
   /** Liegt ein Finger auf diesem Knopf? Siehe `pointerout` weiter unten. */
   let isPressed = false;
@@ -285,17 +289,24 @@ export function createBackButton(
   onClick: () => void,
   options: { label?: string } = {},
 ): ButtonHandle {
-  return createButton(scene, BACK_BUTTON_X, BACK_BUTTON_Y, options.label ?? '‹  ZURÜCK', onClick, {
-    width: 196,
-    height: 60,
-    accent: 0x9aa3bd,
-    fontSize: FontSize.tiny,
-  });
+  return createButton(
+    scene,
+    BACK_BUTTON_X,
+    GAME_HEIGHT - BACK_BUTTON_BOTTOM_OFFSET,
+    options.label ?? '‹  ZURÜCK',
+    onClick,
+    {
+      width: 196,
+      height: 60,
+      accent: 0x9aa3bd,
+      fontSize: FontSize.tiny,
+    },
+  );
 }
 
 /** Feste Position des Zurueck-Knopfes - gilt fuer jede Scene, die einen hat. */
 export const BACK_BUTTON_X = 138;
-export const BACK_BUTTON_Y = GAME_HEIGHT - 84;
+export const BACK_BUTTON_BOTTOM_OFFSET = 84;
 
 export interface BarHandle {
   container: Phaser.GameObjects.Container;
