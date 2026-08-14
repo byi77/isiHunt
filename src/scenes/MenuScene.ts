@@ -254,22 +254,22 @@ export class MenuScene extends Phaser.Scene {
   private buildTitle(): void {
     // Lichtschein hinter dem Titel - der Name bedeutet Licht, das darf man sehen.
     this.add
-      .image(GAME_WIDTH / 2, 20, TextureKey.Glow)
+      .image(GAME_WIDTH / 2, 100, TextureKey.Glow)
       .setDisplaySize(560, 320)
       .setTint(Palette.goldHex)
       .setAlpha(0.35)
       .setBlendMode(Phaser.BlendModes.ADD);
 
-    const title = this.add.image(GAME_WIDTH / 2, 24, TextureKey.Logo).setDisplaySize(400, 225);
+    const title = this.add.image(GAME_WIDTH / 2, 104, TextureKey.Logo).setDisplaySize(400, 225);
 
     this.add
-      .text(GAME_WIDTH / 2, 104, 'JAGE DAS LICHT', textStyle(FontSize.tiny, Palette.inkDim))
+      .text(GAME_WIDTH / 2, 184, 'JAGE DAS LICHT', textStyle(FontSize.tiny, Palette.inkDim))
       .setOrigin(0.5)
       .setLetterSpacing(8);
 
     this.tweens.add({
       targets: title,
-      y: 20,
+      y: 100,
       duration: 2200,
       yoyo: true,
       repeat: -1,
