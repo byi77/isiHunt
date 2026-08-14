@@ -43,13 +43,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   Display-, Browser-, CPU-, Netzwerk- und Webspeicher-Daten.
 - Eine Namensaenderung im Profil wird jetzt auch auf den bestehenden eigenen
   Ranglisteneintrag uebertragen.
-- Auf installierten iPhone-Web-Apps ermittelt das Laufband seine sichere
-  Oberkante jetzt aus `safe-area-inset-top` plus einem modellabhaengigen
-  Fallback. Der dunkle Kopf darf hinter die Statusleiste reichen, der Text
-  beginnt garantiert erst unter Dynamic Island und Uhr.
 - Die Laufzeile schliesst jetzt direkt an die iOS-Safe-Area an und wird ohne
   unscharfen Textschatten gezeichnet. Der Canvas reicht zugleich bis in die
   untere Home-Indicator-Safe-Area, sodass dort kein eigener Balken entsteht.
+- Installierte iOS-Apps verwenden jetzt eine undurchsichtige schwarze
+  Statusleiste. Dadurch kann der Systemblur die direkt darunterliegende
+  Laufzeile nicht mehr weichzeichnen.
 - Phase 3.5: prozedurale WebAudio-Toene fuer Klicks, Faenge, Combo-Stufen,
   Run-Start, Run-Ende und Levelaufstieg; der Ton ist in den Einstellungen
   abschaltbar und bleibt gespeichert.

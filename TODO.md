@@ -388,6 +388,10 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
         bis zum Displayrand, waehrend Text und Canvas mit
         `safe-area-inset-top` plus modellabhaengigem Fallback unterhalb der
         Island beginnen. Echter Geraetetest mit v0.1.59 steht aus.
+  - [x] Geraetetest bis v0.1.65: Geometrie oben 94 CSS-px und unten 0 CSS-px,
+        aber `black-translucent` legt den iOS-Systemblur weiterhin ueber die
+        Laufzeile. Deshalb ab v0.1.66 undurchsichtige schwarze Statusleiste;
+        Web-Viewport und Laufzeile beginnen direkt darunter. Geraetetest offen.
 - [ ] Erst mit M6 (Capacitor): Live Activity mit Punktestand und Restzeit
       waehrend eines Runs; bis dahin wird die Anzeige als Prototyp beobachtet.
 

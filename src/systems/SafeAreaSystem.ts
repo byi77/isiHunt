@@ -1,8 +1,9 @@
 /**
  * Kleine Anzeige in der oberen Safe Area.
  *
- * Der dunkle Bereich darf unter die iOS-Statusleiste reichen. Sein Text liegt
- * durch ein Safe-Area-Padding unterhalb von Systemuhr und Dynamic Island.
+ * In installierten iOS-Apps liegt der Bereich direkt unter der undurchsichtigen
+ * Systemstatusleiste. Dadurch bleiben Uhr und Dynamic Island unangetastet und
+ * der Lauftext wird nicht vom Systemblur weichgezeichnet.
  */
 
 import { eventBus, GameEvent } from '@/core/EventBus';
@@ -14,30 +15,13 @@ let tickerItems: readonly string[] = [];
 let tickerIndex = 0;
 
 /**
- * WebKit meldet `safe-area-inset-top` in installierten Apps auf einzelnen
- * iOS-Staenden als 0. Fuer diese Kombination stellen wir einen geraeteweisen
- * Mindestwert bereit. `env(...)` gewinnt weiterhin, sobald iOS korrekt misst.
+ * Mit der undurchsichtigen iOS-Statusleiste beginnt der Web-Viewport bereits
+ * unter Uhr und Dynamic Island. Ein zusaetzliches Safe-Area-Padding wuerde den
+ * freigewordenen Platz doppelt reservieren und als Leerstreifen erscheinen.
  */
-function installIosSafeTopFallback(): void {
+function configureIosStatusArea(): void {
   if (!isIos() || !isStandalone()) return;
-
-  const userAgent = navigator.userAgent;
-  const isIphone = /iPhone|iPod/.test(userAgent);
-  const longScreenEdge = Math.max(window.screen.width, window.screen.height);
-
-  let fallback = 24; // iPad und aeltere iOS-Geraete
-  if (isIphone && longScreenEdge >= 870)
-    fallback = 62; // iPhone 16 Pro / Pro Max
-  else if (isIphone && longScreenEdge >= 850)
-    fallback = 59; // iPhone 14/15 Pro
-  else if (isIphone && longScreenEdge >= 812)
-    fallback = 47; // klassische Notch
-  else if (isIphone) fallback = 20;
-
-  document.documentElement.style.setProperty(
-    '--app-safe-top',
-    `max(env(safe-area-inset-top, 0px), ${fallback}px)`,
-  );
+  document.documentElement.style.setProperty('--app-safe-top', '0px');
 }
 
 function write(message: string): void {
@@ -98,6 +82,6 @@ export function initialize(): void {
   area = document.getElementById('safe-area-content');
   if (!area) return;
 
-  installIosSafeTopFallback();
+  configureIosStatusArea();
   registerGameEvents();
 }

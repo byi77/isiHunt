@@ -25,9 +25,9 @@
 
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <!-- Der Hintergrund darf bis hinter die iOS-Statusleiste reichen. Das
-         Laufband selbst wird darunter gepolstert; siehe --app-safe-top. -->
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- Eine undurchsichtige iOS-Statusleiste haelt den Systemblur von der
+         Laufzeile fern. Webinhalt beginnt direkt unter Uhr und Dynamic Island. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="isiHunt" />
     <meta
       name="description"
@@ -207,9 +207,10 @@
         display: block;
       }
 
-      /* Der dunkle Kopf beginnt am Displayrand, der Text aber erst unterhalb
-         der sicheren Oberkante. So bleibt er auch bei `black-translucent`
-         ausserhalb von Uhr, Notch und Dynamic Island. */
+      /* In normalen Browsern beruecksichtigt der Kopf die sichere Oberkante.
+         In der installierten iOS-App reserviert die undurchsichtige
+         Statusleiste diesen Bereich bereits; dort setzt JavaScript den Wert
+         auf 0 und die Laufzeile beginnt direkt unter dem Systembereich. */
       #safe-area-content {
         position: absolute;
         top: 0;
