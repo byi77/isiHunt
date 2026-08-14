@@ -59,6 +59,7 @@ create table if not exists public.scores (
   player_id    uuid        not null,
   player_name  text        not null,
   world_id     text        not null,
+  player_level integer     not null default 1,
   score        integer     not null,
   best_combo   integer     not null default 0,
   created_at   timestamptz not null default now(),
@@ -66,6 +67,7 @@ create table if not exists public.scores (
   -- Grenzen gegen offensichtlichen Unsinn. Kein Betrugsschutz, sondern
   -- Schutz vor kaputten Daten und vor Namen, die das Layout sprengen.
   constraint scores_name_length check (char_length(player_name) between 1 and 16),
+  constraint scores_level_range check (player_level between 1 and 100),
   constraint scores_score_range check (score >= 0 and score <= 10000000),
   constraint scores_combo_range check (best_combo >= 0 and best_combo <= 10000)
 );
@@ -73,6 +75,7 @@ create table if not exists public.scores (
 -- Migration fuer die bereits angelegte v0.1-Tabelle. Alte Zeilen haben noch
 -- keine Profil-ID und werden mit cleanup_leaderboard.sql bewusst entfernt.
 alter table public.scores add column if not exists player_id uuid;
+alter table public.scores add column if not exists player_level integer not null default 1;
 
 -- Partial, damit das Schema vor der einmaligen Bereinigung wiederholbar bleibt.
 -- Nach der Bereinigung setzt cleanup_leaderboard.sql die Spalte auf NOT NULL.
@@ -106,10 +109,13 @@ drop policy if exists "Jeder darf ein Ergebnis eintragen" on public.scores;
 -- Bewusst KEINE insert-, update- oder delete-Regel: ohne sie verweigert RLS
 -- direkte Aenderungen. Der RPC unten laeuft kontrolliert als security definer.
 
+drop function if exists public.submit_best_score(uuid, text, text, integer, integer);
+
 create or replace function public.submit_best_score(
   p_player_id   uuid,
   p_player_name text,
   p_world_id    text,
+  p_player_level integer,
   p_score       integer,
   p_best_combo  integer
 )
@@ -123,17 +129,22 @@ begin
     raise exception 'Ungueltiges Spielerprofil';
   end if;
 
-  insert into public.scores (player_id, player_name, world_id, score, best_combo)
+  insert into public.scores (player_id, player_name, world_id, player_level, score, best_combo)
   values (
     p_player_id,
     trim(p_player_name),
     p_world_id,
+    greatest(1, least(100, p_player_level)),
     greatest(0, p_score),
     greatest(0, p_best_combo)
   )
   on conflict (player_id) where (player_id is not null) do update
   set player_name = excluded.player_name,
       score = greatest(public.scores.score, excluded.score),
+      player_level = case
+        when excluded.score > public.scores.score then excluded.player_level
+        else public.scores.player_level
+      end,
       best_combo = case
         when excluded.score > public.scores.score then excluded.best_combo
         else public.scores.best_combo
@@ -151,9 +162,9 @@ begin
 end;
 $$;
 
-revoke execute on function public.submit_best_score(uuid, text, text, integer, integer)
+revoke execute on function public.submit_best_score(uuid, text, text, integer, integer, integer)
   from public;
-grant execute on function public.submit_best_score(uuid, text, text, integer, integer)
+grant execute on function public.submit_best_score(uuid, text, text, integer, integer, integer)
   to anon, authenticated;
 
 -- Profilnamen muessen auch beim bereits vorhandenen Bestwert sichtbar werden.

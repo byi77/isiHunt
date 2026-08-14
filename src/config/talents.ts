@@ -78,8 +78,8 @@ export const TALENTS: readonly TalentDef[] = [
 export type TalentRanks = Partial<Record<TalentId, number>>;
 
 /** Kosten des nächsten Rangs: steigend, damit der Talentbaum langfristig bleibt. */
-export const TALENT_BASE_COST = 50;
-export const TALENT_COST_STEP = 25;
+export const TALENT_BASE_COST = 400;
+export const TALENT_COST_STEP = 100;
 
 export function talentCost(currentRank: number): number {
   return TALENT_BASE_COST + Math.max(0, currentRank) * TALENT_COST_STEP;

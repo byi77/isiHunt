@@ -27,7 +27,7 @@ import {
 } from '@/ui/widgets';
 
 const LIST_TOP = 430;
-const ROW_HEIGHT = 58;
+const ROW_HEIGHT = 72;
 
 export class LeaderboardScene extends Phaser.Scene {
   /**
@@ -266,10 +266,13 @@ export class LeaderboardScene extends Phaser.Scene {
         this.add
           .text(
             134,
-            y,
+            y - 10,
             entry.playerName,
             textStyle(FontSize.small, isOwn ? Palette.gold : Palette.ink),
           )
+          .setOrigin(0, 0.5),
+        this.add
+          .text(134, y + 15, 'LEVEL ' + entry.level, textStyle(FontSize.tiny, Palette.inkDim))
           .setOrigin(0, 0.5),
         this.add
           .text(

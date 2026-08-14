@@ -476,6 +476,7 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
       Levelaufstiege)
 - [x] Talentbaum-Oberflaeche mit Rangkauf ueber Profil
 - [x] Talente zuruecksetzen gegen 250 Coins, ohne Erstattung
+- [x] Coin-Balance auf etwa einen Talent-Rang je fünf abgeschlossene Runden
 - [x] **Vitest** — 62 Tests in npm run verify
 
 > **Erledigt am 2026-08-14:** Phase 4 ist lokal und offline vollstaendig

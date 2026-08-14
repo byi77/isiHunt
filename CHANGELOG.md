@@ -20,6 +20,9 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 - Talentbaum im Profil mit steigenden Coin-Kosten je Rang und kostenpflichtigem
   Reset.
 - Atomare Talent-RPCs fuer angemeldete Mehrgeraete-Profile.
+- Die Talentkosten sind auf 400 Coins für Rang 1 und jeweils 100 Coins mehr
+  pro weiterem Rang angepasst; Zielwert ist etwa ein Rang je fünf Runden.
+- Ranglisten-Einträge speichern und zeigen jetzt zusätzlich das Spielerlevel.
 
 ### Geaendert
 

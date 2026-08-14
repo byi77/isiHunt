@@ -49,6 +49,7 @@ export type CloudResult<T> = { ok: true; value: T } | { ok: false; error: string
 
 export interface LeaderboardEntry {
   playerName: string;
+  level: number;
   score: number;
   bestCombo: number;
   createdAt: string;
@@ -171,7 +172,7 @@ export async function fetchLeaderboard(worldId?: string): Promise<CloudResult<Le
 
   let query = supabase
     .from('scores')
-    .select('player_name, score, best_combo, created_at, world_id');
+    .select('player_name, player_level, score, best_combo, created_at, world_id');
 
   if (worldId) query = query.eq('world_id', worldId);
 
@@ -192,6 +193,7 @@ export async function fetchLeaderboard(worldId?: string): Promise<CloudResult<Le
     ok: true,
     value: rows.map((row) => ({
       playerName: String(row.player_name),
+      level: Math.max(1, Number(row.player_level ?? 1)),
       score: Number(row.score),
       bestCombo: Number(row.best_combo),
       createdAt: String(row.created_at),
@@ -211,6 +213,7 @@ export async function submitScore(
   playerId: string,
   playerName: string,
   worldId: string,
+  level: number,
   score: number,
   bestCombo: number,
 ): Promise<CloudResult<true>> {
@@ -226,6 +229,7 @@ export async function submitScore(
       p_player_id: playerId,
       p_player_name: name,
       p_world_id: worldId,
+      p_player_level: Math.max(1, Math.round(level)),
       p_score: Math.max(0, Math.round(score)),
       p_best_combo: Math.max(0, Math.round(bestCombo)),
     }),

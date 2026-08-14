@@ -262,17 +262,17 @@ describe('grantLevels', () => {
 describe('Talentkäufe', () => {
   it('kauft Ränge mit Coins und berechnet den kostenpflichtigen Reset', () => {
     SaveSystem.update((data) => {
-      data.coins = 400;
+      data.coins = 1300;
     });
 
     expect(Progression.purchaseTalent('reach')).not.toBeNull();
     expect(Progression.purchaseTalent('reach')).not.toBeNull();
     expect(SaveSystem.load().talents.reach).toBe(2);
-    expect(SaveSystem.load().coins).toBe(275);
+    expect(SaveSystem.load().coins).toBe(400);
 
     expect(Progression.resetTalents()).not.toBeNull();
     expect(SaveSystem.load().talents.reach).toBeUndefined();
-    expect(SaveSystem.load().coins).toBe(25);
+    expect(SaveSystem.load().coins).toBe(150);
   });
 
   it('verweigert Käufe ohne ausreichende Coins', () => {

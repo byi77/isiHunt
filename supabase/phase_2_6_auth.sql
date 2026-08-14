@@ -15,6 +15,12 @@
 
 begin;
 
+-- Ranglisten-Erweiterung: das Level wird zusammen mit dem Bestwert gespeichert.
+alter table public.scores add column if not exists player_level integer not null default 1;
+alter table public.scores drop constraint if exists scores_level_range;
+alter table public.scores add constraint scores_level_range
+  check (player_level between 1 and 100);
+
 -- ============================================================================
 -- 1. Auth-Profil und gemeinsamer Profilstand
 -- ============================================================================
@@ -295,7 +301,7 @@ begin
   if coalesce((current_data->>'version')::integer, 1) < 4 then
     current_coins := current_coins + coalesce((current_data->>'talentPoints')::integer, 0) * 10;
   end if;
-  talent_cost := 50 + current_rank * 25;
+  talent_cost := 400 + current_rank * 100;
   if current_coins < talent_cost then raise exception 'Nicht genug Coins'; end if;
   if current_rank >= max_rank then raise exception 'Talent bereits maximiert'; end if;
 
@@ -449,10 +455,13 @@ revoke execute on function public.submit_progress_event(uuid, text, integer, int
 grant execute on function public.submit_progress_event(uuid, text, integer, integer, integer, integer, integer, jsonb, text[]) to authenticated;
 
 -- Authenticated leaderboard calls may only write their own profile row.
+drop function if exists public.submit_best_score(uuid, text, text, integer, integer);
+
 create or replace function public.submit_best_score(
   p_player_id   uuid,
   p_player_name text,
   p_world_id    text,
+  p_player_level integer,
   p_score       integer,
   p_best_combo  integer
 )
@@ -469,11 +478,22 @@ begin
     raise exception 'Ungültiges Spielerprofil';
   end if;
 
-  insert into public.scores (player_id, player_name, world_id, score, best_combo)
-  values (p_player_id, trim(p_player_name), p_world_id, greatest(0, p_score), greatest(0, p_best_combo))
+  insert into public.scores (
+    player_id, player_name, world_id, player_level, score, best_combo
+  )
+  values (
+    p_player_id,
+    trim(p_player_name),
+    p_world_id,
+    greatest(1, least(100, p_player_level)),
+    greatest(0, p_score),
+    greatest(0, p_best_combo)
+  )
   on conflict (player_id) where (player_id is not null) do update
   set player_name = excluded.player_name,
       score = greatest(public.scores.score, excluded.score),
+      player_level = case when excluded.score > public.scores.score
+        then excluded.player_level else public.scores.player_level end,
       best_combo = case when excluded.score > public.scores.score
         then excluded.best_combo else public.scores.best_combo end,
       world_id = case when excluded.score > public.scores.score
@@ -484,8 +504,8 @@ begin
 end;
 $$;
 
-revoke execute on function public.submit_best_score(uuid, text, text, integer, integer) from public;
-grant execute on function public.submit_best_score(uuid, text, text, integer, integer) to anon, authenticated;
+revoke execute on function public.submit_best_score(uuid, text, text, integer, integer, integer) from public;
+grant execute on function public.submit_best_score(uuid, text, text, integer, integer, integer) to anon, authenticated;
 
 create or replace function public.rename_best_score(
   p_player_id   uuid,

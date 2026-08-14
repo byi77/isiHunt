@@ -257,11 +257,16 @@ export class ResultScene extends Phaser.Scene {
     if (!name) return;
 
     const playerId = AuthSystem.currentUserId() ?? SaveSystem.ensureCloudId();
-    void CloudSystem.submitScore(playerId, name, stats.worldId, stats.score, stats.bestCombo).catch(
-      () => {
-        // Online-Eintraege duerfen den Ergebnisbildschirm niemals stoeren.
-      },
-    );
+    void CloudSystem.submitScore(
+      playerId,
+      name,
+      stats.worldId,
+      SaveSystem.load().level,
+      stats.score,
+      stats.bestCombo,
+    ).catch(() => {
+      // Online-Eintraege duerfen den Ergebnisbildschirm niemals stoeren.
+    });
   }
 
   /**
