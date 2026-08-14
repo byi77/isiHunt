@@ -4,8 +4,9 @@
  * Skalierung: Das Spiel rendert intern in GAME_WIDTH x GAME_HEIGHT. Die Breite
  * bleibt 720, die Hoehe wird beim Start aus der verfuegbaren Portrait-Flaeche
  * berechnet (mindestens 1280). Phaser skaliert das per FIT auf das Geraet und
- * zentriert es. Szenen, die mit GAME_HEIGHT arbeiten, nutzen dadurch die
- * zusaetzliche Hoehe ohne geraeteabhaengige Sonderkoordinaten.
+ * zentriert es horizontal und setzt es vertikal direkt unter den App-Kopf.
+ * Szenen, die mit GAME_HEIGHT arbeiten, nutzen dadurch die zusaetzliche Hoehe
+ * ohne geraeteabhaengige Sonderkoordinaten.
  */
 
 import Phaser from 'phaser';
@@ -38,7 +39,10 @@ function createGameConfig(): Phaser.Types.Core.GameConfig {
     backgroundColor: Palette.backdrop,
     scale: {
       mode: Phaser.Scale.FIT,
-      autoCenter: Phaser.Scale.CENTER_BOTH,
+      // Vertikal beginnt der Canvas direkt unter Safe Area und Laufband.
+      // CENTER_BOTH erzeugt auf hohen iPhones einen sichtbaren Leerblock
+      // zwischen Laufband und Menue; horizontal bleibt er zentriert.
+      autoCenter: Phaser.Scale.CENTER_HORIZONTALLY,
       width: GAME_WIDTH,
       height: GAME_HEIGHT,
       // Das gesamte Spielfeld statt nur des Canvas in den Vollbildmodus
