@@ -187,7 +187,7 @@ export class MenuScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         490,
-        'NEÜRER SPIELSTAND GEFUNDEN',
+        'NEUER SPIELSTAND GEFUNDEN',
         textStyle(FontSize.body, Palette.gold),
       )
       .setOrigin(0.5)
@@ -269,7 +269,7 @@ export class MenuScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       190,
-      `NEÜ VERSION VERFÜGBAR  ·  v${info.available}  ·  JETZT LADEN`,
+      `NEUE VERSION VERFÜGBAR  ·  v${info.available}  ·  JETZT LADEN`,
       () => forceReload(),
       { width: 600, height: 62, accent: Palette.goldHex, fontSize: FontSize.small },
     );

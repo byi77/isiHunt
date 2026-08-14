@@ -90,7 +90,7 @@ export class ResultScene extends Phaser.Scene {
         .text(
           GAME_WIDTH / 2,
           224,
-          'NEÜR BESTWERT',
+          'NEUER BESTWERT',
           textStyle(FontSize.small, Palette.gold, { fontStyle: 'bold' }),
         )
         .setOrigin(0.5);
