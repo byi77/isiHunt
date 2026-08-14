@@ -87,7 +87,7 @@ export class AdminScene extends Phaser.Scene {
     this.buildActions();
 
     this.statusText = this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 120, '', textStyle(FontSize.tiny, Palette.inkDim))
+      .text(GAME_WIDTH / 2, GAME_HEIGHT - 45, '', textStyle(FontSize.tiny, Palette.inkDim))
       .setOrigin(0.5)
       .setWordWrapWidth(GAME_WIDTH - 120)
       .setAlign('center');
@@ -179,28 +179,42 @@ export class AdminScene extends Phaser.Scene {
   }
 
   private buildActions(): void {
-    createButton(this, GAME_WIDTH / 2, 820, 'NEU LADEN ERZWINGEN', () => forceReload(), {
+    createButton(this, GAME_WIDTH / 2, 770, 'UPDATE PRÜFEN', () => void this.checkUpdateNow(), {
       width: 460,
-      height: 84,
-      accent: Palette.goldHex,
-      fontSize: FontSize.body,
+      height: 58,
+      accent: 0x9aa3bd,
+      fontSize: FontSize.small,
     });
 
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        880,
-        'Holt das Spiel frisch vom Server, am Cache vorbei.',
-        textStyle(FontSize.tiny, Palette.inkDim),
-      )
-      .setOrigin(0.5);
+    createButton(this, GAME_WIDTH / 2, 840, 'NEU LADEN ERZWINGEN', () => forceReload(), {
+      width: 460,
+      height: 62,
+      accent: Palette.goldHex,
+      fontSize: FontSize.small,
+    });
+
+    createButton(this, GAME_WIDTH / 2, 915, 'DATEN EXPORTIEREN', () => this.exportSave(), {
+      width: 460,
+      height: 62,
+      accent: 0x9aa3bd,
+      fontSize: FontSize.small,
+    });
+
+    createButton(
+      this,
+      GAME_WIDTH / 2,
+      990,
+      'SPIELSTAND PRÜFEN & SPEICHERN',
+      () => this.repairSave(),
+      { width: 460, height: 62, accent: 0x9aa3bd, fontSize: FontSize.small },
+    );
 
     // Lineal ueber dem Menue: Damit lassen sich Layout-Fehler in Zahlen
     // beschreiben statt in Worten ("von 0 bis 160 ist schwarz").
     createButton(
       this,
       GAME_WIDTH / 2,
-      1100,
+      1140,
       'PIXEL-LINEAL ANZEIGEN',
       () => {
         this.scene.start(SceneKey.Menu);
@@ -212,7 +226,7 @@ export class AdminScene extends Phaser.Scene {
     const reset = createButton(
       this,
       GAME_WIDTH / 2,
-      970,
+      1050,
       'SPIELSTAND ZURÜCKSETZEN',
       () => {
         // Zwei Tipps: Der erste bewaffnet, der zweite fuehrt aus. Ein
@@ -243,6 +257,29 @@ export class AdminScene extends Phaser.Scene {
     }
   }
 
+  private async checkUpdateNow(): Promise<void> {
+    this.setStatus('Version wird erneut geprüft ...', Palette.inkDim);
+    await this.lookForUpdate();
+  }
+
+  private repairSave(): void {
+    const save = SaveSystem.load();
+    SaveSystem.save(save);
+    this.setStatus('Spielstand geprüft, migriert und gespeichert.', Palette.success);
+  }
+
+  private exportSave(): void {
+    const data = JSON.stringify(SaveSystem.load(), null, 2);
+    const blob = new Blob([data], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `isihunt-spielstand-v${APP_VERSION}.json`;
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+    this.setStatus('Spielstand als JSON exportiert.', Palette.success);
+  }
+
   /**
    * Fragt den Server nach der verfuegbaren Version.
    *
@@ -259,6 +296,7 @@ export class AdminScene extends Phaser.Scene {
 
     if (!info) {
       line.setText('Aktuellster Stand.').setColor(Palette.success);
+      this.setStatus('Kein neuer Stand verfügbar.', Palette.success);
       return;
     }
 
