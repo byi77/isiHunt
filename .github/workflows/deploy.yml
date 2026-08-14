@@ -24,9 +24,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Node 24 wie in der CI - der Deploy faehrt `verify` und damit die Tests,
+      # deren `jsdom` unter Node 20 nicht laedt (Begruendung in ci.yml).
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       - run: npm ci

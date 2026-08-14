@@ -374,6 +374,10 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- **CI und Deploy fahren jetzt Node 24 statt Node 20.** Die Testumgebung
+  `jsdom` verlangt `^22.22.2 || ^24.15.0 || >=26`; unter Node 20 brach der
+  Testlauf mit `markAsUncloneable is not a function` ab. `engines` in der
+  `package.json` steht entsprechend auf `>=22.22.2` statt `>=20.0.0`.
 - **Der `pre-push`-Hook wechselt jetzt in Gits normalisiertes
   Wurzelverzeichnis.** Git startet Hooks unter Windows mit kleingeschriebenem
   Laufwerksbuchstaben; Vitest legte seine Module daraufhin unter `C:/...` ab,

@@ -23,9 +23,13 @@ jobs:
           # werden kann (siehe Schritt "Versionssprung pruefen").
           fetch-depth: 2
 
+      # Node 24, nicht 20: `jsdom` (Testumgebung) verlangt
+      # ^22.22.2 || ^24.15.0 || >=26, sein `undici` mindestens 22.19. Unter
+      # Node 20 bricht der Testlauf mit "markAsUncloneable is not a function"
+      # ab - lokal lief dieselbe Suite gruen, weil dort Node 24 steht.
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: npm
 
       # Der lokale pre-push-Hook prueft dasselbe - aber nur, wenn er

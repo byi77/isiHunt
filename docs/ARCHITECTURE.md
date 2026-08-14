@@ -487,6 +487,16 @@ sondern in einer Zeichenkette. Der `pre-push`-Hook beginnt deshalb mit
 Wer ein weiteres Werkzeug in einen Hook haengt, prueft es **im Hook**, nicht in
 der Konsole.
 
+### Node-Version
+
+`jsdom` verlangt Node `^22.22.2 || ^24.15.0 || >=26`. CI und Deploy liefen auf
+Node 20 und brachen im Testschritt mit `markAsUncloneable is not a function`
+ab — lokal lief dieselbe Suite gruen, weil dort Node 24 steht. Beide Workflows
+fahren jetzt Node 24, `engines` in der `package.json` steht auf `>=22.22.2`.
+
+Dasselbe Muster wie eine Ebene hoeher: Ein Werkzeug laeuft dort gruen, wo man
+es startet, und faellt dort um, wo es tatsaechlich laufen muss.
+
 ## 10. Grenzen der aktuellen Architektur
 
 Ehrlich benannt, damit sie nicht ueberrascht:
