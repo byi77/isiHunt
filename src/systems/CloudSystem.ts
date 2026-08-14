@@ -224,6 +224,8 @@ export async function submitScore(
   level: number,
   score: number,
   bestCombo: number,
+  durationMs: number,
+  collected: Record<string, number>,
 ): Promise<CloudResult<true>> {
   const supabase = getClient();
   if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
@@ -240,6 +242,8 @@ export async function submitScore(
       p_player_level: Math.max(1, Math.round(level)),
       p_score: Math.max(0, Math.round(score)),
       p_best_combo: Math.max(0, Math.round(bestCombo)),
+      p_duration_ms: Math.max(0, Math.round(durationMs)),
+      p_collected: collected,
     }),
     'Bestwert eintragen',
   );

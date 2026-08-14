@@ -191,13 +191,18 @@ Seit Phase 3 sind die Raumzonen sichtbar umbenannt: Sternenweide, Eisring,
 Glutnebel, Nullsektor und Sonnenkrone. Die Welt-IDs bleiben fuer bestehende
 Spielstaende stabil.
 
-| Welt         | Ab Level | Stimmung       | Geplante Besonderheit                        |
-| ------------ | -------- | -------------- | -------------------------------------------- |
-| Sternenweide | 1        | Gruen, Nebel   | keine - die Lernzone                         |
-| Eisring      | 3        | Blau, Eis      | Planeten gleiten weiter                      |
-| Glutnebel    | 6        | Orange, Gas    | kuerzere Zeitfenster                         |
-| Nullsektor   | 10       | Violett, Leere | Planeten blinken kurz weg                    |
-| Sonnenkrone  | 15       | Gold, Stern    | doppelte Legendaer-Chance, halbe Lebensdauer |
+| Welt         | Ab Level | Herausforderung                         | Belohnung |
+| ------------ | -------- | ---------------------------------------- | --------- |
+| Sternenweide | 1        | keine - die Lernzone                    | +3 %      |
+| Eisring      | 3        | Trägheit, bremsende Hindernisse          | +6 %      |
+| Glutnebel    | 6        | kürzere Fenster, bremsende Hindernisse  | +10 %     |
+| Nullsektor   | 10       | Blinkeffekt, Zeitverlust-Hindernisse    | +15 %     |
+| Sonnenkrone  | 15       | seltene Planeten, Zeitverlust            | +18 %     |
+| Mondschmiede | 22       | stärkere Trägheit, Zeitverlust            | +22 %     |
+| Kristallbruch| 30       | kurze Fenster, viele Hindernisse          | +30 %     |
+| Sturmgrenze  | 40       | Blinken, Trägheit, harte Hindernisse      | +40 %     |
+| Lichtkern    | 55       | seltene Planeten, viele Hindernisse       | +52 %     |
+| Horizonttor  | 75       | kürzeste Fenster, höchste Dichte          | +65 %     |
 
 In v0.1 unterscheiden sich die Welten mechanisch nur optisch. Jede Zone hat
 dafuer eine eigene feste Stern-/Nebelkomposition und zwei transparente
@@ -262,7 +267,7 @@ darf nicht als Geschenk direkt unter dem Daumen erscheinen.
 
 | Nicht drin                    | Begruendung                                                                                 |
 | ----------------------------- | ------------------------------------------------------------------------------------------- |
-| Gegner / Schaden / Verlieren  | Der Zeitdruck ist die Spannung. Zusaetzlicher Misserfolg macht kurze Sessions frustrierend. |
+| Gegner / Schaden / Verlieren  | Es gibt keine Lebenspunkte und kein Game Over. Hindernisse bremsen oder ziehen nur wenige Sekunden ab. |
 | Tutorial                      | Wenn es eins braucht, ist das Design gescheitert (Designziel 1).                            |
 | Werbung / Kaeufe              | Vorerst kein Monetarisierungsdruck. Beeinflusst sonst das Balancing.                        |
 | Online-Bestenliste            | Erst wenn die Kernschleife steht (M5).                                                      |
@@ -272,13 +277,8 @@ darf nicht als Geschenk direkt unter dem Daumen erscheinen.
 
 ## 11. Offene Designfragen
 
-- [ ] Wo lebt die Talentvergabe — eigener Bildschirm oder direkt im Ergebnis?
-- [ ] Braucht es eine zweite Waehrung (Gold) fuer Kosmetik, oder reichen Level?
-- [ ] Sollen Welten unterschiedliche Seltenheitsverteilungen haben, oder nur
-      Modifikatoren?
 - [ ] Endlos-Modus ohne Timer als zweiter Spielmodus?
-- [ ] Tages-Herausforderung mit festem Seed — die Technik dafuer steht seit dem
-      Duell-Modus bereit.
 - [ ] Soll das Duell benannte Spieler erlauben statt "Spieler 1 / Spieler 2"?
-- [ ] Duell ueber zwei Geraete per geteiltem Link (ADR-0010) — als naechster
-      Schritt oder erst nach den Talenten?
+- [ ] Duell ueber zwei Geraete per geteiltem Link (ADR-0010)?
+- [ ] Echtes Netzwerkduell erst nach ausreichendem Bedarf und stabiler
+      serverseitiger Bewertung?

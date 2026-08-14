@@ -487,7 +487,7 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
 ### Balancing noch nachtesten
 
 > Erste technische Runde umgesetzt: Die Phase-5-Strafen wurden reduziert und
-> die Solo-Grundbelohnung auf 30 Coins angehoben. Die offenen Punkte brauchen
+> die Solo-Grundbelohnung auf 25 Coins angepasst. Die offenen Punkte brauchen
 > noch echte Runs mit Emre und Simay, bevor sie als abgeschlossen gelten.
 
 - [ ] **Phase-5-Schwierigkeit:** Weltmodifikatoren und Hindernisse mit den
@@ -497,7 +497,7 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
 - [ ] **Coin-/Talent-Balance:** Coin-Einnahmen pro Runde, Relikt und Levelaufstieg
       gegen Talentkosten und Resetkosten prüfen; Ziel bleibt ungefähr ein
       sinnvoller Talent-Rang nach etwa fünf normalen Runden.
-- [ ] **Talentpunkte-Migration:** prüfen, dass alte Talentpunkte genau einmal
+- [x] **Talentpunkte-Migration:** geprüft, dass alte Talentpunkte genau einmal
       korrekt in Coins überführt werden und keine doppelten Gutschriften entstehen.
 
 ## Phase 5 — Herausforderung
@@ -508,8 +508,9 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
       erhöhte seltene Planeten
 - [x] Hindernisse: keine in Sternenweide, bremsend in Eisring/Glutnebel,
       zeitbestrafend in Nullsektor/Sonnenkrone
-- [ ] `GAME_DESIGN.md` §10 praezisieren (nicht streichen): kein Misserfolg in
-      den Einstiegswelten
+- [x] `GAME_DESIGN.md` §10 präzisieren: keine Lebenspunkte und kein Game Over;
+      Einstiegswelten bestrafen nur mit lesbaren Bremsen, spätere Welten mit
+      kurzem Zeitverlust.
 - [ ] ~~Ranked-Modus~~ — blockiert, siehe Phase 6
 
 ## Phase 6 — Sozial

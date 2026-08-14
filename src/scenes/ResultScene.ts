@@ -264,6 +264,8 @@ export class ResultScene extends Phaser.Scene {
       SaveSystem.load().level,
       stats.score,
       stats.bestCombo,
+      stats.durationMs ?? 0,
+      stats.collected,
     ).catch(() => {
       // Online-Eintraege duerfen den Ergebnisbildschirm niemals stoeren.
     });

@@ -68,6 +68,12 @@ export class SpawnSystem {
     private readonly modifier: WorldModifier = 'none',
     private readonly obstacleMode: ObstacleMode = 'none',
     private readonly difficultyScale = 1,
+    /**
+     * Duelle brauchen wirklich dieselben Positionen. Im Solo-Modus wird ein
+     * Spawn vom Spieler ferngehalten; im Duell darf die Position dagegen nicht
+     * vom Bewegungsverlauf des vorherigen Spielers abhängen.
+     */
+    private readonly synchronizedPositions = false,
   ) {}
 
   /**
@@ -105,7 +111,10 @@ export class SpawnSystem {
           (WORLD_OBSTACLE_END_CHANCE - WORLD_OBSTACLE_BASE_CHANCE) * runProgress;
     const scaledObstacleChance = Math.min(0.24, obstacleChance * this.difficultyScale);
 
-    if (activeCount >= MAX_ACTIVE_COLLECTIBLES) return null;
+    // Im Duell darf ein langsamerer erster Spieler den Spawn-Plan nicht durch
+    // ein volles Feld veraendern. Abgelaufene Objekte werden weiterhin normal
+    // entfernt; die hoehere temporaere Anzahl ist fuer 90 Sekunden begrenzt.
+    if (activeCount >= MAX_ACTIVE_COLLECTIBLES && !this.synchronizedPositions) return null;
 
     if (obstacleRoll < scaledObstacleChance) {
       return {
@@ -177,6 +186,8 @@ export class SpawnSystem {
   private findPosition(playerX: number, playerY: number): { x: number; y: number } {
     let chosen: { x: number; y: number } | null = null;
     let last = { x: this.bounds.centerX, y: this.bounds.centerY };
+    const referenceX = this.synchronizedPositions ? this.bounds.centerX : playerX;
+    const referenceY = this.synchronizedPositions ? this.bounds.centerY : playerY;
 
     for (let attempt = 0; attempt < SPAWN_POSITION_CANDIDATES; attempt++) {
       const candidate = {
@@ -187,7 +198,8 @@ export class SpawnSystem {
 
       if (
         !chosen &&
-        Math.hypot(candidate.x - playerX, candidate.y - playerY) >= SPAWN_MIN_DISTANCE_TO_PLAYER
+        Math.hypot(candidate.x - referenceX, candidate.y - referenceY) >=
+          SPAWN_MIN_DISTANCE_TO_PLAYER
       ) {
         chosen = candidate;
       }

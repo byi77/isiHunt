@@ -288,17 +288,17 @@ describe('Spielstand-Migration', () => {
 describe('Talentkäufe', () => {
   it('kauft Ränge mit Coins und berechnet den kostenpflichtigen Reset', () => {
     SaveSystem.update((data) => {
-      data.coins = 1100;
+      data.coins = 1400;
     });
 
     expect(Progression.purchaseTalent('reach')).not.toBeNull();
     expect(Progression.purchaseTalent('reach')).not.toBeNull();
     expect(SaveSystem.load().talents.reach).toBe(2);
-    expect(SaveSystem.load().coins).toBe(400);
+    expect(SaveSystem.load().coins).toBe(475);
 
     expect(Progression.resetTalents()).not.toBeNull();
     expect(SaveSystem.load().talents.reach).toBeUndefined();
-    expect(SaveSystem.load().coins).toBe(150);
+    expect(SaveSystem.load().coins).toBe(175);
   });
 
   it('verweigert Käufe ohne ausreichende Coins', () => {

@@ -109,7 +109,77 @@ drop policy if exists "Jeder darf ein Ergebnis eintragen" on public.scores;
 -- Bewusst KEINE insert-, update- oder delete-Regel: ohne sie verweigert RLS
 -- direkte Aenderungen. Der RPC unten laeuft kontrolliert als security definer.
 
-drop function if exists public.submit_best_score(uuid, text, text, integer, integer);
+create or replace function public.max_plausible_score(
+  p_world_id text,
+  p_duration_ms integer,
+  p_best_combo integer,
+  p_collected jsonb
+)
+returns integer
+language plpgsql
+immutable
+set search_path = public
+as $$
+declare
+  item record;
+  count_value integer;
+  total_relics integer := 0;
+  base_points numeric := 0;
+  reward_multiplier numeric := case p_world_id
+    when 'silberhain' then 1.03
+    when 'frostzinne' then 1.06
+    when 'glutmark' then 1.10
+    when '__LEERENBLÜTE__' then 1.15
+    when 'sonnenhort' then 1.18
+    when 'mondschmiede' then 1.22
+    when 'kristallbruch' then 1.30
+    when 'sturmgrenze' then 1.40
+    when 'lichtkern' then 1.52
+    when 'horizonttor' then 1.65
+    else 0
+  end;
+  combo_multiplier integer := case
+    when p_best_combo >= 35 then 5
+    when p_best_combo >= 20 then 4
+    when p_best_combo >= 10 then 3
+    when p_best_combo >= 5 then 2
+    else 1
+  end;
+begin
+  if p_duration_ms < 60000 or p_duration_ms > 120000 then return 0; end if;
+  if reward_multiplier = 0 then return 0; end if;
+
+  for item in select key, value from jsonb_each(coalesce(p_collected, '{}'::jsonb)) loop
+    if item.key not in ('poor', 'common', 'uncommon', 'rare', 'epic', 'legendary') then
+      continue;
+    end if;
+    count_value := greatest(0, (item.value #>> '{}')::integer);
+    total_relics := total_relics + count_value;
+    base_points := base_points + count_value * case item.key
+      when 'poor' then 1
+      when 'common' then 2
+      when 'uncommon' then 5
+      when 'rare' then 15
+      when 'epic' then 50
+      when 'legendary' then 200
+      else 0
+    end;
+  end loop;
+
+  if total_relics > ceil(p_duration_ms / 190.0)::integer then return 0; end if;
+  if p_best_combo < 0 or p_best_combo > total_relics then return 0; end if;
+
+  return least(
+    10000000,
+    ceil(base_points * combo_multiplier * 1.30 * reward_multiplier * 2.0 * 1.10)::integer
+  );
+end;
+$$;
+
+revoke execute on function public.max_plausible_score(text, integer, integer, jsonb) from public;
+
+drop function if exists public.submit_best_score(uuid, text, text, integer, integer, integer);
+drop function if exists public.submit_best_score(uuid, text, text, integer, integer, integer, integer, jsonb);
 
 create or replace function public.submit_best_score(
   p_player_id   uuid,
@@ -117,7 +187,9 @@ create or replace function public.submit_best_score(
   p_world_id    text,
   p_player_level integer,
   p_score       integer,
-  p_best_combo  integer
+  p_best_combo  integer,
+  p_duration_ms integer,
+  p_collected   jsonb
 )
 returns boolean
 language plpgsql
@@ -127,6 +199,14 @@ as $$
 begin
   if p_player_id is null or char_length(trim(p_player_name)) not between 1 and 16 then
     raise exception 'Ungueltiges Spielerprofil';
+  end if;
+  if p_score > public.max_plausible_score(
+    p_world_id,
+    p_duration_ms,
+    p_best_combo,
+    p_collected
+  ) then
+    raise exception 'Punktestand nicht plausibel';
   end if;
 
   insert into public.scores (player_id, player_name, world_id, player_level, score, best_combo)
@@ -162,9 +242,9 @@ begin
 end;
 $$;
 
-revoke execute on function public.submit_best_score(uuid, text, text, integer, integer, integer)
+revoke execute on function public.submit_best_score(uuid, text, text, integer, integer, integer, integer, jsonb)
   from public;
-grant execute on function public.submit_best_score(uuid, text, text, integer, integer, integer)
+grant execute on function public.submit_best_score(uuid, text, text, integer, integer, integer, integer, jsonb)
   to anon, authenticated;
 
 -- Profilnamen muessen auch beim bereits vorhandenen Bestwert sichtbar werden.

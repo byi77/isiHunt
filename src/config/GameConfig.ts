@@ -176,7 +176,7 @@ export const TALENT_POINTS_PER_LEVEL = 1;
 /** Veraltete Umrechnung fuer Spielstände aus der Talentpunkt-Phase. */
 export const COINS_PER_EXTRA_TALENT_POINT = 10;
 /** Grundbelohnung fuer jede abgeschlossene Solo-Runde. */
-export const COINS_PER_RUN = 30;
+export const COINS_PER_RUN = 25;
 /** Coins fuer jedes im Solo-Run eingesammelte Relikt. */
 export const COINS_PER_COLLECTED_RELIC = 1;
 /** Einmalige Belohnung je neu freigeschaltetem Achievement. */
@@ -184,7 +184,7 @@ export const COINS_PER_ACHIEVEMENT = 25;
 /** Coins pro Levelaufstieg als dauerhafte Spielbelohnung. */
 export const COINS_PER_LEVEL = 20;
 /** Kosten eines Talent-Resets. */
-export const TALENT_RESET_COST = 250;
+export const TALENT_RESET_COST = 300;
 /** Fester Bonus für den ersten abgeschlossenen Tageslauf des Tages. */
 export const DAILY_COMPLETION_BONUS_COINS = 400;
 /** Zusätzlicher Bonus je erreichter Punktestufe, gedeckelt gegen Überfarmung. */

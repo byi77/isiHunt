@@ -93,9 +93,11 @@ Der Fortschritt bekommt seine Oberflaeche.
 - [x] **Vitest einrichten** — `ProgressionSystem`, `ScoreSystem` und
       `ChallengeSystem` sind mit 62 Tests abgedeckt; `npm run test` haengt in
       `verify` und damit in `pre-push`, CI und Deploy
-- [ ] **Test fuer den Duell-Determinismus** — dass zwei Durchgaenge mit
+- [x] **Test fuer den Duell-Determinismus** — dass zwei Durchgaenge mit
       gleichem Seed dieselbe Relikt-Abfolge liefern, bricht sonst unbemerkt
-      bei der naechsten Aenderung am Spawning (ARCHITECTURE.md 4.1)
+      bei der naechsten Aenderung am Spawning (ARCHITECTURE.md 4.1). Die
+      Positionen und die volle Spawnfolge bleiben jetzt auch bei
+      unterschiedlicher Spielerbewegung gleich.
 - [ ] Level-Aufstieg im Run feiern, nicht erst im Ergebnis
 
 ## M2.5 — Login & Mehrgeräte-Profil _(priorisiert)_

@@ -156,6 +156,7 @@ export class GameScene extends Phaser.Scene {
       this.world.modifier,
       this.world.obstacleMode,
       this.world.difficultyScale,
+      Boolean(challenge),
     );
 
     // HUD als eigene Scene parallel starten - siehe Kommentar in EventBus.ts.

@@ -47,7 +47,7 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'none',
     obstacleMode: 'none',
     difficultyScale: 1,
-    rewardMultiplier: 1,
+    rewardMultiplier: 1.03,
   },
   {
     id: 'frostzinne',
@@ -62,7 +62,7 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'inertia',
     obstacleMode: 'brake',
     difficultyScale: 1,
-    rewardMultiplier: 1,
+    rewardMultiplier: 1.06,
   },
   {
     id: 'glutmark',
@@ -77,7 +77,7 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'short_lived',
     obstacleMode: 'brake',
     difficultyScale: 1,
-    rewardMultiplier: 1,
+    rewardMultiplier: 1.1,
   },
   {
     id: '__LEERENBLÜTE__',
@@ -92,7 +92,7 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'blink',
     obstacleMode: 'penalty',
     difficultyScale: 1,
-    rewardMultiplier: 1,
+    rewardMultiplier: 1.15,
   },
   {
     id: 'sonnenhort',
@@ -107,7 +107,7 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'rare_bonus',
     obstacleMode: 'penalty',
     difficultyScale: 1,
-    rewardMultiplier: 1,
+    rewardMultiplier: 1.18,
   },
   {
     id: 'mondschmiede',
@@ -122,7 +122,7 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'inertia',
     obstacleMode: 'penalty',
     difficultyScale: 1.12,
-    rewardMultiplier: 1.08,
+    rewardMultiplier: 1.22,
   },
   {
     id: 'kristallbruch',
@@ -137,7 +137,7 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'short_lived',
     obstacleMode: 'penalty',
     difficultyScale: 1.25,
-    rewardMultiplier: 1.16,
+    rewardMultiplier: 1.3,
   },
   {
     id: 'sturmgrenze',
@@ -152,7 +152,7 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'blink',
     obstacleMode: 'penalty',
     difficultyScale: 1.4,
-    rewardMultiplier: 1.25,
+    rewardMultiplier: 1.4,
   },
   {
     id: 'lichtkern',
@@ -167,7 +167,7 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'rare_bonus',
     obstacleMode: 'penalty',
     difficultyScale: 1.55,
-    rewardMultiplier: 1.35,
+    rewardMultiplier: 1.52,
   },
   {
     id: 'horizonttor',
@@ -182,7 +182,7 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'short_lived',
     obstacleMode: 'penalty',
     difficultyScale: 1.7,
-    rewardMultiplier: 1.5,
+    rewardMultiplier: 1.65,
   },
 ];
 

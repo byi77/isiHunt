@@ -25,7 +25,7 @@
 
 import Phaser from 'phaser';
 
-import { APP_VERSION, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { APP_VERSION, DEBUG_ENABLED, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { checkForUpdate, forceReload } from '@/core/updateCheck';
 import type { UpdateInfo } from '@/core/updateCheck';
 import { measureDevice, readWebStorageLine } from '@/core/deviceReport';
@@ -208,56 +208,58 @@ export class AdminScene extends Phaser.Scene {
       },
     );
 
-    createPanel(this, GAME_WIDTH / 2, 1010, GAME_WIDTH - 120, 150, Palette.goldHex, {
-      alpha: 0.35,
-      radius: 16,
-    });
-    this.add
-      .text(GAME_WIDTH / 2, 958, 'LOKALES TESTPROFIL', textStyle(FontSize.tiny, Palette.gold))
-      .setOrigin(0.5)
-      .setLetterSpacing(3);
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        986,
-        'Level 100 · 99.999 Coins · bleibt offline',
-        textStyle(FontSize.tiny, Palette.inkDim),
-      )
-      .setOrigin(0.5);
+    if (DEBUG_ENABLED) {
+      createPanel(this, GAME_WIDTH / 2, 1010, GAME_WIDTH - 120, 150, Palette.goldHex, {
+        alpha: 0.35,
+        radius: 16,
+      });
+      this.add
+        .text(GAME_WIDTH / 2, 958, 'LOKALES TESTPROFIL', textStyle(FontSize.tiny, Palette.gold))
+        .setOrigin(0.5)
+        .setLetterSpacing(3);
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          986,
+          'Level 100 · 99.999 Coins · bleibt offline',
+          textStyle(FontSize.tiny, Palette.inkDim),
+        )
+        .setOrigin(0.5);
 
-    const pinInput = createTextInput(this, 210, 1030, {
-      inputType: 'password',
-      placeholder: 'Admin-PIN',
-      maxLength: 6,
-      numeric: true,
-      numericKeyboard: true,
-      width: 220,
-      accent: Palette.goldHex,
-    });
-    const testButton = createButton(
-      this,
-      535,
-      1030,
-      SaveSystem.isTestProfileActive() ? 'TESTPROFIL AUS' : 'TESTPROFIL AN',
-      () => {
-        if (pinInput.getValue() !== SaveSystem.ADMIN_TEST_PIN) {
-          this.setStatus('Falsche Admin-PIN.', Palette.danger);
-          return;
-        }
+      const pinInput = createTextInput(this, 210, 1030, {
+        inputType: 'password',
+        placeholder: 'Admin-PIN',
+        maxLength: 6,
+        numeric: true,
+        numericKeyboard: true,
+        width: 220,
+        accent: Palette.goldHex,
+      });
+      const testButton = createButton(
+        this,
+        535,
+        1030,
+        SaveSystem.isTestProfileActive() ? 'TESTPROFIL AUS' : 'TESTPROFIL AN',
+        () => {
+          if (pinInput.getValue() !== SaveSystem.ADMIN_TEST_PIN) {
+            this.setStatus('Falsche Admin-PIN.', Palette.danger);
+            return;
+          }
 
-        if (SaveSystem.isTestProfileActive()) {
-          SaveSystem.disableTestProfile();
-          testButton.setLabel('TESTPROFIL AN');
-          this.setStatus('Normaler Spielstand wiederhergestellt.', Palette.success);
-        } else {
-          SaveSystem.enableTestProfile();
-          testButton.setLabel('TESTPROFIL AUS');
-          this.setStatus('Testprofil aktiv: Level 100 und 99.999 Coins.', Palette.success);
-        }
-        pinInput.setValue('');
-      },
-      { width: 210, height: 62, accent: Palette.goldHex, fontSize: FontSize.tiny },
-    );
+          if (SaveSystem.isTestProfileActive()) {
+            SaveSystem.disableTestProfile();
+            testButton.setLabel('TESTPROFIL AN');
+            this.setStatus('Normaler Spielstand wiederhergestellt.', Palette.success);
+          } else {
+            SaveSystem.enableTestProfile();
+            testButton.setLabel('TESTPROFIL AUS');
+            this.setStatus('Testprofil aktiv: Level 100 und 99.999 Coins.', Palette.success);
+          }
+          pinInput.setValue('');
+        },
+        { width: 210, height: 62, accent: Palette.goldHex, fontSize: FontSize.tiny },
+      );
+    }
 
     // Lineal ueber dem Menue: Damit lassen sich Layout-Fehler in Zahlen
     // beschreiben statt in Worten ("von 0 bis 160 ist schwarz").
