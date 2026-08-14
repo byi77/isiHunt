@@ -70,10 +70,16 @@ export class AccountScene extends Phaser.Scene {
       radius: 22,
     });
 
+    const feedbackY = GAME_HEIGHT - 205;
+    createPanel(this, GAME_WIDTH / 2, feedbackY, GAME_WIDTH - 160, 86, world.accent, {
+      alpha: 0.72,
+      radius: 16,
+    });
+
     this.statusText = this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 145, '', textStyle(FontSize.tiny, Palette.inkDim))
+      .text(GAME_WIDTH / 2, feedbackY, '', textStyle(FontSize.small, Palette.ink))
       .setOrigin(0.5)
-      .setWordWrapWidth(GAME_WIDTH - 140)
+      .setWordWrapWidth(GAME_WIDTH - 190)
       .setAlign('center');
 
     this.buildCurrentState(world.accent);

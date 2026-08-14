@@ -7,7 +7,7 @@
 -- kann nach dem Login über claim_cloud_profile übernommen werden.
 --
 -- Der sichtbare Login ist ein Alias. Supabase Auth erhält dafür intern eine
--- nicht zustellbare Adresse der Form <alias>@login.isihunt.invalid, weil der
+-- interne Adresse der Form <alias>@<supabase-projekt>.supabase.co, weil der
 -- Passwortlogin von Supabase direkt E-Mail oder Telefonnummer erwartet. Im
 -- Supabase-Dashboard deshalb unter Authentication -> Providers -> Email die
 -- Bestätigungspflicht deaktivieren; für diesen Login gibt es bewusst keine

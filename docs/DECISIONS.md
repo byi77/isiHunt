@@ -602,7 +602,7 @@ ereignisse mit eindeutiger `event_id` und führt sie idempotent zusammen.
 
 Der erste Weg ist Alias/Passwort. Supabase Auth akzeptiert beim
 Passwort-Login technisch E-Mail oder Telefonnummer, daher wird aus dem
-normalisierten Alias eine pseudonyme, nicht zustellbare interne Auth-ID
+normalisierten Alias eine pseudonyme technische interne Auth-ID
 gebildet. Der Spieler gibt keine E-Mail an und sieht auch keine. Der Alias ist
 3 bis 16 Zeichen lang und nutzt nur `a-z`, `0-9`, `-` und `_`. Apple-Login oder
 eine optionale Wiederherstellungsadresse können später für die native App
@@ -611,7 +611,7 @@ bestehende lokale Profile bleiben bis dahin nutzbar.
 
 Für den Alias-only-Betrieb muss im Supabase-Dashboard die Bestätigungspflicht
 für E-Mail-Accounts deaktiviert werden. Ohne diese Einstellung würde Supabase
-eine Bestätigung an die interne, absichtlich nicht zustellbare Adresse
+eine Bestätigung an die interne technische Adresse
 verlangen.
 
 ### Konfliktregeln

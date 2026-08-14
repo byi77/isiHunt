@@ -2,7 +2,7 @@
 
 import type { Session, User } from '@supabase/supabase-js';
 
-import { BACKEND_TIMEOUT_MS } from '@/config/backend';
+import { BACKEND_TIMEOUT_MS, BACKEND_URL } from '@/config/backend';
 import * as CloudSystem from '@/systems/CloudSystem';
 import type { CloudResult } from '@/systems/CloudSystem';
 
@@ -17,7 +17,8 @@ let unsubscribe: (() => void) | null = null;
  */
 export const ALIAS_MIN_LENGTH = 3;
 export const ALIAS_MAX_LENGTH = 16;
-const INTERNAL_AUTH_DOMAIN = 'login.isihunt.invalid';
+/** Supabase weist reservierte Testdomains wie `.invalid` als E-Mail zurück. */
+const INTERNAL_AUTH_FALLBACK_DOMAIN = 'example.com';
 
 export function normalizeAlias(value: string): string {
   return value.trim().toLowerCase();
@@ -32,7 +33,13 @@ export function isValidAlias(value: string): boolean {
 }
 
 function aliasToAuthEmail(alias: string): string {
-  return `${normalizeAlias(alias)}@${INTERNAL_AUTH_DOMAIN}`;
+  let domain = INTERNAL_AUTH_FALLBACK_DOMAIN;
+  try {
+    domain = new URL(BACKEND_URL).hostname || domain;
+  } catch {
+    // Ohne gültige Backend-URL greift vorher ohnehin die Konfigurationsprüfung.
+  }
+  return `${normalizeAlias(alias)}@${domain}`;
 }
 
 function client() {

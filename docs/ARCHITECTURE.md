@@ -382,7 +382,7 @@ Lösung trennt deshalb Backend-Profil und lokale Installation:
 
 - Supabase Auth verwaltet die Sitzung. Die App fragt nur einen Alias und ein
   Passwort ab. Intern wird der normalisierte Alias auf eine pseudonyme,
-  nicht zustellbare Auth-ID abgebildet; eine E-Mail-Adresse wird weder
+  technische Auth-ID abgebildet; eine E-Mail-Adresse wird weder
   abgefragt noch in Profilanzeige oder Rangliste veröffentlicht.
 - Aliase sind global eindeutig, 3 bis 16 Zeichen lang und auf `a-z`, `0-9`,
   `-` und `_` begrenzt. Da keine Kontaktadresse hinterlegt wird, ist eine
