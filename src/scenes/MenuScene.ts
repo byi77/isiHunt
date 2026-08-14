@@ -53,7 +53,14 @@ export class MenuScene extends Phaser.Scene {
     SafeAreaSystem.showMenuTicker();
     const save = SaveSystem.load();
     if (!save.playerName) {
-      this.scene.start(SceneKey.Profile, { firstStart: true });
+      // Beim allerersten Start wird ein Profil angelegt. Ist das Backend
+      // eingerichtet, soll der Alias direkt als Mehrgeräte-Profil entstehen;
+      // ohne Backend bzw. ohne Netz bleibt ein lokales Offline-Profil möglich.
+      if (CloudSystem.isAvailable() && navigator.onLine) {
+        this.scene.start(SceneKey.Account, { firstStart: true });
+      } else {
+        this.scene.start(SceneKey.Profile, { firstStart: true });
+      }
       return;
     }
 

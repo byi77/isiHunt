@@ -31,6 +31,10 @@ export interface TextInputOptions {
   accent?: number;
   /** Grossbuchstaben erzwingen und Autokorrektur abschalten - fuer Codes. */
   uppercase?: boolean;
+  /** Numerische Tastatur und nur Ziffern - fuer den sechsstelligen PIN. */
+  numeric?: boolean;
+  /** Nur numerische Tastatur, ohne bestehende Legacy-Passwörter zu filtern. */
+  numericKeyboard?: boolean;
   onSubmit?: (value: string) => void;
 }
 
@@ -62,6 +66,22 @@ export function createTextInput(
     input.inputMode = 'email';
   } else if (input.type === 'password') {
     input.autocomplete = 'current-password';
+  }
+  if (options.numeric || options.numericKeyboard) {
+    input.inputMode = 'numeric';
+    input.pattern = '[0-9]*';
+  }
+  if (options.numeric) {
+    input.addEventListener('input', () => {
+      const start = input.selectionStart ?? input.value.length;
+      const before = input.value;
+      input.value = before.replace(/\D/g, '').slice(0, options.maxLength ?? 6);
+      const removedBeforeCursor = before.slice(0, start).replace(/\D/g, '').length;
+      input.setSelectionRange(
+        Math.min(removedBeforeCursor, input.value.length),
+        Math.min(removedBeforeCursor, input.value.length),
+      );
+    });
   }
 
   Object.assign(input.style, {

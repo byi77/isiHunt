@@ -201,7 +201,9 @@ export class ProfileScene extends Phaser.Scene {
     updateButton();
 
     if (firstStart) {
-      status.setText('Der Name wird in der Bestenliste angezeigt.').setColor(toCss(world.accent));
+      status
+        .setText('Lokales Offline-Profil erstellt. Du kannst es später online verbinden.')
+        .setColor(toCss(world.accent));
     }
 
     this.add

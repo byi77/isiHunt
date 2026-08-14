@@ -8,10 +8,11 @@
 --
 -- Der sichtbare Login ist ein Alias. Supabase Auth erhält dafür intern eine
 -- interne Adresse der Form <alias>@<supabase-projekt>.supabase.co, weil der
--- Passwortlogin von Supabase direkt E-Mail oder Telefonnummer erwartet. Im
+-- Der PIN wird technisch als Authentifizierungswert an Supabase übergeben;
+-- Supabase erwartet dafür intern E-Mail oder Telefonnummer. Im
 -- Supabase-Dashboard deshalb unter Authentication -> Providers -> Email die
 -- Bestätigungspflicht deaktivieren; für diesen Login gibt es bewusst keine
--- E-Mail-Zustellung und zunächst auch keinen E-Mail-Passwort-Reset.
+-- E-Mail-Zustellung und zunächst auch keinen E-Mail-PIN-Reset.
 
 begin;
 

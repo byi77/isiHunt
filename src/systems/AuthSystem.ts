@@ -17,6 +17,7 @@ let unsubscribe: (() => void) | null = null;
  */
 export const ALIAS_MIN_LENGTH = 3;
 export const ALIAS_MAX_LENGTH = 16;
+export const PIN_LENGTH = 6;
 /** Supabase weist reservierte Testdomains wie `.invalid` als E-Mail zurück. */
 const INTERNAL_AUTH_FALLBACK_DOMAIN = 'example.com';
 
@@ -30,6 +31,10 @@ export function isValidAlias(value: string): boolean {
     value.length <= ALIAS_MAX_LENGTH &&
     /^[a-z0-9_-]+$/.test(value)
   );
+}
+
+export function isValidPin(value: string): boolean {
+  return new RegExp(`^\\d{${PIN_LENGTH}}$`).test(value);
 }
 
 function aliasToAuthEmail(alias: string): string {
@@ -48,7 +53,7 @@ function readableAuthError(message: string, fallback: string): string {
     return 'Profil noch nicht freigeschaltet: In Supabase „Confirm email“ ausschalten und das Profil danach neu anlegen.';
   }
   if (normalized.includes('invalid login credentials')) {
-    return 'Alias oder Passwort ist nicht korrekt.';
+    return 'Alias oder Zugang ist nicht korrekt.';
   }
   if (normalized.includes('email address') && normalized.includes('invalid')) {
     return 'Alias-Login im Backend ist noch nicht korrekt konfiguriert.';
@@ -133,25 +138,22 @@ export async function refresh(): Promise<CloudResult<Session | null>> {
   return { ok: true, value: session };
 }
 
-export async function signUp(
-  alias: string,
-  password: string,
-): Promise<CloudResult<Session | null>> {
+export async function signUp(alias: string, pin: string): Promise<CloudResult<Session | null>> {
   const supabase = client();
   if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
 
   const normalizedAlias = normalizeAlias(alias);
-  if (!isValidAlias(normalizedAlias)) {
+  if (!isValidAlias(normalizedAlias) || !isValidPin(pin)) {
     return {
       ok: false,
-      error: `Alias: ${ALIAS_MIN_LENGTH}-${ALIAS_MAX_LENGTH} Zeichen, nur a-z, 0-9, - und _`,
+      error: `Alias: ${ALIAS_MIN_LENGTH}-${ALIAS_MAX_LENGTH} Zeichen und ein ${PIN_LENGTH}-stelliger PIN erforderlich.`,
     };
   }
 
   const result = await request(
     supabase.auth.signUp({
       email: aliasToAuthEmail(normalizedAlias),
-      password,
+      password: pin,
       options: { data: { alias: normalizedAlias } },
     }),
     'Profil anlegen',
@@ -163,7 +165,10 @@ export async function signUp(
   return { ok: true, value: session };
 }
 
-export async function signIn(alias: string, password: string): Promise<CloudResult<Session>> {
+export async function signIn(
+  alias: string,
+  pinOrLegacyPassword: string,
+): Promise<CloudResult<Session>> {
   const supabase = client();
   if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
 
@@ -178,7 +183,9 @@ export async function signIn(alias: string, password: string): Promise<CloudResu
   const result = await request(
     supabase.auth.signInWithPassword({
       email: aliasToAuthEmail(normalizedAlias),
-      password,
+      // Bestehende Profile dürfen vorübergehend ihr altes Passwort weiter
+      // verwenden; neue Profile nutzen ausschließlich den sechsstelligen PIN.
+      password: pinOrLegacyPassword,
     }),
     'Anmelden',
   );
@@ -186,7 +193,7 @@ export async function signIn(alias: string, password: string): Promise<CloudResu
   if (result.value.error || !result.value.data.session) {
     return {
       ok: false,
-      error: readableAuthError(result.value.error?.message ?? '', 'Alias oder Passwort ungültig'),
+      error: readableAuthError(result.value.error?.message ?? '', 'Alias oder Zugang ungültig'),
     };
   }
 

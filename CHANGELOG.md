@@ -9,6 +9,13 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Erststart und Profil
+
+- Beim ersten Online-Start wird ein gemeinsames Profil mit Alias und
+  sechsstelliger PIN angelegt; offline entsteht zunächst ein lokales Profil.
+- Neue Profile verwenden einen PIN statt eines Passworts. Bestehende Konten
+  bleiben vorübergehend mit ihrem bisherigen Zugang kompatibel.
+
 ### Hinzugefuegt
 
 **Phase 4: Belohnung**
