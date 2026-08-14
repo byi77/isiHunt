@@ -8,7 +8,7 @@
 
 import Phaser from 'phaser';
 
-import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { COINS_PER_LEVEL, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { ACHIEVEMENT_BY_ID } from '@/config/achievements';
 import { RARITIES } from '@/config/rarities';
 import { getWorld } from '@/config/worlds';
@@ -192,21 +192,10 @@ export class ResultScene extends Phaser.Scene {
     }
 
     if (progression.levelsGained > 0) {
-      if (progression.coinsGained > 0) {
-        highlights.push({
-          text:
-            'Levelaufstieg! +' +
-            progression.talentPointsGained +
-            ' Talentpunkt' +
-            (progression.talentPointsGained === 1 ? '' : 'e'),
-          color: Palette.gold,
-        });
-      } else {
-        highlights.push({
-          text: `Levelaufstieg! +${progression.talentPointsGained} Talentpunkt${progression.talentPointsGained === 1 ? '' : 'e'}`,
-          color: Palette.gold,
-        });
-      }
+      highlights.push({
+        text: 'Levelaufstieg! +' + progression.levelsGained * COINS_PER_LEVEL + ' Level-Coins',
+        color: Palette.gold,
+      });
     }
 
     for (const worldId of progression.unlockedWorldIds) {

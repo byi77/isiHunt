@@ -6,7 +6,13 @@
  * alles Schreibende ueber `save()`.
  */
 
-import { MAX_LEVEL, SAVE_KEY, SAVE_VERSION, xpForLevel } from '@/config/GameConfig';
+import {
+  COINS_PER_EXTRA_TALENT_POINT,
+  MAX_LEVEL,
+  SAVE_KEY,
+  SAVE_VERSION,
+  xpForLevel,
+} from '@/config/GameConfig';
 import { emptyRarityCounts } from '@/config/rarities';
 import { DEFAULT_WORLD_ID } from '@/config/worlds';
 import type { SaveData } from '@/types';
@@ -107,6 +113,12 @@ function migrate(raw: Partial<SaveData>): SaveData {
 
     save.level = level;
     save.xp = level >= MAX_LEVEL ? 0 : xp;
+  }
+  if (rawVersion < 4) {
+    // Talentpunkte waren vor Phase 4 eine separate Währung. Nichts verlieren:
+    // vorhandene Punkte werden beim Wechsel in Coins umgewandelt.
+    save.coins += save.talentPoints * COINS_PER_EXTRA_TALENT_POINT;
+    save.talentPoints = 0;
   }
   return save;
 }

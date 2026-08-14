@@ -8,7 +8,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { MAX_LEVEL, TALENT_POINTS_PER_LEVEL, xpForLevel } from '@/config/GameConfig';
+import { COINS_PER_LEVEL, MAX_LEVEL, xpForLevel } from '@/config/GameConfig';
 import { emptyRarityCounts } from '@/config/rarities';
 import { DEFAULT_WORLD_ID, WORLDS } from '@/config/worlds';
 import type { RarityId } from '@/config/rarities';
@@ -145,11 +145,12 @@ describe('applyRun - Levelaufstieg', () => {
     expect(result.newLevel).toBe(4);
   });
 
-  it('vergibt pro Levelaufstieg einen Talentpunkt', () => {
+  it('vergibt pro Levelaufstieg Coins', () => {
     const result = Progression.applyRun(createRun({ xpGained: xpForLevel(1) + xpForLevel(2) }));
 
-    expect(result.talentPointsGained).toBe(2 * TALENT_POINTS_PER_LEVEL);
-    expect(SaveSystem.load().talentPoints).toBe(2 * TALENT_POINTS_PER_LEVEL);
+    expect(result.talentPointsGained).toBe(0);
+    expect(result.coinsGained).toBeGreaterThanOrEqual(2 * COINS_PER_LEVEL);
+    expect(SaveSystem.load().coins).toBe(result.coinsGained);
   });
 
   it('haelt auf Maximalstufe an und sammelt keine XP mehr an', () => {
@@ -238,11 +239,11 @@ describe('applyRun - Achievements', () => {
 });
 
 describe('grantLevels', () => {
-  it('hebt das Level und vergibt die zugehoerigen Talentpunkte', () => {
+  it('hebt das Level und vergibt die zugehoerigen Coins', () => {
     const save = Progression.grantLevels(3);
 
     expect(save.level).toBe(4);
-    expect(save.talentPoints).toBe(3 * TALENT_POINTS_PER_LEVEL);
+    expect(save.coins).toBe(3 * COINS_PER_LEVEL);
   });
 
   it('geht nie ueber die Maximalstufe hinaus', () => {
@@ -259,18 +260,23 @@ describe('grantLevels', () => {
 });
 
 describe('Talentkäufe', () => {
-  it('kauft Ränge und erstattet sie beim Reset vollständig', () => {
+  it('kauft Ränge mit Coins und berechnet den kostenpflichtigen Reset', () => {
     SaveSystem.update((data) => {
-      data.talentPoints = 2;
+      data.coins = 400;
     });
 
     expect(Progression.purchaseTalent('reach')).not.toBeNull();
     expect(Progression.purchaseTalent('reach')).not.toBeNull();
     expect(SaveSystem.load().talents.reach).toBe(2);
-    expect(SaveSystem.load().talentPoints).toBe(0);
+    expect(SaveSystem.load().coins).toBe(275);
 
-    Progression.resetTalents();
+    expect(Progression.resetTalents()).not.toBeNull();
     expect(SaveSystem.load().talents.reach).toBeUndefined();
-    expect(SaveSystem.load().talentPoints).toBe(2);
+    expect(SaveSystem.load().coins).toBe(25);
+  });
+
+  it('verweigert Käufe ohne ausreichende Coins', () => {
+    expect(Progression.purchaseTalent('reach')).toBeNull();
+    expect(Progression.resetTalents()).toBeNull();
   });
 });

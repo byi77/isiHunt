@@ -154,19 +154,25 @@ export const MAX_LEVEL = 100;
 export const xpForLevel = (level: number): number =>
   level >= MAX_LEVEL ? 0 : Math.floor(750 * Math.sqrt(level));
 
-/** Talentpunkte pro Levelaufstieg. */
+/** Veralteter Speicherwert; neue Talentkäufe laufen vollständig über Coins. */
 export const TALENT_POINTS_PER_LEVEL = 1;
-/** Umrechnung fuer einen Levelaufstieg bei voll ausgebautem Talentbaum. */
+/** Veraltete Umrechnung fuer Spielstände aus der Talentpunkt-Phase. */
 export const COINS_PER_EXTRA_TALENT_POINT = 10;
+/** Grundbelohnung fuer jede abgeschlossene Solo-Runde. */
+export const COINS_PER_RUN = 25;
 /** Coins fuer jedes im Solo-Run eingesammelte Relikt. */
 export const COINS_PER_COLLECTED_RELIC = 1;
 /** Einmalige Belohnung je neu freigeschaltetem Achievement. */
 export const COINS_PER_ACHIEVEMENT = 25;
+/** Coins pro Levelaufstieg als dauerhafte Spielbelohnung. */
+export const COINS_PER_LEVEL = 20;
+/** Kosten eines Talent-Resets. */
+export const TALENT_RESET_COST = 250;
 
 // --- Persistenz -------------------------------------------------------------
 
 export const SAVE_KEY = 'isihunt.save.v1';
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 // --- Entwicklung ------------------------------------------------------------
 

@@ -1,9 +1,7 @@
 /**
- * Talente - dauerhafte Upgrades, gekauft mit Talentpunkten aus Levelaufstiegen.
+ * Talente - dauerhafte Upgrades, gekauft mit Coins aus Runs und Erfolgen.
  *
- * Status v0.1: Datenmodell + Stat-Aufloesung sind vollstaendig implementiert und
- * werden im Run angewendet. Die Vergabe-UI fehlt noch (docs/ROADMAP.md, M2).
- * Bis dahin lassen sich Raenge im Dev-Build ueber die Debug-Tasten setzen.
+ * Die Stat-Auflösung und die Coin-basierte Vergabe sind vollständig implementiert.
  */
 
 import {
@@ -78,6 +76,14 @@ export const TALENTS: readonly TalentDef[] = [
 ];
 
 export type TalentRanks = Partial<Record<TalentId, number>>;
+
+/** Kosten des nächsten Rangs: steigend, damit der Talentbaum langfristig bleibt. */
+export const TALENT_BASE_COST = 50;
+export const TALENT_COST_STEP = 25;
+
+export function talentCost(currentRank: number): number {
+  return TALENT_BASE_COST + Math.max(0, currentRank) * TALENT_COST_STEP;
+}
 
 /**
  * Effektive Werte einer Figur. Alles, was ein Talent beeinflussen kann, wird

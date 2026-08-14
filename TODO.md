@@ -30,7 +30,7 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 - **Phase 1 ist abgeschlossen.** Auf dem Handy laeuft v0.1.3, die Knoepfe
   reagieren. Der Fehler lag an der Auslieferung, nicht am Code.
 - **Bestenliste wird geleert** beim Wechsel auf 90 Sekunden.
-- **Ueberschuessige Talentpunkte werden zu Coins.**
+- **Talente werden mit Coins gekauft; Levelaufstiege geben Level-Coins.**
 - **Bestenliste soll uebergreifend sein** — geprueft: sie ist heute pro Welt
   getrennt. **Nach Phase 1.3 vorgezogen, dringend.**
 - **Jeder Run wird automatisch eingetragen** (Variante B, ohne Filterung auf
@@ -472,10 +472,10 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
 
 - [x] Punkte-Popup auffaelliger (`floatingScore` mit animiertem Bonus-Hinweis)
 - [x] Serien-Bonus: drei gleiche Seltenheiten → doppelte Punkte, ab Gruen
-- [x] Coin-System: Feld im Spielstand, Anzeige, Quellen (Run + Erfolge +
-      ueberschuessige Talentpunkte)
+- [x] Coin-System: Feld im Spielstand, Anzeige, Quellen (Run, Erfolge und
+      Levelaufstiege)
 - [x] Talentbaum-Oberflaeche mit Rangkauf ueber Profil
-- [x] Talente zuruecksetzen mit vollstaendiger Punkterstattung
+- [x] Talente zuruecksetzen gegen 250 Coins, ohne Erstattung
 - [x] **Vitest** — 62 Tests in npm run verify
 
 > **Erledigt am 2026-08-14:** Phase 4 ist lokal und offline vollstaendig

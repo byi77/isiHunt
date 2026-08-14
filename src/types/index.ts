@@ -14,8 +14,9 @@ export interface SaveData {
   level: number;
   /** XP innerhalb des aktuellen Levels, nicht kumulativ. */
   xp: number;
+  /** Legacy-Feld aus der früheren Talentpunkt-Phase; bleibt für Migration. */
   talentPoints: number;
-  /** Waehrung fuer spaetere Belohnungen und ueberschuessige Talentpunkte. */
+  /** Waehrung fuer Run-Belohnungen und Talentkäufe. */
   coins: number;
   talents: TalentRanks;
   bestScore: number;

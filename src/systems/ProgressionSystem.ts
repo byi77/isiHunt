@@ -1,5 +1,5 @@
 /**
- * Charakterlevel, XP, Talentpunkte, Weltenfreischaltung und Achievements.
+ * Charakterlevel, XP, Coins, Weltenfreischaltung und Achievements.
  *
  * Reine Logik ohne Phaser-Abhaengigkeit - dadurch komplett unit-testbar und
  * unabhaengig davon, ob ein Run gerade laeuft.
@@ -7,14 +7,15 @@
 
 import { ACHIEVEMENTS } from '@/config/achievements';
 import {
-  COINS_PER_EXTRA_TALENT_POINT,
   COINS_PER_ACHIEVEMENT,
   COINS_PER_COLLECTED_RELIC,
+  COINS_PER_LEVEL,
+  COINS_PER_RUN,
   MAX_LEVEL,
-  TALENT_POINTS_PER_LEVEL,
+  TALENT_RESET_COST,
   xpForLevel,
 } from '@/config/GameConfig';
-import { TALENTS } from '@/config/talents';
+import { TALENTS, talentCost, type TalentId } from '@/config/talents';
 import { WORLDS } from '@/config/worlds';
 import * as SaveSystem from '@/systems/SaveSystem';
 import type { ProgressionResult, RunStats, SaveData } from '@/types';
@@ -28,18 +29,10 @@ export interface LevelProgress {
   ratio: number;
 }
 
-function allTalentsMaxed(ranks: SaveData['talents']): boolean {
-  return TALENTS.every((talent) => (ranks[talent.id] ?? 0) >= talent.maxRank);
-}
-
-function grantTalentReward(data: SaveData): 'talentPoint' | 'coins' {
-  if (allTalentsMaxed(data.talents)) {
-    data.coins += COINS_PER_EXTRA_TALENT_POINT;
-    return 'coins';
-  }
-
-  data.talentPoints += TALENT_POINTS_PER_LEVEL;
-  return 'talentPoint';
+function grantLevelReward(data: SaveData): number {
+  data.talentPoints = 0;
+  data.coins += COINS_PER_LEVEL;
+  return COINS_PER_LEVEL;
 }
 
 export function getLevelProgress(save: SaveData): LevelProgress {
@@ -66,9 +59,9 @@ export function applyRun(run: RunStats): ProgressionResult {
   const before = SaveSystem.load();
   const levelBefore = before.level;
   const isNewBestScore = run.score > before.bestScore;
-  let talentPointsGained = 0;
+  const talentPointsGained = 0;
   let coinsGained = 0;
-  const runCoins = run.totalCollected * COINS_PER_COLLECTED_RELIC;
+  const runCoins = COINS_PER_RUN + run.totalCollected * COINS_PER_COLLECTED_RELIC;
   coinsGained += runCoins;
 
   const after = SaveSystem.update((data) => {
@@ -89,8 +82,7 @@ export function applyRun(run: RunStats): ProgressionResult {
     while (data.level < MAX_LEVEL && data.xp >= xpForLevel(data.level) && guard < MAX_LEVEL) {
       data.xp -= xpForLevel(data.level);
       data.level += 1;
-      if (grantTalentReward(data) === 'coins') coinsGained += COINS_PER_EXTRA_TALENT_POINT;
-      else talentPointsGained += TALENT_POINTS_PER_LEVEL;
+      coinsGained += grantLevelReward(data);
       guard += 1;
     }
 
@@ -129,26 +121,28 @@ export function applyRun(run: RunStats): ProgressionResult {
 }
 
 /** Kauft genau einen Rang lokal; der Talentbildschirm validiert nicht blind. */
-export function purchaseTalent(talentId: keyof SaveData['talents']): SaveData | null {
+export function purchaseTalent(talentId: TalentId): SaveData | null {
   const talent = TALENTS.find((entry) => entry.id === talentId);
   if (!talent) return null;
 
   let purchased = false;
   const result = SaveSystem.update((data) => {
     const currentRank = data.talents[talentId] ?? 0;
-    if (data.talentPoints <= 0 || currentRank >= talent.maxRank) return;
-    data.talentPoints -= 1;
+    const cost = talentCost(currentRank);
+    if (data.coins < cost || currentRank >= talent.maxRank) return;
+    data.coins -= cost;
     data.talents[talentId] = currentRank + 1;
     purchased = true;
   });
   return purchased ? result : null;
 }
 
-/** Setzt alle Talentränge zurück und erstattet jeden ausgegebenen Punkt. */
-export function resetTalents(): SaveData {
+/** Setzt alle Talentränge gegen die konfigurierte Reset-Gebühr zurück. */
+export function resetTalents(): SaveData | null {
+  if (SaveSystem.load().coins < TALENT_RESET_COST) return null;
   return SaveSystem.update((data) => {
-    const spent = Object.values(data.talents).reduce((sum, rank) => sum + (rank ?? 0), 0);
-    data.talentPoints += spent;
+    if (data.coins < TALENT_RESET_COST) return;
+    data.coins -= TALENT_RESET_COST;
     data.talents = {};
   });
 }
@@ -175,7 +169,7 @@ export function grantLevels(count: number): SaveData {
     const nextLevel = Math.min(MAX_LEVEL, currentLevel + Math.max(0, count));
     const gained = nextLevel - currentLevel;
     data.level = nextLevel;
-    for (let index = 0; index < gained; index++) grantTalentReward(data);
+    for (let index = 0; index < gained; index++) grantLevelReward(data);
     data.xp = 0;
   });
 }

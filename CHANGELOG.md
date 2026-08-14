@@ -15,9 +15,10 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 - Auffaelligere Punkte-Popups mit sichtbarem x2-Serienbonus ab drei gleichen
   gruenen, blauen, lila oder orangenen Relikten in Folge.
-- Coins fuer eingesammelte Relikte und neue Erfolge; ueberschuessige
-  Talentpunkte bleiben weiterhin Coins.
-- Talentbaum im Profil mit Rangkauf und vollstaendigem Reset gegen Erstattung.
+- Coins fuer jede abgeschlossene Runde, eingesammelte Relikte, neue Erfolge und
+  Levelaufstiege.
+- Talentbaum im Profil mit steigenden Coin-Kosten je Rang und kostenpflichtigem
+  Reset.
 - Atomare Talent-RPCs fuer angemeldete Mehrgeraete-Profile.
 
 ### Geaendert

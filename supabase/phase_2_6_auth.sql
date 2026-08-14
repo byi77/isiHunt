@@ -268,7 +268,8 @@ declare
   next_data jsonb;
   current_rank integer;
   max_rank integer;
-  current_points integer;
+  current_coins integer;
+  talent_cost integer;
 begin
   if uid is null then raise exception 'Anmeldung erforderlich'; end if;
   max_rank := case p_talent_id
@@ -288,12 +289,20 @@ begin
   if current_data is null then raise exception 'Profilstand noch nicht angelegt'; end if;
 
   current_rank := coalesce((current_data->'talents'->>p_talent_id)::integer, 0);
-  current_points := coalesce((current_data->>'talentPoints')::integer, 0);
-  if current_points < 1 then raise exception 'Keine Talentpunkte verfügbar'; end if;
+  current_coins := coalesce((current_data->>'coins')::integer, 0);
+  -- Alte Profilstände behalten ihren Wert: Talentpunkte werden einmalig
+  -- mit dem historischen Kurs in Coins umgewandelt.
+  if coalesce((current_data->>'version')::integer, 1) < 4 then
+    current_coins := current_coins + coalesce((current_data->>'talentPoints')::integer, 0) * 10;
+  end if;
+  talent_cost := 50 + current_rank * 25;
+  if current_coins < talent_cost then raise exception 'Nicht genug Coins'; end if;
   if current_rank >= max_rank then raise exception 'Talent bereits maximiert'; end if;
 
   next_data := jsonb_set(current_data, array['talents', p_talent_id], to_jsonb(current_rank + 1), true);
-  next_data := jsonb_set(next_data, '{talentPoints}', to_jsonb(current_points - 1), true);
+  next_data := jsonb_set(next_data, '{coins}', to_jsonb(current_coins - talent_cost), true);
+  next_data := jsonb_set(next_data, '{talentPoints}', '0'::jsonb, true);
+  next_data := jsonb_set(next_data, '{version}', '4'::jsonb, true);
   update public.profile_progress
   set data = next_data, updated_at = now()
   where profile_id = uid;
@@ -314,22 +323,22 @@ declare
   uid uuid := auth.uid();
   current_data jsonb;
   next_data jsonb;
-  spent integer;
+  current_coins integer;
 begin
   if uid is null then raise exception 'Anmeldung erforderlich'; end if;
   select data into current_data
   from public.profile_progress where profile_id = uid for update;
   if current_data is null then raise exception 'Profilstand noch nicht angelegt'; end if;
 
-  select coalesce(sum(value::integer), 0) into spent
-  from jsonb_each_text(coalesce(current_data->'talents', '{}'::jsonb));
+  current_coins := coalesce((current_data->>'coins')::integer, 0);
+  if coalesce((current_data->>'version')::integer, 1) < 4 then
+    current_coins := current_coins + coalesce((current_data->>'talentPoints')::integer, 0) * 10;
+  end if;
+  if current_coins < 250 then raise exception 'Nicht genug Coins für den Reset'; end if;
   next_data := jsonb_set(current_data, '{talents}', '{}'::jsonb, true);
-  next_data := jsonb_set(
-    next_data,
-    '{talentPoints}',
-    to_jsonb(coalesce((current_data->>'talentPoints')::integer, 0) + spent),
-    true
-  );
+  next_data := jsonb_set(next_data, '{coins}', to_jsonb(current_coins - 250), true);
+  next_data := jsonb_set(next_data, '{talentPoints}', '0'::jsonb, true);
+  next_data := jsonb_set(next_data, '{version}', '4'::jsonb, true);
   update public.profile_progress
   set data = next_data, updated_at = now()
   where profile_id = uid;
@@ -415,9 +424,10 @@ begin
   next_data := current_data || jsonb_build_object(
     'level', next_level,
     'xp', next_xp,
-    'coins', coalesce((current_data->>'coins')::integer, 0) + greatest(0, p_coins_gained),
-    'talentPoints', coalesce((current_data->>'talentPoints')::integer, 0)
-      + greatest(0, p_talent_points_gained),
+    'coins', coalesce((current_data->>'coins')::integer, 0)
+      + greatest(0, p_coins_gained)
+      + greatest(0, p_talent_points_gained) * 10,
+    'talentPoints', 0,
     'bestScore', greatest(coalesce((current_data->>'bestScore')::integer, 0), p_score),
     'bestCombo', greatest(coalesce((current_data->>'bestCombo')::integer, 0), p_best_combo),
     'totalScore', coalesce((current_data->>'totalScore')::bigint, 0) + greatest(0, p_score),
