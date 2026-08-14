@@ -27,6 +27,8 @@ interface ToneSpec {
 let audioContext: AudioContext | null = null;
 let initialized = false;
 let resumePromise: Promise<boolean> | null = null;
+const pendingTones: ToneSpec[] = [];
+const MAX_PENDING_TONES = 12;
 
 function soundEnabled(): boolean {
   return SaveSystem.load().soundEnabled;
@@ -44,6 +46,9 @@ function getAudioContext(): AudioContext | null {
 
   try {
     audioContext = new AudioContextConstructor();
+    audioContext.addEventListener('statechange', () => {
+      if (audioContext?.state === 'running') flushPendingTones(audioContext);
+    });
     return audioContext;
   } catch {
     return null;
@@ -94,6 +99,37 @@ function resumeAudioContext(): Promise<boolean> {
   return resumePromise;
 }
 
+function playTone(context: AudioContext, spec: ToneSpec): void {
+  try {
+    const start = context.currentTime + (spec.delay ?? 0);
+    const gain = context.createGain();
+    const oscillator = context.createOscillator();
+    const volume = spec.volume ?? 0.045;
+
+    oscillator.type = spec.type ?? 'sine';
+    oscillator.frequency.setValueAtTime(spec.frequency, start);
+    gain.gain.setValueAtTime(0.0001, start);
+    gain.gain.exponentialRampToValueAtTime(volume, start + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, start + spec.duration);
+
+    oscillator.connect(gain);
+    gain.connect(context.destination);
+    oscillator.start(start);
+    oscillator.stop(start + spec.duration + 0.02);
+  } catch {
+    // Audio darf das Spiel niemals unterbrechen. Der naechste Tipp versucht
+    // automatisch erneut, den Kontext zu aktivieren.
+    if ((context as AudioContext).state === 'closed') audioContext = null;
+  }
+}
+
+function flushPendingTones(context: AudioContext): void {
+  if (!soundEnabled() || context.state !== 'running' || pendingTones.length === 0) return;
+
+  const tones = pendingTones.splice(0, pendingTones.length);
+  for (const tone of tones) playTone(context, tone);
+}
+
 function unlock(): void {
   if (!soundEnabled()) return;
 
@@ -101,7 +137,9 @@ function unlock(): void {
   if (!context) return;
 
   primeAudioContext(context);
-  void resumeAudioContext();
+  void resumeAudioContext().then((ready) => {
+    if (ready) flushPendingTones(context);
+  });
 }
 
 function scheduleTone(spec: ToneSpec): void {
@@ -110,34 +148,15 @@ function scheduleTone(spec: ToneSpec): void {
   const context = getAudioContext();
   if (!context) return;
 
-  const play = (): void => {
-    if (!soundEnabled()) return;
+  if (context.state === 'running') {
+    playTone(context, spec);
+    return;
+  }
 
-    try {
-      const start = context.currentTime + (spec.delay ?? 0);
-      const gain = context.createGain();
-      const oscillator = context.createOscillator();
-      const volume = spec.volume ?? 0.045;
-
-      oscillator.type = spec.type ?? 'sine';
-      oscillator.frequency.setValueAtTime(spec.frequency, start);
-      gain.gain.setValueAtTime(0.0001, start);
-      gain.gain.exponentialRampToValueAtTime(volume, start + 0.012);
-      gain.gain.exponentialRampToValueAtTime(0.0001, start + spec.duration);
-
-      oscillator.connect(gain);
-      gain.connect(context.destination);
-      oscillator.start(start);
-      oscillator.stop(start + spec.duration + 0.02);
-    } catch {
-      // Audio darf das Spiel niemals unterbrechen. Der naechste Tipp versucht
-      // automatisch erneut, den Kontext zu aktivieren.
-      if ((context as AudioContext).state === 'closed') audioContext = null;
-    }
-  };
-
+  if (pendingTones.length >= MAX_PENDING_TONES) pendingTones.shift();
+  pendingTones.push(spec);
   void resumeAudioContext().then((ready) => {
-    if (ready) play();
+    if (ready) flushPendingTones(context);
   });
 }
 
@@ -299,8 +318,11 @@ export function setEnabled(enabled: boolean): void {
     data.soundEnabled = enabled;
   });
 
-  if (!enabled && audioContext?.state === 'running') {
-    void audioContext.suspend().catch(() => undefined);
+  if (!enabled) {
+    pendingTones.length = 0;
+    if (audioContext?.state === 'running') {
+      void audioContext.suspend().catch(() => undefined);
+    }
   } else if (enabled) {
     unlock();
   }
