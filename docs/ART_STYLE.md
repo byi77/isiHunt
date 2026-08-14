@@ -306,10 +306,10 @@ Home-Indicator reichen — das ist fuer den **Hintergrund** richtig, damit dort
 nichts durchblitzt. Text und Spielfeld duerfen dagegen nicht hinter Dynamic
 Island, Uhr oder Home-Indicator liegen.
 
-Der dunkle App-Kopf beginnt deshalb am Displayrand. Sein Lauftext startet erst
-nach `safe-area-inset-top` und einem kleinen Abstand zum iOS-Systemblur;
-anschliessend folgen 32 px fuer Laufband beziehungsweise Restzeit. Weil WebKit
-den oberen Wert in einzelnen installierten Apps als 0 meldet, setzt
+Der dunkle App-Kopf beginnt deshalb am Displayrand. Direkt nach
+`safe-area-inset-top` folgen 32 px fuer Laufband beziehungsweise Restzeit;
+zwischen Systembereich und Laufband bleibt kein ungenutzter Streifen. Weil
+WebKit den oberen Wert in einzelnen installierten Apps als 0 meldet, setzt
 `SafeAreaSystem` auf iPhones zusaetzlich einen nach Bildschirmgeneration
 abgestuften Mindestwert. Seitliche Raender nutzen weiterhin
 `env(safe-area-inset-*)`. Unten reicht der Canvas bis zum Displayrand; die

@@ -47,7 +47,7 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   Oberkante jetzt aus `safe-area-inset-top` plus einem modellabhaengigen
   Fallback. Der dunkle Kopf darf hinter die Statusleiste reichen, der Text
   beginnt garantiert erst unter Dynamic Island und Uhr.
-- Die Laufzeile liegt jetzt ausserhalb des iOS-Systemblurs und wird ohne
+- Die Laufzeile schliesst jetzt direkt an die iOS-Safe-Area an und wird ohne
   unscharfen Textschatten gezeichnet. Der Canvas reicht zugleich bis in die
   untere Home-Indicator-Safe-Area, sodass dort kein eigener Balken entsteht.
 - Phase 3.5: prozedurale WebAudio-Toene fuer Klicks, Faenge, Combo-Stufen,

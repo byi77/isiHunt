@@ -51,7 +51,6 @@
         --world-top: #0b1020;
         --world-bottom: #0b1020;
         --ticker-height: 32px;
-        --ticker-clearance: 0px;
         --app-safe-top: env(safe-area-inset-top, 0px);
       }
 
@@ -163,9 +162,7 @@
           var(--world-bottom) 100%
         );
         /* Statusbereich plus Laufband bleiben oberhalb von Spielpixel 0. */
-        padding-top: calc(
-          var(--app-safe-top) + var(--ticker-clearance) + var(--ticker-height)
-        );
+        padding-top: calc(var(--app-safe-top) + var(--ticker-height));
         /* Der Canvas-Hintergrund reicht bis zum Displayrand. Bedienbare
            Elemente halten ihren Abstand intern; ein Padding hier erzeugt in
            iOS-Home-Screen-Apps einen sichtbaren unteren Balken. */
@@ -218,13 +215,13 @@
         top: 0;
         left: 0;
         right: 0;
-        height: calc(var(--app-safe-top) + var(--ticker-clearance) + var(--ticker-height));
+        height: calc(var(--app-safe-top) + var(--ticker-height));
         z-index: 2;
         display: flex;
         align-items: center;
         justify-content: center;
         box-sizing: border-box;
-        padding: calc(var(--app-safe-top) + var(--ticker-clearance)) 18px 0;
+        padding: var(--app-safe-top) 18px 0;
         overflow: hidden;
         background: #0b1020;
         color: #f4f1e8;
