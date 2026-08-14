@@ -392,6 +392,11 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
         aber `black-translucent` legt den iOS-Systemblur weiterhin ueber die
         Laufzeile. Deshalb ab v0.1.66 undurchsichtige schwarze Statusleiste;
         Web-Viewport und Laufzeile beginnen direkt darunter. Geraetetest offen.
+  - [x] Geraetetest v0.1.66: iOS reserviert den Statusbereich entgegen dem
+        erwarteten Verhalten nicht; Laufzeile verschwindet und Logo wird
+        abgeschnitten. Ab v0.1.67 wieder sichere 126-CSS-px-Geometrie, aber der
+        32-px-Blur-Schutz ist transparent und zeigt den Welt-Hintergrund. Nur
+        die eigentliche Laufzeile bleibt dunkel. Geraetetest offen.
 - [ ] Erst mit M6 (Capacitor): Live Activity mit Punktestand und Restzeit
       waehrend eines Runs; bis dahin wird die Anzeige als Prototyp beobachtet.
 

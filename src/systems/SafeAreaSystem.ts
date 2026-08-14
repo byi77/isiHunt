@@ -1,9 +1,8 @@
 /**
  * Kleine Anzeige in der oberen Safe Area.
  *
- * In installierten iOS-Apps liegt der Bereich direkt unter der undurchsichtigen
- * Systemstatusleiste. Dadurch bleiben Uhr und Dynamic Island unangetastet und
- * der Lauftext wird nicht vom Systemblur weichgezeichnet.
+ * In installierten iOS-Apps liegt der Text unterhalb des Systemblurs. Der
+ * dazwischenliegende Bereich bleibt transparent und zeigt den Welt-Hintergrund.
  */
 
 import { eventBus, GameEvent } from '@/core/EventBus';
@@ -14,14 +13,24 @@ let tickerTimer: number | undefined;
 let tickerItems: readonly string[] = [];
 let tickerIndex = 0;
 
-/**
- * Mit der undurchsichtigen iOS-Statusleiste beginnt der Web-Viewport bereits
- * unter Uhr und Dynamic Island. Ein zusaetzliches Safe-Area-Padding wuerde den
- * freigewordenen Platz doppelt reservieren und als Leerstreifen erscheinen.
- */
+/** WebKit meldet die obere Safe Area in installierten Apps gelegentlich als 0. */
 function configureIosStatusArea(): void {
   if (!isIos() || !isStandalone()) return;
-  document.documentElement.style.setProperty('--app-safe-top', '0px');
+
+  const isIphone = /iPhone|iPod/.test(navigator.userAgent);
+  const longScreenEdge = Math.max(window.screen.width, window.screen.height);
+
+  let fallback = 24;
+  if (isIphone && longScreenEdge >= 870) fallback = 62;
+  else if (isIphone && longScreenEdge >= 850) fallback = 59;
+  else if (isIphone && longScreenEdge >= 812) fallback = 47;
+  else if (isIphone) fallback = 20;
+
+  document.documentElement.style.setProperty(
+    '--app-safe-top',
+    `max(env(safe-area-inset-top, 0px), ${fallback}px)`,
+  );
+  document.documentElement.style.setProperty('--ticker-offset', isIphone ? '32px' : '8px');
 }
 
 function write(message: string): void {

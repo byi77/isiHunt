@@ -43,12 +43,11 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   Display-, Browser-, CPU-, Netzwerk- und Webspeicher-Daten.
 - Eine Namensaenderung im Profil wird jetzt auch auf den bestehenden eigenen
   Ranglisteneintrag uebertragen.
-- Die Laufzeile schliesst jetzt direkt an die iOS-Safe-Area an und wird ohne
-  unscharfen Textschatten gezeichnet. Der Canvas reicht zugleich bis in die
-  untere Home-Indicator-Safe-Area, sodass dort kein eigener Balken entsteht.
-- Installierte iOS-Apps verwenden jetzt eine undurchsichtige schwarze
-  Statusleiste. Dadurch kann der Systemblur die direkt darunterliegende
-  Laufzeile nicht mehr weichzeichnen.
+- Die Laufzeile liegt unterhalb des iOS-Systemblurs und wird ohne unscharfen
+  Textschatten gezeichnet. Der notwendige Schutzbereich darueber ist
+  transparent und zeigt den Welt-Hintergrund statt eines blauen Leerfelds.
+  Der Canvas reicht zugleich bis in die untere Home-Indicator-Safe-Area,
+  sodass dort kein eigener Balken entsteht.
 - Phase 3.5: prozedurale WebAudio-Toene fuer Klicks, Faenge, Combo-Stufen,
   Run-Start, Run-Ende und Levelaufstieg; der Ton ist in den Einstellungen
   abschaltbar und bleibt gespeichert.

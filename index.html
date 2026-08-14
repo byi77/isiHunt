@@ -25,9 +25,9 @@
 
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <!-- Eine undurchsichtige iOS-Statusleiste haelt den Systemblur von der
-         Laufzeile fern. Webinhalt beginnt direkt unter Uhr und Dynamic Island. -->
-    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <!-- Der Welt-Hintergrund darf hinter die iOS-Statusleiste reichen. Text
+         und Canvas werden darunter in der sicheren Flaeche positioniert. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="isiHunt" />
     <meta
       name="description"
@@ -51,6 +51,7 @@
         --world-top: #0b1020;
         --world-bottom: #0b1020;
         --ticker-height: 32px;
+        --ticker-offset: 0px;
         --app-safe-top: env(safe-area-inset-top, 0px);
       }
 
@@ -162,7 +163,7 @@
           var(--world-bottom) 100%
         );
         /* Statusbereich plus Laufband bleiben oberhalb von Spielpixel 0. */
-        padding-top: calc(var(--app-safe-top) + var(--ticker-height));
+        padding-top: calc(var(--app-safe-top) + var(--ticker-offset) + var(--ticker-height));
         /* Der Canvas-Hintergrund reicht bis zum Displayrand. Bedienbare
            Elemente halten ihren Abstand intern; ein Padding hier erzeugt in
            iOS-Home-Screen-Apps einen sichtbaren unteren Balken. */
@@ -207,22 +208,21 @@
         display: block;
       }
 
-      /* In normalen Browsern beruecksichtigt der Kopf die sichere Oberkante.
-         In der installierten iOS-App reserviert die undurchsichtige
-         Statusleiste diesen Bereich bereits; dort setzt JavaScript den Wert
-         auf 0 und die Laufzeile beginnt direkt unter dem Systembereich. */
+      /* Nur die eigentliche 32-px-Laufzeile ist dunkel. Der Bereich zwischen
+         iOS-Systemblur und Laufzeile bleibt transparent, sodass dort der
+         Welt-Hintergrund weiterlaeuft statt eines blauen Leerfelds. */
       #safe-area-content {
         position: absolute;
-        top: 0;
+        top: calc(var(--app-safe-top) + var(--ticker-offset));
         left: 0;
         right: 0;
-        height: calc(var(--app-safe-top) + var(--ticker-height));
+        height: var(--ticker-height);
         z-index: 2;
         display: flex;
         align-items: center;
         justify-content: center;
         box-sizing: border-box;
-        padding: var(--app-safe-top) 18px 0;
+        padding: 0 18px;
         overflow: hidden;
         background: #0b1020;
         color: #f4f1e8;
