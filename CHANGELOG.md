@@ -43,6 +43,9 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   Display-, Browser-, CPU-, Netzwerk- und Webspeicher-Daten.
 - Eine Namensaenderung im Profil wird jetzt auch auf den bestehenden eigenen
   Ranglisteneintrag uebertragen.
+- Auf iPhones liegt das Laufband jetzt in einem eigenen App-Kopfbereich unter
+  der schwarzen Systemstatusleiste. Webinhalt wird nicht mehr hinter Dynamic
+  Island und Uhr geschoben; der doppelte Laufband-Knoten wurde entfernt.
 - Phase 3.5: prozedurale WebAudio-Toene fuer Klicks, Faenge, Combo-Stufen,
   Run-Start, Run-Ende und Levelaufstieg; der Ton ist in den Einstellungen
   abschaltbar und bleibt gespeichert.

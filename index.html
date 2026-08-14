@@ -25,7 +25,11 @@
 
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <!-- `black` reserviert in einer iOS-Home-Screen-App einen eigenen dunklen
+         Systembereich fuer Uhr und Dynamic Island. `black-translucent` darf
+         Webinhalt darunter schieben und war die Ursache dafuer, dass das
+         Laufband im Island-Bereich lag. -->
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
     <meta name="apple-mobile-web-app-title" content="isiHunt" />
     <meta
       name="description"
@@ -48,6 +52,7 @@
       :root {
         --world-top: #0b1020;
         --world-bottom: #0b1020;
+        --ticker-height: 32px;
       }
 
       html,
@@ -157,9 +162,10 @@
           var(--world-bottom) 70%,
           var(--world-bottom) 100%
         );
-        /* Mindestens 28 px fuer die obere Statuszeile; auf iPhones gewinnt
-           der echte Safe-Area-Abstand der Dynamic Island. */
-        padding-top: max(28px, env(safe-area-inset-top, 0px));
+        /* Die iOS-Statusleiste liegt mit `black` ausserhalb des Webinhalts.
+           Innerhalb der App reserviert dieser feste Kopfbereich Platz fuer
+           das Laufband. So beginnt auch Spielpixel 0 garantiert darunter. */
+        padding-top: var(--ticker-height);
         padding-bottom: env(safe-area-inset-bottom, 0px);
         padding-left: env(safe-area-inset-left, 0px);
         padding-right: env(safe-area-inset-right, 0px);
@@ -201,22 +207,21 @@
         display: block;
       }
 
-      /* Dezentes Laufband im Bereich oberhalb von Spielpixel 0. Der Streifen
-         hat einen 28-px-Fallback, weil iOS in manchen PWA-/Browserstaenden
-         trotz sichtbarer Statuszone 0 fuer safe-area-inset-top meldet. */
+      /* Dezentes Laufband direkt oberhalb von Spielpixel 0. Es liegt absolut
+         im App-Container und damit unter Apples reservierter Statusleiste,
+         statt wie zuvor als `fixed`-Element hinter der Dynamic Island. */
       #safe-area-content {
-        position: fixed;
+        position: absolute;
         top: 0;
         left: 0;
         right: 0;
-        min-height: 28px;
-        height: max(28px, env(safe-area-inset-top, 0px));
+        height: var(--ticker-height);
         z-index: 2;
         display: flex;
-        align-items: flex-end;
+        align-items: center;
         justify-content: center;
         box-sizing: border-box;
-        padding: 0 18px 8px;
+        padding: 0 18px;
         overflow: hidden;
         background: #0b1020;
         color: rgba(244, 241, 232, 0.9);
@@ -232,25 +237,6 @@
         transition:
           color 300ms ease,
           opacity 300ms ease;
-      }
-
-      /* iOS meldet in installierten Web-Apps nicht auf jedem Modell den
-         Dynamic-Island-Abstand ueber `env(...)`. Ein fester Mindestwert hält
-         die Laufzeile sicher unter der Island; der Canvas beginnt darunter.
-         Auf Geraeten mit echtem Safe-Area-Wert gewinnt der groessere Wert. */
-      html.ios-device #game {
-        padding-top: max(60px, env(safe-area-inset-top, 0px));
-      }
-
-      html.ios-device #safe-area-content {
-        min-height: 60px;
-        height: max(60px, env(safe-area-inset-top, 0px));
-      }
-
-      /* Nur der Knoten innerhalb von #game darf sichtbar sein: Das ist im
-         Browser und im Fullscreen derselbe sichere Anzeigeplatz. */
-      body > #safe-area-content {
-        display: none !important;
       }
 
       /* Messpunkte fuer die sicheren Raender - unsichtbar, siehe <body>. */
@@ -344,7 +330,6 @@
     <div id="orientation-lock" aria-live="polite">
       <span>Bitte halte das Handy hochkant, um isiHunt zu spielen.</span>
     </div>
-    <div id="safe-area-content" aria-hidden="true">ISI HUNT · JAGE DAS LICHT</div>
     <!-- Zwei Messpunkte fuer die sicheren Raender.
          `env(safe-area-inset-*)` laesst sich aus JavaScript nicht direkt lesen.
          Diese beiden 1-Pixel-Marken stehen genau auf der Grenze; ihre Position

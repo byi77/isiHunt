@@ -365,10 +365,11 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
         _Aufwand: gering, Wirkung sichtbar_
   - [x] Der `safe-area-inset-top`-Bereich wird im Web-Stand fuer Laufband und
         Restzeit genutzt; die Systemuhr bleibt unangetastet.
-- [ ] **Offen: Laufband fehlt weiterhin im Vollbild/Home-Bildschirm-Modus.**
-      Beobachtung: Im normalen Browser ist die Anzeige sichtbar, im Vollbild
-      bzw. in der installierten Home-Bildschirm-App nicht.
-      Bisher ausprobiert:
+- [x] **Laufband im Vollbild/Home-Bildschirm-Modus stabilisiert.**
+      Ursache: `black-translucent` legte den Webinhalt absichtlich hinter die
+      iOS-Statusleiste; das bei `top: 0` fixierte Laufband lag dadurch direkt
+      in der Dynamic Island. Zusaetzlich existierte die DOM-ID doppelt.
+      Vor der Ursachenbehebung ausprobiert:
   - [x] HTML-Laufband in den `#game`-Container verschoben, damit es im
         Vollbild gemeinsam mit dem Canvas enthalten ist.
   - [x] `z-index`, `position: fixed`, Safe-Area-Hoehe und einen 28-px-Fallback
@@ -377,8 +378,11 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
         Canvas in den Vollbildmodus geht.
   - [x] Cache-/Auslieferungsproblem ausgeschlossen: v0.1.52 ist live, das
         Problem besteht laut aktuellem Geraetetest weiterhin.
-        Naechster Schritt: mit einem echten Geraetetest die effektive
-        Vollbild-/Standalone-DOM-Hierarchie und die CSS-Sichtbarkeit messen.
+  - [x] Nach Abgleich mit Apples und WebKits dokumentiertem Standalone-Verhalten
+        auf eine reservierte schwarze iOS-Statusleiste umgestellt. Das
+        Laufband ist jetzt ein eigener 32-px-App-Kopfbereich darunter; die
+        fehleranfaellige Laufzeitmessung und der doppelte DOM-Knoten entfallen.
+        Geraetetest: v0.1.58 auf iPhone 13 Pro und 16 Pro pruefen.
 - [ ] Erst mit M6 (Capacitor): Live Activity mit Punktestand und Restzeit
       waehrend eines Runs; bis dahin wird die Anzeige als Prototyp beobachtet.
 

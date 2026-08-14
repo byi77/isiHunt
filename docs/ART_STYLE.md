@@ -301,15 +301,17 @@ abhebt, bricht ab.
 
 ### 8.4 Das Spielfeld haelt sich aus den sicheren Raendern heraus
 
-`viewport-fit=cover` laesst die Seite bis unter Dynamic Island und
-Home-Indicator reichen — das ist fuer den **Hintergrund** richtig, damit dort
-nichts durchblitzt. Fuer das **Spielfeld** ist es falsch: Auf einem iPhone 16
-Pro verschwand der Zurueck-Knopf (Spiel-y 30..90) hinter der Island.
+`viewport-fit=cover` laesst die Seite bis zum Home-Indicator reichen — das ist
+fuer den **Hintergrund** richtig, damit dort nichts durchblitzt. Oben darf der
+Webinhalt aber nicht hinter Dynamic Island und Uhr liegen: Die installierte
+iOS-App verwendet deshalb den Statusleistenstil `black`, der diesen Bereich
+fuer das System reserviert.
 
-Deshalb bekommt `#game` ein Padding in Hoehe der sicheren Raender
-(`env(safe-area-inset-*)`, mit `box-sizing: border-box`). Der Hintergrund
-bleibt randlos, das Spielfeld rutscht genau so weit hinein, wie das Geraet es
-verlangt.
+Direkt darunter reserviert `#game` einen festen 32-px-App-Kopfbereich fuer
+Laufband beziehungsweise Restzeit. Seitliche und untere sichere Raender
+nutzen weiterhin `env(safe-area-inset-*)` mit `box-sizing: border-box`. Der
+Hintergrund bleibt randlos, waehrend Canvas und Bedienung in der sicheren
+Flaeche bleiben.
 
 **Warum das nie am Schreibtisch auffaellt:** Ein Browser-Simulator kann
 iPhone-Groessen nachstellen, aber **keine sicheren Raender** — die entstehen
