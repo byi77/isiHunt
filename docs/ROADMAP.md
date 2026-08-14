@@ -104,7 +104,8 @@ Der bisherige Sync-Code ist ein einmaliger Umzug. Für iPhone und iPad mit
 demselben Profil braucht es ein Backend-Profil mit Login und eine
 Zusammenführung statt des bisherigen vollständigen Ersetzens.
 
-- [x] Supabase Auth mit E-Mail/Passwort und Profil-Tabelle
+- [x] Supabase Auth mit Alias/Passwort und Profil-Tabelle; Supabase erhält
+      dafür intern nur eine pseudonyme Auth-ID, keine echte Kontaktadresse
 - [x] RLS- und RPC-Skript: jedes Profil sieht und ändert nur seine eigenen Daten
 - [x] Offline-Outbox für Solo-Run-Ereignisse mit eindeutiger `event_id`
 - [x] Serverseitige, idempotente Zusammenführung von XP, Coins, Erfolgen und

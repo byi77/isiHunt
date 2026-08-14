@@ -13,7 +13,11 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 **Phase 2.6: Login und Mehrgeräte-Profil**
 
-- Freiwilliger Supabase-Login in den Einstellungen mit E-Mail/Passwort.
+- Freiwilliger Supabase-Login in den Einstellungen mit Alias/Passwort; eine
+  E-Mail-Adresse wird vom Spieler weder benötigt noch angezeigt.
+- Der Alias wird intern auf eine pseudonyme Auth-ID abgebildet. Für den
+  alias-only Login muss die E-Mail-Bestätigung in Supabase deaktiviert sein;
+  eine Wiederherstellung per E-Mail gibt es bewusst noch nicht.
 - Gemeinsamer Profilstand für iPhone und iPad; das lokale Spiel bleibt ohne
   Login und offline nutzbar.
 - Offline-Outbox für angemeldete Solo-Runs mit eindeutiger Ereignis-ID sowie

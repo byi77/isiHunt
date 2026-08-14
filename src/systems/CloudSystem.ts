@@ -477,6 +477,25 @@ export async function updateProfileName(name: string): Promise<CloudResult<true>
   return { ok: true, value: true };
 }
 
+/** Speichert den sichtbaren Alias des angemeldeten Profils. */
+export async function updateProfileAlias(alias: string): Promise<CloudResult<true>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const safeAlias = alias.trim().toLowerCase();
+  if (!/^[a-z0-9_-]{3,16}$/.test(safeAlias)) {
+    return { ok: false, error: 'Ungültiger Alias' };
+  }
+
+  const result = await withTimeout(
+    authenticated.value.rpc('update_profile_alias', { p_alias: safeAlias }),
+    'Alias speichern',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+  return { ok: true, value: true };
+}
+
 /** Überträgt genau ein neues Solo-Ereignis. Wiederholungen sind idempotent. */
 export async function submitProgressEvent(
   event: ProgressEvent,

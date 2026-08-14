@@ -600,10 +600,19 @@ Supabase Auth verwaltet ein plattformübergreifendes Login. Eine Zeile in
 anmelden, gehören zum selben Profil. Das Backend speichert Fortschritts-
 ereignisse mit eindeutiger `event_id` und führt sie idempotent zusammen.
 
-Der erste Weg ist E-Mail/Passwort. Die E-Mail bleibt privat und wird weder im
-Profil noch in der Rangliste angezeigt. Apple-Login kann später für die native
-App ergänzt werden. Ein Pflichtkonto ist erst aktiv, wenn diese Phase gebaut
-ist; bestehende lokale Profile bleiben bis dahin nutzbar.
+Der erste Weg ist Alias/Passwort. Supabase Auth akzeptiert beim
+Passwort-Login technisch E-Mail oder Telefonnummer, daher wird aus dem
+normalisierten Alias eine pseudonyme, nicht zustellbare interne Auth-ID
+gebildet. Der Spieler gibt keine E-Mail an und sieht auch keine. Der Alias ist
+3 bis 16 Zeichen lang und nutzt nur `a-z`, `0-9`, `-` und `_`. Apple-Login oder
+eine optionale Wiederherstellungsadresse können später für die native App
+ergänzt werden. Ein Pflichtkonto ist erst aktiv, wenn diese Phase gebaut ist;
+bestehende lokale Profile bleiben bis dahin nutzbar.
+
+Für den Alias-only-Betrieb muss im Supabase-Dashboard die Bestätigungspflicht
+für E-Mail-Accounts deaktiviert werden. Ohne diese Einstellung würde Supabase
+eine Bestätigung an die interne, absichtlich nicht zustellbare Adresse
+verlangen.
 
 ### Konfliktregeln
 

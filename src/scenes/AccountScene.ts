@@ -26,8 +26,9 @@ import {
 export class AccountScene extends Phaser.Scene {
   private busy = false;
   private statusText!: Phaser.GameObjects.Text;
-  private emailInput: TextInputHandle | null = null;
+  private aliasInput: TextInputHandle | null = null;
   private passwordInput: TextInputHandle | null = null;
+  private activeAlias = '';
   private actionObjects: Phaser.GameObjects.GameObject[] = [];
 
   constructor() {
@@ -80,7 +81,7 @@ export class AccountScene extends Phaser.Scene {
       if (result.ok && result.value && this.scene.isActive()) this.scene.restart();
     });
     this.events.once('shutdown', () => {
-      this.emailInput?.destroy();
+      this.aliasInput?.destroy();
       this.passwordInput?.destroy();
     });
   }
@@ -97,13 +98,14 @@ export class AccountScene extends Phaser.Scene {
 
   private buildLogin(accent: number): void {
     this.add
-      .text(GAME_WIDTH / 2, 270, 'E-MAIL UND PASSWORT', textStyle(FontSize.body, Palette.gold))
+      .text(GAME_WIDTH / 2, 270, 'ALIAS UND PASSWORT', textStyle(FontSize.body, Palette.gold))
       .setOrigin(0.5)
       .setLetterSpacing(2);
 
-    this.emailInput = createTextInput(this, GAME_WIDTH / 2, 390, {
-      placeholder: 'E-Mail',
-      inputType: 'email',
+    this.aliasInput = createTextInput(this, GAME_WIDTH / 2, 390, {
+      placeholder: 'Alias',
+      inputType: 'text',
+      maxLength: AuthSystem.ALIAS_MAX_LENGTH,
       width: 480,
       accent,
       onSubmit: () => void this.signIn(),
@@ -138,13 +140,13 @@ export class AccountScene extends Phaser.Scene {
   }
 
   private buildSignedIn(accent: number): void {
-    const email = AuthSystem.currentEmail() ?? 'angemeldetes Profil';
+    const alias = AuthSystem.currentAlias() ?? 'angemeldetes Profil';
     this.add
       .text(GAME_WIDTH / 2, 290, 'ANGEMELDET', textStyle(FontSize.body, Palette.gold))
       .setOrigin(0.5)
       .setLetterSpacing(2);
     this.add
-      .text(GAME_WIDTH / 2, 350, email, textStyle(FontSize.small, Palette.ink))
+      .text(GAME_WIDTH / 2, 350, alias, textStyle(FontSize.small, Palette.ink))
       .setOrigin(0.5);
 
     const sync = createButton(
@@ -169,17 +171,21 @@ export class AccountScene extends Phaser.Scene {
   }
 
   private async signIn(): Promise<void> {
-    if (this.busy || !this.emailInput || !this.passwordInput) return;
-    const email = this.emailInput.getValue().trim();
+    if (this.busy || !this.aliasInput || !this.passwordInput) return;
+    const alias = AuthSystem.normalizeAlias(this.aliasInput.getValue());
     const password = this.passwordInput.getValue();
-    if (!email || !password) {
-      this.setStatus('Bitte E-Mail und Passwort eingeben.', Palette.gold);
+    if (!AuthSystem.isValidAlias(alias) || !password) {
+      this.setStatus(
+        `Alias: ${AuthSystem.ALIAS_MIN_LENGTH}-${AuthSystem.ALIAS_MAX_LENGTH} Zeichen, nur a-z, 0-9, - und _`,
+        Palette.gold,
+      );
       return;
     }
 
+    this.activeAlias = alias;
     this.busy = true;
     this.setStatus('Anmeldung wird geprüft ...', Palette.inkDim);
-    const result = await AuthSystem.signIn(email, password);
+    const result = await AuthSystem.signIn(alias, password);
     if (!result.ok) {
       this.busy = false;
       this.setStatus(result.error, Palette.gold);
@@ -190,17 +196,21 @@ export class AccountScene extends Phaser.Scene {
   }
 
   private async signUp(): Promise<void> {
-    if (this.busy || !this.emailInput || !this.passwordInput) return;
-    const email = this.emailInput.getValue().trim();
+    if (this.busy || !this.aliasInput || !this.passwordInput) return;
+    const alias = AuthSystem.normalizeAlias(this.aliasInput.getValue());
     const password = this.passwordInput.getValue();
-    if (!email || password.length < 6) {
-      this.setStatus('E-Mail eingeben; das Passwort braucht mindestens 6 Zeichen.', Palette.gold);
+    if (!AuthSystem.isValidAlias(alias) || password.length < 6) {
+      this.setStatus(
+        `Alias: ${AuthSystem.ALIAS_MIN_LENGTH}-${AuthSystem.ALIAS_MAX_LENGTH} Zeichen; Passwort mindestens 6 Zeichen.`,
+        Palette.gold,
+      );
       return;
     }
 
+    this.activeAlias = alias;
     this.busy = true;
     this.setStatus('Profil wird angelegt ...', Palette.inkDim);
-    const result = await AuthSystem.signUp(email, password);
+    const result = await AuthSystem.signUp(alias, password);
     if (!result.ok) {
       this.busy = false;
       this.setStatus(result.error, Palette.gold);
@@ -209,7 +219,7 @@ export class AccountScene extends Phaser.Scene {
     if (!result.value) {
       this.busy = false;
       this.setStatus(
-        'Bitte bestätige zuerst die E-Mail. Danach kannst du dich anmelden.',
+        'Profil angelegt. Bitte prüfe die Alias-Konfiguration im Backend.',
         Palette.success,
       );
       return;
@@ -243,6 +253,16 @@ export class AccountScene extends Phaser.Scene {
       if (!remote.ok) {
         this.busy = false;
         this.setStatus(remote.error, Palette.gold);
+        return;
+      }
+    }
+
+    const alias = this.activeAlias || AuthSystem.currentAlias();
+    if (alias) {
+      const aliasResult = await CloudSystem.updateProfileAlias(alias);
+      if (!aliasResult.ok) {
+        this.busy = false;
+        this.setStatus(aliasResult.error, Palette.gold);
         return;
       }
     }
@@ -284,9 +304,9 @@ export class AccountScene extends Phaser.Scene {
   private clearActions(): void {
     for (const object of this.actionObjects) object.destroy();
     this.actionObjects = [];
-    this.emailInput?.destroy();
+    this.aliasInput?.destroy();
     this.passwordInput?.destroy();
-    this.emailInput = null;
+    this.aliasInput = null;
     this.passwordInput = null;
   }
 }

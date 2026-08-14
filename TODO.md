@@ -314,9 +314,9 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
 ### Technischer Plan
 
 - [x] **Supabase Auth einführen:** Login und Sitzung werden vom Backend
-      verwaltet. E-Mail/Passwort ist der erste plattformübergreifende Weg;
-      Apple-Login kann später für die native App ergänzt werden. Die E-Mail
-      bleibt privat und erscheint nie in Rangliste oder Profilanzeige.
+      verwaltet. Alias/Passwort ist der erste plattformübergreifende Weg;
+      Apple-Login kann später für die native App ergänzt werden. Eine echte
+      E-Mail wird weder abgefragt noch in Rangliste oder Profilanzeige verwendet.
 - [x] **Profil-Tabelle und RLS-Skript anlegen:** `profiles.id` referenziert
       `auth.users.id`; Name, Erstellungs- und Änderungszeitpunkt liegen im
       Backend. `SaveData.cloudId` wird auf diese Profil-ID migriert.
@@ -350,8 +350,10 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
    als synchronisierte Ereignisse anschließen.
 
 **SQL-Migration:** `supabase/phase_2_6_auth.sql` nach `schema.sql` im
-Supabase SQL Editor ausführen. Ohne diesen Schritt bleibt der Login-Code
-bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
+Supabase SQL Editor ausführen. Danach in Supabase unter Authentication ->
+Providers -> Email die Bestätigungspflicht deaktivieren, weil der Alias-Login
+keine zustellbare E-Mail-Adresse verwendet. Ohne diese Schritte bleibt der
+Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
 
 > **Native Anschluss:** Das Auth-Modell funktioniert zunächst als Web-App und
 > später in Capacitor/TestFlight. Der native Build bleibt für Phase 6 geplant;

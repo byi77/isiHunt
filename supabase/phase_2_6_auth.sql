@@ -5,6 +5,13 @@
 --
 -- Der bisherige Sync-Code bleibt bestehen. Ein vorhandenes anonymes Profil
 -- kann nach dem Login über claim_cloud_profile übernommen werden.
+--
+-- Der sichtbare Login ist ein Alias. Supabase Auth erhält dafür intern eine
+-- nicht zustellbare Adresse der Form <alias>@login.isihunt.invalid, weil der
+-- Passwortlogin von Supabase direkt E-Mail oder Telefonnummer erwartet. Im
+-- Supabase-Dashboard deshalb unter Authentication -> Providers -> Email die
+-- Bestätigungspflicht deaktivieren; für diesen Login gibt es bewusst keine
+-- E-Mail-Zustellung und zunächst auch keinen E-Mail-Passwort-Reset.
 
 begin;
 
@@ -15,10 +22,19 @@ begin;
 create table if not exists public.profiles (
   id           uuid primary key references auth.users (id) on delete cascade,
   player_name  text not null default '',
+  alias        text,
+  alias_normalized text,
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now(),
   constraint profiles_name_length check (char_length(player_name) <= 16)
 );
+
+alter table public.profiles add column if not exists alias text;
+alter table public.profiles add column if not exists alias_normalized text;
+
+create unique index if not exists profiles_alias_normalized_idx
+  on public.profiles (alias_normalized)
+  where alias_normalized is not null;
 
 create table if not exists public.profile_progress (
   profile_id  uuid primary key references public.profiles (id) on delete cascade,
@@ -207,6 +223,34 @@ $$;
 
 revoke execute on function public.update_profile_name(text) from public;
 grant execute on function public.update_profile_name(text) to authenticated;
+
+create or replace function public.update_profile_alias(p_alias text)
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  safe_alias text := lower(trim(p_alias));
+begin
+  if uid is null then raise exception 'Anmeldung erforderlich'; end if;
+  if safe_alias !~ '^[a-z0-9_-]{3,16}$' then
+    raise exception 'Ungültiger Alias';
+  end if;
+
+  insert into public.profiles (id, alias, alias_normalized)
+  values (uid, safe_alias, safe_alias)
+  on conflict (id) do update
+    set alias = excluded.alias,
+        alias_normalized = excluded.alias_normalized,
+        updated_at = now();
+  return true;
+end;
+$$;
+
+revoke execute on function public.update_profile_alias(text) from public;
+grant execute on function public.update_profile_alias(text) to authenticated;
 
 create or replace function public.submit_progress_event(
   p_event_id             uuid,

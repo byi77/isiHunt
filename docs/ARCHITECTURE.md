@@ -380,8 +380,13 @@ Der aktuelle `cloudId`- und Sync-Code bildet einen **Spielstand-Umzug** ab,
 aber noch kein Profil, auf dem mehrere Geräte dauerhaft spielen. Die geplante
 Lösung trennt deshalb Backend-Profil und lokale Installation:
 
-- Supabase Auth verwaltet die Sitzung. Eine E-Mail-Adresse wird nicht in
-  Profilanzeige oder Rangliste veröffentlicht.
+- Supabase Auth verwaltet die Sitzung. Die App fragt nur einen Alias und ein
+  Passwort ab. Intern wird der normalisierte Alias auf eine pseudonyme,
+  nicht zustellbare Auth-ID abgebildet; eine E-Mail-Adresse wird weder
+  abgefragt noch in Profilanzeige oder Rangliste veröffentlicht.
+- Aliase sind global eindeutig, 3 bis 16 Zeichen lang und auf `a-z`, `0-9`,
+  `-` und `_` begrenzt. Da keine Kontaktadresse hinterlegt wird, ist eine
+  Passwort-Wiederherstellung per E-Mail zunächst nicht möglich.
 - `profiles.id` referenziert `auth.users.id`; RLS erlaubt nur Zugriff auf das
   eigene Profil.
 - `progress_events` nimmt abgeschlossene Solo-Runs mit eindeutiger `event_id`

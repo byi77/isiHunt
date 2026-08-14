@@ -10,6 +10,31 @@ let session: Session | null = null;
 let initialized = false;
 let unsubscribe: (() => void) | null = null;
 
+/**
+ * Supabase kennt beim Passwortlogin E-Mail oder Telefonnummer, aber keinen
+ * freien Benutzernamen. Der Alias bleibt deshalb die sichtbare Identität und
+ * wird intern auf eine nicht zustellbare Auth-ID abgebildet.
+ */
+export const ALIAS_MIN_LENGTH = 3;
+export const ALIAS_MAX_LENGTH = 16;
+const INTERNAL_AUTH_DOMAIN = 'login.isihunt.invalid';
+
+export function normalizeAlias(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+export function isValidAlias(value: string): boolean {
+  return (
+    value.length >= ALIAS_MIN_LENGTH &&
+    value.length <= ALIAS_MAX_LENGTH &&
+    /^[a-z0-9_-]+$/.test(value)
+  );
+}
+
+function aliasToAuthEmail(alias: string): string {
+  return `${normalizeAlias(alias)}@${INTERNAL_AUTH_DOMAIN}`;
+}
+
 function client() {
   return CloudSystem.getSupabaseClient();
 }
@@ -60,8 +85,14 @@ export function currentUserId(): string | null {
   return session?.user.id ?? null;
 }
 
-export function currentEmail(): string | null {
-  return session?.user.email ?? null;
+export function currentAlias(): string | null {
+  const metadataAlias = session?.user.user_metadata?.alias;
+  if (typeof metadataAlias === 'string' && metadataAlias.length > 0) {
+    return metadataAlias;
+  }
+
+  const internalEmail = session?.user.email;
+  return internalEmail?.split('@')[0] ?? null;
 }
 
 export async function refresh(): Promise<CloudResult<Session | null>> {
@@ -77,14 +108,26 @@ export async function refresh(): Promise<CloudResult<Session | null>> {
 }
 
 export async function signUp(
-  email: string,
+  alias: string,
   password: string,
 ): Promise<CloudResult<Session | null>> {
   const supabase = client();
   if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
 
+  const normalizedAlias = normalizeAlias(alias);
+  if (!isValidAlias(normalizedAlias)) {
+    return {
+      ok: false,
+      error: `Alias: ${ALIAS_MIN_LENGTH}-${ALIAS_MAX_LENGTH} Zeichen, nur a-z, 0-9, - und _`,
+    };
+  }
+
   const result = await request(
-    supabase.auth.signUp({ email: email.trim(), password }),
+    supabase.auth.signUp({
+      email: aliasToAuthEmail(normalizedAlias),
+      password,
+      options: { data: { alias: normalizedAlias } },
+    }),
     'Profil anlegen',
   );
   if (!result.ok) return result;
@@ -94,17 +137,28 @@ export async function signUp(
   return { ok: true, value: session };
 }
 
-export async function signIn(email: string, password: string): Promise<CloudResult<Session>> {
+export async function signIn(alias: string, password: string): Promise<CloudResult<Session>> {
   const supabase = client();
   if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
 
+  const normalizedAlias = normalizeAlias(alias);
+  if (!isValidAlias(normalizedAlias)) {
+    return {
+      ok: false,
+      error: `Alias: ${ALIAS_MIN_LENGTH}-${ALIAS_MAX_LENGTH} Zeichen, nur a-z, 0-9, - und _`,
+    };
+  }
+
   const result = await request(
-    supabase.auth.signInWithPassword({ email: email.trim(), password }),
+    supabase.auth.signInWithPassword({
+      email: aliasToAuthEmail(normalizedAlias),
+      password,
+    }),
     'Anmelden',
   );
   if (!result.ok) return result;
   if (result.value.error || !result.value.data.session) {
-    return { ok: false, error: result.value.error?.message ?? 'E-Mail noch nicht bestätigt' };
+    return { ok: false, error: result.value.error?.message ?? 'Alias oder Passwort ungültig' };
   }
 
   session = result.value.data.session;
