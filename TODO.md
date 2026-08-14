@@ -360,6 +360,20 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
         _Aufwand: gering, Wirkung sichtbar_
   - [x] Der `safe-area-inset-top`-Bereich wird im Web-Stand fuer Laufband und
         Restzeit genutzt; die Systemuhr bleibt unangetastet.
+- [ ] **Offen: Laufband fehlt weiterhin im Vollbild/Home-Bildschirm-Modus.**
+      Beobachtung: Im normalen Browser ist die Anzeige sichtbar, im Vollbild
+      bzw. in der installierten Home-Bildschirm-App nicht.
+      Bisher ausprobiert:
+  - [x] HTML-Laufband in den `#game`-Container verschoben, damit es im
+        Vollbild gemeinsam mit dem Canvas enthalten ist.
+  - [x] `z-index`, `position: fixed`, Safe-Area-Hoehe und einen 28-px-Fallback
+        fuer `env(safe-area-inset-top)` angepasst.
+  - [x] Phaser `fullscreenTarget` auf `#game` gesetzt, damit nicht nur der
+        Canvas in den Vollbildmodus geht.
+  - [x] Cache-/Auslieferungsproblem ausgeschlossen: v0.1.52 ist live, das
+        Problem besteht laut aktuellem Geraetetest weiterhin.
+        Naechster Schritt: mit einem echten Geraetetest die effektive
+        Vollbild-/Standalone-DOM-Hierarchie und die CSS-Sichtbarkeit messen.
 - [ ] Erst mit M6 (Capacitor): Live Activity mit Punktestand und Restzeit
       waehrend eines Runs; bis dahin wird die Anzeige als Prototyp beobachtet.
 
