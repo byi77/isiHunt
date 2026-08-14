@@ -545,6 +545,7 @@ export async function submitProgressEvent(
       p_score: Math.max(0, Math.round(event.score)),
       p_best_combo: Math.max(0, Math.round(event.bestCombo)),
       p_xp_gained: Math.max(0, Math.round(event.xpGained)),
+      p_duration_ms: Math.max(0, Math.round(event.durationMs ?? 0)),
       p_coins_gained: Math.max(0, Math.round(event.coinsGained)),
       p_talent_points_gained: Math.max(0, Math.round(event.talentPointsGained)),
       p_collected: event.collected,

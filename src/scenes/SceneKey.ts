@@ -4,6 +4,8 @@ export const SceneKey = {
   Menu: 'Menu',
   /** Profil: Name und Spielericon; beim ersten Start verpflichtend. */
   Profile: 'Profile',
+  /** Übersicht der im Spiel freigeschalteten Erfolge. */
+  Achievements: 'Achievements',
   Game: 'Game',
   Hud: 'Hud',
   Result: 'Result',

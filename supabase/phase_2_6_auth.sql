@@ -57,12 +57,15 @@ create table if not exists public.profile_progress_events (
   score                    integer not null default 0,
   best_combo               integer not null default 0,
   xp_gained                integer not null default 0,
+  duration_ms              integer not null default 0,
   coins_gained             integer not null default 0,
   talent_points_gained     integer not null default 0,
   collected                jsonb not null default '{}'::jsonb,
   achievement_ids          jsonb not null default '[]'::jsonb,
   created_at               timestamptz not null default now()
 );
+
+alter table public.profile_progress_events add column if not exists duration_ms integer not null default 0;
 
 create index if not exists profile_progress_events_profile_idx
   on public.profile_progress_events (profile_id, created_at);
@@ -340,6 +343,12 @@ begin
 
   next_data := jsonb_set(current_data, array['talents', p_talent_id], to_jsonb(current_rank + 1), true);
   next_data := jsonb_set(next_data, '{coins}', to_jsonb(current_coins - talent_cost), true);
+  next_data := jsonb_set(
+    next_data,
+    '{coinsSpent}',
+    to_jsonb(coalesce((current_data->>'coinsSpent')::integer, 0) + talent_cost),
+    true
+  );
   next_data := jsonb_set(next_data, '{talentPoints}', '0'::jsonb, true);
   next_data := jsonb_set(next_data, '{version}', '5'::jsonb, true);
   update public.profile_progress
@@ -379,6 +388,12 @@ begin
   if current_coins < 250 then raise exception 'Nicht genug Coins für den Reset'; end if;
   next_data := jsonb_set(current_data, '{talents}', '{}'::jsonb, true);
   next_data := jsonb_set(next_data, '{coins}', to_jsonb(current_coins - 250), true);
+  next_data := jsonb_set(
+    next_data,
+    '{coinsSpent}',
+    to_jsonb(coalesce((current_data->>'coinsSpent')::integer, 0) + 250),
+    true
+  );
   next_data := jsonb_set(next_data, '{talentPoints}', '0'::jsonb, true);
   next_data := jsonb_set(next_data, '{version}', '5'::jsonb, true);
   update public.profile_progress
@@ -391,6 +406,8 @@ $$;
 revoke execute on function public.reset_talents() from public;
 grant execute on function public.reset_talents() to authenticated;
 
+drop function if exists public.submit_progress_event(uuid, text, integer, integer, integer, integer, integer, jsonb, text[]);
+
 create or replace function public.submit_progress_event(
   p_event_id             uuid,
   p_world_id             text,
@@ -398,6 +415,7 @@ create or replace function public.submit_progress_event(
   p_best_combo           integer,
   p_xp_gained            integer,
   p_coins_gained         integer,
+  p_duration_ms          integer,
   p_talent_points_gained integer,
   p_collected            jsonb,
   p_achievement_ids      text[]
@@ -425,10 +443,10 @@ begin
 
   insert into public.profile_progress_events (
     event_id, profile_id, world_id, score, best_combo, xp_gained,
-    coins_gained, talent_points_gained, collected, achievement_ids
+    duration_ms, coins_gained, talent_points_gained, collected, achievement_ids
   ) values (
     p_event_id, uid, p_world_id, greatest(0, p_score), greatest(0, p_best_combo),
-    greatest(0, p_xp_gained), greatest(0, p_coins_gained),
+    greatest(0, p_xp_gained), greatest(0, p_duration_ms), greatest(0, p_coins_gained),
     greatest(0, p_talent_points_gained), coalesce(p_collected, '{}'::jsonb),
     to_jsonb(coalesce(p_achievement_ids, '{}'::text[]))
   ) on conflict (event_id) do nothing;
@@ -501,6 +519,11 @@ begin
     'bestCombo', greatest(coalesce((current_data->>'bestCombo')::integer, 0), p_best_combo),
     'totalScore', coalesce((current_data->>'totalScore')::bigint, 0) + greatest(0, p_score),
     'totalRuns', coalesce((current_data->>'totalRuns')::integer, 0) + 1,
+    'totalPlayTimeMs', coalesce((current_data->>'totalPlayTimeMs')::bigint, 0)
+      + greatest(0, p_duration_ms),
+    'totalCoinsEarned', coalesce((current_data->>'totalCoinsEarned')::bigint, 0)
+      + greatest(0, p_coins_gained)
+      + greatest(0, p_talent_points_gained) * 10,
     'collected', next_collected,
     'unlockedAchievements', next_achievements,
     'lastWorldId', p_world_id
@@ -514,8 +537,8 @@ begin
 end;
 $$;
 
-revoke execute on function public.submit_progress_event(uuid, text, integer, integer, integer, integer, integer, jsonb, text[]) from public;
-grant execute on function public.submit_progress_event(uuid, text, integer, integer, integer, integer, integer, jsonb, text[]) to authenticated;
+revoke execute on function public.submit_progress_event(uuid, text, integer, integer, integer, integer, integer, integer, jsonb, text[]) from public;
+grant execute on function public.submit_progress_event(uuid, text, integer, integer, integer, integer, integer, integer, jsonb, text[]) to authenticated;
 
 -- Authenticated leaderboard calls may only write their own profile row.
 drop function if exists public.submit_best_score(uuid, text, text, integer, integer);

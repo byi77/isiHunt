@@ -684,83 +684,87 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private buildFooter(): void {
-    // Phase 5 hat zwei zusätzliche, klar getrennte Spielmodi. Der komplette
-    // Aktionsblock wird deshalb aus seiner Anzahl berechnet, damit kein neuer
-    // Button jemals den Einstellungsbutton überlagert.
+    // Hauptaktionen als festes 2-Spalten-Raster: Die drei Zeilen bleiben auch
+    // bei deaktivierter Cloud-Rangliste an derselben Stelle sichtbar.
     const hasLeaderboard = CloudSystem.isAvailable();
     const actionSpacing = 84;
     const settingsY = GAME_HEIGHT - 110;
-    const actionCount = hasLeaderboard ? 4 : 3;
-    const actionsY = Math.max(790, Math.min(900, settingsY - actionCount * actionSpacing - 20));
+    const actionsY = Math.min(820, settingsY - actionSpacing * 3 - 28);
+    const columnGap = 115;
+    const columnWidth = 210;
 
     createButton(
       this,
-      GAME_WIDTH / 2,
+      GAME_WIDTH / 2 - columnGap,
       actionsY,
-      'JAGD BEGINNEN',
+      'JAGD',
       () => {
         this.scene.start(SceneKey.Game, { worldId: this.selectedWorld.id });
       },
       {
-        width: 440,
+        width: columnWidth,
         height: 76,
         accent: this.selectedWorld.accent,
-        fontSize: FontSize.large,
+        fontSize: FontSize.body,
       },
     );
 
     createButton(
       this,
-      GAME_WIDTH / 2,
-      actionsY + actionSpacing,
-      'DUELL ZU ZWEIT',
+      GAME_WIDTH / 2 + columnGap,
+      actionsY,
+      'DUELL',
       () => {
         ChallengeSystem.start(this.selectedWorld.id);
         this.scene.start(SceneKey.Challenge);
       },
-      { width: 440, height: 76, accent: Palette.goldHex, fontSize: FontSize.body },
+      { width: columnWidth, height: 76, accent: Palette.goldHex, fontSize: FontSize.body },
     );
 
     createButton(
       this,
-      GAME_WIDTH / 2 - 115,
-      actionsY + actionSpacing * 2,
+      GAME_WIDTH / 2 - columnGap,
+      actionsY + actionSpacing,
       'TAGESLAUF',
       () => {
         ChallengeSystem.startDaily(this.selectedWorld.id);
         this.scene.start(SceneKey.Challenge);
       },
-      { width: 210, height: 76, accent: this.selectedWorld.accent, fontSize: FontSize.tiny },
+      {
+        width: columnWidth,
+        height: 76,
+        accent: this.selectedWorld.accent,
+        fontSize: FontSize.tiny,
+      },
     );
 
     createButton(
       this,
-      GAME_WIDTH / 2 + 115,
-      actionsY + actionSpacing * 2,
-      'BOT-DUELL',
-      () => {
-        ChallengeSystem.startBot(this.selectedWorld.id);
-        this.scene.start(SceneKey.Challenge);
-      },
-      { width: 210, height: 76, accent: 0xa855f7, fontSize: FontSize.tiny },
+      GAME_WIDTH / 2 + columnGap,
+      actionsY + actionSpacing,
+      'ERFOLGE',
+      () => this.scene.start(SceneKey.Achievements),
+      { width: columnWidth, height: 76, accent: Palette.goldHex, fontSize: FontSize.tiny },
     );
 
-    // Die Rangliste ist ein grosser Hauptbutton direkt unter dem Duell. Die
-    // Einstellungen bleiben ein kleiner, einzelner Button ganz unten mittig.
-    if (CloudSystem.isAvailable()) {
-      createButton(
-        this,
-        GAME_WIDTH / 2,
-        actionsY + actionSpacing * 3,
-        'RANGLISTE',
-        () => this.scene.start(SceneKey.Leaderboard),
-        {
-          width: 440,
-          accent: 0x9aa3bd,
-          fontSize: FontSize.body,
-        },
-      );
-    }
+    createButton(
+      this,
+      GAME_WIDTH / 2 - columnGap,
+      actionsY + actionSpacing * 2,
+      'TALENTBAUM',
+      () => this.scene.start(SceneKey.Talents, { returnTo: SceneKey.Menu }),
+      { width: columnWidth, height: 76, accent: 0xb782ff, fontSize: FontSize.tiny },
+    );
+
+    const leaderboardButton = createButton(
+      this,
+      GAME_WIDTH / 2 + columnGap,
+      actionsY + actionSpacing * 2,
+      'RANGLISTE',
+      () => this.scene.start(SceneKey.Leaderboard),
+      { width: columnWidth, height: 76, accent: 0x9aa3bd, fontSize: FontSize.tiny },
+    );
+    leaderboardButton.setEnabled(hasLeaderboard);
 
     createButton(
       this,

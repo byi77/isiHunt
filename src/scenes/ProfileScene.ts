@@ -32,6 +32,13 @@ import {
 import type { ButtonHandle } from '@/ui/widgets';
 import { createTextInput } from '@/ui/textInput';
 
+function formatPlayTime(milliseconds: number): string {
+  const totalMinutes = Math.floor(Math.max(0, milliseconds) / 60_000);
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return hours > 0 ? `${hours} Std. ${minutes} Min.` : `${minutes} Min.`;
+}
+
 export interface ProfileSceneData {
   firstStart?: boolean;
 }
@@ -81,10 +88,13 @@ export class ProfileScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
 
+    const statsVisible = !firstStart;
+    const talentButtonY = statsVisible ? 1100 : 930;
+
     createButton(
       this,
       GAME_WIDTH / 2,
-      930,
+      talentButtonY,
       'TALENTBAUM',
       () => this.scene.start(SceneKey.Talents, { returnTo: SceneKey.Profile }),
       { width: 440, accent: world.accent, fontSize: FontSize.body },
@@ -220,12 +230,49 @@ export class ProfileScene extends Phaser.Scene {
     this.add
       .text(
         GAME_WIDTH / 2,
-        830,
+        810,
         firstStart
           ? 'Du kannst ihn später im Profil ändern.'
           : 'Änderungen gelten für neue Einträge.',
         textStyle(FontSize.tiny, Palette.inkDim),
       )
       .setOrigin(0.5);
+
+    if (statsVisible) {
+      const totalRelics = Object.values(save.collected).reduce((sum, count) => sum + count, 0);
+      const averageScore = save.totalRuns > 0 ? Math.round(save.totalScore / save.totalRuns) : 0;
+      const statistics = [
+        ['RUNS GESAMT', save.totalRuns.toLocaleString('de-DE')],
+        ['SPIELZEIT', formatPlayTime(save.totalPlayTimeMs)],
+        ['PUNKTE GESAMT', save.totalScore.toLocaleString('de-DE')],
+        ['Ø PRO RUN', averageScore.toLocaleString('de-DE')],
+        ['RELIKTE', totalRelics.toLocaleString('de-DE')],
+        ['BESTE KETTE', save.bestCombo.toLocaleString('de-DE')],
+        ['COINS VERDIENT', save.totalCoinsEarned.toLocaleString('de-DE')],
+        ['COINS AUSGEGEBEN', save.coinsSpent.toLocaleString('de-DE')],
+      ] as const;
+
+      createPanel(this, GAME_WIDTH / 2, 945, GAME_WIDTH - 120, 220, world.accent, {
+        alpha: 0.52,
+        radius: 18,
+      });
+      this.add
+        .text(GAME_WIDTH / 2, 852, 'STATISTIKEN', textStyle(FontSize.tiny, Palette.inkDim))
+        .setOrigin(0.5)
+        .setLetterSpacing(4);
+
+      statistics.forEach(([label, value], index) => {
+        const column = index % 2;
+        const row = Math.floor(index / 2);
+        const x = column === 0 ? 105 : 405;
+        const y = 885 + row * 43;
+        this.add
+          .text(x, y, label, textStyle(14, Palette.inkDim, { fontStyle: 'bold' }))
+          .setOrigin(0, 0.5);
+        this.add
+          .text(x, y + 19, value, textStyle(FontSize.small, Palette.ink, { fontStyle: 'bold' }))
+          .setOrigin(0, 0.5);
+      });
+    }
   }
 }

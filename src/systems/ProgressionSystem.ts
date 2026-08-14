@@ -67,6 +67,7 @@ export function applyRun(run: RunStats): ProgressionResult {
   const after = SaveSystem.update((data) => {
     data.totalRuns += 1;
     data.totalScore += run.score;
+    data.totalPlayTimeMs += Math.max(0, run.durationMs ?? 0);
     data.bestScore = Math.max(data.bestScore, run.score);
     data.bestCombo = Math.max(data.bestCombo, run.bestCombo);
     data.lastWorldId = run.worldId;
@@ -109,6 +110,10 @@ export function applyRun(run: RunStats): ProgressionResult {
     coinsGained += achievementCoins;
   }
 
+  SaveSystem.update((data) => {
+    data.totalCoinsEarned += coinsGained;
+  });
+
   return {
     levelsGained,
     newLevel: after.level,
@@ -131,6 +136,7 @@ export function purchaseTalent(talentId: TalentId): SaveData | null {
     const cost = talentCost(currentRank);
     if (data.coins < cost || currentRank >= talent.maxRank) return;
     data.coins -= cost;
+    data.coinsSpent += cost;
     data.talents[talentId] = currentRank + 1;
     purchased = true;
   });
@@ -143,6 +149,7 @@ export function resetTalents(): SaveData | null {
   return SaveSystem.update((data) => {
     if (data.coins < TALENT_RESET_COST) return;
     data.coins -= TALENT_RESET_COST;
+    data.coinsSpent += TALENT_RESET_COST;
     data.talents = {};
   });
 }

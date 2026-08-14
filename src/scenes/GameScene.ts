@@ -434,7 +434,10 @@ export class GameScene extends Phaser.Scene {
     if (this.phase === 'ended') return;
     this.phase = 'ended';
 
-    const stats = this.scoring.toRunStats(this.world.id);
+    const stats = {
+      ...this.scoring.toRunStats(this.world.id),
+      durationMs: this.totalMs,
+    };
 
     // Ein Duell-Durchgang laesst den Spielstand unberuehrt: die Haelfte der
     // Durchgaenge spielt jemand, dem er nicht gehoert (config/challenge.ts).

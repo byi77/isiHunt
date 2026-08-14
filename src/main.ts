@@ -17,6 +17,7 @@ import { requestPortraitOrientationLock } from '@/core/orientation';
 import { keepCanvasBoundsFresh, waitForViewportToSettle } from '@/core/viewport';
 import { AdminScene } from '@/scenes/AdminScene';
 import { AccountScene } from '@/scenes/AccountScene';
+import { AchievementsScene } from '@/scenes/AchievementsScene';
 import { BootScene } from '@/scenes/BootScene';
 import { ChallengeScene } from '@/scenes/ChallengeScene';
 import { GameScene } from '@/scenes/GameScene';
@@ -72,6 +73,7 @@ function createGameConfig(): Phaser.Types.Core.GameConfig {
       BootScene,
       MenuScene,
       ProfileScene,
+      AchievementsScene,
       GameScene,
       HudScene,
       ResultScene,

@@ -42,6 +42,7 @@ export function enqueueRun(stats: RunStats, progression: ProgressionResult): voi
     score: stats.score,
     bestCombo: stats.bestCombo,
     xpGained: stats.xpGained,
+    durationMs: stats.durationMs ?? 0,
     coinsGained: progression.coinsGained,
     talentPointsGained: progression.talentPointsGained,
     collected: stats.collected,

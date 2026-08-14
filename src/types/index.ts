@@ -23,6 +23,12 @@ export interface SaveData {
   bestCombo: number;
   totalScore: number;
   totalRuns: number;
+  /** Gesamte abgeschlossene Solo-Spielzeit in Millisekunden. */
+  totalPlayTimeMs: number;
+  /** Alle im Spiel gutgeschriebenen Coins, inklusive Boni. */
+  totalCoinsEarned: number;
+  /** Alle für Talente und Resets ausgegebenen Coins. */
+  coinsSpent: number;
   /** Ueber alle Runs eingesammelte Relikte je Seltenheit. */
   collected: Record<RarityId, number>;
   unlockedAchievements: string[];
@@ -53,6 +59,8 @@ export interface RunStats {
   /** Relikte, die verblasst sind, bevor sie eingesammelt wurden. */
   missed: number;
   xpGained: number;
+  /** Dauer des abgeschlossenen Runs; Challenge-Runs setzen diesen Wert nicht. */
+  durationMs?: number;
 }
 
 /**
@@ -105,6 +113,7 @@ export interface ProgressEvent {
   score: number;
   bestCombo: number;
   xpGained: number;
+  durationMs: number;
   coinsGained: number;
   talentPointsGained: number;
   collected: Record<RarityId, number>;
