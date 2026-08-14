@@ -121,7 +121,7 @@ export function isAvailable(): boolean {
 async function withTimeout<T>(operation: PromiseLike<T>, label: string): Promise<CloudResult<T>> {
   try {
     const timeout = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Zeitueberschreitung')), BACKEND_TIMEOUT_MS);
+      setTimeout(() => reject(new Error('Zeitüberschreitung')), BACKEND_TIMEOUT_MS);
     });
 
     return { ok: true, value: await Promise.race([operation, timeout]) };
@@ -428,7 +428,7 @@ export async function redeemSyncCode(
   // liefert deshalb dasselbe wie ein falscher.
   const lookup = await withTimeout(
     supabase.from('sync_codes').select('save_id').eq('code', code).maybeSingle(),
-    'Code pruefen',
+    'Code prüfen',
   );
 
   if (!lookup.ok) return lookup;

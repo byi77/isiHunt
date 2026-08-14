@@ -166,7 +166,7 @@ export class LeaderboardScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         y + 90,
-        this.filter ? 'Stern links antippen fuer alle Welten' : 'Welt antippen zum Filtern',
+        this.filter ? 'Stern links antippen für alle Welten' : 'Welt antippen zum Filtern',
         textStyle(FontSize.tiny, Palette.inkDim),
       )
       .setOrigin(0.5);

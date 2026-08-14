@@ -18,7 +18,7 @@
  * ## Warum versteckt
  *
  * Er ist Werkzeug, nicht Spielinhalt. Ein sichtbarer Knopf "Spielstand
- * zuruecksetzen" im Menue waere fuer ein neunjaehriges Kind eine Falle. Der
+ * zurücksetzen" im Menue waere fuer ein neunjaehriges Kind eine Falle. Der
  * Zugang fuehrt deshalb ueber einen langen Druck auf die Versionsnummer -
  * auffindbar fuer den, der davon weiss, unauffaellig fuer alle anderen.
  */
@@ -100,7 +100,7 @@ export class AdminScene extends Phaser.Scene {
    *
    * Ein Browser-Simulator kennt keine sicheren Raender - nur hier stehen die
    * echten Zahlen. Ohne sie bliebe die Frage "warum verschwindet der
-   * Zurueck-Knopf unter der Notch" eine Vermutung.
+   * Zurück-Knopf unter der Notch" eine Vermutung.
    */
   private async buildLayoutPanel(): Promise<void> {
     const y = 560;
@@ -110,7 +110,7 @@ export class AdminScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         y - 160,
-        'LAYOUT AUF DIESEM GERAET',
+        'LAYOUT AUF DIESEM GERÄT',
         textStyle(FontSize.tiny, Palette.inkDim),
       )
       .setOrigin(0.5)
@@ -124,7 +124,7 @@ export class AdminScene extends Phaser.Scene {
       .setLineSpacing(4);
 
     this.add
-      .text(84, y - 8, 'GERAET / BROWSER', textStyle(FontSize.tiny, Palette.inkDim))
+      .text(84, y - 8, 'GERÄT / BROWSER', textStyle(FontSize.tiny, Palette.inkDim))
       .setOrigin(0, 0)
       .setLetterSpacing(3);
 
@@ -213,7 +213,7 @@ export class AdminScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       970,
-      'SPIELSTAND ZURUECKSETZEN',
+      'SPIELSTAND ZURÜCKSETZEN',
       () => {
         // Zwei Tipps: Der erste bewaffnet, der zweite fuehrt aus. Ein
         // versehentlicher Tipp loescht damit nichts.
@@ -226,8 +226,8 @@ export class AdminScene extends Phaser.Scene {
 
         SaveSystem.reset();
         this.resetArmed = false;
-        reset.setLabel('SPIELSTAND ZURUECKSETZEN');
-        this.setStatus('Spielstand zurueckgesetzt.', Palette.success);
+        reset.setLabel('SPIELSTAND ZURÜCKSETZEN');
+        this.setStatus('Spielstand zurückgesetzt.', Palette.success);
       },
       {
         width: 460,
@@ -239,7 +239,7 @@ export class AdminScene extends Phaser.Scene {
 
     if (!AdminScene.RESET_ENABLED) {
       reset.setEnabled(false);
-      reset.setLabel('RESET VORUEBERGEHEND DEAKTIVIERT');
+      reset.setLabel('RESET VORÜBERGEHEND DEAKTIVIERT');
     }
   }
 
@@ -262,7 +262,7 @@ export class AdminScene extends Phaser.Scene {
       return;
     }
 
-    line.setText(`Neu verfuegbar: v${info.available}`).setColor(Palette.gold);
+    line.setText(`Neu verfügbar: v${info.available}`).setColor(Palette.gold);
     this.setStatus('Tippe "Neu laden erzwingen", um sie zu holen.', Palette.gold);
   }
 

@@ -10,7 +10,7 @@
  * ## Warum der Konflikt sichtbar gemacht wird
  *
  * Wenn auf beiden Geraeten gespielt wurde, gibt es zwei Spielstaende und keine
- * Regel, die verlaesslich den richtigen waehlt. "Der neuere gewinnt" verliert
+ * Regel, die verlaesslich den richtigen waehlt. "Der neüre gewinnt" verliert
  * genau dann Wochen an Fortschritt, wenn man auf dem Zweitgeraet kurz eine
  * Runde gespielt hat.
  *
@@ -62,7 +62,7 @@ export class SyncScene extends Phaser.Scene {
   }
 
   create(): void {
-    SafeAreaSystem.showStatic('PROFIL UEBERTRAGEN');
+    SafeAreaSystem.showStatic('PROFIL ÜBERTRAGEN');
     this.busy = false;
     this.pending = null;
     this.transient = [];
@@ -96,7 +96,7 @@ export class SyncScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         176,
-        'Zwischen deinen Geraeten abgleichen',
+        'Zwischen deinen Geräten abgleichen',
         textStyle(FontSize.small, Palette.inkDim),
       )
       .setOrigin(0.5);
@@ -122,7 +122,7 @@ export class SyncScene extends Phaser.Scene {
     this.keep(createPanel(this, GAME_WIDTH / 2, 300, GAME_WIDTH - 120, 150, Palette.goldHex));
     this.keep(
       this.add
-        .text(GAME_WIDTH / 2, 258, 'Dieses Geraet', textStyle(FontSize.tiny, Palette.inkDim))
+        .text(GAME_WIDTH / 2, 258, 'Dieses Gerät', textStyle(FontSize.tiny, Palette.inkDim))
         .setOrigin(0.5)
         .setLetterSpacing(4),
     );
@@ -149,7 +149,7 @@ export class SyncScene extends Phaser.Scene {
         .text(
           GAME_WIDTH / 2,
           534,
-          'Auf DIESEM Geraet, wenn du den Stand woanders hin holen willst',
+          'Auf DIESEM Gerät, wenn du den Stand woanders hin holen willst',
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0.5)
@@ -169,7 +169,7 @@ export class SyncScene extends Phaser.Scene {
         .text(
           GAME_WIDTH / 2,
           712,
-          'Code vom anderen Geraet eingeben',
+          'Code vom anderen Gerät eingeben',
           textStyle(FontSize.small, Palette.ink),
         )
         .setOrigin(0.5),
@@ -199,7 +199,7 @@ export class SyncScene extends Phaser.Scene {
         if (box) {
           console.warn(
             `[SyncScene] Code-Feld liegt bei Spiel-y ${box.top.toFixed(0)}..${box.bottom.toFixed(0)}` +
-              ` (gezeichnet fuer 746..818), Knopf ab 892`,
+              ` (gezeichnet für 746..818), Knopf ab 892`,
           );
         }
       });
@@ -217,7 +217,7 @@ export class SyncScene extends Phaser.Scene {
     // Solange die genaue Ursache nicht gemessen ist (die Ausgabe oben liefert
     // sie), ist Abstand die einzige belastbare Massnahme.
     this.keep(
-      createButton(this, GAME_WIDTH / 2, 1028, 'CODE EINLOESEN', () => void this.redeem(), {
+      createButton(this, GAME_WIDTH / 2, 1028, 'CODE EINLÖSEN', () => void this.redeem(), {
         width: 440,
         height: 76,
         accent: 0x9aa3bd,
@@ -254,7 +254,7 @@ export class SyncScene extends Phaser.Scene {
         .text(
           GAME_WIDTH / 2,
           360,
-          'Diesen Code am anderen Geraet eingeben',
+          'Diesen Code am anderen Gerät eingeben',
           textStyle(FontSize.small, Palette.ink),
         )
         .setOrigin(0.5)
@@ -282,7 +282,7 @@ export class SyncScene extends Phaser.Scene {
         .text(
           GAME_WIDTH / 2,
           586,
-          'Gueltig fuer 15 Minuten',
+          'Gültig für 15 Minuten',
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0.5),
@@ -312,7 +312,7 @@ export class SyncScene extends Phaser.Scene {
     }
 
     this.busy = true;
-    this.setStatus('Code wird geprueft ...', Palette.inkDim);
+    this.setStatus('Code wird geprüft ...', Palette.inkDim);
 
     const result = await CloudSystem.redeemSyncCode(code);
     this.busy = false;
@@ -351,7 +351,7 @@ export class SyncScene extends Phaser.Scene {
 
     this.buildSaveCard(
       400,
-      'DIESES GERAET',
+      'DIESES GERÄT',
       local.level,
       local.bestScore,
       local.totalRuns,
@@ -389,7 +389,7 @@ export class SyncScene extends Phaser.Scene {
         .text(
           GAME_WIDTH / 2,
           930,
-          'Der Stand dieses Geraets wird dabei ueberschrieben.',
+          'Der Stand dieses Geräts wird dabei überschrieben.',
           textStyle(FontSize.tiny, Palette.danger),
         )
         .setOrigin(0.5)

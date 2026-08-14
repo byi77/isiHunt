@@ -414,6 +414,10 @@ Erster spielbarer Prototyp.
 
 - Safe-Area-Laufschrift bleibt jetzt auch im Browser-Vollbild sichtbar
 
+**Texte**
+
+- Sichtbare deutsche Spieltexte verwenden jetzt echte Umlaute
+
 **Steuerung**
 
 - Touch: Figur laeuft zum Finger, mit Abbremsen nahe am Ziel

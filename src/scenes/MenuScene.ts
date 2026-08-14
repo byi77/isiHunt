@@ -160,7 +160,7 @@ export class MenuScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         490,
-        'NEUERER SPIELSTAND GEFUNDEN',
+        'NEÜRER SPIELSTAND GEFUNDEN',
         textStyle(FontSize.body, Palette.gold),
       )
       .setOrigin(0.5)
@@ -170,7 +170,7 @@ export class MenuScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         565,
-        `Cloud: Level ${remote.level}  ·  Bestwert ${remote.bestScore.toLocaleString('de-DE')}\n${remote.totalRuns} Runs\n\nSoll dieser Stand uebernommen werden?`,
+        `Cloud: Level ${remote.level}  ·  Bestwert ${remote.bestScore.toLocaleString('de-DE')}\n${remote.totalRuns} Runs\n\nSoll dieser Stand übernommen werden?`,
         textStyle(FontSize.small, Palette.ink),
       )
       .setOrigin(0.5)
@@ -242,7 +242,7 @@ export class MenuScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       190,
-      `NEUE VERSION VERFUEGBAR  ·  v${info.available}  ·  JETZT LADEN`,
+      `NEÜ VERSION VERFÜGBAR  ·  v${info.available}  ·  JETZT LADEN`,
       () => forceReload(),
       { width: 600, height: 62, accent: Palette.goldHex, fontSize: FontSize.small },
     );
@@ -291,14 +291,14 @@ export class MenuScene extends Phaser.Scene {
       this,
       GAME_WIDTH - 96,
       52,
-      this.scale.isFullscreen ? 'ZURUECK' : 'VOLLBILD',
+      this.scale.isFullscreen ? 'ZURÜCK' : 'VOLLBILD',
       () => {
         if (this.scale.isFullscreen) {
           this.scale.stopFullscreen();
           button.setLabel('VOLLBILD');
         } else {
           this.scale.startFullscreen();
-          button.setLabel('ZURUECK');
+          button.setLabel('ZURÜCK');
         }
       },
       { width: 148, height: 52, accent: 0x9aa3bd, fontSize: FontSize.tiny },
@@ -674,7 +674,7 @@ export class MenuScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       actionsY + 94,
-      'DUELL ZU ZWEIT',
+      'DÜLL ZU ZWEIT',
       () => {
         ChallengeSystem.start(this.selectedWorld.id);
         this.scene.start(SceneKey.Challenge);

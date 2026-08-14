@@ -43,7 +43,7 @@ export const RARITIES: readonly RarityDef[] = [
   },
   {
     id: 'common',
-    label: 'Gewoehnlich',
+    label: 'Gewöhnlich',
     color: 0xffffff,
     points: 2,
     xp: 2,
@@ -54,7 +54,7 @@ export const RARITIES: readonly RarityDef[] = [
   },
   {
     id: 'uncommon',
-    label: 'Ungewoehnlich',
+    label: 'Ungewöhnlich',
     color: 0x1eff00,
     points: 5,
     xp: 6,
@@ -87,7 +87,7 @@ export const RARITIES: readonly RarityDef[] = [
   },
   {
     id: 'legendary',
-    label: 'Legendaer',
+    label: 'Legendär',
     color: 0xff8000,
     points: 200,
     xp: 250,

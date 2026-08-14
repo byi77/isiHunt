@@ -74,7 +74,7 @@ export class ProfileScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         firstStart ? 188 : 196,
-        firstStart ? 'Wie soll dein Licht heissen?' : 'Name fuer Spiel und Bestenliste',
+        firstStart ? 'Wie soll dein Licht heissen?' : 'Name für Spiel und Bestenliste',
         textStyle(FontSize.small, Palette.inkDim),
       )
       .setOrigin(0.5);
@@ -205,8 +205,8 @@ export class ProfileScene extends Phaser.Scene {
         GAME_WIDTH / 2,
         830,
         firstStart
-          ? 'Du kannst ihn spaeter im Profil aendern.'
-          : 'Aenderungen gelten fuer neue Eintraege.',
+          ? 'Du kannst ihn später im Profil ändern.'
+          : 'Änderungen gelten für neue Einträge.',
         textStyle(FontSize.tiny, Palette.inkDim),
       )
       .setOrigin(0.5);

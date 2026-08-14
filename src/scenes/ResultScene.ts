@@ -87,7 +87,7 @@ export class ResultScene extends Phaser.Scene {
         .text(
           GAME_WIDTH / 2,
           224,
-          'NEUER BESTWERT',
+          'NEÜR BESTWERT',
           textStyle(FontSize.small, Palette.gold, { fontStyle: 'bold' }),
         )
         .setOrigin(0.5);
@@ -235,7 +235,7 @@ export class ResultScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       GAME_HEIGHT - 76,
-      'ZUM MENUE',
+      'ZUM MENÜ',
       () => this.scene.start(SceneKey.Menu),
       { width: 300, height: 72, accent: 0x9aa3bd, fontSize: FontSize.small },
     );

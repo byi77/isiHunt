@@ -171,7 +171,7 @@ export function keepCanvasBoundsFresh(game: Phaser.Game): void {
   }
 
   window.addEventListener('orientationchange', rescale);
-  // Zurueck aus dem Seiten-Cache (iOS "Zurueck"-Geste): Masse koennen veraltet
+  // Zurueck aus dem Seiten-Cache (iOS "Zurück"-Geste): Masse koennen veraltet
   // sein, ohne dass ein Ereignis dazwischenlag.
   window.addEventListener('pageshow', rescale);
 

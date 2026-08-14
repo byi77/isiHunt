@@ -96,7 +96,7 @@ export function makeAlignedHitArea(
   );
 
   if (DEBUG_ENABLED && !Phaser.Geom.Rectangle.Contains(hitArea, centerX, centerY)) {
-    console.warn(`[widgets] Trefferflaeche verfehlt den Mittelpunkt (${width}x${height}).`);
+    console.warn(`[widgets] Trefferfläche verfehlt den Mittelpunkt (${width}x${height}).`);
   }
 
   return hitArea;
@@ -273,7 +273,7 @@ export function createButton(
  *
  * Warum ein eigenes Widget statt eines `createButton`-Aufrufs je Scene: Die
  * Knoepfe lagen vorher unterschiedlich weit unten am Rand und sahen verschieden
- * aus. Beim Spieltest hiess es deshalb, es gebe "nirgends einen Zurueck-Knopf"
+ * aus. Beim Spieltest hiess es deshalb, es gebe "nirgends einen Zurück-Knopf"
  * - sie waren da, nur nirgends zweimal an derselben Stelle. Eine feste Position
  * ist auffindbar, ohne dass man sie suchen muss.
  *
@@ -285,7 +285,7 @@ export function createBackButton(
   onClick: () => void,
   options: { label?: string } = {},
 ): ButtonHandle {
-  return createButton(scene, BACK_BUTTON_X, BACK_BUTTON_Y, options.label ?? '‹  ZURUECK', onClick, {
+  return createButton(scene, BACK_BUTTON_X, BACK_BUTTON_Y, options.label ?? '‹  ZURÜCK', onClick, {
     width: 196,
     height: 60,
     accent: 0x9aa3bd,

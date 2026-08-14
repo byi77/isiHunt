@@ -482,7 +482,7 @@ export class GameScene extends Phaser.Scene {
       togglePause: () => this.togglePause(),
       resetSave: () => {
         SaveSystem.reset();
-        console.warn('[debug] Spielstand zurueckgesetzt');
+        console.warn('[debug] Spielstand zurückgesetzt');
       },
     });
   }

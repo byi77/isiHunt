@@ -41,7 +41,7 @@ export class ChallengeScene extends Phaser.Scene {
   }
 
   create(): void {
-    SafeAreaSystem.showStatic('DUELL');
+    SafeAreaSystem.showStatic('DÜLL');
     const state = ChallengeSystem.getState();
 
     // Ohne Duell-Zustand gibt es nichts anzuzeigen. Kann nur passieren, wenn
@@ -80,14 +80,14 @@ export class ChallengeScene extends Phaser.Scene {
   // --- Phase 1: Einfuehrung ---------------------------------------------------
 
   private buildIntro(world: WorldDef): void {
-    this.buildHeading('DUELL', `${challengePlayerLabel(0)} gegen ${challengePlayerLabel(1)}`);
+    this.buildHeading('DÜLL', `${challengePlayerLabel(0)} gegen ${challengePlayerLabel(1)}`);
 
     const seconds = Math.round(CHALLENGE_DURATION_MS / 1000);
     const rules: readonly string[] = [
       `Jeder spielt ${seconds} Sekunden.`,
       'Beide jagen exakt dieselben Relikte.',
       'Keine Talente - gleiche Voraussetzungen.',
-      'Das Duell aendert euren Spielstand nicht.',
+      'Das Duell ändert euren Spielstand nicht.',
     ];
 
     createPanel(this, GAME_WIDTH / 2, 560, GAME_WIDTH - 120, 260, world.accent);
@@ -127,7 +127,7 @@ export class ChallengeScene extends Phaser.Scene {
     const finished = state.rounds[finishedIndex];
     if (!finished) return;
 
-    this.buildHeading('GERAET WEITERGEBEN', `${challengePlayerLabel(nextIndex)} ist dran`);
+    this.buildHeading('GERÄT WEITERGEBEN', `${challengePlayerLabel(nextIndex)} ist dran`);
 
     createPanel(this, GAME_WIDTH / 2, 500, GAME_WIDTH - 120, 230, world.accent);
 
@@ -170,7 +170,7 @@ export class ChallengeScene extends Phaser.Scene {
       { width: 460, accent: world.accent, fontSize: FontSize.large },
     );
 
-    this.buildBackToMenu('DUELL ABBRECHEN');
+    this.buildBackToMenu('DÜLL ABBRECHEN');
   }
 
   // --- Phase 3: Ergebnis ------------------------------------------------------
@@ -253,7 +253,7 @@ export class ChallengeScene extends Phaser.Scene {
       { width: 460, accent: world.accent, fontSize: FontSize.large },
     );
 
-    this.buildBackToMenu('ZUM MENUE');
+    this.buildBackToMenu('ZUM MENÜ');
   }
 
   // --- Gemeinsame Bausteine ---------------------------------------------------

@@ -2,7 +2,7 @@
  * Einstellungen fuer Dinge, die nicht in den schnellen Spielstart gehoeren.
  *
  * Die Sprache bleibt bewusst kindgerecht: Die technische Funktion "Sync-Code"
- * heisst hier "Profil auf anderes Geraet". Der eigentliche Vergleich beider
+ * heisst hier "Profil auf anderes Gerät". Der eigentliche Vergleich beider
  * Spielstaende bleibt im bestehenden Sync-Bildschirm erhalten.
  */
 
@@ -67,12 +67,7 @@ export class SettingsScene extends Phaser.Scene {
     });
 
     this.add
-      .text(
-        GAME_WIDTH / 2,
-        300,
-        'PROFIL AUF ANDERES GERAET',
-        textStyle(FontSize.body, Palette.gold),
-      )
+      .text(GAME_WIDTH / 2, 300, 'PROFIL AUF ANDERES GERÄT', textStyle(FontSize.body, Palette.gold))
       .setOrigin(0.5)
       .setLetterSpacing(2);
 
@@ -90,7 +85,7 @@ export class SettingsScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       540,
-      'PROFIL UEBERTRAGEN',
+      'PROFIL ÜBERTRAGEN',
       () => this.scene.start(SceneKey.Sync),
       { width: 440, height: 82, accent: world.accent, fontSize: FontSize.body },
     );
@@ -101,7 +96,7 @@ export class SettingsScene extends Phaser.Scene {
         .text(
           GAME_WIDTH / 2,
           640,
-          'Die Profiluebertragung ist gerade nicht verfuegbar.',
+          'Die Profilübertragung ist gerade nicht verfügbar.',
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0.5)
@@ -155,10 +150,10 @@ export class SettingsScene extends Phaser.Scene {
         GAME_WIDTH / 2,
         1025,
         'BESONDERER DANK AN EMRE UND SIMAY\n' +
-          'Fuer eure aussergewoehnliche Unterstuetzung bei der Planung,\n' +
-          'mit Vorschlaegen und Ideen, beim Testen und Bugfixen.\n' +
-          'Eure Neugier und ehrlichen Rueckmeldungen machen isiHunt\n' +
-          'mutiger, schoener und immer ein bisschen besser.',
+          'Für eure aussergewöhnliche Unterstützung bei der Planung,\n' +
+          'mit Vorschlägen und Ideen, beim Testen und Bugfixen.\n' +
+          'Eure Neugier und ehrlichen Rückmeldungen machen isiHunt\n' +
+          'mutiger, schöner und immer ein bisschen besser.',
         textStyle(FontSize.small, Palette.inkDim, { lineSpacing: 3 }),
       )
       .setOrigin(0.5)

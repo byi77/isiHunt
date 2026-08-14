@@ -55,14 +55,14 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     id: 'first_legendary',
-    name: 'Legendaer',
-    description: 'Sammle dein erstes legendaeres Relikt.',
+    name: 'Legendär',
+    description: 'Sammle dein erstes legendäres Relikt.',
     check: (save) => save.collected.legendary >= 1,
   },
   {
     id: 'legendary_3_run',
-    name: 'Gluecksstraehne',
-    description: 'Sammle drei legendaere Relikte in einem einzigen Run.',
+    name: 'Glückssträhne',
+    description: 'Sammle drei legendäre Relikte in einem einzigen Run.',
     check: (_save, run) => run.collected.legendary >= 3,
   },
   {
@@ -73,7 +73,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     id: 'score_5000',
-    name: 'Reliktjaeger',
+    name: 'Reliktjäger',
     description: 'Erreiche 5.000 Punkte in einem Run.',
     check: (save) => save.bestScore >= 5000,
   },
@@ -97,7 +97,7 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
   },
   {
     id: 'clean_run_50',
-    name: 'Aufgeraeumt',
+    name: 'Aufgeräumt',
     description: 'Sammle 50 Relikte in einem Run.',
     check: (_save, run) => run.totalCollected >= 50,
   },

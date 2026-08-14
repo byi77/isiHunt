@@ -50,6 +50,11 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 - **5 Hindernisse:** ab welcher Welt darf ein Hindernis bestrafen?
 - **6 Manipulationsschutz:** vor oder nach Ranked-Modus und Rekord-Meldungen?
 
+### Querschnitt
+
+- [x] Sichtbare deutsche Spieltexte verwenden echte Umlaute (`ä`, `ö`, `ü`);
+      technische IDs und Event-Namen bleiben unverändert.
+
 ---
 
 ## Erledigt — der Knopf-Fehler lag an der Auslieferung

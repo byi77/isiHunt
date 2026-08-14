@@ -107,7 +107,7 @@ let game: Phaser.Game | null = null;
  *
  * Der Zugang liegt am DOM-Element und nicht an einem Knopf im Spiel: Er soll
  * auffindbar sein fuer den, der davon weiss, und unauffaellig fuer alle
- * anderen - ein sichtbares "Spielstand zuruecksetzen" waere fuer ein Kind eine
+ * anderen - ein sichtbares "Spielstand zurücksetzen" waere fuer ein Kind eine
  * Falle.
  *
  * `pointer-events` ist fuer #version aus (die Nummer soll nichts abfangen), das

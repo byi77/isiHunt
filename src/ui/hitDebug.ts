@@ -275,7 +275,7 @@ function runHitAreaSelfTest(scene: Phaser.Scene): void {
 
     if (report.length > 0) {
       console.warn(
-        `[hitDebug] Trefferflaechen in ${scene.scene.key}:\n` +
+        `[hitDebug] Trefferflächen in ${scene.scene.key}:\n` +
           report
             .map(
               (row) =>

@@ -44,7 +44,7 @@ export function showMenuTicker(): void {
   tickerItems = [
     'JAGE DAS LICHT  ·  SAMMLE PLANETEN',
     'KETTEN BRINGEN MEHR PUNKTE',
-    'NEUE WELTEN WARTEN AUF DICH',
+    'NEÜ WELTEN WARTEN AUF DICH',
     'SCHAFFE DEINEN BESTWERT',
   ];
   showNextTickerItem();

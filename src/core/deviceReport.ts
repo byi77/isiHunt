@@ -33,11 +33,11 @@ function platformName(): string {
 
   if (/iPhone/.test(ua)) return 'iPhone (Modell nicht auslesbar)';
   if (/iPad/.test(ua) || isIpadOs) return 'iPad (Modell nicht auslesbar)';
-  if (/Android/.test(ua)) return 'Android-Geraet';
+  if (/Android/.test(ua)) return 'Android-Gerät';
   if (/Windows/.test(ua)) return 'Windows-PC';
   if (/Macintosh/.test(ua)) return 'Mac';
-  if (/Linux/.test(ua)) return 'Linux-Geraet';
-  return 'Unbekanntes Geraet';
+  if (/Linux/.test(ua)) return 'Linux-Gerät';
+  return 'Unbekanntes Gerät';
 }
 
 function osVersion(): string {
@@ -89,7 +89,7 @@ export function measureDevice(): DeviceReport {
 
   return {
     lines: [
-      `Geraet      ${platformName()}`,
+      `Gerät      ${platformName()}`,
       `System      ${osVersion()}  ·  ${browserName()}`,
       `Display     ${window.screen.width} x ${window.screen.height} CSS / ${screenWidth} x ${screenHeight} px`,
       `Pixelratio  ${window.devicePixelRatio.toFixed(2)}  ·  Touch ${navigator.maxTouchPoints}`,
@@ -115,7 +115,7 @@ export async function readWebStorageLine(): Promise<string> {
     if (typeof estimate.quota !== 'number') return 'Webspeicher nicht auslesbar';
 
     const used = typeof estimate.usage === 'number' ? formatBytes(estimate.usage) : '?';
-    return `Webspeicher ${used} / ${formatBytes(estimate.quota)}  (nicht Geraetespeicher)`;
+    return `Webspeicher ${used} / ${formatBytes(estimate.quota)}  (nicht Gerätespeicher)`;
   } catch {
     return 'Webspeicher nicht auslesbar';
   }

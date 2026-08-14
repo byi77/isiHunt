@@ -34,7 +34,7 @@ export const WORLDS: readonly WorldDef[] = [
     bgBottom: 0x061410,
     accent: 0x4ade80,
     spaceVariant: 0,
-    flavor: 'Ruhige Nebelbahnen mit jungen Sternen und sanften Lichtstroemen.',
+    flavor: 'Ruhige Nebelbahnen mit jungen Sternen und sanften Lichtströmen.',
     plannedModifier: 'Keine - die Lernzone.',
   },
   {
@@ -46,7 +46,7 @@ export const WORLDS: readonly WorldDef[] = [
     accent: 0x7dd3fc,
     spaceVariant: 1,
     flavor: 'Ein Planet aus Eis, umkreist von splittrigen Kristallringen.',
-    plannedModifier: 'Planeten driften weiter - Bewegung mit Traegheit.',
+    plannedModifier: 'Planeten driften weiter - Bewegung mit Trägheit.',
   },
   {
     id: 'glutmark',
@@ -57,10 +57,10 @@ export const WORLDS: readonly WorldDef[] = [
     accent: 0xfb923c,
     spaceVariant: 2,
     flavor: 'Heisse Gaswolken, in denen jeder Kurs zum Wettlauf wird.',
-    plannedModifier: 'Planeten vergluehen schneller - kuerzere Zeitfenster.',
+    plannedModifier: 'Planeten verglühen schneller - kürzere Zeitfenster.',
   },
   {
-    id: 'leerenbluete',
+    id: '__LEERENBLÜTE__',
     name: 'Nullsektor',
     unlockLevel: 10,
     bgTop: 0x2e1065,
@@ -78,7 +78,7 @@ export const WORLDS: readonly WorldDef[] = [
     bgBottom: 0x1a1103,
     accent: 0xfcd34d,
     spaceVariant: 4,
-    flavor: 'Die leuchtende Krone eines Sterns - dort beginnt die naechste Reise.',
+    flavor: 'Die leuchtende Krone eines Sterns - dort beginnt die nächste Reise.',
     plannedModifier: 'Doppelte Chance auf seltene Planeten, halbe Lebensdauer.',
   },
 ];
