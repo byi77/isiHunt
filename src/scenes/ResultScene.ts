@@ -184,10 +184,21 @@ export class ResultScene extends Phaser.Scene {
 
     const highlights: { text: string; color: string }[] = [];
 
+    if (progression.coinsGained > 0) {
+      highlights.push({
+        text: '+' + progression.coinsGained + ' Coins gesammelt',
+        color: Palette.gold,
+      });
+    }
+
     if (progression.levelsGained > 0) {
       if (progression.coinsGained > 0) {
         highlights.push({
-          text: `Alle Talente ausgebaut - +${progression.coinsGained} Coins`,
+          text:
+            'Levelaufstieg! +' +
+            progression.talentPointsGained +
+            ' Talentpunkt' +
+            (progression.talentPointsGained === 1 ? '' : 'e'),
           color: Palette.gold,
         });
       } else {

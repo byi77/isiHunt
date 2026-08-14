@@ -8,6 +8,8 @@
 import { ACHIEVEMENTS } from '@/config/achievements';
 import {
   COINS_PER_EXTRA_TALENT_POINT,
+  COINS_PER_ACHIEVEMENT,
+  COINS_PER_COLLECTED_RELIC,
   MAX_LEVEL,
   TALENT_POINTS_PER_LEVEL,
   xpForLevel,
@@ -66,6 +68,8 @@ export function applyRun(run: RunStats): ProgressionResult {
   const isNewBestScore = run.score > before.bestScore;
   let talentPointsGained = 0;
   let coinsGained = 0;
+  const runCoins = run.totalCollected * COINS_PER_COLLECTED_RELIC;
+  coinsGained += runCoins;
 
   const after = SaveSystem.update((data) => {
     data.totalRuns += 1;
@@ -73,6 +77,7 @@ export function applyRun(run: RunStats): ProgressionResult {
     data.bestScore = Math.max(data.bestScore, run.score);
     data.bestCombo = Math.max(data.bestCombo, run.bestCombo);
     data.lastWorldId = run.worldId;
+    data.coins += runCoins;
 
     for (const [rarityId, count] of Object.entries(run.collected)) {
       data.collected[rarityId as keyof typeof data.collected] += count;
@@ -104,6 +109,13 @@ export function applyRun(run: RunStats): ProgressionResult {
 
   // Achievements erst NACH der XP-Verrechnung pruefen: manche haengen am Level.
   const unlockedAchievementIds = evaluateAchievements(after, run);
+  const achievementCoins = unlockedAchievementIds.length * COINS_PER_ACHIEVEMENT;
+  if (achievementCoins > 0) {
+    SaveSystem.update((data) => {
+      data.coins += achievementCoins;
+    });
+    coinsGained += achievementCoins;
+  }
 
   return {
     levelsGained,
@@ -114,6 +126,31 @@ export function applyRun(run: RunStats): ProgressionResult {
     unlockedAchievementIds,
     isNewBestScore,
   };
+}
+
+/** Kauft genau einen Rang lokal; der Talentbildschirm validiert nicht blind. */
+export function purchaseTalent(talentId: keyof SaveData['talents']): SaveData | null {
+  const talent = TALENTS.find((entry) => entry.id === talentId);
+  if (!talent) return null;
+
+  let purchased = false;
+  const result = SaveSystem.update((data) => {
+    const currentRank = data.talents[talentId] ?? 0;
+    if (data.talentPoints <= 0 || currentRank >= talent.maxRank) return;
+    data.talentPoints -= 1;
+    data.talents[talentId] = currentRank + 1;
+    purchased = true;
+  });
+  return purchased ? result : null;
+}
+
+/** Setzt alle Talentränge zurück und erstattet jeden ausgegebenen Punkt. */
+export function resetTalents(): SaveData {
+  return SaveSystem.update((data) => {
+    const spent = Object.values(data.talents).reduce((sum, rank) => sum + (rank ?? 0), 0);
+    data.talentPoints += spent;
+    data.talents = {};
+  });
 }
 
 /** Prueft alle noch nicht freigeschalteten Achievements und speichert Treffer. */

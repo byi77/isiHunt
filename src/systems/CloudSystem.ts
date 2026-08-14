@@ -34,6 +34,7 @@ import {
 import { xpForLevel } from '@/config/GameConfig';
 import * as SaveSystem from '@/systems/SaveSystem';
 import type { ProgressEvent, SaveData } from '@/types';
+import type { TalentId } from '@/config/talents';
 
 // --- Ergebnistypen ----------------------------------------------------------
 
@@ -494,6 +495,36 @@ export async function updateProfileAlias(alias: string): Promise<CloudResult<tru
   if (!result.ok) return result;
   if (result.value.error) return { ok: false, error: result.value.error.message };
   return { ok: true, value: true };
+}
+
+/** Kauft einen Talentpunkt atomar im gemeinsamen Profil. */
+export async function purchaseTalent(
+  talentId: TalentId,
+): Promise<CloudResult<RemoteProfileProgress | null>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const result = await withTimeout(
+    authenticated.value.rpc('purchase_talent', { p_talent_id: talentId }),
+    'Talent kaufen',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+  return { ok: true, value: readProfileProgress(result.value.data) };
+}
+
+/** Setzt den Talentbaum zurück und erstattet alle investierten Punkte. */
+export async function resetTalents(): Promise<CloudResult<RemoteProfileProgress | null>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const result = await withTimeout(
+    authenticated.value.rpc('reset_talents'),
+    'Talentbaum zurücksetzen',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+  return { ok: true, value: readProfileProgress(result.value.data) };
 }
 
 /** Überträgt genau ein neues Solo-Ereignis. Wiederholungen sind idempotent. */

@@ -86,12 +86,12 @@ Ein Modus fuer zwei Personen.
 
 Der Fortschritt bekommt seine Oberflaeche.
 
-- [ ] Talent-Bildschirm mit Punktevergabe
-- [ ] Talente zuruecksetzen
+- [x] Talent-Bildschirm mit Punktevergabe
+- [x] Talente zuruecksetzen
 - [ ] Erfolgsuebersicht mit Fortschrittsanzeige
 - [ ] Statistik-Bildschirm (Runs gesamt, Relikte gesamt, beste Kette)
 - [x] **Vitest einrichten** — `ProgressionSystem`, `ScoreSystem` und
-      `ChallengeSystem` sind mit 58 Tests abgedeckt; `npm run test` haengt in
+      `ChallengeSystem` sind mit 62 Tests abgedeckt; `npm run test` haengt in
       `verify` und damit in `pre-push`, CI und Deploy
 - [ ] **Test fuer den Duell-Determinismus** — dass zwei Durchgaenge mit
       gleichem Seed dieselbe Relikt-Abfolge liefern, bricht sonst unbemerkt

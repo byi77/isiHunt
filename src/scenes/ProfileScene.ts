@@ -81,6 +81,15 @@ export class ProfileScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
 
+    createButton(
+      this,
+      GAME_WIDTH / 2,
+      930,
+      'TALENTBAUM',
+      () => this.scene.start(SceneKey.Talents, { returnTo: SceneKey.Profile }),
+      { width: 440, accent: world.accent, fontSize: FontSize.body },
+    );
+
     createPanel(this, GAME_WIDTH / 2, 430, GAME_WIDTH - 120, 430, world.accent, {
       alpha: 0.62,
       radius: 20,

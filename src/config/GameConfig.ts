@@ -158,6 +158,10 @@ export const xpForLevel = (level: number): number =>
 export const TALENT_POINTS_PER_LEVEL = 1;
 /** Umrechnung fuer einen Levelaufstieg bei voll ausgebautem Talentbaum. */
 export const COINS_PER_EXTRA_TALENT_POINT = 10;
+/** Coins fuer jedes im Solo-Run eingesammelte Relikt. */
+export const COINS_PER_COLLECTED_RELIC = 1;
+/** Einmalige Belohnung je neu freigeschaltetem Achievement. */
+export const COINS_PER_ACHIEVEMENT = 25;
 
 // --- Persistenz -------------------------------------------------------------
 

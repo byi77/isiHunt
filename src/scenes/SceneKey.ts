@@ -17,6 +17,8 @@ export const SceneKey = {
   Settings: 'Settings',
   /** Freiwilliger Login fuer ein gemeinsames Profil auf mehreren Geraeten. */
   Account: 'Account',
+  /** Kaufbarer Talentbaum und Punkt-Reset. */
+  Talents: 'Talents',
   /**
    * Wartungsbildschirm: Version, Neuladen erzwingen, Spielstand zuruecksetzen.
    * Absichtlich versteckt - erreichbar ueber drei Tipps und langen Druck auf

@@ -46,6 +46,8 @@ export interface GameEventPayloads {
     awardedPoints: number;
     combo: number;
     multiplier: number;
+    sameRarityStreak: number;
+    streakBonus: boolean;
     x: number;
     y: number;
   };

@@ -20,6 +20,10 @@ export interface CollectOutcome {
   multiplier: number;
   comboIncreased: boolean;
   multiplierIncreased: boolean;
+  /** Anzahl gleicher seltener Relikte in Folge (ab Gruen). */
+  sameRarityStreak: number;
+  /** Ab dem dritten gleichen seltenen Relikt werden die Punkte verdoppelt. */
+  streakBonus: boolean;
 }
 
 export function multiplierForCombo(combo: number): number {
@@ -39,6 +43,8 @@ export class ScoreSystem {
   private missed = 0;
   private xpGained = 0;
   private collected: Record<RarityId, number> = emptyRarityCounts();
+  private lastRarityId: RarityId | null = null;
+  private sameRarityStreak = 0;
 
   constructor(
     private readonly comboGraceMs: number,
@@ -66,10 +72,20 @@ export class ScoreSystem {
     this.bestCombo = Math.max(this.bestCombo, this.combo);
     this.collected[rarity.id] += 1;
 
+    if (this.lastRarityId === rarity.id && rarity.points >= 5) {
+      this.sameRarityStreak += 1;
+    } else {
+      this.sameRarityStreak = rarity.points >= 5 ? 1 : 0;
+    }
+    this.lastRarityId = rarity.id;
+
     const multiplier = multiplierForCombo(this.combo);
     this.bestMultiplier = Math.max(this.bestMultiplier, multiplier);
 
-    const awardedPoints = Math.round(rarity.points * multiplier * this.scoreMultiplier);
+    const streakBonus = this.sameRarityStreak >= 3;
+    const awardedPoints = Math.round(
+      rarity.points * multiplier * this.scoreMultiplier * (streakBonus ? 2 : 1),
+    );
     const xp = Math.round(rarity.xp * this.xpMultiplier);
 
     this.score += awardedPoints;
@@ -82,6 +98,8 @@ export class ScoreSystem {
       multiplier,
       comboIncreased: true,
       multiplierIncreased: multiplier > previousMultiplier,
+      sameRarityStreak: this.sameRarityStreak,
+      streakBonus,
     };
   }
 

@@ -193,3 +193,11 @@ export function adoptRemote(remote: Partial<SaveData>, cloudId: string): SaveDat
   save(merged);
   return merged;
 }
+
+/** Übernimmt den gemeinsamen Auth-Profilstand und bewahrt die lokale Sync-ID. */
+export function adoptProfileProgress(remote: Partial<SaveData>): SaveData {
+  const merged = migrate(remote);
+  merged.cloudId = load().cloudId;
+  save(merged);
+  return merged;
+}

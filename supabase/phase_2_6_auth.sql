@@ -252,6 +252,94 @@ $$;
 revoke execute on function public.update_profile_alias(text) from public;
 grant execute on function public.update_profile_alias(text) to authenticated;
 
+-- ============================================================================
+-- 3. Talentbaum: atomare Käufe und kostenloser Reset
+-- ============================================================================
+
+create or replace function public.purchase_talent(p_talent_id text)
+returns setof public.profile_progress
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  current_data jsonb;
+  next_data jsonb;
+  current_rank integer;
+  max_rank integer;
+  current_points integer;
+begin
+  if uid is null then raise exception 'Anmeldung erforderlich'; end if;
+  max_rank := case p_talent_id
+    when 'reach' then 5
+    when 'swiftness' then 5
+    when 'magnetism' then 4
+    when 'endurance' then 4
+    when 'focus' then 4
+    when 'insight' then 5
+    when 'fortune' then 5
+    else 0
+  end;
+  if max_rank = 0 then raise exception 'Unbekanntes Talent'; end if;
+
+  select data into current_data
+  from public.profile_progress where profile_id = uid for update;
+  if current_data is null then raise exception 'Profilstand noch nicht angelegt'; end if;
+
+  current_rank := coalesce((current_data->'talents'->>p_talent_id)::integer, 0);
+  current_points := coalesce((current_data->>'talentPoints')::integer, 0);
+  if current_points < 1 then raise exception 'Keine Talentpunkte verfügbar'; end if;
+  if current_rank >= max_rank then raise exception 'Talent bereits maximiert'; end if;
+
+  next_data := jsonb_set(current_data, array['talents', p_talent_id], to_jsonb(current_rank + 1), true);
+  next_data := jsonb_set(next_data, '{talentPoints}', to_jsonb(current_points - 1), true);
+  update public.profile_progress
+  set data = next_data, updated_at = now()
+  where profile_id = uid;
+  return query select * from public.profile_progress where profile_id = uid;
+end;
+$$;
+
+revoke execute on function public.purchase_talent(text) from public;
+grant execute on function public.purchase_talent(text) to authenticated;
+
+create or replace function public.reset_talents()
+returns setof public.profile_progress
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  current_data jsonb;
+  next_data jsonb;
+  spent integer;
+begin
+  if uid is null then raise exception 'Anmeldung erforderlich'; end if;
+  select data into current_data
+  from public.profile_progress where profile_id = uid for update;
+  if current_data is null then raise exception 'Profilstand noch nicht angelegt'; end if;
+
+  select coalesce(sum(value::integer), 0) into spent
+  from jsonb_each_text(coalesce(current_data->'talents', '{}'::jsonb));
+  next_data := jsonb_set(current_data, '{talents}', '{}'::jsonb, true);
+  next_data := jsonb_set(
+    next_data,
+    '{talentPoints}',
+    to_jsonb(coalesce((current_data->>'talentPoints')::integer, 0) + spent),
+    true
+  );
+  update public.profile_progress
+  set data = next_data, updated_at = now()
+  where profile_id = uid;
+  return query select * from public.profile_progress where profile_id = uid;
+end;
+$$;
+
+revoke execute on function public.reset_talents() from public;
+grant execute on function public.reset_talents() to authenticated;
+
 create or replace function public.submit_progress_event(
   p_event_id             uuid,
   p_world_id             text,

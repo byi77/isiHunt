@@ -14,6 +14,7 @@ import { multiplierForCombo, ScoreSystem } from '@/systems/ScoreSystem';
 
 const POOR = RARITY_BY_ID.poor;
 const LEGENDARY = RARITY_BY_ID.legendary;
+const RARE = RARITY_BY_ID.rare;
 
 /** Ein System ohne Talent-Boni: Multiplikatoren neutral bei 1. */
 function createSystem(scoreMultiplier = 1, xpMultiplier = 1): ScoreSystem {
@@ -150,6 +151,29 @@ describe('ScoreSystem - Combo-Zerfall', () => {
 
     system.update(COMBO_GRACE_MS / 2);
     expect(system.comboTimerRatio).toBeCloseTo(0.5);
+  });
+});
+
+describe('ScoreSystem - Seltenheitsserie', () => {
+  it('verdoppelt ab dem dritten gleichen grünen oder selteneren Relikt die Punkte', () => {
+    const system = createSystem();
+    system.registerCollect(RARE!);
+    system.registerCollect(RARE!);
+    const bonus = system.registerCollect(RARE!);
+
+    expect(bonus.sameRarityStreak).toBe(3);
+    expect(bonus.streakBonus).toBe(true);
+    expect(bonus.awardedPoints).toBe(RARE!.points * bonus.multiplier * 2);
+  });
+
+  it('setzt die Serie bei einer anderen Seltenheit zurück', () => {
+    const system = createSystem();
+    system.registerCollect(RARE!);
+    system.registerCollect(RARE!);
+    system.registerCollect(LEGENDARY!);
+
+    expect(system.registerCollect(RARE!).sameRarityStreak).toBe(1);
+    expect(system.registerCollect(RARE!).streakBonus).toBe(false);
   });
 });
 

@@ -11,6 +11,15 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+**Phase 4: Belohnung**
+
+- Auffaelligere Punkte-Popups mit sichtbarem x2-Serienbonus ab drei gleichen
+  gruenen, blauen, lila oder orangenen Relikten in Folge.
+- Coins fuer eingesammelte Relikte und neue Erfolge; ueberschuessige
+  Talentpunkte bleiben weiterhin Coins.
+- Talentbaum im Profil mit Rangkauf und vollstaendigem Reset gegen Erstattung.
+- Atomare Talent-RPCs fuer angemeldete Mehrgeraete-Profile.
+
 ### Geaendert
 
 - Der manuelle Geräte-Transfer wurde aus den Einstellungen entfernt. Angemeldete
@@ -34,7 +43,7 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 **Tests**
 
-- Vitest eingerichtet (`npm run test`, `npm run test:watch`). 58 Tests decken
+- Vitest eingerichtet (`npm run test`, `npm run test:watch`). 62 Tests decken
   `ScoreSystem`, `ProgressionSystem` und `ChallengeSystem` ab: Combo-Zerfall
   und Multiplikatorstufen, XP-Kurve und Maximalstufe, Weltenfreischaltung,
   Erfolge sowie Sieger- und Gleichstandsermittlung im Duell.

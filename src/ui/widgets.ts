@@ -731,27 +731,55 @@ export function floatingScore(
   y: number,
   label: string,
   color: number,
+  options: { bonus?: boolean } = {},
 ): void {
+  const bonus = options.bonus ?? false;
   const text = scene.add
     .text(
       x,
       y,
       label,
-      textStyle(FontSize.body, `#${color.toString(16).padStart(6, '0')}`, {
-        fontStyle: 'bold',
-        stroke: '#000000',
-        strokeThickness: 4,
-      }),
+      textStyle(
+        bonus ? FontSize.large : FontSize.body,
+        bonus ? '#ffd84d' : `#${color.toString(16).padStart(6, '0')}`,
+        {
+          fontStyle: 'bold',
+          stroke: '#000000',
+          strokeThickness: bonus ? 7 : 5,
+        },
+      ),
     )
     .setOrigin(0.5)
+    .setScale(bonus ? 0.55 : 0.8)
     .setDepth(Depth.FloatingScore);
 
+  const bonusLabel = bonus
+    ? scene.add
+        .text(
+          x,
+          y + 34,
+          'x2 SERIENBONUS',
+          textStyle(FontSize.tiny, '#ffd84d', {
+            fontStyle: 'bold',
+            stroke: '#000000',
+            strokeThickness: 4,
+          }),
+        )
+        .setOrigin(0.5)
+        .setScale(0.7)
+        .setDepth(Depth.FloatingScore)
+    : null;
+
   scene.tweens.add({
-    targets: text,
-    y: y - 80,
+    targets: bonusLabel ? [text, bonusLabel] : text,
+    y: y - (bonus ? 105 : 90),
+    scale: 1,
     alpha: 0,
-    duration: 750,
+    duration: bonus ? 980 : 820,
     ease: 'Quad.Out',
-    onComplete: () => text.destroy(),
+    onComplete: () => {
+      text.destroy();
+      bonusLabel?.destroy();
+    },
   });
 }

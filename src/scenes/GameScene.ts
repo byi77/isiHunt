@@ -272,7 +272,9 @@ export class GameScene extends Phaser.Scene {
 
     burst(this, orb.x, orb.y, orb.rarity.color, isImpact ? 26 : 12);
     shockwave(this, orb.x, orb.y, orb.rarity.color, isImpact ? 1.5 : 0.85);
-    floatingScore(this, orb.x, orb.y, `+${outcome.awardedPoints}`, orb.rarity.color);
+    floatingScore(this, orb.x, orb.y, `+${outcome.awardedPoints}`, orb.rarity.color, {
+      bonus: outcome.streakBonus,
+    });
     this.player.pulse(orb.rarity.color);
 
     // Kamera-Ruckler skaliert mit dem Wert - Legendaeres soll sich fett anfuehlen.
@@ -287,6 +289,8 @@ export class GameScene extends Phaser.Scene {
       awardedPoints: outcome.awardedPoints,
       combo: outcome.combo,
       multiplier: outcome.multiplier,
+      sameRarityStreak: outcome.sameRarityStreak,
+      streakBonus: outcome.streakBonus,
       x: orb.x,
       y: orb.y,
     });

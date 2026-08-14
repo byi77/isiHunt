@@ -104,6 +104,13 @@ describe('applyRun - Statistik', () => {
 
     expect(SaveSystem.load().lastWorldId).toBe(other.id);
   });
+
+  it('vergibt Coins für eingesammelte Relikte', () => {
+    const result = Progression.applyRun(createRun({ totalCollected: 7 }));
+
+    expect(result.coinsGained).toBeGreaterThanOrEqual(7);
+    expect(SaveSystem.load().coins).toBe(result.coinsGained);
+  });
 });
 
 describe('applyRun - Levelaufstieg', () => {
@@ -248,5 +255,22 @@ describe('grantLevels', () => {
     const save = Progression.grantLevels(-3);
 
     expect(save.level).toBe(6);
+  });
+});
+
+describe('Talentkäufe', () => {
+  it('kauft Ränge und erstattet sie beim Reset vollständig', () => {
+    SaveSystem.update((data) => {
+      data.talentPoints = 2;
+    });
+
+    expect(Progression.purchaseTalent('reach')).not.toBeNull();
+    expect(Progression.purchaseTalent('reach')).not.toBeNull();
+    expect(SaveSystem.load().talents.reach).toBe(2);
+    expect(SaveSystem.load().talentPoints).toBe(0);
+
+    Progression.resetTalents();
+    expect(SaveSystem.load().talents.reach).toBeUndefined();
+    expect(SaveSystem.load().talentPoints).toBe(2);
   });
 });

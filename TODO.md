@@ -19,7 +19,7 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 | 3       | Weltraum statt Fantasy                                   | mittel       |
 | **3.5** | Ton (aus M4 vorgezogen)                                  | mittel       |
 | **3.6** | Dynamic Island — braucht native App                      | Entscheidung |
-| 4       | Bonus, Coins, Talentbaum                                 | mittel       |
+| **4**   | **Bonus, Coins, Talentbaum — abgeschlossen**              | —            |
 | 5       | Modi, Hindernisse                                        | mittel       |
 | 6       | Freunde, Realtime, Manipulationsschutz                   | hoch         |
 
@@ -468,15 +468,20 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
 > des gesamten Runs sichtbar bleiben und laufend sinnvolle Informationen zeigen.
 > Welche Inhalte dauerhaft bleiben, wird nach dem ersten Test entschieden.
 
-## Phase 4 — Belohnung
+## Phase 4 — Belohnung — abgeschlossen
 
-- [ ] Punkte-Popup auffaelliger (`floatingScore` existiert, ist zu dezent)
-- [ ] Serien-Bonus: drei gleiche Seltenheiten → doppelte Punkte, ab Gruen
-- [ ] Coin-System: Feld im Spielstand, Anzeige, Quellen (Run + Erfolge +
+- [x] Punkte-Popup auffaelliger (`floatingScore` mit animiertem Bonus-Hinweis)
+- [x] Serien-Bonus: drei gleiche Seltenheiten → doppelte Punkte, ab Gruen
+- [x] Coin-System: Feld im Spielstand, Anzeige, Quellen (Run + Erfolge +
       ueberschuessige Talentpunkte)
-- [ ] Talentbaum-Oberflaeche (Logik existiert, im Menue steht "Vergabe folgt")
-- [ ] Talente zuruecksetzen
-- [ ] **Vitest einrichten** — vor der XP-Kurve waere es besser gewesen
+- [x] Talentbaum-Oberflaeche mit Rangkauf ueber Profil
+- [x] Talente zuruecksetzen mit vollstaendiger Punkterstattung
+- [x] **Vitest** — 62 Tests in npm run verify
+
+> **Erledigt am 2026-08-14:** Phase 4 ist lokal und offline vollstaendig
+> umgesetzt. Fuer angemeldete Profile muessen die beiden neuen RPC-Funktionen
+> aus supabase/phase_2_6_auth.sql noch einmal im Supabase SQL Editor
+> ausgefuehrt werden.
 
 ## Phase 5 — Herausforderung
 
