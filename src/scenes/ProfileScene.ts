@@ -181,7 +181,7 @@ export class ProfileScene extends Phaser.Scene {
       }
 
       SaveSystem.setPlayerName(name);
-      if (CloudSystem.isAvailable()) {
+      if (CloudSystem.isAvailable() && !SaveSystem.isTestProfileActive()) {
         if (AuthSystem.isSignedIn()) {
           const result = await CloudSystem.updateProfileName(name);
           if (!result.ok) {

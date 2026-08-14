@@ -43,6 +43,7 @@ import {
   createVignette,
   paintSafeAreaBackdrop,
 } from '@/ui/widgets';
+import { createTextInput } from '@/ui/textInput';
 
 export class AdminScene extends Phaser.Scene {
   private statusText!: Phaser.GameObjects.Text;
@@ -193,20 +194,69 @@ export class AdminScene extends Phaser.Scene {
       fontSize: FontSize.small,
     });
 
-    createButton(this, GAME_WIDTH / 2, 915, 'DATEN EXPORTIEREN', () => this.exportSave(), {
-      width: 460,
-      height: 62,
-      accent: 0x9aa3bd,
-      fontSize: FontSize.small,
-    });
-
     createButton(
       this,
       GAME_WIDTH / 2,
-      990,
+      915,
       'SPIELSTAND PRÜFEN & SPEICHERN',
       () => this.repairSave(),
-      { width: 460, height: 62, accent: 0x9aa3bd, fontSize: FontSize.small },
+      {
+        width: 460,
+        height: 62,
+        accent: 0x9aa3bd,
+        fontSize: FontSize.small,
+      },
+    );
+
+    createPanel(this, GAME_WIDTH / 2, 1010, GAME_WIDTH - 120, 150, Palette.goldHex, {
+      alpha: 0.35,
+      radius: 16,
+    });
+    this.add
+      .text(GAME_WIDTH / 2, 958, 'LOKALES TESTPROFIL', textStyle(FontSize.tiny, Palette.gold))
+      .setOrigin(0.5)
+      .setLetterSpacing(3);
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        986,
+        'Level 100 · 99.999 Coins · bleibt offline',
+        textStyle(FontSize.tiny, Palette.inkDim),
+      )
+      .setOrigin(0.5);
+
+    const pinInput = createTextInput(this, 210, 1030, {
+      inputType: 'password',
+      placeholder: 'Admin-PIN',
+      maxLength: 6,
+      numeric: true,
+      numericKeyboard: true,
+      width: 220,
+      accent: Palette.goldHex,
+    });
+    const testButton = createButton(
+      this,
+      535,
+      1030,
+      SaveSystem.isTestProfileActive() ? 'TESTPROFIL AUS' : 'TESTPROFIL AN',
+      () => {
+        if (pinInput.getValue() !== SaveSystem.ADMIN_TEST_PIN) {
+          this.setStatus('Falsche Admin-PIN.', Palette.danger);
+          return;
+        }
+
+        if (SaveSystem.isTestProfileActive()) {
+          SaveSystem.disableTestProfile();
+          testButton.setLabel('TESTPROFIL AN');
+          this.setStatus('Normaler Spielstand wiederhergestellt.', Palette.success);
+        } else {
+          SaveSystem.enableTestProfile();
+          testButton.setLabel('TESTPROFIL AUS');
+          this.setStatus('Testprofil aktiv: Level 100 und 99.999 Coins.', Palette.success);
+        }
+        pinInput.setValue('');
+      },
+      { width: 210, height: 62, accent: Palette.goldHex, fontSize: FontSize.tiny },
     );
 
     // Lineal ueber dem Menue: Damit lassen sich Layout-Fehler in Zahlen
@@ -214,19 +264,19 @@ export class AdminScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      1140,
+      1200,
       'PIXEL-LINEAL ANZEIGEN',
       () => {
         this.scene.start(SceneKey.Menu);
         this.scene.launch(SceneKey.Ruler);
       },
-      { width: 460, height: 72, accent: 0x9aa3bd, fontSize: FontSize.small },
+      { width: 460, height: 58, accent: 0x9aa3bd, fontSize: FontSize.small },
     );
 
     const reset = createButton(
       this,
       GAME_WIDTH / 2,
-      1050,
+      1120,
       'SPIELSTAND ZURÜCKSETZEN',
       () => {
         // Zwei Tipps: Der erste bewaffnet, der zweite fuehrt aus. Ein
@@ -266,18 +316,6 @@ export class AdminScene extends Phaser.Scene {
     const save = SaveSystem.load();
     SaveSystem.save(save);
     this.setStatus('Spielstand geprüft, migriert und gespeichert.', Palette.success);
-  }
-
-  private exportSave(): void {
-    const data = JSON.stringify(SaveSystem.load(), null, 2);
-    const blob = new Blob([data], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `isihunt-spielstand-v${APP_VERSION}.json`;
-    link.click();
-    window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-    this.setStatus('Spielstand als JSON exportiert.', Palette.success);
   }
 
   /**

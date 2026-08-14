@@ -251,7 +251,7 @@ export class ResultScene extends Phaser.Scene {
    * Runs.
    */
   private submitLeaderboardScore(stats: RunStats): void {
-    if (!CloudSystem.isAvailable()) return;
+    if (!CloudSystem.isAvailable() || SaveSystem.isTestProfileActive()) return;
 
     const name = CloudSystem.sanitizePlayerName(SaveSystem.load().playerName);
     if (!name) return;
@@ -275,7 +275,7 @@ export class ResultScene extends Phaser.Scene {
    * beeinflussen; MenuScene prueft beim naechsten Start erneut.
    */
   private uploadSave(): void {
-    if (!CloudSystem.isAvailable()) return;
+    if (!CloudSystem.isAvailable() || SaveSystem.isTestProfileActive()) return;
     void ProgressSyncSystem.flush();
     if (!AuthSystem.isSignedIn()) void CloudSystem.syncSaveSafely();
   }

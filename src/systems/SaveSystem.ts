@@ -19,6 +19,10 @@ import { emptyRarityCounts } from '@/config/rarities';
 import { DEFAULT_WORLD_ID } from '@/config/worlds';
 import type { SaveData } from '@/types';
 
+const TEST_PROFILE_KEY = 'isihunt.admin-test-profile.v1';
+const TEST_PROFILE_BACKUP_KEY = 'isihunt.admin-test-profile-backup.v1';
+export const ADMIN_TEST_PIN = '739164';
+
 export function createDefaultSave(): SaveData {
   return {
     version: SAVE_VERSION,
@@ -196,6 +200,61 @@ export function reset(): SaveData {
   const fresh = createDefaultSave();
   save(fresh);
   return fresh;
+}
+
+/** True, wenn der lokale Wartungs-Teststand aktiv ist. */
+export function isTestProfileActive(): boolean {
+  try {
+    return window.localStorage.getItem(TEST_PROFILE_KEY) === '1';
+  } catch {
+    return false;
+  }
+}
+
+/** Aktiviert einen lokalen Teststand, ohne den normalen Spielstand zu verlieren. */
+export function enableTestProfile(): SaveData {
+  if (isTestProfileActive()) return load();
+
+  const original = structuredClone(load());
+  try {
+    window.localStorage.setItem(TEST_PROFILE_BACKUP_KEY, JSON.stringify(original));
+    window.localStorage.setItem(TEST_PROFILE_KEY, '1');
+  } catch (error) {
+    console.warn('[SaveSystem] Testprofil nicht aktivierbar.', error);
+  }
+
+  const testProfile = {
+    ...original,
+    level: MAX_LEVEL,
+    xp: 0,
+    talentPoints: 0,
+    coins: 99_999,
+    talents: {},
+    totalCoinsEarned: Math.max(original.totalCoinsEarned, 99_999),
+    pendingDailyKey: null,
+    pendingDailyCoins: 0,
+    pendingDailyScore: 0,
+    cloudId: null,
+  } satisfies SaveData;
+  save(testProfile);
+  return testProfile;
+}
+
+/** Deaktiviert den lokalen Teststand und stellt den vorherigen Stand wieder her. */
+export function disableTestProfile(): SaveData {
+  let backup: Partial<SaveData> | null = null;
+  try {
+    const raw = window.localStorage.getItem(TEST_PROFILE_BACKUP_KEY);
+    backup = raw ? (JSON.parse(raw) as Partial<SaveData>) : null;
+    window.localStorage.removeItem(TEST_PROFILE_KEY);
+    window.localStorage.removeItem(TEST_PROFILE_BACKUP_KEY);
+  } catch (error) {
+    console.warn('[SaveSystem] Testprofil nicht deaktivierbar.', error);
+  }
+
+  const restored = backup ? migrate(backup) : createDefaultSave();
+  save(restored);
+  return restored;
 }
 
 // --- Online-Abgleich ---------------------------------------------------------

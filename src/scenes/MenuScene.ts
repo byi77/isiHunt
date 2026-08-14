@@ -111,7 +111,13 @@ export class MenuScene extends Phaser.Scene {
    * ausgefuehrt. Ein besserer Cloud-Stand braucht eine sichtbare Entscheidung.
    */
   private async checkCloudSave(): Promise<void> {
-    if (this.saveSyncBusy || !CloudSystem.isAvailable() || !this.scene.isActive()) return;
+    if (
+      this.saveSyncBusy ||
+      !CloudSystem.isAvailable() ||
+      SaveSystem.isTestProfileActive() ||
+      !this.scene.isActive()
+    )
+      return;
     this.saveSyncBusy = true;
 
     const local = SaveSystem.load();

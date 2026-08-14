@@ -36,7 +36,7 @@ function writeOutbox(events: ProgressEvent[]): void {
 
 /** Legt einen Run lokal ab, bevor der Netzwerkversuch startet. */
 export function enqueueRun(stats: RunStats, progression: ProgressionResult): void {
-  if (!AuthSystem.isSignedIn()) return;
+  if (!AuthSystem.isSignedIn() || SaveSystem.isTestProfileActive()) return;
 
   const event: ProgressEvent = {
     eventId: createEventId(),
@@ -57,7 +57,7 @@ export function enqueueRun(stats: RunStats, progression: ProgressionResult): voi
 
 /** Überträgt wartende Runs in Reihenfolge; Fehler bleiben in der Outbox. */
 async function flushPending(): Promise<void> {
-  if (!AuthSystem.isSignedIn()) return;
+  if (!AuthSystem.isSignedIn() || SaveSystem.isTestProfileActive()) return;
 
   const pending = readOutbox();
   const remaining: ProgressEvent[] = [];

@@ -167,7 +167,7 @@ export class TalentScene extends Phaser.Scene {
     if (this.busy) return;
     this.busy = true;
     let error = '';
-    if (AuthSystem.isSignedIn()) {
+    if (AuthSystem.isSignedIn() && !SaveSystem.isTestProfileActive()) {
       // Lokale Runs und Tagesboni muessen vor dem atomaren Serverkauf
       // angekommen sein, sonst zeigt die Scene mehr Coins als der Server.
       await ProgressSyncSystem.flush();
