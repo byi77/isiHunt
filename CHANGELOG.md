@@ -11,6 +11,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+### Geaendert
+
+- Der manuelle Geräte-Transfer wurde aus den Einstellungen entfernt. Angemeldete
+  Profile synchronisieren sich automatisch; der alte Sync-Code bleibt nur als
+  interner Migrationsweg für anonyme Alt-Spielstände erhalten.
+
 **Phase 2.6: Login und Mehrgeräte-Profil**
 
 - Freiwilliger Supabase-Login in den Einstellungen mit Alias/Passwort; eine

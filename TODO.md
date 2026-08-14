@@ -345,7 +345,8 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
 1. Supabase Auth, `profiles` und RLS.
 2. Login, Sitzung und Migration des bestehenden lokalen Profils.
 3. Ereignisse, Offline-Outbox und idempotente Zusammenführung.
-4. Gerätewechsel-UI als Übergang; danach kann der alte Sync-Code entfallen.
+4. Der manuelle Gerätewechsel bleibt nur intern als Migrationsweg; die
+   sichtbare Gerätewechsel-UI ist entfernt.
 5. Echter iPhone-/iPad-Test; erst danach weitere Phase-4-Fortschrittsquellen
    als synchronisierte Ereignisse anschließen.
 

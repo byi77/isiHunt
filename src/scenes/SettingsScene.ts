@@ -1,5 +1,5 @@
 /**
- * Einstellungen fuer Dinge, die nicht in den schnellen Spielstart gehoeren.
+ * Einstellungen für Dinge, die nicht in den schnellen Spielstart gehören.
  *
  * Die Sprache bleibt bewusst kindgerecht: Die technische Funktion "Sync-Code"
  * heisst hier "Profil auf anderes Gerät". Der eigentliche Vergleich beider
@@ -12,7 +12,6 @@ import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as AuthSystem from '@/systems/AuthSystem';
-import * as CloudSystem from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
@@ -62,7 +61,7 @@ export class SettingsScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
 
-    createPanel(this, GAME_WIDTH / 2, 430, GAME_WIDTH - 120, 430, world.accent, {
+    createPanel(this, GAME_WIDTH / 2, 390, GAME_WIDTH - 120, 330, world.accent, {
       alpha: 0.58,
       radius: 20,
     });
@@ -91,23 +90,13 @@ export class SettingsScene extends Phaser.Scene {
       { width: 460, height: 76, accent: world.accent, fontSize: FontSize.small },
     );
 
-    const transferButton = createButton(
-      this,
-      GAME_WIDTH / 2,
-      565,
-      'EINMALIGER GERÄTE-TRANSFER',
-      () => this.scene.start(SceneKey.Sync),
-      { width: 460, height: 64, accent: 0x9aa3bd, fontSize: FontSize.tiny },
-    );
-
-    if (!CloudSystem.isAvailable()) {
+    if (!AuthSystem.isConfigured()) {
       accountButton.setEnabled(false);
-      transferButton.setEnabled(false);
       this.add
         .text(
           GAME_WIDTH / 2,
-          625,
-          'Die Profilübertragung ist gerade nicht verfügbar.',
+          530,
+          'Das Online-Profil ist gerade nicht verfügbar.',
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0.5)

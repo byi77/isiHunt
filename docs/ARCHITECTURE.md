@@ -88,7 +88,7 @@ isiHunt/
 │   │   ├── HudScene.ts         Anzeige waehrend des Runs
 │   │   ├── ChallengeScene.ts   Duell: Einfuehrung, Uebergabe, Ergebnis
 │   │   ├── LeaderboardScene.ts Online-Bestenliste, Gesamtansicht + Weltfilter
-│   │   ├── SyncScene.ts        Spielstand-Abgleich zwischen Geraeten
+│   │   ├── SyncScene.ts        Legacy-Abgleich für anonyme Alt-Spielstände
 │   │   ├── AdminScene.ts       Wartung: Version, Neuladen, Reset (versteckt)
 │   │   ├── RulerScene.ts       CSS-Pixel-Lineal über dem gesamten Viewport
 │   │   └── ResultScene.ts      Auswertung eines Solo-Runs
