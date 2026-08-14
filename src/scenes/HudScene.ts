@@ -187,7 +187,7 @@ export class HudScene extends Phaser.Scene {
         .text(
           cx,
           cy - 90,
-          'Im Düll lässt sich nicht pausieren.\nDer Durchgang läuft weiter.',
+          'Im Duell lässt sich nicht pausieren.\nDer Durchgang läuft weiter.',
           textStyle(FontSize.small, Palette.inkDim),
         )
         .setOrigin(0.5)
@@ -220,7 +220,7 @@ export class HudScene extends Phaser.Scene {
       this,
       cx,
       cy + 118,
-      this.mode === 'challenge' ? 'DÜLL ABBRECHEN' : 'RUN VERLASSEN',
+      this.mode === 'challenge' ? 'DUELL ABBRECHEN' : 'RUN VERLASSEN',
       () => eventBus.emitEvent(GameEvent.AbortRequested, undefined),
       { width: 400, height: 76, accent: 0x9aa3bd, fontSize: FontSize.small },
     );

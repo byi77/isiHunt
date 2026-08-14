@@ -674,7 +674,7 @@ export class MenuScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       actionsY + 94,
-      'DÜLL ZU ZWEIT',
+      'DUELL ZU ZWEIT',
       () => {
         ChallengeSystem.start(this.selectedWorld.id);
         this.scene.start(SceneKey.Challenge);

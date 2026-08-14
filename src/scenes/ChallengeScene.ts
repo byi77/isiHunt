@@ -41,7 +41,7 @@ export class ChallengeScene extends Phaser.Scene {
   }
 
   create(): void {
-    SafeAreaSystem.showStatic('DÜLL');
+    SafeAreaSystem.showStatic('DUELL');
     const state = ChallengeSystem.getState();
 
     // Ohne Duell-Zustand gibt es nichts anzuzeigen. Kann nur passieren, wenn
@@ -80,7 +80,7 @@ export class ChallengeScene extends Phaser.Scene {
   // --- Phase 1: Einfuehrung ---------------------------------------------------
 
   private buildIntro(world: WorldDef): void {
-    this.buildHeading('DÜLL', `${challengePlayerLabel(0)} gegen ${challengePlayerLabel(1)}`);
+    this.buildHeading('DUELL', `${challengePlayerLabel(0)} gegen ${challengePlayerLabel(1)}`);
 
     const seconds = Math.round(CHALLENGE_DURATION_MS / 1000);
     const rules: readonly string[] = [
@@ -170,7 +170,7 @@ export class ChallengeScene extends Phaser.Scene {
       { width: 460, accent: world.accent, fontSize: FontSize.large },
     );
 
-    this.buildBackToMenu('DÜLL ABBRECHEN');
+    this.buildBackToMenu('DUELL ABBRECHEN');
   }
 
   // --- Phase 3: Ergebnis ------------------------------------------------------
