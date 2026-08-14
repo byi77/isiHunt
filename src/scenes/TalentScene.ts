@@ -18,7 +18,8 @@ import * as CloudSystem from '@/systems/CloudSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
-import { playerTextureForLevel } from '@/ui/textures';
+import { Depth } from '@/ui/depth';
+import { playerTextureForLevel, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   createBackButton,
@@ -36,6 +37,7 @@ export class TalentScene extends Phaser.Scene {
   private returnTo: SceneKeyValue = SceneKey.Profile;
   private busy = false;
   private feedbackText!: Phaser.GameObjects.Text;
+  private resetDialogObjects: Phaser.GameObjects.GameObject[] = [];
 
   constructor() {
     super(SceneKey.Talents);
@@ -93,7 +95,7 @@ export class TalentScene extends Phaser.Scene {
       GAME_WIDTH / 2,
       resetY,
       'RESET ' + TALENT_RESET_COST + ' COINS',
-      () => void this.reset(),
+      () => this.openResetConfirmation(),
       {
         width: 380,
         height: 64,
@@ -180,6 +182,77 @@ export class TalentScene extends Phaser.Scene {
     this.scene.restart({ returnTo: this.returnTo });
   }
 
+  private openResetConfirmation(): void {
+    if (this.resetDialogObjects.length > 0 || SaveSystem.load().coins < TALENT_RESET_COST) {
+      this.feedbackText
+        .setText('Für den Reset fehlen ' + TALENT_RESET_COST + ' Coins.')
+        .setColor(Palette.gold);
+      return;
+    }
+
+    const overlay = this.add
+      .image(0, 0, TextureKey.Pixel)
+      .setOrigin(0)
+      .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
+      .setTint(Palette.backdrop)
+      .setAlpha(0.88)
+      .setDepth(Depth.Overlay)
+      .setInteractive();
+    const panel = createPanel(
+      this,
+      GAME_WIDTH / 2,
+      GAME_HEIGHT / 2,
+      GAME_WIDTH - 90,
+      330,
+      0xb782ff,
+      { alpha: 0.98, radius: 22 },
+    ).setDepth(Depth.Overlay + 1);
+    const title = this.add
+      .text(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2 - 105,
+        'WILLST DU WIRKLICH\\nALLE TALENTE ZURÜCKSETZEN?',
+        textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold', align: 'center' }),
+      )
+      .setOrigin(0.5)
+      .setAlign('center')
+      .setDepth(Depth.Overlay + 2);
+    const detail = this.add
+      .text(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2 - 20,
+        'Das kostet ' + TALENT_RESET_COST + ' Coins.',
+        textStyle(FontSize.small, Palette.ink),
+      )
+      .setOrigin(0.5)
+      .setDepth(Depth.Overlay + 2);
+
+    const cancel = createButton(
+      this,
+      GAME_WIDTH / 2 - 105,
+      GAME_HEIGHT / 2 + 88,
+      'ABBRECHEN',
+      () => this.closeResetConfirmation(),
+      { width: 190, height: 68, accent: 0x778099, fontSize: FontSize.tiny },
+    );
+    const confirm = createButton(
+      this,
+      GAME_WIDTH / 2 + 105,
+      GAME_HEIGHT / 2 + 88,
+      'ZURÜCKSETZEN',
+      () => void this.reset(),
+      { width: 190, height: 68, accent: 0xb782ff, fontSize: FontSize.tiny },
+    );
+    cancel.container.setDepth(Depth.Overlay + 2);
+    confirm.container.setDepth(Depth.Overlay + 2);
+    this.resetDialogObjects = [overlay, panel, title, detail, cancel.container, confirm.container];
+  }
+
+  private closeResetConfirmation(): void {
+    for (const object of this.resetDialogObjects) object.destroy();
+    this.resetDialogObjects = [];
+  }
+
   private async reset(): Promise<void> {
     if (this.busy) return;
     this.busy = true;
@@ -195,9 +268,11 @@ export class TalentScene extends Phaser.Scene {
     }
     this.busy = false;
     if (error) {
+      this.closeResetConfirmation();
       this.feedbackText.setText(error).setColor(Palette.gold);
       return;
     }
+    this.closeResetConfirmation();
     this.scene.restart({ returnTo: this.returnTo });
   }
 }
