@@ -365,7 +365,7 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
         _Aufwand: gering, Wirkung sichtbar_
   - [x] Der `safe-area-inset-top`-Bereich wird im Web-Stand fuer Laufband und
         Restzeit genutzt; die Systemuhr bleibt unangetastet.
-- [x] **Laufband im Vollbild/Home-Bildschirm-Modus stabilisiert.**
+- [ ] **Laufband im Vollbild/Home-Bildschirm-Modus stabilisieren.**
       Ursache: `black-translucent` legte den Webinhalt absichtlich hinter die
       iOS-Statusleiste; das bei `top: 0` fixierte Laufband lag dadurch direkt
       in der Dynamic Island. Zusaetzlich existierte die DOM-ID doppelt.
@@ -382,7 +382,12 @@ ausgebaut, die restlichen 67 haetten sonst kein Ziel.
         auf eine reservierte schwarze iOS-Statusleiste umgestellt. Das
         Laufband ist jetzt ein eigener 32-px-App-Kopfbereich darunter; die
         fehleranfaellige Laufzeitmessung und der doppelte DOM-Knoten entfallen.
-        Geraetetest: v0.1.58 auf iPhone 13 Pro und 16 Pro pruefen.
+        Geraetetest v0.1.58: auf dem iPhone 16 Pro weiterhin nicht sichtbar.
+  - [x] Naechster Ansatz: nicht mehr auf eine von iOS beim Installieren
+        gespeicherte Statusleistenart verlassen. Der dunkle Kopf reicht wieder
+        bis zum Displayrand, waehrend Text und Canvas mit
+        `safe-area-inset-top` plus modellabhaengigem Fallback unterhalb der
+        Island beginnen. Echter Geraetetest mit v0.1.59 steht aus.
 - [ ] Erst mit M6 (Capacitor): Live Activity mit Punktestand und Restzeit
       waehrend eines Runs; bis dahin wird die Anzeige als Prototyp beobachtet.
 

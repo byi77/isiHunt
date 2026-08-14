@@ -301,17 +301,17 @@ abhebt, bricht ab.
 
 ### 8.4 Das Spielfeld haelt sich aus den sicheren Raendern heraus
 
-`viewport-fit=cover` laesst die Seite bis zum Home-Indicator reichen — das ist
-fuer den **Hintergrund** richtig, damit dort nichts durchblitzt. Oben darf der
-Webinhalt aber nicht hinter Dynamic Island und Uhr liegen: Die installierte
-iOS-App verwendet deshalb den Statusleistenstil `black`, der diesen Bereich
-fuer das System reserviert.
+`viewport-fit=cover` laesst die Seite bis hinter Statusleiste und
+Home-Indicator reichen — das ist fuer den **Hintergrund** richtig, damit dort
+nichts durchblitzt. Text und Spielfeld duerfen dagegen nicht hinter Dynamic
+Island, Uhr oder Home-Indicator liegen.
 
-Direkt darunter reserviert `#game` einen festen 32-px-App-Kopfbereich fuer
-Laufband beziehungsweise Restzeit. Seitliche und untere sichere Raender
-nutzen weiterhin `env(safe-area-inset-*)` mit `box-sizing: border-box`. Der
-Hintergrund bleibt randlos, waehrend Canvas und Bedienung in der sicheren
-Flaeche bleiben.
+Der dunkle App-Kopf beginnt deshalb am Displayrand. Sein Lauftext startet erst
+nach `safe-area-inset-top`; anschliessend folgen 32 px fuer Laufband
+beziehungsweise Restzeit. Weil WebKit diesen Wert in einzelnen installierten
+Apps als 0 meldet, setzt `SafeAreaSystem` auf iPhones zusaetzlich einen nach
+Bildschirmgeneration abgestuften Mindestwert. Seitliche und untere Raender
+nutzen weiterhin `env(safe-area-inset-*)` mit `box-sizing: border-box`.
 
 **Warum das nie am Schreibtisch auffaellt:** Ein Browser-Simulator kann
 iPhone-Groessen nachstellen, aber **keine sicheren Raender** — die entstehen
