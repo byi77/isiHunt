@@ -78,16 +78,34 @@ export class AchievementsScene extends Phaser.Scene {
       const x = columnX[column];
       const y = rowTop + row * rowStep;
 
-      createPanel(this, x, y, 316, 112, accent, { alpha: isUnlocked ? 0.58 : 0.38, radius: 14 });
+      createPanel(this, x, y, 316, 112, accent, {
+        alpha: isUnlocked ? 0.58 : 0.38,
+        radius: 14,
+      });
+      addTrophy(this, x - 134, y - 4, achievement.rank, isUnlocked);
+
+      const rankBadge = this.add.graphics();
+      rankBadge.fillStyle(isUnlocked ? Palette.goldHex : 0x69738d, isUnlocked ? 0.2 : 0.16);
+      rankBadge.lineStyle(1.5, isUnlocked ? Palette.goldHex : 0x69738d, 0.75);
+      rankBadge.fillRoundedRect(x - 104, y - 49, 92, 28, 8);
+      rankBadge.strokeRoundedRect(x - 104, y - 49, 92, 28, 8);
+
       this.add
-        .text(x - 136, y - 27, isUnlocked ? '✓' : '○', textStyle(FontSize.body, toCss(accent)))
+        .text(
+          x - 94,
+          y - 35,
+          `RANG ${achievement.rank}`,
+          textStyle(FontSize.small, isUnlocked ? Palette.gold : Palette.inkDim, {
+            fontStyle: 'bold',
+          }),
+        )
         .setOrigin(0, 0.5);
       this.add
         .text(
           x - 102,
-          y - 25,
-          `RANG ${achievement.rank} · ${achievement.name}`,
-          textStyle(FontSize.tiny, isUnlocked ? Palette.ink : Palette.inkDim, {
+          y - 6,
+          achievement.name,
+          textStyle(FontSize.small, isUnlocked ? Palette.ink : Palette.inkDim, {
             fontStyle: 'bold',
           }),
         )
@@ -129,4 +147,47 @@ export class AchievementsScene extends Phaser.Scene {
     );
     next.setEnabled(page < pageCount - 1);
   }
+}
+
+/** Kleiner Pokal als Vektor-Element, damit der Rang auf jedem Geraet sichtbar bleibt. */
+function addTrophy(
+  scene: Phaser.Scene,
+  x: number,
+  y: number,
+  rank: number,
+  unlocked: boolean,
+): void {
+  const color = unlocked ? Palette.goldHex : 0x69738d;
+  const trophy = scene.add.container(x, y);
+
+  const glow = scene.add.graphics();
+  glow.fillStyle(color, unlocked ? 0.14 : 0.08);
+  glow.fillCircle(0, 0, 27);
+
+  const cup = scene.add.graphics();
+  cup.fillStyle(color, unlocked ? 1 : 0.72);
+  cup.fillRoundedRect(-12, -20, 24, 18, 5);
+  cup.fillRoundedRect(-15, 10, 30, 6, 2);
+  cup.fillRect(-3, -3, 6, 15);
+  cup.lineStyle(4, color, unlocked ? 1 : 0.72);
+  cup.beginPath();
+  cup.moveTo(-12, -16);
+  cup.lineTo(-19, -16);
+  cup.lineTo(-19, -7);
+  cup.lineTo(-12, -4);
+  cup.moveTo(12, -16);
+  cup.lineTo(19, -16);
+  cup.lineTo(19, -7);
+  cup.lineTo(12, -4);
+  cup.strokePath();
+
+  const rankLabel = scene.add
+    .text(
+      0,
+      -11,
+      String(rank),
+      textStyle(FontSize.tiny, toCss(Palette.backdrop), { fontStyle: 'bold' }),
+    )
+    .setOrigin(0.5);
+  trophy.add([glow, cup, rankLabel]);
 }
