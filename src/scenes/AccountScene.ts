@@ -11,6 +11,7 @@ import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import type { RemoteSave } from '@/systems/CloudSystem';
+import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import type { TextInputHandle } from '@/ui/textInput';
 import { createTextInput } from '@/ui/textInput';
@@ -46,7 +47,10 @@ export class AccountScene extends Phaser.Scene {
 
   create(data: AccountSceneData = {}): void {
     this.firstStart = data.firstStart ?? false;
-    SafeAreaSystem.showStatic('PROFIL LOGIN');
+    // Der eigene Begrüßungsbereich ersetzt beim Erststart die schmale
+    // Safe-Area-Überschrift, damit keine zweite Überschrift über dem Logo steht.
+    if (this.firstStart) SafeAreaSystem.hide();
+    else SafeAreaSystem.showStatic('PROFIL LOGIN');
     const world = getWorld(SaveSystem.load().lastWorldId);
 
     createWorldBackdrop(
@@ -61,8 +65,13 @@ export class AccountScene extends Phaser.Scene {
     createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, world.spaceVariant);
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
     if (!this.firstStart) createBackButton(this, () => this.scene.start(SceneKey.Settings));
+    if (this.firstStart) this.buildFirstStartWelcome(world.accent);
 
-    const loginY = createMenuLayout().sections.next(660);
+    const layout = createMenuLayout();
+    // Der Erststart ist kein normales Untermenü: Logo und Begrüßung erhalten
+    // einen eigenen Kopfbereich, die Karte selbst bleibt im zentralen Stapel.
+    if (this.firstStart) layout.sections.advance(260);
+    const loginY = layout.sections.next(660);
     this.contentOffset = loginY - 540;
     createPanel(this, GAME_WIDTH / 2, loginY, GAME_WIDTH - 120, 660, world.accent, {
       alpha: 0.62,
@@ -98,6 +107,27 @@ export class AccountScene extends Phaser.Scene {
       this.pinInput?.destroy();
       this.pinConfirmInput?.destroy();
     });
+  }
+
+  /** Sichtbarer Einstieg in die App, bevor ein Profil angelegt wird. */
+  private buildFirstStartWelcome(accent: number): void {
+    this.add
+      .image(GAME_WIDTH / 2, 126, TextureKey.Glow)
+      .setDisplaySize(440, 230)
+      .setTint(accent)
+      .setAlpha(0.34)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    this.add.image(GAME_WIDTH / 2, 126, TextureKey.Logo).setDisplaySize(290, 164);
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        236,
+        'Willkommen bei isiHunt!\nLege dein Profil an und dein Fortschritt bleibt erhalten.',
+        textStyle(FontSize.small, Palette.ink),
+      )
+      .setOrigin(0.5)
+      .setAlign('center')
+      .setWordWrapWidth(GAME_WIDTH - 110);
   }
 
   private buildCurrentState(accent: number): void {
