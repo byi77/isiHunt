@@ -58,16 +58,7 @@ export class AdminStatsScene extends Phaser.Scene {
     this.add
       .text(
         GAME_WIDTH / 2,
-        128,
-        'ONLINE-STATISTIK',
-        textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
-      )
-      .setOrigin(0.5)
-      .setLetterSpacing(3);
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        170,
+        58,
         'Nur für serverseitig freigegebene Wartungsprofile',
         textStyle(FontSize.tiny, Palette.inkDim),
       )
@@ -78,12 +69,12 @@ export class AdminStatsScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      1090,
+      912,
       'AKTUALISIEREN',
       () => {
         void this.loadDashboard();
       },
-      { width: 330, height: 62, accent: world.accent, fontSize: FontSize.small },
+      { width: 330, height: 54, accent: world.accent, fontSize: FontSize.small },
     );
 
     void this.loadDashboard();
@@ -136,7 +127,7 @@ export class AdminStatsScene extends Phaser.Scene {
       const column = index % 4;
       const row = Math.floor(index / 4);
       const x = 120 + column * 160;
-      const y = 252 + row * 108;
+      const y = 126 + row * 108;
       this.content.push(
         createPanel(this, x, y, 142, 88, world.accent, { alpha: 0.48, radius: 12 }),
         this.add
@@ -154,7 +145,7 @@ export class AdminStatsScene extends Phaser.Scene {
 
     this.content.push(
       this.add
-        .text(58, 584, 'PROFILE', textStyle(FontSize.tiny, Palette.gold, { fontStyle: 'bold' }))
+        .text(58, 435, 'PROFILE', textStyle(FontSize.tiny, Palette.gold, { fontStyle: 'bold' }))
         .setOrigin(0, 0.5)
         .setLetterSpacing(3),
     );
@@ -162,12 +153,12 @@ export class AdminStatsScene extends Phaser.Scene {
     const pageCount = Math.max(1, Math.ceil(dashboard.users.length / PAGE_SIZE));
     this.page = Phaser.Math.Clamp(this.page, 0, pageCount - 1);
     const users = dashboard.users.slice(this.page * PAGE_SIZE, (this.page + 1) * PAGE_SIZE);
-    users.forEach((user, index) => this.renderUser(user, 650 + index * 128, world.accent));
+    users.forEach((user, index) => this.renderUser(user, 500 + index * 128, world.accent));
 
     const pageLabel = this.add
       .text(
         GAME_WIDTH / 2,
-        1015,
+        855,
         dashboard.users.length === 0
           ? 'Keine Profile in der Datenbank.'
           : `SEITE ${this.page + 1} / ${pageCount} · ${dashboard.users.length} PROFILE`,
@@ -177,7 +168,7 @@ export class AdminStatsScene extends Phaser.Scene {
     const previous = createButton(
       this,
       GAME_WIDTH / 2 - 155,
-      1015,
+      855,
       '‹',
       () => {
         this.page -= 1;
@@ -188,7 +179,7 @@ export class AdminStatsScene extends Phaser.Scene {
     const next = createButton(
       this,
       GAME_WIDTH / 2 + 155,
-      1015,
+      855,
       '›',
       () => {
         this.page += 1;

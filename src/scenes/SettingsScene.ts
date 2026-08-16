@@ -52,7 +52,7 @@ export class SettingsScene extends Phaser.Scene {
     // hält den kleinen Abstand zwischen Profil, Ton und Impressum konstant.
     // Die Scroll-Kopfzeile liegt außerhalb des Canvas. 36 px reichen als
     // Luft darunter; ein größerer Startwert erzeugt sichtbar unnötigen Raum.
-    const sections = createSectionStack(36);
+    const sections = createSectionStack();
     const profileY = sections.next(330);
     const soundY = sections.next(180);
     const legalY = sections.next(350);
@@ -126,6 +126,15 @@ export class SettingsScene extends Phaser.Scene {
       },
       { width: 360, height: 70, accent: world.accent, fontSize: FontSize.body },
     );
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        soundY + 55,
+        'LAUTSTÄRKE: IPHONE-TASTEN',
+        textStyle(FontSize.tiny, Palette.inkDim),
+      )
+      .setOrigin(0.5)
+      .setLetterSpacing(2);
 
     createPanel(this, GAME_WIDTH / 2, legalY, GAME_WIDTH - 120, 350, world.accent, {
       alpha: 0.5,

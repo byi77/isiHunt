@@ -41,6 +41,7 @@ import {
   createBackStatusText,
   createButton,
   createPanel,
+  createSectionStack,
   createVignette,
   paintSafeAreaBackdrop,
 } from '@/ui/widgets';
@@ -78,14 +79,12 @@ export class AdminScene extends Phaser.Scene {
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
 
-    this.add
-      .text(GAME_WIDTH / 2, 140, 'WARTUNG', textStyle(FontSize.heading, Palette.gold))
-      .setOrigin(0.5)
-      .setLetterSpacing(6);
-
-    this.buildVersionPanel();
-    void this.buildLayoutPanel();
-    this.buildActions();
+    const sections = createSectionStack();
+    const versionY = sections.next(170);
+    const layoutY = sections.next(360);
+    this.buildVersionPanel(versionY);
+    void this.buildLayoutPanel(layoutY);
+    this.buildActions(layoutY + 244);
 
     this.statusText = createBackStatusText(this);
 
@@ -99,8 +98,7 @@ export class AdminScene extends Phaser.Scene {
    * echten Zahlen. Ohne sie bliebe die Frage "warum verschwindet der
    * Zurück-Knopf unter der Notch" eine Vermutung.
    */
-  private async buildLayoutPanel(): Promise<void> {
-    const y = 560;
+  private async buildLayoutPanel(y: number): Promise<void> {
     createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, 360, 0x9aa3bd, { alpha: 0.5 });
 
     this.add
@@ -142,8 +140,7 @@ export class AdminScene extends Phaser.Scene {
   }
 
   /** Was laeuft, wie es gestartet wurde - die Angaben fuer einen Fehlerbericht. */
-  private buildVersionPanel(): void {
-    const y = 270;
+  private buildVersionPanel(y: number): void {
     createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, 170, Palette.goldHex, { alpha: 0.5 });
 
     this.add
@@ -165,15 +162,15 @@ export class AdminScene extends Phaser.Scene {
       .setOrigin(0.5);
   }
 
-  private buildActions(): void {
-    createButton(this, GAME_WIDTH / 2, 800, 'UPDATE PRÜFEN', () => void this.checkUpdateNow(), {
+  private buildActions(firstY: number): void {
+    createButton(this, GAME_WIDTH / 2, firstY, 'UPDATE PRÜFEN', () => void this.checkUpdateNow(), {
       width: 460,
       height: 58,
       accent: 0x9aa3bd,
       fontSize: FontSize.small,
     });
 
-    createButton(this, GAME_WIDTH / 2, 875, 'NEU LADEN ERZWINGEN', () => forceReload(), {
+    createButton(this, GAME_WIDTH / 2, firstY + 75, 'NEU LADEN ERZWINGEN', () => forceReload(), {
       width: 460,
       height: 62,
       accent: Palette.goldHex,
@@ -183,7 +180,7 @@ export class AdminScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      950,
+      firstY + 150,
       'SPIELSTAND PRÜFEN & SPEICHERN',
       () => this.repairSave(),
       {
@@ -197,7 +194,7 @@ export class AdminScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      1025,
+      firstY + 225,
       'ONLINE-STATISTIK',
       () => {
         this.scene.start(SceneKey.AdminStats);
@@ -263,7 +260,7 @@ export class AdminScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      1100,
+      firstY + 300,
       'PIXEL-LINEAL ANZEIGEN',
       () => {
         this.scene.start(SceneKey.Menu);

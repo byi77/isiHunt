@@ -41,23 +41,13 @@ export class AchievementsScene extends Phaser.Scene {
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
 
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        118,
-        'ERFOLGE',
-        textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
-      )
-      .setOrigin(0.5)
-      .setLetterSpacing(4);
-
     const unlocked = save.unlockedAchievements.filter((id) =>
       ACHIEVEMENTS.some((achievement) => achievement.id === id),
     ).length;
     this.add
       .text(
         GAME_WIDTH / 2,
-        165,
+        60,
         `${unlocked} von ${ACHIEVEMENTS.length} freigeschaltet`,
         textStyle(FontSize.body, toCss(world.accent), { fontStyle: 'bold' }),
       )
@@ -68,7 +58,7 @@ export class AchievementsScene extends Phaser.Scene {
     const page = Math.min(pageCount - 1, Math.max(0, data.page ?? 0));
     const pageAchievements = ACHIEVEMENTS.slice(page * pageSize, (page + 1) * pageSize);
     const columnX = [190, 530] as const;
-    const rowTop = 285;
+    const rowTop = 185;
     const rowStep = 145;
     pageAchievements.forEach((achievement, index) => {
       const column = index < 5 ? 0 : 1;

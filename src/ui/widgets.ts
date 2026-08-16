@@ -328,6 +328,8 @@ export const BACK_BUTTON_BOTTOM_OFFSET = 84;
 /** Oberhalb dieser Zone muessen Seitenaktionen enden. */
 export const BACK_BUTTON_RESERVED_HEIGHT = 140;
 export const BACK_BUTTON_CONTENT_BOTTOM = GAME_HEIGHT - BACK_BUTTON_RESERVED_HEIGHT;
+/** Erste Kartenkante direkt unter der festen Safe-Area-Kopfzeile. */
+export const PAGE_CONTENT_TOP = 36;
 
 /**
  * Einheitlicher Platz für kurzlebige Rückmeldungen auf Unterseiten.
@@ -365,7 +367,7 @@ export interface SectionStack {
  * Y-Werte später auseinanderlaufen können. Für Raster und frei platzierte
  * Spielelemente ist dieser Helfer bewusst nicht gedacht.
  */
-export function createSectionStack(firstTop: number, gap = 35): SectionStack {
+export function createSectionStack(firstTop = PAGE_CONTENT_TOP, gap = 35): SectionStack {
   let nextTop = firstTop;
 
   return {

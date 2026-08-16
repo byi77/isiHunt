@@ -65,26 +65,17 @@ export class TalentScene extends Phaser.Scene {
     this.add
       .text(
         GAME_WIDTH / 2,
-        116,
-        'TALENTBAUM',
-        textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
-      )
-      .setOrigin(0.5)
-      .setLetterSpacing(4);
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        160,
+        60,
         'COINS ' + save.coins.toLocaleString('de-DE'),
         textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
       )
       .setOrigin(0.5);
     this.add
-      .image(92, 120, playerTextureForLevel(save.level))
+      .image(92, 60, playerTextureForLevel(save.level))
       .setTint(Palette.goldHex)
       .setScale(0.26);
 
-    const rowTop = 230;
+    const rowTop = 150;
     const rowStep = 108;
     TALENTS.forEach((talent, index) =>
       this.buildTalentRow(talent.id, rowTop + index * rowStep, world.accent),

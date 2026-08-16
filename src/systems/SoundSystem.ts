@@ -154,9 +154,13 @@ function scheduleTone(spec: ToneSpec): void {
 
   if (pendingTones.length >= MAX_PENDING_TONES) pendingTones.shift();
   pendingTones.push(spec);
-  // Ein `resume()` außerhalb einer echten Eingabegeste wird insbesondere von
-  // iOS-PWAs unzuverlässig abgelehnt. Der Ton bleibt deshalb bis zum nächsten
-  // Tipp in der kleinen Queue, statt zufällig später oder gar nicht zu kommen.
+  // Nach einem App-Wechsel ist der Ton häufig selbst die erste Aktion nach
+  // dem Zurückkehren. Deshalb jetzt direkt wieder aktivieren; lehnt iOS den
+  // Versuch außerhalb einer Geste ab, bleibt der Ton bis zum nächsten Tipp
+  // in der Queue und `unlock` versucht es erneut.
+  void resumeAudioContext().then((ready) => {
+    if (ready) flushPendingTones(context);
+  });
 }
 
 function playSequence(specs: readonly ToneSpec[]): void {
@@ -328,5 +332,8 @@ export function setEnabled(enabled: boolean): void {
     }
   } else if (enabled) {
     unlock();
+    // Der Web-Audio-Ausgang folgt der iPhone-Hardwarelautstärke. Ein kurzer
+    // Bestätigungston macht das Einschalten unmittelbar hörbar.
+    scheduleTone({ frequency: 660, duration: 0.09, type: 'triangle', volume: 0.05 });
   }
 }
