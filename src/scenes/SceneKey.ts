@@ -31,6 +31,8 @@ export const SceneKey = {
   AdminPin: 'AdminPin',
   /** Serverseitig geschützte Nutzungsstatistik für Wartungsadmins. */
   AdminStats: 'AdminStats',
+  /** Serverseitig geschützte Benutzerwerkzeuge für Wartungsadmins. */
+  AdminUsers: 'AdminUsers',
   /**
    * Pixel-Lineal ueber dem Spielfeld. Macht aus "da ist ein Balken" die Aussage
    * "von 0 bis 160 ist schwarz" - eine Zahl statt einer Beschreibung.

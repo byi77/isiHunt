@@ -698,6 +698,42 @@ export async function fetchAdminDashboard(): Promise<CloudResult<AdminDashboard 
   return { ok: true, value: readAdminDashboard(result.value.data) };
 }
 
+/** Gibt einem Profil serverseitig einen Teststand fuer Wartungszwecke. */
+export async function adminBoostUser(
+  alias: string,
+  level = 50,
+  coins = 5000,
+): Promise<CloudResult<true>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const result = await withTimeout(
+    authenticated.value.rpc('admin_boost_user', {
+      p_alias: alias.trim().toLowerCase(),
+      p_level: level,
+      p_coins: coins,
+    }),
+    'Profil auf Teststand setzen',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+  return { ok: true, value: true };
+}
+
+/** Setzt ein Profil serverseitig auf den sauberen Anfangszustand zurueck. */
+export async function adminResetUser(alias: string): Promise<CloudResult<true>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const result = await withTimeout(
+    authenticated.value.rpc('admin_reset_user', { p_alias: alias.trim().toLowerCase() }),
+    'Profil zuruecksetzen',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+  return { ok: true, value: true };
+}
+
 /** Lädt den gemeinsamen Profilstand des angemeldeten Benutzers. */
 export async function fetchProfileProgress(): Promise<CloudResult<RemoteProfileProgress | null>> {
   const authenticated = await requireAuthenticatedClient();

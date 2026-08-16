@@ -169,6 +169,7 @@ export class AdminScene extends Phaser.Scene {
     const reloadY = actions.next(54);
     const repairY = actions.next(54);
     const statsY = actions.next(54);
+    const usersY = actions.next(54);
     const rulerY = actions.next(54);
 
     createButton(this, GAME_WIDTH / 2, updateY, 'UPDATE PRÜFEN', () => void this.checkUpdateNow(), {
@@ -207,6 +208,15 @@ export class AdminScene extends Phaser.Scene {
       () => {
         this.scene.start(SceneKey.AdminStats);
       },
+      { width: 460, height: 54, accent: Palette.goldHex, fontSize: FontSize.small },
+    );
+
+    createButton(
+      this,
+      GAME_WIDTH / 2,
+      usersY,
+      'BENUTZER-WERKZEUGE',
+      () => this.scene.start(SceneKey.AdminUsers),
       { width: 460, height: 54, accent: Palette.goldHex, fontSize: FontSize.small },
     );
 

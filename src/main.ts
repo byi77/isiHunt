@@ -18,6 +18,7 @@ import { keepCanvasBoundsFresh, waitForViewportToSettle } from '@/core/viewport'
 import { AdminScene } from '@/scenes/AdminScene';
 import { AdminPinScene } from '@/scenes/AdminPinScene';
 import { AdminStatsScene } from '@/scenes/AdminStatsScene';
+import { AdminUsersScene } from '@/scenes/AdminUsersScene';
 import { AccountScene } from '@/scenes/AccountScene';
 import { AchievementsScene } from '@/scenes/AchievementsScene';
 import { BootScene } from '@/scenes/BootScene';
@@ -88,6 +89,7 @@ function createGameConfig(): Phaser.Types.Core.GameConfig {
       AdminScene,
       AdminPinScene,
       AdminStatsScene,
+      AdminUsersScene,
       RulerScene,
     ],
   };
