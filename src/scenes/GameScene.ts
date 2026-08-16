@@ -439,6 +439,7 @@ export class GameScene extends Phaser.Scene {
     const stats = {
       ...this.scoring.toRunStats(this.world.id),
       durationMs: this.totalMs,
+      completedAt: new Date().toISOString(),
     };
 
     // Ein Duell-Durchgang laesst den Spielstand unberuehrt: die Haelfte der

@@ -867,6 +867,7 @@ revoke execute on function public.max_plausible_score(text, integer, integer, js
 -- Authenticated leaderboard calls may only write their own profile row.
 drop function if exists public.submit_best_score(uuid, text, text, integer, integer, integer);
 drop function if exists public.submit_best_score(uuid, text, text, integer, integer, integer, integer, jsonb);
+drop function if exists public.submit_best_score(uuid, text, text, integer, integer, integer, integer, jsonb, timestamptz);
 
 create or replace function public.submit_best_score(
   p_player_id   uuid,
@@ -876,14 +877,22 @@ create or replace function public.submit_best_score(
   p_score       integer,
   p_best_combo  integer,
   p_duration_ms integer,
-  p_collected   jsonb
+  p_collected   jsonb,
+  p_recorded_at timestamptz default now()
 )
 returns boolean
 language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  safe_recorded_at timestamptz := coalesce(p_recorded_at, now());
 begin
+  -- Ein Offline-Lauf darf sein echtes Datum behalten. Zukunftsdaten sind
+  -- dagegen nicht plausibel und werden auf den Serverzeitpunkt begrenzt.
+  if safe_recorded_at > now() + interval '1 day' then
+    safe_recorded_at := now();
+  end if;
   if auth.uid() is not null and p_player_id <> auth.uid() then
     raise exception 'Fremdes Spielerprofil';
   end if;
@@ -903,7 +912,7 @@ begin
   end if;
 
   insert into public.scores (
-    player_id, player_name, world_id, player_level, score, best_combo
+    player_id, player_name, world_id, player_level, score, best_combo, created_at
   )
   values (
     p_player_id,
@@ -911,7 +920,8 @@ begin
     p_world_id,
     greatest(1, least(100, p_player_level)),
     greatest(0, p_score),
-    greatest(0, p_best_combo)
+    greatest(0, p_best_combo),
+    safe_recorded_at
   )
   on conflict (player_id) where (player_id is not null) do update
   set player_name = excluded.player_name,
@@ -928,8 +938,8 @@ begin
 end;
 $$;
 
-revoke execute on function public.submit_best_score(uuid, text, text, integer, integer, integer, integer, jsonb) from public;
-grant execute on function public.submit_best_score(uuid, text, text, integer, integer, integer, integer, jsonb) to anon, authenticated;
+revoke execute on function public.submit_best_score(uuid, text, text, integer, integer, integer, integer, jsonb, timestamptz) from public;
+grant execute on function public.submit_best_score(uuid, text, text, integer, integer, integer, integer, jsonb, timestamptz) to anon, authenticated;
 
 create or replace function public.rename_best_score(
   p_player_id   uuid,

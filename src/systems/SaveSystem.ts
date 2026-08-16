@@ -38,6 +38,7 @@ export function createDefaultSave(): SaveData {
     coins: 0,
     talents: {},
     bestScore: 0,
+    bestScoreRecordedAt: null,
     bestCombo: 0,
     totalScore: 0,
     totalRuns: 0,
@@ -108,6 +109,11 @@ function reconcile(raw: Partial<SaveData>): SaveData {
     pendingDailyCoins: Math.max(0, raw.pendingDailyCoins ?? base.pendingDailyCoins),
     pendingDailyScore: Math.max(0, raw.pendingDailyScore ?? base.pendingDailyScore),
     soundEnabled: raw.soundEnabled ?? base.soundEnabled,
+    bestScoreRecordedAt:
+      typeof raw.bestScoreRecordedAt === 'string' &&
+      Number.isFinite(Date.parse(raw.bestScoreRecordedAt))
+        ? new Date(raw.bestScoreRecordedAt).toISOString()
+        : base.bestScoreRecordedAt,
     collected: { ...base.collected, ...(raw.collected ?? {}) },
     talents: { ...base.talents, ...(raw.talents ?? {}) },
     unlockedAchievements: raw.unlockedAchievements ?? base.unlockedAchievements,

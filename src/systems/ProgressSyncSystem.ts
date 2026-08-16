@@ -97,3 +97,9 @@ export function flush(): Promise<void> {
 export function pendingCount(): number {
   return readOutbox().length;
 }
+
+/** Ob neben dem sichtbaren Spielstand noch lokale Daten zum Upload warten. */
+export function hasPendingData(): boolean {
+  const local = SaveSystem.load();
+  return pendingCount() > 0 || (Boolean(local.pendingDailyKey) && local.pendingDailyCoins > 0);
+}

@@ -112,6 +112,14 @@ describe('applyRun - Statistik', () => {
     expect(SaveSystem.load().lastWorldId).toBe(other.id);
   });
 
+  it('bewahrt den Zeitpunkt eines neuen Bestwerts', () => {
+    const recordTime = '2026-08-16T12:34:56.000Z';
+    Progression.applyRun(createRun({ score: 500, completedAt: recordTime }));
+    Progression.applyRun(createRun({ score: 100, completedAt: '2026-08-17T12:34:56.000Z' }));
+
+    expect(SaveSystem.load().bestScoreRecordedAt).toBe(recordTime);
+  });
+
   it('vergibt Coins für eingesammelte Relikte', () => {
     const result = Progression.applyRun(createRun({ totalCollected: 7 }));
 

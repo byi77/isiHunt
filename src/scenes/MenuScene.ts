@@ -23,6 +23,7 @@ import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
+import * as SyncStatusSystem from '@/systems/SyncStatusSystem';
 import { playerTextureForLevel, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
@@ -42,9 +43,10 @@ export class MenuScene extends Phaser.Scene {
   private worldInputCleanup: (() => void) | null = null;
   private worldListDecorations: Phaser.GameObjects.GameObject[] = [];
   private savePromptObjects: Phaser.GameObjects.GameObject[] = [];
+  private syncPopupObjects: Phaser.GameObjects.GameObject[] = [];
   private saveSyncBusy = false;
   private readonly onlineHandler = (): void => {
-    void this.checkCloudSave();
+    void this.synchronizeData();
   };
 
   constructor() {
@@ -92,8 +94,7 @@ export class MenuScene extends Phaser.Scene {
     this.buildFooter();
 
     void this.showUpdateHintIfAny();
-    void this.checkCloudSave();
-    void CloudSystem.flushPendingLeaderboardScore();
+    void this.synchronizeData();
     window.addEventListener('online', this.onlineHandler);
 
     // Nur mit ?hitboxes in der Adresse - zeigt, was Phaser fuer anfassbar haelt.
@@ -103,7 +104,49 @@ export class MenuScene extends Phaser.Scene {
       this.cleanupWorldList();
       window.removeEventListener('online', this.onlineHandler);
       this.clearSavePrompt();
+      this.hideSyncPopup();
     });
+  }
+
+  /**
+   * Führt beim App-Start alle ausstehenden Uploads gemeinsam aus. Offline
+   * verschwindet der Hinweis sofort; der Profilstatus bleibt dann bewusst auf
+   * „noch nicht aktuell“, bis ein erfolgreicher Abgleich möglich war.
+   */
+  private async synchronizeData(): Promise<void> {
+    if (this.saveSyncBusy || !this.scene.isActive()) return;
+
+    if (!CloudSystem.isAvailable() || SaveSystem.isTestProfileActive()) {
+      SyncStatusSystem.setDataSyncStatus('local-only');
+      return;
+    }
+
+    this.showSyncPopup();
+    if (!navigator.onLine) {
+      SyncStatusSystem.setDataSyncStatus('offline');
+      this.hideSyncPopup();
+      return;
+    }
+
+    SyncStatusSystem.setDataSyncStatus('syncing');
+    try {
+      const saveSynced = await this.checkCloudSave();
+      if (!this.scene.isActive()) return;
+
+      await CloudSystem.flushPendingLeaderboardScore();
+      if (!this.scene.isActive()) return;
+
+      const hasPendingData =
+        ProgressSyncSystem.hasPendingData() ||
+        CloudSystem.hasPendingLeaderboardScore() ||
+        this.savePromptObjects.length > 0;
+      SyncStatusSystem.setDataSyncStatus(saveSynced && !hasPendingData ? 'up-to-date' : 'pending');
+    } catch {
+      this.saveSyncBusy = false;
+      SyncStatusSystem.setDataSyncStatus('pending');
+    } finally {
+      if (this.scene.isActive()) this.hideSyncPopup();
+    }
   }
 
   /**
@@ -111,14 +154,14 @@ export class MenuScene extends Phaser.Scene {
    * unangetastet; bei Rueckkehr des Netzes wird dieselbe Pruefung erneut
    * ausgefuehrt. Ein besserer Cloud-Stand braucht eine sichtbare Entscheidung.
    */
-  private async checkCloudSave(): Promise<void> {
+  private async checkCloudSave(): Promise<boolean> {
     if (
       this.saveSyncBusy ||
       !CloudSystem.isAvailable() ||
       SaveSystem.isTestProfileActive() ||
       !this.scene.isActive()
     )
-      return;
+      return false;
     this.saveSyncBusy = true;
 
     const local = SaveSystem.load();
@@ -147,47 +190,90 @@ export class MenuScene extends Phaser.Scene {
           SaveSystem.adoptRemote(remote.data, local.cloudId ?? AuthSystem.currentUserId()!);
           this.saveSyncBusy = false;
           this.scene.restart();
-          return;
+          return false;
         }
       }
       this.saveSyncBusy = false;
-      return;
+      return profile.ok;
     }
 
     if (!local.cloudId) {
-      await CloudSystem.pushSave();
+      const pushed = await CloudSystem.pushSave();
       this.saveSyncBusy = false;
-      return;
+      return pushed.ok;
     }
 
     const result = await CloudSystem.fetchSave(local.cloudId);
     if (!this.scene.isActive()) {
       this.saveSyncBusy = false;
-      return;
+      return false;
     }
 
     if (!result.ok) {
       // Kein Netz: spaeter bzw. beim naechsten Run erneut versuchen. Der lokale
       // Stand bleibt die ganze Zeit erhalten.
       this.saveSyncBusy = false;
-      return;
+      return false;
     }
 
     if (!result.value) {
       // Die Kennung ist lokal noch vorhanden, der Datensatz wurde aber etwa
       // nach einer Backend-Bereinigung entfernt. Den lokalen Stand neu anlegen.
-      await CloudSystem.pushSave();
+      const pushed = await CloudSystem.pushSave();
       this.saveSyncBusy = false;
-      return;
+      return pushed.ok;
     }
 
     if (CloudSystem.isRemoteAhead(local, result.value)) {
       this.showRemoteSavePrompt(result.value);
+      this.saveSyncBusy = false;
+      return false;
     } else if (CloudSystem.isLocalAhead(local, result.value)) {
-      await CloudSystem.pushSave();
+      const pushed = await CloudSystem.pushSave();
+      this.saveSyncBusy = false;
+      return pushed.ok;
     }
 
     this.saveSyncBusy = false;
+    return true;
+  }
+
+  private showSyncPopup(): void {
+    if (this.syncPopupObjects.length > 0) return;
+    const overlay = this.add
+      .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, Palette.backdrop, 0.48)
+      .setOrigin(0)
+      .setDepth(200);
+    overlay.setInteractive();
+    const panel = createPanel(this, GAME_WIDTH / 2, GAME_HEIGHT / 2, 430, 150, Palette.goldHex, {
+      alpha: 0.96,
+      radius: 22,
+    }).setDepth(201);
+    const title = this.add
+      .text(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2 - 22,
+        'DATENSYNC',
+        textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
+      )
+      .setOrigin(0.5)
+      .setLetterSpacing(3)
+      .setDepth(202);
+    const message = this.add
+      .text(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2 + 29,
+        'BITTE WARTEN',
+        textStyle(FontSize.small, Palette.ink),
+      )
+      .setOrigin(0.5)
+      .setDepth(202);
+    this.syncPopupObjects = [overlay, panel, title, message];
+  }
+
+  private hideSyncPopup(): void {
+    for (const object of this.syncPopupObjects) object.destroy();
+    this.syncPopupObjects = [];
   }
 
   private showRemoteSavePrompt(remote: RemoteSave): void {
@@ -253,7 +339,12 @@ export class MenuScene extends Phaser.Scene {
         this.saveSyncBusy = true;
         void CloudSystem.pushSave().then((result) => {
           this.saveSyncBusy = false;
-          if (result.ok) this.clearSavePrompt();
+          if (result.ok) {
+            this.clearSavePrompt();
+            void this.synchronizeData();
+          } else {
+            SyncStatusSystem.setDataSyncStatus('pending');
+          }
         });
       },
       { width: 430, height: 68, accent: 0x9aa3bd, fontSize: FontSize.tiny },

@@ -269,6 +269,7 @@ export class ResultScene extends Phaser.Scene {
       stats.bestCombo,
       stats.durationMs ?? 0,
       stats.collected,
+      stats.completedAt ?? new Date().toISOString(),
     );
   }
 

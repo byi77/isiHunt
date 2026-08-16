@@ -31,6 +31,16 @@ import {
 
 const ROW_HEIGHT = 72;
 
+function formatRecordDate(value: string): string {
+  const timestamp = Date.parse(value);
+  if (!Number.isFinite(timestamp)) return 'DATUM UNBEKANNT';
+  return new Intl.DateTimeFormat('de-DE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date(timestamp));
+}
+
 export class LeaderboardScene extends Phaser.Scene {
   /**
    * Welt, nach der gefiltert wird - `null` heisst: alle Welten zusammen.
@@ -261,7 +271,12 @@ export class LeaderboardScene extends Phaser.Scene {
           )
           .setOrigin(0, 0.5),
         this.add
-          .text(134, y + 15, 'LEVEL ' + entry.level, textStyle(FontSize.tiny, Palette.inkDim))
+          .text(
+            134,
+            y + 15,
+            `LEVEL ${entry.level} · REKORD ${formatRecordDate(entry.createdAt)}`,
+            textStyle(FontSize.tiny, Palette.inkDim),
+          )
           .setOrigin(0, 0.5),
         this.add
           .text(

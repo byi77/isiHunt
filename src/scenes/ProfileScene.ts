@@ -19,6 +19,7 @@ import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
+import * as SyncStatusSystem from '@/systems/SyncStatusSystem';
 import { playerTextureForLevel, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
@@ -138,6 +139,18 @@ export class ProfileScene extends Phaser.Scene {
         textStyle(FontSize.small, Palette.ink),
       )
       .setOrigin(0.5, 0.5);
+
+    if (!firstStart) {
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          520,
+          SyncStatusSystem.dataSyncStatusLabel(),
+          textStyle(FontSize.tiny, Palette.inkDim, { fontStyle: 'bold' }),
+        )
+        .setOrigin(0.5, 0.5)
+        .setLetterSpacing(1);
+    }
 
     let saveButton: ButtonHandle | null = null;
     const status = this.add

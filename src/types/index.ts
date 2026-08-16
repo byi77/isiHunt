@@ -20,6 +20,8 @@ export interface SaveData {
   coins: number;
   talents: TalentRanks;
   bestScore: number;
+  /** Zeitpunkt, zu dem der aktuelle Bestwert erspielt wurde. */
+  bestScoreRecordedAt: string | null;
   bestCombo: number;
   totalScore: number;
   totalRuns: number;
@@ -69,6 +71,8 @@ export interface RunStats {
   xpGained: number;
   /** Dauer des abgeschlossenen Runs; Challenge-Runs setzen diesen Wert nicht. */
   durationMs?: number;
+  /** Lokaler Zeitpunkt des Run-Endes, auch für einen späteren Offline-Upload. */
+  completedAt?: string;
 }
 
 /**

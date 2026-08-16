@@ -67,6 +67,7 @@ interface PendingLeaderboardScore {
   bestCombo: number;
   durationMs: number;
   collected: Record<string, number>;
+  recordedAt: string;
 }
 
 const PENDING_LEADERBOARD_SCORE_KEY = 'isihunt.pending-leaderboard-score.v1';
@@ -79,7 +80,10 @@ function readPendingLeaderboardScore(): PendingLeaderboardScore | null {
     if (!value.playerId || !value.playerName || !value.worldId || !Number.isFinite(value.score)) {
       return null;
     }
-    return value as PendingLeaderboardScore;
+    return {
+      ...value,
+      recordedAt: normalizedRecordTimestamp(value.recordedAt ?? new Date().toISOString()),
+    } as PendingLeaderboardScore;
   } catch {
     return null;
   }
@@ -101,6 +105,11 @@ function clearPendingLeaderboardScore(): void {
   } catch {
     // Siehe savePendingLeaderboardScore.
   }
+}
+
+/** Ob ein offline erspielter Ranglisten-Bestwert noch hochgeladen werden muss. */
+export function hasPendingLeaderboardScore(): boolean {
+  return readPendingLeaderboardScore() !== null;
 }
 
 /** Kurzfassung eines Spielstands - genug, um zwei Staende zu unterscheiden. */
@@ -302,6 +311,7 @@ export async function submitScore(
   bestCombo: number,
   durationMs: number,
   collected: Record<string, number>,
+  recordedAt: string,
 ): Promise<CloudResult<true>> {
   const supabase = getClient();
   if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
@@ -310,23 +320,40 @@ export async function submitScore(
   if (!name) return { ok: false, error: 'Kein Name angegeben' };
   if (!playerId) return { ok: false, error: 'Kein Spielerprofil angegeben' };
 
+  const scoreArgs = {
+    p_player_id: playerId,
+    p_player_name: name,
+    p_world_id: worldId,
+    p_player_level: Math.max(1, Math.round(level)),
+    p_score: Math.max(0, Math.round(score)),
+    p_best_combo: Math.max(0, Math.round(bestCombo)),
+    p_duration_ms: Math.max(0, Math.round(durationMs)),
+    p_collected: collected,
+  };
   const result = await withTimeout(
     supabase.rpc('submit_best_score', {
-      p_player_id: playerId,
-      p_player_name: name,
-      p_world_id: worldId,
-      p_player_level: Math.max(1, Math.round(level)),
-      p_score: Math.max(0, Math.round(score)),
-      p_best_combo: Math.max(0, Math.round(bestCombo)),
-      p_duration_ms: Math.max(0, Math.round(durationMs)),
-      p_collected: collected,
+      ...scoreArgs,
+      p_recorded_at: normalizedRecordTimestamp(recordedAt),
     }),
     'Bestwert eintragen',
   );
 
   if (!result.ok) return result;
-  if (result.value.error) return { ok: false, error: result.value.error.message };
+  if (!result.value.error) return { ok: true, value: true };
+  if (!needsLegacyLeaderboardRpc(result.value.error.message)) {
+    return { ok: false, error: result.value.error.message };
+  }
 
+  // Die App darf zwischen Web-Release und SQL-Migration nicht jeden neuen
+  // Bestwert verlieren. Der Rückfall speichert dann noch das Upload-Datum;
+  // nach Ausführen der Migration wird automatisch der echte Laufzeitpunkt
+  // übertragen.
+  const legacyResult = await withTimeout(
+    supabase.rpc('submit_best_score', scoreArgs),
+    'Bestwert eintragen',
+  );
+  if (!legacyResult.ok) return legacyResult;
+  if (legacyResult.value.error) return { ok: false, error: legacyResult.value.error.message };
   return { ok: true, value: true };
 }
 
@@ -344,6 +371,7 @@ export async function submitScoreSafely(
   bestCombo: number,
   durationMs: number,
   collected: Record<string, number>,
+  recordedAt: string,
 ): Promise<CloudResult<true>> {
   const pending: PendingLeaderboardScore = {
     playerId,
@@ -354,6 +382,7 @@ export async function submitScoreSafely(
     bestCombo,
     durationMs,
     collected,
+    recordedAt: normalizedRecordTimestamp(recordedAt),
   };
   try {
     const result = await submitScore(
@@ -365,6 +394,7 @@ export async function submitScoreSafely(
       bestCombo,
       durationMs,
       collected,
+      pending.recordedAt,
     );
     if (result.ok) {
       const existing = readPendingLeaderboardScore();
@@ -394,8 +424,22 @@ export async function flushPendingLeaderboardScore(): Promise<void> {
     pending.bestCombo,
     pending.durationMs,
     pending.collected,
+    pending.recordedAt,
   );
   if (result.ok) clearPendingLeaderboardScore();
+}
+
+/** Der Run-Zeitpunkt muss beim Offline-Upload weitergereicht werden. */
+function normalizedRecordTimestamp(value: string): string {
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : new Date().toISOString();
+}
+
+function needsLegacyLeaderboardRpc(message: string): boolean {
+  return (
+    /submit_best_score|p_recorded_at/i.test(message) &&
+    /function|schema cache|parameter/i.test(message)
+  );
 }
 
 /** Aktualisiert den Anzeigenamen des bereits vorhandenen eigenen Bestwerts. */

@@ -58,6 +58,7 @@ export function applyRun(run: RunStats): ProgressionResult {
   const before = SaveSystem.load();
   const levelBefore = before.level;
   const isNewBestScore = run.score > before.bestScore;
+  const recordTimestamp = normalizedTimestamp(run.completedAt);
   const talentPointsGained = 0;
   let coinsGained = 0;
   const runCoins = COINS_PER_RUN + run.totalCollected * COINS_PER_COLLECTED_RELIC;
@@ -68,6 +69,7 @@ export function applyRun(run: RunStats): ProgressionResult {
     data.totalScore += run.score;
     data.totalPlayTimeMs += Math.max(0, run.durationMs ?? 0);
     data.bestScore = Math.max(data.bestScore, run.score);
+    if (isNewBestScore) data.bestScoreRecordedAt = recordTimestamp;
     data.bestCombo = Math.max(data.bestCombo, run.bestCombo);
     data.lastWorldId = run.worldId;
     data.coins += runCoins;
@@ -125,6 +127,12 @@ export function applyRun(run: RunStats): ProgressionResult {
     unlockedAchievementIds,
     isNewBestScore,
   };
+}
+
+/** Bewahrt einen vom Run stammenden Zeitstempel, ohne kaputte Altwerte zu speichern. */
+function normalizedTimestamp(value: string | undefined): string {
+  const timestamp = value ? Date.parse(value) : Number.NaN;
+  return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : new Date().toISOString();
 }
 
 /** Kauft genau einen Rang lokal; der Talentbildschirm validiert nicht blind. */
