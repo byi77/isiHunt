@@ -50,7 +50,9 @@ export class SettingsScene extends Phaser.Scene {
 
     // Karten immer direkt unter dem letzten Abschnitt anfügen. Der Helfer
     // hält den kleinen Abstand zwischen Profil, Ton und Impressum konstant.
-    const sections = createSectionStack(140);
+    // Die Scroll-Kopfzeile liegt außerhalb des Canvas. 36 px reichen als
+    // Luft darunter; ein größerer Startwert erzeugt sichtbar unnötigen Raum.
+    const sections = createSectionStack(36);
     const profileY = sections.next(330);
     const soundY = sections.next(180);
     const legalY = sections.next(350);
