@@ -38,6 +38,7 @@ import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import {
   createBackButton,
+  createBackStatusText,
   createButton,
   createPanel,
   createVignette,
@@ -86,11 +87,7 @@ export class AdminScene extends Phaser.Scene {
     void this.buildLayoutPanel();
     this.buildActions();
 
-    this.statusText = this.add
-      .text(GAME_WIDTH / 2, 1110, '', textStyle(FontSize.tiny, Palette.inkDim))
-      .setOrigin(0.5)
-      .setWordWrapWidth(GAME_WIDTH - 120)
-      .setAlign('center');
+    this.statusText = createBackStatusText(this);
 
     void this.lookForUpdate();
   }
@@ -166,27 +163,17 @@ export class AdminScene extends Phaser.Scene {
         textStyle(FontSize.small, Palette.inkDim),
       )
       .setOrigin(0.5);
-
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        y + 46,
-        'Version wird gesucht ...',
-        textStyle(FontSize.tiny, Palette.inkDim),
-      )
-      .setOrigin(0.5)
-      .setName('updateLine');
   }
 
   private buildActions(): void {
-    createButton(this, GAME_WIDTH / 2, 770, 'UPDATE PRÜFEN', () => void this.checkUpdateNow(), {
+    createButton(this, GAME_WIDTH / 2, 800, 'UPDATE PRÜFEN', () => void this.checkUpdateNow(), {
       width: 460,
       height: 58,
       accent: 0x9aa3bd,
       fontSize: FontSize.small,
     });
 
-    createButton(this, GAME_WIDTH / 2, 840, 'NEU LADEN ERZWINGEN', () => forceReload(), {
+    createButton(this, GAME_WIDTH / 2, 875, 'NEU LADEN ERZWINGEN', () => forceReload(), {
       width: 460,
       height: 62,
       accent: Palette.goldHex,
@@ -196,7 +183,7 @@ export class AdminScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      915,
+      950,
       'SPIELSTAND PRÜFEN & SPEICHERN',
       () => this.repairSave(),
       {
@@ -210,7 +197,7 @@ export class AdminScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      985,
+      1025,
       'ONLINE-STATISTIK',
       () => {
         this.scene.start(SceneKey.AdminStats);
@@ -276,7 +263,7 @@ export class AdminScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      1080,
+      1100,
       'PIXEL-LINEAL ANZEIGEN',
       () => {
         this.scene.start(SceneKey.Menu);
@@ -342,17 +329,12 @@ export class AdminScene extends Phaser.Scene {
     const info: UpdateInfo | null = await checkForUpdate();
     if (!this.scene.isActive()) return;
 
-    const line = this.children.getByName('updateLine');
-    if (!(line instanceof Phaser.GameObjects.Text)) return;
-
     if (!info) {
-      line.setText('Aktuellster Stand.').setColor(Palette.success);
       this.setStatus('Kein neuer Stand verfügbar.', Palette.success);
       return;
     }
 
-    line.setText(`Neu verfügbar: v${info.available}`).setColor(Palette.gold);
-    this.setStatus('Tippe "Neu laden erzwingen", um sie zu holen.', Palette.gold);
+    this.setStatus(`Update v${info.available}: Neu laden erzwingen.`, Palette.gold);
   }
 
   private setStatus(message: string, color: string): void {

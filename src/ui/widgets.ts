@@ -329,6 +329,28 @@ export const BACK_BUTTON_BOTTOM_OFFSET = 84;
 export const BACK_BUTTON_RESERVED_HEIGHT = 140;
 export const BACK_BUTTON_CONTENT_BOTTOM = GAME_HEIGHT - BACK_BUTTON_RESERVED_HEIGHT;
 
+/**
+ * Einheitlicher Platz für kurzlebige Rückmeldungen auf Unterseiten.
+ *
+ * Die Meldung teilt sich die feste Fußzone mit dem Zurück-Knopf, bleibt aber
+ * rechts davon. Damit verschiebt eine Lade- oder Fehlermeldung nie den
+ * Seiteninhalt und kann auch nicht von einem Menü überdeckt werden.
+ */
+export function createBackStatusText(scene: Phaser.Scene, initial = ''): Phaser.GameObjects.Text {
+  return scene.add
+    .text(
+      GAME_WIDTH - 54,
+      GAME_HEIGHT - BACK_BUTTON_BOTTOM_OFFSET,
+      initial,
+      textStyle(FontSize.tiny, Palette.inkDim),
+    )
+    .setOrigin(1, 0.5)
+    .setWordWrapWidth(GAME_WIDTH - 300)
+    .setAlign('right')
+    .setDepth(Depth.Overlay + 2)
+    .setScrollFactor(0);
+}
+
 export interface BarHandle {
   container: Phaser.GameObjects.Container;
   /** @param ratio 0 bis 1 */

@@ -12,6 +12,7 @@ import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   createBackButton,
+  createBackStatusText,
   createButton,
   createDriftLayers,
   createPanel,
@@ -72,16 +73,7 @@ export class AdminStatsScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
 
-    this.statusText = this.add
-      .text(
-        GAME_WIDTH / 2,
-        540,
-        'Statistik wird geladen …',
-        textStyle(FontSize.small, Palette.inkDim),
-      )
-      .setOrigin(0.5)
-      .setAlign('center')
-      .setWordWrapWidth(GAME_WIDTH - 120);
+    this.statusText = createBackStatusText(this, 'Statistik wird geladen …');
 
     createButton(
       this,

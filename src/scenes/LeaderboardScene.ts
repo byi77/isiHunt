@@ -21,6 +21,7 @@ import { planetTextureForVariant, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   createBackButton,
+  createBackStatusText,
   createDriftLayers,
   createPanel,
   createVignette,
@@ -87,11 +88,7 @@ export class LeaderboardScene extends Phaser.Scene {
 
     this.buildWorldTabs();
 
-    this.statusText = this.add
-      .text(GAME_WIDTH / 2, LIST_TOP + 120, '', textStyle(FontSize.small, Palette.inkDim))
-      .setOrigin(0.5)
-      .setWordWrapWidth(GAME_WIDTH - 140)
-      .setAlign('center');
+    this.statusText = createBackStatusText(this);
 
     void this.loadList();
   }

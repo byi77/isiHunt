@@ -48,33 +48,28 @@ export class SettingsScene extends Phaser.Scene {
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
 
     this.add
-      .text(GAME_WIDTH / 2, 140, 'EINSTELLUNGEN', textStyle(FontSize.heading, Palette.gold))
-      .setOrigin(0.5)
-      .setLetterSpacing(4);
-
-    this.add
       .text(
         GAME_WIDTH / 2,
-        190,
+        150,
         'Dein Spiel und dein Profil',
         textStyle(FontSize.small, Palette.inkDim),
       )
       .setOrigin(0.5);
 
-    createPanel(this, GAME_WIDTH / 2, 390, GAME_WIDTH - 120, 330, world.accent, {
+    createPanel(this, GAME_WIDTH / 2, 360, GAME_WIDTH - 120, 330, world.accent, {
       alpha: 0.58,
       radius: 20,
     });
 
     this.add
-      .text(GAME_WIDTH / 2, 275, 'PROFIL & SYNCHRONISATION', textStyle(FontSize.body, Palette.gold))
+      .text(GAME_WIDTH / 2, 245, 'PROFIL & SYNCHRONISATION', textStyle(FontSize.body, Palette.gold))
       .setOrigin(0.5)
       .setLetterSpacing(2);
 
     this.add
       .text(
         GAME_WIDTH / 2,
-        340,
+        310,
         'Melde dich auf iPhone und iPad mit demselben Profil an.\nOhne Login bleibt dein Spiel vollständig offline nutzbar.',
         textStyle(FontSize.small, Palette.ink),
       )
@@ -84,7 +79,7 @@ export class SettingsScene extends Phaser.Scene {
     const accountButton = createButton(
       this,
       GAME_WIDTH / 2,
-      465,
+      435,
       AuthSystem.isSignedIn() ? 'PROFIL ÖFFNEN' : 'ANMELDEN / PROFIL ANLEGEN',
       () => this.scene.start(SceneKey.Account),
       { width: 460, height: 76, accent: world.accent, fontSize: FontSize.small },
@@ -95,7 +90,7 @@ export class SettingsScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          530,
+          500,
           'Das Online-Profil ist gerade nicht verfügbar.',
           textStyle(FontSize.tiny, Palette.inkDim),
         )

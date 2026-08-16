@@ -16,6 +16,7 @@ import type { TextInputHandle } from '@/ui/textInput';
 import { createTextInput } from '@/ui/textInput';
 import {
   createBackButton,
+  createBackStatusText,
   createButton,
   createDriftLayers,
   createPanel,
@@ -84,17 +85,20 @@ export class AccountScene extends Phaser.Scene {
       radius: 22,
     });
 
-    const feedbackY = GAME_HEIGHT - 205;
-    createPanel(this, GAME_WIDTH / 2, feedbackY, GAME_WIDTH - 160, 86, world.accent, {
-      alpha: 0.72,
-      radius: 16,
-    });
-
-    this.statusText = this.add
-      .text(GAME_WIDTH / 2, feedbackY, '', textStyle(FontSize.small, Palette.ink))
-      .setOrigin(0.5)
-      .setWordWrapWidth(GAME_WIDTH - 190)
-      .setAlign('center');
+    if (this.firstStart) {
+      const feedbackY = GAME_HEIGHT - 205;
+      createPanel(this, GAME_WIDTH / 2, feedbackY, GAME_WIDTH - 160, 86, world.accent, {
+        alpha: 0.72,
+        radius: 16,
+      });
+      this.statusText = this.add
+        .text(GAME_WIDTH / 2, feedbackY, '', textStyle(FontSize.small, Palette.ink))
+        .setOrigin(0.5)
+        .setWordWrapWidth(GAME_WIDTH - 190)
+        .setAlign('center');
+    } else {
+      this.statusText = createBackStatusText(this);
+    }
 
     const signedInBeforeRefresh = AuthSystem.isSignedIn();
     this.buildCurrentState(world.accent);

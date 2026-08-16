@@ -35,6 +35,7 @@ import type { TextInputHandle } from '@/ui/textInput';
 import { createTextInput } from '@/ui/textInput';
 import {
   createBackButton,
+  createBackStatusText,
   createButton,
   createDriftLayers,
   createPanel,
@@ -101,11 +102,7 @@ export class SyncScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
 
-    this.statusText = this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 190, '', textStyle(FontSize.tiny, Palette.inkDim))
-      .setOrigin(0.5)
-      .setWordWrapWidth(GAME_WIDTH - 120)
-      .setAlign('center');
+    this.statusText = createBackStatusText(this);
 
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
 
