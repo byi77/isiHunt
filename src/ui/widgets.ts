@@ -351,6 +351,32 @@ export function createBackStatusText(scene: Phaser.Scene, initial = ''): Phaser.
     .setScrollFactor(0);
 }
 
+/** Vertikaler Abschnitts-Stapel für Unterseiten mit mehreren Karten. */
+export interface SectionStack {
+  /** Reserviert die nächste Karte und gibt ihre vertikale Mitte zurück. */
+  next(height: number): number;
+}
+
+/**
+ * Ordnet Karten lückenlos in Lesereihenfolge an.
+ *
+ * Neue Abschnitte werden ausschließlich über `next` angehängt. So bleibt
+ * zwischen zwei Karten überall derselbe leichte Abstand, ohne dass einzelne
+ * Y-Werte später auseinanderlaufen können. Für Raster und frei platzierte
+ * Spielelemente ist dieser Helfer bewusst nicht gedacht.
+ */
+export function createSectionStack(firstTop: number, gap = 35): SectionStack {
+  let nextTop = firstTop;
+
+  return {
+    next(height: number): number {
+      const center = nextTop + height / 2;
+      nextTop += height + gap;
+      return center;
+    },
+  };
+}
+
 export interface BarHandle {
   container: Phaser.GameObjects.Container;
   /** @param ratio 0 bis 1 */

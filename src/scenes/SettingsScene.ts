@@ -21,6 +21,7 @@ import {
   createButton,
   createDriftLayers,
   createPanel,
+  createSectionStack,
   createVignette,
   createWorldBackdrop,
 } from '@/ui/widgets';
@@ -47,29 +48,32 @@ export class SettingsScene extends Phaser.Scene {
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
 
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        150,
-        'Dein Spiel und dein Profil',
-        textStyle(FontSize.small, Palette.inkDim),
-      )
-      .setOrigin(0.5);
+    // Karten immer direkt unter dem letzten Abschnitt anfügen. Der Helfer
+    // hält den kleinen Abstand zwischen Profil, Ton und Impressum konstant.
+    const sections = createSectionStack(140);
+    const profileY = sections.next(330);
+    const soundY = sections.next(180);
+    const legalY = sections.next(350);
 
-    createPanel(this, GAME_WIDTH / 2, 360, GAME_WIDTH - 120, 330, world.accent, {
+    createPanel(this, GAME_WIDTH / 2, profileY, GAME_WIDTH - 120, 330, world.accent, {
       alpha: 0.58,
       radius: 20,
     });
 
     this.add
-      .text(GAME_WIDTH / 2, 245, 'PROFIL & SYNCHRONISATION', textStyle(FontSize.body, Palette.gold))
+      .text(
+        GAME_WIDTH / 2,
+        profileY - 115,
+        'PROFIL & SYNCHRONISATION',
+        textStyle(FontSize.body, Palette.gold),
+      )
       .setOrigin(0.5)
       .setLetterSpacing(2);
 
     this.add
       .text(
         GAME_WIDTH / 2,
-        310,
+        profileY - 50,
         'Melde dich auf iPhone und iPad mit demselben Profil an.\nOhne Login bleibt dein Spiel vollständig offline nutzbar.',
         textStyle(FontSize.small, Palette.ink),
       )
@@ -79,7 +83,7 @@ export class SettingsScene extends Phaser.Scene {
     const accountButton = createButton(
       this,
       GAME_WIDTH / 2,
-      435,
+      profileY + 75,
       AuthSystem.isSignedIn() ? 'PROFIL ÖFFNEN' : 'ANMELDEN / PROFIL ANLEGEN',
       () => this.scene.start(SceneKey.Account),
       { width: 460, height: 76, accent: world.accent, fontSize: FontSize.small },
@@ -90,7 +94,7 @@ export class SettingsScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          500,
+          profileY + 140,
           'Das Online-Profil ist gerade nicht verfügbar.',
           textStyle(FontSize.tiny, Palette.inkDim),
         )
@@ -98,20 +102,20 @@ export class SettingsScene extends Phaser.Scene {
         .setAlign('center');
     }
 
-    createPanel(this, GAME_WIDTH / 2, 760, GAME_WIDTH - 120, 180, world.accent, {
+    createPanel(this, GAME_WIDTH / 2, soundY, GAME_WIDTH - 120, 180, world.accent, {
       alpha: 0.5,
       radius: 20,
     });
 
     this.add
-      .text(GAME_WIDTH / 2, 700, 'TON', textStyle(FontSize.body, Palette.gold))
+      .text(GAME_WIDTH / 2, soundY - 60, 'TON', textStyle(FontSize.body, Palette.gold))
       .setOrigin(0.5)
       .setLetterSpacing(3);
 
     const soundButton = createButton(
       this,
       GAME_WIDTH / 2,
-      770,
+      soundY + 10,
       SoundSystem.isEnabled() ? 'TON: AN' : 'TON: AUS',
       () => {
         const enabled = !SoundSystem.isEnabled();
@@ -121,20 +125,20 @@ export class SettingsScene extends Phaser.Scene {
       { width: 360, height: 70, accent: world.accent, fontSize: FontSize.body },
     );
 
-    createPanel(this, GAME_WIDTH / 2, 985, GAME_WIDTH - 120, 240, world.accent, {
+    createPanel(this, GAME_WIDTH / 2, legalY, GAME_WIDTH - 120, 350, world.accent, {
       alpha: 0.5,
       radius: 20,
     });
 
     this.add
-      .text(GAME_WIDTH / 2, 900, 'IMPRESSUM', textStyle(FontSize.body, Palette.gold))
+      .text(GAME_WIDTH / 2, legalY - 125, 'IMPRESSUM', textStyle(FontSize.body, Palette.gold))
       .setOrigin(0.5)
       .setLetterSpacing(3);
 
     this.add
       .text(
         GAME_WIDTH / 2,
-        942,
+        legalY - 70,
         'PROGRAMMIERT VON  YAVUZ ISIK',
         textStyle(FontSize.small, Palette.ink, { fontStyle: 'bold' }),
       )
@@ -143,7 +147,7 @@ export class SettingsScene extends Phaser.Scene {
     this.add
       .text(
         GAME_WIDTH / 2,
-        1025,
+        legalY + 45,
         'BESONDERER DANK AN EMRE UND SIMAY\n' +
           'Für eure aussergewöhnliche Unterstützung bei der Planung,\n' +
           'mit Vorschlägen und Ideen, beim Testen und Bugfixen.\n' +
