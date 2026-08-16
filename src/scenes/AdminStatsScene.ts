@@ -99,7 +99,7 @@ export class AdminStatsScene extends Phaser.Scene {
     );
 
     void this.loadDashboard();
-    enableVerticalScroll(this, 1510, [backdrop, vignette, title, subtitle, back.container]);
+    enableVerticalScroll(this, 1600, [backdrop, vignette, title, subtitle, back.container]);
   }
 
   private async loadDashboard(): Promise<void> {

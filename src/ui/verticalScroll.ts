@@ -35,6 +35,20 @@ export function enableVerticalScroll(
     .setDepth(Depth.Overlay);
   protectedZone.setInteractive();
 
+  const protectedTop = GAME_HEIGHT - 140;
+  const updateButtonVisibility = (): void => {
+    for (const child of scene.children.list) {
+      if (!(child instanceof Phaser.GameObjects.Container)) continue;
+      if (!child.input || child.scrollFactorY === 0 || child.depth > Depth.UI) continue;
+
+      const halfHeight = Math.max(child.displayHeight, child.height, 60) / 2;
+      const screenY = child.y - camera.scrollY;
+      const overlapsProtectedZone =
+        screenY + halfHeight > protectedTop && screenY - halfHeight < GAME_HEIGHT;
+      child.setVisible(!overlapsProtectedZone);
+    }
+  };
+
   const trackTop = 230;
   const trackHeight = GAME_HEIGHT - 390;
   const track = scene.add
@@ -55,6 +69,7 @@ export function enableVerticalScroll(
   const setScroll = (scrollY: number): void => {
     camera.setScroll(0, Phaser.Math.Clamp(scrollY, 0, maxScroll));
     updateThumb();
+    updateButtonVisibility();
   };
 
   let dragging = false;
@@ -82,6 +97,8 @@ export function enableVerticalScroll(
   const onUp = (): void => {
     dragging = false;
   };
+
+  updateButtonVisibility();
 
   scene.input.on('wheel', onWheel);
   scene.input.on('pointerdown', onDown);

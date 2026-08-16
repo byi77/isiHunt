@@ -402,7 +402,18 @@ begin
           coalesce((progress.data->>'coins')::bigint, 0)
             + coalesce((progress.data->>'coinsSpent')::bigint, 0)
         ) as total_coins_earned,
-        coalesce((progress.data->>'coins')::bigint, 0) as current_coins,
+        -- Nicht jedes historische Cloud-Profil besitzt bereits den aktuellen
+        -- `coins`-Wert. Der verfuegbare Bestand laesst sich dann verlaesslich
+        -- aus allen verdienten minus allen ausgegebenen Coins ableiten.
+        greatest(
+          coalesce((progress.data->>'coins')::bigint, 0),
+          greatest(
+            coalesce((progress.data->>'totalCoinsEarned')::bigint, 0),
+            coalesce((progress.data->>'coins')::bigint, 0)
+              + coalesce((progress.data->>'coinsSpent')::bigint, 0)
+          ) - coalesce((progress.data->>'coinsSpent')::bigint, 0),
+          0
+        ) as current_coins,
         coalesce((progress.data->>'totalDailyRuns')::bigint, 0) as total_daily_runs,
         coalesce(progress.total_xp, 0) as total_xp,
         coalesce((progress.data->>'bestScore')::bigint, 0) as best_score,
