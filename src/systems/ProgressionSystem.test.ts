@@ -123,7 +123,7 @@ describe('applyRun - Statistik', () => {
   it('vergibt Coins für eingesammelte Relikte', () => {
     const result = Progression.applyRun(createRun({ totalCollected: 7 }));
 
-    expect(result.coinsGained).toBeGreaterThanOrEqual(7);
+    expect(result.coinsGained).toBeGreaterThanOrEqual(20);
     expect(SaveSystem.load().coins).toBe(result.coinsGained);
   });
 });
@@ -315,11 +315,11 @@ describe('Talentkäufe', () => {
     expect(Progression.purchaseTalent('reach')).not.toBeNull();
     expect(Progression.purchaseTalent('reach')).not.toBeNull();
     expect(SaveSystem.load().talents.reach).toBe(2);
-    expect(SaveSystem.load().coins).toBe(475);
+    expect(SaveSystem.load().coins).toBe(800);
 
     expect(Progression.resetTalents()).not.toBeNull();
     expect(SaveSystem.load().talents.reach).toBeUndefined();
-    expect(SaveSystem.load().coins).toBe(175);
+    expect(SaveSystem.load().coins).toBe(600);
   });
 
   it('verweigert Käufe ohne ausreichende Coins', () => {

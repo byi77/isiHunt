@@ -5,6 +5,7 @@ import { describe, expect, it } from 'vitest';
 import {
   COINS_PER_RUN,
   DAILY_COMPLETION_BONUS_COINS,
+  DAILY_LOGIN_BONUS_COINS,
   TALENT_RESET_COST,
 } from '@/config/GameConfig';
 import { talentCost } from '@/config/talents';
@@ -20,17 +21,19 @@ describe('Phase-5-Balance', () => {
       expect(WORLDS[index]!.difficultyScale).toBeGreaterThanOrEqual(
         WORLDS[index - 1]!.difficultyScale,
       );
-      expect(WORLDS[index]!.rewardMultiplier).toBeGreaterThanOrEqual(
-        WORLDS[index - 1]!.rewardMultiplier,
+      expect(WORLDS[index]!.scoreMultiplier).toBeGreaterThanOrEqual(
+        WORLDS[index - 1]!.scoreMultiplier,
       );
+      expect(WORLDS[index]!.xpMultiplier).toBeGreaterThanOrEqual(WORLDS[index - 1]!.xpMultiplier);
     }
   });
 
   it('haelt die Coin-Ziele der aktuellen Economy fest', () => {
-    expect(COINS_PER_RUN).toBe(25);
-    expect(DAILY_COMPLETION_BONUS_COINS).toBe(400);
-    expect(talentCost(0)).toBe(400);
-    expect(talentCost(1)).toBe(525);
-    expect(TALENT_RESET_COST).toBe(300);
+    expect(COINS_PER_RUN).toBe(20);
+    expect(DAILY_LOGIN_BONUS_COINS).toBe(25);
+    expect(DAILY_COMPLETION_BONUS_COINS).toBe(90);
+    expect(talentCost(0)).toBe(250);
+    expect(talentCost(1)).toBe(350);
+    expect(TALENT_RESET_COST).toBe(200);
   });
 });

@@ -17,7 +17,7 @@ import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import type { BarHandle } from '@/ui/widgets';
-import { createBar, createButton, createPanel } from '@/ui/widgets';
+import { burst, createBar, createButton, createPanel } from '@/ui/widgets';
 import type { RunMode } from '@/types';
 
 export interface HudSceneData {
@@ -33,6 +33,7 @@ export interface HudSceneData {
 export class HudScene extends Phaser.Scene {
   private scoreText!: Phaser.GameObjects.Text;
   private comboText!: Phaser.GameObjects.Text;
+  private multiplierBurstText!: Phaser.GameObjects.Text;
   private timerText!: Phaser.GameObjects.Text;
   private worldText!: Phaser.GameObjects.Text;
   private targetText: Phaser.GameObjects.Text | null = null;
@@ -41,6 +42,7 @@ export class HudScene extends Phaser.Scene {
   private scoreToBeat: number | null = null;
   private hasOvertaken = false;
   private mode: RunMode = 'solo';
+  private lastComboMultiplier = 1;
   /** Alle Teile des Pause-Bildschirms - zusammen ein- und ausgeblendet. */
   private pauseOverlay: Phaser.GameObjects.GameObject[] = [];
 
@@ -54,6 +56,7 @@ export class HudScene extends Phaser.Scene {
     this.scoreToBeat = data.scoreToBeat ?? null;
     this.hasOvertaken = false;
     this.mode = data.mode ?? 'solo';
+    this.lastComboMultiplier = 1;
     this.pauseOverlay = [];
 
     // Dunkle Kappe hinter der Kopfzeile: der Punktestand muss auch dann lesbar
@@ -88,6 +91,17 @@ export class HudScene extends Phaser.Scene {
         textStyle(FontSize.body, toCss(this.accent), { fontStyle: 'bold' }),
       )
       .setOrigin(0.5, 0);
+
+    this.multiplierBurstText = this.add
+      .text(
+        GAME_WIDTH / 2,
+        250,
+        '',
+        textStyle(FontSize.title, toCss(this.accent), { fontStyle: 'bold' }),
+      )
+      .setOrigin(0.5)
+      .setDepth(Depth.Overlay)
+      .setAlpha(0);
 
     this.timerBar = createBar(this, 60, 24, GAME_WIDTH - 120, 8, this.accent);
     this.timerBar.setRatio(1);
@@ -295,13 +309,39 @@ export class HudScene extends Phaser.Scene {
   }): void => {
     if (combo < 2) {
       this.comboText.setText('');
+      this.lastComboMultiplier = 1;
       return;
     }
 
-    this.comboText.setText(`${combo} gleiche in Folge   x${multiplier}`);
+    this.comboText.setText(`${combo} FÄNGE IN FOLGE`);
     this.comboText.setScale(1.2);
     this.tweens.add({ targets: this.comboText, scale: 1, duration: 200, ease: 'Back.Out' });
+
+    if (multiplier <= this.lastComboMultiplier) return;
+    this.lastComboMultiplier = multiplier;
+    this.showMultiplierBurst(multiplier);
   };
+
+  private showMultiplierBurst(multiplier: number): void {
+    const label = `×${multiplier.toLocaleString('de-DE', { maximumFractionDigits: 2 })}`;
+    this.tweens.killTweensOf(this.multiplierBurstText);
+    this.multiplierBurstText
+      .setText(label)
+      .setPosition(GAME_WIDTH / 2, 250)
+      .setScale(0.45)
+      .setAlpha(0);
+    burst(this, GAME_WIDTH / 2, 250, this.accent, 28);
+    this.tweens.add({
+      targets: this.multiplierBurstText,
+      alpha: { from: 0, to: 1 },
+      scale: { from: 0.45, to: 1.25 },
+      duration: 210,
+      ease: 'Back.Out',
+      yoyo: true,
+      hold: 420,
+      onComplete: () => this.multiplierBurstText.setAlpha(0),
+    });
+  }
 
   private readonly onTimer = ({
     remainingMs,

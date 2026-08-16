@@ -31,6 +31,8 @@ export interface SaveData {
   totalCoinsEarned: number;
   /** Alle für Talente und Resets ausgegebenen Coins. */
   coinsSpent: number;
+  /** Serverbestätigter Kalendertag des zuletzt abgeholten Login-Bonus. */
+  lastLoginBonusKey: string | null;
   /** Lokaler Schlüssel des zuletzt abgeschlossenen Tageslaufs. */
   lastDailyKey: string | null;
   dailyBestScore: number;
@@ -107,6 +109,8 @@ export interface ChallengeState {
   dailyKey?: string;
   dailyCompleted?: boolean;
   dailyRewardCoins?: number;
+  dailyRewardXp?: number;
+  dailyPerformanceTier?: number;
 }
 
 /** Was ein Run an Progression ausgeloest hat - fuer den Ergebnisbildschirm. */

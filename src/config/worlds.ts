@@ -29,8 +29,10 @@ export interface WorldDef {
   readonly obstacleMode: 'none' | 'brake' | 'penalty';
   /** Erschwernis fuer Spawn-Dichte und Sichtfenster. */
   readonly difficultyScale: number;
-  /** Bonus auf Punkte und XP als Gegenleistung fuer die Erschwernis. */
-  readonly rewardMultiplier: number;
+  /** Punktebonus als Gegenleistung fuer die Erschwernis. */
+  readonly scoreMultiplier: number;
+  /** XP wachsen flacher als Punkte, damit das Endgame nicht davonrast. */
+  readonly xpMultiplier: number;
 }
 
 export const WORLDS: readonly WorldDef[] = [
@@ -47,7 +49,8 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'none',
     obstacleMode: 'none',
     difficultyScale: 1,
-    rewardMultiplier: 1.03,
+    scoreMultiplier: 1,
+    xpMultiplier: 1,
   },
   {
     id: 'frostzinne',
@@ -62,7 +65,8 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'inertia',
     obstacleMode: 'brake',
     difficultyScale: 1,
-    rewardMultiplier: 1.06,
+    scoreMultiplier: 1.04,
+    xpMultiplier: 1.02,
   },
   {
     id: 'glutmark',
@@ -77,7 +81,8 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'short_lived',
     obstacleMode: 'brake',
     difficultyScale: 1,
-    rewardMultiplier: 1.1,
+    scoreMultiplier: 1.08,
+    xpMultiplier: 1.04,
   },
   {
     id: '__LEERENBLÜTE__',
@@ -92,7 +97,8 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'blink',
     obstacleMode: 'penalty',
     difficultyScale: 1,
-    rewardMultiplier: 1.15,
+    scoreMultiplier: 1.12,
+    xpMultiplier: 1.06,
   },
   {
     id: 'sonnenhort',
@@ -107,7 +113,8 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'rare_bonus',
     obstacleMode: 'penalty',
     difficultyScale: 1,
-    rewardMultiplier: 1.18,
+    scoreMultiplier: 1.16,
+    xpMultiplier: 1.08,
   },
   {
     id: 'mondschmiede',
@@ -122,7 +129,8 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'inertia',
     obstacleMode: 'penalty',
     difficultyScale: 1.12,
-    rewardMultiplier: 1.22,
+    scoreMultiplier: 1.2,
+    xpMultiplier: 1.11,
   },
   {
     id: 'kristallbruch',
@@ -137,7 +145,8 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'short_lived',
     obstacleMode: 'penalty',
     difficultyScale: 1.25,
-    rewardMultiplier: 1.3,
+    scoreMultiplier: 1.26,
+    xpMultiplier: 1.15,
   },
   {
     id: 'sturmgrenze',
@@ -152,7 +161,8 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'blink',
     obstacleMode: 'penalty',
     difficultyScale: 1.4,
-    rewardMultiplier: 1.4,
+    scoreMultiplier: 1.33,
+    xpMultiplier: 1.19,
   },
   {
     id: 'lichtkern',
@@ -167,7 +177,8 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'rare_bonus',
     obstacleMode: 'penalty',
     difficultyScale: 1.55,
-    rewardMultiplier: 1.52,
+    scoreMultiplier: 1.39,
+    xpMultiplier: 1.22,
   },
   {
     id: 'horizonttor',
@@ -182,7 +193,8 @@ export const WORLDS: readonly WorldDef[] = [
     modifier: 'short_lived',
     obstacleMode: 'penalty',
     difficultyScale: 1.7,
-    rewardMultiplier: 1.65,
+    scoreMultiplier: 1.45,
+    xpMultiplier: 1.25,
   },
 ];
 

@@ -14,10 +14,13 @@
 import { CHALLENGE_PLAYER_COUNT } from '@/config/challenge';
 import {
   DAILY_COMPLETION_BONUS_COINS,
-  DAILY_SCORE_BONUS_CAP,
+  DAILY_COMPLETION_BONUS_XP,
   DAILY_SCORE_BONUS_COINS,
+  DAILY_SCORE_BONUS_MAX_TIERS,
   DAILY_SCORE_BONUS_STEP,
+  DAILY_SCORE_BONUS_XP,
 } from '@/config/GameConfig';
+import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import type { BotDifficulty, ChallengeKind, ChallengeState, RunStats } from '@/types';
 
@@ -88,31 +91,42 @@ export function startDaily(worldId: string): ChallengeState {
   return state;
 }
 
-export function completeDaily(stats: RunStats): number {
-  if (!state || state.kind !== 'daily' || !state.dailyKey) return 0;
+export interface DailyReward {
+  coins: number;
+  xp: number;
+  performanceTier: number;
+}
+
+export function completeDaily(stats: RunStats): DailyReward | null {
+  if (!state || state.kind !== 'daily' || !state.dailyKey) return null;
   const key = state.dailyKey;
   if (SaveSystem.load().lastDailyKey === key) {
     state.dailyCompleted = true;
-    return 0;
+    return null;
   }
 
-  const scoreBonus = Math.min(
-    DAILY_SCORE_BONUS_CAP,
-    Math.floor(Math.max(0, stats.score) / DAILY_SCORE_BONUS_STEP) * DAILY_SCORE_BONUS_COINS,
+  const performanceTier = Math.min(
+    DAILY_SCORE_BONUS_MAX_TIERS,
+    Math.floor(Math.max(0, stats.score) / DAILY_SCORE_BONUS_STEP),
   );
-  const reward = DAILY_COMPLETION_BONUS_COINS + scoreBonus;
+  const reward: DailyReward = {
+    coins: DAILY_COMPLETION_BONUS_COINS + performanceTier * DAILY_SCORE_BONUS_COINS,
+    xp: DAILY_COMPLETION_BONUS_XP + performanceTier * DAILY_SCORE_BONUS_XP,
+    performanceTier,
+  };
+  const progression = ProgressionSystem.applyDailyBonus(reward.coins, reward.xp);
   SaveSystem.update((data) => {
     data.lastDailyKey = key;
     data.dailyBestScore = Math.max(data.dailyBestScore, stats.score);
     data.totalDailyRuns += 1;
-    data.coins += reward;
-    data.totalCoinsEarned += reward;
     data.pendingDailyKey = key;
-    data.pendingDailyCoins = reward;
+    data.pendingDailyCoins = progression.coinsGained;
     data.pendingDailyScore = stats.score;
   });
   state.dailyCompleted = true;
-  state.dailyRewardCoins = reward;
+  state.dailyRewardCoins = progression.coinsGained;
+  state.dailyRewardXp = reward.xp;
+  state.dailyPerformanceTier = reward.performanceTier;
   return reward;
 }
 

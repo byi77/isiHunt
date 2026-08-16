@@ -44,6 +44,7 @@ export class MenuScene extends Phaser.Scene {
   private worldListDecorations: Phaser.GameObjects.GameObject[] = [];
   private savePromptObjects: Phaser.GameObjects.GameObject[] = [];
   private syncPopupObjects: Phaser.GameObjects.GameObject[] = [];
+  private loginBonusObjects: Phaser.GameObjects.GameObject[] = [];
   private saveSyncBusy = false;
   private readonly onlineHandler = (): void => {
     void this.synchronizeData();
@@ -101,6 +102,7 @@ export class MenuScene extends Phaser.Scene {
       window.removeEventListener('online', this.onlineHandler);
       this.clearSavePrompt();
       this.hideSyncPopup();
+      this.hideLoginBonusPopup();
     });
   }
 
@@ -132,6 +134,9 @@ export class MenuScene extends Phaser.Scene {
       await CloudSystem.flushPendingLeaderboardScore();
       if (!this.scene.isActive()) return;
 
+      await this.claimDailyLoginBonus();
+      if (!this.scene.isActive()) return;
+
       const hasPendingData =
         ProgressSyncSystem.hasPendingData() ||
         CloudSystem.hasPendingLeaderboardScore() ||
@@ -143,6 +148,17 @@ export class MenuScene extends Phaser.Scene {
     } finally {
       if (this.scene.isActive()) this.hideSyncPopup();
     }
+  }
+
+  /** Der Login-Bonus ist serverseitig idempotent und deshalb auch auf zwei Geräten sicher. */
+  private async claimDailyLoginBonus(): Promise<void> {
+    if (!AuthSystem.isSignedIn()) return;
+
+    const result = await CloudSystem.claimDailyLoginBonus(ChallengeSystem.dailyKeyForToday());
+    if (!result.ok || !result.value.profile) return;
+
+    SaveSystem.adoptProfileProgress(result.value.profile.data);
+    if (result.value.claimed) this.showLoginBonusPopup();
   }
 
   /**
@@ -270,6 +286,64 @@ export class MenuScene extends Phaser.Scene {
   private hideSyncPopup(): void {
     for (const object of this.syncPopupObjects) object.destroy();
     this.syncPopupObjects = [];
+  }
+
+  private showLoginBonusPopup(): void {
+    if (this.loginBonusObjects.length > 0) return;
+    const overlay = this.add
+      .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, Palette.backdrop, 0.38)
+      .setOrigin(0)
+      .setDepth(210)
+      .setInteractive();
+    const panel = createPanel(this, GAME_WIDTH / 2, GAME_HEIGHT / 2, 450, 210, Palette.goldHex, {
+      alpha: 0.97,
+      radius: 24,
+    }).setDepth(211);
+    const title = this.add
+      .text(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2 - 42,
+        'TAGESLOGIN',
+        textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
+      )
+      .setOrigin(0.5)
+      .setLetterSpacing(3)
+      .setDepth(212);
+    const reward = this.add
+      .text(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2 + 18,
+        '+25 COINS',
+        textStyle(FontSize.heading, Palette.ink, { fontStyle: 'bold' }),
+      )
+      .setOrigin(0.5)
+      .setDepth(212);
+    const note = this.add
+      .text(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2 + 70,
+        'Schön, dass du wieder da bist.',
+        textStyle(FontSize.tiny, Palette.inkDim),
+      )
+      .setOrigin(0.5)
+      .setDepth(212);
+    this.loginBonusObjects = [overlay, panel, title, reward, note];
+    this.tweens.add({
+      targets: [panel, title, reward, note],
+      scale: { from: 0.78, to: 1 },
+      duration: 260,
+      ease: 'Back.Out',
+    });
+    this.time.delayedCall(1600, () => {
+      if (!this.scene.isActive()) return;
+      this.hideLoginBonusPopup();
+      this.scene.restart();
+    });
+  }
+
+  private hideLoginBonusPopup(): void {
+    for (const object of this.loginBonusObjects) object.destroy();
+    this.loginBonusObjects = [];
   }
 
   private showRemoteSavePrompt(remote: RemoteSave): void {

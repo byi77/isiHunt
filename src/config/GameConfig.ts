@@ -102,14 +102,14 @@ export const PLAYER_TRAIL_MIN_SPEED = 60;
  * "selten"). Schwelle statt Liste, damit neue Seltenheitsstufen automatisch
  * richtig einsortiert werden.
  */
-export const RARITY_RAYS_MIN_POINTS = 15;
+export const RARITY_RAYS_MIN_POINTS = 18;
 
 /**
  * Ab wie vielen Basispunkten ein Fang den Bildschirm erschuettert und heller
  * aufblitzt (ab "episch"). Bewusst hoeher als der Strahlenkranz: Sehen darf
  * man Seltenes oft, spueren selten.
  */
-export const RARITY_IMPACT_MIN_POINTS = 50;
+export const RARITY_IMPACT_MIN_POINTS = 45;
 
 // --- Spawning ---------------------------------------------------------------
 
@@ -151,15 +151,16 @@ export const WORLD_RARE_PROMOTION_CHANCE = 0.18;
  * Laeuft es ab, faellt die Combo auf 0. Verpasste Objekte brechen die Combo
  * NICHT - belohnt wird Flow, nicht Perfektion.
  */
-export const COMBO_GRACE_MS = 2200;
+export const COMBO_GRACE_MS = 1800;
 
-/** Ab wie vielen unmittelbar gleichen Relikten welcher Multiplikator gilt. */
+/** Ab wie vielen zeitnah gefangenen Relikten welcher Punktemultiplikator gilt. */
 export const COMBO_TIERS: readonly { readonly minCombo: number; readonly multiplier: number }[] = [
   { minCombo: 0, multiplier: 1 },
-  { minCombo: 2, multiplier: 2 },
-  { minCombo: 3, multiplier: 3 },
-  { minCombo: 4, multiplier: 4 },
-  { minCombo: 5, multiplier: 5 },
+  { minCombo: 5, multiplier: 1.1 },
+  { minCombo: 10, multiplier: 1.25 },
+  { minCombo: 20, multiplier: 1.45 },
+  { minCombo: 35, multiplier: 1.65 },
+  { minCombo: 50, multiplier: 1.85 },
 ];
 
 // --- Progression ------------------------------------------------------------
@@ -169,33 +170,39 @@ export const MAX_LEVEL = 100;
 
 /** XP fuer den Aufstieg von `level` auf `level + 1`; auf Maximalstufe 0. */
 export const xpForLevel = (level: number): number =>
-  level >= MAX_LEVEL ? 0 : Math.floor(750 * Math.sqrt(level));
+  level >= MAX_LEVEL ? 0 : Math.floor(750 * Math.sqrt(level) + 8 * Math.pow(level, 1.25));
 
 /** Veralteter Speicherwert; neue Talentkäufe laufen vollständig über Coins. */
 export const TALENT_POINTS_PER_LEVEL = 1;
 /** Veraltete Umrechnung fuer Spielstände aus der Talentpunkt-Phase. */
 export const COINS_PER_EXTRA_TALENT_POINT = 10;
 /** Grundbelohnung fuer jede abgeschlossene Solo-Runde. */
-export const COINS_PER_RUN = 25;
-/** Coins fuer jedes im Solo-Run eingesammelte Relikt. */
-export const COINS_PER_COLLECTED_RELIC = 1;
+export const COINS_PER_RUN = 20;
+/** Alle 25 Relikte gibt es einen kleinen Fangbonus. */
+export const COINS_PER_COLLECTION_STEP = 3;
+export const COLLECTION_STEP_SIZE = 25;
+export const MAX_COLLECTION_BONUS_COINS = 18;
 /** Einmalige Belohnung je neu freigeschaltetem Achievement. */
-export const COINS_PER_ACHIEVEMENT = 25;
+export const COINS_PER_ACHIEVEMENT = 20;
 /** Coins pro Levelaufstieg als dauerhafte Spielbelohnung. */
 export const COINS_PER_LEVEL = 20;
 /** Kosten eines Talent-Resets. */
-export const TALENT_RESET_COST = 300;
+export const TALENT_RESET_COST = 200;
+/** Einmalige Begruessung pro Kalendertag fuer einen echten Profil-Login. */
+export const DAILY_LOGIN_BONUS_COINS = 25;
 /** Fester Bonus für den ersten abgeschlossenen Tageslauf des Tages. */
-export const DAILY_COMPLETION_BONUS_COINS = 400;
-/** Zusätzlicher Bonus je erreichter Punktestufe, gedeckelt gegen Überfarmung. */
-export const DAILY_SCORE_BONUS_STEP = 5_000;
-export const DAILY_SCORE_BONUS_COINS = 50;
-export const DAILY_SCORE_BONUS_CAP = 100;
+export const DAILY_COMPLETION_BONUS_COINS = 90;
+export const DAILY_COMPLETION_BONUS_XP = 750;
+/** Drei Leistungsstufen machen den Tageslauf wertvoll, aber endlich. */
+export const DAILY_SCORE_BONUS_STEP = 1_500;
+export const DAILY_SCORE_BONUS_COINS = 20;
+export const DAILY_SCORE_BONUS_XP = 250;
+export const DAILY_SCORE_BONUS_MAX_TIERS = 3;
 
 // --- Persistenz -------------------------------------------------------------
 
 export const SAVE_KEY = 'isihunt.save.v1';
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 // --- Entwicklung ------------------------------------------------------------
 

@@ -124,8 +124,8 @@ export class ChallengeScene extends Phaser.Scene {
             `Du spielst ${seconds} Sekunden.`,
             'Der Seed ist heute für alle gleich.',
             'Keine Talente - gleiche Voraussetzungen.',
-            'Einmal täglich: mindestens 400 Bonus-Coins.',
-            'Der Tageslauf ändert deinen Spielstand nicht.',
+            'Einmal täglich: bis zu 150 Bonus-Coins und 1.500 XP.',
+            'Der Lauf zählt zusätzlich als normaler Fortschritt.',
           ]
         : kind === 'bot'
           ? [
@@ -239,7 +239,7 @@ export class ChallengeScene extends Phaser.Scene {
         .text(
           GAME_WIDTH / 2,
           700,
-          `TAGESBONUS  +${state.dailyRewardCoins ?? 0} COINS`,
+          `TAGESBONUS  +${state.dailyRewardCoins ?? 0} COINS  ·  +${state.dailyRewardXp ?? 0} XP`,
           textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
         )
         .setOrigin(0.5);

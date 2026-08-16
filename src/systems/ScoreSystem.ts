@@ -1,9 +1,9 @@
 /**
  * Punkte, Combo und Multiplikator eines laufenden Runs.
  *
- * Combo-Regel: Nur unmittelbar gleiche Relikte erhoehen die Kette. Ein
- * anderes Relikt beginnt eine neue Kette bei 1; nach Ablauf des Zeitfensters
- * faellt sie auf 0. Verpasste Relikte brechen die Combo NICHT.
+ * Combo-Regel: Jeder zeitnahe Fang erhoeht die Kette. Nach Ablauf des
+ * Zeitfensters faellt sie auf 0. Verpasste Relikte brechen die Combo NICHT,
+ * kosten aber Zeit und machen den Zerfall dadurch zur echten Gefahr.
  */
 
 import { COMBO_TIERS } from '@/config/GameConfig';
@@ -18,9 +18,9 @@ export interface CollectOutcome {
   multiplier: number;
   comboIncreased: boolean;
   multiplierIncreased: boolean;
-  /** Anzahl unmittelbar gleicher Relikte in Folge. */
+  /** Anzahl zeitnah gefangener Relikte in Folge. */
   sameRarityStreak: number;
-  /** Wahr, sobald die sichtbare Kette mindestens zwei gleiche Relikte hat. */
+  /** Wahr, sobald die Kette erstmals einen sichtbaren Punktebonus gibt. */
   streakBonus: boolean;
 }
 
@@ -41,7 +41,6 @@ export class ScoreSystem {
   private missed = 0;
   private xpGained = 0;
   private collected: Record<RarityId, number> = emptyRarityCounts();
-  private lastRarityId: RarityId | null = null;
 
   constructor(
     private readonly comboGraceMs: number,
@@ -64,16 +63,15 @@ export class ScoreSystem {
   registerCollect(rarity: RarityDef): CollectOutcome {
     const previousMultiplier = multiplierForCombo(this.combo);
 
-    this.combo = this.lastRarityId === rarity.id ? this.combo + 1 : 1;
+    this.combo += 1;
     this.comboTimerMs = this.comboGraceMs;
     this.bestCombo = Math.max(this.bestCombo, this.combo);
     this.collected[rarity.id] += 1;
-    this.lastRarityId = rarity.id;
 
     const multiplier = multiplierForCombo(this.combo);
     this.bestMultiplier = Math.max(this.bestMultiplier, multiplier);
 
-    const streakBonus = this.combo >= 2;
+    const streakBonus = multiplier > 1;
     const awardedPoints = Math.round(rarity.points * multiplier * this.scoreMultiplier);
     const xp = Math.round(rarity.xp * this.xpMultiplier);
 

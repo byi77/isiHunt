@@ -7,10 +7,12 @@
 
 import { ACHIEVEMENT_BY_ID, ACHIEVEMENTS } from '@/config/achievements';
 import {
-  COINS_PER_COLLECTED_RELIC,
+  COLLECTION_STEP_SIZE,
+  COINS_PER_COLLECTION_STEP,
   COINS_PER_LEVEL,
   COINS_PER_RUN,
   MAX_LEVEL,
+  MAX_COLLECTION_BONUS_COINS,
   TALENT_RESET_COST,
   xpForLevel,
 } from '@/config/GameConfig';
@@ -26,6 +28,19 @@ export interface LevelProgress {
   xpNeeded: number;
   /** 0 bis 1. */
   ratio: number;
+}
+
+/** Coins bleiben wertvoll: Fangmenge und hochwertige Beute helfen, nicht Masse allein. */
+export function coinsForRun(run: RunStats): number {
+  const collectionBonus = Math.min(
+    MAX_COLLECTION_BONUS_COINS,
+    Math.floor(run.totalCollected / COLLECTION_STEP_SIZE) * COINS_PER_COLLECTION_STEP,
+  );
+  const rarityBonus =
+    Math.floor(run.collected.rare / 5) +
+    Math.floor(run.collected.epic / 2) * 2 +
+    run.collected.legendary * 3;
+  return COINS_PER_RUN + collectionBonus + rarityBonus;
 }
 
 function grantLevelReward(data: SaveData): number {
@@ -61,7 +76,7 @@ export function applyRun(run: RunStats): ProgressionResult {
   const recordTimestamp = normalizedTimestamp(run.completedAt);
   const talentPointsGained = 0;
   let coinsGained = 0;
-  const runCoins = COINS_PER_RUN + run.totalCollected * COINS_PER_COLLECTED_RELIC;
+  const runCoins = coinsForRun(run);
   coinsGained += runCoins;
 
   const after = SaveSystem.update((data) => {
@@ -126,6 +141,45 @@ export function applyRun(run: RunStats): ProgressionResult {
     unlockedWorldIds,
     unlockedAchievementIds,
     isNewBestScore,
+  };
+}
+
+/**
+ * Gewaehrt den einmaligen Tageslauf-Bonus lokal. Der gleiche Schritt wird beim
+ * naechsten Sync serverseitig wiederholt; die Merker im Save machen ihn
+ * geraeteuebergreifend idempotent.
+ */
+export function applyDailyBonus(
+  coins: number,
+  xp: number,
+): {
+  coinsGained: number;
+  xpGained: number;
+  levelsGained: number;
+} {
+  const before = SaveSystem.load();
+  const safeCoins = Math.max(0, Math.round(coins));
+  const safeXp = Math.max(0, Math.round(xp));
+  let totalCoinGain = safeCoins;
+
+  const after = SaveSystem.update((data) => {
+    data.coins += safeCoins;
+    data.xp += safeXp;
+    let guard = 0;
+    while (data.level < MAX_LEVEL && data.xp >= xpForLevel(data.level) && guard < MAX_LEVEL) {
+      data.xp -= xpForLevel(data.level);
+      data.level += 1;
+      totalCoinGain += grantLevelReward(data);
+      guard += 1;
+    }
+    if (data.level >= MAX_LEVEL) data.xp = 0;
+    data.totalCoinsEarned += totalCoinGain;
+  });
+
+  return {
+    coinsGained: totalCoinGain,
+    xpGained: safeXp,
+    levelsGained: after.level - before.level,
   };
 }
 

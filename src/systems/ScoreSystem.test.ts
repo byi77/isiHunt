@@ -75,17 +75,16 @@ describe('ScoreSystem - Fangen', () => {
   it('wendet den Talent-Punktemultiplikator an und rundet kaufmaennisch', () => {
     const system = createSystem(1.5);
 
-    // 1 Punkt * Multiplikator 1 * 1.5 = 1.5 -> gerundet 2.
-    expect(system.registerCollect(POOR!).awardedPoints).toBe(2);
+    expect(system.registerCollect(POOR!).awardedPoints).toBe(Math.round(POOR!.points * 1.5));
   });
 
-  it('setzt die Kette bei einer anderen Seltenheit auf eins zurueck', () => {
+  it('haelt die Flow-Kette auch ueber unterschiedliche Seltenheiten', () => {
     const system = createSystem();
     system.registerCollect(POOR!);
     system.registerCollect(POOR!);
     const outcome = system.registerCollect(LEGENDARY!);
-    expect(outcome.combo).toBe(1);
-    expect(outcome.multiplier).toBe(1);
+    expect(outcome.combo).toBe(3);
+    expect(outcome.multiplier).toBe(multiplierForCombo(3));
     expect(outcome.xpGained).toBe(LEGENDARY!.xp);
   });
 });
@@ -149,26 +148,25 @@ describe('ScoreSystem - Combo-Zerfall', () => {
   });
 });
 
-describe('ScoreSystem - Seltenheitsserie', () => {
+describe('ScoreSystem - Flow-Kette', () => {
   it('verdoppelt ab dem dritten gleichen grünen oder selteneren Relikt die Punkte', () => {
     const system = createSystem();
-    system.registerCollect(RARE!);
-    const second = system.registerCollect(RARE!);
-    const third = system.registerCollect(RARE!);
+    const tier = COMBO_TIERS[1]!;
+    let outcome = system.registerCollect(RARE!);
+    for (let index = 1; index < tier.minCombo; index += 1) {
+      outcome = system.registerCollect(index % 2 === 0 ? RARE! : LEGENDARY!);
+    }
 
-    expect(second.sameRarityStreak).toBe(2);
-    expect(second.multiplier).toBe(2);
-    expect(third.sameRarityStreak).toBe(3);
-    expect(third.multiplier).toBe(3);
-    expect(third.awardedPoints).toBe(RARE!.points * 3);
+    expect(outcome.sameRarityStreak).toBe(tier.minCombo);
+    expect(outcome.multiplier).toBe(tier.multiplier);
+    expect(outcome.streakBonus).toBe(true);
   });
 
   it('setzt die Serie bei einer anderen Seltenheit zurück', () => {
     const system = createSystem();
     system.registerCollect(RARE!);
-    system.registerCollect(RARE!);
     system.registerCollect(LEGENDARY!);
-
+    system.update(COMBO_GRACE_MS);
     const restarted = system.registerCollect(RARE!);
     expect(restarted.sameRarityStreak).toBe(1);
     expect(restarted.multiplier).toBe(1);

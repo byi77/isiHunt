@@ -50,28 +50,28 @@ export const TALENTS: readonly TalentDef[] = [
     name: 'Ausdauer',
     description: 'Verlängert die Dauer eines Runs.',
     maxRank: 4,
-    perRank: '+4 Sekunden',
+    perRank: '+3 Sekunden',
   },
   {
     id: 'focus',
     name: 'Fokus',
     description: 'Deine Combo hält länger, bevor sie zerfällt.',
     maxRank: 4,
-    perRank: '+250 ms Combo-Fenster',
+    perRank: '+150 ms Combo-Fenster',
   },
   {
     id: 'insight',
     name: 'Erkenntnis',
     description: 'Du erhältst mehr Erfahrung pro Relikt.',
     maxRank: 5,
-    perRank: '+8% XP',
+    perRank: '+5% XP',
   },
   {
     id: 'fortune',
     name: 'Gunst',
     description: 'Du erhältst mehr Punkte pro Relikt.',
     maxRank: 5,
-    perRank: '+6% Punkte',
+    perRank: '+4% Punkte',
   },
 ];
 
@@ -79,11 +79,10 @@ export type TalentRanks = Partial<Record<TalentId, number>>;
 
 /** Kosten des nächsten Rangs: steigend, damit der Talentbaum langfristig bleibt. */
 /** Ein brauchbarer Rang soll etwa vier bis sechs normale Runs erfordern. */
-export const TALENT_BASE_COST = 400;
-export const TALENT_COST_STEP = 125;
+export const TALENT_COSTS = [250, 350, 500, 650, 850] as const;
 
 export function talentCost(currentRank: number): number {
-  return TALENT_BASE_COST + Math.max(0, currentRank) * TALENT_COST_STEP;
+  return TALENT_COSTS[Math.min(Math.max(0, currentRank), TALENT_COSTS.length - 1)]!;
 }
 
 /**
@@ -112,9 +111,9 @@ export function resolveStats(ranks: TalentRanks): PlayerStats {
     collectRadius: PLAYER_BASE_COLLECT_RADIUS + rank(ranks, 'reach') * 6,
     moveSpeed: PLAYER_BASE_SPEED * (1 + rank(ranks, 'swiftness') * 0.05),
     magnetRadius: rank(ranks, 'magnetism') * 35,
-    runDurationMs: RUN_DURATION_MS + rank(ranks, 'endurance') * 4000,
-    comboGraceMs: COMBO_GRACE_MS + rank(ranks, 'focus') * 250,
-    xpMultiplier: 1 + rank(ranks, 'insight') * 0.08,
-    scoreMultiplier: 1 + rank(ranks, 'fortune') * 0.06,
+    runDurationMs: RUN_DURATION_MS + rank(ranks, 'endurance') * 3000,
+    comboGraceMs: COMBO_GRACE_MS + rank(ranks, 'focus') * 150,
+    xpMultiplier: 1 + rank(ranks, 'insight') * 0.05,
+    scoreMultiplier: 1 + rank(ranks, 'fortune') * 0.04,
   };
 }

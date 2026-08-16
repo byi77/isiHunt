@@ -39,6 +39,7 @@ import { InputController } from '@/input/InputController';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
+import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { ScoreSystem } from '@/systems/ScoreSystem';
@@ -142,8 +143,8 @@ export class GameScene extends Phaser.Scene {
     this.input_ = new InputController(this);
     this.scoring = new ScoreSystem(
       this.stats.comboGraceMs,
-      this.stats.scoreMultiplier * this.world.rewardMultiplier,
-      this.stats.xpMultiplier * this.world.rewardMultiplier,
+      this.stats.scoreMultiplier * this.world.scoreMultiplier,
+      this.stats.xpMultiplier * this.world.xpMultiplier,
     );
 
     // Nur im Duell wird geseedet - beide Spieler bekommen dieselbe Abfolge.
@@ -444,9 +445,16 @@ export class GameScene extends Phaser.Scene {
 
     // Ein Duell-Durchgang laesst den Spielstand unberuehrt: die Haelfte der
     // Durchgaenge spielt jemand, dem er nicht gehoert (config/challenge.ts).
+    // Der Tageslauf ist die bewusste Ausnahme: gleiche Ausgangswerte sorgen
+    // fuer Fairness, der fertig gespielte Lauf ist trotzdem echter Fortschritt.
     if (this.mode !== 'solo') {
       ChallengeSystem.submitRound(stats);
-      if (this.mode === 'daily') ChallengeSystem.completeDaily(stats);
+      if (this.mode === 'daily') {
+        const progression = ProgressionSystem.applyRun(stats);
+        ProgressSyncSystem.enqueueRun(stats, progression);
+        ChallengeSystem.completeDaily(stats);
+        void ProgressSyncSystem.flush();
+      }
 
       this.time.delayedCall(450, () => {
         this.scene.stop(SceneKey.Hud);

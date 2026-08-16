@@ -130,6 +130,11 @@ export interface RemoteProfileProgress {
   updatedAt: string;
 }
 
+export interface DailyLoginClaim {
+  claimed: boolean;
+  profile: RemoteProfileProgress | null;
+}
+
 /** Eine Zeile der ausschließlich serverseitig autorisierten Wartungsansicht. */
 export interface AdminUserStats {
   playerName: string;
@@ -835,6 +840,32 @@ export async function claimDailyBonus(
   if (!result.ok) return result;
   if (result.value.error) return { ok: false, error: result.value.error.message };
   return { ok: true, value: readProfileProgress(result.value.data) };
+}
+
+/** Beansprucht den kleinen Login-Bonus; der Server erlaubt ihn nur einmal je Tag. */
+export async function claimDailyLoginBonus(
+  dailyKey: string,
+): Promise<CloudResult<DailyLoginClaim>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const result = await withTimeout(
+    authenticated.value.rpc('claim_daily_login_bonus', { p_daily_key: dailyKey }),
+    'Login-Bonus abholen',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  const raw = result.value.data;
+  if (!raw || typeof raw !== 'object') return { ok: false, error: 'Ungültige Login-Bonus-Antwort' };
+  const value = raw as { claimed?: unknown; profile?: unknown };
+  return {
+    ok: true,
+    value: {
+      claimed: value.claimed === true,
+      profile: readProfileProgress(value.profile),
+    },
+  };
 }
 
 /** Überträgt genau ein neues Solo-Ereignis. Wiederholungen sind idempotent. */
