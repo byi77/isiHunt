@@ -10,7 +10,6 @@ import type { AdminDashboard, AdminUserStats } from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
-import { Depth } from '@/ui/depth';
 import {
   createBackButton,
   createButton,
@@ -19,9 +18,8 @@ import {
   createVignette,
   createWorldBackdrop,
 } from '@/ui/widgets';
-import { enableVerticalScroll } from '@/ui/verticalScroll';
 
-const PAGE_SIZE = 5;
+const PAGE_SIZE = 3;
 
 function formatDuration(milliseconds: number): string {
   const totalMinutes = Math.floor(milliseconds / 60_000);
@@ -43,7 +41,7 @@ export class AdminStatsScene extends Phaser.Scene {
   create(): void {
     SafeAreaSystem.showStatic('ONLINE-STATISTIK');
     const world = getWorld(SaveSystem.load().lastWorldId);
-    const backdrop = createWorldBackdrop(
+    createWorldBackdrop(
       this,
       GAME_WIDTH,
       GAME_HEIGHT,
@@ -53,12 +51,10 @@ export class AdminStatsScene extends Phaser.Scene {
       world.spaceVariant,
     );
     createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, world.spaceVariant);
-    backdrop.setScrollFactor(0);
-    const vignette = createVignette(this, GAME_WIDTH, GAME_HEIGHT).setScrollFactor(0);
-    const back = createBackButton(this, () => this.scene.start(SceneKey.Admin));
-    back.container.setScrollFactor(0).setDepth(Depth.Overlay + 2);
+    createVignette(this, GAME_WIDTH, GAME_HEIGHT);
+    createBackButton(this, () => this.scene.start(SceneKey.Admin));
 
-    const title = this.add
+    this.add
       .text(
         GAME_WIDTH / 2,
         128,
@@ -67,7 +63,7 @@ export class AdminStatsScene extends Phaser.Scene {
       )
       .setOrigin(0.5)
       .setLetterSpacing(3);
-    const subtitle = this.add
+    this.add
       .text(
         GAME_WIDTH / 2,
         170,
@@ -90,7 +86,7 @@ export class AdminStatsScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      1400,
+      1090,
       'AKTUALISIEREN',
       () => {
         void this.loadDashboard();
@@ -99,7 +95,6 @@ export class AdminStatsScene extends Phaser.Scene {
     );
 
     void this.loadDashboard();
-    enableVerticalScroll(this, 1600, [backdrop, vignette, title, subtitle, back.container]);
   }
 
   private async loadDashboard(): Promise<void> {
@@ -167,7 +162,7 @@ export class AdminStatsScene extends Phaser.Scene {
 
     this.content.push(
       this.add
-        .text(58, 602, 'PROFILE', textStyle(FontSize.tiny, Palette.gold, { fontStyle: 'bold' }))
+        .text(58, 584, 'PROFILE', textStyle(FontSize.tiny, Palette.gold, { fontStyle: 'bold' }))
         .setOrigin(0, 0.5)
         .setLetterSpacing(3),
     );
@@ -175,12 +170,12 @@ export class AdminStatsScene extends Phaser.Scene {
     const pageCount = Math.max(1, Math.ceil(dashboard.users.length / PAGE_SIZE));
     this.page = Phaser.Math.Clamp(this.page, 0, pageCount - 1);
     const users = dashboard.users.slice(this.page * PAGE_SIZE, (this.page + 1) * PAGE_SIZE);
-    users.forEach((user, index) => this.renderUser(user, 668 + index * 132, world.accent));
+    users.forEach((user, index) => this.renderUser(user, 650 + index * 128, world.accent));
 
     const pageLabel = this.add
       .text(
         GAME_WIDTH / 2,
-        1350,
+        1015,
         dashboard.users.length === 0
           ? 'Keine Profile in der Datenbank.'
           : `SEITE ${this.page + 1} / ${pageCount} · ${dashboard.users.length} PROFILE`,
@@ -190,7 +185,7 @@ export class AdminStatsScene extends Phaser.Scene {
     const previous = createButton(
       this,
       GAME_WIDTH / 2 - 155,
-      1350,
+      1015,
       '‹',
       () => {
         this.page -= 1;
@@ -201,7 +196,7 @@ export class AdminStatsScene extends Phaser.Scene {
     const next = createButton(
       this,
       GAME_WIDTH / 2 + 155,
-      1350,
+      1015,
       '›',
       () => {
         this.page += 1;

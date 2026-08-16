@@ -162,7 +162,7 @@ export class SettingsScene extends Phaser.Scene {
     this.add
       .text(
         GAME_WIDTH / 2,
-        GAME_HEIGHT - 120,
+        GAME_HEIGHT - 180,
         'Dein Spielstand wird automatisch lokal gespeichert.',
         textStyle(FontSize.tiny, Palette.inkDim),
       )

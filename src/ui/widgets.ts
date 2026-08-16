@@ -8,7 +8,7 @@
 
 import Phaser from 'phaser';
 
-import { DEBUG_ENABLED, GAME_HEIGHT } from '@/config/GameConfig';
+import { DEBUG_ENABLED, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
@@ -289,7 +289,23 @@ export function createBackButton(
   onClick: () => void,
   options: { label?: string } = {},
 ): ButtonHandle {
-  return createButton(
+  // Gemeinsame, feste Fusszone aller Unterseiten. Sie liegt bewusst ueber dem
+  // normalen Inhalt: Kein Scroll-Inhalt und kein spaeter hinzugefuegter
+  // Button kann den Zurueck-Knopf verdecken oder unter ihm auftauchen.
+  scene.add
+    .rectangle(
+      GAME_WIDTH / 2,
+      GAME_HEIGHT - BACK_BUTTON_RESERVED_HEIGHT / 2,
+      GAME_WIDTH,
+      BACK_BUTTON_RESERVED_HEIGHT,
+      Palette.backdrop,
+      0.94,
+    )
+    .setDepth(Depth.Overlay)
+    .setScrollFactor(0)
+    .setInteractive();
+
+  const button = createButton(
     scene,
     BACK_BUTTON_X,
     GAME_HEIGHT - BACK_BUTTON_BOTTOM_OFFSET,
@@ -302,11 +318,16 @@ export function createBackButton(
       fontSize: FontSize.tiny,
     },
   );
+  button.container.setScrollFactor(0).setDepth(Depth.Overlay + 1);
+  return button;
 }
 
 /** Feste Position des Zurueck-Knopfes - gilt fuer jede Scene, die einen hat. */
 export const BACK_BUTTON_X = 138;
 export const BACK_BUTTON_BOTTOM_OFFSET = 84;
+/** Oberhalb dieser Zone muessen Seitenaktionen enden. */
+export const BACK_BUTTON_RESERVED_HEIGHT = 140;
+export const BACK_BUTTON_CONTENT_BOTTOM = GAME_HEIGHT - BACK_BUTTON_RESERVED_HEIGHT;
 
 export interface BarHandle {
   container: Phaser.GameObjects.Container;
