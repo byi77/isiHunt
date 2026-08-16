@@ -394,7 +394,14 @@ begin
         coalesce((progress.data->>'level')::integer, 1) as level,
         coalesce((progress.data->>'totalRuns')::bigint, 0) as total_runs,
         coalesce((progress.data->>'totalPlayTimeMs')::bigint, 0) as total_play_time_ms,
-        coalesce((progress.data->>'totalCoinsEarned')::bigint, 0) as total_coins_earned,
+        -- Alte Profile kannten totalCoinsEarned noch nicht. Der sichtbare
+        -- Bestand plus alle Talent-/Resetkosten ergibt die tatsächlich
+        -- verdienten Coins und repariert die Statistik rückwirkend.
+        greatest(
+          coalesce((progress.data->>'totalCoinsEarned')::bigint, 0),
+          coalesce((progress.data->>'coins')::bigint, 0)
+            + coalesce((progress.data->>'coinsSpent')::bigint, 0)
+        ) as total_coins_earned,
         coalesce(progress.total_xp, 0) as total_xp,
         coalesce((progress.data->>'bestScore')::bigint, 0) as best_score,
         coalesce((progress.data->>'bestCombo')::integer, 0) as best_combo,
