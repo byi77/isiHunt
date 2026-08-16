@@ -216,6 +216,18 @@ export function reset(): SaveData {
   return fresh;
 }
 
+/**
+ * Entfernt den auf diesem Gerät zwischengespeicherten Profilstand nach einer
+ * Abmeldung. Der Cloud-Stand bleibt unverändert und wird beim nächsten Login
+ * wieder geladen. Geräteeinstellungen wie der Ton bleiben erhalten.
+ */
+export function clearLocalProfile(): SaveData {
+  const fresh = createDefaultSave();
+  fresh.soundEnabled = load().soundEnabled;
+  save(fresh);
+  return fresh;
+}
+
 /** True, wenn der lokale Wartungs-Teststand aktiv ist. */
 export function isTestProfileActive(): boolean {
   try {

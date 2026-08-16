@@ -76,7 +76,7 @@ export class SettingsScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         profileY - 50,
-        'Melde dich auf iPhone und iPad mit demselben Profil an.\nOhne Login bleibt dein Spiel vollständig offline nutzbar.',
+        'Melde dich auf iPhone und iPad mit demselben Profil an.\nDein Fortschritt wird sicher in deinem Online-Profil gespeichert.',
         textStyle(FontSize.small, Palette.ink),
       )
       .setOrigin(0.5)

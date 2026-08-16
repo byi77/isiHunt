@@ -394,13 +394,26 @@ export class AccountScene extends Phaser.Scene {
   private async signOut(): Promise<void> {
     if (this.busy) return;
     this.busy = true;
+    this.setStatus('Ausstehende Änderungen werden gesichert ...', Palette.inkDim);
+    await ProgressSyncSystem.flush();
+    if (ProgressSyncSystem.hasPendingData()) {
+      this.busy = false;
+      this.setStatus(
+        'Abmelden erst möglich, wenn der Profilstand abgeglichen wurde.',
+        Palette.gold,
+      );
+      return;
+    }
+
     const result = await AuthSystem.signOut();
-    this.busy = false;
     if (!result.ok) {
+      this.busy = false;
       this.setStatus(result.error, Palette.gold);
       return;
     }
-    this.scene.restart();
+    SaveSystem.clearLocalProfile();
+    this.busy = false;
+    this.scene.start(SceneKey.Menu);
   }
 
   private setStatus(text: string, color: string): void {
