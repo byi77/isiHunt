@@ -94,7 +94,10 @@ export class AdminUsersScene extends Phaser.Scene {
       boostButton.setEnabled(false);
       resetButton.setEnabled(false);
     });
-    aliasInput.focus();
+    // Nicht automatisch fokussieren: Auf Mobilgeräten öffnet der sofortige
+    // Fokus die Bildschirmtastatur und schiebt bzw. verdeckt genau den
+    // festen Zurück-Bereich am unteren Rand. Das Alias-Feld bleibt ganz
+    // normal antippbar, ohne die Navigation zu blockieren.
   }
 
   private async boost(alias: string): Promise<void> {
