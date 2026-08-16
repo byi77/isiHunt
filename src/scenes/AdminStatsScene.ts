@@ -24,10 +24,14 @@ import {
 const PAGE_SIZE = 3;
 
 function formatDuration(milliseconds: number): string {
-  const totalMinutes = Math.floor(milliseconds / 60_000);
+  const totalSeconds = Math.floor(milliseconds / 1000);
+  const totalMinutes = Math.floor(totalSeconds / 60);
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
-  return hours > 0 ? `${hours} h ${minutes} min` : `${minutes} min`;
+  const seconds = totalSeconds % 60;
+  if (hours > 0) return `${hours} h ${minutes} min`;
+  if (minutes > 0) return `${minutes} min ${seconds} s`;
+  return `${seconds} s`;
 }
 
 export class AdminStatsScene extends Phaser.Scene {

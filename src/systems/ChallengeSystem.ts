@@ -97,7 +97,7 @@ export interface DailyReward {
   performanceTier: number;
 }
 
-export function completeDaily(stats: RunStats): DailyReward | null {
+export function completeDaily(stats: RunStats, eventId: string | null = null): DailyReward | null {
   if (!state || state.kind !== 'daily' || !state.dailyKey) return null;
   const key = state.dailyKey;
   if (SaveSystem.load().lastDailyKey === key) {
@@ -119,9 +119,14 @@ export function completeDaily(stats: RunStats): DailyReward | null {
     data.lastDailyKey = key;
     data.dailyBestScore = Math.max(data.dailyBestScore, stats.score);
     data.totalDailyRuns += 1;
-    data.pendingDailyKey = key;
-    data.pendingDailyCoins = progression.coinsGained;
-    data.pendingDailyScore = stats.score;
+    // Ohne angemeldetes Profil gibt es kein Cloud-Ereignis, an das der
+    // serverseitige Bonus sicher gebunden werden kann. Der lokale Spielstand
+    // enthaelt die Belohnung bereits; eine Cloud-Nachholung wird erst fuer
+    // eingeloggte Runs mit Event-ID vorgemerkt.
+    data.pendingDailyKey = eventId ? key : null;
+    data.pendingDailyEventId = eventId;
+    data.pendingDailyCoins = eventId ? progression.coinsGained : 0;
+    data.pendingDailyScore = eventId ? stats.score : 0;
   });
   state.dailyCompleted = true;
   state.dailyRewardCoins = progression.coinsGained;

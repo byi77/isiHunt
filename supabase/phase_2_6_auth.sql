@@ -607,9 +607,12 @@ revoke execute on function public.reset_talents() from public;
 grant execute on function public.reset_talents() to authenticated;
 
 -- Ein Tageslauf kann pro Profil und Kalendertag nur einmal belohnt werden.
+drop function if exists public.claim_daily_bonus(text, integer);
+
 create or replace function public.claim_daily_bonus(
   p_daily_key text,
-  p_score integer
+  p_score integer,
+  p_event_id uuid
 )
 returns setof public.profile_progress
 language plpgsql
@@ -648,6 +651,15 @@ begin
     return;
   end if;
 
+  if p_event_id is null or not exists (
+    select 1
+    from public.profile_progress_events
+    where event_id = p_event_id
+      and profile_id = uid
+  ) then
+    raise exception 'Tageslauf noch nicht synchronisiert';
+  end if;
+
   current_level := greatest(1, coalesce((current_data->>'level')::integer, 1));
   next_total_xp := current_total_xp + safe_xp;
   select level, xp into next_level, next_xp
@@ -673,8 +685,8 @@ begin
 end;
 $$;
 
-revoke execute on function public.claim_daily_bonus(text, integer) from public;
-grant execute on function public.claim_daily_bonus(text, integer) to authenticated;
+revoke execute on function public.claim_daily_bonus(text, integer, uuid) from public;
+grant execute on function public.claim_daily_bonus(text, integer, uuid) to authenticated;
 
 -- Ein Login-Bonus ist bewusst kleiner als ein Tageslauf und bringt keine XP:
 -- Wiederkommen lohnt sich, Charakterlevel bleiben aber eine Spielbelohnung.
@@ -767,6 +779,7 @@ declare
   next_level integer;
   next_xp integer;
   item record;
+  safe_duration_ms integer := least(102000, greatest(0, coalesce(p_duration_ms, 0)));
 begin
   if uid is null then raise exception 'Anmeldung erforderlich'; end if;
   if not exists (select 1 from public.profile_progress where profile_id = uid) then
@@ -778,7 +791,7 @@ begin
     duration_ms, coins_gained, talent_points_gained, collected, achievement_ids
   ) values (
     p_event_id, uid, p_world_id, greatest(0, p_score), greatest(0, p_best_combo),
-    greatest(0, p_xp_gained), greatest(0, p_duration_ms), greatest(0, p_coins_gained),
+    greatest(0, p_xp_gained), safe_duration_ms, greatest(0, p_coins_gained),
     greatest(0, p_talent_points_gained), coalesce(p_collected, '{}'::jsonb),
     to_jsonb(coalesce(p_achievement_ids, '{}'::text[]))
   ) on conflict (event_id) do nothing;
@@ -852,7 +865,7 @@ begin
     'totalScore', coalesce((current_data->>'totalScore')::bigint, 0) + greatest(0, p_score),
     'totalRuns', coalesce((current_data->>'totalRuns')::integer, 0) + 1,
     'totalPlayTimeMs', coalesce((current_data->>'totalPlayTimeMs')::bigint, 0)
-      + greatest(0, p_duration_ms),
+      + safe_duration_ms,
     'totalCoinsEarned', coalesce((current_data->>'totalCoinsEarned')::bigint, 0)
       + greatest(0, p_coins_gained)
       + greatest(0, p_talent_points_gained) * 10,

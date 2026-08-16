@@ -39,6 +39,8 @@ export interface SaveData {
   totalDailyRuns: number;
   /** Cloud-Nachholung, falls der Tagesbonus offline verdient wurde. */
   pendingDailyKey: string | null;
+  /** Das zugehoerige Laufereignis muss vor dem Tagesbonus synchronisiert sein. */
+  pendingDailyEventId: string | null;
   pendingDailyCoins: number;
   pendingDailyScore: number;
   /** Ueber alle Runs eingesammelte Relikte je Seltenheit. */

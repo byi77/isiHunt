@@ -35,11 +35,12 @@ function writeOutbox(events: ProgressEvent[]): void {
 }
 
 /** Legt einen Run lokal ab, bevor der Netzwerkversuch startet. */
-export function enqueueRun(stats: RunStats, progression: ProgressionResult): void {
-  if (!AuthSystem.isSignedIn() || SaveSystem.isTestProfileActive()) return;
+export function enqueueRun(stats: RunStats, progression: ProgressionResult): string | null {
+  if (!AuthSystem.isSignedIn() || SaveSystem.isTestProfileActive()) return null;
 
+  const eventId = createEventId();
   const event: ProgressEvent = {
-    eventId: createEventId(),
+    eventId,
     worldId: stats.worldId,
     score: stats.score,
     bestCombo: stats.bestCombo,
@@ -53,6 +54,7 @@ export function enqueueRun(stats: RunStats, progression: ProgressionResult): voi
   };
 
   writeOutbox([...readOutbox(), event]);
+  return eventId;
 }
 
 /** Überträgt wartende Runs in Reihenfolge; Fehler bleiben in der Outbox. */
@@ -73,14 +75,25 @@ async function flushPending(): Promise<void> {
 
   writeOutbox(remaining);
 
+  // Der Tagesbonus darf erst abgeholt werden, wenn wirklich alle Laufereignisse
+  // synchronisiert wurden. Sonst koennen XP/Coins/Level steigen, obwohl die
+  // zugehoerige Spielzeit noch nicht im Profil steht.
+  if (remaining.length > 0) return;
+
   const local = SaveSystem.load();
-  if (!local.pendingDailyKey || local.pendingDailyCoins <= 0) return;
-  const daily = await CloudSystem.claimDailyBonus(local.pendingDailyKey, local.pendingDailyScore);
+  if (!local.pendingDailyKey || !local.pendingDailyEventId || local.pendingDailyCoins <= 0) return;
+
+  const daily = await CloudSystem.claimDailyBonus(
+    local.pendingDailyKey,
+    local.pendingDailyScore,
+    local.pendingDailyEventId,
+  );
   if (!daily.ok || !daily.value) return;
 
   SaveSystem.adoptProfileProgress(daily.value.data);
   SaveSystem.update((data) => {
     data.pendingDailyKey = null;
+    data.pendingDailyEventId = null;
     data.pendingDailyCoins = 0;
     data.pendingDailyScore = 0;
   });

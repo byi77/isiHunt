@@ -451,8 +451,8 @@ export class GameScene extends Phaser.Scene {
       ChallengeSystem.submitRound(stats);
       if (this.mode === 'daily') {
         const progression = ProgressionSystem.applyRun(stats);
-        ProgressSyncSystem.enqueueRun(stats, progression);
-        ChallengeSystem.completeDaily(stats);
+        const eventId = ProgressSyncSystem.enqueueRun(stats, progression);
+        ChallengeSystem.completeDaily(stats, eventId);
         void ProgressSyncSystem.flush();
       }
 

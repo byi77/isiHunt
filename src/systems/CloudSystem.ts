@@ -826,6 +826,7 @@ export async function resetTalents(): Promise<CloudResult<RemoteProfileProgress 
 export async function claimDailyBonus(
   dailyKey: string,
   score: number,
+  eventId: string,
 ): Promise<CloudResult<RemoteProfileProgress | null>> {
   const authenticated = await requireAuthenticatedClient();
   if (!authenticated.ok) return authenticated;
@@ -834,6 +835,7 @@ export async function claimDailyBonus(
     authenticated.value.rpc('claim_daily_bonus', {
       p_daily_key: dailyKey,
       p_score: Math.max(0, Math.round(score)),
+      p_event_id: eventId,
     }),
     'Tagesbonus synchronisieren',
   );
