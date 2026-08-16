@@ -27,6 +27,8 @@ export const SceneKey = {
    * die Versionsnummer.
    */
   Admin: 'Admin',
+  /** PIN-Abfrage nach der versteckten Versions-Geste. */
+  AdminPin: 'AdminPin',
   /** Serverseitig geschützte Nutzungsstatistik für Wartungsadmins. */
   AdminStats: 'AdminStats',
   /**

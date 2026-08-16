@@ -43,7 +43,7 @@ import {
   createVignette,
   paintSafeAreaBackdrop,
 } from '@/ui/widgets';
-import { createTextInput } from '@/ui/textInput';
+import { enableVerticalScroll } from '@/ui/verticalScroll';
 
 export class AdminScene extends Phaser.Scene {
   private statusText!: Phaser.GameObjects.Text;
@@ -66,19 +66,20 @@ export class AdminScene extends Phaser.Scene {
 
     // Schlichter Hintergrund statt Weltkulisse: Das hier ist Werkzeug, kein
     // Spielinhalt - die Trennung soll man sofort sehen.
-    this.add
+    const backdrop = this.add
       .image(GAME_WIDTH / 2, GAME_HEIGHT / 2, TextureKey.Pixel)
       .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
-      .setTint(Palette.backdrop);
+      .setTint(Palette.backdrop)
+      .setScrollFactor(0);
 
     // Auch die Streifen ausserhalb des Spielfelds auf den Grundton setzen -
     // sonst bliebe hier die Farbe der zuletzt gezeigten Welt stehen.
     paintSafeAreaBackdrop(Palette.backdrop, Palette.backdrop);
 
-    createVignette(this, GAME_WIDTH, GAME_HEIGHT);
-    createBackButton(this, () => this.scene.start(SceneKey.Menu));
+    const vignette = createVignette(this, GAME_WIDTH, GAME_HEIGHT).setScrollFactor(0);
+    const back = createBackButton(this, () => this.scene.start(SceneKey.Menu));
 
-    this.add
+    const title = this.add
       .text(GAME_WIDTH / 2, 140, 'WARTUNG', textStyle(FontSize.heading, Palette.gold))
       .setOrigin(0.5)
       .setLetterSpacing(6);
@@ -88,12 +89,13 @@ export class AdminScene extends Phaser.Scene {
     this.buildActions();
 
     this.statusText = this.add
-      .text(GAME_WIDTH / 2, GAME_HEIGHT - 45, '', textStyle(FontSize.tiny, Palette.inkDim))
+      .text(GAME_WIDTH / 2, 1160, '', textStyle(FontSize.tiny, Palette.inkDim))
       .setOrigin(0.5)
       .setWordWrapWidth(GAME_WIDTH - 120)
       .setAlign('center');
 
     void this.lookForUpdate();
+    enableVerticalScroll(this, 1420, [backdrop, vignette, title, back.container]);
   }
 
   /**
@@ -219,6 +221,7 @@ export class AdminScene extends Phaser.Scene {
       { width: 460, height: 58, accent: Palette.goldHex, fontSize: FontSize.small },
     );
 
+    /* Lokales Testprofil bleibt bewusst aus dem Wartungsmenue entfernt.
     createPanel(this, GAME_WIDTH / 2, 1090, GAME_WIDTH - 120, 150, Palette.goldHex, {
       alpha: 0.35,
       radius: 16,
@@ -270,12 +273,13 @@ export class AdminScene extends Phaser.Scene {
       { width: 210, height: 62, accent: Palette.goldHex, fontSize: FontSize.tiny },
     );
 
+    */
     // Lineal ueber dem Menue: Damit lassen sich Layout-Fehler in Zahlen
     // beschreiben statt in Worten ("von 0 bis 160 ist schwarz").
     createButton(
       this,
       GAME_WIDTH / 2,
-      1215,
+      1080,
       'PIXEL-LINEAL ANZEIGEN',
       () => {
         this.scene.start(SceneKey.Menu);

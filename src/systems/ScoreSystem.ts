@@ -1,11 +1,9 @@
 /**
  * Punkte, Combo und Multiplikator eines laufenden Runs.
  *
- * Combo-Regel: Jeder Fang erhoeht die Combo um 1 und startet das Zeitfenster
- * neu. Faengst du innerhalb des Fensters nichts, faellt die Combo auf 0.
- * Verpasste Relikte brechen die Combo NICHT - belohnt wird durchgehender Flow,
- * nicht fehlerfreies Spiel. Das haelt kurze Runs entspannt und macht lange
- * Ketten trotzdem zu einer echten Leistung.
+ * Combo-Regel: Nur unmittelbar gleiche Relikte erhoehen die Kette. Ein
+ * anderes Relikt beginnt eine neue Kette bei 1; nach Ablauf des Zeitfensters
+ * faellt sie auf 0. Verpasste Relikte brechen die Combo NICHT.
  */
 
 import { COMBO_TIERS } from '@/config/GameConfig';
@@ -20,9 +18,9 @@ export interface CollectOutcome {
   multiplier: number;
   comboIncreased: boolean;
   multiplierIncreased: boolean;
-  /** Anzahl gleicher seltener Relikte in Folge (ab Gruen). */
+  /** Anzahl unmittelbar gleicher Relikte in Folge. */
   sameRarityStreak: number;
-  /** Ab dem dritten gleichen seltenen Relikt werden die Punkte verdoppelt. */
+  /** Wahr, sobald die sichtbare Kette mindestens zwei gleiche Relikte hat. */
   streakBonus: boolean;
 }
 
@@ -44,7 +42,6 @@ export class ScoreSystem {
   private xpGained = 0;
   private collected: Record<RarityId, number> = emptyRarityCounts();
   private lastRarityId: RarityId | null = null;
-  private sameRarityStreak = 0;
 
   constructor(
     private readonly comboGraceMs: number,
@@ -67,25 +64,17 @@ export class ScoreSystem {
   registerCollect(rarity: RarityDef): CollectOutcome {
     const previousMultiplier = multiplierForCombo(this.combo);
 
-    this.combo += 1;
+    this.combo = this.lastRarityId === rarity.id ? this.combo + 1 : 1;
     this.comboTimerMs = this.comboGraceMs;
     this.bestCombo = Math.max(this.bestCombo, this.combo);
     this.collected[rarity.id] += 1;
-
-    if (this.lastRarityId === rarity.id && rarity.points >= 5) {
-      this.sameRarityStreak += 1;
-    } else {
-      this.sameRarityStreak = rarity.points >= 5 ? 1 : 0;
-    }
     this.lastRarityId = rarity.id;
 
     const multiplier = multiplierForCombo(this.combo);
     this.bestMultiplier = Math.max(this.bestMultiplier, multiplier);
 
-    const streakBonus = this.sameRarityStreak >= 3;
-    const awardedPoints = Math.round(
-      rarity.points * multiplier * this.scoreMultiplier * (streakBonus ? 2 : 1),
-    );
+    const streakBonus = this.combo >= 2;
+    const awardedPoints = Math.round(rarity.points * multiplier * this.scoreMultiplier);
     const xp = Math.round(rarity.xp * this.xpMultiplier);
 
     this.score += awardedPoints;
@@ -98,7 +87,7 @@ export class ScoreSystem {
       multiplier,
       comboIncreased: true,
       multiplierIncreased: multiplier > previousMultiplier,
-      sameRarityStreak: this.sameRarityStreak,
+      sameRarityStreak: this.combo,
       streakBonus,
     };
   }

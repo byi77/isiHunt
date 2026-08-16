@@ -93,6 +93,7 @@ export class MenuScene extends Phaser.Scene {
 
     void this.showUpdateHintIfAny();
     void this.checkCloudSave();
+    void CloudSystem.flushPendingLeaderboardScore();
     window.addEventListener('online', this.onlineHandler);
 
     // Nur mit ?hitboxes in der Adresse - zeigt, was Phaser fuer anfassbar haelt.

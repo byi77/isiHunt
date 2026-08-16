@@ -64,9 +64,7 @@ describe('ScoreSystem - Fangen', () => {
     const tier = COMBO_TIERS[1];
     expect(tier).toBeDefined();
 
-    const outcomes = Array.from({ length: tier!.minCombo + 1 }, () =>
-      system.registerCollect(POOR!),
-    );
+    const outcomes = Array.from({ length: tier!.minCombo }, () => system.registerCollect(POOR!));
 
     const jumpIndex = outcomes.findIndex((o) => o.multiplierIncreased);
     expect(outcomes[jumpIndex]?.combo).toBe(tier!.minCombo);
@@ -81,16 +79,13 @@ describe('ScoreSystem - Fangen', () => {
     expect(system.registerCollect(POOR!).awardedPoints).toBe(2);
   });
 
-  it('rechnet XP unabhaengig vom Combo-Multiplikator', () => {
+  it('setzt die Kette bei einer anderen Seltenheit auf eins zurueck', () => {
     const system = createSystem();
-    const tier = COMBO_TIERS[1];
-
-    // Combo bis ueber die zweite Stufe treiben.
-    for (let i = 0; i < tier!.minCombo; i++) system.registerCollect(POOR!);
-
+    system.registerCollect(POOR!);
+    system.registerCollect(POOR!);
     const outcome = system.registerCollect(LEGENDARY!);
-    expect(outcome.multiplier).toBeGreaterThan(1);
-    // XP bleiben der Basiswert - nur Punkte skalieren mit der Combo.
+    expect(outcome.combo).toBe(1);
+    expect(outcome.multiplier).toBe(1);
     expect(outcome.xpGained).toBe(LEGENDARY!.xp);
   });
 });
@@ -158,12 +153,14 @@ describe('ScoreSystem - Seltenheitsserie', () => {
   it('verdoppelt ab dem dritten gleichen grünen oder selteneren Relikt die Punkte', () => {
     const system = createSystem();
     system.registerCollect(RARE!);
-    system.registerCollect(RARE!);
-    const bonus = system.registerCollect(RARE!);
+    const second = system.registerCollect(RARE!);
+    const third = system.registerCollect(RARE!);
 
-    expect(bonus.sameRarityStreak).toBe(3);
-    expect(bonus.streakBonus).toBe(true);
-    expect(bonus.awardedPoints).toBe(RARE!.points * bonus.multiplier * 2);
+    expect(second.sameRarityStreak).toBe(2);
+    expect(second.multiplier).toBe(2);
+    expect(third.sameRarityStreak).toBe(3);
+    expect(third.multiplier).toBe(3);
+    expect(third.awardedPoints).toBe(RARE!.points * 3);
   });
 
   it('setzt die Serie bei einer anderen Seltenheit zurück', () => {
@@ -172,8 +169,9 @@ describe('ScoreSystem - Seltenheitsserie', () => {
     system.registerCollect(RARE!);
     system.registerCollect(LEGENDARY!);
 
-    expect(system.registerCollect(RARE!).sameRarityStreak).toBe(1);
-    expect(system.registerCollect(RARE!).streakBonus).toBe(false);
+    const restarted = system.registerCollect(RARE!);
+    expect(restarted.sameRarityStreak).toBe(1);
+    expect(restarted.multiplier).toBe(1);
   });
 });
 

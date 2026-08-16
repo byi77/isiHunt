@@ -153,13 +153,13 @@ export const WORLD_RARE_PROMOTION_CHANCE = 0.18;
  */
 export const COMBO_GRACE_MS = 2200;
 
-/** Ab wie vielen Combo-Stufen welcher Multiplikator gilt (aufsteigend). */
+/** Ab wie vielen unmittelbar gleichen Relikten welcher Multiplikator gilt. */
 export const COMBO_TIERS: readonly { readonly minCombo: number; readonly multiplier: number }[] = [
   { minCombo: 0, multiplier: 1 },
-  { minCombo: 5, multiplier: 2 },
-  { minCombo: 10, multiplier: 3 },
-  { minCombo: 20, multiplier: 4 },
-  { minCombo: 35, multiplier: 5 },
+  { minCombo: 2, multiplier: 2 },
+  { minCombo: 3, multiplier: 3 },
+  { minCombo: 4, multiplier: 4 },
+  { minCombo: 5, multiplier: 5 },
 ];
 
 // --- Progression ------------------------------------------------------------

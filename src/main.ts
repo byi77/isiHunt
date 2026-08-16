@@ -16,6 +16,7 @@ import { isStandalone } from '@/core/display';
 import { requestPortraitOrientationLock } from '@/core/orientation';
 import { keepCanvasBoundsFresh, waitForViewportToSettle } from '@/core/viewport';
 import { AdminScene } from '@/scenes/AdminScene';
+import { AdminPinScene } from '@/scenes/AdminPinScene';
 import { AdminStatsScene } from '@/scenes/AdminStatsScene';
 import { AccountScene } from '@/scenes/AccountScene';
 import { AchievementsScene } from '@/scenes/AchievementsScene';
@@ -85,6 +86,7 @@ function createGameConfig(): Phaser.Types.Core.GameConfig {
       TalentScene,
       SyncScene,
       AdminScene,
+      AdminPinScene,
       AdminStatsScene,
       RulerScene,
     ],
@@ -156,7 +158,7 @@ function installAdminLongPress(activeGame: Phaser.Game): void {
 
     holdTimer = window.setTimeout(() => {
       activeGame.scene.getScenes(true).forEach((scene) => scene.scene.stop());
-      activeGame.scene.start(SceneKey.Admin);
+      activeGame.scene.start(SceneKey.AdminPin);
       tapCount = 0;
     }, LANGER_DRUCK_MS);
   });

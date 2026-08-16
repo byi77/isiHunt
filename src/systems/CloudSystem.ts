@@ -58,6 +58,51 @@ export interface LeaderboardEntry {
   worldId: string;
 }
 
+interface PendingLeaderboardScore {
+  playerId: string;
+  playerName: string;
+  worldId: string;
+  level: number;
+  score: number;
+  bestCombo: number;
+  durationMs: number;
+  collected: Record<string, number>;
+}
+
+const PENDING_LEADERBOARD_SCORE_KEY = 'isihunt.pending-leaderboard-score.v1';
+
+function readPendingLeaderboardScore(): PendingLeaderboardScore | null {
+  try {
+    const raw = window.localStorage.getItem(PENDING_LEADERBOARD_SCORE_KEY);
+    if (!raw) return null;
+    const value = JSON.parse(raw) as Partial<PendingLeaderboardScore>;
+    if (!value.playerId || !value.playerName || !value.worldId || !Number.isFinite(value.score)) {
+      return null;
+    }
+    return value as PendingLeaderboardScore;
+  } catch {
+    return null;
+  }
+}
+
+function savePendingLeaderboardScore(score: PendingLeaderboardScore): void {
+  const existing = readPendingLeaderboardScore();
+  if (existing && existing.playerId === score.playerId && existing.score > score.score) return;
+  try {
+    window.localStorage.setItem(PENDING_LEADERBOARD_SCORE_KEY, JSON.stringify(score));
+  } catch {
+    // Privater Browsermodus darf einen Lauf nicht beeintraechtigen.
+  }
+}
+
+function clearPendingLeaderboardScore(): void {
+  try {
+    window.localStorage.removeItem(PENDING_LEADERBOARD_SCORE_KEY);
+  } catch {
+    // Siehe savePendingLeaderboardScore.
+  }
+}
+
 /** Kurzfassung eines Spielstands - genug, um zwei Staende zu unterscheiden. */
 export interface RemoteSaveSummary {
   level: number;
@@ -83,6 +128,8 @@ export interface AdminUserStats {
   totalRuns: number;
   totalPlayTimeMs: number;
   totalCoinsEarned: number;
+  currentCoins: number;
+  totalDailyRuns: number;
   totalXp: number;
   bestScore: number;
   bestCombo: number;
@@ -97,6 +144,8 @@ export interface AdminDashboard {
   totalRuns: number;
   totalPlayTimeMs: number;
   totalCoinsEarned: number;
+  totalCoinsHeld: number;
+  totalDailyRuns: number;
   totalXp: number;
   totalAchievements: number;
   highestScore: number;
@@ -279,6 +328,74 @@ export async function submitScore(
   if (result.value.error) return { ok: false, error: result.value.error.message };
 
   return { ok: true, value: true };
+}
+
+/**
+ * Bewahrt einen nicht zugestellten Bestwert lokal auf und versucht ihn beim
+ * naechsten Menue-Start erneut. Ohne Login darf gespielt werden; die
+ * Bestenliste braucht aber eine erreichbare Datenbank in genau diesem Moment.
+ */
+export async function submitScoreSafely(
+  playerId: string,
+  playerName: string,
+  worldId: string,
+  level: number,
+  score: number,
+  bestCombo: number,
+  durationMs: number,
+  collected: Record<string, number>,
+): Promise<CloudResult<true>> {
+  const pending: PendingLeaderboardScore = {
+    playerId,
+    playerName,
+    worldId,
+    level,
+    score,
+    bestCombo,
+    durationMs,
+    collected,
+  };
+  try {
+    const result = await submitScore(
+      playerId,
+      playerName,
+      worldId,
+      level,
+      score,
+      bestCombo,
+      durationMs,
+      collected,
+    );
+    if (result.ok) {
+      const existing = readPendingLeaderboardScore();
+      if (!existing || (existing.playerId === playerId && existing.score <= score)) {
+        clearPendingLeaderboardScore();
+      }
+    } else {
+      savePendingLeaderboardScore(pending);
+    }
+    return result;
+  } catch {
+    savePendingLeaderboardScore(pending);
+    return { ok: false, error: 'Bestwert wird beim naechsten Start erneut versucht' };
+  }
+}
+
+/** Versucht einen nach Netz- oder Serverfehler vorgemerkten Bestwert erneut. */
+export async function flushPendingLeaderboardScore(): Promise<void> {
+  const pending = readPendingLeaderboardScore();
+  if (!pending || !isAvailable()) return;
+  const result = await submitScoreSafely(
+    pending.playerId,
+    pending.playerName,
+    pending.worldId,
+    pending.level,
+    pending.score,
+    pending.bestCombo,
+    pending.durationMs,
+    pending.collected,
+  );
+  if (result.ok) clearPendingLeaderboardScore();
 }
 
 /** Aktualisiert den Anzeigenamen des bereits vorhandenen eigenen Bestwerts. */
@@ -486,6 +603,8 @@ function readAdminDashboard(raw: unknown): AdminDashboard | null {
           totalRuns: Math.max(0, Number(entry.totalRuns ?? 0)),
           totalPlayTimeMs: Math.max(0, Number(entry.totalPlayTimeMs ?? 0)),
           totalCoinsEarned: Math.max(0, Number(entry.totalCoinsEarned ?? 0)),
+          currentCoins: Math.max(0, Number(entry.currentCoins ?? 0)),
+          totalDailyRuns: Math.max(0, Number(entry.totalDailyRuns ?? 0)),
           totalXp: Math.max(0, Number(entry.totalXp ?? 0)),
           bestScore: Math.max(0, Number(entry.bestScore ?? 0)),
           bestCombo: Math.max(0, Number(entry.bestCombo ?? 0)),
@@ -500,6 +619,8 @@ function readAdminDashboard(raw: unknown): AdminDashboard | null {
     totalRuns: Math.max(0, Number(dashboard.totalRuns ?? 0)),
     totalPlayTimeMs: Math.max(0, Number(dashboard.totalPlayTimeMs ?? 0)),
     totalCoinsEarned: Math.max(0, Number(dashboard.totalCoinsEarned ?? 0)),
+    totalCoinsHeld: Math.max(0, Number(dashboard.totalCoinsHeld ?? 0)),
+    totalDailyRuns: Math.max(0, Number(dashboard.totalDailyRuns ?? 0)),
     totalXp: Math.max(0, Number(dashboard.totalXp ?? 0)),
     totalAchievements: Math.max(0, Number(dashboard.totalAchievements ?? 0)),
     highestScore: Math.max(0, Number(dashboard.highestScore ?? 0)),

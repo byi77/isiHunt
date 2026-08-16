@@ -18,6 +18,7 @@ import {
   createVignette,
   createWorldBackdrop,
 } from '@/ui/widgets';
+import { enableVerticalScroll } from '@/ui/verticalScroll';
 
 const PAGE_SIZE = 5;
 
@@ -41,7 +42,7 @@ export class AdminStatsScene extends Phaser.Scene {
   create(): void {
     SafeAreaSystem.showStatic('ONLINE-STATISTIK');
     const world = getWorld(SaveSystem.load().lastWorldId);
-    createWorldBackdrop(
+    const backdrop = createWorldBackdrop(
       this,
       GAME_WIDTH,
       GAME_HEIGHT,
@@ -51,10 +52,11 @@ export class AdminStatsScene extends Phaser.Scene {
       world.spaceVariant,
     );
     createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, world.spaceVariant);
-    createVignette(this, GAME_WIDTH, GAME_HEIGHT);
-    createBackButton(this, () => this.scene.start(SceneKey.Admin));
+    backdrop.setScrollFactor(0);
+    const vignette = createVignette(this, GAME_WIDTH, GAME_HEIGHT).setScrollFactor(0);
+    const back = createBackButton(this, () => this.scene.start(SceneKey.Admin));
 
-    this.add
+    const title = this.add
       .text(
         GAME_WIDTH / 2,
         128,
@@ -63,7 +65,7 @@ export class AdminStatsScene extends Phaser.Scene {
       )
       .setOrigin(0.5)
       .setLetterSpacing(3);
-    this.add
+    const subtitle = this.add
       .text(
         GAME_WIDTH / 2,
         170,
@@ -86,7 +88,7 @@ export class AdminStatsScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      GAME_HEIGHT - 88,
+      1400,
       'AKTUALISIEREN',
       () => {
         void this.loadDashboard();
@@ -95,6 +97,7 @@ export class AdminStatsScene extends Phaser.Scene {
     );
 
     void this.loadDashboard();
+    enableVerticalScroll(this, 1510, [backdrop, vignette, title, subtitle, back.container]);
   }
 
   private async loadDashboard(): Promise<void> {
@@ -133,6 +136,8 @@ export class AdminStatsScene extends Phaser.Scene {
       `RUNS\n${dashboard.totalRuns.toLocaleString('de-DE')}`,
       `SPIELZEIT\n${formatDuration(dashboard.totalPlayTimeMs)}`,
       `COINS\n${dashboard.totalCoinsEarned.toLocaleString('de-DE')}`,
+      `IN TASCHEN\n${dashboard.totalCoinsHeld.toLocaleString('de-DE')} C`,
+      `DAILYS\n${dashboard.totalDailyRuns.toLocaleString('de-DE')}`,
       `EP\n${dashboard.totalXp.toLocaleString('de-DE')}`,
       `ERFOLGE\n${dashboard.totalAchievements.toLocaleString('de-DE')}`,
       `BESTWERT\n${dashboard.highestScore.toLocaleString('de-DE')}`,
@@ -160,7 +165,7 @@ export class AdminStatsScene extends Phaser.Scene {
 
     this.content.push(
       this.add
-        .text(58, 494, 'PROFILE', textStyle(FontSize.tiny, Palette.gold, { fontStyle: 'bold' }))
+        .text(58, 602, 'PROFILE', textStyle(FontSize.tiny, Palette.gold, { fontStyle: 'bold' }))
         .setOrigin(0, 0.5)
         .setLetterSpacing(3),
     );
@@ -168,12 +173,12 @@ export class AdminStatsScene extends Phaser.Scene {
     const pageCount = Math.max(1, Math.ceil(dashboard.users.length / PAGE_SIZE));
     this.page = Phaser.Math.Clamp(this.page, 0, pageCount - 1);
     const users = dashboard.users.slice(this.page * PAGE_SIZE, (this.page + 1) * PAGE_SIZE);
-    users.forEach((user, index) => this.renderUser(user, 548 + index * 112, world.accent));
+    users.forEach((user, index) => this.renderUser(user, 668 + index * 132, world.accent));
 
     const pageLabel = this.add
       .text(
         GAME_WIDTH / 2,
-        GAME_HEIGHT - 174,
+        1350,
         dashboard.users.length === 0
           ? 'Keine Profile in der Datenbank.'
           : `SEITE ${this.page + 1} / ${pageCount} · ${dashboard.users.length} PROFILE`,
@@ -183,7 +188,7 @@ export class AdminStatsScene extends Phaser.Scene {
     const previous = createButton(
       this,
       GAME_WIDTH / 2 - 155,
-      GAME_HEIGHT - 174,
+      1350,
       '‹',
       () => {
         this.page -= 1;
@@ -194,7 +199,7 @@ export class AdminStatsScene extends Phaser.Scene {
     const next = createButton(
       this,
       GAME_WIDTH / 2 + 155,
-      GAME_HEIGHT - 174,
+      1350,
       '›',
       () => {
         this.page += 1;
@@ -209,7 +214,7 @@ export class AdminStatsScene extends Phaser.Scene {
 
   private renderUser(user: AdminUserStats, y: number, accent: number): void {
     this.content.push(
-      createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 110, 96, accent, {
+      createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 110, 116, accent, {
         alpha: 0.42,
         radius: 12,
       }),
@@ -225,7 +230,7 @@ export class AdminStatsScene extends Phaser.Scene {
       this.add
         .text(
           74,
-          y + 10,
+          y + 6,
           `Level ${user.level} · ${user.totalRuns} Runs · ${formatDuration(user.totalPlayTimeMs)}`,
           textStyle(FontSize.tiny, Palette.inkDim),
         )
@@ -235,23 +240,23 @@ export class AdminStatsScene extends Phaser.Scene {
         .text(
           GAME_WIDTH - 74,
           y - 22,
-          `${user.totalCoinsEarned.toLocaleString('de-DE')} C`,
+          `Verdient ${user.totalCoinsEarned.toLocaleString('de-DE')} C`,
           textStyle(FontSize.small, Palette.gold, { fontStyle: 'bold' }),
         )
         .setOrigin(1, 0.5),
       this.add
         .text(
           GAME_WIDTH - 74,
-          y + 8,
-          `${user.totalXp.toLocaleString('de-DE')} EP · ${user.achievementCount} Erfolge`,
+          y + 4,
+          `Tasche ${user.currentCoins.toLocaleString('de-DE')} C · ${user.totalDailyRuns} Dailys`,
           textStyle(FontSize.tiny, toCss(accent)),
         )
         .setOrigin(1, 0.5),
       this.add
         .text(
           GAME_WIDTH - 74,
-          y + 29,
-          `Bestwert ${user.bestScore.toLocaleString('de-DE')} · Combo ${user.bestCombo}`,
+          y + 30,
+          `${user.totalXp.toLocaleString('de-DE')} EP · ${user.achievementCount} Erfolge · Bestwert ${user.bestScore.toLocaleString('de-DE')}`,
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(1, 0.5),

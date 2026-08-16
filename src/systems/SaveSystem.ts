@@ -27,7 +27,7 @@ const TEST_PROFILE_BACKUP_KEY = 'isihunt.admin-test-profile-backup.v1';
  * Das ist keine Adminberechtigung: Der Stand bleibt offline, schaltet keine
  * Serverfunktion frei und wird nicht in Bestenliste oder Profil-Sync übertragen.
  */
-export const ADMIN_TEST_PIN = '739164';
+export const MAINTENANCE_PIN = '180870';
 
 export function createDefaultSave(): SaveData {
   return {

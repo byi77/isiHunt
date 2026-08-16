@@ -298,7 +298,7 @@ export class HudScene extends Phaser.Scene {
       return;
     }
 
-    this.comboText.setText(`${combo}er Kette   x${multiplier}`);
+    this.comboText.setText(`${combo} gleiche in Folge   x${multiplier}`);
     this.comboText.setScale(1.2);
     this.tweens.add({ targets: this.comboText, scale: 1, duration: 200, ease: 'Back.Out' });
   };

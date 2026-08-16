@@ -402,6 +402,8 @@ begin
           coalesce((progress.data->>'coins')::bigint, 0)
             + coalesce((progress.data->>'coinsSpent')::bigint, 0)
         ) as total_coins_earned,
+        coalesce((progress.data->>'coins')::bigint, 0) as current_coins,
+        coalesce((progress.data->>'totalDailyRuns')::bigint, 0) as total_daily_runs,
         coalesce(progress.total_xp, 0) as total_xp,
         coalesce((progress.data->>'bestScore')::bigint, 0) as best_score,
         coalesce((progress.data->>'bestCombo')::integer, 0) as best_combo,
@@ -417,6 +419,8 @@ begin
         coalesce(sum(total_runs), 0) as total_runs,
         coalesce(sum(total_play_time_ms), 0) as total_play_time_ms,
         coalesce(sum(total_coins_earned), 0) as total_coins_earned,
+        coalesce(sum(current_coins), 0) as total_coins_held,
+        coalesce(sum(total_daily_runs), 0) as total_daily_runs,
         coalesce(sum(total_xp), 0) as total_xp,
         coalesce(sum(achievement_count), 0) as total_achievements,
         coalesce(max(best_score), 0) as highest_score
@@ -433,6 +437,8 @@ begin
       'totalRuns', summary.total_runs,
       'totalPlayTimeMs', summary.total_play_time_ms,
       'totalCoinsEarned', summary.total_coins_earned,
+      'totalCoinsHeld', summary.total_coins_held,
+      'totalDailyRuns', summary.total_daily_runs,
       'totalXp', summary.total_xp,
       'totalAchievements', summary.total_achievements,
       'highestScore', summary.highest_score,
@@ -444,6 +450,8 @@ begin
             'totalRuns', total_runs,
             'totalPlayTimeMs', total_play_time_ms,
             'totalCoinsEarned', total_coins_earned,
+            'currentCoins', current_coins,
+            'totalDailyRuns', total_daily_runs,
             'totalXp', total_xp,
             'bestScore', best_score,
             'bestCombo', best_combo,
@@ -800,10 +808,10 @@ declare
     else 0
   end;
   combo_multiplier integer := case
-    when p_best_combo >= 35 then 5
-    when p_best_combo >= 20 then 4
-    when p_best_combo >= 10 then 3
-    when p_best_combo >= 5 then 2
+    when p_best_combo >= 5 then 5
+    when p_best_combo >= 4 then 4
+    when p_best_combo >= 3 then 3
+    when p_best_combo >= 2 then 2
     else 1
   end;
 begin
@@ -835,7 +843,7 @@ begin
   if p_best_combo < 0 or p_best_combo > total_relics then return 0; end if;
 
   -- 1.30 = maximaler Gunst-Bonus, world multiplier = Weltbonus,
-  -- 2 = maximaler gleicher-Raritaet-Streak, 1.10 = Rundungspuffer.
+  -- 2 = historischer Serienpuffer, 1.10 = Rundungspuffer.
   return least(
     10000000,
     ceil(base_points * combo_multiplier * 1.30 * reward_multiplier * 2.0 * 1.10)::integer
