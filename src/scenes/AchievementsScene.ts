@@ -94,7 +94,7 @@ export class AchievementsScene extends Phaser.Scene {
         .text(
           x - 94,
           y - 35,
-          `RANG ${achievement.rank}`,
+          `RANG ${achievement.rank} · +${achievement.coinReward}`,
           textStyle(FontSize.small, isUnlocked ? Palette.gold : Palette.inkDim, {
             fontStyle: 'bold',
           }),

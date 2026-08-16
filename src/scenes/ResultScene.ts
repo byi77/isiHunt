@@ -205,7 +205,10 @@ export class ResultScene extends Phaser.Scene {
     for (const achievementId of progression.unlockedAchievementIds) {
       const achievement = ACHIEVEMENT_BY_ID[achievementId];
       if (achievement) {
-        highlights.push({ text: `Erfolg: ${achievement.name}`, color: Palette.gold });
+        highlights.push({
+          text: `Erfolg: ${achievement.name} · +${achievement.coinReward} Coins`,
+          color: Palette.gold,
+        });
       }
     }
 

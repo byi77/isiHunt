@@ -16,6 +16,7 @@ import { isStandalone } from '@/core/display';
 import { requestPortraitOrientationLock } from '@/core/orientation';
 import { keepCanvasBoundsFresh, waitForViewportToSettle } from '@/core/viewport';
 import { AdminScene } from '@/scenes/AdminScene';
+import { AdminStatsScene } from '@/scenes/AdminStatsScene';
 import { AccountScene } from '@/scenes/AccountScene';
 import { AchievementsScene } from '@/scenes/AchievementsScene';
 import { BootScene } from '@/scenes/BootScene';
@@ -84,6 +85,7 @@ function createGameConfig(): Phaser.Types.Core.GameConfig {
       TalentScene,
       SyncScene,
       AdminScene,
+      AdminStatsScene,
       RulerScene,
     ],
   };

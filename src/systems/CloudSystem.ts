@@ -76,6 +76,33 @@ export interface RemoteProfileProgress {
   updatedAt: string;
 }
 
+/** Eine Zeile der ausschließlich serverseitig autorisierten Wartungsansicht. */
+export interface AdminUserStats {
+  playerName: string;
+  level: number;
+  totalRuns: number;
+  totalPlayTimeMs: number;
+  totalCoinsEarned: number;
+  totalXp: number;
+  bestScore: number;
+  bestCombo: number;
+  achievementCount: number;
+  updatedAt: string;
+}
+
+/** Aggregierte Nutzung ohne Zugriff auf private Spielstand-Rohdaten. */
+export interface AdminDashboard {
+  profileCount: number;
+  playedProfileCount: number;
+  totalRuns: number;
+  totalPlayTimeMs: number;
+  totalCoinsEarned: number;
+  totalXp: number;
+  totalAchievements: number;
+  highestScore: number;
+  users: AdminUserStats[];
+}
+
 /** Vergleicht die Fortschrittsmarker, die fuer den Nutzer sichtbar sind. */
 export function isRemoteAhead(local: SaveData, remote: RemoteSave): boolean {
   return (
@@ -441,6 +468,64 @@ function readProfileProgress(raw: unknown): RemoteProfileProgress | null {
     totalXp: Number(value.total_xp ?? 0),
     updatedAt: String(value.updated_at ?? ''),
   };
+}
+
+function readAdminDashboard(raw: unknown): AdminDashboard | null {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  if (!value || typeof value !== 'object') return null;
+
+  const dashboard = value as Record<string, unknown>;
+  const users = Array.isArray(dashboard.users)
+    ? dashboard.users
+        .filter(
+          (entry): entry is Record<string, unknown> => Boolean(entry) && typeof entry === 'object',
+        )
+        .map((entry) => ({
+          playerName: String(entry.playerName ?? 'Ohne Namen'),
+          level: Math.max(1, Number(entry.level ?? 1)),
+          totalRuns: Math.max(0, Number(entry.totalRuns ?? 0)),
+          totalPlayTimeMs: Math.max(0, Number(entry.totalPlayTimeMs ?? 0)),
+          totalCoinsEarned: Math.max(0, Number(entry.totalCoinsEarned ?? 0)),
+          totalXp: Math.max(0, Number(entry.totalXp ?? 0)),
+          bestScore: Math.max(0, Number(entry.bestScore ?? 0)),
+          bestCombo: Math.max(0, Number(entry.bestCombo ?? 0)),
+          achievementCount: Math.max(0, Number(entry.achievementCount ?? 0)),
+          updatedAt: String(entry.updatedAt ?? ''),
+        }))
+    : [];
+
+  return {
+    profileCount: Math.max(0, Number(dashboard.profileCount ?? 0)),
+    playedProfileCount: Math.max(0, Number(dashboard.playedProfileCount ?? 0)),
+    totalRuns: Math.max(0, Number(dashboard.totalRuns ?? 0)),
+    totalPlayTimeMs: Math.max(0, Number(dashboard.totalPlayTimeMs ?? 0)),
+    totalCoinsEarned: Math.max(0, Number(dashboard.totalCoinsEarned ?? 0)),
+    totalXp: Math.max(0, Number(dashboard.totalXp ?? 0)),
+    totalAchievements: Math.max(0, Number(dashboard.totalAchievements ?? 0)),
+    highestScore: Math.max(0, Number(dashboard.highestScore ?? 0)),
+    users,
+  };
+}
+
+/**
+ * Lädt die serverseitig geschützte Wartungsübersicht.
+ *
+ * Die Funktion liefert nur aggregierte Werte und die angeforderten
+ * Profilkennzahlen. Die Datenbank prüft `profiles.is_admin`; ein lokaler PIN
+ * oder eine sichtbare UI kann diese Berechtigung nicht ersetzen.
+ */
+export async function fetchAdminDashboard(): Promise<CloudResult<AdminDashboard | null>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const result = await withTimeout(
+    authenticated.value.rpc('get_admin_dashboard', { p_limit: 200 }),
+    'Wartungsstatistik laden',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  return { ok: true, value: readAdminDashboard(result.value.data) };
 }
 
 /** Lädt den gemeinsamen Profilstand des angemeldeten Benutzers. */

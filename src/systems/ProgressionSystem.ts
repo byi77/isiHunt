@@ -5,9 +5,8 @@
  * unabhaengig davon, ob ein Run gerade laeuft.
  */
 
-import { ACHIEVEMENTS } from '@/config/achievements';
+import { ACHIEVEMENT_BY_ID, ACHIEVEMENTS } from '@/config/achievements';
 import {
-  COINS_PER_ACHIEVEMENT,
   COINS_PER_COLLECTED_RELIC,
   COINS_PER_LEVEL,
   COINS_PER_RUN,
@@ -102,7 +101,10 @@ export function applyRun(run: RunStats): ProgressionResult {
 
   // Achievements erst NACH der XP-Verrechnung pruefen: manche haengen am Level.
   const unlockedAchievementIds = evaluateAchievements(after, run);
-  const achievementCoins = unlockedAchievementIds.length * COINS_PER_ACHIEVEMENT;
+  const achievementCoins = unlockedAchievementIds.reduce(
+    (sum, id) => sum + (ACHIEVEMENT_BY_ID[id]?.coinReward ?? 0),
+    0,
+  );
   if (achievementCoins > 0) {
     SaveSystem.update((data) => {
       data.coins += achievementCoins;

@@ -368,7 +368,7 @@ export class MenuScene extends Phaser.Scene {
       { center: y - 26, height: FontSize.body },
       { center: y + 2, height: FontSize.body },
       { center: y + 28, height: FontSize.tiny },
-      { center: y + 49, height: FontSize.tiny },
+      { center: y + 49, height: FontSize.body },
       { center: y + 80, height: 20 },
     ];
     const panelPadding = 25;
@@ -425,8 +425,8 @@ export class MenuScene extends Phaser.Scene {
       .text(
         172,
         y + 49,
-        `COINS ${coins.toLocaleString('de-DE')}`,
-        textStyle(FontSize.tiny, Palette.inkDim),
+        `COINS  ${coins.toLocaleString('de-DE')}`,
+        textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
       )
       .setOrigin(0, 0.5)
       .setLetterSpacing(3);

@@ -15,6 +15,7 @@ import {
   SAVE_VERSION,
   xpForLevel,
 } from '@/config/GameConfig';
+import { ACHIEVEMENT_BY_ID } from '@/config/achievements';
 import { emptyRarityCounts } from '@/config/rarities';
 import { DEFAULT_WORLD_ID, WORLDS } from '@/config/worlds';
 import type { RarityId } from '@/config/rarities';
@@ -241,6 +242,18 @@ describe('applyRun - Achievements', () => {
     for (const id of result.unlockedAchievementIds) {
       expect(save.unlockedAchievements).toContain(id);
     }
+  });
+
+  it('vergibt für höhere Erfolgsränge eine höhere Coin-Belohnung', () => {
+    const result = Progression.applyRun(createRun({ bestCombo: 25 }));
+    const achievementCoins = result.unlockedAchievementIds.reduce(
+      (sum, id) => sum + (ACHIEVEMENT_BY_ID[id]?.coinReward ?? 0),
+      0,
+    );
+
+    expect(result.unlockedAchievementIds).toContain('combo_25');
+    expect(achievementCoins).toBeGreaterThan(ACHIEVEMENT_BY_ID.combo_25!.coinReward);
+    expect(result.coinsGained).toBeGreaterThanOrEqual(achievementCoins);
   });
 });
 

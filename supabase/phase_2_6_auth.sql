@@ -49,6 +49,7 @@ create table if not exists public.profiles (
   player_name  text not null default '',
   alias        text,
   alias_normalized text,
+  is_admin     boolean not null default false,
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now(),
   constraint profiles_name_length check (char_length(player_name) <= 16)
@@ -56,6 +57,7 @@ create table if not exists public.profiles (
 
 alter table public.profiles add column if not exists alias text;
 alter table public.profiles add column if not exists alias_normalized text;
+alter table public.profiles add column if not exists is_admin boolean not null default false;
 
 create unique index if not exists profiles_alias_normalized_idx
   on public.profiles (alias_normalized)
@@ -365,6 +367,94 @@ $$;
 
 revoke execute on function public.update_profile_alias(text) from public;
 grant execute on function public.update_profile_alias(text) to authenticated;
+
+-- Ausschließlich serverseitig freigegebene Wartungsübersicht. Das lokale
+-- Testprofil und seine PIN vergeben keinerlei Rechte: Ein Konto wird nur über
+-- `profiles.is_admin` (manuell im SQL Editor) zum Wartungsadmin.
+create or replace function public.get_admin_dashboard(p_limit integer default 200)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  uid uuid := auth.uid();
+  safe_limit integer := greatest(1, least(coalesce(p_limit, 200), 200));
+begin
+  if uid is null or not exists (
+    select 1 from public.profiles where id = uid and is_admin
+  ) then
+    raise exception 'Wartungsrechte erforderlich';
+  end if;
+
+  return (
+    with user_stats as (
+      select
+        p.player_name,
+        coalesce((progress.data->>'level')::integer, 1) as level,
+        coalesce((progress.data->>'totalRuns')::bigint, 0) as total_runs,
+        coalesce((progress.data->>'totalPlayTimeMs')::bigint, 0) as total_play_time_ms,
+        coalesce((progress.data->>'totalCoinsEarned')::bigint, 0) as total_coins_earned,
+        coalesce(progress.total_xp, 0) as total_xp,
+        coalesce((progress.data->>'bestScore')::bigint, 0) as best_score,
+        coalesce((progress.data->>'bestCombo')::integer, 0) as best_combo,
+        coalesce(jsonb_array_length(progress.data->'unlockedAchievements'), 0) as achievement_count,
+        progress.updated_at
+      from public.profiles as p
+      left join public.profile_progress as progress on progress.profile_id = p.id
+    ),
+    summary as (
+      select
+        count(*) as profile_count,
+        count(*) filter (where total_runs > 0) as played_profile_count,
+        coalesce(sum(total_runs), 0) as total_runs,
+        coalesce(sum(total_play_time_ms), 0) as total_play_time_ms,
+        coalesce(sum(total_coins_earned), 0) as total_coins_earned,
+        coalesce(sum(total_xp), 0) as total_xp,
+        coalesce(sum(achievement_count), 0) as total_achievements,
+        coalesce(max(best_score), 0) as highest_score
+      from user_stats
+    ),
+    top_users as (
+      select * from user_stats
+      order by total_runs desc, total_play_time_ms desc, updated_at desc nulls last
+      limit safe_limit
+    )
+    select jsonb_build_object(
+      'profileCount', summary.profile_count,
+      'playedProfileCount', summary.played_profile_count,
+      'totalRuns', summary.total_runs,
+      'totalPlayTimeMs', summary.total_play_time_ms,
+      'totalCoinsEarned', summary.total_coins_earned,
+      'totalXp', summary.total_xp,
+      'totalAchievements', summary.total_achievements,
+      'highestScore', summary.highest_score,
+      'users', coalesce(
+        (
+          select jsonb_agg(jsonb_build_object(
+            'playerName', coalesce(nullif(player_name, ''), 'Ohne Namen'),
+            'level', level,
+            'totalRuns', total_runs,
+            'totalPlayTimeMs', total_play_time_ms,
+            'totalCoinsEarned', total_coins_earned,
+            'totalXp', total_xp,
+            'bestScore', best_score,
+            'bestCombo', best_combo,
+            'achievementCount', achievement_count,
+            'updatedAt', updated_at
+          ) order by total_runs desc, total_play_time_ms desc, updated_at desc nulls last)
+          from top_users
+        ),
+        '[]'::jsonb
+      )
+    )
+    from summary
+  );
+end;
+$$;
+
+revoke execute on function public.get_admin_dashboard(integer) from public;
+grant execute on function public.get_admin_dashboard(integer) to authenticated;
 
 -- ============================================================================
 -- 3. Talentbaum: atomare Käufe und kostenloser Reset

@@ -9,7 +9,6 @@
 import {
   COINS_PER_LEVEL,
   COINS_PER_EXTRA_TALENT_POINT,
-  DEBUG_ENABLED,
   MAX_LEVEL,
   RUN_DURATION_MS,
   SAVE_KEY,
@@ -22,8 +21,13 @@ import type { SaveData } from '@/types';
 
 const TEST_PROFILE_KEY = 'isihunt.admin-test-profile.v1';
 const TEST_PROFILE_BACKUP_KEY = 'isihunt.admin-test-profile-backup.v1';
-/** Der Test-PIN wird nur in Development-Builds in den Client aufgenommen. */
-export const ADMIN_TEST_PIN = DEBUG_ENABLED ? '739164' : '';
+/**
+ * PIN für den ausschließlich lokalen Wartungs-Teststand.
+ *
+ * Das ist keine Adminberechtigung: Der Stand bleibt offline, schaltet keine
+ * Serverfunktion frei und wird nicht in Bestenliste oder Profil-Sync übertragen.
+ */
+export const ADMIN_TEST_PIN = '739164';
 
 export function createDefaultSave(): SaveData {
   return {
@@ -206,7 +210,6 @@ export function reset(): SaveData {
 
 /** True, wenn der lokale Wartungs-Teststand aktiv ist. */
 export function isTestProfileActive(): boolean {
-  if (!DEBUG_ENABLED) return false;
   try {
     return window.localStorage.getItem(TEST_PROFILE_KEY) === '1';
   } catch {
@@ -216,7 +219,6 @@ export function isTestProfileActive(): boolean {
 
 /** Aktiviert einen lokalen Teststand, ohne den normalen Spielstand zu verlieren. */
 export function enableTestProfile(): SaveData {
-  if (!DEBUG_ENABLED) return load();
   if (isTestProfileActive()) return load();
 
   const original = structuredClone(load());
@@ -246,7 +248,6 @@ export function enableTestProfile(): SaveData {
 
 /** Deaktiviert den lokalen Teststand und stellt den vorherigen Stand wieder her. */
 export function disableTestProfile(): SaveData {
-  if (!DEBUG_ENABLED) return load();
   let backup: Partial<SaveData> | null = null;
   try {
     const raw = window.localStorage.getItem(TEST_PROFILE_BACKUP_KEY);

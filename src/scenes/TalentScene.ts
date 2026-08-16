@@ -166,6 +166,7 @@ export class TalentScene extends Phaser.Scene {
   private async purchase(id: TalentId): Promise<void> {
     if (this.busy) return;
     this.busy = true;
+    this.feedbackText.setText('KAUF WIRD GEBUCHT · BITTE WARTEN …').setColor(Palette.gold);
     let error = '';
     if (AuthSystem.isSignedIn() && !SaveSystem.isTestProfileActive()) {
       // Lokale Runs und Tagesboni muessen vor dem atomaren Serverkauf
@@ -270,6 +271,7 @@ export class TalentScene extends Phaser.Scene {
   private async reset(): Promise<void> {
     if (this.busy) return;
     this.busy = true;
+    this.feedbackText.setText('RESET WIRD GEBUCHT · BITTE WARTEN …').setColor(Palette.gold);
     let error = '';
     if (AuthSystem.isSignedIn()) {
       const result = await CloudSystem.resetTalents();

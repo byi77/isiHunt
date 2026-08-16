@@ -136,7 +136,6 @@ function unlock(): void {
   const context = getAudioContext();
   if (!context) return;
 
-  primeAudioContext(context);
   void resumeAudioContext().then((ready) => {
     if (ready) flushPendingTones(context);
   });
@@ -155,9 +154,9 @@ function scheduleTone(spec: ToneSpec): void {
 
   if (pendingTones.length >= MAX_PENDING_TONES) pendingTones.shift();
   pendingTones.push(spec);
-  void resumeAudioContext().then((ready) => {
-    if (ready) flushPendingTones(context);
-  });
+  // Ein `resume()` außerhalb einer echten Eingabegeste wird insbesondere von
+  // iOS-PWAs unzuverlässig abgelehnt. Der Ton bleibt deshalb bis zum nächsten
+  // Tipp in der kleinen Queue, statt zufällig später oder gar nicht zu kommen.
 }
 
 function playSequence(specs: readonly ToneSpec[]): void {
@@ -299,13 +298,17 @@ export function initialize(): void {
 
   registerEventListeners();
   window.addEventListener('pointerdown', unlock, true);
-  window.addEventListener('pointerup', unlock, true);
-  window.addEventListener('touchstart', unlock, true);
-  window.addEventListener('touchend', unlock, true);
-  window.addEventListener('click', unlock, true);
+  // Fallback für ältere Touch-WebViews ohne Pointer Events.
+  if (!window.PointerEvent) window.addEventListener('touchstart', unlock, true);
   window.addEventListener('keydown', unlock, true);
   document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'visible') unlock();
+    if (document.visibilityState !== 'hidden') return;
+    // Keine alten Fang-Töne nach dem Zurückkehren aus App-Wechsel oder
+    // Sperrbildschirm nachspielen. iOS unterbricht dort den AudioContext.
+    pendingTones.length = 0;
+    if (audioContext?.state === 'running') {
+      void audioContext.suspend().catch(() => undefined);
+    }
   });
 }
 

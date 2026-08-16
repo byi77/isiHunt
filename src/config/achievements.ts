@@ -1,6 +1,7 @@
 /** Erfolge mit sichtbaren Rängen und steigenden Anforderungen. */
 
 import type { RunStats, SaveData } from '@/types';
+import { COINS_PER_ACHIEVEMENT } from '@/config/GameConfig';
 
 export interface AchievementDef {
   readonly id: string;
@@ -8,6 +9,8 @@ export interface AchievementDef {
   readonly description: string;
   /** 1 = Einstieg, höhere Werte markieren schwierigere Ränge. */
   readonly rank: number;
+  /** Steigende Einmalbelohnung; Rang 1 behält die bisherige 25-Coin-Prämie. */
+  readonly coinReward: number;
   /** Wird nach jedem Run geprüft. `run` ist der soeben beendete Run. */
   readonly check: (save: SaveData, run: RunStats) => boolean;
 }
@@ -19,11 +22,21 @@ function achievement(
   rank: number,
   check: AchievementDef['check'],
 ): AchievementDef {
-  return { id, name, description, rank, check };
+  return {
+    id,
+    name,
+    description,
+    rank,
+    coinReward: COINS_PER_ACHIEVEMENT + (rank - 1) * 15,
+    check,
+  };
 }
 
 const totalRelics = (save: SaveData): number =>
   Object.values(save.collected).reduce((sum, count) => sum + count, 0);
+
+const totalTalentRanks = (save: SaveData): number =>
+  Object.values(save.talents).reduce((sum, rank) => sum + rank, 0);
 
 export const ACHIEVEMENTS: readonly AchievementDef[] = [
   achievement(
@@ -69,6 +82,20 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     5,
     (save) => save.bestCombo >= 100,
   ),
+  achievement(
+    'combo_125',
+    'Kettenreaktion',
+    'Erreiche eine Combo von 125.',
+    6,
+    (save) => save.bestCombo >= 125,
+  ),
+  achievement(
+    'combo_150',
+    'Unendlicher Flow',
+    'Erreiche eine Combo von 150.',
+    7,
+    (save) => save.bestCombo >= 150,
+  ),
 
   achievement(
     'first_rare',
@@ -91,6 +118,20 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     3,
     (save) => save.collected.rare >= 50,
   ),
+  achievement(
+    'rare_100',
+    'Blaues Feuer',
+    'Sammle 100 seltene Relikte.',
+    4,
+    (save) => save.collected.rare >= 100,
+  ),
+  achievement(
+    'rare_250',
+    'Azurwächter',
+    'Sammle 250 seltene Relikte.',
+    5,
+    (save) => save.collected.rare >= 250,
+  ),
 
   achievement(
     'first_epic',
@@ -112,6 +153,20 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     'Sammle 25 epische Relikte.',
     3,
     (save) => save.collected.epic >= 25,
+  ),
+  achievement(
+    'epic_50',
+    'Epischer Orbit',
+    'Sammle 50 epische Relikte.',
+    4,
+    (save) => save.collected.epic >= 50,
+  ),
+  achievement(
+    'epic_100',
+    'Kosmische Macht',
+    'Sammle 100 epische Relikte.',
+    5,
+    (save) => save.collected.epic >= 100,
   ),
 
   achievement(
@@ -141,6 +196,13 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     'Sammle 25 legendäre Relikte.',
     4,
     (save) => save.collected.legendary >= 25,
+  ),
+  achievement(
+    'legendary_50',
+    'Mythischer Sammler',
+    'Sammle 50 legendäre Relikte.',
+    5,
+    (save) => save.collected.legendary >= 50,
   ),
 
   achievement(
@@ -177,6 +239,20 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     'Erreiche 60.000 Punkte in einem Run.',
     5,
     (save) => save.bestScore >= 60_000,
+  ),
+  achievement(
+    'score_100000',
+    'Sechsstellig',
+    'Erreiche 100.000 Punkte in einem Run.',
+    6,
+    (save) => save.bestScore >= 100_000,
+  ),
+  achievement(
+    'score_150000',
+    'Lichtblitz',
+    'Erreiche 150.000 Punkte in einem Run.',
+    7,
+    (save) => save.bestScore >= 150_000,
   ),
 
   achievement('level_5', 'Aufstieg', 'Erreiche Charakterlevel 5.', 1, (save) => save.level >= 5),
@@ -245,6 +321,20 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     4,
     (save) => totalRelics(save) >= 10_000,
   ),
+  achievement(
+    'collector_25000',
+    'Sternenarchiv',
+    'Sammle insgesamt 25.000 Relikte.',
+    5,
+    (save) => totalRelics(save) >= 25_000,
+  ),
+  achievement(
+    'collector_50000',
+    'Archiv des Lichts',
+    'Sammle insgesamt 50.000 Relikte.',
+    6,
+    (save) => totalRelics(save) >= 50_000,
+  ),
 
   achievement(
     'clean_run_50',
@@ -266,6 +356,69 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     'Sammle 100 Relikte in einem Run.',
     3,
     (_save, run) => run.totalCollected >= 100,
+  ),
+  achievement(
+    'clean_run_125',
+    'Sternenregen',
+    'Sammle 125 Relikte in einem Run.',
+    4,
+    (_save, run) => run.totalCollected >= 125,
+  ),
+  achievement(
+    'clean_run_150',
+    'Himmelssturz',
+    'Sammle 150 Relikte in einem Run.',
+    5,
+    (_save, run) => run.totalCollected >= 150,
+  ),
+
+  achievement('runs_10', 'Stammjäger', 'Beende 10 Runs.', 1, (save) => save.totalRuns >= 10),
+  achievement('runs_50', 'Ausdauernd', 'Beende 50 Runs.', 2, (save) => save.totalRuns >= 50),
+  achievement('runs_150', 'Routiniert', 'Beende 150 Runs.', 3, (save) => save.totalRuns >= 150),
+  achievement('runs_500', 'Unermüdlich', 'Beende 500 Runs.', 4, (save) => save.totalRuns >= 500),
+
+  achievement(
+    'playtime_hour',
+    'Eine Stunde Licht',
+    'Spiele insgesamt eine Stunde.',
+    1,
+    (save) => save.totalPlayTimeMs >= 60 * 60 * 1000,
+  ),
+  achievement(
+    'playtime_five_hours',
+    'Langstreckenflug',
+    'Spiele insgesamt fünf Stunden.',
+    2,
+    (save) => save.totalPlayTimeMs >= 5 * 60 * 60 * 1000,
+  ),
+  achievement(
+    'playtime_ten_hours',
+    'Nachtwache',
+    'Spiele insgesamt zehn Stunden.',
+    3,
+    (save) => save.totalPlayTimeMs >= 10 * 60 * 60 * 1000,
+  ),
+
+  achievement(
+    'talents_5',
+    'Erste Spezialisierung',
+    'Kaufe insgesamt 5 Talentränge.',
+    1,
+    (save) => totalTalentRanks(save) >= 5,
+  ),
+  achievement(
+    'talents_15',
+    'Lichtformung',
+    'Kaufe insgesamt 15 Talentränge.',
+    2,
+    (save) => totalTalentRanks(save) >= 15,
+  ),
+  achievement(
+    'talents_30',
+    'Voll entfaltet',
+    'Kaufe insgesamt 30 Talentränge.',
+    3,
+    (save) => totalTalentRanks(save) >= 30,
   ),
 
   achievement(
