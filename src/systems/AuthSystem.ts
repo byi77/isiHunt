@@ -9,6 +9,8 @@ import type { CloudResult } from '@/systems/CloudSystem';
 let session: Session | null = null;
 let initialized = false;
 let unsubscribe: (() => void) | null = null;
+let sessionReady = false;
+let sessionReadyPromise: Promise<void> = Promise.resolve();
 
 /**
  * Supabase kennt beim Passwortlogin E-Mail oder Telefonnummer, aber keinen
@@ -81,18 +83,36 @@ async function request<T>(operation: PromiseLike<T>, label: string): Promise<Clo
 export function initialize(): void {
   if (initialized || !client()) return;
   initialized = true;
+  sessionReady = false;
 
   const supabase = client();
   if (!supabase) return;
 
-  void supabase.auth.getSession().then(({ data }) => {
-    session = data.session;
-  });
+  sessionReadyPromise = supabase.auth
+    .getSession()
+    .then(({ data }) => {
+      session = data.session;
+    })
+    .catch(() => {
+      session = null;
+    })
+    .finally(() => {
+      sessionReady = true;
+    });
 
   const subscription = supabase.auth.onAuthStateChange((_event, nextSession) => {
     session = nextSession;
   });
   unsubscribe = () => subscription.data.subscription.unsubscribe();
+}
+
+/** Liefert erst nach dem ersten Laden der gespeicherten Auth-Session. */
+export function whenReady(): Promise<void> {
+  return sessionReadyPromise;
+}
+
+export function isReady(): boolean {
+  return sessionReady;
 }
 
 export function isConfigured(): boolean {
@@ -217,5 +237,7 @@ export function dispose(): void {
   unsubscribe?.();
   unsubscribe = null;
   initialized = false;
+  sessionReady = false;
+  sessionReadyPromise = Promise.resolve();
   session = null;
 }

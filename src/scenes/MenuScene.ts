@@ -57,6 +57,15 @@ export class MenuScene extends Phaser.Scene {
   create(): void {
     SafeAreaSystem.showMenuTicker();
     const save = SaveSystem.load();
+    // Der lokale Stand darf nicht weiter wie ein eingeloggtes Profil wirken,
+    // wenn die Auth-Session bereits beendet oder abgelaufen ist. Das ist vor
+    // allem nach einer externen Abmeldung wichtig: Der Cloud-Stand bleibt
+    // erhalten und wird beim nächsten Einloggen wieder geladen.
+    if (AuthSystem.isReady() && !AuthSystem.isSignedIn() && save.playerName) {
+      SaveSystem.clearLocalProfile();
+      this.scene.start(SceneKey.Account, { firstStart: true });
+      return;
+    }
     if (!save.playerName) {
       // Ein Erstprofil ist immer ein Online-Profil. Ohne erfolgreiche
       // Anmeldung wird kein lokaler Ersatzstand angelegt, damit jeder neue

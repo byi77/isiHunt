@@ -215,8 +215,19 @@ export class ProfileScene extends Phaser.Scene {
       onSubmit: saveProfile,
     });
 
-    input.setValue(save.playerName);
-    input.element.node.addEventListener('input', updateButton);
+    input.setValue(CloudSystem.sanitizePlayerName(save.playerName));
+    input.element.node.addEventListener('input', () => {
+      const inputElement = input.element.node as HTMLInputElement;
+      const rawValue = input.getValue();
+      const cursor = inputElement.selectionStart ?? rawValue.length;
+      const cleanedValue = CloudSystem.sanitizePlayerName(rawValue);
+      if (cleanedValue !== rawValue) {
+        const cleanedBeforeCursor = CloudSystem.sanitizePlayerName(rawValue.slice(0, cursor));
+        input.setValue(cleanedValue);
+        inputElement.setSelectionRange(cleanedBeforeCursor.length, cleanedBeforeCursor.length);
+      }
+      updateButton();
+    });
     input.element.node.addEventListener('blur', () => {
       input.setValue(CloudSystem.sanitizePlayerName(input.getValue()));
     });

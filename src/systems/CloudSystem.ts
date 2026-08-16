@@ -500,16 +500,11 @@ export async function isPlayerNameAvailable(
 /**
  * Bereinigt einen Spielernamen.
  *
- * Steuerzeichen raus, Leerraum zusammenfassen, kuerzen. Die Datenbank prueft
- * die Laenge ebenfalls - hier passiert es nur frueher, damit der Nutzer eine
- * verstaendliche Rueckmeldung statt eines Datenbankfehlers bekommt.
+ * Erlaubt sind ausschließlich Buchstaben und Zahlen. Leerzeichen und andere
+ * Sonderzeichen werden entfernt; die Datenbank prueft die Regel ebenfalls.
  */
 export function sanitizePlayerName(raw: string): string {
-  return raw
-    .replace(/[\p{Cc}\p{Cf}]/gu, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, PLAYER_NAME_MAX_LENGTH);
+  return raw.replace(/[^a-zA-Z0-9]/g, '').slice(0, PLAYER_NAME_MAX_LENGTH);
 }
 
 // --- Spielstand --------------------------------------------------------------

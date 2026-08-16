@@ -41,7 +41,7 @@ export const SYNC_CODE_LENGTH = 6;
 export const SYNC_CODE_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTUVWXYZ';
 
 /** Obergrenze fuer den Spielernamen. Muss zur Pruefregel in schema.sql passen. */
-export const PLAYER_NAME_MAX_LENGTH = 16;
+export const PLAYER_NAME_MAX_LENGTH = 12;
 
 /**
  * Zeitlimit fuer jede Netzanfrage.

@@ -302,8 +302,7 @@ export function createBackButton(
       0.94,
     )
     .setDepth(Depth.Overlay)
-    .setScrollFactor(0)
-    .setInteractive();
+    .setScrollFactor(0);
 
   const button = createButton(
     scene,
