@@ -1,7 +1,7 @@
 # TODO — offene Arbeiten
 
-**Stand:** 2026-08-14 · abgeleitet aus dem Spieltest-Feedback von Emre (11) und
-Simay (9)
+**Stand:** 2026-08-17 · abgeleitet aus dem Spieltest-Feedback von Emre und
+Simay
 
 Reihenfolge nach Nutzen, nicht nach Aufwand.
 
@@ -9,7 +9,7 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 
 | Phase   | Inhalt                                                   | Aufwand      |
 | ------- | -------------------------------------------------------- | ------------ |
-| 1       | Bedienbarkeit — **abgeschlossen**                        | —            |
+| 1       | Bedienbarkeit — **abgeschlossen, erneut bestaetigt**     | —            |
 | 1.1     | Zwei UI-Fehler, Wartungsbildschirm — **fertig**          | —            |
 | 1.2     | Update-Erkennung — **gebaut, ungeprueft**                | Test noetig  |
 | **1.3** | **Bestenliste: gemeinsam + automatisch — abgeschlossen** | —            |
@@ -19,11 +19,74 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 | 3       | Weltraum statt Fantasy                                   | mittel       |
 | **3.5** | Ton (aus M4 vorgezogen)                                  | mittel       |
 | **3.6** | Dynamic Island — braucht native App                      | Entscheidung |
-| **4**   | **Bonus, Coins, Talentbaum — abgeschlossen**             | —            |
-| 5       | Modi, Hindernisse                                        | mittel       |
-| 6       | Freunde, Realtime, Manipulationsschutz                   | hoch         |
+| 4       | Bonus, Coins, Talentbaum — erste Fassung abgeschlossen   | —            |
+| **4.1** | **Talentpunkte-Neuentwurf — naechste Phase**             | **hoch**     |
+| 5       | Modi, Hindernisse — gebaut, Spieltest offen              | mittel       |
+| 6       | Freunde, Realtime, Ranked und Rekorde                    | hoch         |
 
 **Fett = neu am 2026-08-13.**
+
+## Aktuell priorisiert — Feedback Emre & Simay (2026-08-17)
+
+> **Aktuelle Entwicklungsphase:** Die spielbaren Grundlagen von Phase 1 bis 5
+> sind gebaut. Die naechste Produktphase ist **Phase 4.1**: der Talentpunkte-
+> Umbau aus dem Kinderfeedback. Phase 6 folgt erst danach. Vor jeder neuen
+> Umsetzung muessen jedoch die noch offenen echten Mehrgeraete-Tests aus Phase
+> 2.6 und der Spieltest des Schwierigkeitsgrads aus Phase 5 abgeschlossen
+> werden.
+
+### P0 — erst absichern und messen
+
+- [x] Button-Trefferflaechen auf dem Testgeraet erneut bestaetigt: funktionieren
+      gut.
+- [x] Zurueck-Navigation auf dem Testgeraet erneut bestaetigt: funktioniert gut.
+- [ ] **Phase 2.6 produktiv pruefen:** SQL-Migration in Supabase anwenden und
+      mit einem Profil auf iPhone und iPad testen: Offline spielen, verbinden,
+      dann XP, Coins, Name, Bestwert und Erfolge pruefen.
+- [ ] **Phase 5 mit Kindern balancieren:** Schwierige Welten, Hindernisse,
+      Tempo, Sichtfenster und Belohnungen sollen fordernd, aber nie frustrierend
+      sein.
+
+### P1 — Fortschritt vor Wettbewerb neu entscheiden
+
+- [ ] **Talentpunkte statt Coin-Kosten planen und bauen.** Jeder Levelaufstieg
+      soll Talentpunkte geben; Talentkaeufe duerfen dann keine Coins kosten.
+- [ ] **Zahl zuerst entscheiden:** Von Level 1 bis 100 gibt es bei Punkten ab
+      Levelaufstieg nur 99 Aufstiege. Entweder hat der Baum 99 Ränge oder ein
+      neues Profil startet mit einem Talentpunkt, damit 100 Ränge erreichbar
+      sind.
+- [ ] Talentbaum auf die beschlossene Gesamtzahl ausbauen; darunter eine
+      kindgerechte Schleife/Route als sichtbaren Fortschritt zeichnen.
+- [ ] Sichere Migration fuer bestehende Coin-Talente und den Supabase-Stand
+      planen, bevor die Kosten umgestellt werden.
+- [ ] Coins bleiben Waehrung fuer spaetere Skins und optionale Boni; Skin-Inventar
+      und Shop nur vorbereiten, nicht vor dem Talentpunkte-Umbau bauen.
+- [ ] Profilfluss verbessern: beim allerersten Profil einen getrennten sichtbaren
+      Spielernamen erfragen; danach im Profil/Aliasbereich aenderbar halten.
+- [ ] Auswaehlbare Profil-Icons/Avatare vorbereiten.
+- [ ] Level/XP aus dem Hauptmenue ausblenden und erst nach einem klaren
+      "JAGD BEGINNEN"-Schritt zeigen.
+- [ ] Den vorhandenen Kettenbonus gegen die konkrete Regel "drei blaue
+      Planeten hintereinander = doppelte Punkte" abgleichen und entscheiden,
+      ob beide Boni nebeneinander bestehen sollen.
+
+### P2 — Phase 6: Wettbewerb und Freunde
+
+- [ ] Rangliste per Supabase Realtime aktualisieren, solange sie geoeffnet ist.
+- [ ] Rekord-Ereignis im Spiel sichtbar machen; Web-Push fuer installierte Apps
+      erst danach mit Einwilligung planen.
+- [ ] Serverseitige Laufpruefung als Voraussetzung fuer einen echten
+      Ranked-Modus.
+- [ ] Freundesmodell auf `profiles` aufsetzen: Anfrage, Annahme, Online-Status,
+      Rekord und Coin-Anzeige.
+- [ ] 1vs1-Einladung zuerst als Duell-Link zwischen zwei Geraeten bauen;
+      Echtzeit erst als folgenden Schritt pruefen.
+
+### P3 — erst nach stabilem Kern
+
+- [ ] Wiedergeburt/Prestige konzipieren: klarer Reset-Umfang, dauerhafter
+      Multiplikator, Schutz vor versehentlichem Ausloesen und Migration fuer
+      bestehende Profile.
 
 ### Entschieden (2026-08-13)
 
@@ -471,7 +534,10 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
 ## Phase 4 — Belohnung — abgeschlossen
 
 - [x] Punkte-Popup auffaelliger (`floatingScore` mit animiertem Bonus-Hinweis)
-- [x] Serien-Bonus: drei gleiche Seltenheiten → doppelte Punkte, ab Gruen
+- [x] Zeitbasierter Kettenbonus mit sichtbarem Multiplikator
+- [ ] **Exakte Kinderregel nach Phase 4.1 entscheiden:** drei blaue Planeten
+      hintereinander → doppelte Punkte. Sie ist nicht mit dem bestehenden
+      allgemeinen Kettenbonus gleichzusetzen.
 - [x] Coin-System: Feld im Spielstand, Anzeige, Quellen (Run, Erfolge und
       Levelaufstiege)
 - [x] Talentbaum-Oberflaeche mit Rangkauf ueber Profil
@@ -515,7 +581,7 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
 
 ## Phase 6 — Sozial
 
-- [ ] Zeitstempel in der Bestenliste (`createdAt` wird bereits geladen)
+- [x] Zeitstempel in der Bestenliste anzeigen
 - [ ] **Punkte serverseitig bewerten** (Supabase Edge Function, Run nachspielen)
       — Vorbedingung fuer Ranked und Rekord-Meldungen
 - [ ] Realtime-Sync der Bestenliste
@@ -532,4 +598,5 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
 
 - [ ] `src/ui/hitDebug.ts` entfernen, sobald der Knopf-Fehler bestaetigt behoben
       ist — es ist ein Diagnosewerkzeug, kein Feature
-- [ ] `ideen.txt` in die Roadmap ueberfuehren oder loeschen
+- [x] `ideen.txt` in die priorisierte Planung oben ueberfuehrt; die Datei bleibt
+      als unveraenderte Quelle des Kinderfeedbacks erhalten.

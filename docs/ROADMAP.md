@@ -1,185 +1,94 @@
 # Roadmap — isiHunt
 
-**Stand:** 2026-08-12
+**Stand:** 2026-08-17 · Die detaillierte und verbindliche Aufgabenreihenfolge
+steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 
-Meilensteine sind nach _spielbarem Wert_ geordnet, nicht nach technischem
-Aufwand. Jeder Meilenstein endet mit etwas, das man in die Hand nehmen kann.
+## Bereits spielbar
 
----
+### M0 — Fundament ✅
 
-## M0 — Fundament ✅ _(abgeschlossen)_
+Das Browser-Spiel, Touch- und Tastatursteuerung, Persistenz, Tests, Build und
+automatische Auslieferung stehen.
 
-Das Geruest steht und ist spielbar.
+### M1 — Spielgefühl und Bedienung ✅
 
-- [x] Projektstruktur, TypeScript strict, Vite, ESLint, Prettier
-- [x] Gesamte Dokumentation angelegt
-- [x] GitHub-Vorbereitung: CI, Pages-Deployment, PR-Vorlage
-- [x] Prozedurale Texturen — keine Asset-Abhaengigkeit
-- [x] Steuerung: Touch + Tastatur
-- [x] Seltenheiten, Spawning, Combo, Punkte
-- [x] XP, Level, Talentpunkte, Erfolge, Weltenfreischaltung
-- [x] Menue, Run, HUD, Ergebnis
-- [x] Persistenz ueber `localStorage`, versioniert
-- [x] Debug-Tasten im Dev-Build
+Menüs, Pause, Run verlassen, sichtbare iOS-Installationshilfe, einheitliche
+Zurück-Navigation und große Touch-Trefferflächen sind umgesetzt. Emre und
+Simay haben die Button- und Zurück-Navigation am Testgerät erneut als gut
+funktionierend bestätigt.
 
-## M1 — Spielgefuehl _(laufend)_
+### M2 — Profil und Fortschritt ✅
 
-Der Prototyp funktioniert. Jetzt muss er sich **gut** anfuehlen.
+Profile, Charaktername, Level bis 100, XP, Erfolge, Weltenfreischaltung,
+Bestwert und lokale Speicherung funktionieren. Ein angemeldetes Profil kann
+seinen Namen ändern und wird im Hauptmenü gezeigt.
 
-- [x] Grafische Aufwertung: Facetten-Relikte, Strahlenkranz, Schockwelle,
-      Lichtspur, Hintergrund in Schichten, Vignette
-- [x] Vollbild ohne Adressleiste (Fullscreen-API + PWA-Installation)
-- [x] App-Icon und Manifest
-- [x] **Erster Spieltest mit der Zielgruppe** (Kinder, 9 und 11) — die
-      Rueckmeldungen haben mehr Bedienfehler zutage gefoerdert als jedes
-      eigene Testen; die Ergebnisse stehen unten unter M1.6
-- [ ] Auf weiteren Geraeten testen (verschiedene Groessen, Android)
-- [ ] Balancing nach dem ersten echten Spieltest nachziehen
-- [ ] Vibrations-Feedback bei seltenen Faengen (`navigator.vibrate`)
-- [x] Pause-Bildschirm mit sichtbarem Knopf statt nur Debug-Taste
-- [ ] Erster Start: dezente Einfuehrung ohne Textwand
-- [ ] Bildschirmschoner / Sperre waehrend eines Runs verhindern (Wake Lock)
-- [ ] Verhalten beim Wegwischen der App (Run pausieren statt weiterlaufen)
+### M2.6 — Login und mehrere Geräte 🟡
 
-## M1.6 — Nach dem ersten Spieltest _(laufend)_
+Alias-Login mit PIN, gemeinsamer Fortschritt, Offline-Outbox und sichere
+Zusammenführung sind implementiert.
 
-Der Prototyp wurde erstmals von der eigentlichen Zielgruppe gespielt. Die
-Rueckmeldungen zerfielen in drei Sorten: Bedienfehler, Erweiterungswuensche und
-Wuensche, die die Designgrundlage verschieben. Diese Phase raeumt die erste
-Sorte auf.
+**Noch zu bestätigen:** Das Supabase-SQL muss produktiv ausgeführt und ein
+echter iPhone-/iPad-Test mit Offline-Runs und anschließender Verbindung
+durchgeführt werden.
 
-- [x] **Knopf-Fehler behoben.** Ursache war die Auslieferung, nicht der Code:
-      Auf dem Handy lief durchgehend v0.1.0, waehrend lokal laengst korrigiert
-      war. Mit v0.1.3 auf dem Geraet gegengeprueft — die Knoepfe reagieren.
-      Die Absicherung dagegen steht in `CODE_STYLE.md` 1.9.
-- [x] Trefferflaechen werden am gemessenen Ursprung ausgerichtet statt
-      berechnet (`makeAlignedHitArea`)
-- [x] Druck-Effekt staucht nur noch die Grafik, nicht die Trefferflaeche
-- [x] Zurueck-Knopf einheitlich oben links, als eigenes Widget
-- [x] Zurueck-Knopf der Bestenliste aus dem Bereich des Namensfeldes geholt
-      (HTML-Eingabefelder liegen immer ueber dem Canvas)
-- [x] Pause und "Run verlassen" im laufenden Spiel
-- [x] iOS-Vollbildhinweis in einem eigenen Kasten statt in der Fusszeile
-- [x] Weltenauswahl der Bestenliste von 12 auf 50 CSS-px vergroessert
-- [x] Versionsnummer im Menue, bei jedem Commit hochgezaehlt — damit
-      Test-Rueckmeldungen einem Stand zuzuordnen sind
-- [x] Diagnosewerkzeug `?hitboxes` fuer Trefferflaechen
-- [ ] Ergebnis auf dem Geraet der Kinder gegenpruefen
+### M3 — Weltraumwelt ✅
 
-Was aus demselben Spieltest folgt, aber groesser ist — Profil, Spielzeit,
-XP-Kurve, Weltraum-Thema, Coins, Freundesliste — steht in den Meilensteinen
-M2 bis M6.
+Das Licht-Raumschiff ersetzt den Stern, Relikte sind Planeten, jede Raumzone
+hat eigene Sternen-, Nebel- und Planetenansichten. Mit hohem Level werden
+Raumschiff-Skins und schwierigere Welten freigeschaltet.
 
-## M1.5 — Duell _(neu, teilweise fertig)_
+### M4 — Belohnung, Coins und Talente ✅
 
-Ein Modus fuer zwei Personen.
+Punkte-Popups, Kettenbonus, Coins, Erfolge und die erste Coin-basierte Fassung
+des Talentbaums sind spielbar.
 
-- [x] Duell an einem Geraet, abwechselnd, 90 Sekunden je Durchgang
-- [x] Gleicher Seed fuer beide — identische Relikt-Abfolge
-- [x] Faire Bedingungen: keine Talente, keine Progression
-- [x] Uebergabe- und Ergebnisbildschirm mit Revanche
-- [x] Vorlage des Gegners im HUD, Ueberhol-Moment gefeiert
-- [ ] Duell ueber zwei Geraete per geteiltem Link (ADR-0010, Schritt 1)
-- [ ] Benannte Spieler statt "Spieler 1 / Spieler 2"
+> Diese Fassung wird als Nächstes gezielt weiterentwickelt: Talentpunkte statt
+> Coin-Kosten und ein Baum mit klarer Level-100-Logik sind als M4.1 geplant.
 
-## M2 — Talente & Charakter
+### M5 — Herausforderungen und Modi ✅
 
-Der Fortschritt bekommt seine Oberflaeche.
+Normaler Solo-Run, Tages-Herausforderung, lokales Duell gegen eine zweite
+Person oder einen Bot sowie Weltmodifikatoren und Hindernisse sind vorhanden.
 
-- [x] Talent-Bildschirm mit Punktevergabe
-- [x] Talente zuruecksetzen
-- [ ] Erfolgsuebersicht mit Fortschrittsanzeige
-- [ ] Statistik-Bildschirm (Runs gesamt, Relikte gesamt, beste Kette)
-- [x] **Vitest einrichten** — `ProgressionSystem`, `ScoreSystem` und
-      `ChallengeSystem` sind mit 62 Tests abgedeckt; `npm run test` haengt in
-      `verify` und damit in `pre-push`, CI und Deploy
-- [x] **Test fuer den Duell-Determinismus** — dass zwei Durchgaenge mit
-      gleichem Seed dieselbe Relikt-Abfolge liefern, bricht sonst unbemerkt
-      bei der naechsten Aenderung am Spawning (ARCHITECTURE.md 4.1). Die
-      Positionen und die volle Spawnfolge bleiben jetzt auch bei
-      unterschiedlicher Spielerbewegung gleich.
-- [ ] Level-Aufstieg im Run feiern, nicht erst im Ergebnis
+**Noch offen:** Schwierigkeit und Belohnungen mit der Zielgruppe balancieren.
 
-## M2.5 — Login & Mehrgeräte-Profil _(priorisiert)_
+## Nächste Meilensteine
 
-Der bisherige Sync-Code ist ein einmaliger Umzug. Für iPhone und iPad mit
-demselben Profil braucht es ein Backend-Profil mit Login und eine
-Zusammenführung statt des bisherigen vollständigen Ersetzens.
+### M4.1 — Talentpunkte und Profilidentität
 
-- [x] Supabase Auth mit Alias/Passwort und Profil-Tabelle; Supabase erhält
-      dafür intern nur eine pseudonyme Auth-ID, keine echte Kontaktadresse
-- [x] RLS- und RPC-Skript: jedes Profil sieht und ändert nur seine eigenen Daten
-- [x] Offline-Outbox für Solo-Run-Ereignisse mit eindeutiger `event_id`
-- [x] Serverseitige, idempotente Zusammenführung von XP, Coins, Erfolgen und
-      Bestwerten
-- [x] Migration des bestehenden `cloudId`-Profils ohne Fortschrittsverlust
-- [ ] SQL-Migration in Supabase ausführen und mit echten Konten prüfen
-- [ ] Paralleler iPhone-/iPad-Test mit Offline-Runs und Netzrückkehr
+- Talentpunkte pro Levelaufstieg statt Coin-Kosten.
+- Gesamtzahl der Talent-Ränge festlegen: 99 durch Levelaufstiege oder 100 mit
+  einem Startpunkt.
+- Talentbaum als sichtbare, kindgerechte Fortschrittsroute gestalten.
+- Bestehende Talent-/Coin-Stände sicher migrieren.
+- Profil-Icons, getrennten sichtbaren Spielernamen und Skin-Inventar
+  vorbereiten.
 
-## M3 — Welten mit Charakter
+### M6 — Freunde, Wettbewerb und Realtime
 
-Bisher unterscheiden sich die Welten nur farblich.
+- Live-Aktualisierung der Rangliste.
+- Rekord-Ereignisse im Spiel und später optional Web-Push für installierte
+  Apps.
+- Serverseitige Laufprüfung als Grundlage für Ranked.
+- Freundesliste mit Anfrage, Online-Status, Rekord und Coins.
+- 1vs1-Einladung zuerst per Link zwischen zwei Geräten; Echtzeit danach.
 
-- [x] Weltmodifikatoren implementieren (siehe GAME_DESIGN.md, 7.3)
-- [ ] Eigene Hintergrundelemente je Welt (Parallax)
-- [ ] Weltspezifische Seltenheitsverteilungen pruefen
-- [ ] Zweiter Spielmodus: Endlos ohne Timer
-- [x] Tages-Herausforderung mit festem Seed
+### M7 — Prestige
 
-## M4 — Anmutung
+Wiedergeburt als freiwilliger, geschützter Reset mit dauerhaftem Multiplikator.
+Der genaue Reset-Umfang und die Belohnung werden erst nach dem Talentpunkte-
+Umbau festgelegt.
 
-Aus dem Prototyp wird ein Produkt.
+### M8 — Native App
 
-- [ ] Echte Grafiken statt prozeduraler Platzhalter
-- [ ] Eigene Schrift statt System-Font
-- [x] Ton: Fang-Sounds je Seltenheit, Level-Aufstieg, Run-Ende und UI-Klicks
-- [x] Ton stummschaltbar, Zustand gespeichert (Phase 3.5 vorgezogen)
-- [x] App-Icon und PWA-Manifest ("Zum Home-Bildschirm") — in M1 vorgezogen
-- [ ] Startbildschirm der installierten App (Splash Screen)
-- [ ] Ladebildschirm, sobald es etwas zu laden gibt
+Capacitor, Android-Test, iOS-Build/TestFlight und erst dann native Features
+wie Live Activities bei der Dynamic Island.
 
-## M5 — Teilen & Wettbewerb _(teilweise fertig)_
+## Grundsätze
 
-- [x] **Online-Bestenliste je Welt** ueber Supabase, Top 10
-- [x] **Spielstand geraeteuebergreifend** per Sync-Code, ohne Konto
-      _(bleibt als einmaliger Umzug und Migrationsweg erhalten)_
-- [x] Konflikt zweier Spielstaende wird gezeigt statt still entschieden
-- [ ] Ergebnisbild zum Teilen erzeugen
-- [ ] Duell ueber zwei Geraete per geteiltem Link (ADR-0010, Schritt 1)
-- [ ] Echtzeit-Duell ueber Netzwerk (ADR-0010, Schritt 2)
-- [ ] **Punkte serverseitig bewerten** — solange das fehlt, ist die
-      Bestenliste manipulierbar (ADR-0011). Vor jeder oeffentlichen Bewerbung
-      der Liste noetig.
-- [ ] Spielstaende dauerhaft ueber das gemeinsame Login-Profil zusammenfuehren
-      _(M2.5, vor Phase 4 priorisiert)_
-
-## M6 — Als App
-
-- [ ] Capacitor einrichten
-- [ ] Android-Build und APK-Test auf den eigenen Geraeten
-- [ ] **iOS-Build ohne eigenen Mac:** macOS-CI/Cloud-Build einrichten
-      (z. B. GitHub Actions mit macOS-Runner oder ein vergleichbarer Dienst)
-- [ ] Apple-Developer-Konto sowie Zertifikate und Signierung fuer den iOS-Build
-- [ ] **TestFlight einrichten** und die iOS-App auf dem eigenen iPhone und dem
-      iPhone des Sohnes testen
-- [ ] Store-Material (Beschreibung, Bilder, Datenschutz)
-
----
-
-## Nicht geplant
-
-Damit die Roadmap ehrlich bleibt:
-
-- **Werbung / In-App-Kaeufe** — erst wenn das Spiel ohne sie ueberzeugt.
-- **Querformat** — das Spiel ist fuer eine Hand gebaut.
-- **Desktop-Version als eigenes Produkt** — der Browser reicht.
-- **Geteilter Bildschirm im Duell** — zwei Spielfelder sind auf einem
-  Hochformat-Handy zu klein (ADR-0008).
-
-### Korrigiert
-
-- ~~**Mehrspieler in Echtzeit** — passt nicht zur 60-Sekunden-Schleife.~~
-  _(Stand 2026-08-12)_ Ueberholt. Das lokale Duell zeigt, dass ein Modus fuer
-  zwei Personen sehr wohl passt — er ist nur laenger als die Solo-Schleife.
-  Echtzeit ueber Netzwerk ist jetzt in M5 eingeplant, mit dem Link-Duell als
-  guenstigerem Zwischenschritt (ADR-0010).
+- Eine Hand, Hochformat, keine Werbung und keine In-App-Käufe.
+- Kinderfeedback entscheidet vor Annahmen im Code.
+- Erst ein stabiles gemeinsames Profil, dann Freunde, Ranked und Push.
+- Jede konkrete Aufgabe, Entscheidung und Priorität gehört in die
+  [`TODO.md`](../TODO.md).
