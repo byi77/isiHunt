@@ -393,6 +393,13 @@ export class AccountScene extends Phaser.Scene {
 
   private async signOut(): Promise<void> {
     if (this.busy) return;
+    if (!navigator.onLine) {
+      this.setStatus(
+        'Offline-Abmeldung nicht möglich. Bitte stelle eine Internetverbindung her.',
+        Palette.gold,
+      );
+      return;
+    }
     this.busy = true;
     this.setStatus('Ausstehende Änderungen werden gesichert ...', Palette.inkDim);
     await ProgressSyncSystem.flush();
