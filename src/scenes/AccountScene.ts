@@ -19,6 +19,7 @@ import {
   createBackStatusText,
   createButton,
   createDriftLayers,
+  createMenuLayout,
   createPanel,
   createVignette,
   createWorldBackdrop,
@@ -37,6 +38,7 @@ export class AccountScene extends Phaser.Scene {
   private pinConfirmInput: TextInputHandle | null = null;
   private activeAlias = '';
   private actionObjects: Phaser.GameObjects.GameObject[] = [];
+  private contentOffset = 0;
 
   constructor() {
     super(SceneKey.Account);
@@ -60,27 +62,9 @@ export class AccountScene extends Phaser.Scene {
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
     if (!this.firstStart) createBackButton(this, () => this.scene.start(SceneKey.Settings));
 
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        130,
-        this.firstStart ? 'PROFIL ANLEGEN' : 'PROFIL VERBINDEN',
-        textStyle(FontSize.heading, Palette.gold),
-      )
-      .setOrigin(0.5)
-      .setLetterSpacing(3);
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        184,
-        this.firstStart
-          ? 'Alias und PIN sichern deinen Fortschritt auf mehreren Geräten'
-          : 'Auf iPhone und iPad denselben Fortschritt nutzen',
-        textStyle(FontSize.small, Palette.inkDim),
-      )
-      .setOrigin(0.5);
-
-    createPanel(this, GAME_WIDTH / 2, 540, GAME_WIDTH - 120, 660, world.accent, {
+    const loginY = createMenuLayout().sections.next(660);
+    this.contentOffset = loginY - 540;
+    createPanel(this, GAME_WIDTH / 2, loginY, GAME_WIDTH - 120, 660, world.accent, {
       alpha: 0.62,
       radius: 22,
     });
@@ -130,14 +114,14 @@ export class AccountScene extends Phaser.Scene {
     this.add
       .text(
         GAME_WIDTH / 2,
-        270,
+        this.contentY(270),
         this.firstStart ? 'ALIAS UND 6-STELLIGER PIN' : 'ALIAS UND PIN',
         textStyle(FontSize.body, Palette.gold),
       )
       .setOrigin(0.5)
       .setLetterSpacing(2);
 
-    this.aliasInput = createTextInput(this, GAME_WIDTH / 2, 390, {
+    this.aliasInput = createTextInput(this, GAME_WIDTH / 2, this.contentY(390), {
       placeholder: 'Alias',
       inputType: 'text',
       maxLength: AuthSystem.ALIAS_MAX_LENGTH,
@@ -145,7 +129,7 @@ export class AccountScene extends Phaser.Scene {
       accent,
       onSubmit: () => void this.signIn(),
     });
-    this.pinInput = createTextInput(this, GAME_WIDTH / 2, 490, {
+    this.pinInput = createTextInput(this, GAME_WIDTH / 2, this.contentY(490), {
       placeholder: this.firstStart ? '6-stelliger PIN' : 'PIN oder bisheriger Zugang',
       inputType: 'password',
       width: 480,
@@ -154,7 +138,7 @@ export class AccountScene extends Phaser.Scene {
       numericKeyboard: this.firstStart,
       onSubmit: () => void this.signIn(),
     });
-    this.pinConfirmInput = createTextInput(this, GAME_WIDTH / 2, 580, {
+    this.pinConfirmInput = createTextInput(this, GAME_WIDTH / 2, this.contentY(580), {
       placeholder: 'PIN wiederholen',
       inputType: 'password',
       maxLength: AuthSystem.PIN_LENGTH,
@@ -167,7 +151,7 @@ export class AccountScene extends Phaser.Scene {
     const signIn = createButton(
       this,
       GAME_WIDTH / 2,
-      690,
+      this.contentY(690),
       this.firstStart ? 'VORHANDENES PROFIL' : 'ANMELDEN',
       () => void this.signIn(),
       {
@@ -180,7 +164,7 @@ export class AccountScene extends Phaser.Scene {
     const signUp = createButton(
       this,
       GAME_WIDTH / 2,
-      770,
+      this.contentY(770),
       this.firstStart ? 'PROFIL JETZT ANLEGEN' : 'NEUES PROFIL ANLEGEN',
       () => void this.signUp(),
       { width: 440, height: 70, accent: 0x9aa3bd, fontSize: FontSize.small },
@@ -191,7 +175,7 @@ export class AccountScene extends Phaser.Scene {
       const offline = createButton(
         this,
         GAME_WIDTH / 2,
-        840,
+        this.contentY(840),
         'OFFLINE-PROFIL ERSTELLEN',
         () => this.createOfflineProfile(),
         { width: 440, height: 62, accent: 0x778099, fontSize: FontSize.tiny },
@@ -209,27 +193,39 @@ export class AccountScene extends Phaser.Scene {
     const alias = AuthSystem.currentAlias() ?? 'angemeldetes Profil';
     if (this.firstStart && !SaveSystem.load().playerName) SaveSystem.setPlayerName(alias);
     this.add
-      .text(GAME_WIDTH / 2, 290, 'ANGEMELDET', textStyle(FontSize.body, Palette.gold))
+      .text(
+        GAME_WIDTH / 2,
+        this.contentY(290),
+        'ANGEMELDET',
+        textStyle(FontSize.body, Palette.gold),
+      )
       .setOrigin(0.5)
       .setLetterSpacing(2);
     this.add
-      .text(GAME_WIDTH / 2, 350, alias, textStyle(FontSize.small, Palette.ink))
+      .text(GAME_WIDTH / 2, this.contentY(350), alias, textStyle(FontSize.small, Palette.ink))
       .setOrigin(0.5);
 
     const sync = createButton(
       this,
       GAME_WIDTH / 2,
-      520,
+      this.contentY(520),
       'PROFIL ABGLEICHEN',
       () => void this.syncProfile(),
       { width: 440, height: 78, accent, fontSize: FontSize.body },
     );
-    const signOut = createButton(this, GAME_WIDTH / 2, 635, 'ABMELDEN', () => void this.signOut(), {
-      width: 360,
-      height: 68,
-      accent: 0x9aa3bd,
-      fontSize: FontSize.small,
-    });
+    const signOut = createButton(
+      this,
+      GAME_WIDTH / 2,
+      this.contentY(635),
+      'ABMELDEN',
+      () => void this.signOut(),
+      {
+        width: 360,
+        height: 68,
+        accent: 0x9aa3bd,
+        fontSize: FontSize.small,
+      },
+    );
 
     this.actionObjects = [sync.container, signOut.container];
     this.statusText.setText(
@@ -391,6 +387,10 @@ export class AccountScene extends Phaser.Scene {
 
   private setStatus(text: string, color: string): void {
     this.statusText.setText(text).setColor(color);
+  }
+
+  private contentY(y: number): number {
+    return y + this.contentOffset;
   }
 
   private clearActions(): void {
