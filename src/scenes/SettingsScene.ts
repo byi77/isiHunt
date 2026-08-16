@@ -21,7 +21,7 @@ import {
   createButton,
   createDriftLayers,
   createPanel,
-  createSectionStack,
+  createMenuLayout,
   createVignette,
   createWorldBackdrop,
 } from '@/ui/widgets';
@@ -52,7 +52,7 @@ export class SettingsScene extends Phaser.Scene {
     // hält den kleinen Abstand zwischen Profil, Ton und Impressum konstant.
     // Die Scroll-Kopfzeile liegt außerhalb des Canvas. 36 px reichen als
     // Luft darunter; ein größerer Startwert erzeugt sichtbar unnötigen Raum.
-    const sections = createSectionStack();
+    const sections = createMenuLayout().sections;
     const profileY = sections.next(330);
     const soundY = sections.next(180);
     const legalY = sections.next(350);

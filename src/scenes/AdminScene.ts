@@ -41,7 +41,7 @@ import {
   createBackStatusText,
   createButton,
   createPanel,
-  createSectionStack,
+  createMenuLayout,
   createVignette,
   paintSafeAreaBackdrop,
 } from '@/ui/widgets';
@@ -79,12 +79,12 @@ export class AdminScene extends Phaser.Scene {
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
 
-    const sections = createSectionStack();
+    const sections = createMenuLayout().sections;
     const versionY = sections.next(170);
     const layoutY = sections.next(360);
     this.buildVersionPanel(versionY);
     void this.buildLayoutPanel(layoutY);
-    this.buildActions(layoutY + 244);
+    this.buildActions(layoutY);
 
     this.statusText = createBackStatusText(this);
 
@@ -162,17 +162,25 @@ export class AdminScene extends Phaser.Scene {
       .setOrigin(0.5);
   }
 
-  private buildActions(firstY: number): void {
-    createButton(this, GAME_WIDTH / 2, firstY, 'UPDATE PRÜFEN', () => void this.checkUpdateNow(), {
+  private buildActions(layoutY: number): void {
+    const actions = createMenuLayout(8).sections;
+    actions.advance(layoutY + 215 - actions.currentTop());
+    const updateY = actions.next(54);
+    const reloadY = actions.next(54);
+    const repairY = actions.next(54);
+    const statsY = actions.next(54);
+    const rulerY = actions.next(54);
+
+    createButton(this, GAME_WIDTH / 2, updateY, 'UPDATE PRÜFEN', () => void this.checkUpdateNow(), {
       width: 460,
-      height: 58,
+      height: 54,
       accent: 0x9aa3bd,
       fontSize: FontSize.small,
     });
 
-    createButton(this, GAME_WIDTH / 2, firstY + 75, 'NEU LADEN ERZWINGEN', () => forceReload(), {
+    createButton(this, GAME_WIDTH / 2, reloadY, 'NEU LADEN ERZWINGEN', () => forceReload(), {
       width: 460,
-      height: 62,
+      height: 54,
       accent: Palette.goldHex,
       fontSize: FontSize.small,
     });
@@ -180,12 +188,12 @@ export class AdminScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      firstY + 150,
+      repairY,
       'SPIELSTAND PRÜFEN & SPEICHERN',
       () => this.repairSave(),
       {
         width: 460,
-        height: 62,
+        height: 54,
         accent: 0x9aa3bd,
         fontSize: FontSize.small,
       },
@@ -194,12 +202,12 @@ export class AdminScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      firstY + 225,
+      statsY,
       'ONLINE-STATISTIK',
       () => {
         this.scene.start(SceneKey.AdminStats);
       },
-      { width: 460, height: 58, accent: Palette.goldHex, fontSize: FontSize.small },
+      { width: 460, height: 54, accent: Palette.goldHex, fontSize: FontSize.small },
     );
 
     /* Lokales Testprofil bleibt bewusst aus dem Wartungsmenue entfernt.
@@ -260,13 +268,13 @@ export class AdminScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      firstY + 300,
+      rulerY,
       'PIXEL-LINEAL ANZEIGEN',
       () => {
         this.scene.start(SceneKey.Menu);
         this.scene.launch(SceneKey.Ruler);
       },
-      { width: 460, height: 58, accent: 0x9aa3bd, fontSize: FontSize.small },
+      { width: 460, height: 54, accent: 0x9aa3bd, fontSize: FontSize.small },
     );
 
     const reset = createButton(

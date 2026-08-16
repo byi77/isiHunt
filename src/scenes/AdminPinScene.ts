@@ -12,7 +12,7 @@ import {
   createBackButton,
   createButton,
   createPanel,
-  createSectionStack,
+  createMenuLayout,
   createVignette,
   paintSafeAreaBackdrop,
 } from '@/ui/widgets';
@@ -33,7 +33,7 @@ export class AdminPinScene extends Phaser.Scene {
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
 
-    const cardY = createSectionStack().next(220);
+    const cardY = createMenuLayout().sections.next(220);
     this.add
       .text(
         GAME_WIDTH / 2,

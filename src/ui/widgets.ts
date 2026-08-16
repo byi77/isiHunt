@@ -357,6 +357,19 @@ export function createBackStatusText(scene: Phaser.Scene, initial = ''): Phaser.
 export interface SectionStack {
   /** Reserviert die nächste Karte und gibt ihre vertikale Mitte zurück. */
   next(height: number): number;
+  /** Oberkante des nächsten Blocks, ohne dafür selbst Platz zu reservieren. */
+  currentTop(): number;
+  /** Reserviert Zusatzhöhe für mehrzeilige Raster innerhalb eines Abschnitts. */
+  advance(height: number): void;
+}
+
+/** Gemeinsame Geometrie für Canvas-Unterseiten mit fester Safe-Area-Kopfzeile. */
+export interface MenuLayout {
+  readonly sections: SectionStack;
+  /** Unter dieser Kante beginnt die feste Zone für Zurück und Rückmeldungen. */
+  readonly contentBottom: number;
+  /** Mittelt einen Footer-Button exakt oberhalb der reservierten Fußzone. */
+  footerCenter(height: number): number;
 }
 
 /**
@@ -375,6 +388,26 @@ export function createSectionStack(firstTop = PAGE_CONTENT_TOP, gap = 35): Secti
       const center = nextTop + height / 2;
       nextTop += height + gap;
       return center;
+    },
+    currentTop(): number {
+      return nextTop;
+    },
+    advance(height: number): void {
+      nextTop += height;
+    },
+  };
+}
+
+/**
+ * Verbindliche Ausgangsgeometrie für Unterseiten: neue Abschnitte werden über
+ * `sections.next` angehängt; Seitenaktionen nutzen `footerCenter`.
+ */
+export function createMenuLayout(gap = 35): MenuLayout {
+  return {
+    sections: createSectionStack(PAGE_CONTENT_TOP, gap),
+    contentBottom: BACK_BUTTON_CONTENT_BOTTOM,
+    footerCenter(height: number): number {
+      return BACK_BUTTON_CONTENT_BOTTOM - height / 2;
     },
   };
 }

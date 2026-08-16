@@ -23,12 +23,12 @@ import {
   createBackButton,
   createBackStatusText,
   createDriftLayers,
+  createMenuLayout,
   createPanel,
   createVignette,
   createWorldBackdrop,
 } from '@/ui/widgets';
 
-const LIST_TOP = 430;
 const ROW_HEIGHT = 72;
 
 export class LeaderboardScene extends Phaser.Scene {
@@ -44,6 +44,7 @@ export class LeaderboardScene extends Phaser.Scene {
   private backdropWorld!: WorldDef;
   private listItems: Phaser.GameObjects.GameObject[] = [];
   private statusText!: Phaser.GameObjects.Text;
+  private listTop = 0;
   /** Zaehlt Ladevorgaenge, damit eine veraltete Antwort nichts ueberschreibt. */
   private requestId = 0;
 
@@ -74,19 +75,9 @@ export class LeaderboardScene extends Phaser.Scene {
 
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
 
-    // Tiefer als der Zurueck-Knopf oben links, damit sich Ueberschrift und
-    // Trefferflaeche nicht in die Quere kommen.
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        140,
-        'BESTENLISTE',
-        textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
-      )
-      .setOrigin(0.5)
-      .setLetterSpacing(3);
-
-    this.buildWorldTabs();
+    const sections = createMenuLayout().sections;
+    this.buildWorldTabs(sections.next(138));
+    this.listTop = sections.currentTop();
 
     this.statusText = createBackStatusText(this);
 
@@ -99,9 +90,9 @@ export class LeaderboardScene extends Phaser.Scene {
    * Der erste Punkt ist die Gesamtansicht und damit die Voreinstellung. Die
    * uebrigen filtern - nur freigeschaltete sind anwaehlbar.
    */
-  private buildWorldTabs(): void {
+  private buildWorldTabs(sectionY: number): void {
     const level = SaveSystem.load().level;
-    const y = 220;
+    const y = sectionY - 35;
     // Ein Platz mehr als Welten: der erste gehoert der Gesamtansicht.
     const spacing = (GAME_WIDTH - 120) / (WORLDS.length + 1);
 
@@ -237,7 +228,7 @@ export class LeaderboardScene extends Phaser.Scene {
     const ownId = AuthSystem.currentUserId() ?? SaveSystem.load().cloudId;
 
     entries.forEach((entry, index) => {
-      const y = LIST_TOP + index * ROW_HEIGHT;
+      const y = this.listTop + index * ROW_HEIGHT;
       const isOwn = ownId !== null && entry.playerId === ownId;
       const isPodium = index < 3;
 

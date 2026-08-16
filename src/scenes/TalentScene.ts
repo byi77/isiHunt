@@ -25,6 +25,7 @@ import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   createBackButton,
   createButton,
+  createMenuLayout,
   createPanel,
   createVignette,
   createWorldBackdrop,
@@ -62,20 +63,22 @@ export class TalentScene extends Phaser.Scene {
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
 
     createBackButton(this, () => this.scene.start(this.returnTo));
+    const sections = createMenuLayout().sections;
+    const walletY = sections.next(30);
     this.add
       .text(
         GAME_WIDTH / 2,
-        60,
+        walletY,
         'COINS ' + save.coins.toLocaleString('de-DE'),
         textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
       )
       .setOrigin(0.5);
     this.add
-      .image(92, 60, playerTextureForLevel(save.level))
+      .image(92, walletY, playerTextureForLevel(save.level))
       .setTint(Palette.goldHex)
       .setScale(0.26);
 
-    const rowTop = 150;
+    const rowTop = sections.next(96);
     const rowStep = 108;
     TALENTS.forEach((talent, index) =>
       this.buildTalentRow(talent.id, rowTop + index * rowStep, world.accent),
