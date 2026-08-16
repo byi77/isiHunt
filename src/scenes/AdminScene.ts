@@ -35,6 +35,7 @@ import { SceneKey } from '@/scenes/SceneKey';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { TextureKey } from '@/ui/textures';
+import { Depth } from '@/ui/depth';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import {
   createBackButton,
@@ -78,6 +79,7 @@ export class AdminScene extends Phaser.Scene {
 
     const vignette = createVignette(this, GAME_WIDTH, GAME_HEIGHT).setScrollFactor(0);
     const back = createBackButton(this, () => this.scene.start(SceneKey.Menu));
+    back.container.setScrollFactor(0).setDepth(Depth.Overlay + 2);
 
     const title = this.add
       .text(GAME_WIDTH / 2, 140, 'WARTUNG', textStyle(FontSize.heading, Palette.gold))

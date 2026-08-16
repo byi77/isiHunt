@@ -8,7 +8,6 @@ import { Palette } from '@/ui/theme';
 
 type FixedObject = Phaser.GameObjects.GameObject & {
   setScrollFactor(x: number, y?: number): FixedObject;
-  setDepth(value: number): FixedObject;
 };
 
 /**
@@ -28,7 +27,7 @@ export function enableVerticalScroll(
   camera.setBounds(0, 0, GAME_WIDTH, contentHeight);
   camera.setScroll(0, 0);
 
-  for (const object of fixedObjects) object.setScrollFactor(0).setDepth(Depth.Overlay + 2);
+  for (const object of fixedObjects) object.setScrollFactor(0);
 
   const protectedZone = scene.add
     .rectangle(GAME_WIDTH / 2, GAME_HEIGHT - 70, GAME_WIDTH, 140, Palette.backdrop, 0.94)

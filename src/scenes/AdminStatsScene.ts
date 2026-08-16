@@ -10,6 +10,7 @@ import type { AdminDashboard, AdminUserStats } from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
+import { Depth } from '@/ui/depth';
 import {
   createBackButton,
   createButton,
@@ -55,6 +56,7 @@ export class AdminStatsScene extends Phaser.Scene {
     backdrop.setScrollFactor(0);
     const vignette = createVignette(this, GAME_WIDTH, GAME_HEIGHT).setScrollFactor(0);
     const back = createBackButton(this, () => this.scene.start(SceneKey.Admin));
+    back.container.setScrollFactor(0).setDepth(Depth.Overlay + 2);
 
     const title = this.add
       .text(
