@@ -28,7 +28,10 @@ import {
 
 export interface AccountSceneData {
   firstStart?: boolean;
+  mode?: AccountMode;
 }
+
+type AccountMode = 'signIn' | 'signUp';
 
 export class AccountScene extends Phaser.Scene {
   private busy = false;
@@ -40,6 +43,7 @@ export class AccountScene extends Phaser.Scene {
   private activeAlias = '';
   private actionObjects: Phaser.GameObjects.GameObject[] = [];
   private contentOffset = 0;
+  private mode: AccountMode = 'signIn';
 
   constructor() {
     super(SceneKey.Account);
@@ -47,6 +51,7 @@ export class AccountScene extends Phaser.Scene {
 
   create(data: AccountSceneData = {}): void {
     this.firstStart = data.firstStart ?? false;
+    this.mode = data.mode ?? (this.firstStart ? 'signUp' : 'signIn');
     // Der eigene Begrüßungsbereich ersetzt beim Erststart die schmale
     // Safe-Area-Überschrift, damit keine zweite Überschrift über dem Logo steht.
     if (this.firstStart) SafeAreaSystem.hide();
@@ -144,39 +149,45 @@ export class AccountScene extends Phaser.Scene {
     // Die Safe-Area bzw. beim Erststart die Begrüßung ist bereits der
     // Seitenkopf. Felder beginnen deshalb direkt im Karteninhalt statt mit
     // einer zweiten Überschrift und einem zusätzlichen Leerraum.
+    const isSignUp = this.mode === 'signUp';
+    const primaryY = isSignUp ? 620 : 535;
+    const secondaryY = isSignUp ? 700 : 620;
+
     this.aliasInput = createTextInput(this, GAME_WIDTH / 2, this.contentY(320), {
       placeholder: 'Alias',
       inputType: 'text',
       maxLength: AuthSystem.ALIAS_MAX_LENGTH,
       width: 480,
       accent,
-      onSubmit: () => void this.signIn(),
+      onSubmit: () => void (isSignUp ? this.signUp() : this.signIn()),
     });
     this.pinInput = createTextInput(this, GAME_WIDTH / 2, this.contentY(420), {
-      placeholder: this.firstStart ? '6-stelliger PIN' : 'PIN oder bisheriger Zugang',
+      placeholder: isSignUp ? '6-stelliger PIN' : 'PIN oder bisheriger Zugang',
       inputType: 'password',
       width: 480,
       accent,
-      maxLength: this.firstStart ? AuthSystem.PIN_LENGTH : undefined,
-      numericKeyboard: this.firstStart,
-      onSubmit: () => void this.signIn(),
+      maxLength: isSignUp ? AuthSystem.PIN_LENGTH : undefined,
+      numericKeyboard: isSignUp,
+      onSubmit: () => void (isSignUp ? this.signUp() : this.signIn()),
     });
-    this.pinConfirmInput = createTextInput(this, GAME_WIDTH / 2, this.contentY(510), {
-      placeholder: 'PIN wiederholen',
-      inputType: 'password',
-      maxLength: AuthSystem.PIN_LENGTH,
-      numeric: true,
-      width: 480,
-      accent,
-      onSubmit: () => void this.signUp(),
-    });
+    if (isSignUp) {
+      this.pinConfirmInput = createTextInput(this, GAME_WIDTH / 2, this.contentY(510), {
+        placeholder: 'PIN wiederholen',
+        inputType: 'password',
+        maxLength: AuthSystem.PIN_LENGTH,
+        numeric: true,
+        width: 480,
+        accent,
+        onSubmit: () => void this.signUp(),
+      });
+    }
 
-    const signIn = createButton(
+    const primary = createButton(
       this,
       GAME_WIDTH / 2,
-      this.contentY(620),
-      this.firstStart ? 'VORHANDENES PROFIL' : 'ANMELDEN',
-      () => void this.signIn(),
+      this.contentY(primaryY),
+      isSignUp ? 'PROFIL JETZT ANLEGEN' : 'ANMELDEN',
+      () => void (isSignUp ? this.signUp() : this.signIn()),
       {
         width: 440,
         height: 76,
@@ -184,20 +195,24 @@ export class AccountScene extends Phaser.Scene {
         fontSize: FontSize.body,
       },
     );
-    const signUp = createButton(
+    const secondary = createButton(
       this,
       GAME_WIDTH / 2,
-      this.contentY(700),
-      this.firstStart ? 'PROFIL JETZT ANLEGEN' : 'NEUES PROFIL ANLEGEN',
-      () => void this.signUp(),
+      this.contentY(secondaryY),
+      isSignUp ? 'ICH HABE BEREITS EIN PROFIL' : 'NEUES PROFIL ANLEGEN',
+      () => this.switchMode(isSignUp ? 'signIn' : 'signUp'),
       { width: 440, height: 70, accent: 0x9aa3bd, fontSize: FontSize.small },
     );
 
-    this.actionObjects = [signIn.container, signUp.container];
+    this.actionObjects = [primary.container, secondary.container];
     this.statusText.setText(
       this.firstStart
-        ? 'Für dein erstes Profil ist eine Internetverbindung erforderlich.'
-        : 'Ohne Login kannst du mit einem lokalen Profil offline spielen.',
+        ? isSignUp
+          ? 'Für dein erstes Profil ist eine Internetverbindung erforderlich.'
+          : 'Melde dich mit Alias und PIN an. Der PIN wird nur einmal abgefragt.'
+        : isSignUp
+          ? 'Lege ein neues gemeinsames Profil an.'
+          : 'Melde dich mit Alias und PIN an.',
     );
   }
 
@@ -368,7 +383,12 @@ export class AccountScene extends Phaser.Scene {
 
     await ProgressSyncSystem.flush();
     this.busy = false;
-    this.scene.restart();
+    this.scene.start(SceneKey.Menu);
+  }
+
+  private switchMode(mode: AccountMode): void {
+    if (this.busy || this.mode === mode) return;
+    this.scene.restart({ firstStart: this.firstStart, mode });
   }
 
   private async signOut(): Promise<void> {
