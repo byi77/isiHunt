@@ -51,7 +51,9 @@ export class AccountScene extends Phaser.Scene {
 
   create(data: AccountSceneData = {}): void {
     this.firstStart = data.firstStart ?? false;
-    this.mode = data.mode ?? (this.firstStart ? 'signUp' : 'signIn');
+    // Einloggen ist immer der sichere Standard. Ein neues Profil wird nur
+    // bewusst über den kleineren zweiten Button angelegt.
+    this.mode = data.mode ?? 'signIn';
     // Der eigene Begrüßungsbereich ersetzt beim Erststart die schmale
     // Safe-Area-Überschrift, damit keine zweite Überschrift über dem Logo steht.
     if (this.firstStart) SafeAreaSystem.hide();
@@ -127,7 +129,7 @@ export class AccountScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         236,
-        'Willkommen bei isiHunt!\nLege dein Profil an und dein Fortschritt bleibt erhalten.',
+        'Willkommen bei isiHunt!\nHast du schon ein Profil? Dann logge dich ein.\nNoch keines? Lege unten ein neues Profil an.',
         textStyle(FontSize.small, Palette.ink),
       )
       .setOrigin(0.5)
@@ -154,7 +156,7 @@ export class AccountScene extends Phaser.Scene {
     const secondaryY = isSignUp ? 700 : 620;
 
     this.aliasInput = createTextInput(this, GAME_WIDTH / 2, this.contentY(320), {
-      placeholder: 'Alias',
+      placeholder: 'Dein Name (Alias)',
       inputType: 'text',
       maxLength: AuthSystem.ALIAS_MAX_LENGTH,
       width: 480,
@@ -162,7 +164,7 @@ export class AccountScene extends Phaser.Scene {
       onSubmit: () => void (isSignUp ? this.signUp() : this.signIn()),
     });
     this.pinInput = createTextInput(this, GAME_WIDTH / 2, this.contentY(420), {
-      placeholder: isSignUp ? '6-stelliger PIN' : 'PIN oder bisheriger Zugang',
+      placeholder: isSignUp ? '6-stellige PIN' : 'Deine PIN',
       inputType: 'password',
       width: 480,
       accent,
@@ -186,7 +188,7 @@ export class AccountScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       this.contentY(primaryY),
-      isSignUp ? 'PROFIL JETZT ANLEGEN' : 'ANMELDEN',
+      isSignUp ? 'PROFIL JETZT ANLEGEN' : 'EINLOGGEN',
       () => void (isSignUp ? this.signUp() : this.signIn()),
       {
         width: 440,
@@ -199,20 +201,20 @@ export class AccountScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       this.contentY(secondaryY),
-      isSignUp ? 'ICH HABE BEREITS EIN PROFIL' : 'NEUES PROFIL ANLEGEN',
+      isSignUp ? 'ICH HABE SCHON EIN PROFIL' : 'NOCH KEIN PROFIL? NEUES ANLEGEN',
       () => this.switchMode(isSignUp ? 'signIn' : 'signUp'),
-      { width: 440, height: 70, accent: 0x9aa3bd, fontSize: FontSize.small },
+      { width: 400, height: 62, accent: 0x9aa3bd, fontSize: FontSize.small },
     );
 
     this.actionObjects = [primary.container, secondary.container];
     this.statusText.setText(
       this.firstStart
         ? isSignUp
-          ? 'Für dein erstes Profil ist eine Internetverbindung erforderlich.'
-          : 'Melde dich mit Alias und PIN an. Der PIN wird nur einmal abgefragt.'
+          ? 'Hier legst du dein erstes Profil an. Dafür brauchst du Internet.'
+          : 'Gib deinen Namen und deine PIN ein. Dann tippe auf EINLOGGEN.\nNoch kein Profil? Tippe unten auf NEUES ANLEGEN.'
         : isSignUp
-          ? 'Lege ein neues gemeinsames Profil an.'
-          : 'Melde dich mit Alias und PIN an.',
+          ? 'Lege nur dann ein neues Profil an, wenn du noch keines hast.'
+          : 'Gib deinen Namen und deine PIN ein. Dann tippe auf EINLOGGEN.\nNoch kein Profil? Tippe unten auf NEUES ANLEGEN.',
     );
   }
 
@@ -257,7 +259,7 @@ export class AccountScene extends Phaser.Scene {
     const pinOrLegacyPassword = this.pinInput.getValue();
     if (!AuthSystem.isValidAlias(alias) || !pinOrLegacyPassword) {
       this.setStatus(
-        `Alias: ${AuthSystem.ALIAS_MIN_LENGTH}-${AuthSystem.ALIAS_MAX_LENGTH} Zeichen, nur a-z, 0-9, - und _`,
+        'Bitte gib deinen Namen und deine PIN ein. Dann tippe auf EINLOGGEN.',
         Palette.gold,
       );
       return;
@@ -269,7 +271,12 @@ export class AccountScene extends Phaser.Scene {
     const result = await AuthSystem.signIn(alias, pinOrLegacyPassword);
     if (!result.ok) {
       this.busy = false;
-      this.setStatus(result.error, Palette.gold);
+      this.setStatus(
+        navigator.onLine
+          ? 'Einloggen hat nicht geklappt. Prüfe deinen Namen und deine PIN und versuche es noch einmal.\nNoch kein Profil? Tippe auf NEUES ANLEGEN.'
+          : 'Zum Einloggen brauchst du Internet. Bitte verbinde dein Gerät und versuche es dann noch einmal.',
+        Palette.gold,
+      );
       return;
     }
 
