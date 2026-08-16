@@ -50,7 +50,7 @@ export class AccountScene extends Phaser.Scene {
     // Der eigene Begrüßungsbereich ersetzt beim Erststart die schmale
     // Safe-Area-Überschrift, damit keine zweite Überschrift über dem Logo steht.
     if (this.firstStart) SafeAreaSystem.hide();
-    else SafeAreaSystem.showStatic('PROFIL LOGIN');
+    else SafeAreaSystem.showStatic('PROFIL VERBINDEN');
     const world = getWorld(SaveSystem.load().lastWorldId);
 
     createWorldBackdrop(
@@ -141,17 +141,10 @@ export class AccountScene extends Phaser.Scene {
   }
 
   private buildLogin(accent: number): void {
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        this.contentY(270),
-        this.firstStart ? 'ALIAS UND 6-STELLIGER PIN' : 'ALIAS UND PIN',
-        textStyle(FontSize.body, Palette.gold),
-      )
-      .setOrigin(0.5)
-      .setLetterSpacing(2);
-
-    this.aliasInput = createTextInput(this, GAME_WIDTH / 2, this.contentY(390), {
+    // Die Safe-Area bzw. beim Erststart die Begrüßung ist bereits der
+    // Seitenkopf. Felder beginnen deshalb direkt im Karteninhalt statt mit
+    // einer zweiten Überschrift und einem zusätzlichen Leerraum.
+    this.aliasInput = createTextInput(this, GAME_WIDTH / 2, this.contentY(320), {
       placeholder: 'Alias',
       inputType: 'text',
       maxLength: AuthSystem.ALIAS_MAX_LENGTH,
@@ -159,7 +152,7 @@ export class AccountScene extends Phaser.Scene {
       accent,
       onSubmit: () => void this.signIn(),
     });
-    this.pinInput = createTextInput(this, GAME_WIDTH / 2, this.contentY(490), {
+    this.pinInput = createTextInput(this, GAME_WIDTH / 2, this.contentY(420), {
       placeholder: this.firstStart ? '6-stelliger PIN' : 'PIN oder bisheriger Zugang',
       inputType: 'password',
       width: 480,
@@ -168,7 +161,7 @@ export class AccountScene extends Phaser.Scene {
       numericKeyboard: this.firstStart,
       onSubmit: () => void this.signIn(),
     });
-    this.pinConfirmInput = createTextInput(this, GAME_WIDTH / 2, this.contentY(580), {
+    this.pinConfirmInput = createTextInput(this, GAME_WIDTH / 2, this.contentY(510), {
       placeholder: 'PIN wiederholen',
       inputType: 'password',
       maxLength: AuthSystem.PIN_LENGTH,
@@ -181,7 +174,7 @@ export class AccountScene extends Phaser.Scene {
     const signIn = createButton(
       this,
       GAME_WIDTH / 2,
-      this.contentY(690),
+      this.contentY(620),
       this.firstStart ? 'VORHANDENES PROFIL' : 'ANMELDEN',
       () => void this.signIn(),
       {
@@ -194,7 +187,7 @@ export class AccountScene extends Phaser.Scene {
     const signUp = createButton(
       this,
       GAME_WIDTH / 2,
-      this.contentY(770),
+      this.contentY(700),
       this.firstStart ? 'PROFIL JETZT ANLEGEN' : 'NEUES PROFIL ANLEGEN',
       () => void this.signUp(),
       { width: 440, height: 70, accent: 0x9aa3bd, fontSize: FontSize.small },
@@ -211,22 +204,13 @@ export class AccountScene extends Phaser.Scene {
   private buildSignedIn(accent: number): void {
     const alias = AuthSystem.currentAlias() ?? 'angemeldetes Profil';
     this.add
-      .text(
-        GAME_WIDTH / 2,
-        this.contentY(290),
-        'ANGEMELDET',
-        textStyle(FontSize.body, Palette.gold),
-      )
-      .setOrigin(0.5)
-      .setLetterSpacing(2);
-    this.add
-      .text(GAME_WIDTH / 2, this.contentY(350), alias, textStyle(FontSize.small, Palette.ink))
+      .text(GAME_WIDTH / 2, this.contentY(300), alias, textStyle(FontSize.small, Palette.ink))
       .setOrigin(0.5);
 
     const sync = createButton(
       this,
       GAME_WIDTH / 2,
-      this.contentY(520),
+      this.contentY(470),
       'PROFIL ABGLEICHEN',
       () => void this.syncProfile(),
       { width: 440, height: 78, accent, fontSize: FontSize.body },
@@ -234,7 +218,7 @@ export class AccountScene extends Phaser.Scene {
     const signOut = createButton(
       this,
       GAME_WIDTH / 2,
-      this.contentY(635),
+      this.contentY(585),
       'ABMELDEN',
       () => void this.signOut(),
       {
