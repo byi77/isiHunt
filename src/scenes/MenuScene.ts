@@ -57,14 +57,10 @@ export class MenuScene extends Phaser.Scene {
     SafeAreaSystem.showMenuTicker();
     const save = SaveSystem.load();
     if (!save.playerName) {
-      // Beim allerersten Start wird ein Profil angelegt. Ist das Backend
-      // eingerichtet, soll der Alias direkt als Mehrgeräte-Profil entstehen;
-      // ohne Backend bzw. ohne Netz bleibt ein lokales Offline-Profil möglich.
-      if (CloudSystem.isAvailable() && navigator.onLine) {
-        this.scene.start(SceneKey.Account, { firstStart: true });
-      } else {
-        this.scene.start(SceneKey.Profile, { firstStart: true });
-      }
+      // Ein Erstprofil ist immer ein Online-Profil. Ohne erfolgreiche
+      // Anmeldung wird kein lokaler Ersatzstand angelegt, damit jeder neue
+      // Spielstand nach einer Neuinstallation wiederherstellbar bleibt.
+      this.scene.start(SceneKey.Account, { firstStart: true });
       return;
     }
 

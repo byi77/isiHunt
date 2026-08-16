@@ -171,27 +171,15 @@ export class AccountScene extends Phaser.Scene {
     );
 
     this.actionObjects = [signIn.container, signUp.container];
-    if (this.firstStart) {
-      const offline = createButton(
-        this,
-        GAME_WIDTH / 2,
-        this.contentY(840),
-        'OFFLINE-PROFIL ERSTELLEN',
-        () => this.createOfflineProfile(),
-        { width: 440, height: 62, accent: 0x778099, fontSize: FontSize.tiny },
-      );
-      this.actionObjects.push(offline.container);
-    }
     this.statusText.setText(
       this.firstStart
-        ? 'Online: gemeinsames Profil. Offline: lokales Profil, später verbindbar.'
+        ? 'Für dein erstes Profil ist eine Internetverbindung erforderlich.'
         : 'Ohne Login kannst du mit einem lokalen Profil offline spielen.',
     );
   }
 
   private buildSignedIn(accent: number): void {
     const alias = AuthSystem.currentAlias() ?? 'angemeldetes Profil';
-    if (this.firstStart && !SaveSystem.load().playerName) SaveSystem.setPlayerName(alias);
     this.add
       .text(
         GAME_WIDTH / 2,
@@ -235,6 +223,7 @@ export class AccountScene extends Phaser.Scene {
 
   private async signIn(): Promise<void> {
     if (this.busy || !this.aliasInput || !this.pinInput) return;
+    if (!this.ensureFirstStartOnline()) return;
     const alias = AuthSystem.normalizeAlias(this.aliasInput.getValue());
     const pinOrLegacyPassword = this.pinInput.getValue();
     if (!AuthSystem.isValidAlias(alias) || !pinOrLegacyPassword) {
@@ -246,7 +235,6 @@ export class AccountScene extends Phaser.Scene {
     }
 
     this.activeAlias = alias;
-    if (this.firstStart && !SaveSystem.load().playerName) SaveSystem.setPlayerName(alias);
     this.busy = true;
     this.setStatus('Anmeldung wird geprüft ...', Palette.inkDim);
     const result = await AuthSystem.signIn(alias, pinOrLegacyPassword);
@@ -261,6 +249,7 @@ export class AccountScene extends Phaser.Scene {
 
   private async signUp(): Promise<void> {
     if (this.busy || !this.aliasInput || !this.pinInput || !this.pinConfirmInput) return;
+    if (!this.ensureFirstStartOnline()) return;
     const alias = AuthSystem.normalizeAlias(this.aliasInput.getValue());
     const pin = this.pinInput.getValue();
     const pinConfirmation = this.pinConfirmInput.getValue();
@@ -273,10 +262,6 @@ export class AccountScene extends Phaser.Scene {
     }
 
     this.activeAlias = alias;
-    // Der Alias wird zugleich zum Anzeigenamen des neuen lokalen Profils.
-    // So kann der Fortschritt auch dann weitergespielt werden, wenn der
-    // anschließende Cloud-Abgleich wegen eines Netzfehlers ausfällt.
-    if (this.firstStart) SaveSystem.setPlayerName(alias);
     this.busy = true;
     this.setStatus('Profil wird angelegt ...', Palette.inkDim);
     const result = await AuthSystem.signUp(alias, pin);
@@ -297,24 +282,24 @@ export class AccountScene extends Phaser.Scene {
     await this.syncProfile();
   }
 
-  /** Legt beim Erststart bewusst nur ein lokales Profil an. */
-  private createOfflineProfile(): void {
-    if (!this.firstStart || !this.aliasInput) return;
-    const alias = AuthSystem.normalizeAlias(this.aliasInput.getValue());
-    if (!AuthSystem.isValidAlias(alias)) {
-      this.setStatus(
-        `Alias: ${AuthSystem.ALIAS_MIN_LENGTH}-${AuthSystem.ALIAS_MAX_LENGTH} Zeichen, nur a-z, 0-9, - und _`,
-        Palette.gold,
-      );
-      return;
-    }
-
-    SaveSystem.setPlayerName(alias);
-    this.scene.start(SceneKey.Menu);
+  /** Der Erststart hat keinen Offline-Fallback: das Profil muss in die Cloud. */
+  private ensureFirstStartOnline(): boolean {
+    if (!this.firstStart || navigator.onLine) return true;
+    this.setStatus(
+      'Bitte stelle für die erste Anmeldung eine Internetverbindung her.',
+      Palette.gold,
+    );
+    return false;
   }
 
   private async syncProfile(): Promise<void> {
     const local = SaveSystem.load();
+    const alias = this.activeAlias || AuthSystem.currentAlias();
+    // Beim Erststart wird der Alias nur als Datenbasis für den Server genutzt.
+    // Der lokale Speicher bleibt leer, bis der gemeinsame Profilstand wirklich
+    // angelegt bzw. geladen wurde.
+    const profileSeed =
+      this.firstStart && !local.playerName && alias ? { ...local, playerName: alias } : local;
     this.setStatus('Gemeinsames Profil wird geladen ...', Palette.inkDim);
 
     let remote = await CloudSystem.fetchProfileProgress();
@@ -337,7 +322,7 @@ export class AccountScene extends Phaser.Scene {
     }
 
     if (!remote.value) {
-      remote = await CloudSystem.initializeProfileProgress(local);
+      remote = await CloudSystem.initializeProfileProgress(profileSeed);
       if (!remote.ok) {
         this.busy = false;
         this.setStatus(remote.error, Palette.gold);
@@ -345,7 +330,6 @@ export class AccountScene extends Phaser.Scene {
       }
     }
 
-    const alias = this.activeAlias || AuthSystem.currentAlias();
     if (alias) {
       const aliasResult = await CloudSystem.updateProfileAlias(alias);
       if (!aliasResult.ok) {
@@ -363,7 +347,7 @@ export class AccountScene extends Phaser.Scene {
         totalRuns: remote.value.data.totalRuns,
         updatedAt: remote.value.updatedAt,
       };
-      if (CloudSystem.isRemoteAhead(local, summary)) {
+      if (this.firstStart || CloudSystem.isRemoteAhead(local, summary)) {
         SaveSystem.adoptRemote(remote.value.data, local.cloudId ?? AuthSystem.currentUserId()!);
       }
     }
