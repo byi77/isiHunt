@@ -371,6 +371,52 @@ export function initialize(): void {
   document.addEventListener('visibilitychange', onVisibilityChange);
 }
 
+export interface SoundDiagnostics {
+  readonly hasAudioContextApi: boolean;
+  readonly contextExists: boolean;
+  readonly contextState: string;
+  readonly sampleRate: number | null;
+  readonly baseLatency: number | null;
+  readonly pendingTones: number;
+  readonly resumeInFlight: boolean;
+  readonly soundEnabled: boolean;
+}
+
+/**
+ * Momentaufnahme des internen Zustands fuer den Wartungsbildschirm.
+ *
+ * Ohne Mac/Safari-Devtools ist der `AudioContext.state` auf dem Handy sonst
+ * nicht einsehbar - genau diese Blindheit hat mehrere frühere Fixversuche zu
+ * Rateversuchen gemacht statt zu geprueften Aenderungen (No-Guess-Vertrag,
+ * CODE_STYLE.md Regel 8).
+ */
+export function getDiagnostics(): SoundDiagnostics {
+  const AudioContextConstructor =
+    window.AudioContext ?? (window as WebkitWindow).webkitAudioContext;
+
+  return {
+    hasAudioContextApi: !!AudioContextConstructor,
+    contextExists: audioContext !== null,
+    contextState: audioContext?.state ?? 'kein Kontext',
+    sampleRate: audioContext?.sampleRate ?? null,
+    baseLatency: audioContext?.baseLatency ?? null,
+    pendingTones: pendingTones.length,
+    resumeInFlight: resumePromise !== null,
+    soundEnabled: soundEnabled(),
+  };
+}
+
+/** Testton fuer den Wartungsbildschirm - unabhaengig von SaveSystem.soundEnabled. */
+export function playDiagnosticTone(): void {
+  const context = getAudioContext();
+  if (!context) return;
+
+  primeAudioContext(context);
+  void resumeAudioContext().then(() => {
+    playTone(context, { frequency: 660, duration: 0.15, type: 'triangle', volume: 0.08 });
+  });
+}
+
 export function isEnabled(): boolean {
   return soundEnabled();
 }

@@ -32,6 +32,11 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Intern
 
+- Wartungsbildschirm zeigt jetzt eine Ton-Diagnose (AudioContext-Status,
+  Warteschlange, Samplerate) live plus Testton-Knopf. Der Fix fuer
+  fehlenden Ton (siehe oben) hat das Problem auf dem Geraet nicht geloest -
+  ohne Mac/Safari-Devtools war der AudioContext-Zustand auf dem iPhone
+  bisher nicht einsehbar, das machte weitere Versuche zur Ratearbeit.
 - Balancing-Werte in `SpawnSystem`, `ChallengeSystem`, `ProgressionSystem`
   und `InputController` stehen jetzt vollstaendig in `src/config/`.
 - Testabdeckung fuer `CloudSystem`, den Bot- und Tagesmodus in

@@ -34,6 +34,7 @@ import { isIos, isStandalone } from '@/core/display';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
+import * as SoundSystem from '@/systems/SoundSystem';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import {
@@ -50,6 +51,8 @@ export class AdminScene extends Phaser.Scene {
   private statusText!: Phaser.GameObjects.Text;
   /** Zweiter Tipp bestaetigt das Zuruecksetzen - Absicht statt Versehen. */
   private resetArmed = false;
+  private audioDiagnosticsText!: Phaser.GameObjects.Text;
+  private audioDiagnosticsTimer?: Phaser.Time.TimerEvent;
 
   /**
    * Voruebergehend aus: Die Reset-Logik bleibt fuer spaetere Wartung erhalten,
@@ -82,13 +85,19 @@ export class AdminScene extends Phaser.Scene {
     const sections = createMenuLayout().sections;
     const versionY = sections.next(170);
     const layoutY = sections.next(360);
+    const audioY = sections.next(230);
     this.buildVersionPanel(versionY);
     void this.buildLayoutPanel(layoutY);
-    this.buildActions(layoutY);
+    this.buildAudioPanel(audioY);
+    this.buildActions(audioY);
 
     this.statusText = createBackStatusText(this);
 
     void this.lookForUpdate();
+  }
+
+  shutdown(): void {
+    this.audioDiagnosticsTimer?.remove();
   }
 
   /**
@@ -137,6 +146,70 @@ export class AdminScene extends Phaser.Scene {
 
     const storageLine = await readWebStorageLine();
     if (this.scene.isActive()) deviceText.setText([...device.lines, storageLine].join('\n'));
+  }
+
+  /**
+   * Live-Zustand des AudioContext plus Testton.
+   *
+   * Ohne Mac/Safari-Devtools ist der `AudioContext.state` auf dem Handy sonst
+   * unsichtbar - genau diese Bindheit hat mehrere Ton-Fixversuche zu
+   * Ratearbeit gemacht statt zu geprueften Aenderungen. Der Timer haelt die
+   * Anzeige waehrend App-Wechsel/Sperrbildschirm-Tests aktuell.
+   */
+  private buildAudioPanel(y: number): void {
+    createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, 230, 0x9aa3bd, { alpha: 0.5 });
+
+    this.add
+      .text(GAME_WIDTH / 2, y - 100, 'TON-DIAGNOSE', textStyle(FontSize.tiny, Palette.inkDim))
+      .setOrigin(0.5)
+      .setLetterSpacing(3);
+
+    this.audioDiagnosticsText = this.add
+      .text(84, y - 78, this.formatAudioDiagnostics(), textStyle(14, Palette.ink))
+      .setOrigin(0, 0)
+      .setLineSpacing(3);
+
+    createButton(
+      this,
+      GAME_WIDTH / 2,
+      y + 78,
+      'TESTTON ABSPIELEN',
+      () => {
+        SoundSystem.playDiagnosticTone();
+        this.refreshAudioDiagnostics();
+      },
+      {
+        width: 320,
+        height: 50,
+        accent: Palette.goldHex,
+        fontSize: FontSize.small,
+      },
+    );
+
+    this.audioDiagnosticsTimer = this.time.addEvent({
+      delay: 500,
+      loop: true,
+      callback: () => this.refreshAudioDiagnostics(),
+    });
+  }
+
+  private formatAudioDiagnostics(): string {
+    const d = SoundSystem.getDiagnostics();
+    return [
+      `API vorhanden   ${d.hasAudioContextApi ? 'ja' : 'NEIN'}`,
+      `Kontext erzeugt  ${d.contextExists ? 'ja' : 'nein'}`,
+      `Kontext-Status   ${d.contextState}`,
+      `Samplerate       ${d.sampleRate ?? '—'}`,
+      `Basis-Latenz     ${d.baseLatency !== null ? d.baseLatency.toFixed(4) : '—'}`,
+      `Warteschlange    ${d.pendingTones} Ton(e)`,
+      `resume() laeuft  ${d.resumeInFlight ? 'ja' : 'nein'}`,
+      `Ton in Settings  ${d.soundEnabled ? 'AN' : 'AUS'}`,
+    ].join('\n');
+  }
+
+  private refreshAudioDiagnostics(): void {
+    if (!this.scene.isActive()) return;
+    this.audioDiagnosticsText.setText(this.formatAudioDiagnostics());
   }
 
   /** Was laeuft, wie es gestartet wurde - die Angaben fuer einen Fehlerbericht. */
