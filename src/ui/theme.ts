@@ -11,7 +11,7 @@ export const Palette = {
   /** Panel-Hintergrund fuer Menue und Ergebnis. */
   panel: 0x101733,
   ink: '#f4f1e8',
-  inkDim: '#9aa3bd',
+  inkDim: '#b8c0d9',
   gold: '#ffd479',
   goldHex: 0xffd479,
   danger: '#ff6b6b',

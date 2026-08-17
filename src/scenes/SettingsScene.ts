@@ -66,7 +66,7 @@ export class SettingsScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         profileY - 115,
-        'PROFIL & SYNCHRONISATION',
+        'PROFIL & GERÄTE',
         textStyle(FontSize.body, Palette.gold),
       )
       .setOrigin(0.5)

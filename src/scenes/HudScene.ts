@@ -106,12 +106,15 @@ export class HudScene extends Phaser.Scene {
     this.timerBar = createBar(this, 60, 24, GAME_WIDTH - 120, 8, this.accent);
     this.timerBar.setRatio(1);
 
+    // Live-Spielstand ohne Panel-Unterlage - braucht den hellen Standardton,
+    // nicht den gedaempften: er muss auf jedem der zehn Welt-Hintergruende
+    // lesbar bleiben, nicht nur auf dunklen Panels.
     this.timerText = this.add
       .text(
         GAME_WIDTH - 60,
         40,
         String(Math.ceil(data.durationMs / 1000)),
-        textStyle(FontSize.small, Palette.inkDim),
+        textStyle(FontSize.small, Palette.ink),
       )
       .setOrigin(1, 0);
 
@@ -123,7 +126,7 @@ export class HudScene extends Phaser.Scene {
           60,
           40,
           `Ziel ${this.scoreToBeat.toLocaleString('de-DE')}`,
-          textStyle(FontSize.small, Palette.inkDim),
+          textStyle(FontSize.small, Palette.ink),
         )
         .setOrigin(0, 0);
     }
@@ -357,7 +360,7 @@ export class HudScene extends Phaser.Scene {
     // Letzte 10 Sekunden rot - klare Warnung ohne zusaetzliches UI-Element.
     const isCritical = seconds <= 10;
     this.timerBar.setTint(isCritical ? 0xff6b6b : this.accent);
-    this.timerText.setColor(isCritical ? Palette.danger : Palette.inkDim);
+    this.timerText.setColor(isCritical ? Palette.danger : Palette.ink);
   };
 
   // Schutz gegen doppeltes Aufbauen: Ein zweites `RunPaused` - etwa durch die

@@ -61,12 +61,20 @@ Seltenheitsfarben klar unterscheiden.
 | Grundton            | `#0b1020` |
 | Panel               | `#101733` |
 | Text                | `#f4f1e8` |
-| Text gedaempft      | `#9aa3bd` |
+| Text gedaempft      | `#b8c0d9` |
 | Hervorhebung / Gold | `#ffd479` |
 | Warnung             | `#ff6b6b` |
 | Erfolg              | `#7ee787` |
 
 Definiert in `src/ui/theme.ts`. Scenes definieren **keine** eigenen Farben.
+
+**"Text gedaempft" am 2026-08-17 aufgehellt** (vorher `#9aa3bd`): Fuer
+Zielgruppen mit reduzierter Kontrastwahrnehmung (u. a. aeltere Spieler) war
+der alte Wert auf den dunklen Hintergruenden zu knapp. Spielrelevante
+Live-Anzeigen ohne Panel-Unterlage - der Rundentimer und das Duell-Zielscore
+im HUD (`src/scenes/HudScene.ts`) - nutzen seither den hellen Standardton
+`Text` statt "gedaempft", weil sie auf jedem der Welt-Hintergruende lesbar
+bleiben muessen, nicht nur auf dunklen Panels.
 
 ## 3. Formensprache
 
@@ -257,6 +265,14 @@ Offen fuer M4, hier schon notiert:
   (`prefers-reduced-motion` respektieren).
 - Mindestgroesse fuer Tippziele: 44 × 44 px. Alle Knoepfe liegen deutlich
   darueber.
+- **Gesten brauchen einen Knopf-Fallback.** Das Weltenwheel im Menue
+  (`MenuScene.buildWorldList`) liess sich zunaechst nur per Wisch-Geste mit
+  Geschwindigkeitsschwelle bedienen - fuer motorisch weniger sichere Finger
+  (Kinder, aeltere Spieler) ist das unzuverlaessig, und ein misslungener
+  Swipe gibt kein Feedback ausser dem Zurueckschnappen. Seit 2026-08-17
+  ergaenzen zwei Pfeil-Knoepfe denselben Auswahlpfad (`selectWorld`) als
+  zuverlaessiger Zweitweg. Wer eine neue Wisch-Geste einbaut, sollte pruefen,
+  ob ein Knopf-Fallback noetig ist.
 
 ### 8.1 Die Trefferflaeche deckt den Knopf — nicht mehr, nicht weniger
 

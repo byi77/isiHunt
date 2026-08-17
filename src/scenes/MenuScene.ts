@@ -312,7 +312,7 @@ export class MenuScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         GAME_HEIGHT / 2 - 42,
-        'TAGESLOGIN',
+        'TÄGLICHER BONUS',
         textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
       )
       .setOrigin(0.5)
@@ -385,7 +385,7 @@ export class MenuScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         565,
-        `Cloud: Level ${remote.level}  ·  Bestwert ${remote.bestScore.toLocaleString('de-DE')}\n${remote.totalRuns} Runs\n\nSoll dieser Stand übernommen werden?`,
+        `Online-Profil: Level ${remote.level}  ·  Bestwert ${remote.bestScore.toLocaleString('de-DE')}\n${remote.totalRuns} Runs\n\nSoll dieser Stand übernommen werden?`,
         textStyle(FontSize.small, Palette.ink),
       )
       .setOrigin(0.5)
@@ -396,7 +396,7 @@ export class MenuScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       725,
-      'CLOUD-STAND NEHMEN',
+      'ONLINE-STAND NEHMEN',
       () => {
         const local = SaveSystem.load();
         if (!local.cloudId) return;
@@ -781,14 +781,69 @@ export class MenuScene extends Phaser.Scene {
       .setLetterSpacing(3);
     this.worldListDecorations.push(swipeHint);
 
+    // Pfeile als zuverlaessiger Zweitweg zur Wisch-Geste. Wische-mit-
+    // Geschwindigkeitsschwelle ist fuer motorisch weniger sichere Finger
+    // (Kinder, aeltere Nutzer) ein unzuverlaessiger Erstkontakt - ein
+    // misslungener Swipe gibt kein Feedback ausser dem Zurueckschnappen.
+    // Die Pfeile rufen dieselbe selectWorld()-Funktion auf wie die Geste,
+    // es entsteht also kein zweiter Auswahlpfad mit eigenem Zustand.
+    // Die Karte oberhalb der Mitte zeigt den vorherigen Index (offset -1),
+    // die Karte darunter den naechsten (offset +1) - siehe y = centerY +
+    // offset * step weiter oben. Die Pfeile folgen dieser Bildschirmrichtung:
+    // ▲ geht zur oben angezeigten (vorherigen), ▼ zur unten angezeigten
+    // (naechsten) Welt.
+    const arrowX = GAME_WIDTH / 2 + cardWidth / 2 + 30;
+    const arrowUp = createButton(
+      this,
+      arrowX,
+      centerY - step,
+      '▲',
+      () => this.stepWorld(-1, level),
+      {
+        width: 52,
+        height: 52,
+        accent: 0x9aa3bd,
+        fontSize: FontSize.body,
+      },
+    );
+    const arrowDown = createButton(
+      this,
+      arrowX,
+      centerY + step,
+      '▼',
+      () => this.stepWorld(1, level),
+      {
+        width: 52,
+        height: 52,
+        accent: 0x9aa3bd,
+        fontSize: FontSize.body,
+      },
+    );
+    arrowUp.setEnabled(selectedIndex > 0);
+    arrowDown.setEnabled(selectedIndex < WORLDS.length - 1);
+    this.worldListDecorations.push(arrowUp.container, arrowDown.container);
+
     let startY = 0;
     let startX = 0;
     let activePointerId: number | null = null;
     const selectorTop = 370;
     const selectorBottom = 700;
+    // Seitlich auf den Kartenbereich begrenzt, damit ein Tipp auf die
+    // Pfeil-Buttons rechts daneben nicht zusaetzlich einen Wheel-Drag
+    // startet - sonst koennte ein leicht zitternder Finger auf dem Pfeil
+    // gleichzeitig den Klick UND ein Zurueckschnappen des Wheels ausloesen.
+    const selectorLeft = GAME_WIDTH / 2 - cardWidth / 2;
+    const selectorRight = GAME_WIDTH / 2 + cardWidth / 2;
 
     const onPointerDown = (pointer: Phaser.Input.Pointer): void => {
-      if (activePointerId !== null || pointer.y < selectorTop || pointer.y > selectorBottom) return;
+      if (
+        activePointerId !== null ||
+        pointer.y < selectorTop ||
+        pointer.y > selectorBottom ||
+        pointer.x < selectorLeft ||
+        pointer.x > selectorRight
+      )
+        return;
       activePointerId = pointer.id;
       startY = pointer.y;
       startX = pointer.x;
@@ -844,6 +899,12 @@ export class MenuScene extends Phaser.Scene {
     this.worldListDecorations = [];
   }
 
+  /** Pfeil-Fallback zum Wisch-Wheel: einen Schritt vor oder zurueck. */
+  private stepWorld(direction: 1 | -1, level: number): void {
+    const currentIndex = WORLDS.findIndex((world) => world.id === this.selectedWorld.id);
+    this.selectWorld(currentIndex + direction, level);
+  }
+
   private selectWorld(index: number, level: number): boolean {
     const world = WORLDS[index];
     if (!world || world.unlockLevel > level || world.id === this.selectedWorld.id) return false;
@@ -888,91 +949,114 @@ export class MenuScene extends Phaser.Scene {
     });
   }
 
+  /**
+   * Drei Stufen statt eines gleichfoermigen Rasters: JAGD ist der Kern-Loop
+   * und steht allein und gross oben. DUELL/TAGESLAUF sind Nebenmodi mit
+   * eigenem Einstieg. ERFOLGE/TALENTBAUM/RANGLISTE sind Verwaltungsseiten -
+   * niemand oeffnet sie, um "jetzt zu spielen". EINSTELLUNGEN bleibt ganz
+   * unten und gedaempft. Designziel 1 aus GAME_DESIGN.md ("in 5 Sekunden
+   * verstanden") verlangt eine sichtbare Hauptaktion statt acht gleich
+   * gewichteter Kacheln.
+   */
   private buildFooter(): void {
-    // Hauptaktionen als festes 2-Spalten-Raster: Die drei Zeilen bleiben auch
-    // bei deaktivierter Cloud-Rangliste an derselben Stelle sichtbar.
     const hasLeaderboard = CloudSystem.isAvailable();
-    const actionSpacing = 84;
     const settingsY = GAME_HEIGHT - 110;
-    const actionsY = Math.min(820, settingsY - actionSpacing * 3 - 28);
-    const columnGap = 115;
-    const columnWidth = 210;
+
+    const primaryHeight = 96;
+    const secondaryHeight = 76;
+    const tertiaryHeight = 60;
+    const rowGap = 22;
+
+    const tertiaryY = settingsY - tertiaryHeight / 2 - 28;
+    const secondaryY = tertiaryY - tertiaryHeight / 2 - rowGap - secondaryHeight / 2;
+    const primaryY = secondaryY - secondaryHeight / 2 - rowGap - primaryHeight / 2;
 
     createButton(
       this,
-      GAME_WIDTH / 2 - columnGap,
-      actionsY,
+      GAME_WIDTH / 2,
+      primaryY,
       'JAGD',
       () => {
         this.scene.start(SceneKey.Game, { worldId: this.selectedWorld.id });
       },
       {
-        width: columnWidth,
-        height: 76,
+        width: 460,
+        height: primaryHeight,
         accent: this.selectedWorld.accent,
+        fontSize: FontSize.large,
+      },
+    );
+
+    const secondaryGap = 115;
+    const secondaryWidth = 210;
+
+    createButton(
+      this,
+      GAME_WIDTH / 2 - secondaryGap,
+      secondaryY,
+      'DUELL',
+      () => {
+        ChallengeSystem.start(this.selectedWorld.id);
+        this.scene.start(SceneKey.Challenge);
+      },
+      {
+        width: secondaryWidth,
+        height: secondaryHeight,
+        accent: Palette.goldHex,
         fontSize: FontSize.small,
       },
     );
 
     createButton(
       this,
-      GAME_WIDTH / 2 + columnGap,
-      actionsY,
-      'DUELL',
-      () => {
-        ChallengeSystem.start(this.selectedWorld.id);
-        this.scene.start(SceneKey.Challenge);
-      },
-      { width: columnWidth, height: 76, accent: Palette.goldHex, fontSize: FontSize.small },
-    );
-
-    createButton(
-      this,
-      GAME_WIDTH / 2 - columnGap,
-      actionsY + actionSpacing,
+      GAME_WIDTH / 2 + secondaryGap,
+      secondaryY,
       'TAGESLAUF',
       () => {
         ChallengeSystem.startDaily(this.selectedWorld.id);
         this.scene.start(SceneKey.Challenge);
       },
       {
-        width: columnWidth,
-        height: 76,
+        width: secondaryWidth,
+        height: secondaryHeight,
         accent: Palette.dailyHex,
         fontSize: FontSize.small,
       },
     );
 
+    const tertiaryGap = 152;
+    const tertiaryWidth = 132;
+
     createButton(
       this,
-      GAME_WIDTH / 2 + columnGap,
-      actionsY + actionSpacing,
+      GAME_WIDTH / 2 - tertiaryGap,
+      tertiaryY,
       'ERFOLGE',
       () => this.scene.start(SceneKey.Achievements),
       {
-        width: columnWidth,
-        height: 76,
+        width: tertiaryWidth,
+        height: tertiaryHeight,
         accent: Palette.achievementHex,
-        fontSize: FontSize.small,
+        fontSize: FontSize.tiny,
       },
     );
 
     createButton(
       this,
-      GAME_WIDTH / 2 - columnGap,
-      actionsY + actionSpacing * 2,
+      GAME_WIDTH / 2,
+      tertiaryY,
       'TALENTBAUM',
       () => this.scene.start(SceneKey.Talents, { returnTo: SceneKey.Menu }),
-      { width: columnWidth, height: 76, accent: 0xb782ff, fontSize: FontSize.small },
+      { width: tertiaryWidth, height: tertiaryHeight, accent: 0xb782ff, fontSize: FontSize.tiny },
     );
 
     const leaderboardButton = createButton(
       this,
-      GAME_WIDTH / 2 + columnGap,
-      actionsY + actionSpacing * 2,
+      GAME_WIDTH / 2 + tertiaryGap,
+      tertiaryY,
       'RANGLISTE',
       () => this.scene.start(SceneKey.Leaderboard),
-      { width: columnWidth, height: 76, accent: 0x9aa3bd, fontSize: FontSize.small },
+      { width: tertiaryWidth, height: tertiaryHeight, accent: 0x9aa3bd, fontSize: FontSize.tiny },
     );
     leaderboardButton.setEnabled(hasLeaderboard);
 
