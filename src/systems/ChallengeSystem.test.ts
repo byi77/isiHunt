@@ -274,6 +274,98 @@ describe('Bot-Duell', () => {
   });
 });
 
+describe('Netzwerk-Duell', () => {
+  it('legt den Zustand mit dem uebergebenen Seed und Raum-Code an', () => {
+    const state = ChallengeSystem.startOnline(DEFAULT_WORLD_ID, 'seed-abc', 'CODE01', 0);
+
+    expect(state.kind).toBe('duel-online');
+    expect(state.seed).toBe('seed-abc');
+    expect(state.online?.roomCode).toBe('CODE01');
+    expect(state.online?.localPlayerIndex).toBe(0);
+    expect(state.rounds).toHaveLength(0);
+  });
+
+  it('nutzt den localPlayerIndex als currentPlayerIndex, unabhaengig von gespielten Runden', () => {
+    ChallengeSystem.startOnline(DEFAULT_WORLD_ID, 'seed-abc', 'CODE01', 1);
+
+    expect(ChallengeSystem.currentPlayerIndex()).toBe(1);
+  });
+
+  it('ist erst vollstaendig, wenn beide Positionen gesetzt sind', () => {
+    ChallengeSystem.startOnline(DEFAULT_WORLD_ID, 'seed-abc', 'CODE01', 0);
+    expect(ChallengeSystem.isComplete()).toBe(false);
+
+    ChallengeSystem.submitOnlineRound(0, { score: 100, bestCombo: 5, totalCollected: 20 });
+    expect(ChallengeSystem.isComplete()).toBe(false);
+
+    ChallengeSystem.submitOnlineRound(1, { score: 200, bestCombo: 8, totalCollected: 30 });
+    expect(ChallengeSystem.isComplete()).toBe(true);
+  });
+
+  it('ordnet Ergebnisse der festen Position zu, nicht der Ankunftsreihenfolge', () => {
+    // Regressionsfall: das Gegnerergebnis (Index 1) trifft zuerst ein, das
+    // eigene (Index 0) danach. Ohne feste Positionszuordnung wuerde ein
+    // simples push() das erste eingetroffene Ergebnis an Position 0 legen,
+    // egal von welchem Spieler es stammt.
+    ChallengeSystem.startOnline(DEFAULT_WORLD_ID, 'seed-abc', 'CODE01', 0);
+
+    ChallengeSystem.submitOnlineRound(1, { score: 999, bestCombo: 1, totalCollected: 1 });
+    ChallengeSystem.submitOnlineRound(0, { score: 50, bestCombo: 1, totalCollected: 1 });
+
+    const rounds = ChallengeSystem.getState()?.rounds;
+    expect(rounds?.[0]).toEqual({ score: 50, bestCombo: 1, totalCollected: 1 });
+    expect(rounds?.[1]).toEqual({ score: 999, bestCombo: 1, totalCollected: 1 });
+  });
+
+  it('erlaubt winnerIndex() unveraendert zu funktionieren, sobald beide Ergebnisse da sind', () => {
+    ChallengeSystem.startOnline(DEFAULT_WORLD_ID, 'seed-abc', 'CODE01', 0);
+    ChallengeSystem.submitOnlineRound(1, { score: 999, bestCombo: 1, totalCollected: 1 });
+    ChallengeSystem.submitOnlineRound(0, { score: 50, bestCombo: 1, totalCollected: 1 });
+
+    expect(ChallengeSystem.winnerIndex()).toBe(1);
+  });
+
+  it('ignoriert submitOnlineRound ohne laufendes Netzwerk-Duell', () => {
+    ChallengeSystem.start(DEFAULT_WORLD_ID);
+    ChallengeSystem.submitOnlineRound(0, { score: 50, bestCombo: 1, totalCollected: 1 });
+
+    // Ein lokales Duell darf durch einen Fehlaufruf nicht veraendert werden.
+    expect(ChallengeSystem.getState()?.rounds).toHaveLength(0);
+  });
+
+  it('ignoriert submitRound (das lokale Pendant) bei einem Netzwerk-Duell', () => {
+    ChallengeSystem.startOnline(DEFAULT_WORLD_ID, 'seed-abc', 'CODE01', 0);
+    ChallengeSystem.submitRound(createRun(100));
+
+    // submitRound ist fuer lokale Uebergabe gedacht - ein Netzwerk-Duell
+    // muss ausschliesslich ueber submitOnlineRound aktualisiert werden.
+    expect(ChallengeSystem.getState()?.rounds).toHaveLength(0);
+  });
+
+  it('aktualisiert den Uhr-Offset und die Startzeit', () => {
+    ChallengeSystem.startOnline(DEFAULT_WORLD_ID, 'seed-abc', 'CODE01', 0);
+    ChallengeSystem.updateOnlineSync(120, 1_700_000_000_000);
+
+    const online = ChallengeSystem.getState()?.online;
+    expect(online?.clockOffsetMs).toBe(120);
+    expect(online?.startAtServerMs).toBe(1_700_000_000_000);
+  });
+
+  it('ignoriert updateOnlineSync ohne laufendes Netzwerk-Duell', () => {
+    ChallengeSystem.start(DEFAULT_WORLD_ID);
+    ChallengeSystem.updateOnlineSync(120, 1_700_000_000_000);
+
+    expect(ChallengeSystem.getState()?.online).toBeUndefined();
+  });
+
+  it('faellt bei einem Rematch auf das lokale Duell zurueck (Netzwerk-Rematch ist eine spaetere Ausbaustufe)', () => {
+    ChallengeSystem.startOnline(DEFAULT_WORLD_ID, 'seed-abc', 'CODE01', 0);
+    const second = ChallengeSystem.rematch();
+
+    expect(second.kind).toBe('duel');
+  });
+});
+
 describe('Tages-Herausforderung', () => {
   let SaveSystem: typeof SaveSystemModule;
   let DailyChallengeSystem: typeof ChallengeSystem;

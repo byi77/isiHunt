@@ -13,6 +13,8 @@ export const SceneKey = {
   Result: 'Result',
   /** Alle Nicht-Spiel-Phasen eines Duells: Einfuehrung, Uebergabe, Ergebnis. */
   Challenge: 'Challenge',
+  /** Netzwerk-Duell: Raum erzeugen/beitreten, Lobby, Ergebnis. */
+  OnlineDuel: 'OnlineDuel',
   /** Online-Bestenliste: Gesamtansicht und Weltfilter. */
   Leaderboard: 'Leaderboard',
   /** Spielstand-Abgleich zwischen Geraeten. */

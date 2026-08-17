@@ -96,6 +96,7 @@ isiHunt/
 │   │   ├── GameScene.ts        Die Simulation (Solo und Duell)
 │   │   ├── HudScene.ts         Anzeige waehrend des Runs
 │   │   ├── ChallengeScene.ts   Duell: Einfuehrung, Uebergabe, Ergebnis
+│   │   ├── OnlineDuelScene.ts  Netzwerk-Duell: Raum, Lobby, Ergebnis (ADR-0010 Schritt 2)
 │   │   ├── LeaderboardScene.ts Online-Bestenliste, Gesamtansicht + Weltfilter
 │   │   ├── SyncScene.ts        Legacy-Abgleich für anonyme Alt-Spielstände
 │   │   ├── AdminScene.ts       Wartung: Version, Neuladen, Reset (versteckt)
@@ -124,6 +125,8 @@ isiHunt/
 │   │   ├── ChallengeSystem.test.ts
 │   │   ├── CloudSystem.ts      Bestenliste und Spielstand ueber Supabase
 │   │   ├── CloudSystem.test.ts
+│   │   ├── NetworkDuelSystem.ts Netzwerk-Duell: Raum, Uhr-Sync, Realtime-Kanal
+│   │   ├── NetworkDuelSystem.test.ts
 │   │   ├── SpawnSystem.ts      Wann und wo etwas erscheint
 │   │   ├── SpawnSystem.test.ts
 │   │   ├── DebugSystem.ts      Ringpuffer, Report-Text, Screenshot, Share-Sheet (ADR-0016)
@@ -184,6 +187,16 @@ ohne dass der Aufrufer den Fortschritt kennen muss.
 Scene-Wechsel. Scene-Felder ueberleben `scene.start()` nicht, dieser Zustand
 muss das aber. Persistiert wird er bewusst nicht — ein Duell ist ein Spiel zu
 zweit im Hier und Jetzt, kein Fortschritt zum Aufheben.
+
+**Netzwerk-Duell (`kind: 'duel-online'`, ADR-0010 Schritt 2):** dieselbe
+`ChallengeState`-Struktur, aber `OnlineDuelScene` statt `ChallengeScene` und
+`GameScene` startet ueber eine serverseitige Zielzeit statt eines festen
+Schrittzaehlers. `NetworkDuelSystem` kapselt Supabase Realtime (Raum-RPCs,
+Uhr-Offset-Messung, Broadcast/Presence); `ChallengeSystem.submitOnlineRound()`
+ordnet Ergebnisse ueber `onlineRounds` einer festen Spielerposition zu, weil
+sie unabhaengig voneinander eintreffen (Ankunftsreihenfolge ≠ Spielerreihenfolge,
+anders als beim lokalen Duell). Phase 1: kein Live-Score waehrend des Laufs,
+nur synchroner Start und Ergebnisvergleich am Ende.
 
 ## 4. Datenfluss im Run
 

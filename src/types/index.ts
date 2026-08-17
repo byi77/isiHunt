@@ -86,7 +86,7 @@ export interface RunStats {
  */
 export type RunMode = 'solo' | 'challenge' | 'daily' | 'bot';
 
-export type ChallengeKind = 'duel' | 'daily' | 'bot';
+export type ChallengeKind = 'duel' | 'daily' | 'bot' | 'duel-online';
 export type BotDifficulty = 'easy' | 'normal' | 'hard';
 
 /** Das Ergebnis eines einzelnen Duell-Durchgangs. */
@@ -94,6 +94,22 @@ export interface ChallengeRound {
   score: number;
   bestCombo: number;
   totalCollected: number;
+}
+
+/**
+ * Zusaetzliche Angaben, die nur ein Netzwerk-Duell (`kind === 'duel-online'`)
+ * braucht - Raum-Code, welcher der beiden Spieler dieses Geraet ist, und die
+ * Zeitsynchronisation fuer den gemeinsamen Start.
+ */
+export interface OnlineDuelInfo {
+  /** Raum-Code, ueber den beide Geraete denselben Realtime-Kanal finden. */
+  roomCode: string;
+  /** 0 = Gastgeber (hat den Raum erzeugt), 1 = Beigetretener. */
+  localPlayerIndex: 0 | 1;
+  /** localTime + offset ergibt die geschaetzte Supabase-Serverzeit. */
+  clockOffsetMs: number;
+  /** Serverzeit (ms seit Epoch), zu der beide gleichzeitig starten sollen. */
+  startAtServerMs: number | null;
 }
 
 /**
@@ -105,7 +121,7 @@ export interface ChallengeState {
   seed: string;
   worldId: string;
   rounds: ChallengeRound[];
-  /** Spielart: klassisches Duell, Tageslauf oder Bot-Gegner. */
+  /** Spielart: klassisches Duell, Tageslauf, Bot-Gegner oder Netzwerk-Duell. */
   kind?: ChallengeKind;
   botDifficulty?: BotDifficulty;
   dailyKey?: string;
@@ -113,6 +129,18 @@ export interface ChallengeState {
   dailyRewardCoins?: number;
   dailyRewardXp?: number;
   dailyPerformanceTier?: number;
+  /** Nur bei kind === 'duel-online'. */
+  online?: OnlineDuelInfo;
+  /**
+   * Nur bei kind === 'duel-online': Ergebnisse an fester Position
+   * (Index = `OnlineDuelInfo.localPlayerIndex` des jeweiligen Spielers),
+   * getrennt von `rounds`, weil sie unabhaengig voneinander eintreffen -
+   * anders als beim lokalen Duell entscheidet nicht die Ankunftsreihenfolge
+   * ueber die Spielerzuordnung. `rounds` wird erst befuellt, sobald beide
+   * Positionen gesetzt sind, damit winnerIndex()/scoreToBeat() unveraendert
+   * funktionieren.
+   */
+  onlineRounds?: [ChallengeRound | null, ChallengeRound | null];
 }
 
 /** Was ein Run an Progression ausgeloest hat - fuer den Ergebnisbildschirm. */

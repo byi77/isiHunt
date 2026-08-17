@@ -38,6 +38,7 @@ import { DebugKeys } from '@/input/DebugKeys';
 import { InputController } from '@/input/InputController';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
+import * as NetworkDuelSystem from '@/systems/NetworkDuelSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
@@ -56,7 +57,7 @@ import {
   floatingScore,
   shockwave,
 } from '@/ui/widgets';
-import type { RunMode } from '@/types';
+import type { ChallengeState, RunMode } from '@/types';
 
 export interface GameSceneData {
   worldId: string;
@@ -84,6 +85,7 @@ export class GameScene extends Phaser.Scene {
   private totalMs = 0;
   private mode: RunMode = 'solo';
   private playerIndex = 0;
+  private challenge: ChallengeState | null = null;
 
   constructor() {
     super(SceneKey.Game);
@@ -102,6 +104,7 @@ export class GameScene extends Phaser.Scene {
     this.stats = resolveStats(nonProgressionMode ? {} : save.talents);
 
     const challenge = nonProgressionMode ? ChallengeSystem.getState() : null;
+    this.challenge = challenge;
     this.playerIndex = challenge ? ChallengeSystem.currentPlayerIndex() : 0;
 
     this.totalMs = nonProgressionMode ? CHALLENGE_DURATION_MS : this.stats.runDurationMs;
@@ -394,6 +397,12 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(Depth.Overlay);
 
+    const online = this.challenge?.kind === 'duel-online' ? this.challenge.online : null;
+    if (online?.startAtServerMs !== null && online?.startAtServerMs !== undefined) {
+      this.runOnlineCountdown(label, online.startAtServerMs, online.clockOffsetMs);
+      return;
+    }
+
     let step = COUNTDOWN_STEPS;
 
     const tick = () => {
@@ -414,6 +423,52 @@ export class GameScene extends Phaser.Scene {
 
       step -= 1;
       this.time.delayedCall(COUNTDOWN_STEP_MS, tick);
+    };
+
+    tick();
+  }
+
+  /**
+   * Countdown bis zu einer fixen Zielzeit statt einer festen Schrittzahl.
+   *
+   * `startAtServerMs` ist die vom Gastgeber serverseitig gesetzte, fuer
+   * beide Geraete gleiche Startzeit (siehe `NetworkDuelSystem.setStartTime`).
+   * `localStartAt = startAtServerMs - clockOffsetMs` rechnet sie auf die
+   * eigene Geraeteuhr um (`clockOffsetMs` ist positiv, wenn die Serveruhr
+   * vorgeht - `NetworkDuelSystem.measureClockOffset`). Ein Tick alle
+   * `COUNTDOWN_STEP_MS` zeigt die verbleibenden ganzen Sekunden, exakt beim
+   * Erreichen der Zielzeit erscheint "LOS!" - unabhaengig davon, wie viele
+   * Sekunden das tatsaechlich waren (der Server-Vorlauf ist
+   * `ONLINE_DUEL_START_LEAD_MS`, aber diese Funktion selbst kennt und
+   * braucht diesen Wert nicht, sie zaehlt nur bis zur uebergebenen Zeit).
+   */
+  private runOnlineCountdown(
+    label: Phaser.GameObjects.Text,
+    startAtServerMs: number,
+    clockOffsetMs: number,
+  ): void {
+    const localStartAt = startAtServerMs - clockOffsetMs;
+
+    const tick = () => {
+      const remainingMs = localStartAt - Date.now();
+      const remainingSeconds = Math.ceil(remainingMs / 1000);
+
+      if (remainingMs > 0) {
+        label.setText(String(Math.max(1, remainingSeconds)));
+        label.setScale(1.6).setAlpha(1);
+        this.tweens.add({ targets: label, scale: 1, duration: 260, ease: 'Back.Out' });
+        // Kurzes Intervall statt an Sekundengrenzen auszurichten - einfacher
+        // als ein Drift-freier Zeitgeber und bei einem 1s-Countdown-Text
+        // nicht sichtbar ungenau.
+        this.time.delayedCall(Math.min(COUNTDOWN_STEP_MS, remainingMs), tick);
+        return;
+      }
+
+      label.setText('LOS!');
+      label.setScale(1.6).setAlpha(1);
+      this.tweens.add({ targets: label, scale: 1, duration: 260, ease: 'Back.Out' });
+      this.tweens.add({ targets: label, alpha: 0, duration: 300, delay: 200 });
+      this.startRun();
     };
 
     tick();
@@ -448,7 +503,7 @@ export class GameScene extends Phaser.Scene {
     // Durchgaenge spielt jemand, dem er nicht gehoert (config/challenge.ts).
     // Der Tageslauf ist die bewusste Ausnahme: gleiche Ausgangswerte sorgen
     // fuer Fairness, der fertig gespielte Lauf ist trotzdem echter Fortschritt.
-    if (this.mode !== 'solo') {
+    if (this.mode !== 'solo' && this.challenge?.kind !== 'duel-online') {
       ChallengeSystem.submitRound(stats);
       if (this.mode === 'daily') {
         const progression = ProgressionSystem.applyRun(stats);
@@ -460,6 +515,22 @@ export class GameScene extends Phaser.Scene {
       this.time.delayedCall(450, () => {
         this.scene.stop(SceneKey.Hud);
         this.scene.start(SceneKey.Challenge);
+      });
+      return;
+    }
+
+    if (this.challenge?.kind === 'duel-online') {
+      const round = {
+        score: stats.score,
+        bestCombo: stats.bestCombo,
+        totalCollected: stats.totalCollected,
+      };
+      ChallengeSystem.submitOnlineRound(this.playerIndex as 0 | 1, round);
+      NetworkDuelSystem.broadcastRoundResult(this.playerIndex as 0 | 1, round);
+
+      this.time.delayedCall(450, () => {
+        this.scene.stop(SceneKey.Hud);
+        this.scene.start(SceneKey.OnlineDuel, { phase: 'result' });
       });
       return;
     }

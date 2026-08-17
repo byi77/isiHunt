@@ -1051,9 +1051,14 @@ export class MenuScene extends Phaser.Scene {
     const secondaryY = tertiaryY - tertiaryHeight / 2 - rowGap - secondaryHeight / 2;
     const primaryY = secondaryY - secondaryHeight / 2 - rowGap - primaryHeight / 2;
 
+    // JAGD und TAGESLAUF teilen sich die betonte obere Reihe - JAGD bleibt
+    // durch Breite und Farbe der Welt die staerker gewichtete Aktion, auch
+    // wenn sie nicht mehr allein steht.
+    const primaryGap = 130;
+
     createButton(
       this,
-      GAME_WIDTH / 2,
+      GAME_WIDTH / 2 - primaryGap,
       primaryY,
       'JAGD',
       () => {
@@ -1063,10 +1068,29 @@ export class MenuScene extends Phaser.Scene {
         });
       },
       {
-        width: 460,
+        width: 320,
         height: primaryHeight,
         accent: this.selectedWorld.accent,
         fontSize: FontSize.large,
+      },
+    );
+
+    createButton(
+      this,
+      GAME_WIDTH / 2 + primaryGap,
+      primaryY,
+      'TAGESLAUF',
+      () => {
+        this.scene.start(SceneKey.WorldInfo, {
+          worldId: this.selectedWorld.id,
+          mode: 'tageslauf' satisfies WorldInfoMode,
+        });
+      },
+      {
+        width: 220,
+        height: primaryHeight,
+        accent: Palette.dailyHex,
+        fontSize: FontSize.body,
       },
     );
 
@@ -1096,17 +1120,12 @@ export class MenuScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2 + secondaryGap,
       secondaryY,
-      'TAGESLAUF',
-      () => {
-        this.scene.start(SceneKey.WorldInfo, {
-          worldId: this.selectedWorld.id,
-          mode: 'tageslauf' satisfies WorldInfoMode,
-        });
-      },
+      'DUELL2G',
+      () => this.scene.start(SceneKey.OnlineDuel),
       {
         width: secondaryWidth,
         height: secondaryHeight,
-        accent: Palette.dailyHex,
+        accent: 0x38bdf8,
         fontSize: FontSize.small,
       },
     );

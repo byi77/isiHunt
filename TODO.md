@@ -726,7 +726,21 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
 - [ ] Freundesliste auf die dauerhafte Profil-/Geräteidentität aus Phase 2.6
       aufsetzen (kein zweites Identitätssystem)
 - [ ] Freundesliste mit Online/Offline, Rekord, Coins
-- [ ] Duell per geteiltem Link (ADR-0010 Schritt 1)
+- [ ] ~~Duell per geteiltem Link (ADR-0010 Schritt 1)~~ — uebersprungen,
+      direkt Schritt 2 gebaut (siehe unten)
+- [x] **Netzwerk-Duell, Phase 1** (ADR-0010 Schritt 2) _(neu 2026-08-17/18)_:
+      Raum-Code, Uhr-Synchronisation, gemeinsamer serverzeitbasierter
+      Countdown, Ergebnisvergleich am Ende. Noch **kein** Live-Score
+      waehrend des Laufs. `supabase/phase_2_11_duel_rooms.sql` ausgefuehrt.
+      `npm run verify` gruen, 22 neue Tests.
+      **Noch offen vor Abschluss von Phase 1:** erster echter
+      Zwei-Geraete-Test — die 400ms-Broadcast-Takt- und 5s-Start-Vorlauf-
+      Annahmen aus `config/onlineDuel.ts` sind bisher ungetestet
+      (Planungsnotiz Phase 0: bewusst per Doku-Recherche statt Prototyp
+      geklaert, echte Verifikation steht noch aus).
+  - [ ] Phase 2: Live-Punktestand des Gegners waehrend des Laufs im HUD
+  - [ ] Phase 3: Rematch fuer Online-Duelle, Reconnect waehrend einer
+        laufenden Runde, Anzeigename statt "Spieler 2"
 - [ ] Rekord-Meldung im laufenden Spiel; echte Push-Meldung nur fuer
       installierte Web-Apps (iOS-Grenze)
 

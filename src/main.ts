@@ -28,6 +28,7 @@ import { GameScene } from '@/scenes/GameScene';
 import { HudScene } from '@/scenes/HudScene';
 import { LeaderboardScene } from '@/scenes/LeaderboardScene';
 import { MenuScene } from '@/scenes/MenuScene';
+import { OnlineDuelScene } from '@/scenes/OnlineDuelScene';
 import { ProfileScene } from '@/scenes/ProfileScene';
 import { ResultScene } from '@/scenes/ResultScene';
 import { RulerScene } from '@/scenes/RulerScene';
@@ -90,6 +91,7 @@ function createGameConfig(): Phaser.Types.Core.GameConfig {
       HudScene,
       ResultScene,
       ChallengeScene,
+      OnlineDuelScene,
       LeaderboardScene,
       SettingsScene,
       AccountScene,

@@ -28,7 +28,14 @@ import {
 } from '@/config/GameConfig';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
-import type { BotDifficulty, ChallengeKind, ChallengeState, RunStats } from '@/types';
+import type {
+  BotDifficulty,
+  ChallengeKind,
+  ChallengeRound,
+  ChallengeState,
+  OnlineDuelInfo,
+  RunStats,
+} from '@/types';
 
 let state: ChallengeState | null = null;
 
@@ -148,7 +155,44 @@ export function startBot(worldId: string, difficulty: BotDifficulty = 'normal'):
   return state;
 }
 
-/** Neues Duell mit frischem Seed in derselben Welt. */
+/**
+ * Startet ein Netzwerk-Duell mit bereits bekanntem Seed und Raum-Code.
+ *
+ * Anders als `start()`/`startBot()` erzeugt diese Funktion keinen eigenen
+ * Seed - der kommt vom Raum (Gastgeber erzeugt ihn serverseitig, Gast erhaelt
+ * ihn beim Beitritt per RPC), damit beide Geraete garantiert dieselbe
+ * Relikt-Abfolge sehen.
+ */
+export function startOnline(
+  worldId: string,
+  seed: string,
+  roomCode: string,
+  localPlayerIndex: 0 | 1,
+): ChallengeState {
+  const online: OnlineDuelInfo = {
+    roomCode,
+    localPlayerIndex,
+    clockOffsetMs: 0,
+    startAtServerMs: null,
+  };
+  state = { seed, worldId, rounds: [], kind: 'duel-online', online };
+  return state;
+}
+
+/** Aktualisiert Uhr-Offset/Startzeit eines laufenden Netzwerk-Duells. */
+export function updateOnlineSync(clockOffsetMs: number, startAtServerMs: number | null): void {
+  if (!state?.online) return;
+  state.online = { ...state.online, clockOffsetMs, startAtServerMs };
+}
+
+/**
+ * Neues Duell mit frischem Seed in derselben Welt.
+ *
+ * Fuer `duel-online` faellt das bewusst auf das lokale Duell zurueck: ein
+ * Netzwerk-Rematch braucht einen neuen Raum, zu dem beide Geraete erneut
+ * beitreten muessen - das ist eine spaetere Ausbaustufe (Planungsnotiz
+ * Phase 3), kein Fall, den diese Funktion beilaeufig mitloesen sollte.
+ */
 export function rematch(): ChallengeState {
   if (state?.kind === 'daily') return startDaily(state.worldId);
   if (state?.kind === 'bot') return startBot(state.worldId, state.botDifficulty ?? 'normal');
@@ -164,14 +208,29 @@ export function clear(): void {
   state = null;
 }
 
-/** Index des Spielers, der als naechstes dran ist (0-basiert). */
+/**
+ * Index des Spielers, der als naechstes dran ist (0-basiert).
+ *
+ * Bei `duel-online` spielen beide Geraete gleichzeitig statt nacheinander -
+ * "als naechstes dran" ist dort bedeutungslos. Stattdessen liefert diese
+ * Funktion den `localPlayerIndex` des eigenen Geraets, damit GameScene ohne
+ * Sonderfall denselben Aufruf nutzen kann.
+ */
 export function currentPlayerIndex(): number {
+  if (state?.kind === 'duel-online') return state.online?.localPlayerIndex ?? 0;
   return state?.kind === 'bot' ? 0 : state ? state.rounds.length : 0;
 }
 
-/** Traegt das Ergebnis des gerade beendeten Durchgangs ein. */
+/**
+ * Traegt das Ergebnis des gerade beendeten Durchgangs ein.
+ *
+ * Bei `duel-online` **nicht** verwenden - dort kommen beide Ergebnisse
+ * unabhaengig voneinander (eigenes lokal, Gegner ueber Netzwerk) und muessen
+ * an einer festen Position landen, nicht per Ankunftsreihenfolge. Siehe
+ * `submitOnlineRound()`.
+ */
 export function submitRound(stats: RunStats): void {
-  if (!state || isComplete()) return;
+  if (!state || state.kind === 'duel-online' || isComplete()) return;
 
   state.rounds.push({
     score: stats.score,
@@ -184,8 +243,38 @@ export function submitRound(stats: RunStats): void {
   }
 }
 
+/**
+ * Traegt ein Netzwerk-Duell-Ergebnis an einer festen Spielerposition ein.
+ *
+ * Anders als `submitRound()` (Ankunftsreihenfolge = Spielerreihenfolge, gilt
+ * fuer das lokale Duell mit fester Uebergabe) treffen beim Netzwerk-Duell
+ * beide Ergebnisse unabhaengig voneinander ein - das eigene sofort nach dem
+ * lokalen Rundenende, das des Gegners sobald sein Broadcast eintrifft,
+ * moeglicherweise zuerst. Ohne feste Positionszuordnung wuerde `winnerIndex()`
+ * je nach Netzwerktiming den falschen Spieler als "Spieler 1"/"Spieler 2"
+ * ausweisen.
+ */
+export function submitOnlineRound(index: 0 | 1, round: ChallengeRound): void {
+  if (!state || state.kind !== 'duel-online') return;
+
+  const onlineRounds: [ChallengeRound | null, ChallengeRound | null] = state.onlineRounds ?? [
+    null,
+    null,
+  ];
+  onlineRounds[index] = round;
+  state.onlineRounds = onlineRounds;
+
+  // `rounds` erst befuellen, wenn beide Positionen feststehen - vorher
+  // wuerden winnerIndex()/scoreToBeat() mit nur einem Ergebnis rechnen, das
+  // je nach Netzwerktiming das des Gastgebers oder des Gasts sein koennte.
+  if (onlineRounds[0] && onlineRounds[1]) {
+    state.rounds = [onlineRounds[0], onlineRounds[1]];
+  }
+}
+
 export function isComplete(): boolean {
   if (!state) return false;
+  if (state.kind === 'duel-online') return state.rounds.length === CHALLENGE_PLAYER_COUNT;
   return state.rounds.length >= (state.kind === 'duel' ? CHALLENGE_PLAYER_COUNT : 1);
 }
 

@@ -20,6 +20,22 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   **`supabase/phase_2_10_lock_saves_access.sql` musste dafuer manuell im
   Supabase SQL-Editor ausgefuehrt werden** — ist bereits erledigt.
 
+### Hinzugefuegt
+
+- **Netzwerk-Duell, Phase 1** (ADR-0010 Schritt 2): zwei Geraete koennen
+  ueber einen Raum-Code beitreten und gleichzeitig dieselbe Runde starten —
+  Uhr-Synchronisation gegen die Supabase-Serverzeit, gemeinsamer Countdown
+  bis zu einer serverseitig gesetzten Startzeit, Ergebnisvergleich am Ende.
+  Noch **kein** Live-Punktestand waehrend des Laufs, das folgt als Phase 2.
+  Neue `OnlineDuelScene`, `NetworkDuelSystem`, `config/onlineDuel.ts`,
+  `supabase/phase_2_11_duel_rooms.sql`. Menue umgebaut: JAGD und TAGESLAUF
+  teilen sich jetzt die obere Reihe, DUELL und das neue DUELL2G die zweite.
+  **`supabase/phase_2_11_duel_rooms.sql` musste dafuer manuell im Supabase
+  SQL-Editor ausgefuehrt werden** — ist bereits erledigt.
+- **Welt-Detailscreen vor jedem Run:** `WorldInfoScene` zeigt Besonderheit,
+  Hindernismodus und Punkt-/XP-Bonus einer Welt in Klartext, bevor
+  JAGD/DUELL/TAGESLAUF starten.
+
 ### Geaendert
 
 - Diagnose-`console.warn`-Aufrufe in `AccountScene.signIn()` und
