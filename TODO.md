@@ -76,8 +76,11 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
       WebGL loescht den Backbuffer sofort nach dem Praesentieren, und
       `DebugSystem.captureScreenshot()` liest ueber `canvas.toBlob()` einen
       bereits geleerten Puffer. Fix: `preserveDrawingBuffer: true` in der
-      `render`-Konfiguration. **Noch offen: am echten iPhone bestaetigen,
-      dass der Screenshot jetzt den tatsaechlichen Spielinhalt zeigt.**
+      `render`-Konfiguration.
+- [x] **Fix am echten iPhone bestaetigt (2026-08-17, v0.1.159):** Screenshot
+      zeigt jetzt den tatsaechlichen Spielinhalt statt Schwarz.
+
+> **P0.5 damit vollstaendig abgeschlossen.**
 
 ### P1 — Fortschritt vor Wettbewerb neu entscheiden _(pausiert 2026-08-17)_
 
