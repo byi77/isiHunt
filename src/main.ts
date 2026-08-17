@@ -13,6 +13,7 @@ import Phaser from 'phaser';
 
 import { APP_VERSION, configureGameHeight, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { isStandalone } from '@/core/display';
+import { eventBus, GameEvent } from '@/core/EventBus';
 import { requestPortraitOrientationLock } from '@/core/orientation';
 import { keepCanvasBoundsFresh, waitForViewportToSettle } from '@/core/viewport';
 import { AdminScene } from '@/scenes/AdminScene';
@@ -36,7 +37,9 @@ import { SyncScene } from '@/scenes/SyncScene';
 import { TalentScene } from '@/scenes/TalentScene';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as AuthSystem from '@/systems/AuthSystem';
+import * as DebugSystem from '@/systems/DebugSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
+import { installDebugOverlay } from '@/ui/debugOverlay';
 import { Palette } from '@/ui/theme';
 
 function createGameConfig(): Phaser.Types.Core.GameConfig {
@@ -111,6 +114,45 @@ if (isStandalone()) document.documentElement.classList.add('standalone-app');
 SoundSystem.initialize();
 SafeAreaSystem.initialize();
 AuthSystem.initialize();
+installDebugLogging();
+
+/**
+ * Verdrahtet den rollierenden Debug-Ringpuffer, so frueh wie moeglich im
+ * Lebenszyklus - er soll auch Ereignisse und Fehler festhalten, die vor dem
+ * Einschalten des Debug-Modus passieren, damit im Ernstfall sichtbar bleibt,
+ * was VOR einem Bug geschah (nicht nur der Zustand danach).
+ */
+function installDebugLogging(): void {
+  for (const key of Object.values(GameEvent)) {
+    eventBus.onEvent(key, (payload) => {
+      DebugSystem.pushLogEntry({
+        timestamp: Date.now(),
+        kind: 'event',
+        label: key,
+        detail: payload === undefined ? '' : JSON.stringify(payload),
+      });
+    });
+  }
+
+  window.addEventListener('error', (event) => {
+    DebugSystem.pushLogEntry({
+      timestamp: Date.now(),
+      kind: 'error',
+      label: event.message,
+      detail: event.error instanceof Error ? (event.error.stack ?? '') : '',
+    });
+  });
+
+  window.addEventListener('unhandledrejection', (event) => {
+    const reason = event.reason as unknown;
+    DebugSystem.pushLogEntry({
+      timestamp: Date.now(),
+      kind: 'error',
+      label: 'unhandledrejection',
+      detail: reason instanceof Error ? (reason.stack ?? reason.message) : String(reason),
+    });
+  });
+}
 
 // Manifest und installierte Web-App sperren die Ausrichtung bereits. Die
 // Browser-API ist die zusaetzliche Moeglichkeit fuer Android; auf iOS Safari
@@ -207,6 +249,10 @@ async function startGame(): Promise<void> {
   game = new Phaser.Game(createGameConfig());
 
   installAdminLongPress(game);
+
+  // Bleibt eingeschaltet ueber Neustarts hinweg, damit ein Tester den Debug-
+  // Modus nicht nach jedem Neuladen erneut per Logo-Geste aktivieren muss.
+  if (DebugSystem.isDebugModeActive()) installDebugOverlay(game);
 
   // Ohne das liegen Trefferflaechen auf dem iPhone neben dem, was man sieht -
   // die Begruendung steht in core/viewport.ts.

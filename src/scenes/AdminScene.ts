@@ -194,16 +194,7 @@ export class AdminScene extends Phaser.Scene {
   }
 
   private formatAudioDiagnostics(): string {
-    const d = SoundSystem.getDiagnostics();
-    return [
-      `API vorhanden   ${d.hasAudioContextApi ? 'ja' : 'NEIN'}`,
-      `Kontext erzeugt  ${d.contextExists ? 'ja' : 'nein'}`,
-      `Kontext-Status   ${d.contextState}`,
-      `Samplerate       ${d.sampleRate ?? '—'}`,
-      `Basis-Latenz     ${d.baseLatency !== null ? d.baseLatency.toFixed(4) : '—'}`,
-      `resume() laeuft  ${d.resumeInFlight ? 'ja' : 'nein'}`,
-      `Ton in Settings  ${d.soundEnabled ? 'AN' : 'AUS'}`,
-    ].join('\n');
+    return SoundSystem.formatDiagnostics(SoundSystem.getDiagnostics());
   }
 
   private refreshAudioDiagnostics(): void {

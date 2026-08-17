@@ -14,11 +14,13 @@ import { isIos, isStandalone } from '@/core/display';
 import { checkForUpdate, forceReload } from '@/core/updateCheck';
 import { SceneKey } from '@/scenes/SceneKey';
 import { Depth } from '@/ui/depth';
+import { installDebugOverlay, removeDebugOverlay } from '@/ui/debugOverlay';
 import { attachHitDebug } from '@/ui/hitDebug';
 import * as AuthSystem from '@/systems/AuthSystem';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
 import type { RemoteSave } from '@/systems/CloudSystem';
+import * as DebugSystem from '@/systems/DebugSystem';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
@@ -536,6 +538,21 @@ export class MenuScene extends Phaser.Scene {
       .setBlendMode(Phaser.BlendModes.ADD);
 
     const title = this.add.image(GAME_WIDTH / 2, 104, TextureKey.Logo).setDisplaySize(400, 225);
+
+    // Geheimer, PIN-freier Zugang zum Debug-Modus: zehnmal aufs Logo tippen.
+    // Getrennt vom PIN-Wartungsbereich (AdminScene) - dieser Modus liest nur,
+    // veraendert nichts, und soll deshalb ohne Admin-Wissen erreichbar sein.
+    title.setInteractive({ useHandCursor: false });
+    title.on('pointerdown', () => {
+      const active = DebugSystem.registerLogoTap();
+      if (active === null) return;
+
+      if (active) {
+        installDebugOverlay(this.game);
+      } else {
+        removeDebugOverlay();
+      }
+    });
 
     this.add
       .text(GAME_WIDTH / 2, 184, 'JAGE DAS LICHT', textStyle(FontSize.tiny, Palette.inkDim))

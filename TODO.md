@@ -46,6 +46,24 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
       Tempo, Sichtfenster und Belohnungen sollen fordernd, aber nie frustrierend
       sein.
 
+### P0.5 — Debug-Modus fuer Tester _(gebaut 2026-08-17, siehe ADR-0016)_
+
+> **Ziel:** Bug-Reports von Emre und Simay ohne Konsole, ohne Admin-PIN.
+> Zehnmal aufs Logo im Hauptmenue tippen schaltet einen schwebenden
+> Debug-Knopf frei, der ueberall im Spiel sichtbar bleibt. Ein Tipp darauf
+> erzeugt einen Text-Report (Geraet, Version, Layout, Ton-Diagnose, die
+> letzten 50 Ereignisse/Fehler) plus Screenshot und oeffnet das native
+> Share-Sheet (WhatsApp waehlbar).
+
+- [x] `DebugSystem.ts` (Ringpuffer, Report-Text, Toggle-Persistenz,
+      Screenshot-zu-File), `DebugConfig.ts`, `ui/debugOverlay.ts`
+- [x] Zehn-Tipp-Geste auf dem Logo in `MenuScene`, PIN-frei und getrennt vom
+      Wartungsbereich
+- [x] `npm run verify` gruen (Typecheck, Lint, Format, 177 Tests, Build)
+- [ ] **Am echten iPhone pruefen:** Trifft die Tipp-Geste das Logo zuverlaessig?
+      Uebernimmt WhatsApp beim Teilen beide Dateien (PNG + TXT) oder nur eine?
+      Ist der Screenshot-Inhalt brauchbar?
+
 ### P1 — Fortschritt vor Wettbewerb neu entscheiden _(pausiert 2026-08-17)_
 
 > **Pausiert:** Die Grundidee "Talente kosten keine Coins mehr, sondern

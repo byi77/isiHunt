@@ -67,6 +67,7 @@ isiHunt/
 │   │   ├── challenge.ts        Duell: Dauer, Spielernamen, Fairness-Regeln
 │   │   ├── backend.ts          Zugang zum Online-Dienst, Grenzwerte
 │   │   ├── achievements.ts     Erfolge als Praedikate
+│   │   ├── DebugConfig.ts      Tap-Schwelle, Ringpuffer-Groesse, Debug-Modus-Key
 │   │   └── Balance.test.ts     Regressionstests fuer Balancing-Konstanten
 │   ├── core/
 │   │   ├── EventBus.ts         Typisierter Event-Bus zwischen Scenes
@@ -124,7 +125,9 @@ isiHunt/
 │   │   ├── CloudSystem.ts      Bestenliste und Spielstand ueber Supabase
 │   │   ├── CloudSystem.test.ts
 │   │   ├── SpawnSystem.ts      Wann und wo etwas erscheint
-│   │   └── SpawnSystem.test.ts
+│   │   ├── SpawnSystem.test.ts
+│   │   ├── DebugSystem.ts      Ringpuffer, Report-Text, Screenshot, Share-Sheet (ADR-0016)
+│   │   └── DebugSystem.test.ts
 │   ├── types/
 │   │   └── index.ts            SaveData, RunStats, ChallengeState, ...
 │   ├── ui/
@@ -132,6 +135,7 @@ isiHunt/
 │   │   ├── depth.ts            Zeichenreihenfolge aller Ebenen
 │   │   ├── textures.ts         Prozedurale Grafiken
 │   │   ├── hitDebug.ts         Trefferflaechen sichtbar machen (?hitboxes)
+│   │   ├── debugOverlay.ts     Schwebender Debug-Knopf ausserhalb des Canvas (ADR-0016)
 │   │   ├── textInput.ts        Echtes HTML-Eingabefeld ueber dem Canvas
 │   │   └── widgets.ts          Knoepfe, Balken, Hintergruende, Effekte, createStatusPage
 │   ├── env.d.ts                Typen der Umgebungsvariablen

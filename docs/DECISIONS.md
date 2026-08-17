@@ -706,3 +706,76 @@ vorgezogen — M4.1, M6 und M7 stehen davor.
 | **Fastlane + GitHub-Actions-macOS-Runner**    | Technisch gleichwertig erreichbar, aber manuelles Zertifikats-/Profil-Management ist ohne physischen Mac zum Debuggen deutlich fehleranfaelliger, und macOS-Runner-Minuten sind bei GitHub Actions teurer als Linux-Minuten. |
 | **Eigener Mac oder Mac-in-Cloud-Miete**       | Laufende Kosten und Wartungsaufwand fuer ein Werkzeug, das nur gelegentlich gebraucht wird. Explizit vom Nutzer abgelehnt.                                                                                                   |
 | **Neuschreiben in React Native oder Flutter** | Wuerde die gesamte bestehende Phaser-Codebasis verwerfen und widerspricht der in ADR-0001 begruendeten Wahl, aus genau diesem Grund auf Capacitor zu setzen.                                                                 |
+
+---
+
+## ADR-0016 — Debug-Modus fuer Tester: PIN-freier Zugang, Modul-Singleton, Web-Share-API
+
+**Datum:** 2026-08-17 · **Status:** Angenommen
+
+### Kontext
+
+Bugs auf Testgeraeten (v.a. bei Emre und Simay) waren bisher schwer zu
+diagnostizieren: keine Konsole am iPhone, und Rueckmeldungen ohne
+Versionsnummer/Zustand haben bereits Fehlersuchrunden gekostet
+(`CODE_STYLE.md` 1.9). Der bestehende Wartungsbildschirm (`AdminScene`) ist
+bewusst PIN-geschuetzt, weil er den Spielstand loeschen kann — fuer "auf
+jedem Handy ohne Admin einschaltbar" ist er deshalb ungeeignet.
+
+### Entscheidung
+
+Ein zweiter, **PIN-freier** Debug-Modus: zehnmal aufs Logo im Hauptmenue
+tippen schaltet ihn um (`MenuScene`, `DebugSystem.registerLogoTap()`). Aktiv
+zeigt ein schwebender DOM-Knopf (`ui/debugOverlay.ts`) ueberall im Spiel, der
+bei Tipp einen Report (Geraet/Version/Layout/Ton-Diagnose plus ein
+rollierendes Ereignis-/Fehler-Log der letzten 50 Eintraege) und einen
+Screenshot erzeugt und beides ueber `navigator.share()` an das native
+Share-Sheet uebergibt.
+
+Drei Architekturentscheidungen dabei, die von den sonst geltenden Regeln
+abweichen und deshalb hier begruendet werden:
+
+1. **Der schwebende Knopf ist ein DOM-Element, keine Phaser-Scene.** Eine
+   Parallel-Scene (analog `HudScene`) muesste in allen 17 Scenes einzeln
+   gestartet werden, um wirklich ueberall sichtbar zu sein — eine
+   Fehlerquelle, die eine neue Scene leicht vergisst. Ausserdem laege sie im
+   gemeinsamen Canvas und muesste vor jedem Screenshot versteckt werden. Ein
+   DOM-Overlay hat keine Scene-Grenze und landet automatisch nicht im
+   Canvas-Screenshot. Vorbild: `RulerScene.installViewportRuler()` und
+   `ui/hitDebug.ts::ensurePanel()` machen dieselbe Technik bereits vor.
+2. **Der Ereignis-Ringpuffer bekommt bewusst kein `offEvent`.** Regel 1.4
+   ("jeder `eventBus.onEvent` braucht ein `offEvent` im SHUTDOWN-Handler")
+   gilt fuer Scenes, die wiederholt erzeugt und zerstoert werden — ohne
+   Abmeldung entstehen doppelte Listener. Der Ringpuffer-Listener gehoert
+   dagegen zu einem Modul-Singleton (wie `eventBus` selbst), das einmal beim
+   App-Start verdrahtet wird und bis zum Schliessen der Seite lebt. Es gibt
+   keinen "Neustart", an den ein Abmelden andocken koennte.
+3. **Web-Share-API als neue Browser-Abhaengigkeit ohne Server-Gegenstueck.**
+   `navigator.share()` mit `files`-Array ist in iOS Safari und
+   Standalone-PWA lauffaehig. Fehlt die API (Android-Browser ohne
+   Unterstuetzung, Desktop), faellt das System auf einen unsichtbaren
+   Download-Link zurueck — bewusst ohne Zwischenablage-Fallback, da die
+   Zielplattform iOS ist und ein Kind nicht selbst zwischen Apps wechseln
+   soll.
+
+### Begruendung
+
+Der PIN-Schutz des Wartungsbereichs existiert, weil dieser schreibend in den
+Spielstand eingreifen kann. Der Debug-Modus liest ausschliesslich — er
+veraendert nichts am Spielstand oder Backend — und darf deshalb ohne
+Berechtigungspruefung zugaenglich sein. Die Geste (zehn Tipps in einem
+Zeitfenster) verhindert ein versehentliches Ausloesen durch normales Spielen,
+ohne eine Huerde wie eine PIN aufzubauen.
+
+### Konsequenzen
+
+- Neue Dateien: `config/DebugConfig.ts`, `systems/DebugSystem.ts` (+Test),
+  `ui/debugOverlay.ts`. `SoundSystem.formatDiagnostics()` wurde aus
+  `AdminScene` herausgehoben, damit Wartungsbildschirm und Debug-Report
+  dieselbe Formatierung teilen statt sie zu duplizieren.
+- Der Debug-Modus-Zustand liegt in einem eigenen localStorage-Schluessel
+  (`isihunt.debug-mode.v1`), getrennt vom Spielstand — Praezedenzfall:
+  `SaveSystem.TEST_PROFILE_KEY`.
+- Ob WhatsApp beim Teilen von zwei Dateien (PNG + TXT) beide uebernimmt oder
+  nur eine, ist am Schreibtisch nicht pruefbar und bleibt bis zum ersten
+  echten Geraetetest ungeprueft (No-Guess-Vertrag).

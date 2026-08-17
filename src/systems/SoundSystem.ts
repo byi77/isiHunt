@@ -410,6 +410,19 @@ export function getDiagnostics(): SoundDiagnostics {
   };
 }
 
+/** Lesbare Zeilen aus einer Diagnose-Momentaufnahme - fuer Wartungsbildschirm und Debug-Report gleichermassen. */
+export function formatDiagnostics(d: SoundDiagnostics): string {
+  return [
+    `API vorhanden   ${d.hasAudioContextApi ? 'ja' : 'NEIN'}`,
+    `Kontext erzeugt  ${d.contextExists ? 'ja' : 'nein'}`,
+    `Kontext-Status   ${d.contextState}`,
+    `Samplerate       ${d.sampleRate ?? '—'}`,
+    `Basis-Latenz     ${d.baseLatency !== null ? d.baseLatency.toFixed(4) : '—'}`,
+    `resume() laeuft  ${d.resumeInFlight ? 'ja' : 'nein'}`,
+    `Ton in Settings  ${d.soundEnabled ? 'AN' : 'AUS'}`,
+  ].join('\n');
+}
+
 /** Testton fuer den Wartungsbildschirm - unabhaengig von SaveSystem.soundEnabled. */
 export function playDiagnosticTone(): void {
   const context = getAudioContext();
