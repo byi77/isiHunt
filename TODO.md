@@ -116,6 +116,17 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
       `render`-Konfiguration.
 - [x] **Fix am echten iPhone bestaetigt (2026-08-17, v0.1.159):** Screenshot
       zeigt jetzt den tatsaechlichen Spielinhalt statt Schwarz.
+- [x] **BUG gefunden und behoben (2026-08-18): Log-Ringpuffer war rein
+      In-Memory.** Beim Netzwerk-Duell-Testen bemerkt: `logBuffer` in
+      `DebugSystem.ts` war ein einfaches Array ohne `localStorage`-Anbindung
+      - jeder App-Neustart (z. B. App verlassen, um erst einen Screenshot zu
+      pruefen, bevor man teilt) loeschte den kompletten Verlauf. Genau der
+      Moment, in dem ein Fehlerbericht am wichtigsten ist. Fix: Puffer wird
+      gedrosselt (500ms, wegen `TimerChanged` mit ~60 Eintraegen/s waehrend
+      eines Runs) in `localStorage` gespiegelt, zusaetzlich sofort beim
+      `visibilitychange`-Event (App-Wechsel) geschrieben, und beim
+      Modul-Start wiederhergestellt. Neuer `DEBUG_LOG_STORAGE_KEY`, 5 neue
+      Tests.
 
 > **P0.5 damit vollstaendig abgeschlossen.**
 

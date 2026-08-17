@@ -11,10 +11,11 @@
 
 import { EventEmitter } from 'node:events';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   DEBUG_LOG_BUFFER_SIZE,
+  DEBUG_LOG_STORAGE_KEY,
   DEBUG_MODE_STORAGE_KEY,
   DEBUG_TOGGLE_TAP_COUNT,
 } from '@/config/DebugConfig';
@@ -164,6 +165,65 @@ describe('DebugSystem Debug-Modus-Persistenz', () => {
     expect(result).toBe(false);
     expect(DebugSystem.isDebugModeActive()).toBe(false);
     expect(window.localStorage.getItem(DEBUG_MODE_STORAGE_KEY)).toBeNull();
+  });
+});
+
+describe('Persistenz ueber einen App-Neustart', () => {
+  // Beobachtet 2026-08-18: ein Fehlerbericht ging verloren, weil der
+  // Ringpuffer rein In-Memory war - App beenden vor dem Teilen loeschte ihn.
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('schreibt den Puffer gedrosselt in localStorage, nicht synchron bei jedem Eintrag', async () => {
+    vi.useFakeTimers();
+    DebugSystem.pushLogEntry({ timestamp: 1, kind: 'event', label: 'a', detail: '' });
+
+    expect(window.localStorage.getItem(DEBUG_LOG_STORAGE_KEY)).toBeNull();
+
+    await vi.advanceTimersByTimeAsync(500);
+
+    const stored = window.localStorage.getItem(DEBUG_LOG_STORAGE_KEY);
+    expect(stored).not.toBeNull();
+    expect(JSON.parse(stored!)).toEqual([{ timestamp: 1, kind: 'event', label: 'a', detail: '' }]);
+  });
+
+  it('schreibt sofort beim Verstecken der Seite (App-Wechsel), ohne auf den Drossel-Timer zu warten', () => {
+    DebugSystem.pushLogEntry({ timestamp: 1, kind: 'event', label: 'a', detail: '' });
+
+    Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true });
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    const stored = window.localStorage.getItem(DEBUG_LOG_STORAGE_KEY);
+    expect(stored).not.toBeNull();
+    expect(JSON.parse(stored!)).toHaveLength(1);
+  });
+
+  it('stellt einen zuvor gespeicherten Puffer beim naechsten Modul-Start wieder her', async () => {
+    window.localStorage.setItem(
+      DEBUG_LOG_STORAGE_KEY,
+      JSON.stringify([{ timestamp: 1, kind: 'event', label: 'restored', detail: '' }]),
+    );
+    vi.resetModules();
+    const reloaded: typeof DebugSystemModule = await import('@/systems/DebugSystem');
+
+    expect(reloaded.getLogBuffer().map((e) => e.label)).toEqual(['restored']);
+  });
+
+  it('ignoriert kaputte gespeicherte Daten und startet leer, statt zu werfen', async () => {
+    window.localStorage.setItem(DEBUG_LOG_STORAGE_KEY, '{nicht valides json');
+    vi.resetModules();
+    const reloaded: typeof DebugSystemModule = await import('@/systems/DebugSystem');
+
+    expect(reloaded.getLogBuffer()).toEqual([]);
+  });
+
+  it('clearLogBuffer leert sowohl den Speicher als auch localStorage', () => {
+    DebugSystem.pushLogEntry({ timestamp: 1, kind: 'event', label: 'a', detail: '' });
+    DebugSystem.clearLogBuffer();
+
+    expect(DebugSystem.getLogBuffer()).toEqual([]);
+    expect(window.localStorage.getItem(DEBUG_LOG_STORAGE_KEY)).toBeNull();
   });
 });
 

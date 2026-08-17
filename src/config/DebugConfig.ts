@@ -24,3 +24,11 @@ export const DEBUG_LOG_BUFFER_SIZE = 200;
 
 /** Eigener localStorage-Schluessel, getrennt vom Spielstand (SAVE_KEY). */
 export const DEBUG_MODE_STORAGE_KEY = 'isihunt.debug-mode.v1';
+
+/**
+ * Spiegelt den Ringpuffer, damit ein Fehlerbericht einen App-Neustart
+ * ueberlebt. Ohne das ist der Puffer weg, sobald jemand die App verlaesst,
+ * um z. B. erst einen Screenshot zu pruefen, bevor er das Share-Sheet
+ * oeffnet - genau der Moment, in dem ein Fehler dokumentiert werden soll.
+ */
+export const DEBUG_LOG_STORAGE_KEY = 'isihunt.debug-log.v1';

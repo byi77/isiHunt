@@ -27,6 +27,7 @@
 
 import {
   DEBUG_LOG_BUFFER_SIZE,
+  DEBUG_LOG_STORAGE_KEY,
   DEBUG_MODE_STORAGE_KEY,
   DEBUG_TOGGLE_TAP_COUNT,
   DEBUG_TOGGLE_TAP_WINDOW_MS,
@@ -45,19 +46,84 @@ export interface LogEntry {
   readonly detail: string;
 }
 
-const logBuffer: LogEntry[] = [];
+const logBuffer: LogEntry[] = loadPersistedLogBuffer();
 let tapTimestamps: number[] = [];
 let debugModeCache: boolean | null = null;
 let consoleCaptureInstalled = false;
+let persistTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * Laedt den beim letzten Beenden gespeicherten Puffer, damit ein
+ * Fehlerbericht einen App-Neustart ueberlebt - siehe `DEBUG_LOG_STORAGE_KEY`.
+ * Ungueltige oder fehlende Daten ergeben einen leeren Start statt eines
+ * Fehlers; ein kaputter Debug-Log darf das eigentliche Spiel nie stoeren.
+ */
+function loadPersistedLogBuffer(): LogEntry[] {
+  try {
+    const raw = window.localStorage.getItem(DEBUG_LOG_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as LogEntry[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Schreibt den Puffer gedrosselt zurueck, statt bei jedem einzelnen Eintrag
+ * synchron zu speichern. `TimerChanged` feuert waehrend eines Runs jeden
+ * Frame (~60x/s) - ein synchrones `localStorage.setItem` bei jedem dieser
+ * Aufrufe wuerde den Main-Thread spuerbar belasten. Ein Timeout von wenigen
+ * hundert Millisekunden reicht, damit beim Wegwechseln der App (siehe
+ * `flushPersistedLogBuffer`) hoechstens der letzte kurze Moment fehlt.
+ */
+function schedulePersist(): void {
+  if (persistTimer !== null) return;
+  persistTimer = setTimeout(() => {
+    persistTimer = null;
+    flushPersistedLogBuffer();
+  }, 500);
+}
+
+/** Schreibt den Puffer sofort - fuer den Drossel-Timer und beim Seitenverlassen. */
+function flushPersistedLogBuffer(): void {
+  try {
+    window.localStorage.setItem(DEBUG_LOG_STORAGE_KEY, JSON.stringify(logBuffer));
+  } catch {
+    // Privater Browsermodus oder voller Speicher duerfen das Spiel nicht
+    // stoeren - der Puffer bleibt dann nur In-Memory gueltig.
+  }
+}
+
+if (typeof document !== 'undefined') {
+  // 'visibilitychange' statt nur 'pagehide': auf iOS ist das der
+  // zuverlaessige Zeitpunkt fuer "App verlassen" - pagehide feuert dort beim
+  // App-Wechsel (im Gegensatz zu einem echten Tab-Schliessen) nicht
+  // garantiert.
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushPersistedLogBuffer();
+  });
+}
 
 /** Nimmt einen Eintrag in den Ringpuffer auf; verwirft den aeltesten bei Ueberlauf. */
 export function pushLogEntry(entry: LogEntry): void {
   logBuffer.push(entry);
   if (logBuffer.length > DEBUG_LOG_BUFFER_SIZE) logBuffer.shift();
+  schedulePersist();
 }
 
 export function getLogBuffer(): readonly LogEntry[] {
   return logBuffer;
+}
+
+/** Loescht den Puffer auch aus dem localStorage - fuer Tests und einen moeglichen "Log leeren"-Knopf. */
+export function clearLogBuffer(): void {
+  logBuffer.length = 0;
+  try {
+    window.localStorage.removeItem(DEBUG_LOG_STORAGE_KEY);
+  } catch {
+    // Siehe flushPersistedLogBuffer.
+  }
 }
 
 function argsToDetail(args: unknown[]): string {
@@ -90,13 +156,12 @@ export function installConsoleCapture(): void {
   consoleCaptureInstalled = true;
 
   const record = (level: 'warn' | 'error', args: unknown[]): void => {
-    logBuffer.push({
+    pushLogEntry({
       timestamp: Date.now(),
       kind: 'error',
       label: `console.${level}`,
       detail: argsToDetail(args),
     });
-    if (logBuffer.length > DEBUG_LOG_BUFFER_SIZE) logBuffer.shift();
   };
 
   const originalWarn = console.warn.bind(console);
