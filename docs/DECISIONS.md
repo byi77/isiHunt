@@ -728,9 +728,18 @@ Ein zweiter, **PIN-freier** Debug-Modus: zehnmal aufs Logo im Hauptmenue
 tippen schaltet ihn um (`MenuScene`, `DebugSystem.registerLogoTap()`). Aktiv
 zeigt ein schwebender DOM-Knopf (`ui/debugOverlay.ts`) ueberall im Spiel, der
 bei Tipp einen Report (Geraet/Version/Layout/Ton-Diagnose plus ein
-rollierendes Ereignis-/Fehler-Log der letzten 50 Eintraege) und einen
+rollierendes Ereignis-/Fehler-Log der letzten 200 Eintraege) und einen
 Screenshot erzeugt und beides ueber `navigator.share()` an das native
 Share-Sheet uebergibt.
+
+Der Ringpuffer laeuft ab dem allerersten Moment des App-Starts mit, nicht
+erst ab Aktivierung des Debug-Modus: `DebugSystem.logAppStart()` haelt
+Version, Startweg (Standalone/Browser) und Netzwerkstatus als ersten Eintrag
+fest, und `DebugSystem.installConsoleCapture()` faengt `console.warn`/
+`console.error` global ab und schreibt jeden Aufruf zusaetzlich in den
+Puffer — das deckt die bereits bestehenden `console.warn`-Stellen in
+`SaveSystem`, `CloudSystem`, `ProgressSyncSystem` usw. automatisch ab, ohne
+jede einzeln anzufassen.
 
 Drei Architekturentscheidungen dabei, die von den sonst geltenden Regeln
 abweichen und deshalb hier begruendet werden:
@@ -776,6 +785,9 @@ ohne eine Huerde wie eine PIN aufzubauen.
 - Der Debug-Modus-Zustand liegt in einem eigenen localStorage-Schluessel
   (`isihunt.debug-mode.v1`), getrennt vom Spielstand — Praezedenzfall:
   `SaveSystem.TEST_PROFILE_KEY`.
+- Die Puffergroesse wuchs von urspruenglich 50 auf 200 Eintraege, weil der
+  Puffer seit dem Konsolen-Abgriff und der App-weiten Laufzeit (statt nur
+  eines Runs) deutlich schneller befuellt wird.
 - Ob WhatsApp beim Teilen von zwei Dateien (PNG + TXT) beide uebernimmt oder
   nur eine, ist am Schreibtisch nicht pruefbar und bleibt bis zum ersten
   echten Geraetetest ungeprueft (No-Guess-Vertrag).

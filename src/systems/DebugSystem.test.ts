@@ -13,7 +13,11 @@ import { EventEmitter } from 'node:events';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { DEBUG_MODE_STORAGE_KEY, DEBUG_TOGGLE_TAP_COUNT } from '@/config/DebugConfig';
+import {
+  DEBUG_LOG_BUFFER_SIZE,
+  DEBUG_MODE_STORAGE_KEY,
+  DEBUG_TOGGLE_TAP_COUNT,
+} from '@/config/DebugConfig';
 import type * as DebugSystemModule from '@/systems/DebugSystem';
 
 vi.mock('phaser', () => ({
@@ -38,14 +42,81 @@ describe('DebugSystem Ringpuffer', () => {
   });
 
   it('verwirft den aeltesten Eintrag bei Ueberlauf', () => {
-    for (let i = 0; i < 60; i++) {
+    const overflowCount = DEBUG_LOG_BUFFER_SIZE + 10;
+    for (let i = 0; i < overflowCount; i++) {
       DebugSystem.pushLogEntry({ timestamp: i, kind: 'event', label: `e${i}`, detail: '' });
     }
 
     const buffer = DebugSystem.getLogBuffer();
-    expect(buffer.length).toBe(50);
+    expect(buffer.length).toBe(DEBUG_LOG_BUFFER_SIZE);
     expect(buffer[0]?.label).toBe('e10');
-    expect(buffer[buffer.length - 1]?.label).toBe('e59');
+    expect(buffer[buffer.length - 1]?.label).toBe(`e${overflowCount - 1}`);
+  });
+});
+
+describe('DebugSystem.installConsoleCapture', () => {
+  it('schreibt console.warn zusaetzlich in den Ringpuffer', () => {
+    const original = console.warn;
+    try {
+      const spy = vi.fn();
+      console.warn = spy;
+      DebugSystem.installConsoleCapture();
+
+      console.warn('[SaveSystem] Testprofil nicht aktivierbar.', new Error('Quota'));
+
+      expect(spy).toHaveBeenCalledOnce();
+      const buffer = DebugSystem.getLogBuffer();
+      expect(buffer.length).toBe(1);
+      expect(buffer[0]?.label).toBe('console.warn');
+      expect(buffer[0]?.detail).toContain('[SaveSystem] Testprofil nicht aktivierbar.');
+    } finally {
+      console.warn = original;
+    }
+  });
+
+  it('schreibt console.error zusaetzlich in den Ringpuffer', () => {
+    const original = console.error;
+    try {
+      const spy = vi.fn();
+      console.error = spy;
+      DebugSystem.installConsoleCapture();
+
+      console.error('etwas ging schief');
+
+      expect(spy).toHaveBeenCalledOnce();
+      const buffer = DebugSystem.getLogBuffer();
+      expect(buffer[0]?.label).toBe('console.error');
+    } finally {
+      console.error = original;
+    }
+  });
+
+  it('haengt sich bei mehrfachem Aufruf nicht doppelt ein', () => {
+    const original = console.warn;
+    try {
+      const spy = vi.fn();
+      console.warn = spy;
+      DebugSystem.installConsoleCapture();
+      DebugSystem.installConsoleCapture();
+
+      console.warn('einmal');
+
+      expect(DebugSystem.getLogBuffer().length).toBe(1);
+    } finally {
+      console.warn = original;
+    }
+  });
+});
+
+describe('DebugSystem.logAppStart', () => {
+  it('schreibt Version, Startweg und Netzwerkstatus als ersten Eintrag', () => {
+    DebugSystem.logAppStart({ standalone: true, ios: true });
+
+    const buffer = DebugSystem.getLogBuffer();
+    expect(buffer.length).toBe(1);
+    expect(buffer[0]?.label).toBe('app:start');
+    expect(buffer[0]?.detail).toContain('standalone=true');
+    expect(buffer[0]?.detail).toContain('ios=true');
   });
 });
 

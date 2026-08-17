@@ -12,8 +12,15 @@ export const DEBUG_TOGGLE_TAP_COUNT = 10;
 /** Zeitfenster, in dem alle Tipps liegen muessen - sonst zaehlt die Reihe neu. */
 export const DEBUG_TOGGLE_TAP_WINDOW_MS = 4_000;
 
-/** Maximale Anzahl Eintraege im rollierenden Event-/Fehler-Ringpuffer. */
-export const DEBUG_LOG_BUFFER_SIZE = 50;
+/**
+ * Maximale Anzahl Eintraege im rollierenden Event-/Fehler-Ringpuffer.
+ *
+ * Erhoeht von urspruenglich 50: seit der Puffer auch console.warn/console.error
+ * sowie den Boot-Zustand mitschreibt und ueber die gesamte App-Laufzeit (nicht
+ * nur einen Run) sammelt, reichten 50 Eintraege nicht mehr, um den Zeitraum vor
+ * einem spaet auftretenden Bug abzudecken.
+ */
+export const DEBUG_LOG_BUFFER_SIZE = 200;
 
 /** Eigener localStorage-Schluessel, getrennt vom Spielstand (SAVE_KEY). */
 export const DEBUG_MODE_STORAGE_KEY = 'isihunt.debug-mode.v1';

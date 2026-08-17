@@ -12,7 +12,7 @@
 import Phaser from 'phaser';
 
 import { APP_VERSION, configureGameHeight, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
-import { isStandalone } from '@/core/display';
+import { isIos, isStandalone } from '@/core/display';
 import { eventBus, GameEvent } from '@/core/EventBus';
 import { requestPortraitOrientationLock } from '@/core/orientation';
 import { keepCanvasBoundsFresh, waitForViewportToSettle } from '@/core/viewport';
@@ -104,6 +104,10 @@ function createGameConfig(): Phaser.Types.Core.GameConfig {
 const versionLabel = document.getElementById('version');
 if (versionLabel) versionLabel.textContent = `v${APP_VERSION}`;
 
+// So frueh wie moeglich, damit auch die folgenden initialize()-Aufrufe
+// bereits mitgeloggt werden, falls dort etwas ueber console.warn meldet.
+installDebugLogging();
+
 // Alte iOS-Versionen melden installierte Web-Apps nicht immer ueber
 // `display-mode: standalone`. Die Klasse aktiviert deshalb dieselbe 100vh-
 // Umgehung auch fuer `navigator.standalone`.
@@ -114,7 +118,6 @@ if (isStandalone()) document.documentElement.classList.add('standalone-app');
 SoundSystem.initialize();
 SafeAreaSystem.initialize();
 AuthSystem.initialize();
-installDebugLogging();
 
 /**
  * Verdrahtet den rollierenden Debug-Ringpuffer, so frueh wie moeglich im
@@ -123,6 +126,9 @@ installDebugLogging();
  * was VOR einem Bug geschah (nicht nur der Zustand danach).
  */
 function installDebugLogging(): void {
+  DebugSystem.installConsoleCapture();
+  DebugSystem.logAppStart({ standalone: isStandalone(), ios: isIos() });
+
   for (const key of Object.values(GameEvent)) {
     eventBus.onEvent(key, (payload) => {
       DebugSystem.pushLogEntry({

@@ -48,6 +48,7 @@ export interface LogEntry {
 const logBuffer: LogEntry[] = [];
 let tapTimestamps: number[] = [];
 let debugModeCache: boolean | null = null;
+let consoleCaptureInstalled = false;
 
 /** Nimmt einen Eintrag in den Ringpuffer auf; verwirft den aeltesten bei Ueberlauf. */
 export function pushLogEntry(entry: LogEntry): void {
@@ -57,6 +58,58 @@ export function pushLogEntry(entry: LogEntry): void {
 
 export function getLogBuffer(): readonly LogEntry[] {
   return logBuffer;
+}
+
+function argsToDetail(args: unknown[]): string {
+  return args
+    .map((arg) => {
+      if (arg instanceof Error) return arg.stack ?? arg.message;
+      if (typeof arg === 'string') return arg;
+      try {
+        return JSON.stringify(arg);
+      } catch {
+        return String(arg);
+      }
+    })
+    .join(' ');
+}
+
+/**
+ * Faengt console.warn/console.error ab und schreibt jeden Aufruf zusaetzlich
+ * in den Ringpuffer, bevor die Originalfunktion wie gewohnt in die Konsole
+ * schreibt. Deckt die vielen bereits bestehenden `console.warn(...)`-Stellen
+ * in SaveSystem/CloudSystem/ProgressSyncSystem etc. ab, ohne jede einzeln
+ * anzufassen - genau dort stecken die Fehler, die bisher am schwersten zu
+ * diagnostizieren waren, weil eine Konsole am iPhone nicht erreichbar ist.
+ *
+ * Idempotent: ein zweiter Aufruf (z.B. durch Hot-Reload im Dev-Build) hängt
+ * sich nicht ein zweites Mal ein.
+ */
+export function installConsoleCapture(): void {
+  if (consoleCaptureInstalled) return;
+  consoleCaptureInstalled = true;
+
+  const record = (level: 'warn' | 'error', args: unknown[]): void => {
+    logBuffer.push({
+      timestamp: Date.now(),
+      kind: 'error',
+      label: `console.${level}`,
+      detail: argsToDetail(args),
+    });
+    if (logBuffer.length > DEBUG_LOG_BUFFER_SIZE) logBuffer.shift();
+  };
+
+  const originalWarn = console.warn.bind(console);
+  console.warn = (...args: unknown[]) => {
+    record('warn', args);
+    originalWarn(...args);
+  };
+
+  const originalError = console.error.bind(console);
+  console.error = (...args: unknown[]) => {
+    record('error', args);
+    originalError(...args);
+  };
 }
 
 function formatLogBuffer(): string {
@@ -114,6 +167,22 @@ export function registerLogoTap(now: number = Date.now()): boolean | null {
   const next = !isDebugModeActive();
   setDebugModeActive(next);
   return next;
+}
+
+/**
+ * Haelt den Ausgangszustand beim App-Start fest - Version, Startweg,
+ * Netzwerkstatus. Ohne diesen expliziten Eintrag begaenne der Verlauf erst
+ * beim ersten Spiel-Event; ein Bug, der schon vor dem ersten Tastendruck
+ * auftritt (z.B. ein fehlgeschlagener Sync direkt beim Start), waere sonst
+ * nicht im Report sichtbar.
+ */
+export function logAppStart(context: { standalone: boolean; ios: boolean }): void {
+  pushLogEntry({
+    timestamp: Date.now(),
+    kind: 'event',
+    label: 'app:start',
+    detail: `v${APP_VERSION}  standalone=${context.standalone}  ios=${context.ios}  online=${navigator.onLine}`,
+  });
 }
 
 /** Wandelt einen Canvas-Inhalt in eine PNG-Datei fuer das Share-Sheet um. */
