@@ -44,6 +44,7 @@ import {
   createPanel,
   createMenuLayout,
   createVignette,
+  BACK_BUTTON_RESERVED_HEIGHT,
   paintSafeAreaBackdrop,
 } from '@/ui/widgets';
 
@@ -89,7 +90,7 @@ export class AdminScene extends Phaser.Scene {
     this.buildVersionPanel(versionY);
     void this.buildLayoutPanel(layoutY);
     this.buildAudioPanel(audioY);
-    this.buildActions(audioY);
+    this.buildActions();
 
     this.statusText = createBackStatusText(this);
 
@@ -225,39 +226,45 @@ export class AdminScene extends Phaser.Scene {
       .setOrigin(0.5);
   }
 
-  private buildActions(layoutY: number): void {
-    const actions = createMenuLayout(8).sections;
-    actions.advance(layoutY + 215 - actions.currentTop());
-    const updateY = actions.next(54);
-    const reloadY = actions.next(54);
-    const repairY = actions.next(54);
-    const statsY = actions.next(54);
-    const usersY = actions.next(54);
-    const rulerY = actions.next(54);
+  private buildActions(): void {
+    // Die Zurueck-Leiste liegt fest ueber dem Inhalt. Zwei Spalten halten alle
+    // Wartungsaktionen oberhalb dieser Sicherheitszone, auch auf kleinen
+    // Displays, ohne dass die Aktionen unter dem Zurueck-Knopf verschwinden.
+    const actionWidth = 220;
+    const actionHeight = 54;
+    const rowGap = 12;
+    const columnGap = 20;
+    const leftX = GAME_WIDTH / 2 - (actionWidth + columnGap) / 2;
+    const rightX = GAME_WIDTH / 2 + (actionWidth + columnGap) / 2;
+    const contentBottom = GAME_HEIGHT - BACK_BUTTON_RESERVED_HEIGHT;
+    const bottomRowY = contentBottom - actionHeight / 2 - 16;
+    const rowStep = actionHeight + rowGap;
+    const middleRowY = bottomRowY - rowStep;
+    const topRowY = middleRowY - rowStep;
 
-    createButton(this, GAME_WIDTH / 2, updateY, 'UPDATE PRÜFEN', () => void this.checkUpdateNow(), {
-      width: 460,
-      height: 54,
+    createButton(this, leftX, topRowY, 'UPDATE PRÜFEN', () => void this.checkUpdateNow(), {
+      width: actionWidth,
+      height: actionHeight,
       accent: 0x9aa3bd,
       fontSize: FontSize.small,
     });
 
-    createButton(this, GAME_WIDTH / 2, reloadY, 'NEU LADEN ERZWINGEN', () => forceReload(), {
-      width: 460,
-      height: 54,
+    createButton(this, rightX, topRowY, 'NEU LADEN ERZWINGEN', () => forceReload(), {
+      width: actionWidth,
+      height: actionHeight,
       accent: Palette.goldHex,
       fontSize: FontSize.small,
     });
 
     createButton(
       this,
-      GAME_WIDTH / 2,
-      repairY,
+      leftX,
+      middleRowY,
       'SPIELSTAND PRÜFEN & SPEICHERN',
       () => this.repairSave(),
       {
-        width: 460,
-        height: 54,
+        width: actionWidth,
+        height: actionHeight,
         accent: 0x9aa3bd,
         fontSize: FontSize.small,
       },
@@ -265,22 +272,32 @@ export class AdminScene extends Phaser.Scene {
 
     createButton(
       this,
-      GAME_WIDTH / 2,
-      statsY,
+      rightX,
+      middleRowY,
       'ONLINE-STATISTIK',
       () => {
         this.scene.start(SceneKey.AdminStats);
       },
-      { width: 460, height: 54, accent: Palette.goldHex, fontSize: FontSize.small },
+      {
+        width: actionWidth,
+        height: actionHeight,
+        accent: Palette.goldHex,
+        fontSize: FontSize.small,
+      },
     );
 
     createButton(
       this,
-      GAME_WIDTH / 2,
-      usersY,
+      leftX,
+      bottomRowY,
       'BENUTZER-WERKZEUGE',
       () => this.scene.start(SceneKey.AdminUsers),
-      { width: 460, height: 54, accent: Palette.goldHex, fontSize: FontSize.small },
+      {
+        width: actionWidth,
+        height: actionHeight,
+        accent: Palette.goldHex,
+        fontSize: FontSize.small,
+      },
     );
 
     /* Lokales Testprofil bleibt bewusst aus dem Wartungsmenue entfernt.
@@ -340,14 +357,14 @@ export class AdminScene extends Phaser.Scene {
     // beschreiben statt in Worten ("von 0 bis 160 ist schwarz").
     createButton(
       this,
-      GAME_WIDTH / 2,
-      rulerY,
+      rightX,
+      bottomRowY,
       'PIXEL-LINEAL ANZEIGEN',
       () => {
         this.scene.start(SceneKey.Menu);
         this.scene.launch(SceneKey.Ruler);
       },
-      { width: 460, height: 54, accent: 0x9aa3bd, fontSize: FontSize.small },
+      { width: actionWidth, height: actionHeight, accent: 0x9aa3bd, fontSize: FontSize.small },
     );
 
     const reset = createButton(
