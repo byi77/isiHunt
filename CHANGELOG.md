@@ -18,6 +18,15 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- Ton blieb nach App-Kaltstart auf iOS oft dauerhaft stumm, obwohl "TON: AN"
+  gesetzt war: Der allererste `AudioContext.resume()`-Aufruf blieb dort
+  manchmal fuer immer in der Warteschleife (kein resolve, kein reject). Die
+  Diagnoseanzeige im Wartungsbildschirm hat das auf dem Testgeraet
+  reproduzierbar gezeigt: "resume() laeuft: ja" auf unbestimmte Zeit. Da
+  jeder weitere Tipp im Spiel nur dieselbe haengende Anfrage zurueckbekam,
+  half nichts mehr — `resumeAudioContext()` gibt eine haengende Anfrage
+  jetzt nach 1,2 Sekunden frei, sodass der naechste Tipp einen frischen
+  Versuch bekommt.
 - Ton blieb nach App-Wechsel oder Sperrbildschirm meist stumm: Ein frueherer
   Commit hatte unbeabsichtigt die `click`/`touchend`-Entsperr-Gesten entfernt
   und den `visibilitychange`-Handler so umgebaut, dass er den AudioContext

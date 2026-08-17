@@ -30,6 +30,16 @@ let resumePromise: Promise<boolean> | null = null;
 const pendingTones: ToneSpec[] = [];
 const MAX_PENDING_TONES = 12;
 
+// Auf iOS bleibt der allererste `resume()`-Aufruf nach einem Kaltstart
+// manchmal dauerhaft in der Warteschleife haengen - kein resolve, kein
+// reject (beobachtet und reproduziert auf dem Testgeraet: Diagnose zeigte
+// "resume() laeuft: ja" auf unbestimmte Zeit, obwohl der Kontext danach
+// ueber einen zeitversetzten zweiten Tipp doch noch aufwachte). Ohne
+// Zeitlimit wuerde `if (resumePromise) return resumePromise;` in
+// resumeAudioContext() jeden weiteren Tipp fuer immer an dieselbe tote
+// Promise binden, statt einen frischen Versuch zu starten.
+const RESUME_TIMEOUT_MS = 1200;
+
 function soundEnabled(): boolean {
   return SaveSystem.load().soundEnabled;
 }
@@ -86,16 +96,28 @@ function resumeAudioContext(): Promise<boolean> {
   // Manche Safari-Versionen brauchen den lautlosen Puffer direkt vor dem
   // resume()-Aufruf. Beides passiert innerhalb derselben Nutzergeste.
   primeAudioContext(context);
-  resumePromise = context
+
+  const attempt = context
     .resume()
     .then(() => context.state === 'running')
     .catch(() => {
       if (context.state === 'closed') audioContext = null;
       return false;
-    })
-    .finally(() => {
-      resumePromise = null;
     });
+
+  // Haengt `attempt` laenger als das Zeitlimit, gibt der Timeout `false`
+  // zurueck und setzt `resumePromise` frei - der naechste Tipp bekommt dann
+  // einen frischen `resume()`-Versuch statt auf dieselbe tote Promise zu
+  // warten. `attempt` selbst laeuft im Hintergrund weiter; loest sie doch
+  // noch auf, erkennt der `statechange`-Listener auf dem Kontext das.
+  const timeout = new Promise<boolean>((resolve) => {
+    window.setTimeout(() => resolve(false), RESUME_TIMEOUT_MS);
+  });
+
+  resumePromise = Promise.race([attempt, timeout]);
+  resumePromise.finally(() => {
+    resumePromise = null;
+  });
   return resumePromise;
 }
 

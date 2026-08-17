@@ -91,6 +91,16 @@ class FakeAudioContext {
   }
 }
 
+/**
+ * Simuliert das auf dem Testgeraet beobachtete iOS-Verhalten: `resume()`
+ * loest nie auf und nie ab - kein resolve, kein reject.
+ */
+class HangingResumeAudioContext extends FakeAudioContext {
+  resume(): Promise<void> {
+    return new Promise<void>(() => undefined);
+  }
+}
+
 let SoundSystem: typeof SoundSystemModule;
 let SaveSystem: typeof SaveSystemModule;
 let eventBus: typeof EventBusInstance;
@@ -289,6 +299,37 @@ describe('visibilitychange - Regression: Kontext blieb nach Rueckkehr stumm', ()
     expect(registeredTypes).toContain('pointerdown');
 
     addSpy.mockRestore();
+  });
+});
+
+describe('resumeAudioContext - Regression: haengendes resume() blockierte jeden weiteren Versuch', () => {
+  it('gibt resumePromise nach Zeitlimit frei, statt fuer immer an eine tote Promise gebunden zu bleiben', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('AudioContext', HangingResumeAudioContext);
+
+    SaveSystem.update((data) => {
+      data.soundEnabled = true;
+    });
+    SoundSystem.initialize();
+
+    // Erster Tipp: loest resume() aus, das auf diesem simulierten Geraet nie
+    // aufloest - genau der Zustand, der auf dem Testgeraet reproduziert
+    // wurde ("resume() laeuft: ja" auf unbestimmte Zeit).
+    window.dispatchEvent(new PointerEvent('pointerdown'));
+    await vi.advanceTimersByTimeAsync(0);
+
+    expect(SoundSystem.getDiagnostics().resumeInFlight).toBe(true);
+    expect(SoundSystem.getDiagnostics().contextState).toBe('suspended');
+
+    // Nach Ablauf des Zeitlimits muss die Blockade weichen, damit der
+    // naechste Tipp einen frischen Versuch bekommt statt auf die haengende
+    // Promise zu warten.
+    await vi.advanceTimersByTimeAsync(2000);
+
+    expect(SoundSystem.getDiagnostics().resumeInFlight).toBe(false);
+
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
   });
 });
 
