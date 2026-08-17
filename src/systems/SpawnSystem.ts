@@ -31,12 +31,17 @@ import Phaser from 'phaser';
 
 import {
   MAX_ACTIVE_COLLECTIBLES,
+  SPAWN_INTERVAL_JITTER_MAX,
+  SPAWN_INTERVAL_JITTER_MIN,
   SPAWN_INTERVAL_MS,
   SPAWN_MIN_DISTANCE_TO_PLAYER,
   SPAWN_POSITION_CANDIDATES,
   SPAWN_RAMP_FACTOR,
+  WORLD_LIFETIME_SCALE_FLOOR,
+  WORLD_LIFETIME_SCALE_PER_DIFFICULTY,
   WORLD_OBSTACLE_BASE_CHANCE,
   WORLD_OBSTACLE_END_CHANCE,
+  WORLD_OBSTACLE_MAX_CHANCE,
   WORLD_DRIFT_MULTIPLIER,
   WORLD_RARE_LIFETIME_SCALE,
   WORLD_RARE_PROMOTION_CHANCE,
@@ -92,8 +97,11 @@ export class SpawnSystem {
     if (this.timerMs > 0) return null;
 
     const ramp = Phaser.Math.Linear(1, SPAWN_RAMP_FACTOR, Phaser.Math.Clamp(runProgress, 0, 1));
-    // +-20% Streuung, damit das Spawn-Muster nicht metronomisch wirkt.
-    this.timerMs = SPAWN_INTERVAL_MS * ramp * this.rng.realInRange(0.8, 1.2);
+    // Streuung, damit das Spawn-Muster nicht metronomisch wirkt.
+    this.timerMs =
+      SPAWN_INTERVAL_MS *
+      ramp *
+      this.rng.realInRange(SPAWN_INTERVAL_JITTER_MIN, SPAWN_INTERVAL_JITTER_MAX);
 
     // Bewusst VOR der Kapazitaetspruefung: der Verbrauch muss gleich bleiben,
     // auch wenn der Spawn gleich verworfen wird.
@@ -109,7 +117,10 @@ export class SpawnSystem {
         ? 0
         : WORLD_OBSTACLE_BASE_CHANCE +
           (WORLD_OBSTACLE_END_CHANCE - WORLD_OBSTACLE_BASE_CHANCE) * runProgress;
-    const scaledObstacleChance = Math.min(0.24, obstacleChance * this.difficultyScale);
+    const scaledObstacleChance = Math.min(
+      WORLD_OBSTACLE_MAX_CHANCE,
+      obstacleChance * this.difficultyScale,
+    );
 
     // Im Duell darf ein langsamerer erster Spieler den Spawn-Plan nicht durch
     // ein volles Feld veraendern. Abgelaufene Objekte werden weiterhin normal
@@ -126,7 +137,10 @@ export class SpawnSystem {
       };
     }
 
-    const worldLifetimeScale = Math.max(0.55, 1 - (this.difficultyScale - 1) * 0.35);
+    const worldLifetimeScale = Math.max(
+      WORLD_LIFETIME_SCALE_FLOOR,
+      1 - (this.difficultyScale - 1) * WORLD_LIFETIME_SCALE_PER_DIFFICULTY,
+    );
     return {
       x: position.x,
       y: position.y,

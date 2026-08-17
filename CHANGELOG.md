@@ -17,6 +17,15 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   Speicherkontingent) konnte den migrierten Fortschritt stillschweigend
   durch einen leeren Stand ersetzen.
 
+### Intern
+
+- Balancing-Werte in `SpawnSystem`, `ChallengeSystem`, `ProgressionSystem`
+  und `InputController` stehen jetzt vollstaendig in `src/config/`.
+- Testabdeckung fuer `CloudSystem`, den Bot- und Tagesmodus in
+  `ChallengeSystem`, `ProgressSyncSystem`, den Talent-Maximalrang-Guard,
+  `SpawnSystem.reset()`/den Solo-Kapazitaetsguard sowie das Talent-x-Welt-
+  Multiplikatorprodukt in `ScoreSystem` nachgezogen.
+
 ### Erststart und Profil
 
 - Beim ersten Online-Start wird ein gemeinsames Profil mit Alias und

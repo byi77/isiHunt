@@ -326,4 +326,26 @@ describe('Talentkäufe', () => {
     expect(Progression.purchaseTalent('reach')).toBeNull();
     expect(Progression.resetTalents()).toBeNull();
   });
+
+  it('verweigert einen Kauf ueber den Maximalrang hinaus', () => {
+    // docs/AUDIT_2026-08-17.md Abschnitt 5.5: der Guard
+    // "currentRank >= talent.maxRank" wurde bisher nie mit einem Talent auf
+    // Maximalrang getestet - magnetism hat mit maxRank 4 den guenstigsten
+    // Weg dorthin.
+    SaveSystem.update((data) => {
+      data.coins = 100_000;
+    });
+
+    for (let i = 0; i < 4; i++) {
+      expect(Progression.purchaseTalent('magnetism')).not.toBeNull();
+    }
+    expect(SaveSystem.load().talents.magnetism).toBe(4);
+
+    const coinsBeforeExtraPurchase = SaveSystem.load().coins;
+    expect(Progression.purchaseTalent('magnetism')).toBeNull();
+
+    // Ein verweigerter Kauf darf weder Coins abziehen noch den Rang erhoehen.
+    expect(SaveSystem.load().talents.magnetism).toBe(4);
+    expect(SaveSystem.load().coins).toBe(coinsBeforeExtraPurchase);
+  });
 });

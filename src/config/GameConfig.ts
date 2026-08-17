@@ -92,6 +92,10 @@ export const PLAYER_ACCEL_RESPONSE = 14;
 export const PLAYER_BASE_COLLECT_RADIUS = 46;
 /** Ab dieser Distanz zum Finger gilt "Ziel erreicht" - verhindert Zittern. */
 export const POINTER_DEADZONE = 6;
+/** Distanz zum Finger, ab der volle Geschwindigkeit erreicht wird. */
+export const POINTER_THROTTLE_DISTANCE = 90;
+/** Mindesttempo nahe am Finger, damit die Figur nicht komplett stehen bleibt. */
+export const POINTER_THROTTLE_MIN = 0.15;
 /** Ab dieser Geschwindigkeit (px/s) zieht die Figur eine Lichtspur. */
 export const PLAYER_TRAIL_MIN_SPEED = 60;
 
@@ -143,6 +147,25 @@ export const WORLD_DRIFT_MULTIPLIER = 1.15;
 export const WORLD_SHORT_LIFETIME_SCALE = 0.85;
 export const WORLD_RARE_LIFETIME_SCALE = 0.75;
 export const WORLD_RARE_PROMOTION_CHANCE = 0.18;
+
+/** +-Streuung auf das Spawn-Intervall, damit der Takt nicht metronomisch wirkt. */
+export const SPAWN_INTERVAL_JITTER_MIN = 0.8;
+export const SPAWN_INTERVAL_JITTER_MAX = 1.2;
+/** Obergrenze der Hindernis-Wahrscheinlichkeit, auch bei hoher Schwierigkeit. */
+export const WORLD_OBSTACLE_MAX_CHANCE = 0.24;
+/** Wie stark hohe Schwierigkeit die Lebensdauer eines Objekts mindestens kuerzt. */
+export const WORLD_LIFETIME_SCALE_FLOOR = 0.55;
+/** Wie stark jeder Schwierigkeitsschritt ueber 1 die Lebensdauer kuerzt. */
+export const WORLD_LIFETIME_SCALE_PER_DIFFICULTY = 0.35;
+
+/** Seltene Faenge je Run, die einen zusaetzlichen Coin wert sind. */
+export const RARE_CATCHES_PER_BONUS_COIN = 5;
+/** Epische Faenge je Run, die den zusaetzlichen Coin-Bonus ausloesen. */
+export const EPIC_CATCHES_PER_BONUS_STEP = 2;
+/** Coins je ausgeloestem Epic-Bonusschritt. */
+export const EPIC_BONUS_COINS_PER_STEP = 2;
+/** Coins je legendaerem Fang. */
+export const LEGENDARY_BONUS_COINS = 3;
 
 // --- Combo ------------------------------------------------------------------
 

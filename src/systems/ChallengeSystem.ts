@@ -11,7 +11,13 @@
  * Scene-Zustand ueberlebt `scene.start()` nicht, dieser Zustand muss das aber.
  */
 
-import { CHALLENGE_PLAYER_COUNT } from '@/config/challenge';
+import {
+  CHALLENGE_BOT_DIFFICULTY_RATIOS,
+  CHALLENGE_BOT_NOISE_MODULO,
+  CHALLENGE_BOT_NOISE_OFFSET,
+  CHALLENGE_BOT_NOISE_SCALE,
+  CHALLENGE_PLAYER_COUNT,
+} from '@/config/challenge';
 import {
   DAILY_COMPLETION_BONUS_COINS,
   DAILY_COMPLETION_BONUS_XP,
@@ -62,9 +68,11 @@ function botRound(
   seed: string,
   difficulty: BotDifficulty,
 ): ChallengeState['rounds'][number] {
-  const ratios: Record<BotDifficulty, number> = { easy: 0.72, normal: 0.9, hard: 1.04 };
-  const noise = ((hashSeed(`${seed}-${difficulty}`) % 13) - 6) / 100;
-  const factor = ratios[difficulty] + noise;
+  const noise =
+    ((hashSeed(`${seed}-${difficulty}`) % CHALLENGE_BOT_NOISE_MODULO) -
+      CHALLENGE_BOT_NOISE_OFFSET) /
+    CHALLENGE_BOT_NOISE_SCALE;
+  const factor = CHALLENGE_BOT_DIFFICULTY_RATIOS[difficulty] + noise;
   return {
     score: Math.max(0, Math.round(player.score * factor)),
     bestCombo: Math.max(0, Math.round(player.bestCombo * factor)),

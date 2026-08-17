@@ -34,3 +34,15 @@ export const CHALLENGE_PLAYER_LABELS: readonly string[] = ['Spieler 1', 'Spieler
 export function challengePlayerLabel(index: number): string {
   return CHALLENGE_PLAYER_LABELS[index] ?? `Spieler ${index + 1}`;
 }
+
+/**
+ * Wie stark ein Bot je Schwierigkeitsstufe im Verhaeltnis zur echten
+ * Spielerleistung abschneidet (1 = gleichauf).
+ */
+export const CHALLENGE_BOT_DIFFICULTY_RATIOS = { easy: 0.72, normal: 0.9, hard: 1.04 } as const;
+/** Modulo-Basis fuer die deterministische Bot-Streuung aus dem Seed-Hash. */
+export const CHALLENGE_BOT_NOISE_MODULO = 13;
+/** Verschiebt den Modulo-Rest auf ein symmetrisches Intervall um 0. */
+export const CHALLENGE_BOT_NOISE_OFFSET = 6;
+/** Teiler, der den Streuungsschritt auf einen Prozentanteil skaliert. */
+export const CHALLENGE_BOT_NOISE_SCALE = 100;

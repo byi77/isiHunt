@@ -10,6 +10,8 @@ import { describe, expect, it } from 'vitest';
 
 import { COMBO_GRACE_MS, COMBO_TIERS } from '@/config/GameConfig';
 import { RARITY_BY_ID } from '@/config/rarities';
+import { resolveStats } from '@/config/talents';
+import { WORLDS } from '@/config/worlds';
 import { multiplierForCombo, ScoreSystem } from '@/systems/ScoreSystem';
 
 const POOR = RARITY_BY_ID.poor;
@@ -214,5 +216,40 @@ describe('ScoreSystem - Run-Statistik', () => {
     stats.collected.poor = 999;
 
     expect(system.toRunStats('meadow').collected.poor).toBe(1);
+  });
+});
+
+describe('ScoreSystem - Talent x Welt Multiplikator-Produkt', () => {
+  // docs/AUDIT_2026-08-17.md Abschnitt 5.7: GameScene.ts konstruiert
+  // ScoreSystem mit dem PRODUKT aus Talent- und Welt-Multiplikator
+  // (this.stats.scoreMultiplier * this.world.scoreMultiplier), nicht mit
+  // einem isolierten Skalarwert wie in den Tests oben. Dieser Block
+  // reproduziert genau dieses Muster mit den echten Config-Werten.
+  it('rundet konsistent, wenn Talent- und Welt-Multiplikator zusammen ein krummes Produkt ergeben', () => {
+    const maxFortuneStats = resolveStats({ fortune: 5 });
+    const highestWorld = WORLDS[WORLDS.length - 1]!;
+    const combinedScoreMultiplier = maxFortuneStats.scoreMultiplier * highestWorld.scoreMultiplier;
+
+    const system = new ScoreSystem(COMBO_GRACE_MS, combinedScoreMultiplier, 1);
+    const outcome = system.registerCollect(RARE!);
+
+    expect(outcome.awardedPoints).toBe(Math.round(RARE!.points * combinedScoreMultiplier));
+  });
+
+  it('haeuft ueber viele Faenge keinen sichtbaren Rundungsfehler gegenueber der Einzelrechnung an', () => {
+    const maxInsightStats = resolveStats({ insight: 5 });
+    const highestWorld = WORLDS[WORLDS.length - 1]!;
+    const combinedXpMultiplier = maxInsightStats.xpMultiplier * highestWorld.xpMultiplier;
+
+    const system = new ScoreSystem(COMBO_GRACE_MS, 1, combinedXpMultiplier);
+
+    let expectedXp = 0;
+    for (let i = 0; i < 50; i++) {
+      const rarity = i % 2 === 0 ? RARE! : POOR!;
+      system.registerCollect(rarity);
+      expectedXp += Math.round(rarity.xp * combinedXpMultiplier);
+    }
+
+    expect(system.toRunStats('meadow').xpGained).toBe(expectedXp);
   });
 });

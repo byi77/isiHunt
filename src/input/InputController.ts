@@ -13,7 +13,11 @@
 
 import Phaser from 'phaser';
 
-import { POINTER_DEADZONE } from '@/config/GameConfig';
+import {
+  POINTER_DEADZONE,
+  POINTER_THROTTLE_DISTANCE,
+  POINTER_THROTTLE_MIN,
+} from '@/config/GameConfig';
 
 export class InputController {
   private readonly cursors: Phaser.Types.Input.Keyboard.CursorKeys | undefined;
@@ -78,7 +82,11 @@ export class InputController {
     if (distance <= POINTER_DEADZONE) return this.direction.set(0, 0);
 
     // Nahe am Ziel wird abgebremst - verhindert Ueberschwingen am Finger.
-    const throttle = Phaser.Math.Clamp(distance / 90, 0.15, 1);
+    const throttle = Phaser.Math.Clamp(
+      distance / POINTER_THROTTLE_DISTANCE,
+      POINTER_THROTTLE_MIN,
+      1,
+    );
     return this.direction.set((dx / distance) * throttle, (dy / distance) * throttle);
   }
 

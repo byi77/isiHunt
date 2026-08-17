@@ -11,8 +11,12 @@ import {
   COINS_PER_COLLECTION_STEP,
   COINS_PER_LEVEL,
   COINS_PER_RUN,
+  EPIC_BONUS_COINS_PER_STEP,
+  EPIC_CATCHES_PER_BONUS_STEP,
+  LEGENDARY_BONUS_COINS,
   MAX_LEVEL,
   MAX_COLLECTION_BONUS_COINS,
+  RARE_CATCHES_PER_BONUS_COIN,
   TALENT_RESET_COST,
   xpForLevel,
 } from '@/config/GameConfig';
@@ -37,9 +41,9 @@ export function coinsForRun(run: RunStats): number {
     Math.floor(run.totalCollected / COLLECTION_STEP_SIZE) * COINS_PER_COLLECTION_STEP,
   );
   const rarityBonus =
-    Math.floor(run.collected.rare / 5) +
-    Math.floor(run.collected.epic / 2) * 2 +
-    run.collected.legendary * 3;
+    Math.floor(run.collected.rare / RARE_CATCHES_PER_BONUS_COIN) +
+    Math.floor(run.collected.epic / EPIC_CATCHES_PER_BONUS_STEP) * EPIC_BONUS_COINS_PER_STEP +
+    run.collected.legendary * LEGENDARY_BONUS_COINS;
   return COINS_PER_RUN + collectionBonus + rarityBonus;
 }
 
