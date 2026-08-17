@@ -354,8 +354,10 @@ export class ChallengeScene extends Phaser.Scene {
       .setLetterSpacing(3)
       .setDepth(Depth.Overlay);
 
+    // Der Untertitel erklaert den naechsten Schritt (wer spielt, was ist
+    // erledigt) - keine Dekoration, deshalb heller Standardton.
     this.add
-      .text(GAME_WIDTH / 2, 212, subtitle, textStyle(FontSize.small, Palette.inkDim))
+      .text(GAME_WIDTH / 2, 212, subtitle, textStyle(FontSize.small, Palette.ink))
       .setOrigin(0.5)
       .setWordWrapWidth(GAME_WIDTH - 140)
       .setAlign('center')

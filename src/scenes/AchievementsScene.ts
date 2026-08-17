@@ -92,7 +92,7 @@ export class AchievementsScene extends Phaser.Scene {
           }),
         )
         .setOrigin(0, 0.5);
-      this.add
+      const nameText = this.add
         .text(
           x - 102,
           y - 6,
@@ -101,11 +101,25 @@ export class AchievementsScene extends Phaser.Scene {
             fontStyle: 'bold',
           }),
         )
-        .setOrigin(0, 0.5)
+        .setOrigin(0, 0)
         .setWordWrapWidth(230);
+      // Bei freigeschalteten Erfolgen ist die Beschreibung Bestaetigung, bei
+      // gesperrten das eigentliche Ziel - in beiden Faellen keine Dekoration,
+      // die neben Rang und Name verblasst. Nur der Name-Farbverlauf oben
+      // bleibt als alleiniges Sperr-Signal.
+      //
+      // Die Beschreibung folgt direkt unter der tatsaechlichen Namenshoehe
+      // (nameText.height nach dem Zeilenumbruch), statt mit festem Versatz zu
+      // rechnen - ein zweizeiliger Name wuerde sonst von der Beschreibung
+      // ueberlappt.
       this.add
-        .text(x - 102, y + 17, achievement.description, textStyle(FontSize.tiny, Palette.inkDim))
-        .setOrigin(0, 0.5)
+        .text(
+          x - 102,
+          nameText.y + nameText.height + 2,
+          achievement.description,
+          textStyle(FontSize.tiny, isUnlocked ? Palette.ink : Palette.inkDim),
+        )
+        .setOrigin(0, 0)
         .setWordWrapWidth(230)
         .setLineSpacing(2);
     });

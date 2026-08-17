@@ -99,12 +99,14 @@ export class TalentScene extends Phaser.Scene {
       },
     );
     resetButton.setEnabled(save.coins >= TALENT_RESET_COST);
+    // Einzige Warnung vor einem unwiderruflichen Coin-Verlust - keine
+    // Dekoration, deshalb der helle Standardton statt gedaempft.
     this.add
       .text(
         GAME_WIDTH / 2,
         resetY + 48,
         'Reset kostet ' + TALENT_RESET_COST + ' Coins und erstattet nichts.',
-        textStyle(FontSize.tiny, Palette.inkDim),
+        textStyle(FontSize.tiny, Palette.ink),
       )
       .setOrigin(0.5);
     this.feedbackText = this.add

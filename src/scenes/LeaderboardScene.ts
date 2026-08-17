@@ -251,7 +251,10 @@ export class LeaderboardScene extends Phaser.Scene {
         );
       }
 
-      const rankColor = isPodium ? Palette.gold : Palette.inkDim;
+      // Die eigene Platzierung ist die eigentlich gesuchte Information, nicht
+      // nur Podiumsplaetze - deshalb heller Standardton statt gedaempft fuer
+      // alle Raenge, nicht nur fuer Gold/Silber/Bronze.
+      const rankColor = isPodium ? Palette.gold : Palette.ink;
       const world = getWorld(entry.worldId);
 
       this.listItems.push(
