@@ -9,6 +9,17 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Sicherheit
+
+- `saves` und `sync_codes` hatten direkte Tabellenrechte fuer `anon`/
+  `authenticated` mit `using (true)`-Policies — dadurch konnte jeder mit dem
+  oeffentlichen anon-Key alle Spielstaende lesen/ueberschreiben und alle
+  gueltigen Sync-Codes samt `save_id` auflisten. Zugriff laeuft jetzt nur noch
+  ueber security-definer-RPCs (`get_save`, `upsert_save`, `create_sync_code`,
+  `redeem_sync_code`), siehe ADR-0011-Nachtrag 2026-08-17.
+  **`supabase/phase_2_10_lock_saves_access.sql` musste dafuer manuell im
+  Supabase SQL-Editor ausgefuehrt werden** — ist bereits erledigt.
+
 ### Geaendert
 
 - Diagnose-`console.warn`-Aufrufe in `AccountScene.signIn()` und

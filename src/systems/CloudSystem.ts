@@ -539,17 +539,13 @@ export async function pushSave(): Promise<CloudResult<string>> {
   const cloudId = SaveSystem.ensureCloudId();
 
   const result = await withTimeout(
-    supabase.from('saves').upsert(
-      {
-        id: cloudId,
-        data: save,
-        level: save.level,
-        best_score: save.bestScore,
-        total_runs: save.totalRuns,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: 'id' },
-    ),
+    supabase.rpc('upsert_save', {
+      p_id: cloudId,
+      p_data: save,
+      p_level: save.level,
+      p_best_score: save.bestScore,
+      p_total_runs: save.totalRuns,
+    }),
     'Spielstand hochladen',
   );
 
@@ -592,19 +588,12 @@ export async function fetchSave(cloudId: string): Promise<CloudResult<RemoteSave
   const supabase = getClient();
   if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
 
-  const result = await withTimeout(
-    supabase
-      .from('saves')
-      .select('data, level, best_score, total_runs, updated_at')
-      .eq('id', cloudId)
-      .maybeSingle(),
-    'Spielstand laden',
-  );
+  const result = await withTimeout(supabase.rpc('get_save', { p_id: cloudId }), 'Spielstand laden');
 
   if (!result.ok) return result;
   if (result.value.error) return { ok: false, error: result.value.error.message };
 
-  const row = result.value.data;
+  const row = Array.isArray(result.value.data) ? result.value.data[0] : null;
   if (!row) return { ok: true, value: null };
 
   return {
@@ -967,7 +956,7 @@ export async function createSyncCode(): Promise<CloudResult<string>> {
   for (let attempt = 0; attempt < 3; attempt++) {
     const code = createCode();
     const result = await withTimeout(
-      supabase.from('sync_codes').insert({ code, save_id: uploaded.value }),
+      supabase.rpc('create_sync_code', { p_save_id: uploaded.value, p_code: code }),
       'Code erzeugen',
     );
 
@@ -1000,23 +989,32 @@ export async function redeemSyncCode(
     return { ok: false, error: `Ein Code hat ${SYNC_CODE_LENGTH} Zeichen` };
   }
 
-  // Abgelaufene Codes sind per Zugriffsregel unsichtbar - ein verfallener Code
-  // liefert deshalb dasselbe wie ein falscher.
-  const lookup = await withTimeout(
-    supabase.from('sync_codes').select('save_id').eq('code', code).maybeSingle(),
+  // Abgelaufene Codes liefert die RPC nicht mehr zurueck - ein verfallener
+  // Code ergibt deshalb dasselbe wie ein falscher.
+  const result = await withTimeout(
+    supabase.rpc('redeem_sync_code', { p_code: code }),
     'Code prüfen',
   );
 
-  if (!lookup.ok) return lookup;
-  if (lookup.value.error) return { ok: false, error: lookup.value.error.message };
-  if (!lookup.value.data) return { ok: true, value: null };
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
 
-  const cloudId = String(lookup.value.data.save_id);
-  const remote = await fetchSave(cloudId);
-  if (!remote.ok) return remote;
-  if (!remote.value) return { ok: true, value: null };
+  const row = Array.isArray(result.value.data) ? result.value.data[0] : null;
+  if (!row) return { ok: true, value: null };
 
-  return { ok: true, value: { cloudId, save: remote.value } };
+  return {
+    ok: true,
+    value: {
+      cloudId: String(row.save_id),
+      save: {
+        data: row.data as SaveData,
+        level: Number(row.level),
+        bestScore: Number(row.best_score),
+        totalRuns: Number(row.total_runs),
+        updatedAt: String(row.updated_at),
+      },
+    },
+  };
 }
 
 /**

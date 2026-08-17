@@ -289,9 +289,14 @@ grant execute on function public.rename_best_score(uuid, text)
 -- 2. Spielstaende
 -- ============================================================================
 --
--- Zugang ueber die zufaellige `id` (UUID v4). Wer sie nicht kennt, findet den
--- Spielstand nicht - deshalb ist Lesen an die Angabe der id gebunden und es
--- gibt bewusst keinen Weg, die Tabelle aufzulisten.
+-- Zugang ueber die zufaellige `id` (UUID v4). Direkte Tabellenrechte und
+-- `using (true)`-Policies wuerden das NICHT durchsetzen: PostgREST erlaubt
+-- ungefilterte Abfragen wie `GET /rest/v1/saves?select=*`, und RLS filtert
+-- dabei keine Zeile heraus, wenn die Policy jede Zeile erlaubt. Deshalb hat
+-- diese Tabelle bewusst KEINE direkten Rechte fuer anon/authenticated - Lesen
+-- und Schreiben laufen ausschliesslich ueber die security-definer-RPCs
+-- `get_save`/`upsert_save` in supabase/phase_2_10_lock_saves_access.sql, die
+-- die id als Argument nehmen. Siehe dort fuer die vollstaendige Begruendung.
 
 create table if not exists public.saves (
   id          uuid primary key,
@@ -312,33 +317,12 @@ create table if not exists public.saves (
 -- Preis fuer eine reine Bequemlichkeit. Ein Spielstand ist wenige Kilobyte
 -- gross; die Grenze war nie das eigentliche Risiko.
 
--- Zusaetzlich UPDATE: ein Spielstand wird beim Abgleich ueberschrieben.
--- Kein DELETE - ein Spielstand soll sich nicht loeschen lassen.
-grant select, insert, update on public.saves to anon, authenticated;
-
 alter table public.saves enable row level security;
 
--- `using (true)` klingt offener, als es ist: Supabase erlaubt nur Abfragen
--- ueber die REST-Schnittstelle, und der Client fragt immer mit `eq('id', ...)`.
--- Die Sicherheit liegt in der Unratbarkeit der UUID, nicht in der Regel.
-drop policy if exists "Spielstand ist mit Kenntnis der id lesbar" on public.saves;
-create policy "Spielstand ist mit Kenntnis der id lesbar"
-  on public.saves for select
-  to anon, authenticated
-  using (true);
-
-drop policy if exists "Spielstand anlegen" on public.saves;
-create policy "Spielstand anlegen"
-  on public.saves for insert
-  to anon, authenticated
-  with check (true);
-
-drop policy if exists "Spielstand ueberschreiben" on public.saves;
-create policy "Spielstand ueberschreiben"
-  on public.saves for update
-  to anon, authenticated
-  using (true)
-  with check (true);
+-- Bewusst KEINE select-, insert- oder update-Policy und KEIN GRANT fuer
+-- anon/authenticated: siehe Kommentar oben. Ohne Policy verweigert RLS jeden
+-- direkten Zugriff; phase_2_10_lock_saves_access.sql stellt den Zugang ueber
+-- RPCs wieder her.
 
 -- ============================================================================
 -- 3. Sync-Codes
@@ -349,6 +333,14 @@ create policy "Spielstand ueberschreiben"
 --
 -- Kurz heisst ratbar: 6 Zeichen aus 32 sind rund eine Milliarde Moeglichkeiten.
 -- Deshalb verfallen Codes nach 15 Minuten - danach ist ein Treffer wertlos.
+-- Die Rateschranke wirkt aber nur, wenn Codes ausschliesslich einzeln per
+-- `eq('code', ...)` abgefragt werden koennen. Eine `select`-Policy mit
+-- `using (expires_at > now())` erlaubt stattdessen einen ungefilterten
+-- Listen-Request, der alle gerade gueltigen Codes samt `save_id` ausgibt und
+-- die Rateschranke damit umgeht. Deshalb hat auch diese Tabelle bewusst KEINE
+-- direkten Rechte fuer anon/authenticated - Zugriff laeuft ausschliesslich
+-- ueber die security-definer-RPCs `create_sync_code`/`redeem_sync_code` in
+-- supabase/phase_2_10_lock_saves_access.sql.
 
 create table if not exists public.sync_codes (
   code       text primary key,
@@ -363,21 +355,12 @@ create table if not exists public.sync_codes (
 
 create index if not exists sync_codes_expiry_idx on public.sync_codes (expires_at);
 
-grant select, insert on public.sync_codes to anon, authenticated;
-
 alter table public.sync_codes enable row level security;
 
-drop policy if exists "Gueltiger Code ist einloesbar" on public.sync_codes;
-create policy "Gueltiger Code ist einloesbar"
-  on public.sync_codes for select
-  to anon, authenticated
-  using (expires_at > now());
-
-drop policy if exists "Code anlegen" on public.sync_codes;
-create policy "Code anlegen"
-  on public.sync_codes for insert
-  to anon, authenticated
-  with check (true);
+-- Bewusst KEINE select- oder insert-Policy und KEIN GRANT fuer
+-- anon/authenticated: siehe Kommentar oben. Ohne Policy verweigert RLS jeden
+-- direkten Zugriff; phase_2_10_lock_saves_access.sql stellt den Zugang ueber
+-- RPCs wieder her.
 
 -- Abgelaufene Codes aufraeumen. Supabase kann das per Cron planen; solange das
 -- nicht eingerichtet ist, ruft der Client die Funktion gelegentlich mit auf.

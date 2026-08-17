@@ -454,8 +454,9 @@ Abgesichert ist deshalb nur, was sich ohne Server absichern laesst:
 
 - Eintraege sind **unveraenderlich** — kein `UPDATE`, kein `DELETE`, schon auf
   der Rechteebene.
-- Spielstaende sind nur mit Kenntnis ihrer zufaelligen UUID erreichbar.
-- Sync-Codes verfallen.
+- Spielstaende sind nur mit Kenntnis ihrer zufaelligen UUID erreichbar (seit
+  dem Nachtrag 2026-08-17 durch RPCs statt durch Tabellenrechte durchgesetzt).
+- Sync-Codes verfallen (ebenfalls seit 2026-08-17 durch RPCs durchgesetzt).
 - Wertebereiche und Namenslaengen sind in der Datenbank begrenzt.
 
 **Konsequenz:** Fuer ein Duell unter Bekannten ist das unerheblich. Bevor die
@@ -502,6 +503,27 @@ sondern ruft `submit_best_score` auf. Die Datenbank entscheidet atomar ueber
 den hoechsten Score; dadurch entstehen bei schnellen oder parallelen Runs
 keine Duplikate. Die bisherige Liste wird einmalig und bewusst ueber
 `supabase/cleanup_leaderboard.sql` geloescht.
+
+**Nachtrag 2026-08-17 — Korrektur: "nur mit Kenntnis der UUID erreichbar" war
+falsch begruendet.** `saves` und `sync_codes` hatten direkte Tabellenrechte
+(`grant select, insert, update`) mit `using (true)`-Policies. Das schuetzt
+nichts: PostgREST erlaubt ungefilterte Abfragen wie
+`GET /rest/v1/saves?select=*`, und RLS filtert dabei keine Zeile heraus, wenn
+die Policy jede Zeile erlaubt. Jeder mit dem oeffentlichen anon-Key — also
+jeder Browser, der das Spiel laedt — konnte damit alle Spielstaende lesen und
+ueberschreiben sowie alle gueltigen Sync-Codes samt `save_id` auflisten, ohne
+die 6-stellige Rateschranke zu benoetigen. Die bisherige Formulierung "die
+Sicherheit liegt in der Unratbarkeit der UUID, nicht in der Regel" beschrieb
+nur, wie der eigene Client fragt (`eq('id', ...)`) — nicht, was die
+Schnittstelle erlaubt.
+
+**Fix (`supabase/phase_2_10_lock_saves_access.sql`):** Direkte Rechte auf
+`saves` und `sync_codes` fuer `anon`/`authenticated` entzogen. Zugriff laeuft
+jetzt ausschliesslich ueber security-definer-RPCs (`get_save`, `upsert_save`,
+`create_sync_code`, `redeem_sync_code`), die `id`/`code` als Argument nehmen —
+dasselbe Muster, das fuer `scores` bereits seit `submit_best_score` gilt.
+`CloudSystem.ts` ruft diese RPCs auf statt `.from('saves')`/`.from('sync_codes')`
+direkt anzusprechen.
 
 ---
 
