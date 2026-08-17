@@ -13,6 +13,7 @@ import type { WorldDef } from '@/config/worlds';
 import { isIos, isStandalone } from '@/core/display';
 import { checkForUpdate, forceReload } from '@/core/updateCheck';
 import { SceneKey } from '@/scenes/SceneKey';
+import type { WorldInfoMode } from '@/scenes/WorldInfoScene';
 import { Depth } from '@/ui/depth';
 import { installDebugOverlay, removeDebugOverlay } from '@/ui/debugOverlay';
 import { attachHitDebug } from '@/ui/hitDebug';
@@ -753,8 +754,34 @@ export class MenuScene extends Phaser.Scene {
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0, 0.5);
-      subtitle.setWordWrapWidth(cardWidth - 76);
+      subtitle.setWordWrapWidth(isUnlocked ? cardWidth - 150 : cardWidth - 76);
       card.add(subtitle);
+
+      // Nur die ausgewaehlte, freigeschaltete Karte bekommt das Info-Symbol -
+      // bei den kleineren Nachbarkarten waere die Trefferflaeche zu knapp, und
+      // eine gesperrte Welt hat noch keine erspielte Mechanik zu erklaeren.
+      if (isUnlocked && isSelected) {
+        const infoButton = this.add
+          .circle(cardWidth / 2 - 34, 0, 22, world.accent, 0.16)
+          .setStrokeStyle(1.5, world.accent, 0.8)
+          .setInteractive({ useHandCursor: true });
+        const infoLabel = this.add
+          .text(
+            cardWidth / 2 - 34,
+            0,
+            'i',
+            textStyle(FontSize.body, toCss(world.accent), { fontStyle: 'bold' }),
+          )
+          .setOrigin(0.5);
+        infoButton.on('pointerup', () => {
+          SoundSystem.playUiClick();
+          this.scene.start(SceneKey.WorldInfo, {
+            worldId: world.id,
+            mode: 'jagd' satisfies WorldInfoMode,
+          });
+        });
+        card.add([infoButton, infoLabel]);
+      }
 
       if (!isUnlocked) {
         // Zentrales Schloss: Die Welt bleibt lesbar, aber der Zustand ist
@@ -1030,7 +1057,10 @@ export class MenuScene extends Phaser.Scene {
       primaryY,
       'JAGD',
       () => {
-        this.scene.start(SceneKey.Game, { worldId: this.selectedWorld.id });
+        this.scene.start(SceneKey.WorldInfo, {
+          worldId: this.selectedWorld.id,
+          mode: 'jagd' satisfies WorldInfoMode,
+        });
       },
       {
         width: 460,
@@ -1049,8 +1079,10 @@ export class MenuScene extends Phaser.Scene {
       secondaryY,
       'DUELL',
       () => {
-        ChallengeSystem.start(this.selectedWorld.id);
-        this.scene.start(SceneKey.Challenge);
+        this.scene.start(SceneKey.WorldInfo, {
+          worldId: this.selectedWorld.id,
+          mode: 'duell' satisfies WorldInfoMode,
+        });
       },
       {
         width: secondaryWidth,
@@ -1066,8 +1098,10 @@ export class MenuScene extends Phaser.Scene {
       secondaryY,
       'TAGESLAUF',
       () => {
-        ChallengeSystem.startDaily(this.selectedWorld.id);
-        this.scene.start(SceneKey.Challenge);
+        this.scene.start(SceneKey.WorldInfo, {
+          worldId: this.selectedWorld.id,
+          mode: 'tageslauf' satisfies WorldInfoMode,
+        });
       },
       {
         width: secondaryWidth,

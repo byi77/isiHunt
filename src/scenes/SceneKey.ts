@@ -6,6 +6,8 @@ export const SceneKey = {
   Profile: 'Profile',
   /** Übersicht der im Spiel freigeschalteten Erfolge. */
   Achievements: 'Achievements',
+  /** Detailansicht einer Welt: Besonderheit, Hindernisse, Belohnung. */
+  WorldInfo: 'WorldInfo',
   Game: 'Game',
   Hud: 'Hud',
   Result: 'Result',

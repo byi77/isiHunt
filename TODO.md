@@ -69,15 +69,28 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 - [ ] **Phase 5 mit Kindern balancieren:** Schwierige Welten, Hindernisse,
       Tempo, Sichtfenster und Belohnungen sollen fordernd, aber nie frustrierend
       sein.
-- [ ] **DSGVO-Einschaetzung fuer Kinderdaten einholen** _(neu 2026-08-17)_ —
-      `profiles`/`scores` speichern Aliase von Minderjaehrigen. Aktuell nur
-      bekannter Personenkreis (Familie/Freunde), Supabase-Region `eu-west-1`
-      (EU, kein Drittlandtransfer). Ob die Haushaltsausnahme (Art. 2 Abs. 2
-      lit. c DSGVO) bei Freunden ausserhalb des eigenen Haushalts noch greift,
-      ist ungeklaert — das ist keine Ermessensfrage, sondern eine Rechtsfrage,
-      die eine verbindliche Auskunft braucht, keine Einschaetzung aus dem
-      Code. **Bis zur Klaerung bleibt die Bestenliste bewusst auf den
-      bekannten Personenkreis begrenzt** — siehe Vermerk bei Phase 6 unten.
+- [ ] **DSGVO-Einschaetzung fuer Kinderdaten einholen, falls Veroeffentlichung
+      angestrebt wird** _(aktualisiert 2026-08-17)_ — `profiles`/`scores`
+      speichern Aliase von Minderjaehrigen, Supabase-Region `eu-west-1` (EU,
+      kein Drittlandtransfer).
+      **Stand heute bestaetigt: Reichweite ist ausschliesslich enge Familie,
+      keine Freunde, keine Bekannten** — damit greift die Haushaltsausnahme
+      (Art. 2 Abs. 2 lit. c DSGVO) unstrittig, hier besteht kein akuter
+      Klaerungsbedarf.
+      **Die eigentlich offene Frage ist eine andere:** was eine oeffentliche
+      Veroeffentlichung braucht. Das ist kein Graubereich mehr, sondern volle
+      Pflicht: Impressum (TMG/DDG), Datenschutzerklaerung (Art. 13 DSGVO),
+      Auftragsverarbeitungsvertrag mit Supabase (Art. 28), ueberpruefbare
+      Elterneinwilligung fuer Nutzer unter 16 (Art. 8 DSGVO — der aufwendigste
+      Punkt, ein Alterskennzeichen allein ersetzt das nicht), sowie ein
+      Loeschkonzept/Betroffenenrechte-Prozess. Diskutierte, aber ungeprueft
+      abgesegnete Ideen: erzwungene, nicht identifizierende Aliase (reduziert
+      Re-Identifizierbarkeit, ersetzt Art. 8 aber nicht), Timestamps aus der
+      Rangliste entfernen (nur Randwirkung, loest nicht das Kernproblem).
+      **Bewusst zurueckgestellt (2026-08-17):** Veroeffentlichung ist aktuell
+      nicht geplant, das Thema wird erst bei konkretem Anlass wieder
+      aufgegriffen. Bis dahin bleibt die Bestenliste auf den bekannten
+      Personenkreis begrenzt — siehe Vermerk bei Phase 6 unten.
 
 ### P0.5 — Debug-Modus fuer Tester _(gebaut 2026-08-17, siehe ADR-0016)_
 
@@ -684,6 +697,18 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
 - [x] `GAME_DESIGN.md` §10 präzisieren: keine Lebenspunkte und kein Game Over;
       Einstiegswelten bestrafen nur mit lesbaren Bremsen, spätere Welten mit
       kurzem Zeitverlust.
+- [x] **Welt-Detailscreen vor jedem Run** _(neu 2026-08-17)_: Die Mechanik
+      einer Welt (`plannedModifier`) stand bisher nur in `config/worlds.ts`,
+      im Weltenkarussell erschien nur der reine Stimmungstext (`flavor`) ohne
+      Mechanik-Angabe — fuer ein Balancing-Gespraech mit Kindern reicht das
+      nicht, sie muessten die Wirkung raten statt sie nachzulesen.
+      Neue `WorldInfoScene` zeigt jetzt Besonderheit, Hindernismodus
+      (`obstacleMode` in Klartext übersetzt) und Punkt-/XP-Bonus in Prozent.
+      JAGD, DUELL und TAGESLAUF fuehren jetzt alle erst ueber diesen Screen,
+      bevor der eigentliche Modus startet; ein `(i)`-Symbol auf der
+      ausgewaehlten Karussell-Karte oeffnet ihn auch ohne Rundenstart.
+      `npm run verify` gruen (Typecheck, Lint, Format, 184 Tests, Build).
+      **Im Dev-Server getestet und bestaetigt (2026-08-17).**
 - [ ] ~~Ranked-Modus~~ — blockiert, siehe Phase 6
 
 ## Phase 6 — Sozial
@@ -709,8 +734,8 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
 
 ## Aufraeumen
 
-- [ ] **PRIO HOCH — Testdaten aus der Produktions-Supabase-Datenbank
-      loeschen** _(neu 2026-08-17)_
+- [x] **PRIO HOCH — Testdaten aus der Produktions-Supabase-Datenbank
+      geloescht** _(neu 2026-08-17, erledigt 2026-08-17)_
 
   > **Was passiert ist:** Beim Nachziehen von Testabdeckung fuer
   > `CloudSystem` (Audit-Block, siehe `docs/AUDIT_2026-08-17.md` Abschnitt
@@ -740,22 +765,20 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
   > `.env` mit echten Werten liegt. Kuenftige Testlaeufe koennen nicht mehr
   > versehentlich gegen die echte Datenbank schreiben. **Das hier offene
   > Aufraeumen betrifft nur die zwei bereits entstandenen Altdatensaetze.**
-  - [ ] Supabase-Dashboard → Table Editor → Tabelle `sync_codes` → Zeile mit
-        `code = '67N0B2'` suchen und loeschen.
-  - [ ] Supabase-Dashboard → Table Editor → Tabelle `saves` → Zeile mit
-        `id = 'b91ec0c5-999f-4408-8cc7-587bb0c065c5'` suchen und loeschen.
-  - [ ] Vor dem Loeschen zur Sicherheit `created_at`/`updated_at` beider
-        Zeilen gegenpruefen: beide sind exakt am 2026-08-17 kurz vor dem
-        ersten Commit dieser Aufraeum-Session entstanden. Der Score-Eintrag
-        hat keinen plausiblen `playerName` und keine Verbindung zu einem
-        echten Auth-Profil — eindeutig als Testdaten erkennbar.
-  - [ ] **Nicht zeitkritisch:** Kein Schaden fuer echte Spieler (die
-        `playerId` ist zufaellig, gehoert zu keinem echten Profil, taucht in
-        keiner ihnen zugeordneten Ansicht auf). Einzige denkbare Sichtbarkeit
-        waere ein Rangplatz in der Welt-Bestenliste (`LEADERBOARD_LIMIT =
-10`) mit Score 100 — nur relevant, falls die jeweilige Welt aktuell
-        sehr wenig befuellt ist. Erledigen, sobald ohnehin im
-        Supabase-Dashboard gearbeitet wird.
+  - [x] Vorab per SQL Editor gegengeprueft statt blind geloescht
+        (`supabase/cleanup_2026-08-17_test_leftovers.sql`): `saves`-Zeile
+        `id = 'b91ec0c5-999f-4408-8cc7-587bb0c065c5'` mit `level=1,
+        best_score=0, total_runs=0, updated_at 07:01:12 UTC` — eindeutig ein
+        unbespielter Testdatensatz. `sync_codes`-Zeile `code = '67N0B2'`,
+        `save_id` passend, `created_at 07:01:13 UTC` — eine Sekunde nach dem
+        saves-Eintrag. **Korrektur zur urspruenglichen Vermutung:** ein
+        verknuepfter `scores`-Eintrag ("der Score-Eintrag hat keinen
+        plausiblen playerName") liess sich nicht bestaetigen — die Abfrage
+        auf `player_id = 'b91ec0c5-...'` lieferte keine Zeile. Nur zwei
+        DELETEs noetig, nicht drei.
+  - [x] Beide Zeilen geloescht (`delete from public.sync_codes ...`, danach
+        `delete from public.saves ...`, in dieser Reihenfolge wegen der
+        Fremdschluessel-Beziehung).
 
 - [ ] `src/ui/hitDebug.ts` entfernen, sobald der Knopf-Fehler bestaetigt behoben
       ist — es ist ein Diagnosewerkzeug, kein Feature

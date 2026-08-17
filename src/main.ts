@@ -35,6 +35,7 @@ import { SettingsScene } from '@/scenes/SettingsScene';
 import { SceneKey } from '@/scenes/SceneKey';
 import { SyncScene } from '@/scenes/SyncScene';
 import { TalentScene } from '@/scenes/TalentScene';
+import { WorldInfoScene } from '@/scenes/WorldInfoScene';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as AuthSystem from '@/systems/AuthSystem';
 import * as DebugSystem from '@/systems/DebugSystem';
@@ -84,6 +85,7 @@ function createGameConfig(): Phaser.Types.Core.GameConfig {
       MenuScene,
       ProfileScene,
       AchievementsScene,
+      WorldInfoScene,
       GameScene,
       HudScene,
       ResultScene,
