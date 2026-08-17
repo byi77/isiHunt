@@ -1,17 +1,15 @@
 /**
- * Tests fuer die reinen, deterministischen Funktionen von AuthSystem.
+ * Tests fuer die reinen, deterministischen Funktionen von AuthSystem sowie
+ * die Fehlermeldungs-Uebersetzung readableAuthError() (nicht exportiert,
+ * nur ueber signIn()/refresh() erreichbar).
  *
- * docs/AUDIT_2026-08-17.md Abschnitt 7.1 nennt isValidAlias(), isValidPin()
- * und readableAuthError() als testbare Kandidaten ohne Netzwerkabhaengigkeit.
- * readableAuthError() ist nicht exportiert und wird nur innerhalb von
- * signIn()/refresh() aufgerufen, die einen echten Supabase-Client-Mock
- * brauchen wuerden - das bleibt bewusst ausserhalb dieses Tests. Getestet
- * werden die drei oeffentlichen, reinen Funktionen.
+ * docs/AUDIT_2026-08-17.md Abschnitt 7.1/5.8.
  */
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as AuthSystem from '@/systems/AuthSystem';
+import type * as AuthSystemModule from '@/systems/AuthSystem';
 
 describe('normalizeAlias', () => {
   it('trimmt und macht Kleinbuchstaben daraus', () => {
@@ -76,5 +74,90 @@ describe('isValidPin', () => {
 
   it('lehnt einen leeren String ab', () => {
     expect(AuthSystem.isValidPin('')).toBe(false);
+  });
+});
+
+describe('signIn - readableAuthError()-Uebersetzung', () => {
+  // readableAuthError() ist eine private Funktion, nur ueber signIn()
+  // erreichbar. CloudSystem.getSupabaseClient() wird gemockt, um die
+  // Supabase-Fehlermeldung kontrolliert zu erzeugen, ohne echten Netzzugriff.
+  let signInWithPassword: ReturnType<typeof vi.fn>;
+  let SignInAuthSystem: typeof AuthSystemModule;
+
+  beforeEach(async () => {
+    signInWithPassword = vi.fn();
+    vi.resetModules();
+    vi.doMock('@/systems/CloudSystem', () => ({
+      getSupabaseClient: () => ({ auth: { signInWithPassword } }),
+      isAvailable: () => true,
+    }));
+    SignInAuthSystem = await import('@/systems/AuthSystem');
+  });
+
+  it('uebersetzt "email not confirmed" in einen Hinweis auf die Supabase-Einstellung', async () => {
+    signInWithPassword.mockResolvedValue({
+      data: { session: null },
+      error: { message: 'Email not confirmed' },
+    });
+
+    const result = await SignInAuthSystem.signIn('validalias', '123456');
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toContain('Confirm email');
+    }
+  });
+
+  it('uebersetzt "invalid login credentials" in eine kindgerechte Meldung', async () => {
+    signInWithPassword.mockResolvedValue({
+      data: { session: null },
+      error: { message: 'Invalid login credentials' },
+    });
+
+    const result = await SignInAuthSystem.signIn('validalias', '123456');
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBe('Alias oder Zugang ist nicht korrekt.');
+    }
+  });
+
+  it('uebersetzt eine ungueltige E-Mail-Adresse in einen Konfigurationshinweis', async () => {
+    signInWithPassword.mockResolvedValue({
+      data: { session: null },
+      error: { message: 'Email address "x@y" is invalid' },
+    });
+
+    const result = await SignInAuthSystem.signIn('validalias', '123456');
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBe('Alias-Login im Backend ist noch nicht korrekt konfiguriert.');
+    }
+  });
+
+  it('reicht eine unbekannte Fehlermeldung unveraendert durch', async () => {
+    signInWithPassword.mockResolvedValue({
+      data: { session: null },
+      error: { message: 'Some unmapped backend error' },
+    });
+
+    const result = await SignInAuthSystem.signIn('validalias', '123456');
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBe('Some unmapped backend error');
+    }
+  });
+
+  it('faellt bei fehlender Session ohne Fehlermeldung auf den Fallback-Text zurueck', async () => {
+    signInWithPassword.mockResolvedValue({ data: { session: null }, error: null });
+
+    const result = await SignInAuthSystem.signIn('validalias', '123456');
+
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toBe('Alias oder Zugang ungültig');
+    }
   });
 });

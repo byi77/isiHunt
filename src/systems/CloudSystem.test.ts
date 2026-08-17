@@ -35,6 +35,7 @@ vi.mock('@/config/backend', () => ({
 let CloudSystem: typeof CloudSystemModule;
 
 beforeEach(async () => {
+  window.localStorage.clear();
   vi.resetModules();
   CloudSystem = await import('@/systems/CloudSystem');
 });
@@ -192,6 +193,75 @@ describe('"wirft nie" - Netzfunktionen ohne konfiguriertes Backend', () => {
 
     expect(result.ok).toBe(false);
     expect(CloudSystem.hasPendingLeaderboardScore()).toBe(true);
+  });
+
+  it('ueberschreibt einen vorgemerkten Score nicht mit einem niedrigeren derselben playerId', async () => {
+    // docs/AUDIT_2026-08-17.md Abschnitt 5.8: savePendingLeaderboardScore()
+    // verwirft einen neuen Score nur, wenn playerId UND score-Vergleich beide
+    // zutreffen - hier der Fall, der den Guard tatsaechlich greifen laesst.
+    await CloudSystem.submitScoreSafely(
+      'player-1',
+      'Max',
+      DEFAULT_WORLD_ID,
+      5,
+      500,
+      3,
+      90_000,
+      {},
+      new Date().toISOString(),
+    );
+    await CloudSystem.submitScoreSafely(
+      'player-1',
+      'Max',
+      DEFAULT_WORLD_ID,
+      5,
+      100,
+      3,
+      90_000,
+      {},
+      new Date().toISOString(),
+    );
+
+    const persisted = JSON.parse(
+      window.localStorage.getItem('isihunt.pending-leaderboard-score.v1')!,
+    ) as { score: number };
+    expect(persisted.score).toBe(500);
+  });
+
+  it('uebernimmt einen Score einer anderen playerId immer, auch wenn er niedriger ist', async () => {
+    // Der Guard prueft explizit nur bei GLEICHER playerId auf niedrigeren
+    // Score - bei einem Profilwechsel auf demselben Geraet (andere playerId)
+    // wird der neue Score immer uebernommen, selbst wenn er niedriger ist.
+    // Das ist beabsichtigtes Verhalten (anderer Spieler), aber bisher
+    // unverifiziert.
+    await CloudSystem.submitScoreSafely(
+      'player-1',
+      'Max',
+      DEFAULT_WORLD_ID,
+      5,
+      500,
+      3,
+      90_000,
+      {},
+      new Date().toISOString(),
+    );
+    await CloudSystem.submitScoreSafely(
+      'player-2',
+      'Emre',
+      DEFAULT_WORLD_ID,
+      5,
+      50,
+      3,
+      90_000,
+      {},
+      new Date().toISOString(),
+    );
+
+    const persisted = JSON.parse(
+      window.localStorage.getItem('isihunt.pending-leaderboard-score.v1')!,
+    ) as { score: number; playerId: string };
+    expect(persisted.playerId).toBe('player-2');
+    expect(persisted.score).toBe(50);
   });
 
   it('pushSave liefert ein Fehlerergebnis statt zu werfen', async () => {

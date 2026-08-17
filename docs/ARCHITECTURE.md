@@ -66,16 +66,20 @@ isiHunt/
 │   │   ├── talents.ts          Talente + Stat-Aufloesung
 │   │   ├── challenge.ts        Duell: Dauer, Spielernamen, Fairness-Regeln
 │   │   ├── backend.ts          Zugang zum Online-Dienst, Grenzwerte
-│   │   └── achievements.ts     Erfolge als Praedikate
+│   │   ├── achievements.ts     Erfolge als Praedikate
+│   │   └── Balance.test.ts     Regressionstests fuer Balancing-Konstanten
 │   ├── core/
 │   │   ├── EventBus.ts         Typisierter Event-Bus zwischen Scenes
 │   │   ├── display.ts          Vollbild- und Installationszustand des Browsers
+│   │   ├── deviceReport.ts     Geraete-/Browser-Kennwerte fuer den Wartungsbildschirm
 │   │   ├── layoutReport.ts     Misst sichere Raender und Canvas-Lage
+│   │   ├── orientation.ts      Hochformat erzwingen, Landscape-Fallback
 │   │   ├── updateCheck.ts      Liegt eine neuere Fassung bereit?
 │   │   └── viewport.ts         Haelt Phasers Canvas-Position aktuell
 │   ├── entities/               Spielobjekte
 │   │   ├── Player.ts
-│   │   └── Collectible.ts
+│   │   ├── Collectible.ts
+│   │   └── Obstacle.ts         Bremsende und zeitbestrafende Hindernisse (Phase 5)
 │   ├── input/
 │   │   ├── InputController.ts  Touch + Tastatur vereinheitlicht
 │   │   └── DebugKeys.ts        Nur im Dev-Build
@@ -84,17 +88,33 @@ isiHunt/
 │   │   ├── BootScene.ts        Texturen erzeugen
 │   │   ├── MenuScene.ts        Name, Welten, Start, Duell
 │   │   ├── ProfileScene.ts     Name und Lichtfigur beim ersten Start
+│   │   ├── AccountScene.ts     Login und gemeinsamer Profilstand (Phase 2.6)
+│   │   ├── SettingsScene.ts    Ton, Spielstand-Aktionen, Profiluebertragung
+│   │   ├── TalentScene.ts      Talentbaum-Oberflaeche mit Rangkauf
+│   │   ├── AchievementsScene.ts Erfolgsliste
 │   │   ├── GameScene.ts        Die Simulation (Solo und Duell)
 │   │   ├── HudScene.ts         Anzeige waehrend des Runs
 │   │   ├── ChallengeScene.ts   Duell: Einfuehrung, Uebergabe, Ergebnis
 │   │   ├── LeaderboardScene.ts Online-Bestenliste, Gesamtansicht + Weltfilter
 │   │   ├── SyncScene.ts        Legacy-Abgleich für anonyme Alt-Spielstände
 │   │   ├── AdminScene.ts       Wartung: Version, Neuladen, Reset (versteckt)
+│   │   ├── AdminPinScene.ts    PIN-Abfrage vor dem Wartungsbildschirm
+│   │   ├── AdminStatsScene.ts  Aggregierte Nutzungsstatistik (serverseitig geprueft)
+│   │   ├── AdminUsersScene.ts  Profilverwaltung im Wartungsbereich
 │   │   ├── RulerScene.ts       CSS-Pixel-Lineal über dem gesamten Viewport
 │   │   └── ResultScene.ts      Auswertung eines Solo-Runs
 │   ├── systems/                Regeln ohne Darstellung
 │   │   ├── SaveSystem.ts       localStorage, versioniert
-│   │   ├── SafeAreaSystem.ts    Safe-Area-Laufband und Run-Restzeit
+│   │   ├── SaveSystem.test.ts
+│   │   ├── SafeAreaSystem.ts   Safe-Area-Laufband und Run-Restzeit
+│   │   ├── SafeAreaSystem.test.ts
+│   │   ├── SoundSystem.ts      Prozedurales WebAudio-Feedback
+│   │   ├── SoundSystem.test.ts
+│   │   ├── AuthSystem.ts       Alias/PIN-Anmeldung, Sitzungspflege (Phase 2.6)
+│   │   ├── AuthSystem.test.ts
+│   │   ├── ProgressSyncSystem.ts Offline-Outbox fuer angemeldete Profile
+│   │   ├── ProgressSyncSystem.test.ts
+│   │   ├── SyncStatusSystem.ts Sichtbarer Sync-Status im Menue
 │   │   ├── ProgressionSystem.ts XP, Level, Talentpunkte, Erfolge
 │   │   ├── ProgressionSystem.test.ts
 │   │   ├── ScoreSystem.ts      Punkte + Combo eines Runs
@@ -102,7 +122,9 @@ isiHunt/
 │   │   ├── ChallengeSystem.ts  Duell-Zustand: Seed, Punktstaende, Sieger
 │   │   ├── ChallengeSystem.test.ts
 │   │   ├── CloudSystem.ts      Bestenliste und Spielstand ueber Supabase
-│   │   └── SpawnSystem.ts      Wann und wo etwas erscheint
+│   │   ├── CloudSystem.test.ts
+│   │   ├── SpawnSystem.ts      Wann und wo etwas erscheint
+│   │   └── SpawnSystem.test.ts
 │   ├── types/
 │   │   └── index.ts            SaveData, RunStats, ChallengeState, ...
 │   ├── ui/
@@ -111,7 +133,7 @@ isiHunt/
 │   │   ├── textures.ts         Prozedurale Grafiken
 │   │   ├── hitDebug.ts         Trefferflaechen sichtbar machen (?hitboxes)
 │   │   ├── textInput.ts        Echtes HTML-Eingabefeld ueber dem Canvas
-│   │   └── widgets.ts          Knoepfe, Balken, Hintergruende, Effekte
+│   │   └── widgets.ts          Knoepfe, Balken, Hintergruende, Effekte, createStatusPage
 │   ├── env.d.ts                Typen der Umgebungsvariablen
 │   └── main.ts                 Phaser-Konfiguration
 ├── supabase/
@@ -475,11 +497,11 @@ Progression laeuft dadurch gegen die echte Persistenz statt gegen eine Attrappe
 — eine Attrappe haette den Modul-Cache in `SaveSystem` nicht mit abgebildet, und
 genau der ist die Stelle, an der Tests unbemerkt voneinander abhaengig werden.
 
-| Datei                        | Deckt ab                                                            |
-| ---------------------------- | ------------------------------------------------------------------- |
-| `ScoreSystem.test.ts`        | Multiplikatorstufen, Combo-Zerfall, Rundung, Run-Statistik          |
-| `ProgressionSystem.test.ts`  | XP-Kurve, mehrfache Aufstiege, Maximalstufe, Welten, Erfolge        |
-| `ChallengeSystem.test.ts`    | Seed-Vergabe, Rundenwechsel, Sieger und Gleichstand                 |
+| Datei                       | Deckt ab                                                     |
+| --------------------------- | ------------------------------------------------------------ |
+| `ScoreSystem.test.ts`       | Multiplikatorstufen, Combo-Zerfall, Rundung, Run-Statistik   |
+| `ProgressionSystem.test.ts` | XP-Kurve, mehrfache Aufstiege, Maximalstufe, Welten, Erfolge |
+| `ChallengeSystem.test.ts`   | Seed-Vergabe, Rundenwechsel, Sieger und Gleichstand          |
 
 **Zwei Regeln, die die Tests brauchbar halten:**
 
@@ -496,7 +518,7 @@ genau der ist die Stelle, an der Tests unbemerkt voneinander abhaengig werden.
 **Was nicht abgedeckt ist:** Scenes, Entities, Eingabe und Darstellung. Dafuer
 braeuchte es einen echten Browser; die Grenze steht in Abschnitt 10. Ebenso
 offen bleibt der Determinismus-Test des Duells (Abschnitt 4.1) — geprueft ist
-der Duell-*Zustand*, nicht die Gleichheit der Spawn-Abfolge bei gleichem Seed.
+der Duell-_Zustand_, nicht die Gleichheit der Spawn-Abfolge bei gleichem Seed.
 
 ### Die Falle mit dem Laufwerksbuchstaben
 

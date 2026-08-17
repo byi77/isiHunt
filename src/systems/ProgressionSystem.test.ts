@@ -304,6 +304,43 @@ describe('Spielstand-Migration', () => {
     const reloadedSystem = await import('@/systems/SaveSystem');
     expect(reloadedSystem.load().coins).toBe(90);
   });
+
+  it('rechnet einen Version-1-Spielstand von der alten auf die neue XP-Kurve um', async () => {
+    // docs/AUDIT_2026-08-17.md Abschnitt 5.8: der Migrationszweig
+    // `rawVersion < 2` (alte Kurve floor(80*n^1.45) -> aktuelle Kurve) hatte
+    // bisher keinen Test - der einzige vorhandene Migrationstest startet
+    // bei version 3 und durchlaeuft diesen Zweig nie.
+    //
+    // Level 10 unter der alten Kurve ergibt insgesamt 8.098 XP
+    // (floor(80*1^1.45) + ... + floor(80*9^1.45) + 0 XP im aktuellen Level).
+    // Auf die neue Kurve umgerechnet reicht das nur bis Level 6 mit 1.650 XP
+    // im aktuellen Level - ein realer Ruecklauf, kein Rechenfehler: die alte
+    // Kurve waechst am Anfang langsamer als die neue.
+    const legacy = { ...SaveSystem.load(), version: 1, level: 10, xp: 0, coins: 0 };
+    window.localStorage.setItem(SAVE_KEY, JSON.stringify(legacy));
+
+    vi.resetModules();
+    const migratedSystem = await import('@/systems/SaveSystem');
+    const migrated = migratedSystem.load();
+
+    expect(migrated.level).toBe(6);
+    expect(migrated.xp).toBe(1650);
+    expect(migrated.version).toBe(SAVE_VERSION);
+  });
+
+  it('verliert bei der Version-1-Migration nie XP, nur die Kurvenzuordnung aendert sich', async () => {
+    const legacy = { ...SaveSystem.load(), version: 1, level: 20, xp: 0, coins: 0 };
+    window.localStorage.setItem(SAVE_KEY, JSON.stringify(legacy));
+
+    vi.resetModules();
+    const migratedSystem = await import('@/systems/SaveSystem');
+    const migrated = migratedSystem.load();
+
+    // Bei Level 20 gleichen sich alte und neue Kurve fast aus - anders als
+    // bei Level 10 bleibt das migrierte Level hier stabil.
+    expect(migrated.level).toBe(20);
+    expect(migrated.xp).toBe(1509);
+  });
 });
 
 describe('Talentkäufe', () => {
