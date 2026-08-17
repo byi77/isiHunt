@@ -64,6 +64,10 @@ function createGameConfig(): Phaser.Types.Core.GameConfig {
       // Runde Pixel: verhindert flimmernde Kanten bei nicht-ganzzahliger Skalierung.
       roundPixels: true,
       powerPreference: 'high-performance',
+      // WebGL loescht den Backbuffer sonst sofort nach dem Praesentieren -
+      // DebugSystem.captureScreenshot() liest ueber canvas.toBlob() dann
+      // einen bereits geleerten Puffer und liefert ein schwarzes Bild.
+      preserveDrawingBuffer: true,
     },
     input: {
       activePointers: 3,

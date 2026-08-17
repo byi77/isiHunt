@@ -69,9 +69,15 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 - [x] Zehn-Tipp-Geste auf dem Logo in `MenuScene`, PIN-frei und getrennt vom
       Wartungsbereich
 - [x] `npm run verify` gruen (Typecheck, Lint, Format, 177 Tests, Build)
-- [ ] **Am echten iPhone pruefen:** Trifft die Tipp-Geste das Logo zuverlaessig?
-      Uebernimmt WhatsApp beim Teilen beide Dateien (PNG + TXT) oder nur eine?
-      Ist der Screenshot-Inhalt brauchbar?
+- [x] **Am echten iPhone geprueft (2026-08-17):** Tipp-Geste trifft das Logo,
+      WhatsApp uebernimmt beide Dateien (PNG + TXT).
+- [x] **BUG gefunden und behoben: Screenshot komplett schwarz.** Ursache:
+      `main.ts` setzt `type: Phaser.AUTO` ohne `preserveDrawingBuffer: true` -
+      WebGL loescht den Backbuffer sofort nach dem Praesentieren, und
+      `DebugSystem.captureScreenshot()` liest ueber `canvas.toBlob()` einen
+      bereits geleerten Puffer. Fix: `preserveDrawingBuffer: true` in der
+      `render`-Konfiguration. **Noch offen: am echten iPhone bestaetigen,
+      dass der Screenshot jetzt den tatsaechlichen Spielinhalt zeigt.**
 
 ### P1 — Fortschritt vor Wettbewerb neu entscheiden _(pausiert 2026-08-17)_
 
