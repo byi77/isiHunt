@@ -11,6 +11,11 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- Diagnose-`console.warn`-Aufrufe in `AccountScene.signIn()` und
+  `MenuScene.checkCloudSave()`/`synchronizeData()` wieder entfernt. Sie
+  hatten ihren Zweck erfuellt: Der Login-Aussperr-Fall nach ADR-0017 ist
+  geklaert (siehe "Behoben" unten), der Sync-Fall war bereits vorher inhaltlich
+  gefixt.
 - Talent-Reset kostet jetzt 100 statt 200 Coins — ein frueher Fehlkauf war
   fast so teuer wie der naechste Rang selbst und bremste Experimentieren.
 - Talent _Gunst_ (Punkte) gibt jetzt +5 % pro Rang statt +4 % — damit ist es
@@ -56,6 +61,14 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   bei jeder Namensaenderung synchron mitzieht. **Muss nach
   `phase_2_8_unify_identity.sql` einmalig manuell im Supabase SQL-Editor
   ausgefuehrt werden.**
+  **Nachtrag:** Nach beiden Migrationen blieb der Login trotzdem gesperrt.
+  Ursache war keine dritte Code-Luecke, sondern eine falsche Annahme ueber
+  die Datenlage — `profiles.player_name` stand fuer das Admin-Konto bereits
+  auf `byi77`, nicht auf `Yavuz` wie angenommen. Die Migration hatte damit
+  korrekt nichts zu tun. Nach Login mit dem tatsaechlichen, unveraenderten
+  Namen (`byi77`) griff die bewusste Namensaenderung auf `yavuz` ueber die
+  reparierte `update_profile_identity` und zog `auth.users.email` korrekt
+  mit — Login mit `yavuz` funktioniert seitdem.
 - Der automatische Profil-Abgleich beim Menuebesuch (auch beim App-Start)
   erkannte einen weiter fortgeschrittenen Cloud-Stand nur an Level, Bestwert,
   Runs, Gesamtpunkten und Coins. Ein Talentkauf, ein neuer Erfolg oder XP-

@@ -279,11 +279,6 @@ export class AccountScene extends Phaser.Scene {
     this.statusPage.setStatus('Anmeldung wird geprüft ...', Palette.inkDim);
     const result = await AuthSystem.signIn(alias, pinOrLegacyPassword);
     if (!result.ok) {
-      // Diagnose: die UI zeigt bewusst eine einzige, beruhigende Meldung fuer
-      // jeden Fehlschlag, aber das verschluckt die eigentliche Ursache. Bis
-      // ein wiederkehrender Aussperr-Fall geklaert ist, bleibt die echte
-      // Supabase-Fehlermeldung hier sichtbar.
-      console.warn('[AccountScene] signIn fehlgeschlagen', { alias, error: result.error });
       this.busy = false;
       this.statusPage.setStatus(
         navigator.onLine
