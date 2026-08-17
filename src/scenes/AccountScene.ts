@@ -22,9 +22,11 @@ import {
   createDriftLayers,
   createMenuLayout,
   createPanel,
+  createStatusPage,
   createVignette,
   createWorldBackdrop,
 } from '@/ui/widgets';
+import type { StatusPageHandle } from '@/ui/widgets';
 
 export interface AccountSceneData {
   firstStart?: boolean;
@@ -44,6 +46,7 @@ export class AccountScene extends Phaser.Scene {
   private actionObjects: Phaser.GameObjects.GameObject[] = [];
   private contentOffset = 0;
   private mode: AccountMode = 'signIn';
+  private statusPage!: StatusPageHandle;
 
   constructor() {
     super(SceneKey.Account);
@@ -99,6 +102,7 @@ export class AccountScene extends Phaser.Scene {
     } else {
       this.statusText = createBackStatusText(this);
     }
+    this.statusPage = createStatusPage(this.statusText, this.contentOffset);
 
     const signedInBeforeRefresh = AuthSystem.isSignedIn();
     this.buildCurrentState(world.accent);
@@ -155,7 +159,7 @@ export class AccountScene extends Phaser.Scene {
     const primaryY = isSignUp ? 620 : 535;
     const secondaryY = isSignUp ? 700 : 620;
 
-    this.aliasInput = createTextInput(this, GAME_WIDTH / 2, this.contentY(320), {
+    this.aliasInput = createTextInput(this, GAME_WIDTH / 2, this.statusPage.contentY(320), {
       placeholder: 'Dein Name (Alias)',
       inputType: 'text',
       maxLength: AuthSystem.ALIAS_MAX_LENGTH,
@@ -163,7 +167,7 @@ export class AccountScene extends Phaser.Scene {
       accent,
       onSubmit: () => void (isSignUp ? this.signUp() : this.signIn()),
     });
-    this.pinInput = createTextInput(this, GAME_WIDTH / 2, this.contentY(420), {
+    this.pinInput = createTextInput(this, GAME_WIDTH / 2, this.statusPage.contentY(420), {
       placeholder: isSignUp ? '6-stellige PIN' : 'Deine PIN',
       inputType: 'password',
       width: 480,
@@ -173,7 +177,7 @@ export class AccountScene extends Phaser.Scene {
       onSubmit: () => void (isSignUp ? this.signUp() : this.signIn()),
     });
     if (isSignUp) {
-      this.pinConfirmInput = createTextInput(this, GAME_WIDTH / 2, this.contentY(510), {
+      this.pinConfirmInput = createTextInput(this, GAME_WIDTH / 2, this.statusPage.contentY(510), {
         placeholder: 'PIN wiederholen',
         inputType: 'password',
         maxLength: AuthSystem.PIN_LENGTH,
@@ -187,7 +191,7 @@ export class AccountScene extends Phaser.Scene {
     const primary = createButton(
       this,
       GAME_WIDTH / 2,
-      this.contentY(primaryY),
+      this.statusPage.contentY(primaryY),
       isSignUp ? 'PROFIL JETZT ANLEGEN' : 'EINLOGGEN',
       () => void (isSignUp ? this.signUp() : this.signIn()),
       {
@@ -200,7 +204,7 @@ export class AccountScene extends Phaser.Scene {
     const secondary = createButton(
       this,
       GAME_WIDTH / 2,
-      this.contentY(secondaryY),
+      this.statusPage.contentY(secondaryY),
       isSignUp ? 'ICH HABE SCHON EIN PROFIL' : 'NOCH KEIN PROFIL? NEUES ANLEGEN',
       () => this.switchMode(isSignUp ? 'signIn' : 'signUp'),
       { width: 400, height: 62, accent: 0x9aa3bd, fontSize: FontSize.small },
@@ -221,13 +225,18 @@ export class AccountScene extends Phaser.Scene {
   private buildSignedIn(accent: number): void {
     const alias = AuthSystem.currentAlias() ?? 'angemeldetes Profil';
     this.add
-      .text(GAME_WIDTH / 2, this.contentY(300), alias, textStyle(FontSize.small, Palette.ink))
+      .text(
+        GAME_WIDTH / 2,
+        this.statusPage.contentY(300),
+        alias,
+        textStyle(FontSize.small, Palette.ink),
+      )
       .setOrigin(0.5);
 
     const sync = createButton(
       this,
       GAME_WIDTH / 2,
-      this.contentY(470),
+      this.statusPage.contentY(470),
       'PROFIL ABGLEICHEN',
       () => void this.syncProfile(),
       { width: 440, height: 78, accent, fontSize: FontSize.body },
@@ -235,7 +244,7 @@ export class AccountScene extends Phaser.Scene {
     const signOut = createButton(
       this,
       GAME_WIDTH / 2,
-      this.contentY(585),
+      this.statusPage.contentY(585),
       'ABMELDEN',
       () => void this.signOut(),
       {
@@ -258,7 +267,7 @@ export class AccountScene extends Phaser.Scene {
     const alias = AuthSystem.normalizeAlias(this.aliasInput.getValue());
     const pinOrLegacyPassword = this.pinInput.getValue();
     if (!AuthSystem.isValidAlias(alias) || !pinOrLegacyPassword) {
-      this.setStatus(
+      this.statusPage.setStatus(
         'Bitte gib deinen Namen und deine PIN ein. Dann tippe auf EINLOGGEN.',
         Palette.gold,
       );
@@ -267,11 +276,11 @@ export class AccountScene extends Phaser.Scene {
 
     this.activeAlias = alias;
     this.busy = true;
-    this.setStatus('Anmeldung wird geprüft ...', Palette.inkDim);
+    this.statusPage.setStatus('Anmeldung wird geprüft ...', Palette.inkDim);
     const result = await AuthSystem.signIn(alias, pinOrLegacyPassword);
     if (!result.ok) {
       this.busy = false;
-      this.setStatus(
+      this.statusPage.setStatus(
         navigator.onLine
           ? 'Einloggen hat nicht geklappt. Prüfe deinen Namen und deine PIN und versuche es noch einmal.\nNoch kein Profil? Tippe auf NEUES ANLEGEN.'
           : 'Zum Einloggen brauchst du Internet. Bitte verbinde dein Gerät und versuche es dann noch einmal.',
@@ -290,7 +299,7 @@ export class AccountScene extends Phaser.Scene {
     const pin = this.pinInput.getValue();
     const pinConfirmation = this.pinConfirmInput.getValue();
     if (!AuthSystem.isValidAlias(alias) || !AuthSystem.isValidPin(pin) || pin !== pinConfirmation) {
-      this.setStatus(
+      this.statusPage.setStatus(
         `Bitte Alias, einen ${AuthSystem.PIN_LENGTH}-stelligen PIN und die Wiederholung korrekt eingeben.`,
         Palette.gold,
       );
@@ -299,16 +308,16 @@ export class AccountScene extends Phaser.Scene {
 
     this.activeAlias = alias;
     this.busy = true;
-    this.setStatus('Profil wird angelegt ...', Palette.inkDim);
+    this.statusPage.setStatus('Profil wird angelegt ...', Palette.inkDim);
     const result = await AuthSystem.signUp(alias, pin);
     if (!result.ok) {
       this.busy = false;
-      this.setStatus(result.error, Palette.gold);
+      this.statusPage.setStatus(result.error, Palette.gold);
       return;
     }
     if (!result.value) {
       this.busy = false;
-      this.setStatus(
+      this.statusPage.setStatus(
         'Profil angelegt, aber noch nicht freigeschaltet. Bitte „Confirm email“ in Supabase ausschalten und das Profil danach neu anlegen.',
         Palette.success,
       );
@@ -321,7 +330,7 @@ export class AccountScene extends Phaser.Scene {
   /** Der Erststart hat keinen Offline-Fallback: das Profil muss in die Cloud. */
   private ensureFirstStartOnline(): boolean {
     if (!this.firstStart || navigator.onLine) return true;
-    this.setStatus(
+    this.statusPage.setStatus(
       'Bitte stelle für die erste Anmeldung eine Internetverbindung her.',
       Palette.gold,
     );
@@ -336,12 +345,12 @@ export class AccountScene extends Phaser.Scene {
     // angelegt bzw. geladen wurde.
     const profileSeed =
       this.firstStart && !local.playerName && alias ? { ...local, playerName: alias } : local;
-    this.setStatus('Gemeinsames Profil wird geladen ...', Palette.inkDim);
+    this.statusPage.setStatus('Gemeinsames Profil wird geladen ...', Palette.inkDim);
 
     let remote = await CloudSystem.fetchProfileProgress();
     if (!remote.ok) {
       this.busy = false;
-      this.setStatus(remote.error, Palette.gold);
+      this.statusPage.setStatus(remote.error, Palette.gold);
       return;
     }
 
@@ -352,7 +361,7 @@ export class AccountScene extends Phaser.Scene {
       remote = await CloudSystem.claimCloudProfile(local.cloudId);
       if (!remote.ok) {
         this.busy = false;
-        this.setStatus(remote.error, Palette.gold);
+        this.statusPage.setStatus(remote.error, Palette.gold);
         return;
       }
     }
@@ -361,7 +370,7 @@ export class AccountScene extends Phaser.Scene {
       remote = await CloudSystem.initializeProfileProgress(profileSeed);
       if (!remote.ok) {
         this.busy = false;
-        this.setStatus(remote.error, Palette.gold);
+        this.statusPage.setStatus(remote.error, Palette.gold);
         return;
       }
     }
@@ -370,7 +379,7 @@ export class AccountScene extends Phaser.Scene {
       const aliasResult = await CloudSystem.updateProfileAlias(alias);
       if (!aliasResult.ok) {
         this.busy = false;
-        this.setStatus(aliasResult.error, Palette.gold);
+        this.statusPage.setStatus(aliasResult.error, Palette.gold);
         return;
       }
     }
@@ -401,18 +410,18 @@ export class AccountScene extends Phaser.Scene {
   private async signOut(): Promise<void> {
     if (this.busy) return;
     if (!navigator.onLine) {
-      this.setStatus(
+      this.statusPage.setStatus(
         'Offline-Abmeldung nicht möglich. Bitte stelle eine Internetverbindung her.',
         Palette.gold,
       );
       return;
     }
     this.busy = true;
-    this.setStatus('Ausstehende Änderungen werden gesichert ...', Palette.inkDim);
+    this.statusPage.setStatus('Ausstehende Änderungen werden gesichert ...', Palette.inkDim);
     await ProgressSyncSystem.flush();
     if (ProgressSyncSystem.hasPendingData()) {
       this.busy = false;
-      this.setStatus(
+      this.statusPage.setStatus(
         'Abmelden erst möglich, wenn der Profilstand abgeglichen wurde.',
         Palette.gold,
       );
@@ -422,20 +431,12 @@ export class AccountScene extends Phaser.Scene {
     const result = await AuthSystem.signOut();
     if (!result.ok) {
       this.busy = false;
-      this.setStatus(result.error, Palette.gold);
+      this.statusPage.setStatus(result.error, Palette.gold);
       return;
     }
     SaveSystem.clearLocalProfile();
     this.busy = false;
     this.scene.start(SceneKey.Menu);
-  }
-
-  private setStatus(text: string, color: string): void {
-    this.statusText.setText(text).setColor(color);
-  }
-
-  private contentY(y: number): number {
-    return y + this.contentOffset;
   }
 
   private clearActions(): void {

@@ -352,6 +352,32 @@ export function createBackStatusText(scene: Phaser.Scene, initial = ''): Phaser.
     .setScrollFactor(0);
 }
 
+/** Meldungs- und Layout-Hilfen fuer eine Unterseite mit verschobenem Kartenkopf. */
+export interface StatusPageHandle {
+  setStatus(message: string, color: string): void;
+  /** Verschiebt eine Design-Y-Koordinate um den seitenspezifischen Offset. */
+  contentY(y: number): number;
+}
+
+/**
+ * Buendelt das Muster aus AccountScene/SyncScene: eine Statuszeile fuer
+ * Lade-/Fehlermeldungen plus eine Y-Verschiebung fuer alle Karteninhalte,
+ * weil die Kopfzeile je nach Seite unterschiedlich viel Platz braucht.
+ */
+export function createStatusPage(
+  statusText: Phaser.GameObjects.Text,
+  contentOffset: number,
+): StatusPageHandle {
+  return {
+    setStatus(message: string, color: string): void {
+      statusText.setText(message).setColor(color);
+    },
+    contentY(y: number): number {
+      return y + contentOffset;
+    },
+  };
+}
+
 /** Vertikaler Abschnitts-Stapel für Unterseiten mit mehreren Karten. */
 export interface SectionStack {
   /** Reserviert die nächste Karte und gibt ihre vertikale Mitte zurück. */

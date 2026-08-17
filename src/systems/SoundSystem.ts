@@ -288,16 +288,62 @@ function playRunEnded(levelsGained: number): void {
   ]);
 }
 
+// Als benannte, modulweite Referenzen statt Inline-Arrow-Functions - nur so
+// ist die Funktionsreferenz bei `offEvent` dieselbe wie bei `onEvent`
+// (CODE_STYLE.md 1.4, dasselbe Muster wie GameScene/HudScene).
+const onCollected: (payload: { rarityId: RarityId }) => void = ({ rarityId }) =>
+  playCollected(rarityId);
+const onComboChanged: (payload: { combo: number }) => void = ({ combo }) => playComboTier(combo);
+const onRunStarted = (): void => playRunStarted();
+const onRunEnded: (payload: { progression: { levelsGained: number } }) => void = ({
+  progression,
+}) => playRunEnded(progression.levelsGained);
+const onVisibilityChange = (): void => {
+  if (document.visibilityState !== 'hidden') return;
+  // Keine alten Fang-Töne nach dem Zurückkehren aus App-Wechsel oder
+  // Sperrbildschirm nachspielen. iOS unterbricht dort den AudioContext.
+  pendingTones.length = 0;
+  if (audioContext?.state === 'running') {
+    void audioContext.suspend().catch(() => undefined);
+  }
+};
+
 function registerEventListeners(): void {
-  eventBus.onEvent(GameEvent.Collected, ({ rarityId }) => playCollected(rarityId));
-  eventBus.onEvent(GameEvent.ComboChanged, ({ combo }) => playComboTier(combo));
-  eventBus.onEvent(GameEvent.RunStarted, () => playRunStarted());
-  eventBus.onEvent(GameEvent.RunEnded, ({ progression }) => playRunEnded(progression.levelsGained));
+  eventBus.onEvent(GameEvent.Collected, onCollected);
+  eventBus.onEvent(GameEvent.ComboChanged, onComboChanged);
+  eventBus.onEvent(GameEvent.RunStarted, onRunStarted);
+  eventBus.onEvent(GameEvent.RunEnded, onRunEnded);
+}
+
+function unregisterEventListeners(): void {
+  eventBus.offEvent(GameEvent.Collected, onCollected);
+  eventBus.offEvent(GameEvent.ComboChanged, onComboChanged);
+  eventBus.offEvent(GameEvent.RunStarted, onRunStarted);
+  eventBus.offEvent(GameEvent.RunEnded, onRunEnded);
+}
+
+/**
+ * Meldet die EventBus-Listener ab und entfernt die globalen DOM-Listener.
+ *
+ * `SoundSystem` ist kein Scene-Objekt und hat deshalb keinen SHUTDOWN-Handler
+ * im Sinne von CODE_STYLE.md 1.4 - `initialize()` ruft diese Funktion selbst
+ * auf, falls sie aus einem vorherigen Aufruf noch aussteht, damit Listener
+ * nie doppelt registriert werden koennen.
+ */
+export function shutdown(): void {
+  if (!initialized) return;
+  initialized = false;
+
+  unregisterEventListeners();
+  window.removeEventListener('pointerdown', unlock, true);
+  window.removeEventListener('touchstart', unlock, true);
+  window.removeEventListener('keydown', unlock, true);
+  document.removeEventListener('visibilitychange', onVisibilityChange);
 }
 
 /** Einmalig beim App-Start aufrufen. Die Listener bleiben ueber Scenes hinweg. */
 export function initialize(): void {
-  if (initialized) return;
+  if (initialized) shutdown();
   initialized = true;
 
   registerEventListeners();
@@ -305,15 +351,7 @@ export function initialize(): void {
   // Fallback für ältere Touch-WebViews ohne Pointer Events.
   if (!window.PointerEvent) window.addEventListener('touchstart', unlock, true);
   window.addEventListener('keydown', unlock, true);
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState !== 'hidden') return;
-    // Keine alten Fang-Töne nach dem Zurückkehren aus App-Wechsel oder
-    // Sperrbildschirm nachspielen. iOS unterbricht dort den AudioContext.
-    pendingTones.length = 0;
-    if (audioContext?.state === 'running') {
-      void audioContext.suspend().catch(() => undefined);
-    }
-  });
+  document.addEventListener('visibilitychange', onVisibilityChange);
 }
 
 export function isEnabled(): boolean {

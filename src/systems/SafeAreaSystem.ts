@@ -12,6 +12,7 @@ let area: HTMLElement | null = null;
 let tickerTimer: number | undefined;
 let tickerItems: readonly string[] = [];
 let tickerIndex = 0;
+let initialized = false;
 
 /** WebKit meldet die obere Safe Area in installierten Apps gelegentlich als 0. */
 function configureIosStatusArea(): void {
@@ -80,17 +81,50 @@ export function hide(): void {
   write('');
 }
 
+// Als benannte, modulweite Referenzen statt Inline-Arrow-Functions - nur so
+// ist die Funktionsreferenz bei `offEvent` dieselbe wie bei `onEvent`
+// (CODE_STYLE.md 1.4, dasselbe Muster wie GameScene/HudScene).
+const onRunStarted: (payload: { durationMs: number }) => void = ({ durationMs }) =>
+  showRunTimer(durationMs);
+const onTimerChanged: (payload: { remainingMs: number }) => void = ({ remainingMs }) =>
+  showRunTimer(remainingMs);
+const onRunEnded = (): void => showStatic('RUN BEENDET');
+
 function registerGameEvents(): void {
-  eventBus.onEvent(GameEvent.RunStarted, ({ durationMs }) => showRunTimer(durationMs));
-  eventBus.onEvent(GameEvent.TimerChanged, ({ remainingMs }) => showRunTimer(remainingMs));
-  eventBus.onEvent(GameEvent.RunEnded, () => showStatic('RUN BEENDET'));
+  eventBus.onEvent(GameEvent.RunStarted, onRunStarted);
+  eventBus.onEvent(GameEvent.TimerChanged, onTimerChanged);
+  eventBus.onEvent(GameEvent.RunEnded, onRunEnded);
+}
+
+function unregisterGameEvents(): void {
+  eventBus.offEvent(GameEvent.RunStarted, onRunStarted);
+  eventBus.offEvent(GameEvent.TimerChanged, onTimerChanged);
+  eventBus.offEvent(GameEvent.RunEnded, onRunEnded);
+}
+
+/**
+ * Meldet die EventBus-Listener ab.
+ *
+ * `SafeAreaSystem` ist kein Scene-Objekt und hat deshalb keinen
+ * SHUTDOWN-Handler im Sinne von CODE_STYLE.md 1.4 - `initialize()` ruft
+ * diese Funktion selbst auf, falls sie aus einem vorherigen Aufruf noch
+ * aussteht, damit Listener nie doppelt registriert werden koennen.
+ */
+export function shutdown(): void {
+  if (!initialized) return;
+  initialized = false;
+
+  unregisterGameEvents();
 }
 
 /** Einmalig beim App-Start aufrufen. */
 export function initialize(): void {
+  if (initialized) shutdown();
+
   area = document.getElementById('safe-area-content');
   if (!area) return;
 
+  initialized = true;
   configureIosStatusArea();
   registerGameEvents();
 }

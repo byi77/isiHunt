@@ -40,9 +40,11 @@ import {
   createDriftLayers,
   createMenuLayout,
   createPanel,
+  createStatusPage,
   createVignette,
   createWorldBackdrop,
 } from '@/ui/widgets';
+import type { StatusPageHandle } from '@/ui/widgets';
 
 /** "1 Run" statt "1 Runs" - direkt nach dem ersten Spiel sichtbar. */
 function runs(count: number): string {
@@ -56,6 +58,7 @@ export class SyncScene extends Phaser.Scene {
   private codeInput: TextInputHandle | null = null;
   private transient: Phaser.GameObjects.GameObject[] = [];
   private contentOffset = 0;
+  private statusPage!: StatusPageHandle;
 
   /** Nur in der Vergleichsphase gesetzt. */
   private pending: { cloudId: string; save: RemoteSave } | null = null;
@@ -85,6 +88,7 @@ export class SyncScene extends Phaser.Scene {
     this.contentOffset = createMenuLayout().sections.next(150) - 300;
 
     this.statusText = createBackStatusText(this);
+    this.statusPage = createStatusPage(this.statusText, this.contentOffset);
 
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
 
@@ -99,13 +103,20 @@ export class SyncScene extends Phaser.Scene {
     const save = SaveSystem.load();
 
     this.keep(
-      createPanel(this, GAME_WIDTH / 2, this.contentY(300), GAME_WIDTH - 120, 150, Palette.goldHex),
+      createPanel(
+        this,
+        GAME_WIDTH / 2,
+        this.statusPage.contentY(300),
+        GAME_WIDTH - 120,
+        150,
+        Palette.goldHex,
+      ),
     );
     this.keep(
       this.add
         .text(
           GAME_WIDTH / 2,
-          this.contentY(258),
+          this.statusPage.contentY(258),
           'Dieses Gerät',
           textStyle(FontSize.tiny, Palette.inkDim),
         )
@@ -116,7 +127,7 @@ export class SyncScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          this.contentY(312),
+          this.statusPage.contentY(312),
           `Level ${save.level}  ·  Bestwert ${save.bestScore.toLocaleString('de-DE')}  ·  ${runs(save.totalRuns)}`,
           textStyle(FontSize.small, Palette.ink),
         )
@@ -127,7 +138,7 @@ export class SyncScene extends Phaser.Scene {
       createButton(
         this,
         GAME_WIDTH / 2,
-        this.contentY(470),
+        this.statusPage.contentY(470),
         'CODE ERZEUGEN',
         () => void this.generateCode(),
         {
@@ -141,7 +152,7 @@ export class SyncScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          this.contentY(534),
+          this.statusPage.contentY(534),
           'Auf DIESEM Gerät, wenn du den Stand woanders hin holen willst',
           textStyle(FontSize.tiny, Palette.inkDim),
         )
@@ -152,7 +163,12 @@ export class SyncScene extends Phaser.Scene {
 
     this.keep(
       this.add
-        .text(GAME_WIDTH / 2, this.contentY(640), 'ODER', textStyle(FontSize.tiny, Palette.inkDim))
+        .text(
+          GAME_WIDTH / 2,
+          this.statusPage.contentY(640),
+          'ODER',
+          textStyle(FontSize.tiny, Palette.inkDim),
+        )
         .setOrigin(0.5)
         .setLetterSpacing(6),
     );
@@ -161,14 +177,14 @@ export class SyncScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          this.contentY(712),
+          this.statusPage.contentY(712),
           'Code vom anderen Gerät eingeben',
           textStyle(FontSize.small, Palette.ink),
         )
         .setOrigin(0.5),
     );
 
-    this.codeInput = createTextInput(this, GAME_WIDTH / 2, this.contentY(782), {
+    this.codeInput = createTextInput(this, GAME_WIDTH / 2, this.statusPage.contentY(782), {
       placeholder: '· · · · · ·',
       maxLength: SYNC_CODE_LENGTH,
       width: 340,
@@ -213,7 +229,7 @@ export class SyncScene extends Phaser.Scene {
       createButton(
         this,
         GAME_WIDTH / 2,
-        this.contentY(1028),
+        this.statusPage.contentY(1028),
         'CODE EINLÖSEN',
         () => void this.redeem(),
         {
@@ -231,14 +247,14 @@ export class SyncScene extends Phaser.Scene {
   private async generateCode(): Promise<void> {
     if (this.busy) return;
     this.busy = true;
-    this.setStatus('Spielstand wird hochgeladen ...', Palette.inkDim);
+    this.statusPage.setStatus('Spielstand wird hochgeladen ...', Palette.inkDim);
 
     const result = await CloudSystem.createSyncCode();
     this.busy = false;
     if (!this.scene.isActive()) return;
 
     if (!result.ok) {
-      this.setStatus(result.error, Palette.danger);
+      this.statusPage.setStatus(result.error, Palette.danger);
       return;
     }
 
@@ -247,13 +263,13 @@ export class SyncScene extends Phaser.Scene {
 
   private showCode(code: string): void {
     this.clearTransient();
-    this.setStatus('', Palette.inkDim);
+    this.statusPage.setStatus('', Palette.inkDim);
 
     this.keep(
       this.add
         .text(
           GAME_WIDTH / 2,
-          this.contentY(360),
+          this.statusPage.contentY(360),
           'Diesen Code am anderen Gerät eingeben',
           textStyle(FontSize.small, Palette.ink),
         )
@@ -263,13 +279,20 @@ export class SyncScene extends Phaser.Scene {
     );
 
     this.keep(
-      createPanel(this, GAME_WIDTH / 2, this.contentY(480), GAME_WIDTH - 160, 140, Palette.goldHex),
+      createPanel(
+        this,
+        GAME_WIDTH / 2,
+        this.statusPage.contentY(480),
+        GAME_WIDTH - 160,
+        140,
+        Palette.goldHex,
+      ),
     );
 
     const label = this.add
       .text(
         GAME_WIDTH / 2,
-        this.contentY(480),
+        this.statusPage.contentY(480),
         code,
         textStyle(FontSize.title, Palette.gold, { fontStyle: 'bold' }),
       )
@@ -283,7 +306,7 @@ export class SyncScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          this.contentY(586),
+          this.statusPage.contentY(586),
           'Gültig für 15 Minuten',
           textStyle(FontSize.tiny, Palette.inkDim),
         )
@@ -291,12 +314,19 @@ export class SyncScene extends Phaser.Scene {
     );
 
     this.keep(
-      createButton(this, GAME_WIDTH / 2, this.contentY(720), 'FERTIG', () => this.buildStart(), {
-        width: 360,
-        height: 76,
-        accent: 0x9aa3bd,
-        fontSize: FontSize.body,
-      }).container,
+      createButton(
+        this,
+        GAME_WIDTH / 2,
+        this.statusPage.contentY(720),
+        'FERTIG',
+        () => this.buildStart(),
+        {
+          width: 360,
+          height: 76,
+          accent: 0x9aa3bd,
+          fontSize: FontSize.body,
+        },
+      ).container,
     );
   }
 
@@ -309,24 +339,24 @@ export class SyncScene extends Phaser.Scene {
     const code = CloudSystem.normalizeSyncCode(raw);
 
     if (code.length !== SYNC_CODE_LENGTH) {
-      this.setStatus(`Ein Code hat ${SYNC_CODE_LENGTH} Zeichen.`, Palette.danger);
+      this.statusPage.setStatus(`Ein Code hat ${SYNC_CODE_LENGTH} Zeichen.`, Palette.danger);
       return;
     }
 
     this.busy = true;
-    this.setStatus('Code wird geprüft ...', Palette.inkDim);
+    this.statusPage.setStatus('Code wird geprüft ...', Palette.inkDim);
 
     const result = await CloudSystem.redeemSyncCode(code);
     this.busy = false;
     if (!this.scene.isActive()) return;
 
     if (!result.ok) {
-      this.setStatus(result.error, Palette.danger);
+      this.statusPage.setStatus(result.error, Palette.danger);
       return;
     }
 
     if (!result.value) {
-      this.setStatus('Code unbekannt oder abgelaufen.', Palette.danger);
+      this.statusPage.setStatus('Code unbekannt oder abgelaufen.', Palette.danger);
       return;
     }
 
@@ -336,7 +366,7 @@ export class SyncScene extends Phaser.Scene {
 
   private showComparison(remote: RemoteSave): void {
     this.clearTransient();
-    this.setStatus('', Palette.inkDim);
+    this.statusPage.setStatus('', Palette.inkDim);
 
     const local = SaveSystem.load();
 
@@ -344,7 +374,7 @@ export class SyncScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          this.contentY(268),
+          this.statusPage.contentY(268),
           'Welchen Stand willst du behalten?',
           textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }),
         )
@@ -352,7 +382,7 @@ export class SyncScene extends Phaser.Scene {
     );
 
     this.buildSaveCard(
-      this.contentY(400),
+      this.statusPage.contentY(400),
       'DIESES GERÄT',
       local.level,
       local.bestScore,
@@ -360,7 +390,7 @@ export class SyncScene extends Phaser.Scene {
       0x9aa3bd,
     );
     this.buildSaveCard(
-      this.contentY(600),
+      this.statusPage.contentY(600),
       'HERUNTERGELADEN',
       remote.level,
       remote.bestScore,
@@ -372,7 +402,7 @@ export class SyncScene extends Phaser.Scene {
       createButton(
         this,
         GAME_WIDTH / 2,
-        this.contentY(768),
+        this.statusPage.contentY(768),
         'HERUNTERGELADENEN NEHMEN',
         () => this.adopt(),
         {
@@ -385,19 +415,26 @@ export class SyncScene extends Phaser.Scene {
     );
 
     this.keep(
-      createButton(this, GAME_WIDTH / 2, this.contentY(866), 'ABBRECHEN', () => this.buildStart(), {
-        width: 320,
-        height: 70,
-        accent: 0x9aa3bd,
-        fontSize: FontSize.small,
-      }).container,
+      createButton(
+        this,
+        GAME_WIDTH / 2,
+        this.statusPage.contentY(866),
+        'ABBRECHEN',
+        () => this.buildStart(),
+        {
+          width: 320,
+          height: 70,
+          accent: 0x9aa3bd,
+          fontSize: FontSize.small,
+        },
+      ).container,
     );
 
     this.keep(
       this.add
         .text(
           GAME_WIDTH / 2,
-          this.contentY(930),
+          this.statusPage.contentY(930),
           'Der Stand dieses Geräts wird dabei überschrieben.',
           textStyle(FontSize.tiny, Palette.danger),
         )
@@ -460,14 +497,6 @@ export class SyncScene extends Phaser.Scene {
   }
 
   // --- Hilfen -----------------------------------------------------------------
-
-  private setStatus(message: string, color: string): void {
-    this.statusText.setText(message).setColor(color);
-  }
-
-  private contentY(y: number): number {
-    return y + this.contentOffset;
-  }
 
   private keep(object: Phaser.GameObjects.GameObject): void {
     this.transient.push(object);

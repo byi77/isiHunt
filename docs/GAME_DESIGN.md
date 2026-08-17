@@ -109,23 +109,24 @@ Die zentrale Achse. Alles andere haengt daran.
 
 | Stufe         | Farbe            | Punkte | XP  | Spawn | Lebensdauer | Tempo    | Radius |
 | ------------- | ---------------- | ------ | --- | ----- | ----------- | -------- | ------ |
-| Schlicht      | Grau `#9d9d9d`   | 1      | 1   | 34 %  | 5,2 s       | 30 px/s  | 30     |
-| Gewoehnlich   | Weiss `#ffffff`  | 2      | 2   | 28 %  | 4,6 s       | 45 px/s  | 30     |
-| Ungewoehnlich | Gruen `#1eff00`  | 5      | 6   | 20 %  | 3,8 s       | 70 px/s  | 32     |
-| Selten        | Blau `#0070dd`   | 15     | 18  | 11 %  | 3,0 s       | 105 px/s | 34     |
-| Episch        | Lila `#a335ee`   | 50     | 60  | 5,5 % | 2,4 s       | 140 px/s | 38     |
-| Legendaer     | Orange `#ff8000` | 200    | 250 | 1,5 % | 2,0 s       | 190 px/s | 44     |
+| Schlicht      | Grau `#9d9d9d`   | 2      | 2   | 34 %  | 5,2 s       | 30 px/s  | 30     |
+| Gewoehnlich   | Weiss `#ffffff`  | 3      | 3   | 28 %  | 4,6 s       | 45 px/s  | 30     |
+| Ungewoehnlich | Gruen `#1eff00`  | 7      | 8   | 20 %  | 3,8 s       | 70 px/s  | 32     |
+| Selten        | Blau `#0070dd`   | 18     | 20  | 11 %  | 3,0 s       | 105 px/s | 34     |
+| Episch        | Lila `#a335ee`   | 45     | 55  | 5,5 % | 2,4 s       | 140 px/s | 38     |
+| Legendaer     | Orange `#ff8000` | 100    | 130 | 1,5 % | 2,0 s       | 190 px/s | 44     |
 
 **Designregel:** Seltener ⇒ wertvoller ⇒ schneller ⇒ kuerzer sichtbar ⇒
 groesser (damit man es ueberhaupt rechtzeitig sieht).
 
-**Erwartungswert pro Spawn:** ≈ 6,9 Punkte, ≈ 8,9 XP.
+**Erwartungswert pro Spawn:** ≈ 8,9 Punkte, ≈ 10,3 XP.
 Quelle: `src/config/rarities.ts` — diese Tabelle ist eine Abschrift, der Code
-ist die Wahrheit.
+ist die Wahrheit. Werte am 2026-08-17 aus dem Code nachgezogen, s.
+`docs/AUDIT_2026-08-17.md` Abschnitt 4.1 und `docs/BALANCE_2026-08-17.md`.
 
 ## 6. Combo-System
 
-- Jeder Fang: Combo **+1**, Zeitfenster startet neu (Basis **2,2 s**).
+- Jeder Fang: Combo **+1**, Zeitfenster startet neu (Basis **1,8 s**).
 - Faengst du im Fenster nichts, faellt die Combo auf **0**.
 - **Ein verpasstes Relikt bricht die Combo NICHT.**
 
@@ -137,30 +138,42 @@ wird **Flow**, nicht Fehlerfreiheit.
 | Combo | Multiplikator |
 | ----- | ------------- |
 | 0–4   | ×1            |
-| 5–9   | ×2            |
-| 10–19 | ×3            |
-| 20–34 | ×4            |
-| ab 35 | ×5            |
+| 5–9   | ×1,1          |
+| 10–19 | ×1,25         |
+| 20–34 | ×1,45         |
+| 35–49 | ×1,65         |
+| ab 50 | ×1,85         |
+
+Quelle: `src/config/GameConfig.ts` (`COMBO_GRACE_MS`, `COMBO_TIERS`). Werte
+am 2026-08-17 aus dem Code nachgezogen, s. `docs/AUDIT_2026-08-17.md`
+Abschnitt 4.2.
 
 ## 7. Progression
 
 ### 7.1 Charakterlevel
 
-XP fuer den Aufstieg von Level _n_: `floor(750 · √n)`.
+XP fuer den Aufstieg von Level _n_: `floor(750 · √n + 8 · n^1,25)`.
 Ab Level 100 wird kein weiterer XP-Fortschritt gesammelt.
 
 | Level | XP fuer naechstes | kumuliert |
 | ----- | ----------------- | --------- |
-| 1     | 750               | 750       |
-| 2     | 1 060             | 1 810     |
-| 3     | 1 299             | 3 109     |
-| 5     | 1 677             | 6 286     |
-| 10    | 2 371             | 16 849    |
-| 15    | 2 904             | 30 348    |
+| 1     | 758               | 0         |
+| 2     | 1 079             | 758       |
+| 3     | 1 330             | 1 837     |
+| 5     | 1 736             | 4 712     |
+| 10    | 2 513             | 15 037    |
+| 15    | 3 140             | 28 896    |
 
-Ein durchschnittlicher 90-Sekunden-Run bringt grob 900 XP. Level 10 liegt damit
-bei rund 17 Runs, Level 100 bei rund 552 Runs — weiterhin sofortige Aufstiege
-am Anfang, aber ein langer Weg bis zum Maximum.
+"kumuliert" ist die insgesamt bis zum Erreichen dieses Levels noetige XP-Summe
+(ab Level 1 = 0). Quelle: `src/config/GameConfig.ts` (`xpForLevel`). Werte am
+2026-08-17 aus dem Code nachgezogen, s. `docs/AUDIT_2026-08-17.md` Abschnitt
+4.3 und `docs/BALANCE_2026-08-17.md` fuer den vollstaendigen Rechenweg bis
+Level 100.
+
+Der genaue Fang-Erwartungswert pro Run haengt von der Fangquote der
+spielenden Person ab und ist nicht im Code hinterlegt — konkrete
+Runs-bis-Level-Tabellen mit mehreren Fangquoten-Annahmen stehen in
+`docs/BALANCE_2026-08-17.md` Abschnitt 2.
 
 Jeder Levelaufstieg gibt **1 Talentpunkt**, solange noch mindestens ein Talent
 nicht voll ausgebaut ist. Danach wird der Punkt automatisch in **10 Coins**
@@ -176,14 +189,25 @@ Vergabe-Oberflaeche folgt in M2.
 | Reichweite  | 5         | +6 Sammelradius       |
 | Flinkheit   | 5         | +5 % Tempo            |
 | Magnetismus | 4         | +35 Sogreichweite     |
-| Ausdauer    | 4         | +4 s Rundendauer      |
-| Fokus       | 4         | +250 ms Combo-Fenster |
-| Erkenntnis  | 5         | +8 % XP               |
-| Gunst       | 5         | +6 % Punkte           |
+| Ausdauer    | 4         | +3 s Rundendauer      |
+| Fokus       | 4         | +150 ms Combo-Fenster |
+| Erkenntnis  | 5         | +5 % XP               |
+| Gunst       | 5         | +4 % Punkte           |
 
 **Balancing-Absicht:** Kein Talent ist Pflicht. _Reichweite_ und _Magnetismus_
 machen das Spiel leichter, _Gunst_ und _Erkenntnis_ machen es ertragreicher —
 zwei gleichwertige Bauweisen, keine dominante.
+
+Quelle: `src/config/talents.ts` (`resolveStats`). Werte am 2026-08-17 aus dem
+Code nachgezogen, s. `docs/AUDIT_2026-08-17.md` Abschnitt 4.4 — Reichweite,
+Flinkheit und Magnetismus stimmten bereits ueberein, die vier anderen
+Talente waren im Code niedriger als hier dokumentiert.
+
+**Offener Punkt aus dem Balance-Bericht:** _Erkenntnis_ und _Gunst_ haben
+trotz identischer Kosten (`TALENT_COSTS`) und gleichem Maximalrang
+unterschiedlich starke Wirkung (+25 % XP vs. +20 % Punkte in Summe). Ob das
+gewollt ist, ist eine Design-, keine Rechenfrage — s.
+`docs/BALANCE_2026-08-17.md` Abschnitt 4.
 
 ### 7.3 Welten
 
@@ -191,18 +215,26 @@ Seit Phase 3 sind die Raumzonen sichtbar umbenannt: Sternenweide, Eisring,
 Glutnebel, Nullsektor und Sonnenkrone. Die Welt-IDs bleiben fuer bestehende
 Spielstaende stabil.
 
-| Welt         | Ab Level | Herausforderung                         | Belohnung |
-| ------------ | -------- | ---------------------------------------- | --------- |
-| Sternenweide | 1        | keine - die Lernzone                    | +3 %      |
-| Eisring      | 3        | Trägheit, bremsende Hindernisse          | +6 %      |
-| Glutnebel    | 6        | kürzere Fenster, bremsende Hindernisse  | +10 %     |
-| Nullsektor   | 10       | Blinkeffekt, Zeitverlust-Hindernisse    | +15 %     |
-| Sonnenkrone  | 15       | seltene Planeten, Zeitverlust            | +18 %     |
-| Mondschmiede | 22       | stärkere Trägheit, Zeitverlust            | +22 %     |
-| Kristallbruch| 30       | kurze Fenster, viele Hindernisse          | +30 %     |
-| Sturmgrenze  | 40       | Blinken, Trägheit, harte Hindernisse      | +40 %     |
-| Lichtkern    | 55       | seltene Planeten, viele Hindernisse       | +52 %     |
-| Horizonttor  | 75       | kürzeste Fenster, höchste Dichte          | +65 %     |
+| Welt          | Ab Level | Herausforderung                        | Punkte-Bonus | XP-Bonus |
+| ------------- | -------- | -------------------------------------- | ------------ | -------- |
+| Sternenweide  | 1        | keine - die Lernzone                   | +0 %         | +0 %     |
+| Eisring       | 3        | Trägheit, bremsende Hindernisse        | +4 %         | +2 %     |
+| Glutnebel     | 6        | kürzere Fenster, bremsende Hindernisse | +8 %         | +4 %     |
+| Nullsektor    | 10       | Blinkeffekt, Zeitverlust-Hindernisse   | +12 %        | +6 %     |
+| Sonnenkrone   | 15       | seltene Planeten, Zeitverlust          | +16 %        | +8 %     |
+| Mondschmiede  | 22       | stärkere Trägheit, Zeitverlust         | +20 %        | +11 %    |
+| Kristallbruch | 30       | kurze Fenster, viele Hindernisse       | +26 %        | +15 %    |
+| Sturmgrenze   | 40       | Blinken, Trägheit, harte Hindernisse   | +33 %        | +19 %    |
+| Lichtkern     | 55       | seltene Planeten, viele Hindernisse    | +39 %        | +22 %    |
+| Horizonttor   | 75       | kürzeste Fenster, höchste Dichte       | +45 %        | +25 %    |
+
+Punkte- und XP-Bonus laufen bewusst getrennt und wachsen unterschiedlich
+schnell — Punkte staerker als XP, damit spaete Welten die Bestenliste
+attraktiver machen, ohne die Levelprogression zu sehr zu beschleunigen.
+Quelle: `src/config/worlds.ts` (`scoreMultiplier`, `xpMultiplier`). Werte am
+2026-08-17 aus dem Code nachgezogen, s. `docs/AUDIT_2026-08-17.md` Abschnitt
+4.5 — vorher stand hier ein einzelner kombinierter Prozentwert je Welt, der
+nicht mehr der Code-Struktur entsprach.
 
 In v0.1 unterscheiden sich die Welten mechanisch nur optisch. Jede Zone hat
 dafuer eine eigene feste Stern-/Nebelkomposition und zwei transparente
@@ -211,11 +243,16 @@ anfuehlen, dann kommt Varianz dazu (M3).
 
 ### 7.4 Erfolge
 
-15 Erfolge in vier Gruppen: erste Male, Combo-Schwellen, Punktschwellen,
-Sammelmengen. Sie werden nach jedem Run geprueft und wirken rueckwirkend —
-wer die Bedingung schon erfuellt hat, bekommt sie beim naechsten Run.
+62 Erfolge in mehreren Gruppen: erste Male, Combo-Schwellen, Tagesläufe,
+Rarität-Sammelmengen je Stufe, Punktschwellen, Level, Gesamtsammelmenge,
+Run-Sammelmenge, Run-Anzahl, Spielzeit, Talentränge und Weltenfreischaltung.
+Sie werden nach jedem Run geprueft und wirken rueckwirkend — wer die
+Bedingung schon erfuellt hat, bekommt sie beim naechsten Run.
 
-Vollstaendige Liste: `src/config/achievements.ts`.
+Vollstaendige Liste: `src/config/achievements.ts`. Anzahl am 2026-08-17 aus
+dem Code nachgezogen (vorher stand hier "15 Erfolge in vier Gruppen", ein
+Stand aus einer frueheren Entwicklungsphase) — s. `docs/AUDIT_2026-08-17.md`
+Abschnitt 4.6.
 
 ## 7.5 Einen Run verlassen
 
@@ -265,15 +302,15 @@ darf nicht als Geschenk direkt unter dem Daumen erscheinen.
 
 ## 10. Was bewusst NICHT drin ist
 
-| Nicht drin                    | Begruendung                                                                                 |
-| ----------------------------- | ------------------------------------------------------------------------------------------- |
+| Nicht drin                    | Begruendung                                                                                            |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------ |
 | Gegner / Schaden / Verlieren  | Es gibt keine Lebenspunkte und kein Game Over. Hindernisse bremsen oder ziehen nur wenige Sekunden ab. |
-| Tutorial                      | Wenn es eins braucht, ist das Design gescheitert (Designziel 1).                            |
-| Werbung / Kaeufe              | Vorerst kein Monetarisierungsdruck. Beeinflusst sonst das Balancing.                        |
-| Online-Bestenliste            | Erst wenn die Kernschleife steht (M5).                                                      |
-| Querformat                    | Das Spiel ist fuer eine Hand gebaut.                                                        |
-| Geteilter Bildschirm im Duell | Zwei Spielfelder auf einem Hochformat-Handy sind zu klein (siehe 4.1).                      |
-| Echtzeit-Duell ueber Netzwerk | Braucht einen Server. Der Weg dorthin steht in ADR-0010.                                    |
+| Tutorial                      | Wenn es eins braucht, ist das Design gescheitert (Designziel 1).                                       |
+| Werbung / Kaeufe              | Vorerst kein Monetarisierungsdruck. Beeinflusst sonst das Balancing.                                   |
+| Online-Bestenliste            | Erst wenn die Kernschleife steht (M5).                                                                 |
+| Querformat                    | Das Spiel ist fuer eine Hand gebaut.                                                                   |
+| Geteilter Bildschirm im Duell | Zwei Spielfelder auf einem Hochformat-Handy sind zu klein (siehe 4.1).                                 |
+| Echtzeit-Duell ueber Netzwerk | Braucht einen Server. Der Weg dorthin steht in ADR-0010.                                               |
 
 ## 11. Offene Designfragen
 
