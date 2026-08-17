@@ -45,6 +45,15 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 - [ ] **Phase 5 mit Kindern balancieren:** Schwierige Welten, Hindernisse,
       Tempo, Sichtfenster und Belohnungen sollen fordernd, aber nie frustrierend
       sein.
+- [ ] **DSGVO-Einschaetzung fuer Kinderdaten einholen** _(neu 2026-08-17)_ —
+      `profiles`/`scores` speichern Aliase von Minderjaehrigen. Aktuell nur
+      bekannter Personenkreis (Familie/Freunde), Supabase-Region `eu-west-1`
+      (EU, kein Drittlandtransfer). Ob die Haushaltsausnahme (Art. 2 Abs. 2
+      lit. c DSGVO) bei Freunden ausserhalb des eigenen Haushalts noch greift,
+      ist ungeklaert — das ist keine Ermessensfrage, sondern eine Rechtsfrage,
+      die eine verbindliche Auskunft braucht, keine Einschaetzung aus dem
+      Code. **Bis zur Klaerung bleibt die Bestenliste bewusst auf den
+      bekannten Personenkreis begrenzt** — siehe Vermerk bei Phase 6 unten.
 
 ### P0.5 — Debug-Modus fuer Tester _(gebaut 2026-08-17, siehe ADR-0016)_
 
@@ -640,6 +649,12 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
 - [ ] ~~Ranked-Modus~~ — blockiert, siehe Phase 6
 
 ## Phase 6 — Sozial
+
+> **Vermerk 2026-08-17:** Diese Phase vergroessert absichtlich die Reichweite
+> der Bestenliste (Freunde, Realtime, Ranked). Solange die DSGVO-Einschaetzung
+> fuer Kinderdaten (siehe P0 oben) nicht geklaert ist, darf keiner dieser
+> Punkte den Personenkreis ueber "bekannt" hinaus erweitern — das gilt
+> insbesondere fuer Realtime-Sync und eine oeffentlich beworbene Rangliste.
 
 - [x] Zeitstempel in der Bestenliste anzeigen
 - [ ] **Punkte serverseitig bewerten** (Supabase Edge Function, Run nachspielen)
