@@ -181,9 +181,19 @@ export function load(): SaveData {
 
     // Migrationen müssen sofort persistiert werden. Sonst würde ein alter
     // Spielstand nach jedem Browser-/App-Neustart erneut Talentpunkte und
-    // Level-Coins umwandeln und die Währung vervielfachen.
+    // Level-Coins umwandeln und die Währung vervielfachen. Eigener
+    // try/catch: schlägt nur das Schreiben fehl (Quota, privater Modus),
+    // bleibt der bereits migrierte Stand im Speicher gültig - der äußere
+    // catch würde ihn sonst faelschlich durch einen leeren Stand ersetzen.
     if (raw && rawVersion < SAVE_VERSION) {
-      window.localStorage.setItem(SAVE_KEY, JSON.stringify(cache));
+      try {
+        window.localStorage.setItem(SAVE_KEY, JSON.stringify(cache));
+      } catch (error) {
+        console.warn(
+          '[SaveSystem] Migration nicht persistierbar, Stand bleibt im Speicher.',
+          error,
+        );
+      }
     }
   } catch (error) {
     // Privater Modus, volles Quota, kaputtes JSON: nie den Start blockieren.

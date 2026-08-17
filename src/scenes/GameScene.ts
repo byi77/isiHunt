@@ -309,7 +309,8 @@ export class GameScene extends Phaser.Scene {
       } else {
         this.remainingMs = Math.max(0, this.remainingMs - WORLD_PENALTY_MS);
         this.scoring.registerMiss();
-        floatingScore(this, obstacle.x, obstacle.y, '-1,4 s', 0xa855f7);
+        const penaltyLabel = `-${(WORLD_PENALTY_MS / 1000).toFixed(1).replace('.', ',')} s`;
+        floatingScore(this, obstacle.x, obstacle.y, penaltyLabel, 0xa855f7);
         this.cameras.main.shake(120, 0.004);
       }
       obstacle.destroy();

@@ -9,6 +9,14 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Behoben
+
+- Der Zeitverlust-Text bei einem Hindernistreffer zeigte einen falschen Wert
+  an; er wird jetzt aus dem tatsaechlichen Balancing-Wert berechnet.
+- Ein fehlgeschlagenes Schreiben nach einer Spielstand-Migration (z.B. volles
+  Speicherkontingent) konnte den migrierten Fortschritt stillschweigend
+  durch einen leeren Stand ersetzen.
+
 ### Erststart und Profil
 
 - Beim ersten Online-Start wird ein gemeinsames Profil mit Alias und
