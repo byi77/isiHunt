@@ -184,7 +184,7 @@ export class ProfileScene extends Phaser.Scene {
       SaveSystem.setPlayerName(name);
       if (CloudSystem.isAvailable() && !SaveSystem.isTestProfileActive()) {
         if (AuthSystem.isSignedIn()) {
-          const result = await CloudSystem.updateProfileName(name);
+          const result = await CloudSystem.updateProfileIdentity(name);
           if (!result.ok) {
             saving = false;
             saveButton?.setEnabled(true);

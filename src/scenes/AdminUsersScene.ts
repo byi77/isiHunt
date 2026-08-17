@@ -52,7 +52,7 @@ export class AdminUsersScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         titleY + 58,
-        'Push: Level 50 + 5000 Coins · Reset: Level 1 + alles leer',
+        'Push: Level 50 + 50000 Coins · Reset: Level 1 + alles leer',
         textStyle(FontSize.tiny, Palette.inkDim, { align: 'center' }),
       )
       .setOrigin(0.5)
@@ -76,7 +76,7 @@ export class AdminUsersScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2 - 125,
       titleY + 245,
-      'LEVEL 50 + 5000 C',
+      'LEVEL 50 + 50000 C',
       () => void this.boost(aliasInput.getValue()),
       { width: 230, height: 62, accent: Palette.goldHex, fontSize: FontSize.tiny },
     );

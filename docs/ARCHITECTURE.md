@@ -416,6 +416,9 @@ Lösung trennt deshalb Backend-Profil und lokale Installation:
 - Aliase sind global eindeutig, 3 bis 16 Zeichen lang und auf `a-z`, `0-9`,
   `-` und `_` begrenzt. Da keine Kontaktadresse hinterlegt wird, ist eine
   Passwort-Wiederherstellung per E-Mail zunächst nicht möglich.
+- Alias und sichtbarer Anzeigename (Bestenliste, Profil) sind seit ADR-0017
+  **derselbe Wert** — nicht zwei unabhängig änderbare Felder. Ein Konto hat
+  genau einen Namen, gesetzt über `CloudSystem.updateProfileIdentity()`.
 - `profiles.id` referenziert `auth.users.id`; RLS erlaubt nur Zugriff auf das
   eigene Profil.
 - `progress_events` nimmt abgeschlossene Solo-Runs mit eindeutiger `event_id`

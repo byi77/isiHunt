@@ -515,11 +515,17 @@ export async function isPlayerNameAvailable(
 /**
  * Bereinigt einen Spielernamen.
  *
- * Erlaubt sind ausschließlich Buchstaben und Zahlen. Leerzeichen und andere
- * Sonderzeichen werden entfernt; die Datenbank prueft die Regel ebenfalls.
+ * Seit der Vereinheitlichung von Login-Alias und Anzeigename gilt fuer beide
+ * dieselbe Regel: klein geschrieben, nur a-z, 0-9, - und _. Das haelt Alias
+ * und Anzeigename zwangslaeufig gleich, statt sie wie zuvor unabhaengig
+ * auseinanderlaufen zu lassen (docs/DECISIONS.md, ADR zur Identitaets-
+ * Vereinheitlichung). Die Datenbank prueft dieselbe Regel serverseitig.
  */
 export function sanitizePlayerName(raw: string): string {
-  return raw.replace(/[^a-zA-Z0-9]/g, '').slice(0, PLAYER_NAME_MAX_LENGTH);
+  return raw
+    .toLowerCase()
+    .replace(/[^a-z0-9_-]/g, '')
+    .slice(0, PLAYER_NAME_MAX_LENGTH);
 }
 
 // --- Spielstand --------------------------------------------------------------
@@ -800,10 +806,11 @@ export async function claimCloudProfile(
 }
 
 /**
- * Schreibt eine Profiländerung und synchronisiert den Ranglistennamen.
- * Die Datenbank bindet die Änderung an auth.uid().
+ * Schreibt Login-Alias und Anzeigename gleichzeitig - seit
+ * phase_2_8_unify_identity.sql derselbe Wert, damit ein gemeldeter
+ * Spielername im Wartungsbildschirm immer zum Login passt.
  */
-export async function updateProfileName(name: string): Promise<CloudResult<true>> {
+export async function updateProfileIdentity(name: string): Promise<CloudResult<true>> {
   const authenticated = await requireAuthenticatedClient();
   if (!authenticated.ok) return authenticated;
 
@@ -811,27 +818,8 @@ export async function updateProfileName(name: string): Promise<CloudResult<true>
   if (!safeName) return { ok: false, error: 'Kein Name angegeben' };
 
   const result = await withTimeout(
-    authenticated.value.rpc('update_profile_name', { p_player_name: safeName }),
-    'Profilnamen speichern',
-  );
-  if (!result.ok) return result;
-  if (result.value.error) return { ok: false, error: result.value.error.message };
-  return { ok: true, value: true };
-}
-
-/** Speichert den sichtbaren Alias des angemeldeten Profils. */
-export async function updateProfileAlias(alias: string): Promise<CloudResult<true>> {
-  const authenticated = await requireAuthenticatedClient();
-  if (!authenticated.ok) return authenticated;
-
-  const safeAlias = alias.trim().toLowerCase();
-  if (!/^[a-z0-9_-]{3,16}$/.test(safeAlias)) {
-    return { ok: false, error: 'Ungültiger Alias' };
-  }
-
-  const result = await withTimeout(
-    authenticated.value.rpc('update_profile_alias', { p_alias: safeAlias }),
-    'Alias speichern',
+    authenticated.value.rpc('update_profile_identity', { p_name: safeName }),
+    'Namen speichern',
   );
   if (!result.ok) return result;
   if (result.value.error) return { ok: false, error: result.value.error.message };

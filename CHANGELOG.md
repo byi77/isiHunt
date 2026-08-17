@@ -25,6 +25,21 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   kam dort nicht automatisch an, obwohl der manuelle "PROFIL ABGLEICHEN"-
   Button in den Einstellungen sofort funktionierte — die Ursache dafuer ist
   noch nicht gefunden, die Logs sollen den naechsten Fall beweisbar machen.
+- Alle sichtbaren "5000 Coins"-Texte im Wartungsbereich (`AdminUsersScene`)
+  auf 50000 nachgezogen; zwei Stellen hatte der vorige Boost-Fix noch nicht
+  erfasst.
+- **Login-Alias und Anzeigename sind jetzt derselbe Wert** (ADR-0017). Bisher
+  liefen beide unabhaengig auseinander — Admin-Login-Alias `byi77`,
+  Anzeigename `Yavuz` zum Beispiel — und das Wartungsdashboard zeigt den
+  Anzeigenamen, waehrend Boost/Reset nur nach Alias suchen. Ein gemeldeter
+  Spielername war darueber nicht zuverlaessig wiederzufinden. Es gelten
+  jetzt ueberall dieselben, strengeren Alias-Regeln (3-16 Zeichen, `a-z`,
+  `0-9`, `-`, `_`, klein geschrieben); `sanitizePlayerName` folgt derselben
+  Regel. **`supabase/phase_2_8_unify_identity.sql` muss nach
+  `phase_2_7_admin_tools.sql` einmalig manuell im Supabase SQL-Editor
+  ausgefuehrt werden** — sie migriert Bestandsprofile (Anzeigename gewinnt,
+  wird normalisiert und zum neuen Alias) und ersetzt `update_profile_name`/
+  `update_profile_alias` durch `update_profile_identity`.
 
 ### Behoben
 

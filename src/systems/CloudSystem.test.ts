@@ -152,17 +152,21 @@ describe('isRemoteAhead / isLocalAhead', () => {
 });
 
 describe('sanitizePlayerName', () => {
-  it('entfernt alles ausser Buchstaben und Zahlen', () => {
-    expect(CloudSystem.sanitizePlayerName('Ma x_2000!')).toBe('Max2000');
+  it('schreibt klein und entfernt alles ausser a-z, 0-9, - und _', () => {
+    expect(CloudSystem.sanitizePlayerName('Ma x_2000!')).toBe('max_2000');
+  });
+
+  it('behaelt Bindestrich und Unterstrich - dieselbe Regel wie der Login-Alias', () => {
+    expect(CloudSystem.sanitizePlayerName('Emre-K_1')).toBe('emre-k_1');
   });
 
   it('kuerzt auf die konfigurierte Maximallaenge', () => {
     const long = 'a'.repeat(30);
-    expect(CloudSystem.sanitizePlayerName(long).length).toBeLessThanOrEqual(12);
+    expect(CloudSystem.sanitizePlayerName(long).length).toBeLessThanOrEqual(16);
   });
 
   it('liefert einen leeren String fuer reine Sonderzeichen', () => {
-    expect(CloudSystem.sanitizePlayerName('***---!!!')).toBe('');
+    expect(CloudSystem.sanitizePlayerName('***!!!')).toBe('');
   });
 });
 

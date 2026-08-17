@@ -376,10 +376,10 @@ export class AccountScene extends Phaser.Scene {
     }
 
     if (alias) {
-      const aliasResult = await CloudSystem.updateProfileAlias(alias);
-      if (!aliasResult.ok) {
+      const identityResult = await CloudSystem.updateProfileIdentity(alias);
+      if (!identityResult.ok) {
         this.busy = false;
-        this.statusPage.setStatus(aliasResult.error, Palette.gold);
+        this.statusPage.setStatus(identityResult.error, Palette.gold);
         return;
       }
     }

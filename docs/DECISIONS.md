@@ -779,3 +779,67 @@ ohne eine Huerde wie eine PIN aufzubauen.
 - Ob WhatsApp beim Teilen von zwei Dateien (PNG + TXT) beide uebernimmt oder
   nur eine, ist am Schreibtisch nicht pruefbar und bleibt bis zum ersten
   echten Geraetetest ungeprueft (No-Guess-Vertrag).
+
+---
+
+## ADR-0017 — Login-Alias und Anzeigename zu einer Identitaet vereinheitlicht
+
+**Datum:** 2026-08-17 · **Status:** Angenommen
+
+### Kontext
+
+`profiles.alias` (Login-Kennung, technisch Teil der internen Auth-Adresse)
+und `profiles.player_name` (sichtbarer Name im Spiel/Bestenliste) liefen als
+zwei unabhaengig editierbare Felder auseinander: ein Admin-Konto hatte Alias
+`byi77`, aber Anzeigename `Yavuz`. Das Wartungsdashboard
+(`get_admin_dashboard`) zeigt ausschliesslich `player_name`; der
+Boost-/Reset-Werkzeugkasten (`admin_boost_user`, `admin_reset_user`) sucht
+ausschliesslich nach `alias_normalized`. Ohne Verbindung zwischen beiden war
+ein von einem Spieler genannter Name im Wartungsbereich nicht zuverlaessig
+wiederzufinden.
+
+### Entscheidung
+
+Ein Konto hat ab sofort nur noch einen Namen, der gleichzeitig Login-Alias
+und Anzeigename ist. Es gelten durchgehend die bisherigen (strengeren)
+Alias-Regeln: 3-16 Zeichen, nur `a-z`, `0-9`, `-` und `_`, klein geschrieben.
+`sanitizePlayerName` wendet dieselbe Regel an wie `AuthSystem.isValidAlias`.
+`update_profile_name` und `update_profile_alias` wurden durch eine einzige
+SQL-Funktion `update_profile_identity` ersetzt, die `alias`,
+`alias_normalized`, `player_name` und `data.playerName` in einem Schritt
+setzt; die alten Funktionsnamen bleiben als duenne SQL-Huellen bestehen, die
+intern auf die neue Funktion delegieren, damit ein Rollout keine strikte
+Reihenfolge zwischen Migration und Client-Deploy braucht. Client-seitig
+ersetzt `CloudSystem.updateProfileIdentity` die bisherigen
+`updateProfileName`/`updateProfileAlias`.
+
+Fuer Bestandsprofile (u. a. das Admin-Konto) gewinnt beim einmaligen
+Migrationslauf `player_name`: er wird normalisiert (klein geschrieben, alles
+ausser `a-z0-9_-` entfernt, auf 16 Zeichen gekuerzt) und als neuer `alias`
+uebernommen. Kollidieren zwei Profile nach der Normalisierung, erhaelt das
+juengere einen Zahlen-Suffix (`emre_2`), damit kein Konto verloren geht oder
+ein anderes stillschweigend ueberschreibt.
+
+### Begruendung
+
+- Es gibt keinen Gastmodus. `MenuScene` verlangt fuer jeden Spieler ohne
+  `save.playerName` ein Konto (`AccountScene`, `firstStart: true`), und
+  `ensureFirstStartOnline()` blockt den Erststart ganz ohne Internet. Die
+  fruehere Trennung "freier Anzeigename fuer alle, strenger Alias nur fuer
+  eingeloggte Nutzer" hatte damit keine reale Zielgruppe mehr, fuer die sie
+  noetig gewesen waere.
+- Zwei unabhaengig aenderbare Namen fuer dieselbe Person sind der eigentliche
+  Fehlerherd: jedes Werkzeug, das nur eines der beiden Felder kennt, wird
+  frueher oder spaeter am falschen Namen suchen.
+
+### Konsequenzen
+
+- `PLAYER_NAME_MAX_LENGTH` wurde von 12 auf 16 angehoben, um exakt
+  `AuthSystem.ALIAS_MAX_LENGTH` zu entsprechen — beide Konstanten bezeichnen
+  jetzt denselben Wert.
+- Anzeigenamen verlieren Grossschreibung und Sonderzeichen ausserhalb von
+  `-`/`_`. Ein bisheriger Anzeigename wie `Emre` erscheint nach der Migration
+  als `emre`.
+- `supabase/phase_2_8_unify_identity.sql` muss nach `phase_2_7_admin_tools.sql`
+  einmalig manuell im Supabase SQL-Editor ausgefuehrt werden — es gibt keinen
+  automatischen Migrationsweg in diesem Projekt.
