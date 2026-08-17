@@ -71,7 +71,7 @@ export const TALENTS: readonly TalentDef[] = [
     name: 'Gunst',
     description: 'Du erhältst mehr Punkte pro Relikt.',
     maxRank: 5,
-    perRank: '+4% Punkte',
+    perRank: '+5% Punkte',
   },
 ];
 
@@ -114,6 +114,6 @@ export function resolveStats(ranks: TalentRanks): PlayerStats {
     runDurationMs: RUN_DURATION_MS + rank(ranks, 'endurance') * 3000,
     comboGraceMs: COMBO_GRACE_MS + rank(ranks, 'focus') * 150,
     xpMultiplier: 1 + rank(ranks, 'insight') * 0.05,
-    scoreMultiplier: 1 + rank(ranks, 'fortune') * 0.04,
+    scoreMultiplier: 1 + rank(ranks, 'fortune') * 0.05,
   };
 }

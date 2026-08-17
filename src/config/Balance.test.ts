@@ -34,6 +34,6 @@ describe('Phase-5-Balance', () => {
     expect(DAILY_COMPLETION_BONUS_COINS).toBe(90);
     expect(talentCost(0)).toBe(250);
     expect(talentCost(1)).toBe(350);
-    expect(TALENT_RESET_COST).toBe(200);
+    expect(TALENT_RESET_COST).toBe(100);
   });
 });

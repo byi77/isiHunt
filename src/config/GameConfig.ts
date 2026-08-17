@@ -209,8 +209,16 @@ export const MAX_COLLECTION_BONUS_COINS = 18;
 export const COINS_PER_ACHIEVEMENT = 20;
 /** Coins pro Levelaufstieg als dauerhafte Spielbelohnung. */
 export const COINS_PER_LEVEL = 20;
-/** Kosten eines Talent-Resets. */
-export const TALENT_RESET_COST = 200;
+/**
+ * Kosten eines Talent-Resets.
+ *
+ * Bewusst deutlich unter dem ersten Rangkauf (250): ein frueher Fehlkauf soll
+ * korrigierbar bleiben, ohne dass der Reset selbst wie eine zweite Strafe
+ * wirkt. Bei vollem Ausbau (15.650 Coins Gesamtkosten) bleibt der Reset
+ * ohnehin fast kostenlos - die Untergrenze zaehlt fuer Einsteiger.
+ * S. docs/BALANCE_2026-08-17.md Abschnitt 3.
+ */
+export const TALENT_RESET_COST = 100;
 /** Einmalige Begruessung pro Kalendertag fuer einen echten Profil-Login. */
 export const DAILY_LOGIN_BONUS_COINS = 25;
 /** Fester Bonus für den ersten abgeschlossenen Tageslauf des Tages. */

@@ -356,7 +356,7 @@ describe('Talentkäufe', () => {
 
     expect(Progression.resetTalents()).not.toBeNull();
     expect(SaveSystem.load().talents.reach).toBeUndefined();
-    expect(SaveSystem.load().coins).toBe(600);
+    expect(SaveSystem.load().coins).toBe(700);
   });
 
   it('verweigert Käufe ohne ausreichende Coins', () => {

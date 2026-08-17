@@ -192,22 +192,21 @@ Vergabe-Oberflaeche folgt in M2.
 | Ausdauer    | 4         | +3 s Rundendauer      |
 | Fokus       | 4         | +150 ms Combo-Fenster |
 | Erkenntnis  | 5         | +5 % XP               |
-| Gunst       | 5         | +4 % Punkte           |
+| Gunst       | 5         | +5 % Punkte           |
 
 **Balancing-Absicht:** Kein Talent ist Pflicht. _Reichweite_ und _Magnetismus_
 machen das Spiel leichter, _Gunst_ und _Erkenntnis_ machen es ertragreicher —
-zwei gleichwertige Bauweisen, keine dominante.
+zwei gleichwertige Bauweisen, keine dominante. _Erkenntnis_ und _Gunst_ sind
+bei identischen Kosten und gleichem Maximalrang bewusst gleich stark
+(je max. +25 %) — bis 2026-08-17 war _Gunst_ mit +4 %/Rang schwaecher, ohne
+erkennbaren Design-Grund; angeglichen nach `docs/BALANCE_2026-08-17.md`
+Abschnitt 4.
 
 Quelle: `src/config/talents.ts` (`resolveStats`). Werte am 2026-08-17 aus dem
 Code nachgezogen, s. `docs/AUDIT_2026-08-17.md` Abschnitt 4.4 — Reichweite,
 Flinkheit und Magnetismus stimmten bereits ueberein, die vier anderen
-Talente waren im Code niedriger als hier dokumentiert.
-
-**Offener Punkt aus dem Balance-Bericht:** _Erkenntnis_ und _Gunst_ haben
-trotz identischer Kosten (`TALENT_COSTS`) und gleichem Maximalrang
-unterschiedlich starke Wirkung (+25 % XP vs. +20 % Punkte in Summe). Ob das
-gewollt ist, ist eine Design-, keine Rechenfrage — s.
-`docs/BALANCE_2026-08-17.md` Abschnitt 4.
+Talente waren im Code zunaechst niedriger als hier dokumentiert; _Gunst_
+wurde danach im Code selbst angehoben (s.o.).
 
 ### 7.3 Welten
 

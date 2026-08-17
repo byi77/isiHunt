@@ -9,6 +9,13 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Geaendert
+
+- Talent-Reset kostet jetzt 100 statt 200 Coins — ein frueher Fehlkauf war
+  fast so teuer wie der naechste Rang selbst und bremste Experimentieren.
+- Talent _Gunst_ (Punkte) gibt jetzt +5 % pro Rang statt +4 % — damit ist es
+  bei identischen Kosten gleich stark wie _Erkenntnis_ (XP).
+
 ### Behoben
 
 - Der Zeitverlust-Text bei einem Hindernistreffer zeigte einen falschen Wert
