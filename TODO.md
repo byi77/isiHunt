@@ -20,7 +20,7 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 | **3.5** | Ton (aus M4 vorgezogen)                                  | mittel       |
 | **3.6** | Dynamic Island — braucht native App                      | Entscheidung |
 | 4       | Bonus, Coins, Talentbaum — erste Fassung abgeschlossen   | —            |
-| **4.1** | **Talentpunkte-Neuentwurf — naechste Phase**             | **hoch**     |
+| **4.1** | **Talentpunkte-Neuentwurf — pausiert, siehe unten**      | **hoch**     |
 | 5       | Modi, Hindernisse — gebaut, Spieltest offen              | mittel       |
 | 6       | Freunde, Realtime, Ranked und Rekorde                    | hoch         |
 
@@ -29,11 +29,10 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 ## Aktuell priorisiert — Feedback Emre & Simay (2026-08-17)
 
 > **Aktuelle Entwicklungsphase:** Die spielbaren Grundlagen von Phase 1 bis 5
-> sind gebaut. Die naechste Produktphase ist **Phase 4.1**: der Talentpunkte-
-> Umbau aus dem Kinderfeedback. Phase 6 folgt erst danach. Vor jeder neuen
-> Umsetzung muessen jedoch die noch offenen echten Mehrgeraete-Tests aus Phase
-> 2.6 und der Spieltest des Schwierigkeitsgrads aus Phase 5 abgeschlossen
-> werden.
+> sind gebaut. **Phase 4.1 (Talentpunkte-Umbau) ist pausiert** — die
+> Kernidee "Talente kosten keine Coins mehr" steht nochmal zur Diskussion,
+> siehe P1 unten. Bis zur Entscheidung ruecken **P0** (Phase 2.6 produktiv
+> pruefen, Phase 5 balancieren) und danach **Phase 6** in den Vordergrund.
 
 ### P0 — erst absichern und messen
 
@@ -47,7 +46,12 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
       Tempo, Sichtfenster und Belohnungen sollen fordernd, aber nie frustrierend
       sein.
 
-### P1 — Fortschritt vor Wettbewerb neu entscheiden
+### P1 — Fortschritt vor Wettbewerb neu entscheiden _(pausiert 2026-08-17)_
+
+> **Pausiert:** Die Grundidee "Talente kosten keine Coins mehr, sondern
+> Talentpunkte pro Levelaufstieg" wird nochmal ueberdacht, bevor hier
+> weitergeplant oder gebaut wird. Die folgenden Punkte bleiben stehen, sind
+> aber bis zur Entscheidung nicht aktiv.
 
 - [ ] **Talentpunkte statt Coin-Kosten planen und bauen.** Jeder Levelaufstieg
       soll Talentpunkte geben; Talentkaeufe duerfen dann keine Coins kosten.
