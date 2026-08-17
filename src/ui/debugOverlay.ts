@@ -58,7 +58,7 @@ export function installDebugOverlay(game: Phaser.Game): void {
   button.setAttribute('aria-label', 'Debug-Report senden');
   Object.assign(button.style, {
     position: 'fixed',
-    right: '10px',
+    left: '10px',
     bottom: '10px',
     width: '44px',
     height: '44px',
