@@ -124,6 +124,31 @@ describe('isRemoteAhead / isLocalAhead', () => {
 
     expect(CloudSystem.isRemoteAhead(local, remote)).toBe(true);
   });
+
+  it('erkennt einen Talentkauf auf einem anderen Geraet ohne Level-/Score-Aenderung', () => {
+    const local = createSave({ coins: 50, talents: {} });
+    const remoteSave = createSave({ coins: 50, talents: { swiftness: 1 } });
+    const remote = createRemoteSave(remoteSave, {
+      level: local.level,
+      bestScore: local.bestScore,
+      totalRuns: local.totalRuns,
+    });
+
+    expect(CloudSystem.isRemoteAhead(local, remote)).toBe(true);
+    expect(CloudSystem.isLocalAhead(local, remote)).toBe(false);
+  });
+
+  it('erkennt einen neu freigeschalteten Erfolg auf einem anderen Geraet', () => {
+    const local = createSave({ unlockedAchievements: [] });
+    const remoteSave = createSave({ unlockedAchievements: ['first-run'] });
+    const remote = createRemoteSave(remoteSave, {
+      level: local.level,
+      bestScore: local.bestScore,
+      totalRuns: local.totalRuns,
+    });
+
+    expect(CloudSystem.isRemoteAhead(local, remote)).toBe(true);
+  });
 });
 
 describe('sanitizePlayerName', () => {

@@ -34,7 +34,7 @@ import {
 import { xpForLevel } from '@/config/GameConfig';
 import * as SaveSystem from '@/systems/SaveSystem';
 import type { ProgressEvent, SaveData } from '@/types';
-import type { TalentId } from '@/config/talents';
+import type { TalentId, TalentRanks } from '@/config/talents';
 
 // --- Ergebnistypen ----------------------------------------------------------
 
@@ -166,6 +166,15 @@ export interface AdminDashboard {
   users: AdminUserStats[];
 }
 
+/**
+ * Summe aller Talentraenge - ein Kauf auf einem anderen Geraet aendert oft
+ * weder Level noch Bestwert noch Coins (die sind ja gerade dafuer ausgegeben),
+ * bliebe ohne diese Summe fuer den Vergleich unsichtbar.
+ */
+function totalTalentRanks(talents: TalentRanks): number {
+  return Object.values(talents).reduce((sum: number, rank) => sum + (rank ?? 0), 0);
+}
+
 /** Vergleicht die Fortschrittsmarker, die fuer den Nutzer sichtbar sind. */
 export function isRemoteAhead(local: SaveData, remote: RemoteSave): boolean {
   return (
@@ -173,7 +182,10 @@ export function isRemoteAhead(local: SaveData, remote: RemoteSave): boolean {
     remote.bestScore > local.bestScore ||
     remote.totalRuns > local.totalRuns ||
     remote.data.totalScore > local.totalScore ||
-    Number(remote.data.coins ?? 0) > local.coins
+    Number(remote.data.coins ?? 0) > local.coins ||
+    totalXpForSave(remote.data) > totalXpForSave(local) ||
+    totalTalentRanks(remote.data.talents) > totalTalentRanks(local.talents) ||
+    remote.data.unlockedAchievements.length > local.unlockedAchievements.length
   );
 }
 
@@ -184,7 +196,10 @@ export function isLocalAhead(local: SaveData, remote: RemoteSave): boolean {
     local.bestScore > remote.bestScore ||
     local.totalRuns > remote.totalRuns ||
     local.totalScore > remote.data.totalScore ||
-    local.coins > Number(remote.data.coins ?? 0)
+    local.coins > Number(remote.data.coins ?? 0) ||
+    totalXpForSave(local) > totalXpForSave(remote.data) ||
+    totalTalentRanks(local.talents) > totalTalentRanks(remote.data.talents) ||
+    local.unlockedAchievements.length > remote.data.unlockedAchievements.length
   );
 }
 

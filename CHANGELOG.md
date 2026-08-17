@@ -18,6 +18,14 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- Der automatische Profil-Abgleich beim Menuebesuch (auch beim App-Start)
+  erkannte einen weiter fortgeschrittenen Cloud-Stand nur an Level, Bestwert,
+  Runs, Gesamtpunkten und Coins. Ein Talentkauf, ein neuer Erfolg oder XP-
+  Zuwachs auf einem anderen Geraet aendern davon oft keinen einzigen Wert —
+  der Abgleich hielt den lokalen Stand dann faelschlich fuer aktuell, und nur
+  das manuelle "PROFIL ABGLEICHEN" in den Einstellungen zog den echten Stand.
+  `isRemoteAhead`/`isLocalAhead` vergleichen jetzt zusaetzlich Talentraenge,
+  Anzahl freigeschalteter Erfolge und Gesamt-XP.
 - Ton blieb nach App-Kaltstart auf iOS oft dauerhaft stumm, obwohl "TON: AN"
   gesetzt war: Der allererste `AudioContext.resume()`-Aufruf blieb dort
   manchmal fuer immer in der Warteschleife (kein resolve, kein reject). Die
