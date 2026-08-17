@@ -14,13 +14,14 @@
 -- ueber den sie sich finden, "bereit" melden und eine gemeinsame Startzeit
 -- erhalten.
 --
--- Sicherheitsmodell konsistent mit phase_2_10_lock_saves_access.sql: keine
--- direkten Tabellenrechte fuer anon/authenticated, ausschliesslich
--- security-definer-RPCs. Zusaetzlich noetig fuer den laufenden Kanalbetrieb
--- (Score-Broadcast in Phase 2, Ready-Signale hier): eine RLS-Policy auf
--- `realtime.messages`, weil Realtime Broadcast/Presence ein eigener
--- Autorisierungsweg neben PostgREST ist. Kein Login noetig - Zugriff ist an
--- die Kenntnis des Raum-Codes gebunden, genau wie bei sync_codes.
+-- Sicherheitsmodell angelehnt an phase_2_10_lock_saves_access.sql: Schreiben
+-- laeuft ausschliesslich ueber security-definer-RPCs, keine direkten
+-- INSERT/UPDATE/DELETE-Rechte fuer anon/authenticated. Eine Ausnahme, siehe
+-- Begruendung bei der Tabelle unten: ein minimaler, spaltenbeschraenkter
+-- SELECT-Grant ist noetig, weil Supabase Realtime die Autorisierungs-Policy
+-- auf `realtime.messages` mit den Rechten der verbindenden Rolle auswertet,
+-- nicht als security definer. Kein Login noetig - Zugriff ist an die
+-- Kenntnis des Raum-Codes gebunden, genau wie bei sync_codes.
 --
 -- ============================================================================
 -- Warum eine eigene Tabelle statt sync_codes
@@ -57,9 +58,38 @@ create index if not exists duel_rooms_expiry_idx on public.duel_rooms (expires_a
 
 alter table public.duel_rooms enable row level security;
 
--- Bewusst KEINE Policy und KEIN GRANT fuer anon/authenticated: siehe
--- Kommentar oben. Ohne Policy verweigert RLS jeden direkten Zugriff; die
--- RPCs unten stellen den Zugang kontrolliert wieder her.
+-- Kein GRANT/Policy fuer INSERT/UPDATE/DELETE: Schreiben laeuft
+-- ausschliesslich ueber die security-definer-RPCs unten, exakt wie bei
+-- saves/sync_codes (phase_2_10_lock_saves_access.sql).
+--
+-- ============================================================================
+-- Warum es hier trotzdem eine direkte SELECT-Policy braucht - anders als bei
+-- saves/sync_codes
+-- ============================================================================
+--
+-- Die RLS-Policy auf `realtime.messages` unten (Abschnitt 4) prueft per
+-- EXISTS-Subquery gegen `duel_rooms`, ob der Realtime-Kanal-Beitritt erlaubt
+-- ist. Diese Subquery laeuft mit den Rechten der verbindenden Rolle (anon),
+-- nicht als security definer - ohne einen direkten SELECT-Grant auf
+-- `duel_rooms` kann Realtime die Policy nicht auswerten und lehnt JEDEN
+-- Kanal-Beitritt mit "Unauthorized" ab, auch mit korrektem Code. Getestet
+-- und bestaetigt am Geraet (2026-08-18): mit `using (true)`-Policy aber
+-- ohne GRANT schlug der Verbindungsversuch fehl.
+--
+-- Um trotzdem nicht den gesamten Raum-Datensatz (insbesondere `seed`, der
+-- Datengrundlage fuer die Relikt-Reihenfolge) oeffentlich lesbar zu machen,
+-- ist der Grant auf die zwei Spalten begrenzt, die fuer die Existenzpruefung
+-- noetig sind. `seed`/`world_id` bleiben nur ueber die RPCs
+-- (`join_duel_room`, `get_duel_room`) erreichbar - ein direktes
+-- `select seed from duel_rooms` scheitert weiterhin an fehlenden
+-- Spaltenrechten.
+grant select (code, expires_at) on public.duel_rooms to anon, authenticated;
+
+drop policy if exists "Raumcode-Pruefung fuer Realtime-Autorisierung" on public.duel_rooms;
+create policy "Raumcode-Pruefung fuer Realtime-Autorisierung"
+  on public.duel_rooms for select
+  to anon, authenticated
+  using (true);
 
 -- ============================================================================
 -- 2. Raum erzeugen und beitreten
