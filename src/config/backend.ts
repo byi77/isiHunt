@@ -55,3 +55,15 @@ export const PLAYER_NAME_MAX_LENGTH = 16;
  * dass sich das Spiel nicht kaputt anfuehlt.
  */
 export const BACKEND_TIMEOUT_MS = 5000;
+
+/**
+ * Wartezeiten fuer automatische Sync-Wiederholungen nach einem Fehlschlag.
+ *
+ * Direkt nach einem `online`-Ereignis meldet iOS das Netz oft schon, bevor
+ * die Verbindung zu Supabase wirklich steht - ein erster Versuch kann am
+ * `BACKEND_TIMEOUT_MS`-Limit scheitern, obwohl das Geraet Sekunden spaeter
+ * problemlos verbindet. Ohne Wiederholung blieb ein Offline-Run dann bis zum
+ * naechsten `online`-Ereignis oder App-Neustart in der Outbox stehen -
+ * beobachtet 2026-08-17 (TODO.md, Phase-2.6-Testbefund).
+ */
+export const SYNC_RETRY_DELAYS_MS = [5000, 15000, 60000];

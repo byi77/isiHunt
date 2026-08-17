@@ -42,6 +42,30 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 - [ ] **Phase 2.6 produktiv pruefen:** SQL-Migration in Supabase anwenden und
       mit einem Profil auf iPhone und iPad testen: Offline spielen, verbinden,
       dann XP, Coins, Name, Bestwert und Erfolge pruefen.
+  - [x] **BUG gefunden und behoben (2026-08-17), per Debug-Report belegt:**
+        Zwei iPhones, gleiches Profil. iPhone1 offline gespielt → online →
+        Sync-Popup kam, Abgleich lief. iPhone2 offline gespielt → online, im
+        Menue, online gleichzeitig → kein Sync-Popup, der Offline-Run wurde
+        nicht hochgeladen. Nach "PROFIL ABGLEICHEN" zuerst auf iPhone1, dann
+        auf iPhone2 stand am Ende **iPhone2 auf dem (aelteren) Stand von
+        iPhone1** — der iPhone2-Offline-Lauf war verloren.
+        **Ursache, belegt durch den Debug-Report-Verlauf:**
+        `[CloudSystem] Login prüfen fehlgeschlagen` direkt nach `run:ended` —
+        `requireAuthenticatedClient()` ruft `supabase.auth.getUser()` mit dem
+        5s-`BACKEND_TIMEOUT_MS`-Limit auf; iOS meldet das `online`-Ereignis
+        oft, bevor die Verbindung zu Supabase tatsaechlich steht, der erste
+        Versuch lief prompt in den Timeout. Ohne Wiederholung blieb der Run
+        bis zum naechsten `online`-Ereignis oder App-Neustart in der Outbox
+        stehen (`MenuScene` registriert den Listener nur einmalig).
+        **Fix:** `ProgressSyncSystem` plant bei einem Fehlschlag jetzt selbst
+        einen automatischen Wiederholungsversuch (`SYNC_RETRY_DELAYS_MS` in
+        `config/backend.ts`: 5s/15s/60s), unabhaengig vom `MenuScene`- oder
+        `online`-Lebenszyklus. Bricht sauber ab, wenn sich der Nutzer
+        zwischenzeitlich abmeldet. Zwei neue Tests in
+        `ProgressSyncSystem.test.ts`.
+        **Noch offen:** erneuter Geraetetest mit demselben Ablauf (zwei
+        Geraete, Offline-Run auf einem, direkt nach Netzwiederkehr), um zu
+        bestaetigen, dass der Retry den Fall jetzt tatsaechlich auffaengt.
 - [ ] **Phase 5 mit Kindern balancieren:** Schwierige Welten, Hindernisse,
       Tempo, Sichtfenster und Belohnungen sollen fordernd, aber nie frustrierend
       sein.
@@ -168,10 +192,15 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 
 **Jetzt schon klärbar:**
 
-- [ ] Apple Developer Account Status prüfen: Mitgliedschaft aktiv/bezahlt,
-      Team-ID notiert, Zugriff auf App Store Connect, 2FA eingerichtet.
+- [x] **Apple Developer Account Status geprueft (2026-08-17):** Team-ID
+      `2ML2A7586J`, App Store Connect Zugriff vorhanden, 2FA ueber iPhone
+      aktiv. **Mitgliedschaft ist abgelaufen** (war frueher aktiv) — bewusst
+      noch nicht reaktiviert, da M8 ohnehin erst nach M4.1/M6/M7 beginnt.
+      **Reaktivierung ist der erste Schritt bei M8-Start**, vor App-Eintrag
+      und Bundle-ID-Reservierung (die brauchen eine aktive Mitgliedschaft).
 - [ ] App Store Connect: App-Eintrag "isiHunt" anlegen, Bundle-ID reservieren
-      (Namensschema noch offen, siehe ADR-0015).
+      (Namensschema noch offen, siehe ADR-0015). **Voraussetzung: Mitgliedschaft
+      reaktiviert.**
 - [ ] App Store Connect API Key erzeugen (Rolle "App Manager"/"Admin"),
       Key-ID/Issuer-ID/`.p8`-Datei sicher verwahren.
 - [ ] Codemagic-Account anlegen, Repository verbinden, API Key als

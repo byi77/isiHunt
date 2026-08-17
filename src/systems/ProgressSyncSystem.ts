@@ -1,5 +1,6 @@
 /** Offline-Outbox für Fortschrittsereignisse eines angemeldeten Profils. */
 
+import { SYNC_RETRY_DELAYS_MS } from '@/config/backend';
 import * as AuthSystem from '@/systems/AuthSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
@@ -7,6 +8,39 @@ import type { ProgressEvent, ProgressionResult, RunStats } from '@/types';
 
 const OUTBOX_KEY = 'isihunt.progress-events';
 let flushPromise: Promise<void> | null = null;
+let retryTimer: ReturnType<typeof setTimeout> | null = null;
+let retryAttempt = 0;
+
+/**
+ * Bricht eine laufende Wiederholungskette ab.
+ *
+ * Fuer Tests, damit kein Timer ueber das Testende hinaus haengen bleibt; im
+ * Betrieb greift das automatisch nie, weil jeder erfolgreiche `flush()` selbst
+ * ueber `clearRetry()` abbricht.
+ */
+export function cancelRetry(): void {
+  if (retryTimer !== null) clearTimeout(retryTimer);
+  retryTimer = null;
+  retryAttempt = 0;
+}
+
+/**
+ * Plant einen automatischen Wiederholungsversuch nach `SYNC_RETRY_DELAYS_MS`.
+ *
+ * Ohne das haengt ein Offline-Run in der Outbox, bis zufaellig ein neues
+ * `online`-Ereignis feuert oder die App neu startet (siehe Kommentar bei
+ * `SYNC_RETRY_DELAYS_MS`). Ein bereits laufender Timer wird nicht doppelt
+ * gesetzt - `flush()` selbst schuetzt schon vor parallelen Auftraegen.
+ */
+function scheduleRetry(): void {
+  if (retryTimer !== null) return;
+  const delay = SYNC_RETRY_DELAYS_MS[Math.min(retryAttempt, SYNC_RETRY_DELAYS_MS.length - 1)];
+  retryAttempt += 1;
+  retryTimer = setTimeout(() => {
+    retryTimer = null;
+    void flush();
+  }, delay);
+}
 
 function createEventId(): string {
   if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
@@ -59,7 +93,10 @@ export function enqueueRun(stats: RunStats, progression: ProgressionResult): str
 
 /** Überträgt wartende Runs in Reihenfolge; Fehler bleiben in der Outbox. */
 async function flushPending(): Promise<void> {
-  if (!AuthSystem.isSignedIn() || SaveSystem.isTestProfileActive()) return;
+  if (!AuthSystem.isSignedIn() || SaveSystem.isTestProfileActive()) {
+    cancelRetry();
+    return;
+  }
 
   const pending = readOutbox();
   const remaining: ProgressEvent[] = [];
@@ -75,10 +112,14 @@ async function flushPending(): Promise<void> {
 
   writeOutbox(remaining);
 
-  // Der Tagesbonus darf erst abgeholt werden, wenn wirklich alle Laufereignisse
-  // synchronisiert wurden. Sonst koennen XP/Coins/Level steigen, obwohl die
-  // zugehoerige Spielzeit noch nicht im Profil steht.
-  if (remaining.length > 0) return;
+  if (remaining.length > 0) {
+    scheduleRetry();
+    // Der Tagesbonus darf erst abgeholt werden, wenn wirklich alle Laufereignisse
+    // synchronisiert wurden. Sonst koennen XP/Coins/Level steigen, obwohl die
+    // zugehoerige Spielzeit noch nicht im Profil steht.
+    return;
+  }
+  cancelRetry();
 
   const local = SaveSystem.load();
   if (!local.pendingDailyKey || !local.pendingDailyEventId || local.pendingDailyCoins <= 0) return;

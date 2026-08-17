@@ -59,6 +59,17 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Offline-Fortschritt blieb nach Netzwiederkehr haengen, bis App-Neustart
+  oder ein weiteres `online`-Ereignis.** Beim Phase-2.6-Geraetetest mit zwei
+  iPhones (2026-08-17) wurde ein Offline-Run auf einem Geraet trotz Rueckkehr
+  ins Menue bei bestehender Verbindung nicht hochgeladen; ein spaeterer
+  Abgleich vom anderen Geraet aus ueberschrieb ihn. Per Debug-Report belegt:
+  `requireAuthenticatedClient()` (`CloudSystem.ts`) scheiterte an
+  `BACKEND_TIMEOUT_MS` (5s), weil iOS das `online`-Ereignis oft meldet, bevor
+  die Verbindung zu Supabase tatsaechlich steht. `ProgressSyncSystem` plant
+  bei einem Fehlschlag jetzt selbst eine automatische Wiederholung
+  (`SYNC_RETRY_DELAYS_MS`: 5s/15s/60s) statt auf den naechsten
+  `MenuScene`-Lebenszyklus zu warten.
 - `phase_2_8_unify_identity.sql` aktualisierte `profiles.alias`, aber nicht
   die zugehoerige `auth.users.email` — der Login prueft aber genau diese
   E-Mail. Betroffene Konten (u. a. das Admin-Konto) waren nach der Migration

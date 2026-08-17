@@ -11,7 +11,7 @@
  * (siehe ProgressionSystem.test.ts).
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { emptyRarityCounts } from '@/config/rarities';
 import { DEFAULT_WORLD_ID } from '@/config/worlds';
@@ -44,6 +44,11 @@ beforeEach(async () => {
   vi.resetModules();
   SaveSystem = await import('@/systems/SaveSystem');
   ProgressSyncSystem = await import('@/systems/ProgressSyncSystem');
+});
+
+afterEach(() => {
+  ProgressSyncSystem.cancelRetry();
+  vi.useRealTimers();
 });
 
 function createRun(overrides: Partial<RunStats> = {}): RunStats {
@@ -188,6 +193,45 @@ describe('flushPending (ueber flush())', () => {
     const data = SaveSystem.load();
     expect(data.pendingDailyKey).toBe('2026-08-17');
     expect(data.pendingDailyCoins).toBe(50);
+  });
+});
+
+describe('automatischer Retry nach Fehlschlag', () => {
+  // Beobachtet 2026-08-17: getUser() scheiterte kurz nach Netzwiederkehr am
+  // Timeout, obwohl das Geraet Sekunden spaeter problemlos verband. Ohne
+  // Wiederholung blieb der Offline-Run bis zum naechsten `online`-Ereignis
+  // oder App-Neustart haengen (siehe TODO.md, Phase-2.6-Testbefund).
+  it('versucht nach einem Fehlschlag automatisch erneut, ohne dass flush() erneut aufgerufen wird', async () => {
+    vi.useFakeTimers();
+    signedIn = true;
+    ProgressSyncSystem.enqueueRun(createRun(), createProgression());
+    submitProgressEvent.mockResolvedValueOnce({ ok: false, error: 'Zeitüberschreitung' });
+    submitProgressEvent.mockResolvedValueOnce({ ok: true, value: null });
+
+    await ProgressSyncSystem.flush();
+    expect(submitProgressEvent).toHaveBeenCalledTimes(1);
+    expect(ProgressSyncSystem.pendingCount()).toBe(1);
+
+    await vi.advanceTimersByTimeAsync(5000);
+
+    expect(submitProgressEvent).toHaveBeenCalledTimes(2);
+    expect(ProgressSyncSystem.pendingCount()).toBe(0);
+  });
+
+  it('bricht die Wiederholungskette ab, sobald der Nutzer sich abmeldet', async () => {
+    vi.useFakeTimers();
+    signedIn = true;
+    ProgressSyncSystem.enqueueRun(createRun(), createProgression());
+    submitProgressEvent.mockResolvedValue({ ok: false, error: 'Zeitüberschreitung' });
+
+    await ProgressSyncSystem.flush();
+    signedIn = false;
+
+    await vi.advanceTimersByTimeAsync(5000);
+
+    // Kein zweiter Versuch, weil isSignedIn() beim geplanten Retry bereits
+    // false liefert - flushPending() bricht dann ueber cancelRetry() ab.
+    expect(submitProgressEvent).toHaveBeenCalledTimes(1);
   });
 });
 
