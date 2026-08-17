@@ -299,13 +299,21 @@ const onRunEnded: (payload: { progression: { levelsGained: number } }) => void =
   progression,
 }) => playRunEnded(progression.levelsGained);
 const onVisibilityChange = (): void => {
-  if (document.visibilityState !== 'hidden') return;
-  // Keine alten Fang-Töne nach dem Zurückkehren aus App-Wechsel oder
-  // Sperrbildschirm nachspielen. iOS unterbricht dort den AudioContext.
-  pendingTones.length = 0;
-  if (audioContext?.state === 'running') {
-    void audioContext.suspend().catch(() => undefined);
+  if (document.visibilityState === 'hidden') {
+    // Keine alten Fang-Töne nach dem Zurückkehren aus App-Wechsel oder
+    // Sperrbildschirm nachspielen. iOS unterbricht dort den AudioContext.
+    pendingTones.length = 0;
+    if (audioContext?.state === 'running') {
+      void audioContext.suspend().catch(() => undefined);
+    }
+    return;
   }
+
+  // Auf Android/Desktop reicht `resume()` ohne Nutzergeste - dort soll der
+  // Kontext direkt bei Rueckkehr wieder laufen, statt auf den naechsten Tipp
+  // zu warten. iOS lehnt das hier ab; dort greift `unlock()` beim naechsten
+  // pointerdown/click.
+  unlock();
 };
 
 function registerEventListeners(): void {
@@ -336,7 +344,9 @@ export function shutdown(): void {
 
   unregisterEventListeners();
   window.removeEventListener('pointerdown', unlock, true);
+  window.removeEventListener('click', unlock, true);
   window.removeEventListener('touchstart', unlock, true);
+  window.removeEventListener('touchend', unlock, true);
   window.removeEventListener('keydown', unlock, true);
   document.removeEventListener('visibilitychange', onVisibilityChange);
 }
@@ -348,8 +358,15 @@ export function initialize(): void {
 
   registerEventListeners();
   window.addEventListener('pointerdown', unlock, true);
+  // `click` feuert erst nach einem vollstaendigen Tap-Zyklus und zaehlt auf
+  // iOS Safari zuverlaessiger als `pointerdown` allein als echte
+  // Nutzergeste fuer `resume()` (docs/ARCHITECTURE.md 10 - Tonwiedergabe).
+  window.addEventListener('click', unlock, true);
   // Fallback für ältere Touch-WebViews ohne Pointer Events.
-  if (!window.PointerEvent) window.addEventListener('touchstart', unlock, true);
+  if (!window.PointerEvent) {
+    window.addEventListener('touchstart', unlock, true);
+    window.addEventListener('touchend', unlock, true);
+  }
   window.addEventListener('keydown', unlock, true);
   document.addEventListener('visibilitychange', onVisibilityChange);
 }

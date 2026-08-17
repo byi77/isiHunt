@@ -18,6 +18,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- Ton blieb nach App-Wechsel oder Sperrbildschirm meist stumm: Ein frueherer
+  Commit hatte unbeabsichtigt die `click`/`touchend`-Entsperr-Gesten entfernt
+  und den `visibilitychange`-Handler so umgebaut, dass er den AudioContext
+  beim Verlassen zwar pausierte, bei Rueckkehr aber nicht mehr aktiv
+  reaktivierte. Auf iOS Safari zaehlt nicht jede Geste als gueltige
+  Nutzeraktivierung fuer `resume()` — `pointerdown` allein reichte oft nicht.
 - Der Zeitverlust-Text bei einem Hindernistreffer zeigte einen falschen Wert
   an; er wird jetzt aus dem tatsaechlichen Balancing-Wert berechnet.
 - Ein fehlgeschlagenes Schreiben nach einer Spielstand-Migration (z.B. volles

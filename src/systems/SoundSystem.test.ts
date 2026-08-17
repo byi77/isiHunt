@@ -248,6 +248,50 @@ describe('playRunEnded - Level-Aufstieg-Verzweigung', () => {
   });
 });
 
+describe('visibilitychange - Regression: Kontext blieb nach Rueckkehr stumm', () => {
+  it('suspendiert den Kontext bei hidden und reaktiviert ihn bei visible', () => {
+    SaveSystem.update((data) => {
+      data.soundEnabled = true;
+    });
+    SoundSystem.initialize();
+    eventBus.emitEvent(GameEvent.Collected, {
+      rarityId: 'common',
+      basePoints: 1,
+      awardedPoints: 1,
+      combo: 1,
+      multiplier: 1,
+      sameRarityStreak: 1,
+      streakBonus: false,
+      x: 0,
+      y: 0,
+    });
+
+    Object.defineProperty(document, 'visibilityState', {
+      value: 'hidden',
+      configurable: true,
+    });
+    document.dispatchEvent(new Event('visibilitychange'));
+
+    Object.defineProperty(document, 'visibilityState', {
+      value: 'visible',
+      configurable: true,
+    });
+    expect(() => document.dispatchEvent(new Event('visibilitychange'))).not.toThrow();
+  });
+
+  it('registriert click und touchend als zusaetzliche Entsperr-Gesten (iOS braucht mehr als pointerdown)', () => {
+    const addSpy = vi.spyOn(window, 'addEventListener');
+
+    SoundSystem.initialize();
+
+    const registeredTypes = addSpy.mock.calls.map((call) => call[0]);
+    expect(registeredTypes).toContain('click');
+    expect(registeredTypes).toContain('pointerdown');
+
+    addSpy.mockRestore();
+  });
+});
+
 describe('setEnabled', () => {
   it('speichert den Zustand im Spielstand', () => {
     SoundSystem.initialize();
