@@ -1,6 +1,6 @@
 {
   "name": "isihunt",
-  "version": "0.1.134",
+  "version": "0.1.135",
   "private": true,
   "type": "module",
   "description": "isiHunt - ein farbenfroher 2D-Arcade-Collector fuer mobile Browser",

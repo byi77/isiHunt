@@ -965,9 +965,13 @@ export class MenuScene extends Phaser.Scene {
     const primaryHeight = 96;
     const secondaryHeight = 76;
     const tertiaryHeight = 60;
+    const settingsHeight = 66;
     const rowGap = 22;
 
-    const tertiaryY = settingsY - tertiaryHeight / 2 - 28;
+    // Abstand zu EINSTELLUNGEN genauso gross wie zwischen den anderen Reihen -
+    // sonst reicht der optische Lichtschein der Knoepfe (createButton haelt
+    // seinen Halo bis zum 2,6-fachen der Knopfhoehe) in die Nachbarreihe.
+    const tertiaryY = settingsY - settingsHeight / 2 - rowGap - tertiaryHeight / 2;
     const secondaryY = tertiaryY - tertiaryHeight / 2 - rowGap - secondaryHeight / 2;
     const primaryY = secondaryY - secondaryHeight / 2 - rowGap - primaryHeight / 2;
 
