@@ -72,7 +72,7 @@ export class AdminUsersScene extends Phaser.Scene {
       onSubmit: () => void this.boost(aliasInput.getValue()),
     });
 
-    const boostButton = createButton(
+    createButton(
       this,
       GAME_WIDTH / 2 - 125,
       titleY + 245,
@@ -89,10 +89,13 @@ export class AdminUsersScene extends Phaser.Scene {
       { width: 230, height: 62, accent: 0xff6b6b, fontSize: FontSize.tiny },
     );
 
+    // Nur das DOM-Eingabefeld raeumt sich hier selbst auf: Phaser zerstoert
+    // beim Szenenwechsel bereits alle GameObjects der Szene, bevor SHUTDOWN
+    // an diesen Listener geht. boostButton/resetButton.setEnabled(false) rief
+    // hier zuvor disableInteractive() auf einem schon zerstoerten Container
+    // auf und liess das Spiel beim Verlassen dieser Szene abstuerzen.
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
       aliasInput.destroy();
-      boostButton.setEnabled(false);
-      resetButton.setEnabled(false);
     });
     // Nicht automatisch fokussieren: Auf Mobilgeräten öffnet der sofortige
     // Fokus die Bildschirmtastatur und schiebt bzw. verdeckt genau den
