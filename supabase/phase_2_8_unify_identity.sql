@@ -8,6 +8,12 @@
 --
 -- Diese Datei nach phase_2_7_admin_tools.sql im Supabase SQL Editor
 -- ausfuehren. Sie ist wiederholbar und loescht keine Spielstaende.
+--
+-- BEKANNTER FEHLER (behoben in phase_2_9_fix_auth_email_sync.sql): Diese
+-- Datei aendert profiles.alias, aber nicht die zugehoerige auth.users.email.
+-- Der Login baut die interne Auth-Adresse aus dem Alias und prueft sie gegen
+-- auth.users.email - nach dieser Migration allein bleiben betroffene Konten
+-- ausgesperrt. phase_2_9 danach ausfuehren, sonst schlaegt der Login fehl.
 
 begin;
 

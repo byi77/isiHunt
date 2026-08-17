@@ -843,3 +843,10 @@ ein anderes stillschweigend ueberschreibt.
 - `supabase/phase_2_8_unify_identity.sql` muss nach `phase_2_7_admin_tools.sql`
   einmalig manuell im Supabase SQL-Editor ausgefuehrt werden — es gibt keinen
   automatischen Migrationsweg in diesem Projekt.
+- **Nachtrag:** `phase_2_8_unify_identity.sql` aenderte `profiles.alias`,
+  liess aber `auth.users.email` unangetastet, gegen die der Login tatsaechlich
+  prueft. Betroffene Konten waren dadurch nach der Migration ausgesperrt.
+  `supabase/phase_2_9_fix_auth_email_sync.sql` gleicht `auth.users.email`
+  nachtraeglich an und korrigiert `update_profile_identity`, damit auch
+  kuenftige Namensaenderungen die Login-Adresse mitziehen. Ebenfalls
+  einmalig manuell auszufuehren, nach `phase_2_8_unify_identity.sql`.

@@ -43,6 +43,19 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- `phase_2_8_unify_identity.sql` aktualisierte `profiles.alias`, aber nicht
+  die zugehoerige `auth.users.email` — der Login prueft aber genau diese
+  E-Mail. Betroffene Konten (u. a. das Admin-Konto) waren nach der Migration
+  ausgesperrt: Login mit dem neuen Namen schlug fehl, weil Supabase Auth
+  noch den alten Alias in der internen E-Mail erwartete. Ebenso zog
+  `update_profile_identity` diese E-Mail bisher nicht nach — jede kuenftige
+  Namensaenderung haette denselben Aussperr-Effekt gehabt.
+  `supabase/phase_2_9_fix_auth_email_sync.sql` repariert beides: sie
+  gleicht `auth.users.email` einmalig an den aktuellen `alias` an und
+  ersetzt `update_profile_identity` durch eine Fassung, die die Login-Adresse
+  bei jeder Namensaenderung synchron mitzieht. **Muss nach
+  `phase_2_8_unify_identity.sql` einmalig manuell im Supabase SQL-Editor
+  ausgefuehrt werden.**
 - Der automatische Profil-Abgleich beim Menuebesuch (auch beim App-Start)
   erkannte einen weiter fortgeschrittenen Cloud-Stand nur an Level, Bestwert,
   Runs, Gesamtpunkten und Coins. Ein Talentkauf, ein neuer Erfolg oder XP-
