@@ -362,7 +362,14 @@ export function subscribeToRoom(
     })
     .subscribe((status, error) => {
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        activeHandlers.onChannelError?.(error?.message ?? `Kanalstatus: ${status}`);
+        const reason = error?.message ?? `Kanalstatus: ${status}`;
+        // Landet im Debug-Ringpuffer (DebugSystem.installConsoleCapture) -
+        // ohne dieses Log verschwindet der Fehler spurlos, weil der
+        // UI-Handler ihn nur als Text anzeigt, nicht protokolliert. Genau
+        // diese Luecke hat den ersten Realtime-Verbindungsfehler
+        // (2026-08-18) im Debug-Report unsichtbar gemacht.
+        console.warn(`[NetworkDuelSystem] Kanalfehler fuer Raum ${code}:`, reason, error);
+        activeHandlers.onChannelError?.(reason);
         return;
       }
       if (status === 'SUBSCRIBED') {

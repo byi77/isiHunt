@@ -564,6 +564,31 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
 > Weltdetails behalten; die Seltenheit wird weiterhin durch Glow, Strahlenkranz
 > und Fang-Effekte eindeutig angezeigt.
 
+- [ ] **Neues App-Icon** _(Wunsch des Nutzers, 2026-08-18)_: **"Ich brauche
+      ein neues App-Icon, ein modernes und thematisch passendes."** Der
+      Themenwechsel Fantasy → Weltraum (ADR-0013) ist fuer die Spieltexturen
+      laengst umgesetzt (Zeile oben: "Raumschiff statt vierzackiger Stern"),
+      aber die App-Icons selbst sind davon unberuehrt geblieben: Sie zeigen
+      weiterhin einen generischen vierzackigen Stern (siehe
+      `scripts/generate-icons.mjs`, Kommentar "derselbe vierzackige Stern in
+      Gold auf dem Grundton" — ein Relikt aus der Zeit vor dem Weltraum-
+      Thema), waehrend Menue und Spiel laengst das Raumschiff-Logo
+      (`public/assets/isihunt-logo-v2.png`) zeigen.
+      **Betroffene Dateien:** `public/favicon.png`, `public/apple-touch-icon.png`,
+      `public/icon-192.png`, `public/icon-512.png` — Groessen und Zweck stehen
+      im `manifest.webmanifest` und in `docs/ART_STYLE.md` Abschnitt 6.
+      **Technischer Weg bereits vorbereitet:** Das Icon wird prozedural per
+      `npm run icons` (`scripts/generate-icons.mjs`) erzeugt, kein Bildeditor
+      noetig — wer das Motiv aendert, aendert den Zeichencode im Skript.
+      Wichtige Einschraenkung aus demselben Skript: Android beschneidet
+      "maskable" Icons zu einem Kreis/Squircle und garantiert nur die
+      inneren 80 % der Flaeche (`STAR_RADIUS_RATIO = 0.3` haelt das Motiv
+      deshalb bewusst klein) — ein neues Motiv muss dieselbe Kreisprobe
+      bestehen. Alternative: falls das neue Motiv zu fein fuer den
+      prozeduralen PNG-Encoder ist (z. B. Details wie beim Raumschiff-Logo),
+      waere ein Export aus dem bestehenden Logo-Artwork der pragmatischere
+      Weg statt neuer Zeichencode.
+
 ## Phase 3.5 — Ton _(neu 2026-08-13, aus M4 vorgezogen)_
 
 > Vorgezogen, weil Ton bei einem Arcade-Spiel keine Politur ist, sondern
@@ -750,11 +775,30 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
         einen scene-uebergreifenden Handler-Wechsel (Lobby vs. laufender
         Run), neues `GameEvent.OpponentDisconnected` mit sichtbarem
         HUD-Hinweis.
-  - [ ] **Noch offen:** erneuter Zwei-Geraete-Test mit den obigen Fixes -
-        insbesondere pruefen, ob ein Verbindungsabbruch waehrend des Laufs
-        jetzt beim Gegner sichtbar wird UND ob der eigene Bildschirm nach
-        App-Wechsel/Zurueckkehren wieder reagiert (siehe naechster Punkt,
-        das war beim ersten Test getrennt zu beobachten).
+  - [ ] **Zweiter Zwei-Geraete-Test (2026-08-18), neuer Bug, Ursache noch
+        NICHT geklaert:** Ablauf: Master erstellt Code, Slave tritt bei.
+        Master startet JAGD, spielt die Runde komplett durch, landet im
+        Ergebnis ("Dein Geschwister spielt noch seine Runde"). Der Slave
+        haengt waehrenddessen durchgehend bei "Uhr wird abgeglichen ..." -
+        irgendwann erscheint "Verbindungsfehler: channel error: transport
+        failure". **Wichtig, gegen Ferndiagnose-Versuchung:** Master kam
+        im selben Testlauf, gegen dieselbe Datenbank/Policy, durch - das
+        schliesst einen generellen Server-/RLS-Fehler aus, es muss etwas
+        sein, das zwischen Master- und Slave-Geraet/-Verbindung
+        unterschiedlich ist. Eine Hypothese (iOS-Standalone-PWA-WebSocket-
+        Bug) wurde per Recherche gefunden, aber wieder verworfen: das
+        dokumentierte Apple-Problem (FB21416603) betrifft nur lokale
+        `ws://`-Verbindungen, nicht `wss://` zu einem externen Dienst wie
+        Supabase - passt nicht zu unserem Fall, war beim genaueren Hinsehen
+        keine belastbare Erklaerung. **Sofortmassnahme:** Der
+        `CHANNEL_ERROR`/`TIMED_OUT`-Pfad in `NetworkDuelSystem.
+        subscribeToRoom()` protokolliert den Fehler jetzt per `console.warn`
+        in den Debug-Ringpuffer (vorher unsichtbar - der Slave-Debug-Report
+        zeigte nur `app:start`, der eigentliche Fehler fehlte komplett).
+        **Naechster Schritt:** mit dem verbesserten Logging erneut testen,
+        den Debug-Report vom scheiternden Geraet auswerten - das
+        vollstaendige `error`-Objekt (nicht nur die Kurzmeldung) sollte die
+        tatsaechliche Ursache zeigen.
   - [ ] **Neu (2026-08-18): Kein sichtbares Feedback bei App-Hintergrund.**
         Phaser pausiert die Update-Loop automatisch, wenn die Seite in den
         Hintergrund geht (App-Wechsel, Sperrbildschirm) - das ist
@@ -768,23 +812,34 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
   - [ ] Phase 2: Live-Punktestand des Gegners waehrend des Laufs im HUD
   - [ ] Phase 3: Rematch fuer Online-Duelle, Reconnect waehrend einer
         laufenden Runde, Anzeigename statt "Spieler 2"
-  - [ ] **Phase 4 (Vision, 2026-08-18):** volle Live-Sicht auf den
-        Gegner-Lauf, nicht nur den Punktestand - Spielfigur, Bewegung, jeder
-        Fang in Echtzeit sichtbar (Bildschirmteilung oder zweites
-        Mini-Spielfeld). Deutlich groesserer Aufwand als Phase 2: staendige
-        Positionsdaten-Uebertragung statt eines 400ms-Takts, ein zweiter
-        Render-Pfad, neue HUD-Flaeche. Explizit NICHT Teil von Phase 2/3,
-        eigenes Vorhaben nach Abschluss der fruehen Phasen.
-  - [ ] **Idee (2026-08-18): Naeherungserkennung fuer Geraete im selben
-        Raum.** Wenn Master und Slave nachweislich nebeneinander sitzen
-        (1-2m Abstand), koennte der Beitritt automatisiert werden statt
-        Code abtippen. Technisch ein eigenes Thema, nicht Teil des
-        bestehenden Realtime-Ansatzes - z. B. Web Bluetooth (eingeschraenkte
-        Browser-Unterstuetzung, iOS Safari insbesondere), lokale
-        Netzwerk-Discovery, oder ein Naeherungssignal ueber Lautsprecher/
-        Mikrofon (Audio-Beacon). Noch nicht recherchiert, welcher Weg im
-        mobilen Browser ueberhaupt zuverlaessig funktioniert - vor
-        Umsetzung eigene Machbarkeitspruefung noetig.
+  - [ ] **Phase 4 — volle gegenseitige Live-Sicht** _(Wunsch des Nutzers,
+        2026-08-18)_: **"Eigentlich habe ich gedacht man kann sich
+        gegenseitig zusehen wie der andere spielt - also Master-Spiel ist
+        sichtbar auf Slave und Slave-Spiel ist sichtbar auf Master."** Beide
+        Spieler sehen also nicht nur den Punktestand des anderen, sondern
+        sein komplettes laufendes Spielfeld in Echtzeit: Spielfigur,
+        Bewegung, jeden Fang - vermutlich als zweites, kleineres Spielfeld
+        oder Bildschirmteilung. Reihenfolge vom Nutzer explizit bestaetigt:
+        **erst Phase 2 (nur Punktestand) bauen und testen, danach Phase 4
+        (volle Sicht) angehen** - nicht gleichzeitig. Einschaetzung dazu:
+        technisch machbar (staendige Positionsdaten statt eines 400ms-Takts,
+        zweiter Render-Pfad, neue HUD-Flaeche), aber ein eigenes
+        Feature-Paket mit eigenem Umfang, kein Anhaengsel an Phase 2.
+  - [ ] **Naeherungserkennung fuer Geraete im selben Raum** _(Wunsch des
+        Nutzers, 2026-08-18)_: **"Wenn die Geraete nebeneinander sind mit
+        Abstand von 1-2m, dann kann man doch eine Technik einbauen die
+        erkennt dass Master und Slave gerade nebeneinander sitzen"** - Ziel:
+        Beitritt zum Duell-Raum automatisch erkennen/vorschlagen, statt den
+        6-stelligen Code manuell abzutippen, wenn beide Kinder ohnehin im
+        selben Zimmer sitzen. Technisch ein eigenes Thema, nicht Teil des
+        bestehenden Realtime-Ansatzes - moegliche Wege (noch nicht
+        recherchiert, welcher im mobilen Browser tatsaechlich zuverlaessig
+        funktioniert): Web Bluetooth (eingeschraenkte Unterstuetzung,
+        insbesondere iOS Safari), lokale Netzwerk-Discovery, oder ein
+        Naeherungssignal ueber Lautsprecher/Mikrofon (Audio-Beacon). Vor
+        einer Umsetzung braucht es zuerst eine eigene Machbarkeitspruefung,
+        welcher Weg auf den tatsaechlichen Geraeten (iPhones) ueberhaupt
+        geht.
 - [ ] Rekord-Meldung im laufenden Spiel; echte Push-Meldung nur fuer
       installierte Web-Apps (iOS-Grenze)
 
