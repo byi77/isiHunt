@@ -342,8 +342,9 @@ export class OnlineDuelScene extends Phaser.Scene {
 
     let opponentReady = false;
     let started = false;
+    const localPlayerIndex: 0 | 1 = this.isHost ? 0 : 1;
 
-    NetworkDuelSystem.subscribeToRoom(supabase, this.roomCode, {
+    NetworkDuelSystem.subscribeToRoom(supabase, this.roomCode, localPlayerIndex, {
       onOpponentReady: () => {
         opponentReady = true;
         if (!started) statusText.setText('Geschwister bereit - Start wird vorbereitet ...');
@@ -354,6 +355,9 @@ export class OnlineDuelScene extends Phaser.Scene {
         this.beginRun(startAtMs);
       },
       onOpponentDisconnected: () => {
+        // Nur waehrend der Lobby relevant fuer diese Scene - ein Abbruch
+        // WAEHREND des Runs betrifft GameScene, die den Kanal separat
+        // beobachtet (siehe GameScene.subscribeOpponentDisconnect()).
         if (started) return;
         statusText.setText('Verbindung zum Geschwister verloren.').setColor(Palette.danger);
       },

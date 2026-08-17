@@ -733,14 +733,58 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
       Countdown, Ergebnisvergleich am Ende. Noch **kein** Live-Score
       waehrend des Laufs. `supabase/phase_2_11_duel_rooms.sql` ausgefuehrt.
       `npm run verify` gruen, 22 neue Tests.
-      **Noch offen vor Abschluss von Phase 1:** erster echter
-      Zwei-Geraete-Test — die 400ms-Broadcast-Takt- und 5s-Start-Vorlauf-
-      Annahmen aus `config/onlineDuel.ts` sind bisher ungetestet
-      (Planungsnotiz Phase 0: bewusst per Doku-Recherche statt Prototyp
-      geklaert, echte Verifikation steht noch aus).
+  - [x] **Erster Zwei-Geraete-Test (2026-08-18), zwei Bugs gefunden und
+        behoben:**
+        (1) Realtime-Kanal lehnte JEDEN Beitritt mit "Unauthorized" ab -
+        die RLS-Policy auf `realtime.messages` wertet ihre Subquery gegen
+        `duel_rooms` mit den Rechten der verbindenden Rolle aus, nicht als
+        security definer; ohne direkten (spaltenbeschraenkten) SELECT-Grant
+        auf `code`/`expires_at` konnte sie nicht auswerten. Fix in
+        `phase_2_11_duel_rooms.sql`, erneut ausgefuehrt.
+        (2) Presence-Tracking war komplett wirkungslos: beide Spieler
+        nutzten denselben Presence-Key (den Raum-Code statt eines
+        individuellen Schluessels), und `channel.track(...)` fehlte
+        komplett - ohne aktives Tracking kann kein `leave`-Event entstehen.
+        Fix: `localPlayerIndex` als Presence-Key, `track()` nach
+        erfolgreichem Verbinden, `NetworkDuelSystem.updateHandlers()` fuer
+        einen scene-uebergreifenden Handler-Wechsel (Lobby vs. laufender
+        Run), neues `GameEvent.OpponentDisconnected` mit sichtbarem
+        HUD-Hinweis.
+  - [ ] **Noch offen:** erneuter Zwei-Geraete-Test mit den obigen Fixes -
+        insbesondere pruefen, ob ein Verbindungsabbruch waehrend des Laufs
+        jetzt beim Gegner sichtbar wird UND ob der eigene Bildschirm nach
+        App-Wechsel/Zurueckkehren wieder reagiert (siehe naechster Punkt,
+        das war beim ersten Test getrennt zu beobachten).
+  - [ ] **Neu (2026-08-18): Kein sichtbares Feedback bei App-Hintergrund.**
+        Phaser pausiert die Update-Loop automatisch, wenn die Seite in den
+        Hintergrund geht (App-Wechsel, Sperrbildschirm) - das ist
+        Standardverhalten, aber die App zeigt dabei nichts an. Im ersten
+        Test wirkte das wie ein kompletter Absturz ("Bildschirm hing,
+        nichts ging mehr"). Es gibt bereits ein Pause-Overlay
+        (`HudScene.showPauseOverlay()`), aber nur fuer den manuellen
+        Pause-Knopf - kein `visibilitychange`-Handler, der es automatisch
+        zeigt. Betrifft nicht nur Netzwerk-Duelle, aber dort am
+        sichtbarsten, weil der Gegner in der Zwischenzeit weiterwartet.
   - [ ] Phase 2: Live-Punktestand des Gegners waehrend des Laufs im HUD
   - [ ] Phase 3: Rematch fuer Online-Duelle, Reconnect waehrend einer
         laufenden Runde, Anzeigename statt "Spieler 2"
+  - [ ] **Phase 4 (Vision, 2026-08-18):** volle Live-Sicht auf den
+        Gegner-Lauf, nicht nur den Punktestand - Spielfigur, Bewegung, jeder
+        Fang in Echtzeit sichtbar (Bildschirmteilung oder zweites
+        Mini-Spielfeld). Deutlich groesserer Aufwand als Phase 2: staendige
+        Positionsdaten-Uebertragung statt eines 400ms-Takts, ein zweiter
+        Render-Pfad, neue HUD-Flaeche. Explizit NICHT Teil von Phase 2/3,
+        eigenes Vorhaben nach Abschluss der fruehen Phasen.
+  - [ ] **Idee (2026-08-18): Naeherungserkennung fuer Geraete im selben
+        Raum.** Wenn Master und Slave nachweislich nebeneinander sitzen
+        (1-2m Abstand), koennte der Beitritt automatisiert werden statt
+        Code abtippen. Technisch ein eigenes Thema, nicht Teil des
+        bestehenden Realtime-Ansatzes - z. B. Web Bluetooth (eingeschraenkte
+        Browser-Unterstuetzung, iOS Safari insbesondere), lokale
+        Netzwerk-Discovery, oder ein Naeherungssignal ueber Lautsprecher/
+        Mikrofon (Audio-Beacon). Noch nicht recherchiert, welcher Weg im
+        mobilen Browser ueberhaupt zuverlaessig funktioniert - vor
+        Umsetzung eigene Machbarkeitspruefung noetig.
 - [ ] Rekord-Meldung im laufenden Spiel; echte Push-Meldung nur fuer
       installierte Web-Apps (iOS-Grenze)
 

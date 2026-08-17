@@ -37,6 +37,7 @@ export class HudScene extends Phaser.Scene {
   private timerText!: Phaser.GameObjects.Text;
   private worldText!: Phaser.GameObjects.Text;
   private targetText: Phaser.GameObjects.Text | null = null;
+  private opponentDisconnectedText!: Phaser.GameObjects.Text;
   private timerBar!: BarHandle;
   private accent = 0xffffff;
   private scoreToBeat: number | null = null;
@@ -130,6 +131,14 @@ export class HudScene extends Phaser.Scene {
         )
         .setOrigin(0, 0);
     }
+
+    // Nur beim Netzwerk-Duell relevant, deshalb erst bei Bedarf eingeblendet
+    // statt fest reserviertem Platz - ein Verbindungsabbruch soll auffallen,
+    // aber im Normalfall (keine Trennung) nicht staendig Raum beanspruchen.
+    this.opponentDisconnectedText = this.add
+      .text(GAME_WIDTH / 2, 100, '', textStyle(FontSize.tiny, Palette.danger))
+      .setOrigin(0.5, 0)
+      .setAlpha(0);
 
     this.buildPauseButton();
 
@@ -371,6 +380,9 @@ export class HudScene extends Phaser.Scene {
     this.showPauseOverlay();
   };
   private readonly onResumed = (): void => this.hidePauseOverlay();
+  private readonly onOpponentDisconnected = (): void => {
+    this.opponentDisconnectedText.setText('Verbindung zum Geschwister unterbrochen').setAlpha(1);
+  };
 
   private registerEvents(): void {
     eventBus.onEvent(GameEvent.ScoreChanged, this.onScore);
@@ -378,6 +390,7 @@ export class HudScene extends Phaser.Scene {
     eventBus.onEvent(GameEvent.TimerChanged, this.onTimer);
     eventBus.onEvent(GameEvent.RunPaused, this.onPaused);
     eventBus.onEvent(GameEvent.RunResumed, this.onResumed);
+    eventBus.onEvent(GameEvent.OpponentDisconnected, this.onOpponentDisconnected);
   }
 
   /**
@@ -390,5 +403,6 @@ export class HudScene extends Phaser.Scene {
     eventBus.offEvent(GameEvent.TimerChanged, this.onTimer);
     eventBus.offEvent(GameEvent.RunPaused, this.onPaused);
     eventBus.offEvent(GameEvent.RunResumed, this.onResumed);
+    eventBus.offEvent(GameEvent.OpponentDisconnected, this.onOpponentDisconnected);
   }
 }

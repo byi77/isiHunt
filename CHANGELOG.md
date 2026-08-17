@@ -75,6 +75,25 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Netzwerk-Duell: Realtime-Kanal lehnte jeden Beitritt mit "Unauthorized"
+  ab.** Beim ersten Zwei-Geraete-Test (2026-08-18) verweigerte der private
+  Broadcast-Kanal die Verbindung, obwohl der Raum-Code korrekt war. Ursache:
+  die RLS-Policy auf `realtime.messages` prueft per Subquery gegen
+  `duel_rooms`, laeuft dabei aber mit den Rechten der verbindenden Rolle
+  (`anon`), nicht als security definer - ohne direkten SELECT-Grant auf
+  `duel_rooms` konnte die Policy nicht auswerten. Fix: spaltenbeschraenkter
+  Grant nur auf `code`/`expires_at`; `seed` und alle anderen Felder bleiben
+  ausschliesslich ueber RPCs erreichbar.
+  **`supabase/phase_2_11_duel_rooms.sql` musste dafuer erneut manuell im
+  Supabase SQL-Editor ausgefuehrt werden** — ist bereits erledigt.
+- **Netzwerk-Duell: ein Verbindungsabbruch des Gegners blieb unbemerkt.**
+  Presence-Tracking war wirkungslos: beide Spieler nutzten denselben
+  Presence-Key (den Raum-Code statt eines individuellen Schluessels), und
+  `channel.track(...)` fehlte komplett - ohne aktives Tracking kann kein
+  `leave`-Event entstehen. Fix: `localPlayerIndex` als Presence-Key, `track()`
+  nach erfolgreichem Verbinden, ein neuer `GameEvent.OpponentDisconnected`
+  zeigt jetzt einen sichtbaren HUD-Hinweis waehrend des laufenden Runs, nicht
+  nur in der Lobby.
 - **Offline-Fortschritt blieb nach Netzwiederkehr haengen, bis App-Neustart
   oder ein weiteres `online`-Ereignis.** Beim Phase-2.6-Geraetetest mit zwei
   iPhones (2026-08-17) wurde ein Offline-Run auf einem Geraet trotz Rueckkehr

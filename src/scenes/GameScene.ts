@@ -177,6 +177,20 @@ export class GameScene extends Phaser.Scene {
     eventBus.onEvent(GameEvent.PauseRequested, this.onPauseRequested);
     eventBus.onEvent(GameEvent.AbortRequested, this.onAbortRequested);
 
+    // Waehrend eines Netzwerk-Duells soll ein Verbindungsabbruch des Gegners
+    // sichtbar werden, ohne den eigenen Run zu unterbrechen (Planungsnotiz:
+    // "Solo-Fortsetzung statt Abbruch"). Die Handler auf dem Kanal wechseln
+    // hier auf diese Scene - die Lobby-Handler aus OnlineDuelScene waren nur
+    // fuer die Wartephase gedacht und wuerden sonst weiterhin (mit ihrer
+    // eigenen `started`-Sperre) leer laufen, ohne dass irgendwer reagiert.
+    if (challenge?.kind === 'duel-online') {
+      NetworkDuelSystem.updateHandlers({
+        onOpponentDisconnected: () => {
+          eventBus.emitEvent(GameEvent.OpponentDisconnected, undefined);
+        },
+      });
+    }
+
     this.runCountdown();
 
     // Aufraeumen bei Scene-Restart, damit keine Objekte oder Listener leaken.

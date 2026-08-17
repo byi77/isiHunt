@@ -34,6 +34,12 @@ export const GameEvent = {
   PauseRequested: 'run:pause-requested',
   /** Bitte, den Run abzubrechen. Ebenfalls vom HUD ausgeloest. */
   AbortRequested: 'run:abort-requested',
+  /**
+   * Der Netzwerk-Duell-Gegner hat waehrend des laufenden Runs die Verbindung
+   * verloren (Realtime-Presence-"leave"). Der lokale Run laeuft trotzdem
+   * regulaer weiter (Planungsnotiz: "Solo-Fortsetzung statt Abbruch").
+   */
+  OpponentDisconnected: 'duel:opponent-disconnected',
 } as const;
 
 export interface GameEventPayloads {
@@ -58,6 +64,7 @@ export interface GameEventPayloads {
   [GameEvent.RunResumed]: undefined;
   [GameEvent.PauseRequested]: undefined;
   [GameEvent.AbortRequested]: undefined;
+  [GameEvent.OpponentDisconnected]: undefined;
 }
 
 type EventName = keyof GameEventPayloads;

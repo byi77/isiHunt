@@ -268,12 +268,29 @@ export interface DuelRoundResult {
 export interface DuelChannelHandlers {
   onOpponentReady?: () => void;
   onStartTimeSet?: (startAtMs: number) => void;
+  /** Feuert, wenn der jeweils ANDERE Spieler den Kanal verlaesst. */
   onOpponentDisconnected?: () => void;
   onChannelError?: (reason: string) => void;
   onOpponentRoundResult?: (playerIndex: 0 | 1, result: DuelRoundResult) => void;
 }
 
 let activeChannel: RealtimeChannel | null = null;
+let activeLocalPlayerIndex: 0 | 1 = 0;
+
+/**
+ * Aktuell registrierte Handler - veraenderbar statt einmalig in `subscribeToRoom()`
+ * fest verdrahtet, weil der Kanal als Modul-Singleton den Scene-Wechsel
+ * Lobby -> GameScene ueberlebt (siehe `ChallengeSystem`-Kommentar zum selben
+ * Muster), aber jede Scene ihre eigene Reaktion auf dieselben Ereignisse
+ * braucht. `OnlineDuelScene` will z. B. einen Disconnect nur in der Lobby
+ * anzeigen, `GameScene` dagegen waehrend des laufenden Runs.
+ */
+let activeHandlers: DuelChannelHandlers = {};
+
+/** Ersetzt die Handler auf dem bereits verbundenen Kanal, ohne neu zu verbinden. */
+export function updateHandlers(handlers: DuelChannelHandlers): void {
+  activeHandlers = handlers;
+}
 
 /**
  * Abonniert den privaten Broadcast-/Presence-Kanal fuer einen Raum.
@@ -283,21 +300,37 @@ let activeChannel: RealtimeChannel | null = null;
  * Topic-Namen gegen `duel_rooms.code` prueft. `private: true` aktiviert die
  * RLS-Pruefung ueberhaupt erst; ohne dieses Flag wuerde Supabase den Kanal
  * als oeffentlich behandeln.
+ *
+ * `localPlayerIndex` wird als Presence-Key genutzt (nicht der Raum-Code):
+ * Presence unterscheidet Clients ueber ihren Key - mit demselben Key fuer
+ * beide Spieler (frueherer Fehler, am Geraet reproduziert 2026-08-18) sieht
+ * Realtime nur einen einzigen, geteilten Presence-Eintrag und kann "wer hat
+ * die Verbindung verloren" nicht mehr unterscheiden.
+ *
+ * `channel.track(...)` ist zwingend: ohne aktives Tracking meldet sich kein
+ * Client als anwesend, und ohne einen anwesenden Client kann auch kein
+ * `leave`-Event entstehen - Presence ist kein passiver Verbindungsstatus,
+ * sondern muss aktiv gesetzt werden.
  */
 export function subscribeToRoom(
   supabase: SupabaseClient,
   code: string,
+  localPlayerIndex: 0 | 1,
   handlers: DuelChannelHandlers,
 ): void {
   unsubscribeFromRoom();
+  activeHandlers = handlers;
+  activeLocalPlayerIndex = localPlayerIndex;
 
-  const channel = supabase.channel(code, { config: { private: true, presence: { key: code } } });
+  const channel = supabase.channel(code, {
+    config: { private: true, presence: { key: String(localPlayerIndex) } },
+  });
 
   channel
-    .on('broadcast', { event: 'ready' }, () => handlers.onOpponentReady?.())
+    .on('broadcast', { event: 'ready' }, () => activeHandlers.onOpponentReady?.())
     .on('broadcast', { event: 'start' }, ({ payload }: { payload: { startAtMs?: unknown } }) => {
       const startAtMs = Number(payload.startAtMs);
-      if (Number.isFinite(startAtMs)) handlers.onStartTimeSet?.(startAtMs);
+      if (Number.isFinite(startAtMs)) activeHandlers.onStartTimeSet?.(startAtMs);
     })
     .on(
       'broadcast',
@@ -314,17 +347,26 @@ export function subscribeToRoom(
       }) => {
         const playerIndex = payload.playerIndex;
         if (playerIndex !== 0 && playerIndex !== 1) return;
-        handlers.onOpponentRoundResult?.(playerIndex, {
+        activeHandlers.onOpponentRoundResult?.(playerIndex, {
           score: Number(payload.score) || 0,
           bestCombo: Number(payload.bestCombo) || 0,
           totalCollected: Number(payload.totalCollected) || 0,
         });
       },
     )
-    .on('presence', { event: 'leave' }, () => handlers.onOpponentDisconnected?.())
+    .on('presence', { event: 'leave' }, ({ key }: { key: string }) => {
+      // Nur reagieren, wenn der ANDERE Spieler gegangen ist - Presence
+      // meldet grundsaetzlich jeden Abgang im Kanal, auch den eigenen beim
+      // Neuverbinden.
+      if (key !== String(activeLocalPlayerIndex)) activeHandlers.onOpponentDisconnected?.();
+    })
     .subscribe((status, error) => {
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-        handlers.onChannelError?.(error?.message ?? `Kanalstatus: ${status}`);
+        activeHandlers.onChannelError?.(error?.message ?? `Kanalstatus: ${status}`);
+        return;
+      }
+      if (status === 'SUBSCRIBED') {
+        void channel.track({ online: true });
       }
     });
 
@@ -360,6 +402,7 @@ export function broadcastRoundResult(playerIndex: 0 | 1, result: DuelRoundResult
 
 /** Verlaesst den aktuellen Kanal, falls einer aktiv ist - wirft nie. */
 export function unsubscribeFromRoom(): void {
+  activeHandlers = {};
   if (!activeChannel) return;
   void activeChannel.unsubscribe();
   activeChannel = null;

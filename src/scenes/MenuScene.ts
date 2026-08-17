@@ -1051,14 +1051,15 @@ export class MenuScene extends Phaser.Scene {
     const secondaryY = tertiaryY - tertiaryHeight / 2 - rowGap - secondaryHeight / 2;
     const primaryY = secondaryY - secondaryHeight / 2 - rowGap - primaryHeight / 2;
 
-    // JAGD und TAGESLAUF teilen sich die betonte obere Reihe - JAGD bleibt
-    // durch Breite und Farbe der Welt die staerker gewichtete Aktion, auch
-    // wenn sie nicht mehr allein steht.
-    const primaryGap = 130;
+    // JAGD und TAGESLAUF teilen sich die betonte obere Reihe, DUELL und
+    // DUELL2G die zweite - beide Reihen mit derselben Breite/demselben
+    // Abstand, damit sie sich optisch als zusammengehoeriges Paar lesen.
+    const secondaryGap = 115;
+    const secondaryWidth = 210;
 
     createButton(
       this,
-      GAME_WIDTH / 2 - primaryGap,
+      GAME_WIDTH / 2 - secondaryGap,
       primaryY,
       'JAGD',
       () => {
@@ -1068,7 +1069,7 @@ export class MenuScene extends Phaser.Scene {
         });
       },
       {
-        width: 320,
+        width: secondaryWidth,
         height: primaryHeight,
         accent: this.selectedWorld.accent,
         fontSize: FontSize.large,
@@ -1077,7 +1078,7 @@ export class MenuScene extends Phaser.Scene {
 
     createButton(
       this,
-      GAME_WIDTH / 2 + primaryGap,
+      GAME_WIDTH / 2 + secondaryGap,
       primaryY,
       'TAGESLAUF',
       () => {
@@ -1087,15 +1088,12 @@ export class MenuScene extends Phaser.Scene {
         });
       },
       {
-        width: 220,
+        width: secondaryWidth,
         height: primaryHeight,
         accent: Palette.dailyHex,
         fontSize: FontSize.body,
       },
     );
-
-    const secondaryGap = 115;
-    const secondaryWidth = 210;
 
     createButton(
       this,
