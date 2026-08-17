@@ -27,6 +27,14 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   half nichts mehr — `resumeAudioContext()` gibt eine haengende Anfrage
   jetzt nach 1,2 Sekunden frei, sodass der naechste Tipp einen frischen
   Versuch bekommt.
+- Nach dem Aufwachen aus obigem Zustand kamen mehrere Toene gleichzeitig als
+  Haufen statt einzeln: Waehrend `resume()` noch lief, sammelte eine
+  Warteschlange jeden angefragten Ton und feuerte beim spaeten `running` alle
+  auf einmal ab, ohne den urspruenglich gemeinten zeitlichen Bezug
+  zueinander. Die Warteschlange ist entfallen — Toene, die anfallen bevor
+  der Kontext laeuft, werden jetzt verworfen statt nachgeholt. Lieber die
+  ersten ein bis zwei Sekunden nach Kaltstart still als spaeter ein
+  akustisches Durcheinander.
 - Ton blieb nach App-Wechsel oder Sperrbildschirm meist stumm: Ein frueherer
   Commit hatte unbeabsichtigt die `click`/`touchend`-Entsperr-Gesten entfernt
   und den `visibilitychange`-Handler so umgebaut, dass er den AudioContext
@@ -42,10 +50,10 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 ### Intern
 
 - Wartungsbildschirm zeigt jetzt eine Ton-Diagnose (AudioContext-Status,
-  Warteschlange, Samplerate) live plus Testton-Knopf. Der Fix fuer
-  fehlenden Ton (siehe oben) hat das Problem auf dem Geraet nicht geloest -
-  ohne Mac/Safari-Devtools war der AudioContext-Zustand auf dem iPhone
-  bisher nicht einsehbar, das machte weitere Versuche zur Ratearbeit.
+  Samplerate, laufender resume()-Versuch) live plus Testton-Knopf. Ohne
+  Mac/Safari-Devtools war der AudioContext-Zustand auf dem iPhone bisher
+  nicht einsehbar; die Anzeige hat sowohl den haengenden resume() als auch
+  den Tonhaufen danach reproduzierbar sichtbar gemacht statt Ratearbeit.
 - Balancing-Werte in `SpawnSystem`, `ChallengeSystem`, `ProgressionSystem`
   und `InputController` stehen jetzt vollstaendig in `src/config/`.
 - Testabdeckung fuer `CloudSystem`, den Bot- und Tagesmodus in

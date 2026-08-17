@@ -27,8 +27,6 @@ interface ToneSpec {
 let audioContext: AudioContext | null = null;
 let initialized = false;
 let resumePromise: Promise<boolean> | null = null;
-const pendingTones: ToneSpec[] = [];
-const MAX_PENDING_TONES = 12;
 
 // Auf iOS bleibt der allererste `resume()`-Aufruf nach einem Kaltstart
 // manchmal dauerhaft in der Warteschleife haengen - kein resolve, kein
@@ -56,9 +54,6 @@ function getAudioContext(): AudioContext | null {
 
   try {
     audioContext = new AudioContextConstructor();
-    audioContext.addEventListener('statechange', () => {
-      if (audioContext?.state === 'running') flushPendingTones(audioContext);
-    });
     return audioContext;
   } catch {
     return null;
@@ -145,44 +140,36 @@ function playTone(context: AudioContext, spec: ToneSpec): void {
   }
 }
 
-function flushPendingTones(context: AudioContext): void {
-  if (!soundEnabled() || context.state !== 'running' || pendingTones.length === 0) return;
-
-  const tones = pendingTones.splice(0, pendingTones.length);
-  for (const tone of tones) playTone(context, tone);
-}
-
 function unlock(): void {
   if (!soundEnabled()) return;
 
   const context = getAudioContext();
   if (!context) return;
 
-  void resumeAudioContext().then((ready) => {
-    if (ready) flushPendingTones(context);
-  });
+  void resumeAudioContext();
 }
 
+/**
+ * Toene, die anfallen bevor der Kontext laeuft, werden verworfen statt
+ * nachgeholt. Eine Warteschlange fuehrte dazu, dass beim spaeten Aufwachen
+ * (siehe RESUME_TIMEOUT_MS) alle waehrend der Wartezeit angefallenen Toene
+ * gleichzeitig und ohne den urspruenglich gemeinten zeitlichen Bezug
+ * zueinander abgefeuert wurden - hoerbar als Tonhaufen direkt nach dem
+ * Aufwecken. Lieber die ersten ein bis zwei Sekunden nach Kaltstart still
+ * bleiben als spaeter ein akustisches Durcheinander abspielen.
+ */
 function scheduleTone(spec: ToneSpec): void {
   if (!soundEnabled()) return;
 
   const context = getAudioContext();
   if (!context) return;
 
-  if (context.state === 'running') {
-    playTone(context, spec);
+  if (context.state !== 'running') {
+    void resumeAudioContext();
     return;
   }
 
-  if (pendingTones.length >= MAX_PENDING_TONES) pendingTones.shift();
-  pendingTones.push(spec);
-  // Nach einem App-Wechsel ist der Ton häufig selbst die erste Aktion nach
-  // dem Zurückkehren. Deshalb jetzt direkt wieder aktivieren; lehnt iOS den
-  // Versuch außerhalb einer Geste ab, bleibt der Ton bis zum nächsten Tipp
-  // in der Queue und `unlock` versucht es erneut.
-  void resumeAudioContext().then((ready) => {
-    if (ready) flushPendingTones(context);
-  });
+  playTone(context, spec);
 }
 
 function playSequence(specs: readonly ToneSpec[]): void {
@@ -322,9 +309,6 @@ const onRunEnded: (payload: { progression: { levelsGained: number } }) => void =
 }) => playRunEnded(progression.levelsGained);
 const onVisibilityChange = (): void => {
   if (document.visibilityState === 'hidden') {
-    // Keine alten Fang-Töne nach dem Zurückkehren aus App-Wechsel oder
-    // Sperrbildschirm nachspielen. iOS unterbricht dort den AudioContext.
-    pendingTones.length = 0;
     if (audioContext?.state === 'running') {
       void audioContext.suspend().catch(() => undefined);
     }
@@ -399,7 +383,6 @@ export interface SoundDiagnostics {
   readonly contextState: string;
   readonly sampleRate: number | null;
   readonly baseLatency: number | null;
-  readonly pendingTones: number;
   readonly resumeInFlight: boolean;
   readonly soundEnabled: boolean;
 }
@@ -422,7 +405,6 @@ export function getDiagnostics(): SoundDiagnostics {
     contextState: audioContext?.state ?? 'kein Kontext',
     sampleRate: audioContext?.sampleRate ?? null,
     baseLatency: audioContext?.baseLatency ?? null,
-    pendingTones: pendingTones.length,
     resumeInFlight: resumePromise !== null,
     soundEnabled: soundEnabled(),
   };
@@ -449,14 +431,21 @@ export function setEnabled(enabled: boolean): void {
   });
 
   if (!enabled) {
-    pendingTones.length = 0;
     if (audioContext?.state === 'running') {
       void audioContext.suspend().catch(() => undefined);
     }
-  } else if (enabled) {
-    unlock();
-    // Der Web-Audio-Ausgang folgt der iPhone-Hardwarelautstärke. Ein kurzer
-    // Bestätigungston macht das Einschalten unmittelbar hörbar.
-    scheduleTone({ frequency: 660, duration: 0.09, type: 'triangle', volume: 0.05 });
+    return;
   }
+
+  const context = getAudioContext();
+  if (!context) return;
+
+  // Direkt aus dem Toggle-Tap ausgeloest - anders als scheduleTone() darf
+  // dieser eine Ton den laufenden resume()-Versuch abwarten, statt sofort
+  // zu verwerfen. Der Web-Audio-Ausgang folgt der iPhone-Hardwarelautstärke;
+  // ein kurzer Bestätigungston macht das Einschalten unmittelbar hörbar.
+  void resumeAudioContext().then((ready) => {
+    if (ready)
+      playTone(context, { frequency: 660, duration: 0.09, type: 'triangle', volume: 0.05 });
+  });
 }

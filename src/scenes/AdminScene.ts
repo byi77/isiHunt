@@ -201,7 +201,6 @@ export class AdminScene extends Phaser.Scene {
       `Kontext-Status   ${d.contextState}`,
       `Samplerate       ${d.sampleRate ?? '—'}`,
       `Basis-Latenz     ${d.baseLatency !== null ? d.baseLatency.toFixed(4) : '—'}`,
-      `Warteschlange    ${d.pendingTones} Ton(e)`,
       `resume() laeuft  ${d.resumeInFlight ? 'ja' : 'nein'}`,
       `Ton in Settings  ${d.soundEnabled ? 'AN' : 'AUS'}`,
     ].join('\n');

@@ -101,6 +101,29 @@ class HangingResumeAudioContext extends FakeAudioContext {
   }
 }
 
+/**
+ * `resume()` loest erst nach `settle()` auf statt synchron wie
+ * `FakeAudioContext` - bildet ab, dass im echten Browser zwischen Tipp und
+ * `running`-Zustand messbare Zeit vergeht. Ohne das wuerde ein Test mehrerer
+ * schneller Ereignisse den ersten resume()-Aufruf sofort abschliessen und
+ * die Race-Situation, die den Tonhaufen-Bug ausloeste, nicht abbilden.
+ */
+class SlowResumeAudioContext extends FakeAudioContext {
+  private resolveResume: (() => void) | null = null;
+
+  resume(): Promise<void> {
+    return new Promise<void>((resolve) => {
+      this.resolveResume = resolve;
+    });
+  }
+
+  settle(): void {
+    this.state = 'running';
+    this.resolveResume?.();
+    this.resolveResume = null;
+  }
+}
+
 let SoundSystem: typeof SoundSystemModule;
 let SaveSystem: typeof SaveSystemModule;
 let eventBus: typeof EventBusInstance;
@@ -330,6 +353,69 @@ describe('resumeAudioContext - Regression: haengendes resume() blockierte jeden 
 
     vi.useRealTimers();
     vi.unstubAllGlobals();
+  });
+});
+
+describe('scheduleTone - Regression: Tonhaufen beim spaeten Aufwachen', () => {
+  it('verwirft Toene waehrend resume() noch laeuft, statt sie beim spaeten running alle auf einmal nachzuholen', async () => {
+    const capturedInstance = new SlowResumeAudioContext();
+    vi.stubGlobal('AudioContext', function SingletonSlowResumeAudioContext() {
+      return capturedInstance;
+    });
+
+    SaveSystem.update((data) => {
+      data.soundEnabled = true;
+    });
+    SoundSystem.initialize();
+
+    const startSpy = vi.spyOn(FakeOscillatorNode.prototype, 'start');
+
+    // Mehrere Ereignisse, waehrend resume() noch nicht aufgeloest hat -
+    // simuliert die Situation kurz nach App-Kaltstart, in der auf dem
+    // Testgeraet mehrere Klicks anfielen, bevor der Kontext lief. Legendary
+    // allein plant bereits eine mehrstimmige Sequenz (mehrere Toene).
+    eventBus.emitEvent(GameEvent.Collected, {
+      rarityId: 'legendary',
+      basePoints: 100,
+      awardedPoints: 100,
+      combo: 1,
+      multiplier: 1,
+      sameRarityStreak: 1,
+      streakBonus: false,
+      x: 0,
+      y: 0,
+    });
+    eventBus.emitEvent(GameEvent.ComboChanged, { combo: 5, multiplier: 1 });
+
+    expect(startSpy).not.toHaveBeenCalled();
+    expect(capturedInstance.state).toBe('suspended');
+
+    // resume() loest jetzt auf (z.B. weil ein spaeterer Tipp durchkam). Kein
+    // Nachholmechanismus mehr heisst: die zuvor verworfenen Toene duerfen
+    // nicht ploetzlich alle gleichzeitig abgefeuert werden (der fruehere
+    // Tonhaufen-Bug) - kein einziger Ton aus der Wartezeit darf nachtoenen.
+    capturedInstance.settle();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(startSpy).not.toHaveBeenCalled();
+
+    // Ein Ton NACH dem Aufwachen spielt hingegen ganz normal.
+    eventBus.emitEvent(GameEvent.Collected, {
+      rarityId: 'poor',
+      basePoints: 1,
+      awardedPoints: 1,
+      combo: 1,
+      multiplier: 1,
+      sameRarityStreak: 1,
+      streakBonus: false,
+      x: 0,
+      y: 0,
+    });
+
+    expect(startSpy).toHaveBeenCalled();
+
+    startSpy.mockRestore();
   });
 });
 
