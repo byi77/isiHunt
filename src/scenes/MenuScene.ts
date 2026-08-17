@@ -13,6 +13,7 @@ import type { WorldDef } from '@/config/worlds';
 import { isIos, isStandalone } from '@/core/display';
 import { checkForUpdate, forceReload } from '@/core/updateCheck';
 import { SceneKey } from '@/scenes/SceneKey';
+import { Depth } from '@/ui/depth';
 import { attachHitDebug } from '@/ui/hitDebug';
 import * as AuthSystem from '@/systems/AuthSystem';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
@@ -451,24 +452,55 @@ export class MenuScene extends Phaser.Scene {
     const info = await checkForUpdate();
     if (!info || !this.scene.isActive()) return;
 
-    // y=190, Hoehe 44: der freie Streifen zwischen Untertitel (bis 164) und
-    // Level-Zeile (ab 219). Knapp, aber der Hinweis soll oben stehen, wo man
-    // ihn beim Oeffnen sieht - weiter unten wuerde er zwischen Weltenliste und
-    // Startknopf gequetscht.
+    // Im freien Streifen unter dem Wisch-Hinweis (endet bei y=730) und ueber
+    // der JAGD-Reihe (beginnt fruehestens bei y=839, siehe buildFooter) - dort
+    // ist Platz, ohne mit Weltenwheel oder Footer zu kollidieren. Ein neuer
+    // Stand ist eine Ausnahmemeldung und darf entsprechend auffallen: groesser
+    // als ein normaler Knopf und mit einem zusaetzlichen, rein dekorativen
+    // Puls-Glow dahinter.
     //
-    // 44 px liegen genau auf dem Mindestmass aus ART_STYLE.md 8; seitlich ist
-    // die Flaeche mit 520 px dagegen sehr grosszuegig.
+    // Der Puls sitzt bewusst NICHT auf banner.container: Ein pulsierender
+    // setScale() auf dem interaktiven Container wuerde periodisch auch die
+    // Trefferflaeche schrumpfen lassen - exakt die Falle aus ART_STYLE.md 8.2.
+    const bannerY = 785;
+    const bannerWidth = GAME_WIDTH - 60;
+    const pulseGlow = this.add
+      .image(GAME_WIDTH / 2, bannerY, TextureKey.Glow)
+      .setDisplaySize(bannerWidth * 1.3, 84 * 2.4)
+      .setTint(Palette.goldHex)
+      .setAlpha(0)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDepth(Depth.UI - 1);
+
     const banner = createButton(
       this,
       GAME_WIDTH / 2,
-      190,
+      bannerY,
       `NEUE VERSION VERFÜGBAR  ·  v${info.available}  ·  JETZT LADEN`,
       () => forceReload(),
-      { width: 600, height: 62, accent: Palette.goldHex, fontSize: FontSize.small },
+      { width: bannerWidth, height: 84, accent: Palette.goldHex, fontSize: FontSize.small },
     );
 
-    banner.container.setAlpha(0);
-    this.tweens.add({ targets: banner.container, alpha: 1, duration: 320, ease: 'Quad.Out' });
+    banner.container.setAlpha(0).setScale(0.9);
+    this.tweens.add({
+      targets: banner.container,
+      alpha: 1,
+      scale: 1,
+      duration: 320,
+      ease: 'Back.Out',
+      onComplete: () => {
+        this.tweens.add({
+          targets: pulseGlow,
+          alpha: { from: 0.25, to: 0.55 },
+          duration: 900,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.InOut',
+        });
+      },
+    });
+
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => pulseGlow.destroy());
   }
 
   private buildTitle(): void {
