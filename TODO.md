@@ -596,6 +596,54 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
 
 ## Aufraeumen
 
+- [ ] **PRIO HOCH — Testdaten aus der Produktions-Supabase-Datenbank
+      loeschen** _(neu 2026-08-17)_
+
+  > **Was passiert ist:** Beim Nachziehen von Testabdeckung fuer
+  > `CloudSystem` (Audit-Block, siehe `docs/AUDIT_2026-08-17.md` Abschnitt
+  > 5.2) hat ein erster, ungemockter Testlauf tatsaechlich gegen die echte
+  > Produktions-Supabase-Instanz gesprochen — nicht gegen eine Attrappe. Der
+  > Grund: `isBackendConfigured` (`src/config/backend.ts`) wird beim
+  > Modul-Laden aus `import.meta.env.VITE_SUPABASE_URL`/`_ANON_KEY`
+  > berechnet. Die lokale, gitignorete `.env`-Datei auf diesem Rechner
+  > enthaelt dieselben echten Zugangsdaten wie `.env.production`, und Vite/
+  > Vitest laedt `.env` automatisch bei jedem lokalen Lauf — auch bei
+  > Tests. Ohne expliziten Mock verhaelt sich ein Testlauf also identisch
+  > zur echten App und schreibt in dieselbe Datenbank wie echte Spieler.
+  >
+  > **Usecase, der das ausgeloest hat:** Der Test sollte pruefen, dass
+  > `CloudSystem`-Funktionen (`pushSave()`, `createSyncCode()`, etc.) bei
+  > fehlender Backend-Konfiguration sauber `{ ok: false }` zurueckgeben statt
+  > zu werfen (die im Modulkommentar von `CloudSystem.ts` versprochene
+  > "wirft nie"-Garantie). Die Testannahme war "in dieser Umgebung ist kein
+  > Backend konfiguriert" — das stimmte in der CI (kein `.env`), aber nicht
+  > lokal (echte `.env` vorhanden). Dadurch lief `pushSave()` durch, legte
+  > einen echten Spielstand-Datensatz an, und `createSyncCode()` erzeugte
+  > einen echten, einloesbaren Sync-Code dazu.
+  >
+  > **Sofort behoben im Code:** `src/systems/CloudSystem.test.ts` mockt
+  > seither `@/config/backend` fest auf "nicht konfiguriert"
+  > (`vi.mock('@/config/backend', ...)`), unabhaengig davon, ob lokal eine
+  > `.env` mit echten Werten liegt. Kuenftige Testlaeufe koennen nicht mehr
+  > versehentlich gegen die echte Datenbank schreiben. **Das hier offene
+  > Aufraeumen betrifft nur die zwei bereits entstandenen Altdatensaetze.**
+  - [ ] Supabase-Dashboard → Table Editor → Tabelle `sync_codes` → Zeile mit
+        `code = '67N0B2'` suchen und loeschen.
+  - [ ] Supabase-Dashboard → Table Editor → Tabelle `saves` → Zeile mit
+        `id = 'b91ec0c5-999f-4408-8cc7-587bb0c065c5'` suchen und loeschen.
+  - [ ] Vor dem Loeschen zur Sicherheit `created_at`/`updated_at` beider
+        Zeilen gegenpruefen: beide sind exakt am 2026-08-17 kurz vor dem
+        ersten Commit dieser Aufraeum-Session entstanden. Der Score-Eintrag
+        hat keinen plausiblen `playerName` und keine Verbindung zu einem
+        echten Auth-Profil — eindeutig als Testdaten erkennbar.
+  - [ ] **Nicht zeitkritisch:** Kein Schaden fuer echte Spieler (die
+        `playerId` ist zufaellig, gehoert zu keinem echten Profil, taucht in
+        keiner ihnen zugeordneten Ansicht auf). Einzige denkbare Sichtbarkeit
+        waere ein Rangplatz in der Welt-Bestenliste (`LEADERBOARD_LIMIT =
+    10`) mit Score 100 — nur relevant, falls die jeweilige Welt aktuell
+        sehr wenig befuellt ist. Erledigen, sobald ohnehin im
+        Supabase-Dashboard gearbeitet wird.
+
 - [ ] `src/ui/hitDebug.ts` entfernen, sobald der Knopf-Fehler bestaetigt behoben
       ist — es ist ein Diagnosewerkzeug, kein Feature
 - [x] `ideen.txt` in die priorisierte Planung oben ueberfuehrt; die Datei bleibt
