@@ -33,7 +33,7 @@ Web-Anwendung.
 - **Phaser 3 ist reif.** Touch, Skalierung, Tweens, Partikel sind eingebaut;
   die Community ist gross und die Dokumentation gut.
 - **Kein Sackgassen-Risiko.** Aus derselben Codebasis wird ueber Capacitor
-  eine native App (M6), ohne Neuschreiben.
+  eine native App (M8, siehe ADR-0015), ohne Neuschreiben.
 
 ### Verworfene Alternativen
 
@@ -48,7 +48,7 @@ Web-Anwendung.
 
 - Wir sind an die Leistung des mobilen Browsers gebunden. Fuer diese Mechanik
   unkritisch, aber Grafikaufwand muss bewusst bleiben.
-- Kein Zugriff auf native Funktionen bis Capacitor (M6).
+- Kein Zugriff auf native Funktionen bis Capacitor (M8, siehe ADR-0015).
 
 ---
 
@@ -631,3 +631,78 @@ der alte Sync-Code bleibt zunächst als einmaliger Migrations- und Notfallweg.
 Supabase erhält dafür Profil-, Ereignis- und RLS-Regeln. Der spätere
 Capacitor-/TestFlight-Weg verwendet dieselbe Profil-ID und benötigt keine
 zweite Synchronisationsarchitektur.
+
+---
+
+## ADR-0015 — Native App über Capacitor, iOS-Build und TestFlight-Auslieferung über Codemagic
+
+**Datum:** 2026-08-17 · **Status:** Geplant, Vorbereitung fuer M8
+
+### Kontext
+
+isiHunt soll kuenftig ueber TestFlight an Tester ausgeliefert werden koennen.
+ADR-0001 hat diesen Weg von Anfang an vorgesehen ("aus derselben Codebasis
+wird ueber Capacitor eine native App, ohne Neuschreiben"), und ADR-0014 hat
+die Profil-Architektur bereits so gebaut, dass "der spaetere
+Capacitor-/TestFlight-Weg dieselbe Profil-ID verwendet und keine zweite
+Synchronisationsarchitektur benoetigt". Es fehlte bisher eine konkrete
+Entscheidung zu Build-Weg und Signing. Randbedingung: kein Mac vorhanden, und
+keiner wird angeschafft — der iOS-Build muss vollstaendig cloud-basiert
+erfolgen. Ein Apple Developer Account existiert; sein genauer Status
+(Mitgliedschaft aktiv, Team-ID) ist ungeprueft und muss vor Beginn der
+Umsetzung geklaert werden.
+
+### Entscheidung
+
+Capacitor wird als Wrapper um die bestehende Vite/Phaser-Codebasis gelegt
+(kein Rewrite). Build und Signing fuer iOS laufen vollstaendig cloud-basiert
+ueber **Codemagic**, mit Signing ueber eine App Store Connect API Key
+Integration. Die Auslieferung an Tester erfolgt ueber TestFlight. Der
+bestehende Web-Weg (GitHub Actions → GitHub Pages) bleibt unveraendert
+parallel bestehen; Codemagic kommt als zusaetzliche, getrennte Pipeline
+hinzu, ohne `.github/workflows/ci.yml` oder `deploy.yml` anzufassen.
+
+Diese Entscheidung betrifft **nur die Vorbereitung und den technischen Weg**.
+Die tatsaechliche Umsetzung (Capacitor-Pakete einbinden, `ios/`-Ordner
+erzeugen, `codemagic.yaml` bauen) bleibt Teil von M8 und wird nicht
+vorgezogen — M4.1, M6 und M7 stehen davor.
+
+### Begründung
+
+- **Kein Mac vorhanden.** Codemagic uebernimmt den macOS-Build in der Cloud;
+  eine Anschaffung oder Miete eines Macs entfaellt.
+- **Gefuehrtes Signing statt manuellem Zertifikats-Handling.** Die App Store
+  Connect API Key Integration zieht Zertifikat und Provisioning Profile
+  automatisch — die Alternative (Fastlane + selbstverwaltete Zertifikate)
+  waere ohne physischen Mac zum Debuggen deutlich fehleranfaelliger.
+- **Kein Sackgassen-Risiko.** Die Codebasis wird nicht neu geschrieben — das
+  war bereits die Kernbegruendung fuer Phaser in ADR-0001.
+- **Backend ist bereits vorbereitet.** ADR-0014 hat die Profil-/Login-Struktur
+  plattformuebergreifend gebaut; die native App braucht keine zweite
+  Synchronisationsarchitektur.
+
+### Konsequenzen
+
+- Neuer `ios/`-Ordner (natives Xcode-Projekt, von Capacitor erzeugt) sowie
+  `capacitor.config.ts` und `codemagic.yaml` kommen bei der Umsetzung ins
+  Repository. Der `ios/`-Ordner ist ohne Mac lokal nicht oeffenbar; seine
+  Pflege laeuft praktisch ausschliesslich ueber Codemagic-Logs.
+- `src/core/updateCheck.ts` und das `version.json`-Update-Hinweis-Verfahren
+  funktionieren in einer nativen App nicht wie im Browser — `version.json`
+  liegt nur im gebuendelten Snapshot, ein Vergleich gegen sich selbst findet
+  nie eine neuere Version. Die native Variante braucht eine eigene Loesung
+  (deaktivieren oder TestFlight-Hinweis); die konkrete Wahl wird erst mit der
+  M8-Umsetzung getroffen.
+- TestFlight-Freigaben fuer externe Tester durchlaufen Apples Beta App
+  Review (bis zu 24–48h), was ausserhalb eigener Kontrolle liegt.
+- Bundle-ID-Wahl, Android-Reihenfolge und die Vorbereitung fuer Push/Live
+  Activities sind bewusst offen gelassen und werden erst bei M8-Start
+  entschieden.
+
+### Verworfene Alternativen
+
+| Alternative                                   | Warum nicht                                                                                                                                                                                                                  |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Fastlane + GitHub-Actions-macOS-Runner**    | Technisch gleichwertig erreichbar, aber manuelles Zertifikats-/Profil-Management ist ohne physischen Mac zum Debuggen deutlich fehleranfaelliger, und macOS-Runner-Minuten sind bei GitHub Actions teurer als Linux-Minuten. |
+| **Eigener Mac oder Mac-in-Cloud-Miete**       | Laufende Kosten und Wartungsaufwand fuer ein Werkzeug, das nur gelegentlich gebraucht wird. Explizit vom Nutzer abgelehnt.                                                                                                   |
+| **Neuschreiben in React Native oder Flutter** | Wuerde die gesamte bestehende Phaser-Codebasis verwerfen und widerspricht der in ADR-0001 begruendeten Wahl, aus genau diesem Grund auf Capacitor zu setzen.                                                                 |

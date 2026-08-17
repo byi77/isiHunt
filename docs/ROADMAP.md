@@ -83,7 +83,10 @@ Umbau festgelegt.
 ### M8 — Native App
 
 Capacitor, Android-Test, iOS-Build/TestFlight und erst dann native Features
-wie Live Activities bei der Dynamic Island.
+wie Live Activities bei der Dynamic Island. Technischer Weg (Codemagic ohne
+eigenen Mac, App Store Connect API Signing) und Voraussetzungen-Checkliste
+stehen in ADR-0015 (`docs/DECISIONS.md`); die vorbereitbaren Konto-Schritte
+sind in `TODO.md` gelistet und blockieren M4.1/M6/M7 nicht.
 
 ## Grundsätze
 

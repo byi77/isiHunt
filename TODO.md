@@ -110,12 +110,48 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 - **3 Weltraum:** sollen die Dokumente jetzt umgeschrieben werden?
 - **3.6 Dynamic Island:** native Umsetzung wird **nach Phase 4** angegangen.
   Vorbereitung und Planung beginnt jetzt; fuer iOS ohne eigenen Mac laufen
-  Build und Signierung spaeter ueber macOS-CI/Cloud und TestFlight.
+  Build und Signierung spaeter ueber Codemagic (Cloud) und TestFlight —
+  Details in ADR-0015 (`docs/DECISIONS.md`) und im neuen Abschnitt
+  "M8 — Native App vorbereiten" unten.
 - **2.6 Login & Mehrgeräte-Profil:** wird vor dem Abschluss von Phase 4
   priorisiert. Der bisherige Sync-Code bleibt als Migration und Notfallweg;
   der neue Standard wird ein Backend-Profil mit Login.
 - **5 Hindernisse:** entschieden und umgesetzt — ab Nullsektor bestrafen
 - **6 Manipulationsschutz:** vor oder nach Ranked-Modus und Rekord-Meldungen?
+
+### M8 — Native App vorbereiten (geplant, siehe ADR-0015)
+
+> **Blockiert nichts.** Diese Punkte sind reine Konto-/Rahmenvorbereitung
+> ohne Codeänderung und verzögern M4.1, M6 oder M7 nicht. Die eigentliche
+> Umsetzung (Capacitor-Integration, `codemagic.yaml`) bleibt hinter M4.1/M6/M7
+> einsortiert.
+
+**Jetzt schon klärbar:**
+
+- [ ] Apple Developer Account Status prüfen: Mitgliedschaft aktiv/bezahlt,
+      Team-ID notiert, Zugriff auf App Store Connect, 2FA eingerichtet.
+- [ ] App Store Connect: App-Eintrag "isiHunt" anlegen, Bundle-ID reservieren
+      (Namensschema noch offen, siehe ADR-0015).
+- [ ] App Store Connect API Key erzeugen (Rolle "App Manager"/"Admin"),
+      Key-ID/Issuer-ID/`.p8`-Datei sicher verwahren.
+- [ ] Codemagic-Account anlegen, Repository verbinden, API Key als
+      Signing-Integration hinterlegen; vorher Preismodell/Build-Minuten fuer
+      macOS-Builds pruefen.
+- [ ] Testergruppe (E-Mail-Adressen) fuer TestFlight sammeln.
+
+**Erst mit M8 (nach M4.1, M6, M7):**
+
+- [ ] Capacitor-Pakete einbinden, `ios/`-Ordner erzeugen, `capacitor.config.ts`
+      anlegen.
+- [ ] `codemagic.yaml` einrichten, ersten Testbuild durchlaufen lassen.
+- [ ] Update-Check-Mechanismus (`src/core/updateCheck.ts`) fuer die native
+      Variante loesen (deaktivieren oder eigener Hinweis).
+- [ ] Gerätetest der bestehenden Systeme auf echtem TestFlight-Build:
+      Sound-Unlock (`SoundSystem`), Safe-Area (`SafeAreaSystem`,
+      `viewport.ts`), `localStorage`-Persistenz (`SaveSystem`).
+- [ ] Android-Reihenfolge gegen die Roadmap abgleichen (Roadmap nennt
+      "Capacitor, Android-Test, iOS-Build/TestFlight" — Android zuerst als
+      Testplattform).
 
 ### Querschnitt
 
@@ -420,8 +456,9 @@ keine zustellbare E-Mail-Adresse verwendet. Ohne diese Schritte bleibt der
 Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
 
 > **Native Anschluss:** Das Auth-Modell funktioniert zunächst als Web-App und
-> später in Capacitor/TestFlight. Der native Build bleibt für Phase 6 geplant;
-> die Mehrgeräte-Datenstruktur muss dafür nicht neu erfunden werden.
+> später in Capacitor/TestFlight. Der native Build bleibt für Phase 8 geplant
+> (siehe ADR-0015 in `docs/DECISIONS.md`); die Mehrgeräte-Datenstruktur muss
+> dafür nicht neu erfunden werden.
 
 ## Phase 3 — Themenwechsel ins Weltall
 
@@ -478,8 +515,8 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
 > Activities (ActivityKit) und setzen eine native App voraus. Im Browser gibt
 > es keine Schnittstelle dafuer.
 >
-> Erreichbar waere sie erst mit Capacitor (M6), und auch dann nur ueber ein
-> natives Plugin.
+> Erreichbar waere sie erst mit Capacitor (M8, siehe ADR-0015), und auch dann
+> nur ueber ein natives Plugin.
 
 - [x] **Entscheidung:** Native Umsetzung kommt nach Phase 4. Die Vorbereitung
       wird jetzt dokumentiert, aber der Web-Stand bleibt bis dahin aktiv.
@@ -524,8 +561,9 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
         abgeschnitten. Ab v0.1.67 wieder sichere 126-CSS-px-Geometrie, aber der
         32-px-Blur-Schutz ist transparent und zeigt den Welt-Hintergrund. Nur
         die eigentliche Laufzeile bleibt dunkel. Geraetetest offen.
-- [ ] Erst mit M6 (Capacitor): Live Activity mit Punktestand und Restzeit
-      waehrend eines Runs; bis dahin wird die Anzeige als Prototyp beobachtet.
+- [ ] Erst mit M8 (Capacitor, siehe ADR-0015): Live Activity mit Punktestand
+      und Restzeit waehrend eines Runs; bis dahin wird die Anzeige als
+      Prototyp beobachtet.
 
 > **Entscheidung fuer die native Live Activity:** Zunaechst soll sie waehrend
 > des gesamten Runs sichtbar bleiben und laufend sinnvolle Informationen zeigen.
@@ -640,7 +678,7 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
         `playerId` ist zufaellig, gehoert zu keinem echten Profil, taucht in
         keiner ihnen zugeordneten Ansicht auf). Einzige denkbare Sichtbarkeit
         waere ein Rangplatz in der Welt-Bestenliste (`LEADERBOARD_LIMIT =
-    10`) mit Score 100 — nur relevant, falls die jeweilige Welt aktuell
+10`) mit Score 100 — nur relevant, falls die jeweilige Welt aktuell
         sehr wenig befuellt ist. Erledigen, sobald ohnehin im
         Supabase-Dashboard gearbeitet wird.
 

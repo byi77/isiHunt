@@ -138,8 +138,11 @@ isiHunt/
 │   └── main.ts                 Phaser-Konfiguration
 ├── supabase/
 │   └── schema.sql              Tabellen, Rechte und Zugriffsregeln
+├── ios/                        Natives Xcode-Projekt, generiert von Capacitor
+│                                (M8, geplant — siehe ADR-0015 in DECISIONS.md)
 ├── index.html                  Mobile-Meta-Tags, Scroll-Sperre, PWA-Verweise
 ├── vite.config.ts
+├── capacitor.config.ts         Native-App-Konfiguration (M8, geplant)
 ├── tsconfig.json
 └── eslint.config.js
 ```
