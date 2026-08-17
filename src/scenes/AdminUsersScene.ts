@@ -121,7 +121,7 @@ export class AdminUsersScene extends Phaser.Scene {
     }
     this.resetArmed = false;
     this.statusText
-      .setText(`${safeAlias}: Level 50 und 5000 Coins gesetzt.`)
+      .setText(`${safeAlias}: Level 50 und 50000 Coins gesetzt.`)
       .setColor(Palette.success);
   }
 

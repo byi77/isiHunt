@@ -9,7 +9,7 @@ begin;
 create or replace function public.admin_boost_user(
   p_alias text,
   p_level integer default 50,
-  p_coins integer default 5000
+  p_coins integer default 50000
 )
 returns boolean
 language plpgsql
@@ -21,7 +21,7 @@ declare
   target_id uuid;
   safe_alias text := lower(trim(coalesce(p_alias, '')));
   safe_level integer := greatest(1, least(100, coalesce(p_level, 50)));
-  safe_coins integer := greatest(0, coalesce(p_coins, 5000));
+  safe_coins integer := greatest(0, coalesce(p_coins, 50000));
   target_total_xp bigint := 0;
   level_cursor integer := 1;
   required_xp bigint;

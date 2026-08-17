@@ -15,6 +15,16 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   fast so teuer wie der naechste Rang selbst und bremste Experimentieren.
 - Talent _Gunst_ (Punkte) gibt jetzt +5 % pro Rang statt +4 % — damit ist es
   bei identischen Kosten gleich stark wie _Erkenntnis_ (XP).
+- Admin-Wartungsboost (`admin_boost_user`) setzt jetzt 50000 statt 5000
+  Coins. **Die SQL-Funktion in `supabase/phase_2_7_admin_tools.sql` muss
+  dafuer manuell im Supabase SQL-Editor neu ausgefuehrt werden**, der
+  Client-Fix allein reicht nicht.
+- `MenuScene.checkCloudSave()`/`synchronizeData()` protokollieren jetzt
+  Diagnosedaten (`console.warn`) zu jedem Entscheidungspunkt des
+  automatischen Profil-Abgleichs. Anlass: ein Boost auf ein anderes Geraet
+  kam dort nicht automatisch an, obwohl der manuelle "PROFIL ABGLEICHEN"-
+  Button in den Einstellungen sofort funktionierte — die Ursache dafuer ist
+  noch nicht gefunden, die Logs sollen den naechsten Fall beweisbar machen.
 
 ### Behoben
 

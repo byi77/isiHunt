@@ -122,15 +122,23 @@ export class MenuScene extends Phaser.Scene {
    * „noch nicht aktuell“, bis ein erfolgreicher Abgleich möglich war.
    */
   private async synchronizeData(): Promise<void> {
-    if (this.saveSyncBusy || !this.scene.isActive()) return;
+    if (this.saveSyncBusy || !this.scene.isActive()) {
+      console.warn('[MenuScene] synchronizeData uebersprungen', {
+        saveSyncBusy: this.saveSyncBusy,
+        sceneActive: this.scene.isActive(),
+      });
+      return;
+    }
 
     if (!CloudSystem.isAvailable() || SaveSystem.isTestProfileActive()) {
+      console.warn('[MenuScene] synchronizeData: kein Online-Profil (Backend/Testprofil)');
       SyncStatusSystem.setDataSyncStatus('local-only');
       return;
     }
 
     this.showSyncPopup();
     if (!navigator.onLine) {
+      console.warn('[MenuScene] synchronizeData: Geraet meldet offline');
       SyncStatusSystem.setDataSyncStatus('offline');
       this.hideSyncPopup();
       return;
@@ -200,6 +208,18 @@ export class MenuScene extends Phaser.Scene {
         : ({ ok: true, value: null } as const);
       const profile =
         claimed.ok && claimed.value ? claimed : await CloudSystem.fetchProfileProgress();
+      // Diagnose fuer Mehrgeraete-Faelle, in denen der automatische Abgleich
+      // scheinbar nichts tut: zeigt, welcher Zweig lief und was er sah, ohne
+      // dass dafuer erst der manuelle "PROFIL ABGLEICHEN"-Button gebraucht wird.
+      console.warn('[MenuScene] checkCloudSave (signed in)', {
+        localLevel: local.level,
+        localCloudId: local.cloudId,
+        claimedOk: claimed.ok,
+        claimedHasValue: claimed.ok && claimed.value !== null,
+        profileOk: profile.ok,
+        profileError: profile.ok ? null : profile.error,
+        remoteLevel: profile.ok && profile.value ? profile.value.data.level : null,
+      });
       if (profile.ok && profile.value) {
         const remote: RemoteSave = {
           data: profile.value.data,
@@ -209,6 +229,9 @@ export class MenuScene extends Phaser.Scene {
           updatedAt: profile.value.updatedAt,
         };
         if (CloudSystem.isRemoteAhead(local, remote)) {
+          console.warn('[MenuScene] checkCloudSave: remote ist voraus, uebernehme', {
+            remoteLevel: remote.level,
+          });
           SaveSystem.adoptRemote(remote.data, local.cloudId ?? AuthSystem.currentUserId()!);
           this.saveSyncBusy = false;
           this.scene.restart();

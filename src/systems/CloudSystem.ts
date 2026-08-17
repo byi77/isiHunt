@@ -712,7 +712,7 @@ export async function fetchAdminDashboard(): Promise<CloudResult<AdminDashboard 
 export async function adminBoostUser(
   alias: string,
   level = 50,
-  coins = 5000,
+  coins = 50000,
 ): Promise<CloudResult<true>> {
   const authenticated = await requireAuthenticatedClient();
   if (!authenticated.ok) return authenticated;
