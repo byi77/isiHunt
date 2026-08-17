@@ -38,13 +38,14 @@ import * as SoundSystem from '@/systems/SoundSystem';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import {
+  BACK_BUTTON_RESERVED_HEIGHT,
+  PAGE_CONTENT_TOP,
   createBackButton,
   createBackStatusText,
   createButton,
   createPanel,
   createMenuLayout,
   createVignette,
-  BACK_BUTTON_RESERVED_HEIGHT,
   paintSafeAreaBackdrop,
 } from '@/ui/widgets';
 
@@ -74,13 +75,14 @@ export class AdminScene extends Phaser.Scene {
     this.add
       .image(GAME_WIDTH / 2, GAME_HEIGHT / 2, TextureKey.Pixel)
       .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
-      .setTint(Palette.backdrop);
+      .setTint(Palette.backdrop)
+      .setScrollFactor(0);
 
     // Auch die Streifen ausserhalb des Spielfelds auf den Grundton setzen -
     // sonst bliebe hier die Farbe der zuletzt gezeigten Welt stehen.
     paintSafeAreaBackdrop(Palette.backdrop, Palette.backdrop);
 
-    createVignette(this, GAME_WIDTH, GAME_HEIGHT);
+    createVignette(this, GAME_WIDTH, GAME_HEIGHT).setScrollFactor(0);
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
 
     const sections = createMenuLayout().sections;
@@ -90,10 +92,11 @@ export class AdminScene extends Phaser.Scene {
     this.buildVersionPanel(versionY);
     void this.buildLayoutPanel(layoutY);
     this.buildAudioPanel(audioY);
-    this.buildActions();
+    const contentEnd = this.buildActions(audioY);
 
     this.statusText = createBackStatusText(this);
 
+    this.enableVerticalScroll(contentEnd);
     void this.lookForUpdate();
   }
 
@@ -226,45 +229,42 @@ export class AdminScene extends Phaser.Scene {
       .setOrigin(0.5);
   }
 
-  private buildActions(): void {
-    // Die Zurueck-Leiste liegt fest ueber dem Inhalt. Zwei Spalten halten alle
-    // Wartungsaktionen oberhalb dieser Sicherheitszone, auch auf kleinen
-    // Displays, ohne dass die Aktionen unter dem Zurueck-Knopf verschwinden.
-    const actionWidth = 220;
-    const actionHeight = 54;
-    const rowGap = 12;
-    const columnGap = 20;
-    const leftX = GAME_WIDTH / 2 - (actionWidth + columnGap) / 2;
-    const rightX = GAME_WIDTH / 2 + (actionWidth + columnGap) / 2;
-    const contentBottom = GAME_HEIGHT - BACK_BUTTON_RESERVED_HEIGHT;
-    const bottomRowY = contentBottom - actionHeight / 2 - 16;
-    const rowStep = actionHeight + rowGap;
-    const middleRowY = bottomRowY - rowStep;
-    const topRowY = middleRowY - rowStep;
+  private buildActions(startY: number): number {
+    // Die Aktionen bleiben bewusst gross und untereinander. Der Inhalt wird
+    // weiter unten per Kamera verschoben, statt die Bedienflaeche zu verengen.
+    const actions = createMenuLayout(8).sections;
+    actions.advance(startY + 215 - actions.currentTop());
+    const updateY = actions.next(54);
+    const reloadY = actions.next(54);
+    const repairY = actions.next(54);
+    const statsY = actions.next(54);
+    const usersY = actions.next(54);
+    const rulerY = actions.next(54);
+    const resetY = actions.next(76);
 
-    createButton(this, leftX, topRowY, 'UPDATE PRÜFEN', () => void this.checkUpdateNow(), {
-      width: actionWidth,
-      height: actionHeight,
+    createButton(this, GAME_WIDTH / 2, updateY, 'UPDATE PRÜFEN', () => void this.checkUpdateNow(), {
+      width: 460,
+      height: 54,
       accent: 0x9aa3bd,
       fontSize: FontSize.small,
     });
 
-    createButton(this, rightX, topRowY, 'NEU LADEN ERZWINGEN', () => forceReload(), {
-      width: actionWidth,
-      height: actionHeight,
+    createButton(this, GAME_WIDTH / 2, reloadY, 'NEU LADEN ERZWINGEN', () => forceReload(), {
+      width: 460,
+      height: 54,
       accent: Palette.goldHex,
       fontSize: FontSize.small,
     });
 
     createButton(
       this,
-      leftX,
-      middleRowY,
+      GAME_WIDTH / 2,
+      repairY,
       'SPIELSTAND PRÜFEN & SPEICHERN',
       () => this.repairSave(),
       {
-        width: actionWidth,
-        height: actionHeight,
+        width: 460,
+        height: 54,
         accent: 0x9aa3bd,
         fontSize: FontSize.small,
       },
@@ -272,32 +272,22 @@ export class AdminScene extends Phaser.Scene {
 
     createButton(
       this,
-      rightX,
-      middleRowY,
+      GAME_WIDTH / 2,
+      statsY,
       'ONLINE-STATISTIK',
       () => {
         this.scene.start(SceneKey.AdminStats);
       },
-      {
-        width: actionWidth,
-        height: actionHeight,
-        accent: Palette.goldHex,
-        fontSize: FontSize.small,
-      },
+      { width: 460, height: 54, accent: Palette.goldHex, fontSize: FontSize.small },
     );
 
     createButton(
       this,
-      leftX,
-      bottomRowY,
+      GAME_WIDTH / 2,
+      usersY,
       'BENUTZER-WERKZEUGE',
       () => this.scene.start(SceneKey.AdminUsers),
-      {
-        width: actionWidth,
-        height: actionHeight,
-        accent: Palette.goldHex,
-        fontSize: FontSize.small,
-      },
+      { width: 460, height: 54, accent: Palette.goldHex, fontSize: FontSize.small },
     );
 
     /* Lokales Testprofil bleibt bewusst aus dem Wartungsmenue entfernt.
@@ -357,20 +347,22 @@ export class AdminScene extends Phaser.Scene {
     // beschreiben statt in Worten ("von 0 bis 160 ist schwarz").
     createButton(
       this,
-      rightX,
-      bottomRowY,
+      GAME_WIDTH / 2,
+      rulerY,
       'PIXEL-LINEAL ANZEIGEN',
       () => {
         this.scene.start(SceneKey.Menu);
         this.scene.launch(SceneKey.Ruler);
       },
-      { width: actionWidth, height: actionHeight, accent: 0x9aa3bd, fontSize: FontSize.small },
+      { width: 460, height: 54, accent: 0x9aa3bd, fontSize: FontSize.small },
     );
+
+    const actionsEnd = actions.currentTop();
 
     const reset = createButton(
       this,
       GAME_WIDTH / 2,
-      1120,
+      resetY,
       'SPIELSTAND ZURÜCKSETZEN',
       () => {
         // Zwei Tipps: Der erste bewaffnet, der zweite fuehrt aus. Ein
@@ -400,6 +392,71 @@ export class AdminScene extends Phaser.Scene {
       reset.setEnabled(false);
       reset.setLabel('RESET VORÜBERGEHEND DEAKTIVIERT');
     }
+
+    // Die Stack-Position enthaelt bereits den Abstand nach dem letzten
+    // Abschnitt und ist damit die echte Inhaltskante fuer das Scrollen.
+    return AdminScene.RESET_ENABLED ? actions.currentTop() : actionsEnd;
+  }
+
+  /**
+   * Verschiebt den gesamten Wartungsinhalt per Wischen oder Mausrad. Die
+   * Zurueck-Zone bleibt durch ihre Scroll-Faktoren fest am Bildschirm.
+   */
+  private enableVerticalScroll(contentEnd: number): void {
+    const contentBottom = GAME_HEIGHT - BACK_BUTTON_RESERVED_HEIGHT;
+    const maxScroll = Math.max(0, contentEnd - contentBottom);
+    if (maxScroll === 0) return;
+
+    const camera = this.cameras.main;
+    camera.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT + maxScroll);
+    camera.setScroll(0, 0);
+
+    let activePointerId: number | null = null;
+    let pointerStartY = 0;
+    let scrollStart = 0;
+
+    const setScroll = (value: number): void => {
+      camera.setScroll(0, Phaser.Math.Clamp(value, 0, maxScroll));
+    };
+
+    const onPointerDown = (pointer: Phaser.Input.Pointer): void => {
+      if (activePointerId !== null) return;
+      if (pointer.y < PAGE_CONTENT_TOP || pointer.y > contentBottom) return;
+      activePointerId = pointer.id;
+      pointerStartY = pointer.y;
+      scrollStart = camera.scrollY;
+    };
+
+    const onPointerMove = (pointer: Phaser.Input.Pointer): void => {
+      if (pointer.id !== activePointerId) return;
+      setScroll(scrollStart - (pointer.y - pointerStartY));
+    };
+
+    const releasePointer = (pointer: Phaser.Input.Pointer): void => {
+      if (pointer.id === activePointerId) activePointerId = null;
+    };
+
+    const onWheel = (
+      _pointer: Phaser.Input.Pointer,
+      _gameObjects: Phaser.GameObjects.GameObject[],
+      _deltaX: number,
+      deltaY: number,
+    ): void => {
+      setScroll(camera.scrollY + deltaY);
+    };
+
+    this.input.on('pointerdown', onPointerDown);
+    this.input.on('pointermove', onPointerMove);
+    this.input.on('pointerup', releasePointer);
+    this.input.on('pointerupoutside', releasePointer);
+    this.input.on('wheel', onWheel);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.input.off('pointerdown', onPointerDown);
+      this.input.off('pointermove', onPointerMove);
+      this.input.off('pointerup', releasePointer);
+      this.input.off('pointerupoutside', releasePointer);
+      this.input.off('wheel', onWheel);
+    });
   }
 
   private async checkUpdateNow(): Promise<void> {
