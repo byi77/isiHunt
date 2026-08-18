@@ -86,6 +86,31 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
         **Noch offen:** Geraetetest mit einem erneuten Boost, um zu
         bestaetigen, dass der Retry den Fall auf einem echten iPhone
         tatsaechlich auffaengt.
+  - [ ] **Widerlegt durch echten Test (2026-08-18):** Der Retry-Fix hat den
+        Fall NICHT behoben. Selbsttest: eigenes Profil (Level bereits ueber
+        50, Coins klar unter 50000) geboostet, Coins blieben nach App-Start
+        unveraendert, erst "PROFIL ABGLEICHEN" zog sie nach. Level-Seite war
+        durch den Test selbst nicht aussagekraeftig (Boost setzt Level fest
+        auf 50, war beim Tester bereits hoeher) - aber die Coins-Bedingung in
+        `isRemoteAhead` (`Number(remote.data.coins) > local.coins`) haette
+        zuschlagen muessen und tat es nicht.
+        **Der mitgelieferte Debug-Report zeigte keinen einzigen Fehler-Log**
+        (nur `app:start`-Eintraege) - das ist keine Entlastung fuer die
+        Timeout-Hypothese, sondern eine Beweisluecke: `checkCloudSave()`
+        loggt im Erfolgs- UND im Fehlerpfad nichts außer `console.warn`/
+        `console.error`, die der Ringpuffer abfaengt. Ob der Timeout-Pfad
+        ueberhaupt lief, war aus dem Report nicht ablesbar.
+        **Fix zurueckgestuft von "behoben" auf "Diagnose eingebaut":**
+        `checkCloudSave()` protokolliert jetzt bei jedem Durchlauf
+        (`sync:profilePull`, `sync:remoteAheadCheck`) Zwischenergebnisse in
+        den Debug-Ringpuffer - claimed/profile ok-Status, lokale und
+        Remote-Level/Coins, das `isRemoteAhead`-Ergebnis. Bewusst dauerhaft,
+        nicht nur zum Debuggen wieder entfernen (siehe die eigene Kritik im
+        CHANGELOG an der letzten voreiligen Entfernung).
+        **Naechster Schritt:** mit dieser Version erneut boosten und einen
+        neuen Debug-Report ziehen - der zeigt jetzt, ob `claimCloudProfile`/
+        `fetchProfileProgress` ueberhaupt den geboosteten Coins-Wert liefern
+        und ob `isRemoteAhead` daraus korrekt `true` berechnet.
 - [ ] **Phase 5 mit Kindern balancieren:** Schwierige Welten, Hindernisse,
       Tempo, Sichtfenster und Belohnungen sollen fordernd, aber nie frustrierend
       sein.

@@ -207,6 +207,26 @@ export class MenuScene extends Phaser.Scene {
         : ({ ok: true, value: null } as const);
       const profile =
         claimed.ok && claimed.value ? claimed : await CloudSystem.fetchProfileProgress();
+      // Diagnose-Log fuer den Profil-Pull: ein Boost, der nach App-Start nicht
+      // ankam, liess sich bisher nicht von "kein Fehler passiert" unterscheiden
+      // - der Debug-Ringpuffer faengt nur console.warn/error und GameEvents ab,
+      // dieser Ablauf loggt keins von beidem. Bewusst dauerhaft, nicht wieder
+      // entfernen (siehe CHANGELOG "Richtigstellung" 2026-08-18).
+      DebugSystem.pushLogEntry({
+        timestamp: Date.now(),
+        kind: 'event',
+        label: 'sync:profilePull',
+        detail: JSON.stringify({
+          claimedOk: claimed.ok,
+          claimedHasValue: claimed.ok ? claimed.value !== null : null,
+          profileOk: profile.ok,
+          profileHasValue: profile.ok ? profile.value !== null : null,
+          localLevel: local.level,
+          localCoins: local.coins,
+          remoteLevel: profile.ok && profile.value ? profile.value.data.level : null,
+          remoteCoins: profile.ok && profile.value ? profile.value.data.coins : null,
+        }),
+      });
       if (!profile.ok) {
         // Ein Timeout hier (z.B. `requireAuthenticatedClient()` direkt nach
         // App-Start, bevor die Verbindung wirklich steht) darf ein
@@ -225,7 +245,14 @@ export class MenuScene extends Phaser.Scene {
           totalRuns: profile.value.data.totalRuns,
           updatedAt: profile.value.updatedAt,
         };
-        if (CloudSystem.isRemoteAhead(local, remote)) {
+        const remoteAhead = CloudSystem.isRemoteAhead(local, remote);
+        DebugSystem.pushLogEntry({
+          timestamp: Date.now(),
+          kind: 'event',
+          label: 'sync:remoteAheadCheck',
+          detail: JSON.stringify({ remoteAhead }),
+        });
+        if (remoteAhead) {
           SaveSystem.adoptRemote(remote.data, local.cloudId ?? AuthSystem.currentUserId()!);
           this.saveSyncBusy = false;
           this.cancelProfileRetry();

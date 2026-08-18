@@ -134,24 +134,31 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   das manuelle "PROFIL ABGLEICHEN" in den Einstellungen zog den echten Stand.
   `isRemoteAhead`/`isLocalAhead` vergleichen jetzt zusaetzlich Talentraenge,
   Anzahl freigeschalteter Erfolge und Gesamt-XP.
-- **Ein Admin-Boost (Level/Coins) war nach App-Start nicht sichtbar, bis
-  manuell "PROFIL ABGLEICHEN" getippt wurde** _(2026-08-18, Emre und Simay
-  betroffen)_. Andere Ursache als der Eintrag direkt darueber: `isRemoteAhead`
-  deckte Level und Coins schon vorher ab, hier scheiterte der vorgelagerte
-  Aufruf selbst. `MenuScene.checkCloudSave()` baut das Profil-Panel synchron
-  mit dem alten lokalen Stand auf und laedt den Cloud-Stand danach
-  asynchron nach; scheitert `requireAuthenticatedClient()`
-  (`CloudSystem.ts`) dabei am `BACKEND_TIMEOUT_MS`-Limit (5s, z.B. wenn die
-  Verbindung beim App-Start noch nicht ganz steht), brach der Abgleich
-  bisher still ab — kein Fehler, kein Retry, der Boost blieb bis zum
-  naechsten manuellen Abgleich unsichtbar. Gleiche Fehlerklasse wie der
-  bereits geloeste iPhone2-Sync-Bug, nur auf dem Lade- statt dem
-  Sende-Pfad. `checkCloudSave()` plant jetzt bei einem Fehlschlag denselben
-  automatischen Wiederholungsversuch (`SYNC_RETRY_DELAYS_MS`: 5s/15s/60s).
+- **NOCH NICHT BEHOBEN — Admin-Boost (Level/Coins) ist nach App-Start nicht
+  sichtbar, bis manuell "PROFIL ABGLEICHEN" getippt wird** _(2026-08-18,
+  Emre und Simay sowie das eigene Testprofil des Entwicklers betroffen)_.
+  Erste Hypothese war ein stiller Timeout in `requireAuthenticatedClient()`
+  (`checkCloudSave()` erhielt dafuer einen automatischen Retry, analog zum
+  bereits geloesten iPhone2-Sync-Bug) — **durch einen zweiten Selbsttest
+  widerlegt**: Coins waren klar unter dem Boost-Zielwert, `isRemoteAhead`
+  haette ueber die Coins-Bedingung zuschlagen muessen, tat es aber trotz
+  Retry nicht. Der mitgelieferte Debug-Report zeigte keinen einzigen
+  Fehler-Log, was sich als Beweisluecke statt als Entlastung herausstellte:
+  `checkCloudSave()` protokollierte im Erfolgs- wie im Fehlerpfad nichts
+  ausser `console.warn`/`console.error`, die der Ringpuffer abfaengt.
+  `checkCloudSave()` schreibt jetzt bei jedem Durchlauf Zwischenergebnisse
+  (`sync:profilePull`, `sync:remoteAheadCheck`: claimed/profile-Status,
+  lokale und Remote-Level/Coins, `isRemoteAhead`-Ergebnis) in den
+  Debug-Ringpuffer, bewusst dauerhaft. Naechster Schritt: erneuter Boost,
+  neuer Debug-Report, damit die eigentliche Ursache erstmals belegt statt
+  vermutet wird.
   **Richtigstellung:** Der Eintrag unter "Geaendert" oben ("der Sync-Fall
   war bereits vorher inhaltlich gefixt") war verfrueht — die entfernten
-  Diagnose-Logs haetten die eigentliche Ursache vermutlich gezeigt, sie
-  wurde stattdessen erst durch dieses neue Nutzerfeedback gefunden.
+  Diagnose-Logs haetten vermutlich geholfen. Der hier zuerst als "Behoben"
+  eingetragene Retry-Fix war ebenfalls verfrueht: Der Retry allein loest
+  nur den Fall "Anfrage schlaegt fehl", nicht den Fall "Anfrage liefert ein
+  Ergebnis, das `isRemoteAhead` unerwartet nicht als voraus erkennt" — genau
+  das scheint hier vorzuliegen, aber ohne Log unbewiesen.
 - Ton blieb nach App-Kaltstart auf iOS oft dauerhaft stumm, obwohl "TON: AN"
   gesetzt war: Der allererste `AudioContext.resume()`-Aufruf blieb dort
   manchmal fuer immer in der Warteschleife (kein resolve, kein reject). Die
