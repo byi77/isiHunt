@@ -30,6 +30,7 @@ import { BACKEND_TIMEOUT_MS, SYNC_CODE_ALPHABET } from '@/config/backend';
 import { DUEL_ROOM_CODE_TTL_MINUTES, ONLINE_DUEL_CLOCK_SYNC_SAMPLES } from '@/config/onlineDuel';
 import * as CloudSystem from '@/systems/CloudSystem';
 import type { CloudResult } from '@/systems/CloudSystem';
+import * as DebugSystem from '@/systems/DebugSystem';
 
 const DUEL_ROOM_CODE_LENGTH = 6;
 
@@ -423,15 +424,37 @@ export function unsubscribeFromRoom(): void {
  * `withTimeout` in CloudSystem nicht exportiert ist und ein Export nur fuer
  * diesen einen Wiederverwendungsfall den Modulschnitt unnoetig aufweichen
  * wuerde.
+ *
+ * Protokolliert Erfolg UND Fehlschlag im Debug-Ringpuffer (nicht nur
+ * console.warn im Fehlerfall) - dieselbe Luecke wie bei `CloudSystem.
+ * withTimeout` vor 2026-08-18, hier aber uebersehen, weil die Kopie separat
+ * gepflegt wird. Ein Zwei-Geraete-Testbericht ohne einen einzigen
+ * NetworkDuelSystem-Eintrag hat das aufgedeckt: unklar, ob create_duel_room/
+ * join_duel_room/get_server_time ueberhaupt liefen, weil weder Erfolg noch
+ * (sichtbarer) Fehlschlag geloggt wurden.
  */
 async function withTimeout<T>(operation: PromiseLike<T>, label: string): Promise<CloudResult<T>> {
+  const startedAt = Date.now();
   try {
     const timeout = new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error('Zeitüberschreitung')), BACKEND_TIMEOUT_MS);
     });
-    return { ok: true, value: await Promise.race([operation, timeout]) };
+    const value = await Promise.race([operation, timeout]);
+    DebugSystem.pushLogEntry({
+      timestamp: Date.now(),
+      kind: 'event',
+      label: `duel:${label}`,
+      detail: `ok ${Date.now() - startedAt}ms`,
+    });
+    return { ok: true, value };
   } catch (error) {
     const reason = error instanceof Error ? error.message : 'Unbekannter Fehler';
+    DebugSystem.pushLogEntry({
+      timestamp: Date.now(),
+      kind: 'error',
+      label: `duel:${label}`,
+      detail: `fehlgeschlagen ${Date.now() - startedAt}ms: ${reason}`,
+    });
     console.warn(`[NetworkDuelSystem] ${label} fehlgeschlagen:`, error);
     return { ok: false, error: `${label}: ${reason}` };
   }

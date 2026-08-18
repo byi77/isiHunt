@@ -906,30 +906,47 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
         einen scene-uebergreifenden Handler-Wechsel (Lobby vs. laufender
         Run), neues `GameEvent.OpponentDisconnected` mit sichtbarem
         HUD-Hinweis.
-  - [ ] **Zweiter Zwei-Geraete-Test (2026-08-18), neuer Bug, Ursache noch
-        NICHT geklaert:** Ablauf: Master erstellt Code, Slave tritt bei.
-        Master startet JAGD, spielt die Runde komplett durch, landet im
-        Ergebnis ("Dein Geschwister spielt noch seine Runde"). Der Slave
-        haengt waehrenddessen durchgehend bei "Uhr wird abgeglichen ..." -
-        irgendwann erscheint "Verbindungsfehler: channel error: transport
-        failure". **Wichtig, gegen Ferndiagnose-Versuchung:** Master kam
-        im selben Testlauf, gegen dieselbe Datenbank/Policy, durch - das
-        schliesst einen generellen Server-/RLS-Fehler aus, es muss etwas
-        sein, das zwischen Master- und Slave-Geraet/-Verbindung
-        unterschiedlich ist. Eine Hypothese (iOS-Standalone-PWA-WebSocket-
-        Bug) wurde per Recherche gefunden, aber wieder verworfen: das
-        dokumentierte Apple-Problem (FB21416603) betrifft nur lokale
-        `ws://`-Verbindungen, nicht `wss://` zu einem externen Dienst wie
-        Supabase - passt nicht zu unserem Fall, war beim genaueren Hinsehen
-        keine belastbare Erklaerung. **Sofortmassnahme:** Der
-        `CHANNEL_ERROR`/`TIMED_OUT`-Pfad in `NetworkDuelSystem.
-        subscribeToRoom()` protokolliert den Fehler jetzt per `console.warn`
-        in den Debug-Ringpuffer (vorher unsichtbar - der Slave-Debug-Report
-        zeigte nur `app:start`, der eigentliche Fehler fehlte komplett).
-        **Naechster Schritt:** mit dem verbesserten Logging erneut testen,
-        den Debug-Report vom scheiternden Geraet auswerten - das
-        vollstaendige `error`-Objekt (nicht nur die Kurzmeldung) sollte die
-        tatsaechliche Ursache zeigen.
+  - [x] **Zweiter Zwei-Geraete-Test (2026-08-18), Ursache gefunden und
+        wahrscheinlicher Fix gebaut, noch NICHT am Geraet bestaetigt:**
+        Ablauf: Master erstellt Code, Slave tritt bei. Master startet JAGD,
+        spielt die Runde komplett durch, landet im Ergebnis ("Dein
+        Geschwister spielt noch seine Runde"). Der Slave haengt
+        waehrenddessen durchgehend bei "Uhr wird abgeglichen .../Warte auf
+        Geschwister ...". **Wichtig, gegen Ferndiagnose-Versuchung:** Master
+        kam im selben Testlauf, gegen dieselbe Datenbank/Policy, durch - das
+        schliesst einen generellen Server-/RLS-Fehler aus.
+        **Erneuter Testlauf mit verbessertem Logging (v0.1.173,
+        2026-08-18):** Debug-Report vom Slave zeigte trotz aktivem Duell
+        (`Scenes OnlineDuel`) keinen einzigen `NetworkDuelSystem`-Eintrag -
+        weder Erfolg noch Fehler. Grund dafuer selbst gefunden:
+        `NetworkDuelSystem` hat sein eigenes, dupliziertes `withTimeout`
+        (siehe Kommentar dort), das anders als `CloudSystem.withTimeout`
+        NICHT das automatische Erfolgs-/Fehler-Logging vom 2026-08-18-Fix
+        bekommen hatte - dieselbe Luecke wie beim Boost-Bug, nur an einer
+        zweiten, uebersehenen Stelle. Jetzt behoben, `duel:*`-Eintraege im
+        Ringpuffer.
+        **Eigentliche Ursache, im Code belegt (nicht nur vermutet):**
+        `NetworkDuelSystem.broadcastStartTime()`/`broadcastReady()` rufen
+        `activeChannel?.send(...)` mit `void` auf. Supabase Realtime
+        `RealtimeChannel.send()` loest ohne `broadcast.ack`-Option **sofort
+        mit "ok" auf, sobald die Nachricht lokal in die Warteschlange
+        gestellt wurde** - nicht wenn sie beim Empfaenger ankam (Quelle:
+        `node_modules/@supabase/realtime-js/dist/main/RealtimeChannel.js`,
+        `send()`, Zeile ~576). Ein verlorener `start`-Broadcast liess den
+        empfangenden Client unbegrenzt in der Lobby haengen, obwohl
+        `set_duel_start_time` die Zeit bereits erfolgreich serverseitig
+        gespeichert hatte.
+        **Fix:** `OnlineDuelScene.runLobbyFlow()` pollt jetzt zusaetzlich
+        zum Broadcast-Handler alle `ONLINE_DUEL_START_POLL_INTERVAL_MS`
+        (1,5s, neu in `config/onlineDuel.ts`) `getRoomStatus()` fuer BEIDE
+        Rollen - findet die bereits gespeicherte Startzeit unabhaengig
+        davon, ob das `start`-Event ankam. Sauber aufgeraeumt in
+        `beginRun()`/`cleanupLobby()`. `npm run verify` gruen (212 Tests).
+        **Noch offen:** echter Zwei-Geraete-Test, der bestaetigt, dass der
+        Slave jetzt tatsaechlich startet. Der urspruengliche Report erwaehnte
+        zusaetzlich "Verbindungsfehler: channel error: transport failure" -
+        dieser zweite Testlauf zeigte das nicht mehr, blieb aber unbestaetigt,
+        ob das am Fix liegt oder Zufall des Testlaufs war.
   - [ ] **Neu (2026-08-18): Kein sichtbares Feedback bei App-Hintergrund.**
         Phaser pausiert die Update-Loop automatisch, wenn die Seite in den
         Hintergrund geht (App-Wechsel, Sperrbildschirm) - das ist

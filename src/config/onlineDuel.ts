@@ -56,3 +56,21 @@ export const ONLINE_DUEL_CLOCK_SYNC_SAMPLES = 3;
  * zurueck zur Anzeige gewechselt wird, statt endlos zu warten.
  */
 export const ONLINE_DUEL_READY_TIMEOUT_MS = 10_000;
+
+/**
+ * Polling-Takt fuer die serverseitig gesetzte Startzeit, solange kein
+ * `start`-Broadcast eingetroffen ist.
+ *
+ * `channel.send()` von Supabase Realtime loest ohne `broadcast.ack`-Option
+ * sofort mit "ok" auf, sobald die Nachricht lokal in die Warteschlange
+ * gestellt wurde - nicht wenn sie beim Empfaenger ankam (siehe
+ * `RealtimeChannel.send()`). Ein verlorener `start`-Broadcast liess den
+ * nicht sendenden Client bisher unbegrenzt in der Lobby haengen, obwohl
+ * `set_duel_start_time` die Zeit bereits erfolgreich in der Datenbank
+ * abgelegt hatte (belegt durch einen Geraetetest 2026-08-18: Gastgeber lief
+ * durch, Gast blieb bei "Warte auf Geschwister" haengen). `getRoomStatus()`
+ * dient bereits als Fallback fuer den Gastgeber selbst (siehe
+ * `pollAndSetStartTime`); derselbe Weg schliesst jetzt auch die
+ * Broadcast-Luecke fuer den empfangenden Client.
+ */
+export const ONLINE_DUEL_START_POLL_INTERVAL_MS = 1_500;

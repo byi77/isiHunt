@@ -139,6 +139,26 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   nach erfolgreichem Verbinden, ein neuer `GameEvent.OpponentDisconnected`
   zeigt jetzt einen sichtbaren HUD-Hinweis waehrend des laufenden Runs, nicht
   nur in der Lobby.
+- **Netzwerk-Duell: der nicht sendende Client blieb unbegrenzt in der Lobby
+  haengen ("Warte auf Geschwister ..."), obwohl der Gastgeber laengst
+  gestartet war.** Ursache im Code belegt: `broadcastStartTime()`/
+  `broadcastReady()` riefen `activeChannel?.send(...)` mit `void` auf.
+  Supabase Realtime `RealtimeChannel.send()` loest ohne die Option
+  `broadcast.ack` sofort mit `"ok"` auf, sobald die Nachricht lokal in die
+  Warteschlange gestellt wurde - nicht wenn sie beim Empfaenger ankam. Ein
+  verlorener `start`-Broadcast blieb dadurch komplett unbemerkt, waehrend
+  `set_duel_start_time` die Startzeit bereits erfolgreich serverseitig
+  gespeichert hatte. Fix: `OnlineDuelScene` pollt jetzt zusaetzlich zum
+  Broadcast-Handler alle 1,5s (`ONLINE_DUEL_START_POLL_INTERVAL_MS`, neu in
+  `config/onlineDuel.ts`) `getRoomStatus()` fuer beide Rollen - findet die
+  bereits gespeicherte Startzeit unabhaengig vom Broadcast.
+  **Nebenbefund:** `NetworkDuelSystem` hatte eine eigene, duplizierte
+  `withTimeout`-Funktion, die das automatische Erfolgs-/Fehler-Logging vom
+  Boost-Bug-Fix nicht mitbekommen hatte - ein Zwei-Geraete-Testreport zeigte
+  dadurch nicht einen einzigen `NetworkDuelSystem`-Eintrag, obwohl das Duell
+  aktiv lief. Jetzt ebenfalls behoben (`duel:*`-Eintraege im Ringpuffer).
+  **Ungeprueft:** ob der Fix den Slave tatsaechlich starten laesst - noch
+  kein erneuter Zwei-Geraete-Test.
 - **Offline-Fortschritt blieb nach Netzwiederkehr haengen, bis App-Neustart
   oder ein weiteres `online`-Ereignis.** Beim Phase-2.6-Geraetetest mit zwei
   iPhones (2026-08-17) wurde ein Offline-Run auf einem Geraet trotz Rueckkehr

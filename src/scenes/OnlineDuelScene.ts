@@ -13,7 +13,10 @@
 import Phaser from 'phaser';
 
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
-import { ONLINE_DUEL_READY_TIMEOUT_MS } from '@/config/onlineDuel';
+import {
+  ONLINE_DUEL_READY_TIMEOUT_MS,
+  ONLINE_DUEL_START_POLL_INTERVAL_MS,
+} from '@/config/onlineDuel';
 import { getWorld, DEFAULT_WORLD_ID } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
@@ -61,6 +64,8 @@ export class OnlineDuelScene extends Phaser.Scene {
   private roomCode = '';
   private codeInput: TextInputHandle | null = null;
   private readyTimeout: Phaser.Time.TimerEvent | null = null;
+  /** Fallback, falls der `start`-Broadcast den anderen Client nicht erreicht. */
+  private startPollTimer: Phaser.Time.TimerEvent | null = null;
 
   constructor() {
     super(SceneKey.OnlineDuel);
@@ -74,6 +79,7 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.roomCode = '';
     this.codeInput = null;
     this.readyTimeout = null;
+    this.startPollTimer = null;
 
     const state = ChallengeSystem.getState();
     this.world = getWorld(state?.worldId ?? SaveSystem.load().lastWorldId ?? DEFAULT_WORLD_ID);
@@ -410,6 +416,29 @@ export class OnlineDuelScene extends Phaser.Scene {
       // bereit sind (der haeufigere Fall).
       void this.pollAndSetStartTime(statusText);
     }
+
+    // Fallback fuer BEIDE Rollen: `channel.send()` von Supabase Realtime
+    // besitzt ohne `broadcast.ack` keine Zustellbestaetigung und loest
+    // trotzdem mit "ok" auf (siehe ONLINE_DUEL_START_POLL_INTERVAL_MS-
+    // Kommentar in config/onlineDuel.ts). Der Gastgeber hat `set_duel_
+    // start_time` zu diesem Zeitpunkt bereits erfolgreich in die Datenbank
+    // geschrieben - dieses Polling findet die Startzeit unabhaengig davon,
+    // ob das begleitende `start`-Broadcast-Event ankam.
+    this.startPollTimer = this.time.addEvent({
+      delay: ONLINE_DUEL_START_POLL_INTERVAL_MS,
+      loop: true,
+      callback: () => {
+        void (async () => {
+          if (started || !this.scene.isActive()) return;
+          const statusResult = await NetworkDuelSystem.getRoomStatus(this.roomCode);
+          if (started || !this.scene.isActive()) return;
+          const startAtMs = statusResult.ok ? (statusResult.value?.startAtMs ?? null) : null;
+          if (startAtMs === null) return;
+          started = true;
+          this.beginRun(startAtMs);
+        })();
+      },
+    });
   }
 
   private async pollAndSetStartTime(statusText: Phaser.GameObjects.Text): Promise<void> {
@@ -436,12 +465,20 @@ export class OnlineDuelScene extends Phaser.Scene {
       this.readyTimeout.remove();
       this.readyTimeout = null;
     }
+    if (this.startPollTimer) {
+      this.startPollTimer.remove();
+      this.startPollTimer = null;
+    }
     const state = ChallengeSystem.getState();
     ChallengeSystem.updateOnlineSync(state?.online?.clockOffsetMs ?? 0, startAtServerMs);
     this.scene.start(SceneKey.Game, { worldId: this.world.id, mode: 'challenge' });
   }
 
   private cleanupLobby(): void {
+    if (this.startPollTimer) {
+      this.startPollTimer.remove();
+      this.startPollTimer = null;
+    }
     if (this.readyTimeout) {
       this.readyTimeout.remove();
       this.readyTimeout = null;
