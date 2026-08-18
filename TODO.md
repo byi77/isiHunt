@@ -111,6 +111,27 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
         neuen Debug-Report ziehen - der zeigt jetzt, ob `claimCloudProfile`/
         `fetchProfileProgress` ueberhaupt den geboosteten Coins-Wert liefern
         und ob `isRemoteAhead` daraus korrekt `true` berechnet.
+  - [ ] **v0.1.169-Report ausgewertet: das neue Log erschien ueberhaupt
+        nicht.** Trotz bestaetigtem Alias-Login zeigte der Report nur
+        `app:start`, keinen einzigen `sync:profilePull`-Eintrag - obwohl
+        `checkCloudSave()` den eingeloggten Zweig, in dem das Logging sitzt,
+        haette durchlaufen muessen. Zwei moegliche Erklaerungen, keine davon
+        bestaetigt: (a) ein frueher Guard in `synchronizeData()`/
+        `checkCloudSave()` (z.B. `saveSyncBusy`, `scene.isActive()`) bricht
+        vor dem Log-Punkt ab, (b) `ProgressSyncSystem.flush()` wirft eine
+        ungefangene Exception statt eines `CloudResult`-Fehlers und landet
+        im `catch` von `synchronizeData()`, der bisher ebenfalls nichts
+        loggte. **Zusaetzliches Logging eingebaut:** `sync:start` (jeder
+        Guard-Zustand beim Betreten von `synchronizeData()`), `sync:threw`
+        (falls `checkCloudSave()` tatsaechlich wirft, mit Stacktrace),
+        `sync:checkCloudSave:signedIn` und `sync:afterFlush` (um zu sehen,
+        ob `ProgressSyncSystem.flush()` durchlaeuft oder haengt). Damit ist
+        JEDER bisher bekannte stille Ausstiegspunkt jetzt sichtbar.
+        **Naechster Schritt:** erneut boosten, neuen Debug-Report ziehen -
+        falls wieder kein `sync:*`-Eintrag erscheint, ist die Ursache
+        ausserhalb von `MenuScene` zu suchen (z.B. `create()` erreicht
+        Zeile `synchronizeData()` gar nicht, oder der Ringpuffer selbst
+        verliert Eintraege vor dem Report).
 - [ ] **Phase 5 mit Kindern balancieren:** Schwierige Welten, Hindernisse,
       Tempo, Sichtfenster und Belohnungen sollen fordernd, aber nie frustrierend
       sein.

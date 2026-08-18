@@ -149,9 +149,17 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   `checkCloudSave()` schreibt jetzt bei jedem Durchlauf Zwischenergebnisse
   (`sync:profilePull`, `sync:remoteAheadCheck`: claimed/profile-Status,
   lokale und Remote-Level/Coins, `isRemoteAhead`-Ergebnis) in den
-  Debug-Ringpuffer, bewusst dauerhaft. Naechster Schritt: erneuter Boost,
-  neuer Debug-Report, damit die eigentliche Ursache erstmals belegt statt
-  vermutet wird.
+  Debug-Ringpuffer, bewusst dauerhaft. **Nachtrag:** Der naechste Report
+  (v0.1.169, bestaetigt eingeloggt per Alias) zeigte trotzdem keinen
+  einzigen `sync:*`-Eintrag — das Logging selbst wurde nie erreicht, ein
+  fruehes stilles Abbrechen liegt naeher als ein falsches
+  `isRemoteAhead`-Ergebnis. Weiteres Logging ergaenzt: `sync:start` (jeder
+  Guard-Zustand beim Betreten von `synchronizeData()`), `sync:threw` (falls
+  `checkCloudSave()` eine Exception wirft statt eines `CloudResult`-Fehlers
+  — der bisherige `catch`-Block in `synchronizeData()` loggte nichts),
+  `sync:checkCloudSave:signedIn` und `sync:afterFlush` (grenzt ein, ob
+  `ProgressSyncSystem.flush()` durchlaeuft). Naechster Schritt: erneuter
+  Boost, neuer Debug-Report.
   **Richtigstellung:** Der Eintrag unter "Geaendert" oben ("der Sync-Fall
   war bereits vorher inhaltlich gefixt") war verfrueht — die entfernten
   Diagnose-Logs haetten vermutlich geholfen. Der hier zuerst als "Behoben"

@@ -129,6 +129,22 @@ export class MenuScene extends Phaser.Scene {
    * „noch nicht aktuell“, bis ein erfolgreicher Abgleich möglich war.
    */
   private async synchronizeData(): Promise<void> {
+    // Deckt jeden fruehen Ausstieg ab - ohne das war aus einem Debug-Report
+    // nicht unterscheidbar, ob synchronizeData() ueberhaupt lief oder an
+    // einem der Guards still abbrach (siehe TODO.md, Boost-Sichtbarkeits-Bug).
+    DebugSystem.pushLogEntry({
+      timestamp: Date.now(),
+      kind: 'event',
+      label: 'sync:start',
+      detail: JSON.stringify({
+        saveSyncBusy: this.saveSyncBusy,
+        sceneActive: this.scene.isActive(),
+        cloudAvailable: CloudSystem.isAvailable(),
+        testProfile: SaveSystem.isTestProfileActive(),
+        signedIn: AuthSystem.isSignedIn(),
+        online: navigator.onLine,
+      }),
+    });
     if (this.saveSyncBusy || !this.scene.isActive()) return;
 
     if (!CloudSystem.isAvailable() || SaveSystem.isTestProfileActive()) {
@@ -159,7 +175,16 @@ export class MenuScene extends Phaser.Scene {
         CloudSystem.hasPendingLeaderboardScore() ||
         this.savePromptObjects.length > 0;
       SyncStatusSystem.setDataSyncStatus(saveSynced && !hasPendingData ? 'up-to-date' : 'pending');
-    } catch {
+    } catch (error) {
+      // Ein hier durchschlagender Wurf (statt eines CloudResult-Fehlers)
+      // blieb bisher komplett unsichtbar - kein Log, nur der stille
+      // 'pending'-Status. Genau das haette den Boost-Bug erklaeren koennen.
+      DebugSystem.pushLogEntry({
+        timestamp: Date.now(),
+        kind: 'error',
+        label: 'sync:threw',
+        detail: error instanceof Error ? (error.stack ?? error.message) : String(error),
+      });
       this.saveSyncBusy = false;
       SyncStatusSystem.setDataSyncStatus('pending');
     } finally {
@@ -195,10 +220,22 @@ export class MenuScene extends Phaser.Scene {
 
     const local = SaveSystem.load();
     if (AuthSystem.isSignedIn()) {
+      DebugSystem.pushLogEntry({
+        timestamp: Date.now(),
+        kind: 'event',
+        label: 'sync:checkCloudSave:signedIn',
+        detail: JSON.stringify({ hasCloudId: local.cloudId !== null, localCoins: local.coins }),
+      });
       // Erst lokale Offline-Runs ablegen, dann den gemeinsamen Profilstand
       // lesen. Ein Remote-Stand wird nur übernommen, wenn er weiter ist; eine
       // noch nicht gesendete Outbox bleibt dadurch erhalten.
       await ProgressSyncSystem.flush();
+      DebugSystem.pushLogEntry({
+        timestamp: Date.now(),
+        kind: 'event',
+        label: 'sync:afterFlush',
+        detail: '',
+      });
       // Alte anonyme Ranglisteneintraege werden beim Menuebesuch mit dem
       // Loginprofil zusammengefuehrt, damit ein sichtbarer Name nicht doppelt
       // auftaucht. Der vorhandene Profilstand bleibt dabei unveraendert.
