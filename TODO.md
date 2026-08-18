@@ -66,6 +66,26 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
         **Noch offen:** erneuter Geraetetest mit demselben Ablauf (zwei
         Geraete, Offline-Run auf einem, direkt nach Netzwiederkehr), um zu
         bestaetigen, dass der Retry den Fall jetzt tatsaechlich auffaengt.
+  - [x] **Zweiter BUG derselben Fehlerklasse gefunden und behoben
+        (2026-08-18):** Emre und Simay per Wartungsboost auf Level 50 +
+        50000 Coins gesetzt; nach App-Start war der Boost bei beiden nicht
+        sichtbar, erst "PROFIL ABGLEICHEN" zog ihn. **Ursache:**
+        `MenuScene.checkCloudSave()` scheiterte beim eingeloggten Profil-
+        Pull, wenn `requireAuthenticatedClient()` innerhalb von
+        `BACKEND_TIMEOUT_MS` (5s) keine Antwort bekam — genau derselbe
+        Timeout-Mechanismus wie beim ersten Bug, nur auf dem Lade- statt dem
+        Sende-Pfad. Der Fehlschlag blieb lautlos: kein Retry, kein
+        sichtbarer Fehler, das UI zeigte weiter den alten lokalen Stand.
+        **Nicht die Ursache:** `isRemoteAhead` selbst — Level und Coins
+        waren dort bereits vor diesem Fix als Vergleichsfelder abgedeckt.
+        **Fix:** `checkCloudSave()` plant bei einem Fehlschlag jetzt
+        denselben automatischen Wiederholungsversuch wie
+        `ProgressSyncSystem` (`SYNC_RETRY_DELAYS_MS`: 5s/15s/60s), inklusive
+        Aufraeumen des Timers im `shutdown`-Handler. `npm run verify` gruen
+        (212 Tests).
+        **Noch offen:** Geraetetest mit einem erneuten Boost, um zu
+        bestaetigen, dass der Retry den Fall auf einem echten iPhone
+        tatsaechlich auffaengt.
 - [ ] **Phase 5 mit Kindern balancieren:** Schwierige Welten, Hindernisse,
       Tempo, Sichtfenster und Belohnungen sollen fordernd, aber nie frustrierend
       sein.

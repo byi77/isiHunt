@@ -7,6 +7,7 @@
 
 import Phaser from 'phaser';
 
+import { SYNC_RETRY_DELAYS_MS } from '@/config/backend';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { WORLDS } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
@@ -50,6 +51,8 @@ export class MenuScene extends Phaser.Scene {
   private syncPopupObjects: Phaser.GameObjects.GameObject[] = [];
   private loginBonusObjects: Phaser.GameObjects.GameObject[] = [];
   private saveSyncBusy = false;
+  private profileRetryTimer: ReturnType<typeof setTimeout> | null = null;
+  private profileRetryAttempt = 0;
   private readonly onlineHandler = (): void => {
     void this.synchronizeData();
   };
@@ -113,6 +116,7 @@ export class MenuScene extends Phaser.Scene {
     this.events.once('shutdown', () => {
       this.cleanupWorldList();
       window.removeEventListener('online', this.onlineHandler);
+      this.cancelProfileRetry();
       this.clearSavePrompt();
       this.hideSyncPopup();
       this.hideLoginBonusPopup();
@@ -203,7 +207,17 @@ export class MenuScene extends Phaser.Scene {
         : ({ ok: true, value: null } as const);
       const profile =
         claimed.ok && claimed.value ? claimed : await CloudSystem.fetchProfileProgress();
-      if (profile.ok && profile.value) {
+      if (!profile.ok) {
+        // Ein Timeout hier (z.B. `requireAuthenticatedClient()` direkt nach
+        // App-Start, bevor die Verbindung wirklich steht) darf ein
+        // serverseitig gesetztes Level/Coins nicht bis zum naechsten
+        // manuellen "Profil abgleichen" verstecken - siehe TODO.md, gleiche
+        // Fehlerklasse wie der iPhone2-Sync-Bug bei ProgressSyncSystem.
+        this.saveSyncBusy = false;
+        this.scheduleProfileRetry();
+        return false;
+      }
+      if (profile.value) {
         const remote: RemoteSave = {
           data: profile.value.data,
           level: profile.value.data.level,
@@ -214,12 +228,14 @@ export class MenuScene extends Phaser.Scene {
         if (CloudSystem.isRemoteAhead(local, remote)) {
           SaveSystem.adoptRemote(remote.data, local.cloudId ?? AuthSystem.currentUserId()!);
           this.saveSyncBusy = false;
+          this.cancelProfileRetry();
           this.scene.restart();
           return false;
         }
       }
       this.saveSyncBusy = false;
-      return profile.ok;
+      this.cancelProfileRetry();
+      return true;
     }
 
     if (!local.cloudId) {
@@ -261,6 +277,31 @@ export class MenuScene extends Phaser.Scene {
 
     this.saveSyncBusy = false;
     return true;
+  }
+
+  /**
+   * Wiederholt den Profilabgleich automatisch nach `SYNC_RETRY_DELAYS_MS`.
+   *
+   * Ohne das blieb ein serverseitig gesetzter Fortschritt (z.B. ein
+   * Wartungs-Boost) unsichtbar, wenn der erste `getUser()`-Aufruf kurz nach
+   * App-Start am `BACKEND_TIMEOUT_MS`-Limit scheiterte - bis der Spieler
+   * zufaellig selbst "Profil abgleichen" antippte.
+   */
+  private scheduleProfileRetry(): void {
+    if (this.profileRetryTimer !== null) return;
+    const delay =
+      SYNC_RETRY_DELAYS_MS[Math.min(this.profileRetryAttempt, SYNC_RETRY_DELAYS_MS.length - 1)];
+    this.profileRetryAttempt += 1;
+    this.profileRetryTimer = setTimeout(() => {
+      this.profileRetryTimer = null;
+      if (this.scene.isActive()) void this.synchronizeData();
+    }, delay);
+  }
+
+  private cancelProfileRetry(): void {
+    if (this.profileRetryTimer !== null) clearTimeout(this.profileRetryTimer);
+    this.profileRetryTimer = null;
+    this.profileRetryAttempt = 0;
   }
 
   private showSyncPopup(): void {

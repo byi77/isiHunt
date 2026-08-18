@@ -134,6 +134,24 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   das manuelle "PROFIL ABGLEICHEN" in den Einstellungen zog den echten Stand.
   `isRemoteAhead`/`isLocalAhead` vergleichen jetzt zusaetzlich Talentraenge,
   Anzahl freigeschalteter Erfolge und Gesamt-XP.
+- **Ein Admin-Boost (Level/Coins) war nach App-Start nicht sichtbar, bis
+  manuell "PROFIL ABGLEICHEN" getippt wurde** _(2026-08-18, Emre und Simay
+  betroffen)_. Andere Ursache als der Eintrag direkt darueber: `isRemoteAhead`
+  deckte Level und Coins schon vorher ab, hier scheiterte der vorgelagerte
+  Aufruf selbst. `MenuScene.checkCloudSave()` baut das Profil-Panel synchron
+  mit dem alten lokalen Stand auf und laedt den Cloud-Stand danach
+  asynchron nach; scheitert `requireAuthenticatedClient()`
+  (`CloudSystem.ts`) dabei am `BACKEND_TIMEOUT_MS`-Limit (5s, z.B. wenn die
+  Verbindung beim App-Start noch nicht ganz steht), brach der Abgleich
+  bisher still ab — kein Fehler, kein Retry, der Boost blieb bis zum
+  naechsten manuellen Abgleich unsichtbar. Gleiche Fehlerklasse wie der
+  bereits geloeste iPhone2-Sync-Bug, nur auf dem Lade- statt dem
+  Sende-Pfad. `checkCloudSave()` plant jetzt bei einem Fehlschlag denselben
+  automatischen Wiederholungsversuch (`SYNC_RETRY_DELAYS_MS`: 5s/15s/60s).
+  **Richtigstellung:** Der Eintrag unter "Geaendert" oben ("der Sync-Fall
+  war bereits vorher inhaltlich gefixt") war verfrueht — die entfernten
+  Diagnose-Logs haetten die eigentliche Ursache vermutlich gezeigt, sie
+  wurde stattdessen erst durch dieses neue Nutzerfeedback gefunden.
 - Ton blieb nach App-Kaltstart auf iOS oft dauerhaft stumm, obwohl "TON: AN"
   gesetzt war: Der allererste `AudioContext.resume()`-Aufruf blieb dort
   manchmal fuer immer in der Warteschleife (kein resolve, kein reject). Die
