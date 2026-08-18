@@ -437,6 +437,83 @@ export function createMenuLayout(gap = 35): MenuLayout {
   };
 }
 
+/**
+ * Touch-Drag- und Mausrad-Scroll fuer eine Unterseite, deren Karten die
+ * sichtbare Hoehe uebersteigen koennen (variable `GAME_HEIGHT`, siehe
+ * `GameConfig.ts`). Vorher zweimal fast identisch dupliziert
+ * (`SettingsScene`, `AdminScene`); ProfileScene brauchte beim
+ * Zusammenlegen mit dem fruehen AccountScene-Bereich (2026-08-18) dieselbe
+ * Mechanik ein drittes Mal - das war der Punkt, ab dem Kopieren mehr kostet
+ * als eine gemeinsame Funktion.
+ *
+ * `onOffsetChange` bleibt bewusst der einzige Kopplungspunkt: `SettingsScene`
+ * verschiebt einen Container (`content.y`), `AdminScene` verschiebt die
+ * Kamera (`camera.setScroll`) - beide Mechaniken bleiben unangetastet, nur
+ * das Pointer-/Wheel-Handling ist gemeinsam.
+ */
+export function attachVerticalScroll(
+  scene: Phaser.Scene,
+  options: {
+    maxScroll: number;
+    /** Nur Pointer-Drags innerhalb dieses Bereichs starten das Scrollen. */
+    dragZoneTop: number;
+    dragZoneBottom: number;
+    onOffsetChange: (offset: number) => void;
+  },
+): void {
+  const { maxScroll, dragZoneTop, dragZoneBottom, onOffsetChange } = options;
+  if (maxScroll <= 0) return;
+
+  let scrollOffset = 0;
+  let activePointerId: number | null = null;
+  let pointerStartY = 0;
+  let scrollStart = 0;
+
+  const setScrollOffset = (value: number): void => {
+    scrollOffset = Phaser.Math.Clamp(value, 0, maxScroll);
+    onOffsetChange(scrollOffset);
+  };
+
+  const onPointerDown = (pointer: Phaser.Input.Pointer): void => {
+    if (activePointerId !== null) return;
+    if (pointer.y < dragZoneTop || pointer.y > dragZoneBottom) return;
+    activePointerId = pointer.id;
+    pointerStartY = pointer.y;
+    scrollStart = scrollOffset;
+  };
+
+  const onPointerMove = (pointer: Phaser.Input.Pointer): void => {
+    if (pointer.id !== activePointerId) return;
+    setScrollOffset(scrollStart - (pointer.y - pointerStartY));
+  };
+
+  const releasePointer = (pointer: Phaser.Input.Pointer): void => {
+    if (pointer.id === activePointerId) activePointerId = null;
+  };
+
+  const onWheel = (
+    _pointer: Phaser.Input.Pointer,
+    _gameObjects: Phaser.GameObjects.GameObject[],
+    _deltaX: number,
+    deltaY: number,
+  ): void => {
+    setScrollOffset(scrollOffset + deltaY);
+  };
+
+  scene.input.on('pointerdown', onPointerDown);
+  scene.input.on('pointermove', onPointerMove);
+  scene.input.on('pointerup', releasePointer);
+  scene.input.on('pointerupoutside', releasePointer);
+  scene.input.on('wheel', onWheel);
+  scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+    scene.input.off('pointerdown', onPointerDown);
+    scene.input.off('pointermove', onPointerMove);
+    scene.input.off('pointerup', releasePointer);
+    scene.input.off('pointerupoutside', releasePointer);
+    scene.input.off('wheel', onWheel);
+  });
+}
+
 export interface BarHandle {
   container: Phaser.GameObjects.Container;
   /** @param ratio 0 bis 1 */

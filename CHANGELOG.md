@@ -55,8 +55,33 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 - **Welt-Detailscreen vor jedem Run:** `WorldInfoScene` zeigt Besonderheit,
   Hindernismodus und Punkt-/XP-Bonus einer Welt in Klartext, bevor
   JAGD/DUELL/TAGESLAUF starten.
+- **`attachVerticalScroll()` in `widgets.ts`:** gemeinsamer Touch-Drag-/
+  Mausrad-Scroll fuer Unterseiten, deren Karten die sichtbare Hoehe
+  uebersteigen koennen. Vorher zweimal fast identisch dupliziert
+  (`SettingsScene`, `AdminScene`); `ProfileScene` brauchte beim
+  Zusammenlegen mit dem AccountScene-Profilbereich (siehe unten) dieselbe
+  Mechanik ein drittes Mal.
 
 ### Geaendert
+
+- **Zwei "Profil"-Bildschirme zu einem zusammengefuehrt** _(2026-08-18,
+  Nutzerwunsch: "es gibt zwei benutzer profil menüs ... fasse diese beiden
+  zusammen")_. Der Hauptmenue-Knopf "PROFIL" (Name, Level, Statistik,
+  `ProfileScene`) und der Weg ueber Einstellungen → "PROFIL ÖFFNEN"
+  (Alias, "PROFIL ABGLEICHEN", "ABMELDEN", vorher der eingeloggte Zustand
+  von `AccountScene`) zeigten auf zwei fachlich verschiedene Bildschirme
+  mit gleichem Namen. `ProfileScene` ist jetzt das einzige Ziel fuer beide
+  Wege, unabhaengig vom Login-Status: eingeloggt zeigt sie zusaetzlich
+  Alias/Abgleichen/Abmelden, nicht eingeloggt einen Anmelden-Knopf zu
+  `AccountScene`. `AccountScene` behandelt nur noch den eigentlichen
+  Login-/Registrierungsvorgang und leitet bei bereits bestehender Sitzung
+  sofort zu `ProfileScene` weiter (`buildSignedIn()`/`signOut()` dort
+  entfernt). Die zusaetzliche Karte kann `ProfileScene` auf kleinen
+  Geraeten ueber die sichtbare Hoehe hinaus verlaengern - die Seite ist
+  jetzt per Touch-Drag/Mausrad scrollbar (siehe `attachVerticalScroll()`
+  oben). **Ungeprueft:** das Zusammenspiel aus Container-Scroll und dem
+  DOM-basierten Namens-Textinput auf einem echten Geraet - dieser
+  Kombination gab es im Projekt bisher nicht.
 
 - Diagnose-`console.warn`-Aufrufe in `AccountScene.signIn()` und
   `MenuScene.checkCloudSave()`/`synchronizeData()` wieder entfernt. Sie

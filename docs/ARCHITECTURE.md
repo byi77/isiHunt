@@ -88,9 +88,15 @@ isiHunt/
 │   │   ├── SceneKey.ts         Scene-Namen zentral
 │   │   ├── BootScene.ts        Texturen erzeugen
 │   │   ├── MenuScene.ts        Name, Welten, Start, Duell
-│   │   ├── ProfileScene.ts     Name und Lichtfigur beim ersten Start
-│   │   ├── AccountScene.ts     Login und gemeinsamer Profilstand (Phase 2.6)
-│   │   ├── SettingsScene.ts    Ton, Spielstand-Aktionen, Profiluebertragung
+│   │   ├── ProfileScene.ts     Zentrales Profil: Name, Level, Statistik,
+│   │   │                       Login/Abgleichen/Abmelden (2026-08-18
+│   │   │                       zusammengefuehrt, war zuvor Teil von
+│   │   │                       AccountScene)
+│   │   ├── AccountScene.ts     Nur noch Login/Registrierung (Phase 2.6);
+│   │   │                       leitet bei bereits bestehender Sitzung zu
+│   │   │                       ProfileScene weiter
+│   │   ├── SettingsScene.ts    Ton, Spielstand-Aktionen; Profil-Knopf zeigt
+│   │   │                       auf ProfileScene
 │   │   ├── TalentScene.ts      Talentbaum-Oberflaeche mit Rangkauf
 │   │   ├── AchievementsScene.ts Erfolgsliste
 │   │   ├── GameScene.ts        Die Simulation (Solo und Duell)

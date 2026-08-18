@@ -173,6 +173,19 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
         `AuthSystem`, sobald diese `DebugSystem` importieren - behoben durch
         einen dynamischen statt statischen `SoundSystem`-Import in
         `buildReport()`. `npm run verify` gruen (212 Tests).
+- [ ] **Zwei Profil-Menues zusammengefuehrt, Geraetetest noch offen**
+      _(Nutzerwunsch 2026-08-18)_: Hauptmenue-Knopf "PROFIL" und
+      Einstellungen → "PROFIL ÖFFNEN" zeigten auf zwei verschiedene
+      Bildschirme (Name/Level/Statistik vs. Login/Abgleichen/Abmelden).
+      Beide fuehren jetzt zu `ProfileScene`; `AccountScene` behandelt nur
+      noch Login/Registrierung. Dafuer musste `ProfileScene` erstmals
+      scrollbar werden (`attachVerticalScroll()`, neu in `widgets.ts`,
+      gemeinsam mit `SettingsScene`/`AdminScene` extrahiert). `npm run
+      verify` gruen (212 Tests), **aber nicht im Browser/Geraet getestet**
+      - insbesondere ob der DOM-Namens-Textinput sich innerhalb des
+      scrollenden Containers korrekt mitbewegt (diese Kombination gab es
+      im Projekt bisher nicht) und ob beide Wege (Hauptmenue, Einstellungen)
+      wirklich zum selben Bildschirm fuehren.
 - [ ] **Phase 5 mit Kindern balancieren:** Schwierige Welten, Hindernisse,
       Tempo, Sichtfenster und Belohnungen sollen fordernd, aber nie frustrierend
       sein.

@@ -54,6 +54,14 @@ export class AccountScene extends Phaser.Scene {
 
   create(data: AccountSceneData = {}): void {
     this.firstStart = data.firstStart ?? false;
+    // Diese Scene behandelt nur noch Login/Registrierung. Wer bereits
+    // angemeldet ist, gehoert ins zusammengefuehrte ProfileScene (2026-08-18)
+    // - vorher zeigte diese Scene im eingeloggten Zustand einen zweiten,
+    // aehnlich benannten "Profil"-Bildschirm mit Alias/Abgleichen/Abmelden.
+    if (!this.firstStart && AuthSystem.isSignedIn()) {
+      this.scene.start(SceneKey.Profile);
+      return;
+    }
     // Einloggen ist immer der sichere Standard. Ein neues Profil wird nur
     // bewusst über den kleineren zweiten Button angelegt.
     this.mode = data.mode ?? 'signIn';
@@ -143,12 +151,7 @@ export class AccountScene extends Phaser.Scene {
 
   private buildCurrentState(accent: number): void {
     this.clearActions();
-
-    if (AuthSystem.isSignedIn()) {
-      this.buildSignedIn(accent);
-    } else {
-      this.buildLogin(accent);
-    }
+    this.buildLogin(accent);
   }
 
   private buildLogin(accent: number): void {
@@ -219,45 +222,6 @@ export class AccountScene extends Phaser.Scene {
         : isSignUp
           ? 'Lege nur dann ein neues Profil an, wenn du noch keines hast.'
           : 'Gib deinen Namen und deine PIN ein. Dann tippe auf EINLOGGEN.\nNoch kein Profil? Tippe unten auf NEUES ANLEGEN.',
-    );
-  }
-
-  private buildSignedIn(accent: number): void {
-    const alias = AuthSystem.currentAlias() ?? 'angemeldetes Profil';
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        this.statusPage.contentY(300),
-        alias,
-        textStyle(FontSize.small, Palette.ink),
-      )
-      .setOrigin(0.5);
-
-    const sync = createButton(
-      this,
-      GAME_WIDTH / 2,
-      this.statusPage.contentY(470),
-      'PROFIL ABGLEICHEN',
-      () => void this.syncProfile(),
-      { width: 440, height: 78, accent, fontSize: FontSize.body },
-    );
-    const signOut = createButton(
-      this,
-      GAME_WIDTH / 2,
-      this.statusPage.contentY(585),
-      'ABMELDEN',
-      () => void this.signOut(),
-      {
-        width: 360,
-        height: 68,
-        accent: 0x9aa3bd,
-        fontSize: FontSize.small,
-      },
-    );
-
-    this.actionObjects = [sync.container, signOut.container];
-    this.statusText.setText(
-      `${ProgressSyncSystem.pendingCount()} ausstehende Änderung${ProgressSyncSystem.pendingCount() === 1 ? '' : 'en'}.`,
     );
   }
 
@@ -405,38 +369,6 @@ export class AccountScene extends Phaser.Scene {
   private switchMode(mode: AccountMode): void {
     if (this.busy || this.mode === mode) return;
     this.scene.restart({ firstStart: this.firstStart, mode });
-  }
-
-  private async signOut(): Promise<void> {
-    if (this.busy) return;
-    if (!navigator.onLine) {
-      this.statusPage.setStatus(
-        'Offline-Abmeldung nicht möglich. Bitte stelle eine Internetverbindung her.',
-        Palette.gold,
-      );
-      return;
-    }
-    this.busy = true;
-    this.statusPage.setStatus('Ausstehende Änderungen werden gesichert ...', Palette.inkDim);
-    await ProgressSyncSystem.flush();
-    if (ProgressSyncSystem.hasPendingData()) {
-      this.busy = false;
-      this.statusPage.setStatus(
-        'Abmelden erst möglich, wenn der Profilstand abgeglichen wurde.',
-        Palette.gold,
-      );
-      return;
-    }
-
-    const result = await AuthSystem.signOut();
-    if (!result.ok) {
-      this.busy = false;
-      this.statusPage.setStatus(result.error, Palette.gold);
-      return;
-    }
-    SaveSystem.clearLocalProfile();
-    this.busy = false;
-    this.scene.start(SceneKey.Menu);
   }
 
   private clearActions(): void {

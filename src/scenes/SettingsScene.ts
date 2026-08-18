@@ -11,7 +11,6 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
-import * as AuthSystem from '@/systems/AuthSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
@@ -90,37 +89,26 @@ export class SettingsScene extends Phaser.Scene {
         .text(
           GAME_WIDTH / 2,
           profileY - 50,
-          'Melde dich auf iPhone und iPad mit demselben Profil an.\nDein Fortschritt wird sicher in deinem Online-Profil gespeichert.',
+          'Name, Level, Statistik und Mehrgeräte-Anmeldung an einem Ort.',
           textStyle(FontSize.small, Palette.ink),
         )
         .setOrigin(0.5)
         .setAlign('center'),
     );
 
-    const accountButton = createButton(
-      this,
-      GAME_WIDTH / 2,
-      profileY + 75,
-      AuthSystem.isSignedIn() ? 'PROFIL ÖFFNEN' : 'ANMELDEN / PROFIL ANLEGEN',
-      () => this.scene.start(SceneKey.Account),
-      { width: 460, height: 76, accent: world.accent, fontSize: FontSize.small },
+    // Fuehrt unabhaengig vom Login-Status zum selben Ziel wie der
+    // Hauptmenue-Knopf "PROFIL" (2026-08-18 zusammengefuehrt) - ProfileScene
+    // zeigt bei Bedarf selbst den Anmelden-Weg.
+    addContent(
+      createButton(
+        this,
+        GAME_WIDTH / 2,
+        profileY + 75,
+        'PROFIL ÖFFNEN',
+        () => this.scene.start(SceneKey.Profile),
+        { width: 460, height: 76, accent: world.accent, fontSize: FontSize.small },
+      ).container,
     );
-    addContent(accountButton.container);
-
-    if (!AuthSystem.isConfigured()) {
-      accountButton.setEnabled(false);
-      addContent(
-        this.add
-          .text(
-            GAME_WIDTH / 2,
-            profileY + 140,
-            'Das Online-Profil ist gerade nicht verfügbar.',
-            textStyle(FontSize.tiny, Palette.inkDim),
-          )
-          .setOrigin(0.5)
-          .setAlign('center'),
-      );
-    }
 
     addContent(
       createPanel(this, GAME_WIDTH / 2, soundY, GAME_WIDTH - 120, 180, world.accent, {
