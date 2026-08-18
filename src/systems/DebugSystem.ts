@@ -35,7 +35,6 @@ import {
 import { APP_VERSION } from '@/config/GameConfig';
 import { measureDevice, readWebStorageLine } from '@/core/deviceReport';
 import { formatLayout, measureLayout } from '@/core/layoutReport';
-import * as SoundSystem from '@/systems/SoundSystem';
 
 export type LogEntryKind = 'event' | 'error';
 
@@ -270,6 +269,13 @@ export async function buildReport(
 ): Promise<string> {
   const device = measureDevice();
   const storageLine = await readWebStorageLine();
+  // Dynamischer Import statt eines statischen Modulkopf-Imports: SoundSystem
+  // haengt (ueber EventBus) an Phaser, das darf aber nicht in den statischen
+  // Importbaum dieser Datei einfliessen - CloudSystem/AuthSystem importieren
+  // pushLogEntry() auch aus reinen Vitest-Kontexten ohne Canvas-Mock, wo ein
+  // statischer Phaser-Import beim Modulladen sofort bricht
+  // (CanvasFeatures.js). buildReport() laeuft ohnehin nur im echten Browser.
+  const SoundSystem = await import('@/systems/SoundSystem');
 
   return [
     `isiHunt Debug-Report`,

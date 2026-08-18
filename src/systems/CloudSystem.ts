@@ -32,6 +32,7 @@ import {
   SYNC_CODE_LENGTH,
 } from '@/config/backend';
 import { xpForLevel } from '@/config/GameConfig';
+import * as DebugSystem from '@/systems/DebugSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import type { ProgressEvent, SaveData } from '@/types';
 import type { TalentId, TalentRanks } from '@/config/talents';
@@ -240,15 +241,39 @@ export function isAvailable(): boolean {
  * Supabase bricht von sich aus nicht ab. Ohne Limit wartet der Sync-Bildschirm
  * bei schlechtem Empfang unbegrenzt auf eine Antwort, die nie kommt.
  */
+/**
+ * Jeder Backend-Aufruf laeuft hier durch - der zentrale Punkt, um Erfolg UND
+ * Fehlschlag automatisch im Debug-Ringpuffer festzuhalten, ohne bei jedem
+ * neuen Bug erneut manuell Logging nachruesten zu muessen. Vorher wurde nur
+ * der Fehlerfall geloggt (via console.warn); "kein Fehler-Log" war dadurch
+ * mehrfach mit "kein Problem" verwechselbar - siehe TODO.md, Boost-Bug
+ * 2026-08-18, drei Diagnoserunden bis zur echten Ursache. Bewusst ohne
+ * Nutzlast (Session-Token o.ae. duerfen nicht im Klartext im Ringpuffer
+ * landen) - nur Label, Erfolg/Fehlschlag und Dauer.
+ */
 async function withTimeout<T>(operation: PromiseLike<T>, label: string): Promise<CloudResult<T>> {
+  const startedAt = Date.now();
   try {
     const timeout = new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error('Zeitüberschreitung')), BACKEND_TIMEOUT_MS);
     });
 
-    return { ok: true, value: await Promise.race([operation, timeout]) };
+    const value = await Promise.race([operation, timeout]);
+    DebugSystem.pushLogEntry({
+      timestamp: Date.now(),
+      kind: 'event',
+      label: `cloud:${label}`,
+      detail: `ok ${Date.now() - startedAt}ms`,
+    });
+    return { ok: true, value };
   } catch (error) {
     const reason = error instanceof Error ? error.message : 'Unbekannter Fehler';
+    DebugSystem.pushLogEntry({
+      timestamp: Date.now(),
+      kind: 'error',
+      label: `cloud:${label}`,
+      detail: `fehlgeschlagen ${Date.now() - startedAt}ms: ${reason}`,
+    });
     console.warn(`[CloudSystem] ${label} fehlgeschlagen:`, error);
     return { ok: false, error: `${label}: ${reason}` };
   }

@@ -231,22 +231,10 @@ export class MenuScene extends Phaser.Scene {
 
     const local = SaveSystem.load();
     if (AuthSystem.isSignedIn()) {
-      DebugSystem.pushLogEntry({
-        timestamp: Date.now(),
-        kind: 'event',
-        label: 'sync:checkCloudSave:signedIn',
-        detail: JSON.stringify({ hasCloudId: local.cloudId !== null, localCoins: local.coins }),
-      });
       // Erst lokale Offline-Runs ablegen, dann den gemeinsamen Profilstand
       // lesen. Ein Remote-Stand wird nur übernommen, wenn er weiter ist; eine
       // noch nicht gesendete Outbox bleibt dadurch erhalten.
       await ProgressSyncSystem.flush();
-      DebugSystem.pushLogEntry({
-        timestamp: Date.now(),
-        kind: 'event',
-        label: 'sync:afterFlush',
-        detail: '',
-      });
       // Alte anonyme Ranglisteneintraege werden beim Menuebesuch mit dem
       // Loginprofil zusammengefuehrt, damit ein sichtbarer Name nicht doppelt
       // auftaucht. Der vorhandene Profilstand bleibt dabei unveraendert.

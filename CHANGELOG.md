@@ -22,6 +22,26 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Jeder Backend-Aufruf wird jetzt automatisch im Debug-Ringpuffer
+  protokolliert** (Erfolg UND Fehlschlag, nicht nur der Fehlerfall wie
+  bisher). `withTimeout()` in `CloudSystem.ts` ist der zentrale Durchgang
+  fuer alle ~25 Supabase-Aufrufe - ein einziger Punkt statt manuellem
+  Logging pro Funktion. Anlass: der Boost-Sichtbarkeits-Bug (siehe
+  "Behoben" unten) brauchte drei Diagnoserunden, weil bisher nur
+  `console.warn`/`console.error` im Fehlerfall geloggt wurde - "kein
+  Fehler-Log" war dadurch mehrfach mit "kein Problem" verwechselbar.
+  Bewusst ohne Nutzlast (kein Session-Token o.ae. im Klartext), nur Label,
+  Erfolg/Fehlschlag und Dauer. `DEBUG_LOG_BUFFER_SIZE` von 200 auf 400
+  erhoeht, weil dadurch deutlich mehr Eintraege pro Menuebesuch anfallen.
+  **Nebenbefund beim Bauen:** `DebugSystem.ts` zog ueber einen statischen
+  `SoundSystem`-Import (fuer die Ton-Diagnose im Text-Report) transitiv
+  Phaser mit (`SoundSystem → EventBus → Phaser.Events.EventEmitter`) -
+  seit `CloudSystem`/`AuthSystem` jetzt selbst `DebugSystem` importieren,
+  brach das jeden ihrer Vitest-Laeufe (`CanvasFeatures.js`, kein
+  Canvas-Mock in reinen Systemtests). Der `SoundSystem`-Import in
+  `buildReport()` ist jetzt dynamisch (`await import(...)`) statt
+  statisch - `systems/` bleibt damit Phaser-frei (CODE_STYLE.md 1.6), wie
+  es der eigene Modulkommentar in `DebugSystem.ts` immer schon verlangte.
 - **Netzwerk-Duell, Phase 1** (ADR-0010 Schritt 2): zwei Geraete koennen
   ueber einen Raum-Code beitreten und gleichzeitig dieselbe Runde starten —
   Uhr-Synchronisation gegen die Supabase-Serverzeit, gemeinsamer Countdown

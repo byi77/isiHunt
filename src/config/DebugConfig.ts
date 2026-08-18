@@ -15,12 +15,14 @@ export const DEBUG_TOGGLE_TAP_WINDOW_MS = 4_000;
 /**
  * Maximale Anzahl Eintraege im rollierenden Event-/Fehler-Ringpuffer.
  *
- * Erhoeht von urspruenglich 50: seit der Puffer auch console.warn/console.error
- * sowie den Boot-Zustand mitschreibt und ueber die gesamte App-Laufzeit (nicht
- * nur einen Run) sammelt, reichten 50 Eintraege nicht mehr, um den Zeitraum vor
- * einem spaet auftretenden Bug abzudecken.
+ * Erhoeht von urspruenglich 50 auf 200, dann auf 400: seit `withTimeout()` in
+ * `CloudSystem.ts` jeden Backend-Aufruf automatisch mitschreibt (Erfolg UND
+ * Fehlschlag, nicht nur console.warn/console.error), fallen deutlich mehr
+ * Eintraege pro Menuebesuch an. 400 haelt bei den bisher beobachteten
+ * Bug-Faellen den Zeitraum vor einem spaet auftretenden Fehler noch komplett
+ * im Puffer, ohne dass ein Fehlerbericht Minuten an Vorgeschichte verliert.
  */
-export const DEBUG_LOG_BUFFER_SIZE = 200;
+export const DEBUG_LOG_BUFFER_SIZE = 400;
 
 /** Eigener localStorage-Schluessel, getrennt vom Spielstand (SAVE_KEY). */
 export const DEBUG_MODE_STORAGE_KEY = 'isihunt.debug-mode.v1';

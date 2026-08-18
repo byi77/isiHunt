@@ -161,6 +161,18 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
         Werte. `npm run verify` gruen (212 Tests).
         **Noch offen:** Geraetetest, der bestaetigt, dass ein Boost nach
         diesem Fix ohne manuellen Abgleich sichtbar wird.
+  - [x] **Diagnose-Infrastruktur aus diesem Bug verallgemeinert
+        (2026-08-18):** Statt bei jedem kuenftigen Backend-Bug erneut
+        manuell Logging nachzuruesten, protokolliert `withTimeout()` in
+        `CloudSystem.ts` jetzt automatisch jeden der ~25 Backend-Aufrufe
+        (Erfolg UND Fehlschlag, Label + Dauer, keine Nutzlast) in den
+        Debug-Ringpuffer. `DEBUG_LOG_BUFFER_SIZE` 200 -> 400, weil dadurch
+        mehr Eintraege pro Menuebesuch anfallen. Nebenbei gefunden und
+        gefixt: `DebugSystem.ts` zog ueber `SoundSystem` transitiv Phaser
+        mit und brach dadurch jeden Vitest-Lauf von `CloudSystem`/
+        `AuthSystem`, sobald diese `DebugSystem` importieren - behoben durch
+        einen dynamischen statt statischen `SoundSystem`-Import in
+        `buildReport()`. `npm run verify` gruen (212 Tests).
 - [ ] **Phase 5 mit Kindern balancieren:** Schwierige Welten, Hindernisse,
       Tempo, Sichtfenster und Belohnungen sollen fordernd, aber nie frustrierend
       sein.
