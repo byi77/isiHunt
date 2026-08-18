@@ -132,6 +132,35 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
         ausserhalb von `MenuScene` zu suchen (z.B. `create()` erreicht
         Zeile `synchronizeData()` gar nicht, oder der Ringpuffer selbst
         verliert Eintraege vor dem Report).
+  - [x] **Tatsaechliche Ursache gefunden und belegt (v0.1.170-Report,
+        2026-08-18):** Jeder `sync:start`-Eintrag zeigte
+        `"sceneActive":false` - bei JEDEM der neun protokollierten
+        Aufrufe, ohne Ausnahme. Nachvollzogen in
+        `node_modules/phaser/src/scene/SceneManager.js::create()`: Phaser
+        ruft `scene.create.call(scene, settings.data)` auf und setzt
+        `settings.status = CONST.RUNNING` **danach**, erst nach der
+        Rueckkehr aus `create()`. `synchronizeData()` wird am Ende von
+        `MenuScene.create()` als `void this.synchronizeData()`
+        losgeschickt und lief bis zu ihrem ersten `await` **synchron im
+        selben Tick wie `create()`** - genau in diesem Moment lieferte
+        `this.scene.isActive()` garantiert `false`. Der Guard
+        `if (this.saveSyncBusy || !this.scene.isActive()) return;` brach
+        deshalb bei jedem einzigen App-Start sofort ab, bevor
+        `checkCloudSave()` je erreicht wurde - unabhaengig von Netz,
+        Login-Status oder Boost-Wert. Kein Netzwerk-Timeout, keine falsche
+        `isRemoteAhead`-Logik; die ersten zwei "Fixe" fuer dieses Symptom
+        (Retry, erweitertes Logging) haben deshalb nichts geaendert. **Der
+        Bug bestand schon vor allen drei Sync-bezogenen Commits vom
+        2026-08-18** - kein Regressions-Bug, sondern ein alter, bisher nie
+        belegter Fehler.
+        **Fix:** Der `isActive()`-Teil des Einstiegs-Guards ist aus
+        `synchronizeData()` und `checkCloudSave()` entfernt (dort schuetzt
+        nur noch `saveSyncBusy`); die spaeteren `isActive()`-Checks nach
+        jedem `await` bleiben unveraendert bestehen - dort ist `create()`
+        laengst zurueckgekehrt und die Pruefung liefert wieder verlaessliche
+        Werte. `npm run verify` gruen (212 Tests).
+        **Noch offen:** Geraetetest, der bestaetigt, dass ein Boost nach
+        diesem Fix ohne manuellen Abgleich sichtbar wird.
 - [ ] **Phase 5 mit Kindern balancieren:** Schwierige Welten, Hindernisse,
       Tempo, Sichtfenster und Belohnungen sollen fordernd, aber nie frustrierend
       sein.

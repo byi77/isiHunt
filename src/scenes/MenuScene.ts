@@ -129,9 +129,18 @@ export class MenuScene extends Phaser.Scene {
    * „noch nicht aktuell“, bis ein erfolgreicher Abgleich möglich war.
    */
   private async synchronizeData(): Promise<void> {
-    // Deckt jeden fruehen Ausstieg ab - ohne das war aus einem Debug-Report
-    // nicht unterscheidbar, ob synchronizeData() ueberhaupt lief oder an
-    // einem der Guards still abbrach (siehe TODO.md, Boost-Sichtbarkeits-Bug).
+    // BUG gefunden und belegt (2026-08-18, siehe TODO.md): Phaser setzt den
+    // Scene-Status erst NACH dem Rueckkehren aus `create()` auf RUNNING
+    // (SceneManager.create(): `scene.create.call(...)` vor
+    // `settings.status = CONST.RUNNING`). Der fruehere Guard
+    // `!this.scene.isActive()` liess sich hier deshalb bei JEDEM Aufruf aus
+    // `create()` heraus sofort abbrechen - `checkCloudSave()` und damit ein
+    // Admin-Boost wurden dadurch nie erreicht, unabhaengig von Netz oder
+    // Login-Status. Debug-Reports zeigten das erst, nachdem `sceneActive`
+    // selbst mitprotokolliert wurde. Der `onlineHandler` ruft dieselbe
+    // Funktion spaeter erneut auf, wenn die Szene laengst `RUNNING` ist -
+    // `isActive()` bleibt dort weiterhin sinnvoll, nur der allererste
+    // synchrone Aufruf direkt aus `create()` darf sich nicht darauf stuetzen.
     DebugSystem.pushLogEntry({
       timestamp: Date.now(),
       kind: 'event',
@@ -145,7 +154,7 @@ export class MenuScene extends Phaser.Scene {
         online: navigator.onLine,
       }),
     });
-    if (this.saveSyncBusy || !this.scene.isActive()) return;
+    if (this.saveSyncBusy) return;
 
     if (!CloudSystem.isAvailable() || SaveSystem.isTestProfileActive()) {
       SyncStatusSystem.setDataSyncStatus('local-only');
@@ -209,12 +218,14 @@ export class MenuScene extends Phaser.Scene {
    * ausgefuehrt. Ein besserer Cloud-Stand braucht eine sichtbare Entscheidung.
    */
   private async checkCloudSave(): Promise<boolean> {
-    if (
-      this.saveSyncBusy ||
-      !CloudSystem.isAvailable() ||
-      SaveSystem.isTestProfileActive() ||
-      !this.scene.isActive()
-    )
+    // Kein `!this.scene.isActive()`-Guard hier: `synchronizeData()` ruft
+    // diese Funktion beim allerersten Durchlauf noch synchron waehrend
+    // `create()` auf, wo Phaser den Scene-Status erst nach der Rueckkehr aus
+    // `create()` auf RUNNING setzt (siehe Kommentar in `synchronizeData()`).
+    // Die `await`-Zwischenschritte weiter unten pruefen `isActive()` bereits
+    // dort, wo es zuverlaessig ist - vor dem ersten `await` gibt es nichts
+    // zu schuetzen, die Szene existiert ja bereits.
+    if (this.saveSyncBusy || !CloudSystem.isAvailable() || SaveSystem.isTestProfileActive())
       return false;
     this.saveSyncBusy = true;
 

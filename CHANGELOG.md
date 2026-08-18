@@ -134,9 +134,11 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   das manuelle "PROFIL ABGLEICHEN" in den Einstellungen zog den echten Stand.
   `isRemoteAhead`/`isLocalAhead` vergleichen jetzt zusaetzlich Talentraenge,
   Anzahl freigeschalteter Erfolge und Gesamt-XP.
-- **NOCH NICHT BEHOBEN — Admin-Boost (Level/Coins) ist nach App-Start nicht
-  sichtbar, bis manuell "PROFIL ABGLEICHEN" getippt wird** _(2026-08-18,
-  Emre und Simay sowie das eigene Testprofil des Entwicklers betroffen)_.
+- **Admin-Boost (Level/Coins) war nach App-Start nicht sichtbar, bis manuell
+  "PROFIL ABGLEICHEN" getippt wurde** _(2026-08-18, Emre und Simay sowie das
+  eigene Testprofil des Entwicklers betroffen)_. Drei Zwischenstaende, bevor
+  die tatsaechliche Ursache belegt war — chronologisch dokumentiert, weil
+  jeder einzelne Schritt Teil des Belegs ist:
   Erste Hypothese war ein stiller Timeout in `requireAuthenticatedClient()`
   (`checkCloudSave()` erhielt dafuer einen automatischen Retry, analog zum
   bereits geloesten iPhone2-Sync-Bug) — **durch einen zweiten Selbsttest
@@ -163,10 +165,27 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   **Richtigstellung:** Der Eintrag unter "Geaendert" oben ("der Sync-Fall
   war bereits vorher inhaltlich gefixt") war verfrueht — die entfernten
   Diagnose-Logs haetten vermutlich geholfen. Der hier zuerst als "Behoben"
-  eingetragene Retry-Fix war ebenfalls verfrueht: Der Retry allein loest
-  nur den Fall "Anfrage schlaegt fehl", nicht den Fall "Anfrage liefert ein
-  Ergebnis, das `isRemoteAhead` unerwartet nicht als voraus erkennt" — genau
-  das scheint hier vorzuliegen, aber ohne Log unbewiesen.
+  eingetragene Retry-Fix war ebenfalls verfrueht.
+  **Tatsaechliche Ursache, belegt durch den v0.1.170-Report:** Jeder
+  `sync:start`-Log zeigte `"sceneActive":false`, ausnahmslos bei allen neun
+  protokollierten Aufrufen. Nachvollzogen in Phasers eigenem
+  `SceneManager.create()`: `scene.create.call(...)` laeuft, und **erst
+  danach** setzt Phaser `settings.status = CONST.RUNNING`. `synchronizeData()`
+  wird am Ende von `MenuScene.create()` als `void this.synchronizeData()`
+  losgeschickt und lief bis zu ihrem ersten `await` synchron im selben Tick
+  wie `create()` — in genau diesem Moment lieferte `this.scene.isActive()`
+  garantiert `false`. Der Einstiegs-Guard
+  `if (this.saveSyncBusy || !this.scene.isActive()) return;` brach deshalb
+  bei **jedem** App-Start sofort ab, bevor `checkCloudSave()` je erreicht
+  wurde — unabhaengig von Netz, Login-Status oder Boost-Wert. Kein
+  Netzwerk-Timeout, keine falsche `isRemoteAhead`-Logik: Beide vorigen
+  Zwischenstaende bekaempften ein Symptom, dessen Ursache ausserhalb ihrer
+  jeweiligen Hypothese lag. Der Bug bestand schon vor allen drei
+  Sync-Commits vom 2026-08-18 — kein Regressions-, sondern ein alter, nie
+  belegter Fehler. **Fix:** Der `isActive()`-Teil des Einstiegs-Guards ist
+  aus `synchronizeData()` und `checkCloudSave()` entfernt; die spaeteren
+  `isActive()`-Checks nach jedem `await` bleiben unveraendert, dort ist
+  `create()` laengst zurueckgekehrt und die Pruefung wieder verlaesslich.
 - Ton blieb nach App-Kaltstart auf iOS oft dauerhaft stumm, obwohl "TON: AN"
   gesetzt war: Der allererste `AudioContext.resume()`-Aufruf blieb dort
   manchmal fuer immer in der Warteschleife (kein resolve, kein reject). Die
