@@ -581,6 +581,28 @@ etwa 25 Minuten.
 Einzeln zu fahren ueber `--only=nav,controls` (kommagetrennt).
 `--watch` oeffnet ein sichtbares Fenster mit gebremster Eingabe.
 
+#### Sichtbarer Fortschritt
+
+Ein Solo-Run dauert 90 echte Sekunden. Ohne Zwischenmeldung schweigt der Test
+so lange komplett — wer davorsitzt, kann "laeuft noch" nicht von "haengt"
+unterscheiden. Zwei Dinge halten den Lauf lesbar:
+
+- **Vorab die Ansage**, welche Suiten laufen und wie lange das ungefaehr
+  dauert. Enthaelt der Lauf echte Runden, wird das ausdruecklich gesagt.
+- **Eine Statuszeile mit mitlaufender Uhr**, die sich per Wagenruecklauf
+  selbst ueberschreibt. Waehrend eines Runs zeigt sie den Punktestand — der
+  beste Beleg dafuer, dass wirklich gespielt wird.
+
+Ausserhalb eines Terminals (Pipe, Datei, CI) waere eine sich selbst
+ueberschreibende Zeile unleserlich; dort faellt pro Schritt eine normale
+Zeile an. Die Unterscheidung laeuft ueber `process.stdout.isTTY`.
+
+**Warum kein Subagent dafuer.** Naheliegend waere, den Playtest von einem
+Agenten fahren zu lassen. Das macht die Sache aber schlechter: Ein Subagent
+laeuft in einem eigenen Prozess und meldet sein Ergebnis an den
+aufrufenden Agenten, nicht an den Menschen davor. Man saehe **weniger** als
+jetzt, nicht mehr — genau das Gegenteil des Ziels.
+
 #### Vier Teststufen statt immer alles
 
 Ein Volltest dauert rund 20 Minuten, weil er acht echte Runden a 90 Sekunden

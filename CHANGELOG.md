@@ -11,6 +11,13 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Der Playtest zeigt jetzt, woran er gerade arbeitet.** Vorab nennt er die
+  geplanten Suiten und die geschaetzte Dauer; waehrend des Laufs schreibt
+  eine Statuszeile mit mitlaufender Uhr, was gerade passiert — bei einem
+  Run inklusive Punktestand. Vorher schwieg er waehrend eines 90-Sekunden-
+  Runs komplett und war von einem Haenger nicht zu unterscheiden. In einer
+  Pipe oder Datei faellt stattdessen eine normale Zeile pro Schritt an.
+
 - **`npm run test:scope` waehlt die Teststufe anhand der Aenderung.** Fuenf
   Stufen von _keine_ (Doku, Hooks, CI) ueber klein (~2 Min), mittel (~5 Min)
   und gross (~11 Min) bis voll (~20 Min, alle Spielmodi). Ein Volltest bei

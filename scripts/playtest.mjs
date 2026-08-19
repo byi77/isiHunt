@@ -83,19 +83,97 @@ function makeSave(overrides = {}) {
 }
 
 // --- Berichterstattung --------------------------------------------------------
+//
+// Warum eine laufende Statuszeile: Ein Solo-Run dauert 90 echte Sekunden.
+// Ohne Zwischenmeldung schweigt der Test so lange komplett - wer davorsitzt,
+// kann "laeuft noch" nicht von "haengt" unterscheiden. Die Zeile schreibt
+// sich per Wagenruecklauf immer wieder selbst neu und braucht deshalb keine
+// zusaetzlichen Ausgabezeilen.
 const steps = [];
 const failures = [];
 let currentSuite = '';
+const startedAt = Date.now();
+
+const istTTY = process.stdout.isTTY === true;
+let statusTimer = null;
+let statusText = '';
+let statusSince = 0;
+
+function verstrichen(seit) {
+  const s = Math.round((Date.now() - seit) / 1000);
+  const m = Math.floor(s / 60);
+  return m > 0 ? `${m}:${String(s % 60).padStart(2, '0')} min` : `${s}s`;
+}
+
+/** Zeigt an, woran gerade gearbeitet wird - mit mitlaufender Uhr. */
+function status(text) {
+  statusText = text;
+  statusSince = Date.now();
+
+  if (!istTTY) {
+    // In einer Datei oder Pipe waere eine sich selbst ueberschreibende Zeile
+    // unleserlich; dort genuegt eine einzelne Meldung pro Schritt.
+    console.log(`  ... ${text}`);
+    return;
+  }
+
+  if (statusTimer) clearInterval(statusTimer);
+  const zeichnen = () => {
+    const zeile = `  ... ${statusText} (${verstrichen(statusSince)}, gesamt ${verstrichen(startedAt)})`;
+    process.stdout.write('\r' + zeile.padEnd(78).slice(0, 78));
+  };
+  zeichnen();
+  statusTimer = setInterval(zeichnen, 1000);
+  statusTimer.unref?.();
+}
+
+/** Beendet die Statuszeile, damit die naechste Ausgabe sauber beginnt. */
+function statusEnde() {
+  if (statusTimer) {
+    clearInterval(statusTimer);
+    statusTimer = null;
+  }
+  if (istTTY && statusText) process.stdout.write('\r' + ' '.repeat(78) + '\r');
+  statusText = '';
+}
 
 function suite(name) {
+  statusEnde();
   currentSuite = name;
   console.log(`\n=== ${name} ===`);
 }
 
 function record(name, ok, detail) {
+  statusEnde();
   steps.push({ suite: currentSuite, name, ok, detail });
   console.log(`${ok ? 'OK  ' : 'FAIL'} ${name}${detail ? ` - ${detail}` : ''}`);
   if (!ok) failures.push(`[${currentSuite}] ${name}: ${detail ?? 'fehlgeschlagen'}`);
+}
+
+// Vorab ansagen, was kommt und wie lange es dauert. Wer davorsitzt, soll
+// nicht raten muessen, ob sich das Warten noch lohnt.
+{
+  const DAUER = {
+    screens: 1,
+    nav: 1,
+    controls: 1.5,
+    layout: 2,
+    ios: 3.5,
+    progress: 2.5,
+    modes: 8,
+  };
+  const geplant = Object.keys(DAUER).filter((k) => runSuite(k));
+  const minuten = geplant.reduce((a, k) => a + DAUER[k], 0);
+  console.log(`
+Playtest: ${geplant.join(', ')}`);
+  const gerundet = Math.max(1, Math.round(minuten));
+  console.log(
+    `Geschaetzte Dauer: ~${gerundet} ${gerundet === 1 ? 'Minute' : 'Minuten'}` +
+      (watch ? ' (im Watch-Modus laenger)' : ''),
+  );
+  if (geplant.includes('modes') || geplant.includes('progress')) {
+    console.log('Enthaelt echte Runden a 90 Sekunden - die Statuszeile zeigt den Punktestand.');
+  }
 }
 
 // --- Server -------------------------------------------------------------------
@@ -114,8 +192,9 @@ if (!externalUrl) {
       String(PORT),
       '--strictPort',
     ],
-    { stdio: 'ignore' }
+    { stdio: 'ignore' },
   );
+  status('Dev-Server startet');
   const until = Date.now() + 30000;
   for (;;) {
     try {
@@ -147,9 +226,7 @@ const browser = await chromium.launch({
  * ein fest gesetztes 2 wuerde die Groessenrechnung verfaelschen.
  */
 async function openPage(save = makeSave(), contextOptions = null, engine = browser) {
-  const context = await engine.newContext(
-    contextOptions ?? { ...devices['iPhone 13'] }
-  );
+  const context = await engine.newContext(contextOptions ?? { ...devices['iPhone 13'] });
   const page = await context.newPage();
   const errors = [];
   page.on('console', (m) => {
@@ -166,7 +243,7 @@ async function openPage(save = makeSave(), contextOptions = null, engine = brows
         window.localStorage.setItem(k, JSON.stringify(s));
       }
     },
-    [SAVE_KEY, save]
+    [SAVE_KEY, save],
   );
   await page.goto(url, { waitUntil: 'networkidle' });
   return { page, context, errors };
@@ -186,7 +263,7 @@ async function waitForRunLive(page, timeoutMs = 25000) {
       return Boolean(s) && (s.collectibles ?? []).length > 0;
     },
     undefined,
-    { timeout: timeoutMs }
+    { timeout: timeoutMs },
   );
 }
 
@@ -217,15 +294,21 @@ async function playUntilDone(page, maxMs = 140000, onFirstScore = null) {
   let lastScore = 0;
   let fired = false;
 
+  let letzteMeldung = 0;
   while (Date.now() < deadline) {
-    const running = await page.evaluate(
-      () => window.isiHunt?.scene?.isActive('Game') ?? false
-    );
+    const running = await page.evaluate(() => window.isiHunt?.scene?.isActive('Game') ?? false);
     if (!running) break;
 
     const state = await readGameState(page);
     if (!state?.player) break;
     if (state.score !== null) lastScore = state.score;
+
+    // Der Run laeuft 90 echte Sekunden; ohne diese Meldung schweigt der Test
+    // die ganze Zeit und wirkt wie eingefroren.
+    if (Date.now() - letzteMeldung > 2000) {
+      status(`Run laeuft, Score ${lastScore}`);
+      letzteMeldung = Date.now();
+    }
 
     if (!fired && lastScore > 0 && onFirstScore) {
       await onFirstScore();
@@ -236,7 +319,7 @@ async function playUntilDone(page, maxMs = 140000, onFirstScore = null) {
       (a, b) =>
         (a.x - state.player.x) ** 2 +
         (a.y - state.player.y) ** 2 -
-        ((b.x - state.player.x) ** 2 + (b.y - state.player.y) ** 2)
+        ((b.x - state.player.x) ** 2 + (b.y - state.player.y) ** 2),
     )[0];
     if (!target) {
       await page.waitForTimeout(100);
@@ -269,7 +352,7 @@ function toScreen(page, gx, gy) {
         sy: r.top + (y / g.scale.height) * r.height,
       };
     },
-    [gx, gy]
+    [gx, gy],
   );
 }
 
@@ -295,14 +378,14 @@ async function switchScene(page, von, nach, data) {
       if (scene) scene.scene.start(n, d);
       else window.isiHunt.scene.start(n, d);
     },
-    [von, nach, data ?? undefined]
+    [von, nach, data ?? undefined],
   );
 }
 
 /** Aktive Scenes als Liste. */
 function activeScenes(page) {
   return page.evaluate(() =>
-    window.isiHunt.scene.scenes.filter((s) => s.scene.isActive()).map((s) => s.scene.key)
+    window.isiHunt.scene.scenes.filter((s) => s.scene.isActive()).map((s) => s.scene.key),
   );
 }
 
@@ -375,7 +458,13 @@ async function suiteScreens() {
 
   // Ein hohes Level schaltet alle Welten und genug Muenzen fuer Talente frei,
   // damit die Bildschirme mit echtem Inhalt statt leerer Liste geprueft werden.
-  const save = makeSave({ level: 30, coins: 5000, talentPoints: 8, totalRuns: 12, bestScore: 4200 });
+  const save = makeSave({
+    level: 30,
+    coins: 5000,
+    talentPoints: 8,
+    totalRuns: 12,
+    bestScore: 4200,
+  });
   const { page, context, errors } = await openPage(save);
 
   try {
@@ -393,6 +482,7 @@ async function suiteScreens() {
     ];
 
     for (const [key, label] of screens) {
+      status(`Bildschirm ${label}`);
       const before = errors.length;
       const started = await page.evaluate((k) => {
         const g = window.isiHunt;
@@ -420,7 +510,7 @@ async function suiteScreens() {
       record(
         `${label} oeffnet ohne Konsolenfehler`,
         active && fresh.length === 0,
-        active ? (fresh.length ? fresh[0].slice(0, 70) : 'sauber') : 'Scene wurde nicht aktiv'
+        active ? (fresh.length ? fresh[0].slice(0, 70) : 'sauber') : 'Scene wurde nicht aktiv',
       );
 
       // Zurueck ins Menue, damit der naechste Bildschirm vom selben Punkt startet.
@@ -443,13 +533,14 @@ async function suiteModes() {
   // werden die ersten drei, weil jeder Run 90 s echte Zeit kostet.
   const worlds = ['silberhain', 'frostzinne', 'glutmark'];
   for (const worldId of worlds) {
+    status(`Solo-Run in ${worldId} wird vorbereitet`);
     const save = makeSave({ level: 30, coins: 3000, lastWorldId: worldId });
     const { page, context, errors } = await openPage(save);
     try {
       await waitForScene(page, 'Menu');
       await page.evaluate(
         (w) => window.isiHunt.scene.start('Game', { mode: 'solo', worldId: w }),
-        worldId
+        worldId,
       );
       await waitForRunLive(page);
       const score = await playUntilDone(page);
@@ -457,7 +548,7 @@ async function suiteModes() {
       record(
         `Solo-Run in Welt ${worldId}`,
         score > 0 && errors.length === 0,
-        `Score ${score}${errors.length ? `, ${errors.length} Konsolenfehler` : ''}`
+        `Score ${score}${errors.length ? `, ${errors.length} Konsolenfehler` : ''}`,
       );
       await page.screenshot({ path: `${shotDir}/mode-solo-${worldId}.png` });
     } catch (e) {
@@ -498,7 +589,7 @@ async function suiteModes() {
       record(
         `${label} spielbar`,
         score > 0 && errors.length === 0,
-        `Score ${score}${errors.length ? `, ${errors.length} Konsolenfehler` : ''}`
+        `Score ${score}${errors.length ? `, ${errors.length} Konsolenfehler` : ''}`,
       );
       await page.screenshot({ path: `${shotDir}/mode-${mode}.png` });
     } catch (e) {
@@ -568,6 +659,7 @@ async function suiteLayout() {
   }
 
   for (const [name, contextOptions, w, h] of targets) {
+    status(`Layout: ${name} (${w}x${h})`);
     const { page, context } = await openPage(makeSave({ level: 30 }), contextOptions);
     try {
       await waitForScene(page, 'Menu');
@@ -593,7 +685,7 @@ async function suiteLayout() {
         m.overflow <= 0 && m.pauseVisible,
         m.overflow > 0
           ? `Canvas ragt ${m.overflow}px unter den Rand, Pause-Knopf bei y=${m.pauseY}/${m.viewportH}`
-          : `buendig, unterster Knopf bei y=${m.pauseY}/${m.viewportH}`
+          : `buendig, unterster Knopf bei y=${m.pauseY}/${m.viewportH}`,
       );
     } catch (e) {
       record(`${name} (${w}x${h})`, false, e.message.slice(0, 60));
@@ -630,8 +722,8 @@ async function suiteIos() {
     record(
       'WebKit verfuegbar',
       false,
-      `${e.message.split('\n')[0].slice(0, 80)} - `
-        + 'nachinstallieren mit: npx playwright install webkit'
+      `${e.message.split('\n')[0].slice(0, 80)} - ` +
+        'nachinstallieren mit: npx playwright install webkit',
     );
     return;
   }
@@ -639,7 +731,14 @@ async function suiteIos() {
   try {
     // Quer durch die Baureihen: Notch, Dynamic Island, kleines und grosses
     // Display. Alle mit echtem WebKit statt nur mit iPhone-Etikett.
-    const IOS_DEVICES = ['iPhone SE', 'iPhone 13', 'iPhone 15', 'iPhone 16 Pro', 'iPhone 17 Pro Max', 'iPad Pro 11'];
+    const IOS_DEVICES = [
+      'iPhone SE',
+      'iPhone 13',
+      'iPhone 15',
+      'iPhone 16 Pro',
+      'iPhone 17 Pro Max',
+      'iPad Pro 11',
+    ];
 
     for (const name of IOS_DEVICES) {
       const profile = devices[name];
@@ -648,10 +747,11 @@ async function suiteIos() {
         continue;
       }
 
+      status(`WebKit: ${name}`);
       const { page, context, errors } = await openPage(
         makeSave({ level: 30 }),
         { ...profile },
-        engine
+        engine,
       );
       try {
         await waitForScene(page, 'Menu', 25000);
@@ -680,7 +780,7 @@ async function suiteIos() {
               ? `Canvas ragt ${m.overflow}px heraus`
               : errors.length
                 ? errors[0].slice(0, 60)
-                : `buendig, Canvas beginnt bei y=${m.top}`
+                : `buendig, Canvas beginnt bei y=${m.top}`,
         );
         await page.screenshot({
           path: `${shotDir}/ios-${name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.png`,
@@ -697,7 +797,7 @@ async function suiteIos() {
     const { page, context, errors } = await openPage(
       makeSave({ level: 30 }),
       { ...devices['iPhone 15'] },
-      engine
+      engine,
     );
     try {
       await waitForScene(page, 'Menu', 25000);
@@ -708,7 +808,7 @@ async function suiteIos() {
       record(
         'Kompletter Run unter WebKit',
         score > 0 && errors.length === 0,
-        `Score ${score}${errors.length ? `, ${errors.length} Konsolenfehler` : ''}`
+        `Score ${score}${errors.length ? `, ${errors.length} Konsolenfehler` : ''}`,
       );
       await page.screenshot({ path: `${shotDir}/ios-run-result.png` });
     } catch (e) {
@@ -739,7 +839,13 @@ async function suiteIos() {
 async function suiteNavigation() {
   suite('Navigation');
 
-  const save = makeSave({ level: 30, coins: 5000, talentPoints: 5, totalRuns: 12, bestScore: 4200 });
+  const save = makeSave({
+    level: 30,
+    coins: 5000,
+    talentPoints: 5,
+    totalRuns: 12,
+    bestScore: 4200,
+  });
   const { page, context, errors } = await openPage(save);
 
   try {
@@ -759,6 +865,7 @@ async function suiteNavigation() {
     for (const [label, ziel] of WEGE) {
       const vorher = errors.length;
 
+      status(`Navigation: Menue -> ${label}`);
       const buttons = await collectInteractive(page, 'Menu');
       const treffer = buttons.find((b) => b.label.toUpperCase().startsWith(label));
       if (!treffer) {
@@ -783,7 +890,7 @@ async function suiteNavigation() {
           ? frisch.length
             ? frisch[0].slice(0, 60)
             : `Klick auf ${treffer.x},${treffer.y}`
-          : `Scene ${ziel} wurde nicht aktiv (aktiv: ${(await activeScenes(page)).join(', ')})`
+          : `Scene ${ziel} wurde nicht aktiv (aktiv: ${(await activeScenes(page)).join(', ')})`,
       );
 
       if (!angekommen) {
@@ -815,7 +922,7 @@ async function suiteNavigation() {
       record(
         `${ziel} -> zurueck ins Menue`,
         zurueckOk,
-        zurueckOk ? `ueber "${zurueck.label}"` : 'Menue wurde nicht wieder aktiv'
+        zurueckOk ? `ueber "${zurueck.label}"` : 'Menue wurde nicht wieder aktiv',
       );
 
       if (!zurueckOk) {
@@ -850,7 +957,13 @@ async function suiteNavigation() {
 async function suiteControls() {
   suite('Bedienelemente');
 
-  const save = makeSave({ level: 30, coins: 5000, talentPoints: 5, totalRuns: 12, bestScore: 4200 });
+  const save = makeSave({
+    level: 30,
+    coins: 5000,
+    talentPoints: 5,
+    totalRuns: 12,
+    bestScore: 4200,
+  });
   const { page, context } = await openPage(save);
 
   // Tippziele werden in **CSS-Pixeln** bewertet, nicht in Spielpixeln: Die
@@ -889,6 +1002,7 @@ async function suiteControls() {
         await page.waitForTimeout(700);
       }
 
+      status(`Bedienelemente in ${key}`);
       const items = await collectInteractive(page, key);
       const spielHoehe = await page.evaluate(() => window.isiHunt.scale.height);
 
@@ -910,7 +1024,7 @@ async function suiteControls() {
           const oy = Math.min(ra.b, rb.b) - Math.max(ra.t, rb.t);
           if (ox > 2 && oy > 2) {
             kollisionen.push(
-              `${knoepfe[a].label} / ${knoepfe[b].label} (${Math.round(ox)}x${Math.round(oy)})`
+              `${knoepfe[a].label} / ${knoepfe[b].label} (${Math.round(ox)}x${Math.round(oy)})`,
             );
           }
         }
@@ -918,7 +1032,9 @@ async function suiteControls() {
       record(
         `${key}: keine ueberlappenden Knoepfe`,
         kollisionen.length === 0,
-        kollisionen.length ? kollisionen.slice(0, 2).join(' | ') : `${knoepfe.length} Knoepfe geprueft`
+        kollisionen.length
+          ? kollisionen.slice(0, 2).join(' | ')
+          : `${knoepfe.length} Knoepfe geprueft`,
       );
 
       // 2. Ausserhalb der Spielflaeche. Scrollbare Scenes ausgenommen: dort
@@ -938,7 +1054,7 @@ async function suiteControls() {
             : raus
                 .slice(0, 2)
                 .map((i) => `${i.label} bei y=${i.y}`)
-                .join(' | ')
+                .join(' | '),
       );
 
       // 3. Tippziele, umgerechnet in CSS-Pixel des tatsaechlichen Viewports.
@@ -949,12 +1065,10 @@ async function suiteControls() {
       const inCss = (v) => Math.round(v * cssProSpielpixel);
 
       const zuKlein = knoepfe.filter(
-        (i) => inCss(i.w) < FEHLER_CSS_PX || inCss(i.h) < FEHLER_CSS_PX
+        (i) => inCss(i.w) < FEHLER_CSS_PX || inCss(i.h) < FEHLER_CSS_PX,
       );
       const knapp = knoepfe.filter(
-        (i) =>
-          !zuKlein.includes(i) &&
-          (inCss(i.w) < HINWEIS_CSS_PX || inCss(i.h) < HINWEIS_CSS_PX)
+        (i) => !zuKlein.includes(i) && (inCss(i.w) < HINWEIS_CSS_PX || inCss(i.h) < HINWEIS_CSS_PX),
       );
 
       record(
@@ -968,7 +1082,7 @@ async function suiteControls() {
           : knapp.length
             ? `ok; ${knapp.length} unter Apples 44 pt (kleinstes ` +
               `${Math.min(...knapp.map((i) => Math.min(inCss(i.w), inCss(i.h))))} CSS-px)`
-            : 'alle >= 44 CSS-px'
+            : 'alle >= 44 CSS-px',
       );
 
       await page.screenshot({ path: `${shotDir}/controls-${key.toLowerCase()}.png` });
@@ -992,7 +1106,7 @@ async function suiteControls() {
       const cont = sc.children.list.filter((o) => o.type === 'Container');
       const inhalt = cont.reduce(
         (a, b) => ((b.list?.length ?? 0) > (a?.list?.length ?? 0) ? b : a),
-        null
+        null,
       );
       return inhalt ? Math.round(inhalt.y) : null;
     });
@@ -1013,7 +1127,7 @@ async function suiteControls() {
       const cont = sc.children.list.filter((o) => o.type === 'Container');
       const inhalt = cont.reduce(
         (a, b) => ((b.list?.length ?? 0) > (a?.list?.length ?? 0) ? b : a),
-        null
+        null,
       );
       return inhalt ? Math.round(inhalt.y) : null;
     });
@@ -1031,18 +1145,19 @@ async function suiteControls() {
     await switchScene(page, 'Profile', 'Talents');
     await waitForScene(page, 'Talents', 10000);
     await page.waitForTimeout(800);
-    const uebrig = await page.evaluate(() =>
-      [...document.querySelectorAll('input, textarea')].filter((e) => {
-        const r = e.getBoundingClientRect();
-        return r.height > 0 && getComputedStyle(e).display !== 'none';
-      }).length
+    const uebrig = await page.evaluate(
+      () =>
+        [...document.querySelectorAll('input, textarea')].filter((e) => {
+          const r = e.getBoundingClientRect();
+          return r.height > 0 && getComputedStyle(e).display !== 'none';
+        }).length,
     );
     record(
       'Namensfeld verschwindet beim Verlassen von Profile',
       uebrig === 0,
       uebrig === 0
         ? 'kein DOM-Eingabefeld mehr sichtbar'
-        : `${uebrig} sichtbares Eingabefeld liegt ueber der naechsten Scene`
+        : `${uebrig} sichtbares Eingabefeld liegt ueber der naechsten Scene`,
     );
     await page.screenshot({ path: `${shotDir}/controls-input-nach-wechsel.png` });
 
@@ -1051,7 +1166,7 @@ async function suiteControls() {
       verschoben > 20,
       vorherY === null
         ? 'kein Inhalts-Container gefunden'
-        : `Inhalt wanderte ${verschoben} px (${vorherY} -> ${nachherY})`
+        : `Inhalt wanderte ${verschoben} px (${vorherY} -> ${nachherY})`,
     );
     await page.screenshot({ path: `${shotDir}/controls-profile-scrolled.png` });
   } catch (e) {
@@ -1084,27 +1199,27 @@ async function suiteProgress() {
     record(
       'Run erhoeht totalRuns',
       (after?.totalRuns ?? 0) === (before?.totalRuns ?? 0) + 1,
-      `${before?.totalRuns ?? 0} -> ${after?.totalRuns ?? 0}`
+      `${before?.totalRuns ?? 0} -> ${after?.totalRuns ?? 0}`,
     );
     record(
       'Bestwert uebernommen',
       (after?.bestScore ?? 0) >= score && score > 0,
-      `bestScore = ${after?.bestScore ?? 0}, erspielt ${score}`
+      `bestScore = ${after?.bestScore ?? 0}, erspielt ${score}`,
     );
     record(
       'XP oder Level gestiegen',
       (after?.level ?? 1) > (before?.level ?? 1) || (after?.xp ?? 0) > (before?.xp ?? 0),
-      `Level ${before?.level} -> ${after?.level}, XP ${before?.xp} -> ${after?.xp}`
+      `Level ${before?.level} -> ${after?.level}, XP ${before?.xp} -> ${after?.xp}`,
     );
     record(
       'Muenzen gutgeschrieben',
       (after?.totalCoinsEarned ?? 0) > (before?.totalCoinsEarned ?? 0),
-      `${before?.totalCoinsEarned ?? 0} -> ${after?.totalCoinsEarned ?? 0}`
+      `${before?.totalCoinsEarned ?? 0} -> ${after?.totalCoinsEarned ?? 0}`,
     );
     record(
       'Erfolg freigeschaltet',
       (after?.unlockedAchievements?.length ?? 0) > 0,
-      `${after?.unlockedAchievements?.length ?? 0} Erfolge`
+      `${after?.unlockedAchievements?.length ?? 0} Erfolge`,
     );
 
     // Spielstand muss ein Neuladen ueberleben - das ist der eigentliche Zweck
@@ -1116,11 +1231,14 @@ async function suiteProgress() {
     record(
       'Spielstand ueberlebt Neuladen',
       reloaded?.totalRuns === after?.totalRuns && reloaded?.bestScore === after?.bestScore,
-      `totalRuns ${reloaded?.totalRuns}, bestScore ${reloaded?.bestScore}`
+      `totalRuns ${reloaded?.totalRuns}, bestScore ${reloaded?.bestScore}`,
     );
 
-    record('Keine Konsolenfehler waehrend Fortschritt', errors.length === 0,
-      errors.length ? errors[0].slice(0, 70) : 'sauber');
+    record(
+      'Keine Konsolenfehler waehrend Fortschritt',
+      errors.length === 0,
+      errors.length ? errors[0].slice(0, 70) : 'sauber',
+    );
   } catch (e) {
     record('Fortschrittskette', false, e.message.slice(0, 70));
   } finally {
@@ -1129,7 +1247,7 @@ async function suiteProgress() {
 
   // Talentkauf gegen echte Muenzen, getrennt vom Run.
   const { page: p2, context: c2 } = await openPage(
-    makeSave({ level: 20, coins: 5000, talentPoints: 5 })
+    makeSave({ level: 20, coins: 5000, talentPoints: 5 }),
   );
   try {
     await waitForScene(p2, 'Menu');
@@ -1163,6 +1281,7 @@ try {
 }
 
 // --- Bericht ------------------------------------------------------------------
+statusEnde();
 const passed = steps.filter((s) => s.ok).length;
 console.log('\n' + '='.repeat(60));
 console.log(`Playtest: ${passed}/${steps.length} Schritte bestanden`);

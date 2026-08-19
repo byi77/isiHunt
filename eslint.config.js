@@ -38,6 +38,8 @@ export default tseslint.config(
         fetch: 'readonly',
         URL: 'readonly',
         setTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
         // `window` und `navigator` sind hier keine Node-Globals: die an
         // page.evaluate() uebergebenen Funktionen werden als Quelltext in den
         // Browser geschickt und laufen dort (scripts/playtest.mjs).
