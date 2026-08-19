@@ -296,8 +296,11 @@ describe('Spielstand-Migration', () => {
     const migrated = migratedSystem.load();
 
     // 10 vorhandene Coins + 20 fuer Talentpunkte + 60 fuer Level 2-4.
+    // Coins bleiben von der XP-Umstellung unberuehrt - nur Level und XP
+    // rechnen neu (Level 4 unter der v6-Kurve wird Level 3).
     expect(migrated.coins).toBe(90);
     expect(migrated.talentPoints).toBe(0);
+    expect(migrated.level).toBe(3);
     expect(migrated.version).toBe(SAVE_VERSION);
 
     vi.resetModules();
@@ -313,9 +316,11 @@ describe('Spielstand-Migration', () => {
     //
     // Level 10 unter der alten Kurve ergibt insgesamt 8.098 XP
     // (floor(80*1^1.45) + ... + floor(80*9^1.45) + 0 XP im aktuellen Level).
-    // Auf die neue Kurve umgerechnet reicht das nur bis Level 6 mit 1.650 XP
-    // im aktuellen Level - ein realer Ruecklauf, kein Rechenfehler: die alte
-    // Kurve waechst am Anfang langsamer als die neue.
+    //
+    // Der Stand laeuft durch ZWEI Umrechnungen: erst v1 -> v6-Kurve (dort
+    // Level 6 mit 1.650 XP), dann v6 -> die heutige Kurve (2026-08-19).
+    // Ergebnis: Level 5 mit 1.374 XP. Ein realer Ruecklauf, kein Rechenfehler
+    // - beide neueren Kurven wachsen am Anfang schneller als die alte.
     const legacy = { ...SaveSystem.load(), version: 1, level: 10, xp: 0, coins: 0 };
     window.localStorage.setItem(SAVE_KEY, JSON.stringify(legacy));
 
@@ -323,8 +328,8 @@ describe('Spielstand-Migration', () => {
     const migratedSystem = await import('@/systems/SaveSystem');
     const migrated = migratedSystem.load();
 
-    expect(migrated.level).toBe(6);
-    expect(migrated.xp).toBe(1650);
+    expect(migrated.level).toBe(5);
+    expect(migrated.xp).toBe(1374);
     expect(migrated.version).toBe(SAVE_VERSION);
   });
 
@@ -336,10 +341,43 @@ describe('Spielstand-Migration', () => {
     const migratedSystem = await import('@/systems/SaveSystem');
     const migrated = migratedSystem.load();
 
-    // Bei Level 20 gleichen sich alte und neue Kurve fast aus - anders als
-    // bei Level 10 bleibt das migrierte Level hier stabil.
-    expect(migrated.level).toBe(20);
-    expect(migrated.xp).toBe(1509);
+    // Unter der v6-Kurve blieb Level 20 hier noch stehen. Die Kurve vom
+    // 2026-08-19 verlangt in den fruehen Stufen deutlich mehr XP, deshalb
+    // faellt der Stand auf Level 14 - bewusst in Kauf genommen, damit die
+    // Kurve rueckwirkend fuer alle dieselbe ist.
+    expect(migrated.level).toBe(14);
+    expect(migrated.xp).toBe(3984);
+  });
+
+  it('legt die gesamte gesammelte XP auf die neue Kurve um (v6 -> v7)', async () => {
+    // Der Kern der Umstellung: Nicht das Level wird uebernommen, sondern die
+    // Summe aller je gesammelten XP. Level 12 unter der v6-Kurve entspricht
+    // Level 9 unter der neuen.
+    const legacy = { ...SaveSystem.load(), version: 6, level: 12, xp: 100, coins: 0 };
+    window.localStorage.setItem(SAVE_KEY, JSON.stringify(legacy));
+
+    vi.resetModules();
+    const migratedSystem = await import('@/systems/SaveSystem');
+    const migrated = migratedSystem.load();
+
+    expect(migrated.level).toBe(9);
+    expect(migrated.xp).toBe(364);
+    expect(migrated.version).toBe(SAVE_VERSION);
+  });
+
+  it('migriert einen bereits aktuellen Stand nicht noch einmal', async () => {
+    // Ohne Versionspruefung wuerde jeder Start die Kurve erneut anwenden und
+    // das Level immer weiter senken.
+    const aktuell = { ...SaveSystem.load(), version: SAVE_VERSION, level: 9, xp: 364, coins: 0 };
+    window.localStorage.setItem(SAVE_KEY, JSON.stringify(aktuell));
+
+    vi.resetModules();
+    const ersterStart = await import('@/systems/SaveSystem');
+    expect(ersterStart.load().level).toBe(9);
+
+    vi.resetModules();
+    const zweiterStart = await import('@/systems/SaveSystem');
+    expect(zweiterStart.load().level).toBe(9);
   });
 });
 

@@ -38,7 +38,11 @@ describe('SaveSystem.load Migration', () => {
 
     const data = SaveSystem.load();
 
-    expect(data.level).toBe(12);
+    // Level 12 unter der v6-Kurve wird durch die XP-Umstellung vom
+    // 2026-08-19 zu Level 9. Entscheidend ist hier nicht die Zahl, sondern
+    // dass der Stand NICHT auf createDefaultSave() (Level 1, 0 Coins)
+    // zurueckfaellt, wenn nur das Schreiben scheitert.
+    expect(data.level).toBe(9);
     expect(data.coins).toBeGreaterThan(0);
 
     setItemSpy.mockRestore();

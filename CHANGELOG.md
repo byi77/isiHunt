@@ -11,6 +11,47 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- **Die XP-Kurve ist jetzt in Runs formuliert, nicht in einer Formel.** Ziel
+  war, dass ein Levelaufstieg zwei bis drei Runden kostet. Gemessen ueber vier
+  simulierte Runden ergab die alte Kurve `floor(750*sqrt(n) + 8*n^1.25)`
+  dagegen 0,4 Runs auf Level 1 und 4,6 auf Level 99 - der Anfang war zu
+  schnell (mehrere Aufstiege in einem einzigen Run), das Ende zu zaeh.
+
+  Die Kurve gibt jetzt direkt an, wie viele Runs eine Stufe kosten soll, und
+  rechnet das ueber den gemessenen Durchschnittsertrag in XP um
+  (`XP_PER_RUN_REFERENCE`, 2 146 XP je Run bei rund 183 Faengen):
+
+      Level  1  ->  0,5 Runs        Level 20  ->  2,3 Runs
+      Level  5  ->  1,3 Runs        Level 50  ->  2,6 Runs
+      Level 10  ->  2,2 Runs        Level 99  ->  3,0 Runs
+
+  Die ersten zehn Level bleiben bewusst schnell - wer neu anfaengt, soll im
+  ersten Run mehrfach aufsteigen. Ab Level 10 pendelt sich die Kurve ein.
+  Insgesamt sind es rund 245 Runs bis Level 100 (vorher 283).
+
+  Aendert sich das Fangaufkommen spuerbar, gehoert `XP_PER_RUN_REFERENCE`
+  nachgemessen - dann stimmt die ganze Kurve wieder.
+
+- **`SAVE_VERSION` 6 -> 7: bestehende Staende werden neu eingeordnet.** Die
+  gesamte je gesammelte XP wird auf die neue Kurve umgelegt. **Das kann das
+  Level senken** - Level 20 wird zu Level 14, Level 30 zu 23. Grund: Die neue
+  Kurve verlangt in den fruehen Stufen mehr XP als die alte, und wer schon
+  oben war, hat diese Differenz nie bezahlt. Bewusst so entschieden, damit die
+  Kurve rueckwirkend fuer alle dieselbe ist. Wer dadurch unter eine
+  Weltschwelle faellt, muss die Welt neu freispielen.
+
+### Behoben
+
+- **Migrationen rechneten mit der jeweils aktuellen XP-Kurve statt mit der
+  historisch richtigen.** Der Zweig fuer Version-1-Staende rief `xpForLevel`
+  auf - also die Funktion, die sich mit jeder Balance-Aenderung verschiebt.
+  Ein alter Stand waere dadurch durch zwei Umrechnungen hintereinander
+  gelaufen. Die Kurve der Versionen 2 bis 6 ist jetzt als `xpForLevelV6`
+  eingefroren; jede Migration rechnet gegen die Kurve, die zu ihrem Stand
+  gehoert.
+
+### Geaendert
+
 - **Die Serie ist jetzt eine Entscheidung, keine Selbstverstaendlichkeit.**
   Zwei Aenderungen greifen ineinander:
 

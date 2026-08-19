@@ -133,6 +133,44 @@ function legacyXpForLevel(level: number): number {
 }
 
 /**
+ * Die XP-Kurve der Versionen 2 bis 6, eingefroren.
+ *
+ * Migrationen muessen mit der Kurve rechnen, die zum jeweiligen Stand gehoert
+ * - nicht mit der aktuellen. Wuerde hier `xpForLevel` stehen, verschoebe sich
+ * das Ergebnis jeder alten Migration bei jeder kuenftigen Balance-Aenderung,
+ * und ein v1-Stand liefe durch beide Umrechnungen hintereinander.
+ */
+function xpForLevelV6(level: number): number {
+  return level >= MAX_LEVEL ? 0 : Math.floor(750 * Math.sqrt(level) + 8 * Math.pow(level, 1.25));
+}
+
+/**
+ * Verteilt die gesamte gesammelte XP auf eine neue Kurve.
+ *
+ * `alteKurve` liefert den Bedarf je Stufe im alten System, `neueKurve` den im
+ * neuen. Aus Level und Rest-XP wird die Gesamtsumme rekonstruiert und von
+ * Stufe 1 an neu verteilt.
+ */
+function verteileXpNeu(
+  save: SaveData,
+  alteKurve: (level: number) => number,
+  neueKurve: (level: number) => number,
+): void {
+  let gesamtXp = save.xp;
+  for (let level = 1; level < save.level; level++) gesamtXp += alteKurve(level);
+
+  let level = 1;
+  let rest = gesamtXp;
+  while (level < MAX_LEVEL && rest >= neueKurve(level)) {
+    rest -= neueKurve(level);
+    level += 1;
+  }
+
+  save.level = level;
+  save.xp = level >= MAX_LEVEL ? 0 : rest;
+}
+
+/**
  * Version eines eingelesenen Standes.
  *
  * Fehlt das Feld, stammt der Stand aus der Zeit vor der Versionierung - das
@@ -154,18 +192,9 @@ function migrate(raw: Partial<SaveData>): SaveData {
   // Version 1 hatte noch die alte XP-Kurve. Version 2 bekam bereits die
   // aktuelle Kurve; Version 3 fuegt nur das Coins-Feld hinzu.
   if (rawVersion < 2) {
-    let totalXp = save.xp;
-    for (let level = 1; level < save.level; level++) totalXp += legacyXpForLevel(level);
-
-    let level = 1;
-    let xp = totalXp;
-    while (level < MAX_LEVEL && xp >= xpForLevel(level)) {
-      xp -= xpForLevel(level);
-      level += 1;
-    }
-
-    save.level = level;
-    save.xp = level >= MAX_LEVEL ? 0 : xp;
+    // Gegen die damals aktuelle Kurve rechnen (xpForLevelV6), nicht gegen die
+    // heutige - sonst laeuft ein v1-Stand durch zwei Umrechnungen.
+    verteileXpNeu(save, legacyXpForLevel, xpForLevelV6);
   }
   if (rawVersion < 4) {
     // Talentpunkte waren vor Phase 4 eine separate Währung. Nichts verlieren:
@@ -177,6 +206,14 @@ function migrate(raw: Partial<SaveData>): SaveData {
     // Beim Wechsel auf die reine Coin-Waehrung werden die bisher nicht
     // gutgeschriebenen Level-Coins einmalig nachgetragen.
     save.coins += Math.max(0, save.level - 1) * COINS_PER_LEVEL;
+  }
+  if (rawVersion < 7) {
+    // Neue XP-Kurve (2026-08-19): Die gesamte gesammelte XP wird auf sie
+    // umgelegt. Das kann das Level senken - die neue Kurve verlangt in den
+    // fruehen Stufen mehr XP als die alte, und wer schon oben ist, hat diese
+    // Differenz nie bezahlt. Bewusst so entschieden: Die Kurve soll fuer alle
+    // dieselbe sein, auch rueckwirkend.
+    verteileXpNeu(save, xpForLevelV6, xpForLevel);
   }
   return save;
 }

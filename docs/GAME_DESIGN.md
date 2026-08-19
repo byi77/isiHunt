@@ -208,23 +208,47 @@ andere Stellschraube. Das Talent „Fokus" verlaengert das Fenster zusaetzlich.
 
 ### 7.1 Charakterlevel
 
-XP fuer den Aufstieg von Level _n_: `floor(750 · √n + 8 · n^1,25)`.
-Ab Level 100 wird kein weiterer XP-Fortschritt gesammelt.
+**Die Kurve ist in Runs formuliert, nicht in XP.** Ein Levelaufstieg soll eine
+nachvollziehbare Zahl an Runden kosten; die XP ergeben sich daraus über den
+gemessenen Durchschnittsertrag (`XP_PER_RUN_REFERENCE`, aktuell 2 146 XP je
+Run bei rund 183 Fängen).
 
-| Level | XP fuer naechstes | kumuliert |
-| ----- | ----------------- | --------- |
-| 1     | 758               | 0         |
-| 2     | 1 079             | 758       |
-| 3     | 1 330             | 1 837     |
-| 5     | 1 736             | 4 712     |
-| 10    | 2 513             | 15 037    |
-| 15    | 3 140             | 28 896    |
+| Level | XP fuer naechstes | kumuliert | Runs |
+| ----- | ----------------- | --------- | ---- |
+| 1     | 1 073             | 0         | 0,5  |
+| 2     | 1 478             | 1 073     | 0,7  |
+| 3     | 1 884             | 2 551     | 0,9  |
+| 5     | 2 694             | 6 724     | 1,3  |
+| 10    | 4 721             | 24 249    | 2,2  |
+| 15    | 4 818             | 48 047    | 2,2  |
+| 20    | 4 914             | 72 329    | 2,3  |
+| 30    | 5 107             | 122 338   | 2,4  |
+| 50    | 5 493             | 228 143   | 2,6  |
+| 99    | 6 438             | —         | 3,0  |
 
-"kumuliert" ist die insgesamt bis zum Erreichen dieses Levels noetige XP-Summe
-(ab Level 1 = 0). Quelle: `src/config/GameConfig.ts` (`xpForLevel`). Werte am
-2026-08-17 aus dem Code nachgezogen, s. `docs/AUDIT_2026-08-17.md` Abschnitt
-4.3 und `docs/BALANCE_2026-08-17.md` fuer den vollstaendigen Rechenweg bis
-Level 100.
+**Warum der Anfang schneller ist.** Die ersten zehn Level laufen von 0,5 auf
+2,2 Runs hoch: Wer neu anfängt, soll im ersten Run mehrfach aufsteigen und den
+Fortschritt sofort spüren. Ab Level 10 pendelt sich die Kurve ein und steigt
+bis Level 99 nur noch flach auf 3 Runs.
+
+Bis Level 100 sind es rund **245 Runs ≈ 6 Stunden** reine Spielzeit.
+
+**Vorher** stand hier `floor(750 · √n + 8 · n^1,25)`. Gemessen ergab das 0,4
+Runs auf Level 1 und 4,6 auf Level 99 — der Anfang war zu schnell (mehrere
+Aufstiege in einem einzigen Run), das Ende zu zäh.
+
+Ab Level 100 wird kein weiterer XP-Fortschritt gesammelt. "kumuliert" ist die
+insgesamt bis zum Erreichen dieses Levels noetige XP-Summe (ab Level 1 = 0).
+Quelle: `src/config/GameConfig.ts` (`xpForLevel`, `XP_PER_RUN_REFERENCE`).
+Kurve am 2026-08-19 neu gefasst; die Werte davor stehen in
+`docs/AUDIT_2026-08-17.md` Abschnitt 4.3.
+
+**Bestehende Spielstände** werden bei der Migration auf `SAVE_VERSION 7` neu
+eingeordnet: Die gesamte je gesammelte XP wird auf die neue Kurve umgelegt.
+Das kann das Level senken (Level 20 alt → 14 neu), weil die neue Kurve in den
+frühen Stufen mehr XP verlangt und wer schon oben war, diese Differenz nie
+bezahlt hat. Bewusst so entschieden, damit die Kurve rückwirkend für alle
+dieselbe ist.
 
 Der genaue Fang-Erwartungswert pro Run haengt von der Fangquote der
 spielenden Person ab und ist nicht im Code hinterlegt — konkrete

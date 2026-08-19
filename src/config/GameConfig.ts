@@ -337,9 +337,54 @@ export const SERIES_TRAIL_BASE_ALPHA = 0.5;
 /** Hoechste erreichbare Charakterstufe. */
 export const MAX_LEVEL = 100;
 
+/**
+ * Wie viel XP ein durchschnittlicher Run einbringt.
+ *
+ * Gemessen ueber vier simulierte Runden in der Startwelt (2026-08-19):
+ * rund 183 Faenge je Run, im Mittel 2146 XP. Die Serien-Umstellung senkte
+ * zwar den Score, nicht aber die XP - die haengen an der Zahl der Faenge,
+ * nicht am Multiplikator.
+ *
+ * Der Wert ist die Bezugsgroesse der XP-Kurve: `xpForLevel` wird als
+ * "so viele Runs" formuliert und daraus umgerechnet. Aendert sich das
+ * Fangaufkommen spuerbar, gehoert dieser Wert nachgemessen - dann stimmt die
+ * ganze Kurve wieder.
+ */
+export const XP_PER_RUN_REFERENCE = 2146;
+
+/**
+ * Wie viele Runs ein Levelaufstieg kosten soll.
+ *
+ * **Warum nicht durchgehend gleich.** Die ersten Level bleiben bewusst
+ * schnell: Wer neu anfaengt, soll im ersten Run mehrfach aufsteigen und den
+ * Fortschritt sofort spueren. Ab Level 10 pendelt sich die Kurve bei gut zwei
+ * Runs ein und steigt bis zur Maximalstufe nur noch flach auf drei.
+ *
+ * Vorher stand hier `750*sqrt(L) + 8*L^1.25`. Gemessen ergab das 0,4 Runs auf
+ * Level 1 und 4,6 auf Level 99 - der Anfang war zu schnell (mehrere Aufstiege
+ * pro Run), das Ende zu zaeh.
+ */
+const RUNS_PER_LEVEL_START = 0.5;
+const RUNS_PER_LEVEL_SETTLED = 2.2;
+const RUNS_PER_LEVEL_MAX = 3;
+/** Ab dieser Stufe ist die Anlaufphase vorbei. */
+const RUNS_PER_LEVEL_RAMP_END = 10;
+
 /** XP fuer den Aufstieg von `level` auf `level + 1`; auf Maximalstufe 0. */
-export const xpForLevel = (level: number): number =>
-  level >= MAX_LEVEL ? 0 : Math.floor(750 * Math.sqrt(level) + 8 * Math.pow(level, 1.25));
+export const xpForLevel = (level: number): number => {
+  if (level >= MAX_LEVEL) return 0;
+
+  const runs =
+    level <= RUNS_PER_LEVEL_RAMP_END
+      ? RUNS_PER_LEVEL_START +
+        ((RUNS_PER_LEVEL_SETTLED - RUNS_PER_LEVEL_START) * (level - 1)) /
+          (RUNS_PER_LEVEL_RAMP_END - 1)
+      : RUNS_PER_LEVEL_SETTLED +
+        ((RUNS_PER_LEVEL_MAX - RUNS_PER_LEVEL_SETTLED) * (level - RUNS_PER_LEVEL_RAMP_END)) /
+          (MAX_LEVEL - 1 - RUNS_PER_LEVEL_RAMP_END);
+
+  return Math.round(runs * XP_PER_RUN_REFERENCE);
+};
 
 /** Veralteter Speicherwert; neue Talentkäufe laufen vollständig über Coins. */
 export const TALENT_POINTS_PER_LEVEL = 1;
@@ -379,7 +424,7 @@ export const DAILY_SCORE_BONUS_MAX_TIERS = 3;
 // --- Persistenz -------------------------------------------------------------
 
 export const SAVE_KEY = 'isihunt.save.v1';
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 // --- Entwicklung ------------------------------------------------------------
 
