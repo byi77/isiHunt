@@ -214,18 +214,26 @@ Seit Phase 3 sind die Raumzonen sichtbar umbenannt: Sternenweide, Eisring,
 Glutnebel, Nullsektor und Sonnenkrone. Die Welt-IDs bleiben fuer bestehende
 Spielstaende stabil.
 
-| Welt          | Ab Level | Herausforderung                        | Punkte-Bonus | XP-Bonus |
-| ------------- | -------- | -------------------------------------- | ------------ | -------- |
-| Sternenweide  | 1        | keine - die Lernzone                   | +0 %         | +0 %     |
-| Eisring       | 3        | Trägheit, bremsende Hindernisse        | +4 %         | +2 %     |
-| Glutnebel     | 6        | kürzere Fenster, bremsende Hindernisse | +8 %         | +4 %     |
-| Nullsektor    | 10       | Blinkeffekt, Zeitverlust-Hindernisse   | +12 %        | +6 %     |
-| Sonnenkrone   | 15       | seltene Planeten, Zeitverlust          | +16 %        | +8 %     |
-| Mondschmiede  | 22       | stärkere Trägheit, Zeitverlust         | +20 %        | +11 %    |
-| Kristallbruch | 30       | kurze Fenster, viele Hindernisse       | +26 %        | +15 %    |
-| Sturmgrenze   | 40       | Blinken, Trägheit, harte Hindernisse   | +33 %        | +19 %    |
-| Lichtkern     | 55       | seltene Planeten, viele Hindernisse    | +39 %        | +22 %    |
-| Horizonttor   | 75       | kürzeste Fenster, höchste Dichte       | +45 %        | +25 %    |
+| Welt          | Ab Level | Herausforderung                        | Schwierigkeit | Punkte-Bonus | XP-Bonus |
+| ------------- | -------- | -------------------------------------- | ------------- | ------------ | -------- |
+| Sternenweide  | 1        | keine - die Lernzone                   | 1,00          | +0 %         | +0 %     |
+| Eisring       | 3        | Trägheit, bremsende Hindernisse        | 1,03          | +4 %         | +2 %     |
+| Glutnebel     | 6        | kürzere Fenster, bremsende Hindernisse | 1,06          | +8 %         | +4 %     |
+| Nullsektor    | 10       | Blinkeffekt, Zeitverlust-Hindernisse   | 1,09          | +12 %        | +6 %     |
+| Sonnenkrone   | 15       | seltene Planeten, Zeitverlust          | 1,12          | +16 %        | +8 %     |
+| Mondschmiede  | 22       | stärkere Trägheit, Zeitverlust         | 1,16          | +20 %        | +11 %    |
+| Kristallbruch | 30       | kurze Fenster, viele Hindernisse       | 1,28          | +26 %        | +15 %    |
+| Sturmgrenze   | 40       | Blinken, Trägheit, harte Hindernisse   | 1,42          | +33 %        | +19 %    |
+| Lichtkern     | 55       | seltene Planeten, viele Hindernisse    | 1,56          | +39 %        | +22 %    |
+| Horizonttor   | 75       | kürzeste Fenster, höchste Dichte       | 1,70          | +45 %        | +25 %    |
+
+Die Spalte **Schwierigkeit** (`difficultyScale`) wirkt an zwei Stellen: Sie
+skaliert die Hindernis-Wahrscheinlichkeit und kürzt das Sichtfenster jedes
+Objekts. Bis 2026-08-19 standen die Welten 2 bis 5 alle auf 1,00 — fünf
+aufeinander folgende Zonen ohne mechanische Steigerung, unterschieden nur
+durch ihren Modifikator. Die Kurve steigt jetzt durchgehend; die Welten 6 bis
+10 wurden dabei nur minimal angehoben (höchstens +0,04), damit das
+eingespielte Endgame-Balancing nicht verschoben wird.
 
 Punkte- und XP-Bonus laufen bewusst getrennt und wachsen unterschiedlich
 schnell — Punkte staerker als XP, damit spaete Welten die Bestenliste
@@ -235,10 +243,13 @@ Quelle: `src/config/worlds.ts` (`scoreMultiplier`, `xpMultiplier`). Werte am
 4.5 — vorher stand hier ein einzelner kombinierter Prozentwert je Welt, der
 nicht mehr der Code-Struktur entsprach.
 
-In v0.1 unterscheiden sich die Welten mechanisch nur optisch. Jede Zone hat
-dafuer eine eigene feste Stern-/Nebelkomposition und zwei transparente
-Hintergrundplaneten. Das ist Absicht: erst muss sich die Grundmechanik gut
-anfuehlen, dann kommt Varianz dazu (M3).
+Jede Zone hat zusaetzlich eine eigene feste Stern-/Nebelkomposition und zwei
+transparente Hintergrundplaneten. Der Satz "die Welten unterscheiden sich
+mechanisch nur optisch" stand hier bis 2026-08-19 und stammte aus v0.1 — er
+galt schon zum Zeitpunkt der Modifikatoren (`inertia`, `short_lived`,
+`blink`, `rare_bonus`) nicht mehr und erst recht nicht seit der abgestuften
+Schwierigkeit. Die groessere Varianz aus M3 (eigene Weltregeln je Zone) steht
+weiterhin aus.
 
 ### 7.4 Erfolge
 

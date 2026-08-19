@@ -371,6 +371,33 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 - [x] Sichtbare deutsche Spieltexte verwenden echte Umlaute (`ä`, `ö`, `ü`);
       technische IDs und Event-Namen bleiben unverändert.
 
+- [ ] **Ablauflogik aus `MenuScene`/`SyncScene` nach `systems/` ziehen**
+      (aus dem Audit 2026-08-19). `scenes/`, `ui/`, `entities/`, `core/` und
+      `input/` haben zusammen 11.005 Zeilen ohne Unit-Test. Das ist **kein
+      Versäumnis**: Diese Dateien erben von Phaser-Klassen und laden
+      ausserhalb eines Browsers nicht (`getContext() is not implemented` —
+      derselbe Grund, aus dem `ScoreSystem` sein `Math.Clamp` verlor, siehe
+      `docs/CODE_STYLE.md`). Die Architektur schiebt prüfbare Logik deshalb
+      bewusst nach `systems/` (dort 3.300 Zeilen Test auf 4.199 Zeilen Code).
+
+      **Die verbleibende Lücke ist enger, aber real:** In `MenuScene` stehen
+      49 Verzweigungen, viele davon reine Ablauflogik über Netz-, Login- und
+      Spielstandszustände (`synchronizeData()`, `checkCloudSave()`). Genau
+      dort sass der Boost-Bug vom 2026-08-18 — ein falscher
+      `isActive()`-Guard, der `checkCloudSave()` bei jedem Aufruf aus
+      `create()` abbrach. Drei Diagnoserunden, weil kein Test ihn fangen
+      konnte.
+
+      Richtiger Schnitt ist **nicht**, `MenuScene` testbar zu machen, sondern
+      die Entscheidungsketten herauszulösen (z. B. ein `SyncDecisionSystem`,
+      das aus Zuständen eine Handlung ableitet, ohne selbst zu handeln).
+      Dann läuft die Logik ohne Phaser und wird wie `ScoreSystem` geprüft.
+
+      Zusätzlich offen: Der Playtest erreicht **8 von 20 Scenes** (Menu,
+      Game, Result, Profile, Settings, Leaderboard, Achievements, Admin).
+      Nicht abgedeckt sind u. a. `Talent`, `Sync`, `Account`, `Challenge`,
+      `OnlineDuel`, `WorldInfo`, `AdminPin`, `AdminStats`, `AdminUsers`.
+
 ---
 
 ## Erledigt — der Knopf-Fehler lag an der Auslieferung

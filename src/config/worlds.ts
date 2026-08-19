@@ -27,7 +27,20 @@ export interface WorldDef {
   readonly modifier: 'none' | 'inertia' | 'short_lived' | 'blink' | 'rare_bonus';
   /** Hindernisse bremsen zuerst und bestrafen spaeter. */
   readonly obstacleMode: 'none' | 'brake' | 'penalty';
-  /** Erschwernis fuer Spawn-Dichte und Sichtfenster. */
+  /**
+   * Erschwernis fuer Hindernis-Wahrscheinlichkeit und Lebensdauer.
+   *
+   * Wirkt an zwei Stellen in `SpawnSystem`: Sie skaliert die
+   * Hindernis-Chance (nur bei `obstacleMode !== 'none'`) und kuerzt ueber
+   * `WORLD_LIFETIME_SCALE_PER_DIFFICULTY` das Sichtfenster jedes Objekts.
+   *
+   * Die Welten 2 bis 5 standen bis 2026-08-19 alle auf 1 - mechanisch
+   * identisch zur Startwelt, unterschieden nur durch ihren Modifikator. Die
+   * Kurve steigt jetzt durchgehend in Schritten von 0,03 bis Welt 5 und
+   * danach steiler. Die Welten 6 bis 10 wurden dabei nur minimal angehoben
+   * (hoechstens +0,04), damit das ueber viele Runs eingespielte Endgame-
+   * Balancing nicht verschoben wird.
+   */
   readonly difficultyScale: number;
   /** Punktebonus als Gegenleistung fuer die Erschwernis. */
   readonly scoreMultiplier: number;
@@ -64,7 +77,7 @@ export const WORLDS: readonly WorldDef[] = [
     plannedModifier: 'Planeten driften weiter - Bewegung mit Trägheit.',
     modifier: 'inertia',
     obstacleMode: 'brake',
-    difficultyScale: 1,
+    difficultyScale: 1.03,
     scoreMultiplier: 1.04,
     xpMultiplier: 1.02,
   },
@@ -80,7 +93,7 @@ export const WORLDS: readonly WorldDef[] = [
     plannedModifier: 'Planeten verglühen schneller - kürzere Zeitfenster.',
     modifier: 'short_lived',
     obstacleMode: 'brake',
-    difficultyScale: 1,
+    difficultyScale: 1.06,
     scoreMultiplier: 1.08,
     xpMultiplier: 1.04,
   },
@@ -96,7 +109,7 @@ export const WORLDS: readonly WorldDef[] = [
     plannedModifier: 'Planeten blinken kurz aus der Sichtbarkeit.',
     modifier: 'blink',
     obstacleMode: 'penalty',
-    difficultyScale: 1,
+    difficultyScale: 1.09,
     scoreMultiplier: 1.12,
     xpMultiplier: 1.06,
   },
@@ -112,7 +125,7 @@ export const WORLDS: readonly WorldDef[] = [
     plannedModifier: 'Doppelte Chance auf seltene Planeten, halbe Lebensdauer.',
     modifier: 'rare_bonus',
     obstacleMode: 'penalty',
-    difficultyScale: 1,
+    difficultyScale: 1.12,
     scoreMultiplier: 1.16,
     xpMultiplier: 1.08,
   },
@@ -128,7 +141,7 @@ export const WORLDS: readonly WorldDef[] = [
     plannedModifier: 'Mehr Trägheit und deutlichere Hindernisse.',
     modifier: 'inertia',
     obstacleMode: 'penalty',
-    difficultyScale: 1.12,
+    difficultyScale: 1.16,
     scoreMultiplier: 1.2,
     xpMultiplier: 1.11,
   },
@@ -144,7 +157,7 @@ export const WORLDS: readonly WorldDef[] = [
     plannedModifier: 'Kürzere Sichtfenster und mehr Hindernisse.',
     modifier: 'short_lived',
     obstacleMode: 'penalty',
-    difficultyScale: 1.25,
+    difficultyScale: 1.28,
     scoreMultiplier: 1.26,
     xpMultiplier: 1.15,
   },
@@ -160,7 +173,7 @@ export const WORLDS: readonly WorldDef[] = [
     plannedModifier: 'Blinkende Relikte, starke Trägheit und harte Hindernisse.',
     modifier: 'blink',
     obstacleMode: 'penalty',
-    difficultyScale: 1.4,
+    difficultyScale: 1.42,
     scoreMultiplier: 1.33,
     xpMultiplier: 1.19,
   },
@@ -176,7 +189,7 @@ export const WORLDS: readonly WorldDef[] = [
     plannedModifier: 'Sehr schnelle Relikte, viele Hindernisse, bessere Beute.',
     modifier: 'rare_bonus',
     obstacleMode: 'penalty',
-    difficultyScale: 1.55,
+    difficultyScale: 1.56,
     scoreMultiplier: 1.39,
     xpMultiplier: 1.22,
   },

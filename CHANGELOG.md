@@ -9,6 +9,25 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Geaendert
+
+- **Die Welten 2 bis 5 sind jetzt mechanisch abgestuft.** Sie standen alle auf
+  `difficultyScale: 1` — also exakt so schwer wie die Lernzone Sternenweide —
+  und unterschieden sich nur durch ihren Modifikator, den Hindernismodus und
+  Multiplikatorschritte von rund 4 %. Die Schwierigkeit steigt jetzt
+  durchgehend: 1,00 / 1,03 / 1,06 / 1,09 / 1,12. Der Wert skaliert die
+  Hindernis-Wahrscheinlichkeit und kuerzt das Sichtfenster jedes Objekts.
+
+  Die Welten 6 bis 10 wurden nur minimal angehoben (1,12 → 1,16, 1,25 → 1,28,
+  1,40 → 1,42, 1,55 → 1,56, 1,70 unveraendert), damit die Kurve monoton bleibt,
+  ohne das ueber viele Runs eingespielte Endgame-Balancing zu verschieben.
+
+  `Balance.test.ts` prueft die Staffelung jetzt mit `>` statt `>=`. Die alte
+  Pruefung war fuer genau diesen Fall blind: Fuenf identische Welten erfuellen
+  `1 >= 1`. Der neue Test wurde gegen den Vor-Fix-Stand verifiziert und meldet
+  dort "Eisring ist nicht schwerer als Sternenweide". Ein zweiter Test sichert
+  ab, dass jede Erschwernis auch mit mehr Punkten und XP bezahlt wird.
+
 ### Behoben
 
 - **Der Debug-Ringpuffer reichte waehrend eines Runs nur 6,7 Sekunden
