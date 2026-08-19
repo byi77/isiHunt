@@ -166,8 +166,19 @@ if (gewaehlt.suites === null) {
   process.exit(0);
 }
 
-const befehl = `npm run playtest -- --only=${gewaehlt.suites.join(',')}`;
+const nurSuiten = `--only=${gewaehlt.suites.join(',')}`;
+const befehl = `npm run playtest -- ${nurSuiten}`;
 console.log(`\n  ${befehl}`);
+
+// Die langen Stufen kosten ihre Zeit fast nur durch die 90-Sekunden-Runden.
+// Wer waehrend der Arbeit eine schnelle Rueckmeldung braucht, faehrt sie
+// simuliert; vor Release oder Audit bleibt der Lauf oben massgeblich.
+const hatRunden = gewaehlt.suites.includes('modes') || gewaehlt.suites.includes('progress');
+if (hatRunden) {
+  console.log(`\n  Schneller waehrend der Arbeit (Runden gerechnet statt gespielt):`);
+  console.log(`  ${befehl} --sim`);
+  console.log(`  Ohne Rendering, Tweens und Bildrate - vor dem Ausliefern den Lauf oben.`);
+}
 
 if (auchAusfuehren) {
   console.log('');

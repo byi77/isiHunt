@@ -9,6 +9,42 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Hinzugefuegt
+
+- **`npm run playtest -- --sim` rechnet die Runden, statt sie abzuwarten.**
+  Der Lauf faellt von rund 20 auf rund 9 Minuten. Moeglich ist das, weil
+  `GameScene.update(_time, delta)` seinen `time`-Parameter nicht benutzt: Die
+  Simulation haengt allein am `delta` (Regel 5), und ausserhalb des
+  Duell-Countdowns greift nichts auf die Wanduhr zu. Der Test haelt Phasers
+  Loop an (`loop.sleep()`) und ruft `update()` selbst mit 16,67 ms je Schritt
+  auf - 90 Sekunden Spielzeit in unter einer Sekunde.
+
+  Phasers eigenes `timeScale` hilft dabei nicht: `TimeStep.smoothDelta()`
+  deckelt jeden Frame auf `1000 / targetFps`, ein vergroesserter Delta wird
+  abgeschnitten. Der Loop muss umgangen werden, nicht beschleunigt.
+
+  Gesteuert wird ueber den Zeiger, nicht ueber `input_.direction` - den setzt
+  `getDirection()` bei jedem Aufruf zurueck, ein direkt geschriebener
+  Richtungsvektor waere wirkungslos. Ueber den Zeiger laeuft die Eingabe durch
+  dieselbe Kette inklusive Deadzone und Abbremsung.
+
+  Nicht geprueft werden dabei Rendering, Tweens und Bildrate, weil der Loop
+  schlaeft. Vor einem Release oder Audit weiterhin ohne `--sim` fahren.
+
+### Behoben
+
+- **Tageslauf und Bot-Duell wurden im Playtest nie richtig gestartet.** Beide
+  liefen ueber `window.isiHunt.__ch.startDaily(...)` - eine Bruecke, die es im
+  Spielcode nie gab (`git log -S __ch` findet sie ausschliesslich im
+  Testskript). `GameScene.create()` holte sich `ChallengeSystem.getState()`,
+  bekam `null` und startete keine Runde.
+
+  Dass es trotzdem gruen war, lag an einer Testabhaengigkeit: `ChallengeSystem`
+  haelt seinen Zustand in einem Modul-Singleton. War im selben Browser-Context
+  vorher ein Duell gelaufen, stand `state` noch - der Test bestand aus dem
+  Zustand seines Vorgaengers heraus. Beide Modi gehen jetzt denselben Weg wie
+  ein Spieler: ueber `WorldInfoScene` und `ChallengeScene`, per echtem Klick.
+
 ### Geaendert
 
 - **Die Welten 2 bis 5 sind jetzt mechanisch abgestuft.** Sie standen alle auf

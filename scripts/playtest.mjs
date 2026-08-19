@@ -18,6 +18,13 @@
 //
 // Ersetzt den Handytest nicht (Touch-Eigenheiten, Game-Feel), faengt aber
 // Regressionen in Scene-Fluss, Steuerung, Kollision und Persistenz ab.
+//
+// --sim  simuliert die Runden, statt je 90 Sekunden abzuwarten. Der Lauf
+//        faellt damit von rund 20 auf rund 7 Minuten. Geprueft werden
+//        weiterhin Kollision, Punkte, Fortschritt und Persistenz; nicht mehr
+//        geprueft werden Rendering, Tweens und Bildrate, weil Phasers Loop
+//        dabei schlaeft. Begruendung im Detail bei `simulateUntilDone()`.
+//        Vor einem Release oder Audit den Lauf ohne --sim fahren.
 import { chromium, webkit, devices } from 'playwright';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -27,6 +34,14 @@ const PORT = 5199;
 
 const argv = process.argv.slice(2);
 const watch = argv.includes('--watch');
+/**
+ * Runs simulieren statt 90 Sekunden je Runde abzuwarten.
+ *
+ * Der Gesamtlauf faellt damit von rund 20 auf rund 7 Minuten - der Rest sind
+ * Navigation, Layout und WebKit, die echte Zeit brauchen. Begruendung und
+ * Grenzen stehen bei `simulateUntilDone()`.
+ */
+const sim = argv.includes('--sim');
 const onlyArg = argv.find((a) => a.startsWith('--only='));
 const only = onlyArg ? onlyArg.split('=')[1].split(',') : null;
 const positional = argv.filter((a) => !a.startsWith('--'));
@@ -153,25 +168,33 @@ function record(name, ok, detail) {
 // Vorab ansagen, was kommt und wie lange es dauert. Wer davorsitzt, soll
 // nicht raten muessen, ob sich das Warten noch lohnt.
 {
+  // Erster Wert: Echtzeit. Zweiter: mit `--sim`, wo die 90-Sekunden-Runden
+  // wegfallen (modes faehrt 5 Runden, ios und progress je eine).
   const DAUER = {
-    screens: 1,
-    nav: 1,
-    controls: 1.5,
-    layout: 2,
-    ios: 3.5,
-    progress: 2.5,
-    modes: 8,
+    screens: [1, 1],
+    nav: [1, 1],
+    controls: [1.5, 1.5],
+    layout: [2, 2],
+    ios: [3.5, 2],
+    progress: [2.5, 1],
+    modes: [8, 0.5],
   };
   const geplant = Object.keys(DAUER).filter((k) => runSuite(k));
-  const minuten = geplant.reduce((a, k) => a + DAUER[k], 0);
+  const minuten = geplant.reduce((a, k) => a + DAUER[k][sim ? 1 : 0], 0);
   console.log(`
-Playtest: ${geplant.join(', ')}`);
+Playtest: ${geplant.join(', ')}${sim ? ' (simuliert)' : ''}`);
   const gerundet = Math.max(1, Math.round(minuten));
   console.log(
     `Geschaetzte Dauer: ~${gerundet} ${gerundet === 1 ? 'Minute' : 'Minuten'}` +
       (watch ? ' (im Watch-Modus laenger)' : ''),
   );
-  if (geplant.includes('modes') || geplant.includes('progress')) {
+  if (sim) {
+    console.log(
+      'Runden werden simuliert: dieselbe Kollisions- und Punkterechnung, aber\n' +
+        'ohne Rendering, Tweens und Bildrate. Vor einem Release oder Audit den\n' +
+        'Lauf ohne --sim fahren.',
+    );
+  } else if (geplant.includes('modes') || geplant.includes('progress')) {
     console.log('Enthaelt echte Runden a 90 Sekunden - die Statuszeile zeigt den Punktestand.');
   }
 }
@@ -290,6 +313,115 @@ function readGameState(page) {
  * Kollision in GameScene.update(), nicht durch direkte Score-Manipulation.
  */
 async function playUntilDone(page, maxMs = 140000, onFirstScore = null) {
+  if (sim) return simulateUntilDone(page, onFirstScore);
+  return playRealtimeUntilDone(page, maxMs, onFirstScore);
+}
+
+/**
+ * Simuliert den Run, statt 90 echte Sekunden zu warten (`--sim`).
+ *
+ * ## Warum das geht
+ *
+ * `GameScene.update(_time, delta)` benutzt seinen `time`-Parameter nicht: Die
+ * gesamte Simulation haengt allein an `delta` (Regel 5 - "Alles Bewegte
+ * rechnet mit delta"). Ausserhalb des Duell-Countdowns greift nichts in
+ * Entities, Spawn oder Score auf die Wanduhr zu, und `update()` deckelt den
+ * Delta nicht. Ruft man die Methode also selbst mit 16,67 ms je Schritt auf,
+ * rechnet das Spiel exakt dieselben Frames wie bei 60 fps - nur ohne auf sie
+ * zu warten. Gemessen: 90 Sekunden Spielzeit in rund 0,8 Sekunden.
+ *
+ * ## Warum nicht Phasers timeScale
+ *
+ * `TimeStep.smoothDelta()` deckelt jeden Frame auf `1000 / targetFps`
+ * (16,67 ms). Ein kuenstlich vergroesserter Delta wird abgeschnitten, der
+ * Loop laesst sich so nicht beschleunigen. Er muss umgangen werden -
+ * `loop.sleep()` haelt ihn an, wir takten selbst.
+ *
+ * ## Warum der Zeiger und nicht `input_.direction`
+ *
+ * `InputController.getDirection()` setzt seinen Vektor bei jedem Aufruf
+ * zurueck (`readKeyboard()` beginnt mit `set(0, 0)`). Ein direkt gesetzter
+ * Richtungsvektor wird dadurch sofort ueberschrieben - der Bot steuert dann
+ * gar nicht und sammelt nur zufaellige Treffer. Stattdessen wird der Zeiger
+ * gesetzt, wie es ein Finger tut: So laeuft die Eingabe durch dieselbe Kette
+ * inklusive Deadzone und Abbremsung nahe am Ziel.
+ *
+ * ## Was dabei NICHT geprueft wird
+ *
+ * Rendering, Tweens, Partikel und Bildrate unter Last. Der Loop schlaeft
+ * waehrend der Simulation, also laeuft nichts, was an ihm haengt. Deshalb ist
+ * `--sim` eine Ergaenzung fuer schnelle Rueckmeldung, kein Ersatz fuer den
+ * echten Lauf vor einem Release oder Audit.
+ */
+async function simulateUntilDone(page, onFirstScore = null) {
+  status('Run wird simuliert');
+
+  const ergebnis = await page.evaluate(async () => {
+    const game = window.isiHunt;
+    const scene = game.scene.getScene('Game');
+    if (!scene) return { score: 0, frames: 0, abbruch: 'keine GameScene' };
+
+    // Phasers Loop anhalten - sonst taktet er zusaetzlich zu uns.
+    game.loop.sleep();
+
+    const STEP = 1000 / 60;
+    // Sicherheitsgrenze: doppelte Rundenlaenge. Ohne sie wuerde ein Fehler in
+    // der Abbruchbedingung zu einer Endlosschleife im Browser fuehren.
+    const maxFrames = 60 * 240;
+    let frames = 0;
+
+    while (scene.phase === 'running' && frames < maxFrames) {
+      const orbs = (scene.collectibles ?? []).filter((c) => c?.active && !c.isCollected);
+      if (orbs.length > 0 && scene.player) {
+        let ziel = orbs[0];
+        let besteDistanz = Infinity;
+        for (const orb of orbs) {
+          const distanz = (orb.x - scene.player.x) ** 2 + (orb.y - scene.player.y) ** 2;
+          if (distanz < besteDistanz) {
+            besteDistanz = distanz;
+            ziel = orb;
+          }
+        }
+        const pointer = scene.input.activePointer;
+        pointer.isDown = true;
+        pointer.worldX = ziel.x;
+        pointer.worldY = ziel.y;
+      }
+
+      scene.update(frames * STEP, STEP);
+      frames++;
+
+      // Dem Browser gelegentlich Luft geben, damit die Seite waehrend der
+      // Simulation nicht als "haengt" gilt.
+      if (frames % 900 === 0) await new Promise((r) => setTimeout(r, 0));
+    }
+
+    return {
+      score: scene.scoring?.currentScore ?? 0,
+      frames,
+      simulierteSekunden: (frames * STEP) / 1000,
+      abbruch: frames >= maxFrames ? 'Framegrenze erreicht' : null,
+    };
+  });
+
+  // Der Szenenwechsel nach dem Run laeuft ueber `this.time.delayedCall(450)`.
+  // Timer haengen an Phasers Loop - ohne dieses Wecken bliebe die ResultScene
+  // aus, und jeder `waitForScene(page, 'Result')` liefe in sein Zeitlimit.
+  await page.evaluate(() => window.isiHunt.loop.wake());
+
+  if (ergebnis.abbruch) {
+    status(`Simulation abgebrochen: ${ergebnis.abbruch}`);
+  } else {
+    status(`Run simuliert - ${ergebnis.simulierteSekunden.toFixed(0)}s, Score ${ergebnis.score}`);
+  }
+
+  if (ergebnis.score > 0 && onFirstScore) await onFirstScore();
+
+  return ergebnis.score;
+}
+
+/** Spielt den Run in Echtzeit ueber echte Tastatureingaben. */
+async function playRealtimeUntilDone(page, maxMs = 140000, onFirstScore = null) {
   const deadline = Date.now() + maxMs;
   let lastScore = 0;
   let fired = false;
@@ -443,6 +575,26 @@ function collectInteractive(page, sceneKey) {
   }, sceneKey);
 }
 
+/**
+ * Klickt in einer Scene den Knopf, dessen Beschriftung passt - sonst den
+ * ersten anklickbaren.
+ *
+ * WorldInfo und Challenge fuehren mit je einem Knopf weiter in die Runde.
+ * Ueber ihn zu gehen statt die GameScene direkt zu starten ist nicht nur
+ * naeher am echten Spiel, sondern noetig: Der Zustandsaufbau fuer Tageslauf
+ * und Duell passiert in genau diesen Scenes.
+ */
+async function klickeErstenKnopf(page, sceneKey, bevorzugt = null) {
+  const buttons = await collectInteractive(page, sceneKey);
+  if (buttons.length === 0) throw new Error(`${sceneKey}: kein anklickbarer Knopf gefunden`);
+
+  const treffer =
+    (bevorzugt && buttons.find((b) => b.label.toUpperCase().includes(bevorzugt))) ?? buttons[0];
+
+  await clickGamePoint(page, treffer.x, treffer.y);
+  return treffer.label;
+}
+
 function readSave(page) {
   return page.evaluate((key) => {
     const raw = window.localStorage.getItem(key);
@@ -558,10 +710,25 @@ async function suiteModes() {
     }
   }
 
-  // Tageslauf und Bot-Duell laufen ueber ChallengeSystem statt direkt.
+  // Tageslauf und Bot-Duell brauchen einen aufgebauten ChallengeSystem-Zustand.
+  //
+  // Frueher startete dieser Test die GameScene direkt mit `{ mode: 'daily' }`
+  // ueber eine Bruecke `window.isiHunt.__ch`. Die gab es im Spielcode nie
+  // (`git log -S __ch` findet sie nur hier), also lief der Aufruf ins Leere:
+  // `GameScene.create()` holt sich `ChallengeSystem.getState()`, bekam `null`
+  // und startete keine Runde - `waitForRunLive` lief in sein Zeitlimit.
+  //
+  // Warum das lange niemandem auffiel: `ChallengeSystem` haelt seinen Zustand
+  // in einem Modul-Singleton. Lief vorher im selben Browser-Context schon ein
+  // Duell, war `state` noch gesetzt und der Test wurde gruen - aus dem
+  // Zustand des vorigen Tests heraus.
+  //
+  // Jetzt wird derselbe Weg genommen wie beim Spielen mit der Hand:
+  // WorldInfoScene baut den Zustand auf und wechselt in die ChallengeScene,
+  // von dort geht es in die Runde.
   const challengeModes = [
-    ['daily', 'Tageslauf', (w) => `window.isiHunt.__ch.startDaily(${JSON.stringify(w)})`],
-    ['bot', 'Bot-Duell', (w) => `window.isiHunt.__ch.startBot(${JSON.stringify(w)})`],
+    ['tageslauf', 'Tageslauf'],
+    ['duell', 'Bot-Duell'],
   ];
 
   for (const [mode, label] of challengeModes) {
@@ -572,7 +739,7 @@ async function suiteModes() {
       const ok = await page.evaluate((m) => {
         const g = window.isiHunt;
         try {
-          g.scene.start('Game', { mode: m, worldId: 'silberhain' });
+          g.scene.start('WorldInfo', { worldId: 'silberhain', mode: m });
           return true;
         } catch {
           return false;
@@ -583,6 +750,14 @@ async function suiteModes() {
         record(`${label} startet`, false, 'scene.start warf');
         continue;
       }
+
+      // WorldInfo -> (Knopf) -> Challenge -> (Knopf) -> Game. Beide Schritte
+      // brauchen einen echten Klick; die Knopfbeschriftungen stehen im Canvas,
+      // deshalb wird ueber die Scene-Umschaltung gewartet statt ueber Text.
+      await waitForScene(page, 'WorldInfo', 15000);
+      await klickeErstenKnopf(page, 'WorldInfo');
+      await waitForScene(page, 'Challenge', 15000);
+      await klickeErstenKnopf(page, 'Challenge');
 
       await waitForRunLive(page);
       const score = await playUntilDone(page);

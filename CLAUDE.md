@@ -192,6 +192,7 @@ Ein Volltest bei einer Doku-Aenderung kostet 20 Minuten fuer nichts.
 
 ```bash
 npm run playtest                  # alle sieben Suiten, ~20 Minuten
+npm run playtest -- --sim         # Runden simuliert, ~9 Minuten
 npm run playtest -- --only=nav    # screens|nav|controls|layout|ios|progress|modes
 npm run playtest -- --watch       # sichtbares Fenster statt headless
 npm run ios:check                 # iOS-Mindestversion aus dem Build
@@ -208,6 +209,14 @@ Was die Suiten abdecken:
 | `ios`      | Dieselbe Seite in echtem WebKit statt in Chromium              |
 | `progress` | Levelaufstieg, Muenzen, Erfolge, Spielstand ueber ein Neuladen |
 | `modes`    | Solo in drei Welten, Tageslauf, Bot-Duell                      |
+
+**`--sim` waehrend der Arbeit, echter Lauf vor dem Ausliefern.** Mit `--sim`
+wird die 90-Sekunden-Runde nicht abgewartet, sondern gerechnet: `GameScene`
+haengt allein am `delta` (Regel 5), also laesst sich `update()` selbst takten —
+90 Sekunden Spielzeit in unter einer Sekunde. Kollision, Punkte, Fortschritt
+und Persistenz laufen dabei unveraendert durch. **Nicht** geprueft werden
+Rendering, Tweens und Bildrate, weil Phasers Loop solange schlaeft. Vor einem
+Release oder einem Audit deshalb ohne `--sim` fahren.
 
 Einmalig pro Arbeitskopie fuer die `ios`-Suite (echtes WebKit statt Chromium):
 
