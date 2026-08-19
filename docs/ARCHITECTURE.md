@@ -57,7 +57,8 @@ isiHunt/
 ├── scripts/
 │   ├── generate-icons.mjs      Zeichnet die App-Icons (npm run icons)
 │   ├── bump-version.mjs        Patch-Version +1, vom pre-commit-Hook gerufen
-│   └── check-deploy.mjs        Liegt der lokale Stand wirklich live? (deploy:check)
+│   ├── check-deploy.mjs        Liegt der lokale Stand wirklich live? (deploy:check)
+│   └── smoke-test.mjs          Playwright gegen den Dev-Server (npm run smoke)
 ├── src/
 │   ├── config/                 Reine Daten, keine Logik
 │   │   ├── GameConfig.ts       Alle Balancing-Zahlen
@@ -549,6 +550,15 @@ braeuchte es einen echten Browser; die Grenze steht in Abschnitt 10. Ebenso
 offen bleibt der Determinismus-Test des Duells (Abschnitt 4.1) — geprueft ist
 der Duell-_Zustand_, nicht die Gleichheit der Spawn-Abfolge bei gleichem Seed.
 
+**`npm run smoke`** (`scripts/smoke-test.mjs`) startet einen echten Chromium
+per Playwright gegen einen laufenden `npm run dev`, laedt die Seite in einem
+mobilen Viewport (iPhone 13) und schlaegt fehl, wenn die Konsole Fehler zeigt.
+Das ist kein Ersatz fuer den Handytest — es sieht keine Touch-Eigenheiten
+echter Geraete — aber es faengt Laufzeitfehler (kaputte Imports, unbehandelte
+Exceptions beim Boot) automatisiert ab, statt dass sie erst beim manuellen
+Test auffallen. Playwright ist deshalb eine `devDependency`, kein Teil des
+Production-Builds.
+
 ### Die Falle mit dem Laufwerksbuchstaben
 
 Git startet Hooks unter Windows mit **kleingeschriebenem** Laufwerksbuchstaben
@@ -583,7 +593,7 @@ Ehrlich benannt, damit sie nicht ueberrascht:
 | Grenze                                              | Ab wann relevant                                    | Loesung                                    |
 | --------------------------------------------------- | --------------------------------------------------- | ------------------------------------------ |
 | Kein Object Pooling — jedes Relikt wird neu erzeugt | > 100 gleichzeitige Objekte                         | Pool in `SpawnSystem`                      |
-| Tests decken nur `systems/`, nicht Scenes/Entities  | ab Regressionen in Darstellung oder Eingabe         | Browser-Automatisierung, offen             |
+| Tests decken nur `systems/`, nicht Scenes/Entities  | ab Regressionen in Darstellung oder Eingabe         | `npm run smoke` prueft nur den Boot ohne Konsolenfehler, keine Spiellogik |
 | Kollisionstest ist O(n) ueber alle Objekte          | > ~200 Objekte                                      | Raeumliches Gitter                         |
 | Ton nur prozedural, keine Audiodateien              | Musik oder komplexe Klangkulisse                    | Dateien/Audio-Mixer in M4                  |
 | HUD-Layout nutzt 720×variable Portraithoehe         | nie (FIT skaliert)                                  | —                                          |

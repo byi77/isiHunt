@@ -9,6 +9,14 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Hinzugefuegt
+
+- **`npm run smoke`** startet einen echten Chromium (Playwright) gegen den
+  laufenden Dev-Server, laedt die Seite in einem mobilen Viewport und
+  schlaegt bei Konsolenfehlern fehl. Kein Ersatz fuer den Pflicht-Handytest
+  (ARCHITECTURE.md 10), aber faengt kaputte Boots (z.B. fehlerhafte Imports)
+  automatisiert ab. Playwright ist dafuer als `devDependency` dazugekommen.
+
 ### Sicherheit
 
 - `saves` und `sync_codes` hatten direkte Tabellenrechte fuer `anon`/
