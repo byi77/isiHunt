@@ -16,6 +16,7 @@ import {
   xpForLevel,
 } from '@/config/GameConfig';
 import { emptyRarityCounts } from '@/config/rarities';
+import { DEFAULT_SHIP_COLOR, DEFAULT_SHIP_SHAPE, shapesEarnedByLegacyLevel } from '@/config/shop';
 import { DEFAULT_WORLD_ID } from '@/config/worlds';
 import type { SaveData } from '@/types';
 
@@ -56,6 +57,10 @@ export function createDefaultSave(): SaveData {
     collected: emptyRarityCounts(),
     unlockedAchievements: [],
     lastWorldId: DEFAULT_WORLD_ID,
+    ownedShipShapes: [DEFAULT_SHIP_SHAPE],
+    ownedShipColors: [DEFAULT_SHIP_COLOR],
+    shipShape: DEFAULT_SHIP_SHAPE,
+    shipColor: DEFAULT_SHIP_COLOR,
     soundEnabled: true,
     playerName: '',
     cloudId: null,
@@ -121,6 +126,16 @@ function reconcile(raw: Partial<SaveData>): SaveData {
     collected: { ...base.collected, ...(raw.collected ?? {}) },
     talents: { ...base.talents, ...(raw.talents ?? {}) },
     unlockedAchievements: raw.unlockedAchievements ?? base.unlockedAchievements,
+    // Der Pfeil und die Weltfarbe gehoeren immer dazu - sonst stuende ein
+    // Spieler ohne Schiff da, wenn eine Liste beschaedigt ankommt.
+    ownedShipShapes: [
+      ...new Set([DEFAULT_SHIP_SHAPE, ...(raw.ownedShipShapes ?? base.ownedShipShapes)]),
+    ],
+    ownedShipColors: [
+      ...new Set([DEFAULT_SHIP_COLOR, ...(raw.ownedShipColors ?? base.ownedShipColors)]),
+    ],
+    shipShape: raw.shipShape ?? base.shipShape,
+    shipColor: raw.shipColor ?? base.shipColor,
   };
 }
 
@@ -210,6 +225,18 @@ function migrate(raw: Partial<SaveData>): SaveData {
     // Differenz nie bezahlt. Bewusst so entschieden: Die Kurve soll fuer alle
     // dieselbe sein, auch rueckwirkend.
     verteileXpNeu(save, xpForLevelV6, xpForLevel);
+  }
+  if (rawVersion < 8) {
+    // Die Schiffsformen haengen nicht mehr am Level, sondern werden im Laden
+    // gekauft. Wer eine Form ueber sein Level bereits freigeschaltet hatte,
+    // behaelt sie - das Update soll niemandem etwas wegnehmen.
+    //
+    // Wichtig: gegen das Level VOR der XP-Umstellung pruefen waere falsch,
+    // denn `save.level` ist an dieser Stelle bereits neu eingeordnet. Genau
+    // das ist gewollt: Massgeblich ist, was der Spieler jetzt sieht.
+    save.ownedShipShapes = [
+      ...new Set([...save.ownedShipShapes, ...shapesEarnedByLegacyLevel(save.level)]),
+    ];
   }
   return save;
 }

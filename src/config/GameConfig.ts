@@ -443,7 +443,7 @@ export const DAILY_SCORE_BONUS_MAX_TIERS = 3;
 // --- Persistenz -------------------------------------------------------------
 
 export const SAVE_KEY = 'isihunt.save.v1';
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 // --- Entwicklung ------------------------------------------------------------
 

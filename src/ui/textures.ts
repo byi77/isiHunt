@@ -8,6 +8,8 @@
 
 import Phaser from 'phaser';
 
+import { getShipShape } from '@/config/shop';
+
 export const TextureKey = {
   Orb: 'tex-orb',
   Glow: 'tex-glow',
@@ -55,15 +57,23 @@ export function createTextures(scene: Phaser.Scene): void {
   createPlayerHalo(scene);
 }
 
-/** Liefert den Skin fuer das aktuelle Charakterlevel. */
-export function playerTextureForLevel(level: number): TextureKeyValue {
-  if (level >= 100) return TextureKey.PlayerCoreCrown;
-  if (level >= 75) return TextureKey.PlayerCoreNova;
-  if (level >= 50) return TextureKey.PlayerCorePulse;
-  if (level >= 30) return TextureKey.PlayerCoreRanger;
-  if (level >= 15) return TextureKey.PlayerCoreComet;
-  if (level >= 5) return TextureKey.PlayerCoreIon;
-  return TextureKey.PlayerCore;
+/**
+ * Liefert die Textur zur gewaehlten Schiffsform.
+ *
+ * Frueher hing die Form am Charakterlevel (`playerTextureForLevel`). Sie
+ * gehoert jetzt in den Laden - die Begruendung steht in `config/shop.ts`.
+ */
+export function playerTextureForShape(shapeId: string): TextureKeyValue {
+  const nachIndex: readonly TextureKeyValue[] = [
+    TextureKey.PlayerCore,
+    TextureKey.PlayerCoreIon,
+    TextureKey.PlayerCoreComet,
+    TextureKey.PlayerCoreRanger,
+    TextureKey.PlayerCorePulse,
+    TextureKey.PlayerCoreNova,
+    TextureKey.PlayerCoreCrown,
+  ];
+  return nachIndex[getShipShape(shapeId).skinIndex] ?? TextureKey.PlayerCore;
 }
 
 /** Liefert die echte Planetentextur fuer eine Raumzonen-Komposition. */
@@ -264,65 +274,124 @@ function createVignette(scene: Phaser.Scene): void {
 }
 
 /** Die Spielfigur: ein kleines, nach oben ausgerichtetes Licht-Raumschiff. */
+/**
+ * Zeichnet eine Schiffsform.
+ *
+ * **Warum jede Form eine eigene Silhouette hat.** Bis 2026-08-20 teilten sich
+ * alle sieben Varianten denselben Rumpf; unterschieden wurden sie nur durch
+ * kleine angesetzte Bauteile - ein Fluegelpaar, ein Ring, ein Kreis. Der
+ * Gedanke dahinter war, dass die Figur in der Bewegung wiedererkennbar bleibt.
+ * In der Praxis war der Unterschied unsichtbar: Die Figur ist im Spiel klein,
+ * getintet und in Bewegung, und ein Spieler auf Stufe 51 berichtete, nie einen
+ * Wechsel bemerkt zu haben. Ein Ring, der hinter dem weissen Rumpf
+ * verschwindet, ist keine Belohnung.
+ *
+ * Jede Form hat deshalb jetzt einen eigenen Umriss. Gemeinsam bleibt nur, was
+ * die Lesbarkeit braucht: Spitze nach oben, Triebwerke unten, Breite rund 80
+ * von 96 Pixeln.
+ */
 function createPlayerCore(scene: Phaser.Scene, key: string, skin: number): void {
   const size = 96;
 
   withGraphics(scene, key, size, size, (g) => {
     const c = size / 2;
-    const hull = [
-      new Phaser.Math.Vector2(c, 8),
-      new Phaser.Math.Vector2(64, 38),
-      new Phaser.Math.Vector2(84, 78),
-      new Phaser.Math.Vector2(60, 70),
-      new Phaser.Math.Vector2(c, 88),
-      new Phaser.Math.Vector2(36, 70),
-      new Phaser.Math.Vector2(12, 78),
-      new Phaser.Math.Vector2(32, 38),
-    ];
+    const v = (x: number, y: number) => new Phaser.Math.Vector2(x, y);
+
+    /** Zwei Lichtduesen am Heck - das einzige Bauteil, das jede Form teilt. */
+    const triebwerke = (linkeX: number, rechteX: number, oben: number, unten: number) => {
+      g.fillStyle(0xffffff, 0.8);
+      g.fillTriangle(linkeX - 4, oben, linkeX + 4, oben, linkeX, unten);
+      g.fillTriangle(rechteX - 4, oben, rechteX + 4, oben, rechteX, unten);
+    };
+
     g.fillStyle(0xffffff, 1);
-    g.fillPoints(hull, true);
 
-    // Cockpit und Fluegel setzen sich als hellere Formen vom Rumpf ab.
-    g.fillStyle(0xffffff, 0.62);
-    g.fillTriangle(c, 18, 55, 48, 41, 48);
-    g.fillStyle(0xffffff, 0.42);
-    g.fillTriangle(18, 68, 37, 54, 38, 72);
-    g.fillTriangle(78, 68, 59, 54, 58, 72);
+    if (skin === 0) {
+      // PFEIL - der Klassiker: schlank, klare Spitze, gekerbtes Heck.
+      g.fillPoints(
+        [v(c, 8), v(64, 38), v(84, 78), v(60, 70), v(c, 88), v(36, 70), v(12, 78), v(32, 38)],
+        true,
+      );
+      g.fillStyle(0xffffff, 0.62);
+      g.fillTriangle(c, 18, 55, 48, 41, 48);
+      triebwerke(35, 61, 76, 91);
+      return;
+    }
 
-    // Zwei Triebwerke: Die bestehende Aura laesst sie wie Lichtduesen wirken.
-    g.fillStyle(0xffffff, 0.8);
-    g.fillTriangle(31, 76, 39, 76, 35, 91);
-    g.fillTriangle(57, 76, 65, 76, 61, 91);
-
-    // Jeder Skin bekommt ein zusaetzliches, leicht lesbares Bauteil. Die
-    // Grundsilhouette bleibt gleich, damit das Schiff in der Spielbewegung
-    // sofort als dieselbe Figur erkannt wird.
-    if (skin >= 1) {
+    if (skin === 1) {
+      // DELTA - breites Dreieck ohne Einbuchtung, satter Flaeche.
+      g.fillPoints([v(c, 6), v(88, 82), v(c, 66), v(8, 82)], true);
       g.fillStyle(0xffffff, 0.5);
-      g.fillTriangle(9, 59, 27, 48, 23, 66);
-      g.fillTriangle(87, 59, 69, 48, 73, 66);
+      g.fillTriangle(c, 20, 66, 74, 30, 74);
+      triebwerke(38, 58, 66, 84);
+      return;
     }
-    if (skin >= 2) {
-      g.fillStyle(0xffffff, 0.7);
-      g.fillTriangle(c, 3, 53, 23, 43, 23);
+
+    if (skin === 2) {
+      // SICHEL - zwei weit ausgestellte Fluegel, schmaler Mittelrumpf.
+      g.fillPoints(
+        [v(c, 10), v(56, 44), v(92, 84), v(58, 72), v(c, 80), v(38, 72), v(4, 84), v(40, 44)],
+        true,
+      );
+      g.fillStyle(0xffffff, 0.55);
+      g.fillEllipse(c, 40, 18, 34);
+      triebwerke(40, 56, 72, 90);
+      return;
     }
-    if (skin >= 3) {
-      g.lineStyle(2, 0xffffff, 0.75);
-      g.strokeEllipse(c, 53, 48, 16);
-    }
-    if (skin >= 4) {
-      g.fillStyle(0xffffff, 0.42);
-      g.fillTriangle(4, 75, 27, 63, 29, 78);
-      g.fillTriangle(92, 75, 69, 63, 67, 78);
-    }
-    if (skin >= 5) {
-      g.lineStyle(2.5, 0xffffff, 0.65);
-      g.strokeCircle(c, 18, 10);
-    }
-    if (skin >= 6) {
+
+    if (skin === 3) {
+      // RING - Rumpf mit offenem Kreis, der ueber die Silhouette hinausragt.
+      g.fillPoints([v(c, 14), v(60, 46), v(60, 76), v(36, 76), v(36, 46)], true);
+      g.lineStyle(5, 0xffffff, 0.9);
+      g.strokeCircle(c, 46, 30);
       g.fillStyle(0xffffff, 0.6);
-      g.fillTriangle(c, 0, 53, 12, 43, 12);
+      g.fillTriangle(c, 20, 54, 42, 42, 42);
+      triebwerke(41, 55, 74, 92);
+      return;
     }
+
+    if (skin === 4) {
+      // DOPPELRUMPF - zwei getrennte Haelften, durch eine Bruecke verbunden.
+      g.fillPoints([v(30, 12), v(44, 44), v(44, 80), v(16, 80), v(16, 44)], true);
+      g.fillPoints([v(66, 12), v(80, 44), v(80, 80), v(52, 80), v(52, 44)], true);
+      g.fillStyle(0xffffff, 0.7);
+      g.fillRect(38, 48, 20, 12);
+      triebwerke(30, 66, 78, 92);
+      return;
+    }
+
+    if (skin === 5) {
+      // STERN - sechs Zacken, radialsymmetrisch statt gerichtet.
+      const zacken: Phaser.Math.Vector2[] = [];
+      for (let i = 0; i < 12; i++) {
+        const winkel = (Math.PI * 2 * i) / 12 - Math.PI / 2;
+        const radius = i % 2 === 0 ? 42 : 17;
+        zacken.push(v(c + Math.cos(winkel) * radius, c + Math.sin(winkel) * radius));
+      }
+      g.fillPoints(zacken, true);
+      g.fillStyle(0xffffff, 0.5);
+      g.fillCircle(c, c, 12);
+      return;
+    }
+
+    // KRONE - breite Basis mit drei Zinnen, die einzige Form mit flachem Kopf.
+    g.fillPoints(
+      [
+        v(20, 34),
+        v(30, 12),
+        v(40, 34),
+        v(c, 6),
+        v(56, 34),
+        v(66, 12),
+        v(76, 34),
+        v(82, 80),
+        v(14, 80),
+      ],
+      true,
+    );
+    g.fillStyle(0xffffff, 0.55);
+    g.fillRect(28, 50, 40, 16);
+    triebwerke(32, 64, 78, 92);
   });
 }
 

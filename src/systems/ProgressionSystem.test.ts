@@ -424,3 +424,107 @@ describe('Talentkäufe', () => {
     expect(SaveSystem.load().coins).toBe(coinsBeforeExtraPurchase);
   });
 });
+
+describe('Laden: Formen und Farben', () => {
+  it('kauft eine Form, zieht sie sofort an und bucht die Muenzen ab', () => {
+    SaveSystem.update((data) => {
+      data.coins = 1000;
+    });
+
+    const ergebnis = Progression.purchaseShipShape('delta');
+
+    expect(ergebnis).not.toBeNull();
+    const save = SaveSystem.load();
+    expect(save.ownedShipShapes).toContain('delta');
+    expect(save.shipShape).toBe('delta');
+    expect(save.coins).toBe(1000 - 400);
+    expect(save.coinsSpent).toBe(400);
+  });
+
+  it('kauft nichts, wenn das Guthaben nicht reicht', () => {
+    SaveSystem.update((data) => {
+      data.coins = 100;
+    });
+
+    expect(Progression.purchaseShipShape('delta')).toBeNull();
+    const save = SaveSystem.load();
+    expect(save.ownedShipShapes).not.toContain('delta');
+    expect(save.coins).toBe(100);
+  });
+
+  it('kauft eine bereits besessene Form kein zweites Mal', () => {
+    SaveSystem.update((data) => {
+      data.coins = 5000;
+    });
+    Progression.purchaseShipShape('delta');
+    const nachErstkauf = SaveSystem.load().coins;
+
+    expect(Progression.purchaseShipShape('delta')).toBeNull();
+    expect(SaveSystem.load().coins).toBe(nachErstkauf);
+  });
+
+  it('zieht nur an, was auch gekauft wurde', () => {
+    // Ein manipulierter Spielstand soll keine ungekaufte Form tragen koennen.
+    expect(Progression.equipShip('crown')).toBeNull();
+    expect(SaveSystem.load().shipShape).not.toBe('crown');
+  });
+
+  it('wechselt zwischen zwei gekauften Formen ohne erneute Kosten', () => {
+    SaveSystem.update((data) => {
+      data.coins = 5000;
+    });
+    Progression.purchaseShipShape('delta');
+    const nachKauf = SaveSystem.load().coins;
+
+    expect(Progression.equipShip('arrow')).not.toBeNull();
+    expect(SaveSystem.load().shipShape).toBe('arrow');
+    expect(SaveSystem.load().coins).toBe(nachKauf);
+  });
+
+  it('behandelt Farben nach denselben Regeln', () => {
+    SaveSystem.update((data) => {
+      data.coins = 1000;
+    });
+
+    expect(Progression.purchaseShipColor('gold')).not.toBeNull();
+    expect(SaveSystem.load().shipColor).toBe('gold');
+    expect(SaveSystem.load().coins).toBe(1000 - 300);
+    expect(Progression.purchaseShipColor('gold')).toBeNull();
+  });
+
+  it('kennt den Pfeil und die Weltfarbe von Anfang an', () => {
+    const save = SaveSystem.load();
+    expect(save.ownedShipShapes).toContain('arrow');
+    expect(save.ownedShipColors).toContain('world');
+    expect(save.shipShape).toBe('arrow');
+    expect(save.shipColor).toBe('world');
+  });
+});
+
+describe('Laden: Migration aus der Level-Freischaltung', () => {
+  it('schenkt einem alten Stand die ueber sein Level verdienten Formen', async () => {
+    // Bis SAVE_VERSION 7 haingen die Formen am Level. Wer Stufe 30 erreicht
+    // hatte, besass damit Pfeil, Delta, Sichel und Ring - das soll das
+    // Update nicht wegnehmen.
+    const legacy = { ...SaveSystem.load(), version: 7, level: 30, xp: 0 };
+    window.localStorage.setItem(SAVE_KEY, JSON.stringify(legacy));
+
+    vi.resetModules();
+    const migriert = (await import('@/systems/SaveSystem')).load();
+
+    expect(migriert.ownedShipShapes).toEqual(
+      expect.arrayContaining(['arrow', 'delta', 'sickle', 'ring']),
+    );
+    expect(migriert.ownedShipShapes).not.toContain('crown');
+  });
+
+  it('gibt einem frischen Stand nur den Pfeil', async () => {
+    const legacy = { ...SaveSystem.load(), version: 7, level: 1, xp: 0 };
+    window.localStorage.setItem(SAVE_KEY, JSON.stringify(legacy));
+
+    vi.resetModules();
+    const migriert = (await import('@/systems/SaveSystem')).load();
+
+    expect(migriert.ownedShipShapes).toEqual(['arrow']);
+  });
+});

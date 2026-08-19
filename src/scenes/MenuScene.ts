@@ -29,7 +29,8 @@ import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
 import * as SyncStatusSystem from '@/systems/SyncStatusSystem';
-import { playerTextureForLevel, TextureKey } from '@/ui/textures';
+import { shipTint } from '@/config/shop';
+import { playerTextureForShape, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   createAmbientMotes,
@@ -748,7 +749,10 @@ export class MenuScene extends Phaser.Scene {
       .setScale(0.48)
       .setAlpha(0.8);
 
-    this.add.image(112, y, playerTextureForLevel(level)).setTint(Palette.goldHex).setScale(0.34);
+    this.add
+      .image(112, y, playerTextureForShape(SaveSystem.load().shipShape))
+      .setTint(shipTint(SaveSystem.load(), this.selectedWorld.accent))
+      .setScale(0.34);
 
     this.add
       .text(172, y - 26, playerName, textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }))

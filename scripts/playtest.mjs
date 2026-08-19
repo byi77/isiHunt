@@ -627,6 +627,7 @@ async function suiteScreens() {
     const screens = [
       ['Profile', 'Profil'],
       ['Talents', 'Talentbaum'],
+      ['Shop', 'Shop'],
       ['Achievements', 'Erfolge'],
       ['Settings', 'Einstellungen'],
       ['Leaderboard', 'Rangliste'],
@@ -1160,7 +1161,7 @@ async function suiteControls() {
     await waitForScene(page, 'Menu');
     await page.waitForTimeout(600);
 
-    const SCENES = ['Menu', 'Profile', 'Talents', 'Achievements', 'Settings'];
+    const SCENES = ['Menu', 'Profile', 'Talents', 'Shop', 'Achievements', 'Settings'];
 
     // Gewechselt wird immer von der gerade offenen Scene aus - siehe
     // switchScene(): der globale Manager wuerde die alte mitlaufen lassen.

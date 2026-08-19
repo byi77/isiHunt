@@ -20,6 +20,7 @@ import {
   TALENT_RESET_COST,
   xpForLevel,
 } from '@/config/GameConfig';
+import { SHIP_COLORS, SHIP_SHAPES } from '@/config/shop';
 import { TALENTS, talentCost, type TalentId } from '@/config/talents';
 import { WORLDS } from '@/config/worlds';
 import * as SaveSystem from '@/systems/SaveSystem';
@@ -209,6 +210,67 @@ export function purchaseTalent(talentId: TalentId): SaveData | null {
     purchased = true;
   });
   return purchased ? result : null;
+}
+
+/**
+ * Kauft eine Schiffsform. `null`, wenn das Guthaben nicht reicht oder die
+ * Form schon gehoert.
+ */
+export function purchaseShipShape(shapeId: string): SaveData | null {
+  const shape = SHIP_SHAPES.find((entry) => entry.id === shapeId);
+  if (!shape) return null;
+
+  let gekauft = false;
+  const result = SaveSystem.update((data) => {
+    if (data.ownedShipShapes.includes(shape.id)) return;
+    if (data.coins < shape.cost) return;
+    data.coins -= shape.cost;
+    data.coinsSpent += shape.cost;
+    data.ownedShipShapes = [...data.ownedShipShapes, shape.id];
+    // Frisch Gekauftes gleich anziehen - wer kauft, will es sehen.
+    data.shipShape = shape.id;
+    gekauft = true;
+  });
+  return gekauft ? result : null;
+}
+
+/** Kauft eine Farbe. Gleiche Regeln wie bei den Formen. */
+export function purchaseShipColor(colorId: string): SaveData | null {
+  const color = SHIP_COLORS.find((entry) => entry.id === colorId);
+  if (!color) return null;
+
+  let gekauft = false;
+  const result = SaveSystem.update((data) => {
+    if (data.ownedShipColors.includes(color.id)) return;
+    if (data.coins < color.cost) return;
+    data.coins -= color.cost;
+    data.coinsSpent += color.cost;
+    data.ownedShipColors = [...data.ownedShipColors, color.id];
+    data.shipColor = color.id;
+    gekauft = true;
+  });
+  return gekauft ? result : null;
+}
+
+/**
+ * Zieht eine bereits gekaufte Form oder Farbe an.
+ *
+ * Was nicht im Besitz ist, wird still abgelehnt - ein manipulierter
+ * Spielstand soll keine ungekaufte Form tragen koennen.
+ */
+export function equipShip(shapeId?: string, colorId?: string): SaveData | null {
+  let geaendert = false;
+  const result = SaveSystem.update((data) => {
+    if (shapeId && data.ownedShipShapes.includes(shapeId) && data.shipShape !== shapeId) {
+      data.shipShape = shapeId;
+      geaendert = true;
+    }
+    if (colorId && data.ownedShipColors.includes(colorId) && data.shipColor !== colorId) {
+      data.shipColor = colorId;
+      geaendert = true;
+    }
+  });
+  return geaendert ? result : null;
 }
 
 /** Setzt alle Talentränge gegen die konfigurierte Reset-Gebühr zurück. */

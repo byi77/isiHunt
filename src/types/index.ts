@@ -47,6 +47,15 @@ export interface SaveData {
   collected: Record<RarityId, number>;
   unlockedAchievements: string[];
   lastWorldId: string;
+
+  /** Im Laden gekaufte Schiffsformen. Der Pfeil ist immer dabei. */
+  ownedShipShapes: string[];
+  /** Im Laden gekaufte Farben. Die Weltfarbe ist immer dabei. */
+  ownedShipColors: string[];
+  /** Aktuell getragene Form. */
+  shipShape: string;
+  /** Aktuell getragene Farbe. */
+  shipColor: string;
   /** Audio-Feedback in den Einstellungen ein- oder ausgeschaltet. */
   soundEnabled: boolean;
 

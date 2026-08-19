@@ -20,7 +20,8 @@ import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { Depth } from '@/ui/depth';
-import { playerTextureForLevel, TextureKey } from '@/ui/textures';
+import { shipTint } from '@/config/shop';
+import { playerTextureForShape, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   createBackButton,
@@ -74,8 +75,8 @@ export class TalentScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
     this.add
-      .image(92, walletY, playerTextureForLevel(save.level))
-      .setTint(Palette.goldHex)
+      .image(92, walletY, playerTextureForShape(save.shipShape))
+      .setTint(shipTint(save, world.accent))
       .setScale(0.26);
 
     const rowTop = sections.next(96);

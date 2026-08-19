@@ -101,8 +101,7 @@ isiHunt/
 │   │   ├── SettingsScene.ts    Ton, Spielstand-Aktionen; Profil-Knopf zeigt
 │   │   │                       auf ProfileScene
 │   │   ├── TalentScene.ts      Talentbaum-Oberflaeche mit Rangkauf
-│   │   ├── ShopScene.ts        Laden fuer Skins und Boosts - die Coin-Senke
-│   │   │                       (noch ohne Ware, Knopf und Navigation stehen)
+│   │   ├── ShopScene.ts        Laden: Schiffsformen und Farben gegen Muenzen
 │   │   ├── AchievementsScene.ts Erfolgsliste
 │   │   ├── GameScene.ts        Die Simulation (Solo und Duell)
 │   │   ├── HudScene.ts         Anzeige waehrend des Runs

@@ -11,6 +11,40 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Der Laden verkauft Schiffsformen und Farben.** Sieben Formen (Pfeil bis
+  Krone, 0 bis 3 000 Muenzen) und sieben Farben (Weltfarbe bis Rosé, 0 bis 700).
+  Beides ist frei kombinierbar und wird sofort getragen. Zwei Reiter trennen
+  die Listen, die Vorschau oben zeigt immer die aktuelle Kombination.
+
+  Farben brauchen keine zusaetzlichen Texturen: Alle Spielgrafiken sind weiss
+  gezeichnet und werden zur Laufzeit getintet (CLAUDE.md, "Texturen sind
+  weiss"). Eine Farbe kostet damit weder Speicher noch Ladezeit.
+
+### Geaendert
+
+- **Die sieben Schiffsformen sind neu gezeichnet - jede mit eigener
+  Silhouette.** Vorher teilten sie sich denselben Rumpf und unterschieden sich
+  nur durch kleine angesetzte Bauteile: ein Fluegelpaar, ein Ring, ein Kreis.
+  Ein Spieler auf Stufe 51 berichtete, nie einen Wechsel bemerkt zu haben -
+  ein Ring, der hinter dem weissen Rumpf verschwindet, ist keine Belohnung.
+  Jetzt: Pfeil, Delta, Sichel, Ring, Doppelrumpf, Stern, Krone.
+
+- **Die Formen haengen nicht mehr am Charakterlevel, sondern am Laden.**
+  `SAVE_VERSION` 7 -> 8. Wer eine Form ueber sein Level bereits freigeschaltet
+  hatte, behaelt sie - das Update nimmt niemandem etwas weg. Ein Stand auf
+  Stufe 31 startet also mit Pfeil, Delta, Sichel und Ring im Besitz.
+
+### Behoben
+
+- **Im Laden war die letzte Form hinter dem Zurueck-Balken verborgen.** Sieben
+  Karten brauchen mehr Platz als der Bildschirm bietet. Die Liste ist jetzt
+  scrollbar und verschwindet dabei sauber unter dem Kopfbereich.
+
+- **Die Beschreibung lief unter den Kaufknopf.** Der Text bekommt jetzt eine
+  begrenzte Breite und bricht davor um.
+
+### Hinzugefuegt
+
 - **SHOP-Knopf im Menue, rechts neben EINSTELLUNGEN.** Beide teilen sich jetzt
   die unterste Reihe (250 + 22 + 150 = 422 px), buendig zu den Reihen darueber
   (436 bzw. 440). Der Shop ist als einziger Knopf dieser Reihe golden - dieselbe

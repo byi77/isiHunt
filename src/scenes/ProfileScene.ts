@@ -27,7 +27,8 @@ import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SyncStatusSystem from '@/systems/SyncStatusSystem';
-import { playerTextureForLevel, TextureKey } from '@/ui/textures';
+import { shipTint } from '@/config/shop';
+import { playerTextureForShape, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   attachVerticalScroll,
@@ -120,8 +121,8 @@ export class ProfileScene extends Phaser.Scene {
 
     addContent(
       this.add
-        .image(GAME_WIDTH / 2, profileY - 210, playerTextureForLevel(save.level))
-        .setTint(Palette.goldHex)
+        .image(GAME_WIDTH / 2, profileY - 210, playerTextureForShape(save.shipShape))
+        .setTint(shipTint(save, world.accent))
         .setScale(0.82),
     );
 
