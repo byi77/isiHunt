@@ -942,11 +942,15 @@ Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
         Rollen - findet die bereits gespeicherte Startzeit unabhaengig
         davon, ob das `start`-Event ankam. Sauber aufgeraeumt in
         `beginRun()`/`cleanupLobby()`. `npm run verify` gruen (212 Tests).
-        **Noch offen:** echter Zwei-Geraete-Test, der bestaetigt, dass der
-        Slave jetzt tatsaechlich startet. Der urspruengliche Report erwaehnte
-        zusaetzlich "Verbindungsfehler: channel error: transport failure" -
-        dieser zweite Testlauf zeigte das nicht mehr, blieb aber unbestaetigt,
-        ob das am Fix liegt oder Zufall des Testlaufs war.
+  - [ ] **Dritter Zwei-Geraete-Test noetig (seit v0.1.174 live):** bestaetigen,
+        dass der Slave nach dem Polling-Fix tatsaechlich startet, statt bei
+        "Warte auf Geschwister ..." haengen zu bleiben. Ablauf wie beim
+        zweiten Test: Master erstellt Code, Slave tritt bei, Master startet
+        JAGD. Der urspruengliche Report erwaehnte zusaetzlich
+        "Verbindungsfehler: channel error: transport failure" - der zweite
+        Testlauf zeigte das nicht mehr, blieb aber unbestaetigt, ob das am
+        Fix liegt oder Zufall des Testlaufs war - im dritten Test mit
+        beobachten.
   - [ ] **Neu (2026-08-18): Kein sichtbares Feedback bei App-Hintergrund.**
         Phaser pausiert die Update-Loop automatisch, wenn die Seite in den
         Hintergrund geht (App-Wechsel, Sperrbildschirm) - das ist
