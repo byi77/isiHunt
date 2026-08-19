@@ -64,15 +64,17 @@ export function raritySteigertSerie(id: RarityId): boolean {
 }
 
 /**
- * Laenge und Farbe der Schleife fuer eine laufende Serie.
+ * Die Schleifen-Stufe fuer eine laufende Serie.
  *
  * `null`, solange die Serie unter der ersten Stufe liegt - dann bleibt die
- * Spur im ruhigen Grundzustand.
+ * Spur im ruhigen Grundzustand. Gibt die komplette Stufe zurueck, nicht nur
+ * Laenge und Farbe: Dichte, Groesse und Deckkraft gehoeren dazu, sonst ist
+ * die Schleife auf dem hellen Weltraumhintergrund kaum zu sehen.
  */
-export function trailTierForSeries(series: number): { lifespanMs: number; color: number } | null {
-  let treffer: { lifespanMs: number; color: number } | null = null;
+export function trailTierForSeries(series: number): (typeof SERIES_TRAIL_TIERS)[number] | null {
+  let treffer: (typeof SERIES_TRAIL_TIERS)[number] | null = null;
   for (const tier of SERIES_TRAIL_TIERS) {
-    if (series >= tier.minSeries) treffer = { lifespanMs: tier.lifespanMs, color: tier.color };
+    if (series >= tier.minSeries) treffer = tier;
   }
   return treffer;
 }

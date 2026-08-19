@@ -233,16 +233,104 @@ export const SERIES_TRAIL_TIERS: readonly {
   readonly minSeries: number;
   readonly lifespanMs: number;
   readonly color: number;
+  /** Abstand zwischen zwei Partikeln in ms - kleiner heisst dichtere Spur. */
+  readonly frequencyMs: number;
+  readonly scale: number;
+  readonly alpha: number;
+  /** Stuetzpunkte der gezeichneten Linie - mehr Punkte, laengere Schleife. */
+  readonly points: number;
 }[] = [
-  { minSeries: 5, lifespanMs: 620, color: 0x4aa3ff },
-  { minSeries: 10, lifespanMs: 820, color: 0x35d6c3 },
-  { minSeries: 20, lifespanMs: 1020, color: 0x5ce27a },
-  { minSeries: 35, lifespanMs: 1200, color: 0xffc738 },
-  { minSeries: 50, lifespanMs: 1200, color: 0xfff2c4 },
+  {
+    minSeries: 1,
+    lifespanMs: 520,
+    color: 0x6fc2ff,
+    frequencyMs: 22,
+    scale: 0.9,
+    alpha: 0.9,
+    points: 12,
+  },
+  {
+    minSeries: 5,
+    lifespanMs: 700,
+    color: 0x3ce0ff,
+    frequencyMs: 18,
+    scale: 1,
+    alpha: 0.95,
+    points: 16,
+  },
+  {
+    minSeries: 10,
+    lifespanMs: 900,
+    color: 0x35d6c3,
+    frequencyMs: 15,
+    scale: 1.1,
+    alpha: 1,
+    points: 20,
+  },
+  {
+    minSeries: 20,
+    lifespanMs: 1100,
+    color: 0x7cff5c,
+    frequencyMs: 13,
+    scale: 1.2,
+    alpha: 1,
+    points: 24,
+  },
+  {
+    minSeries: 35,
+    lifespanMs: 1300,
+    color: 0xffc738,
+    frequencyMs: 11,
+    scale: 1.3,
+    alpha: 1,
+    points: 28,
+  },
+  {
+    minSeries: 50,
+    lifespanMs: 1300,
+    color: 0xff8a2b,
+    frequencyMs: 10,
+    scale: 1.4,
+    alpha: 1,
+    points: 28,
+  },
 ];
 
-/** Lebensdauer der Spur ohne laufende Serie - der ruhige Grundzustand. */
-export const SERIES_TRAIL_BASE_LIFESPAN_MS = 420;
+/**
+ * Staerke der Schleifenlinie am Schiff, in Pixeln. Nach hinten laeuft sie
+ * linear auf 0 aus.
+ */
+export const SERIES_TRAIL_LINE_WIDTH = 14;
+
+/**
+ * Abstand zwischen zwei Stuetzpunkten der Schleife.
+ *
+ * Fest in Millisekunden statt je Frame: Sonst haengt die Schleifenlaenge an
+ * der Bildrate - bei 120 Hz waere sie halb so lang wie bei 60 Hz, obwohl das
+ * Schiff denselben Weg zurueckgelegt hat (Regel 5).
+ */
+export const SERIES_TRAIL_SAMPLE_MS = 26;
+
+/**
+ * Wie viele Abtastungen im Stillstand vergehen, bis die Schleife hinten einen
+ * Punkt verliert.
+ *
+ * Ohne diese Traegheit verschwand die Schleife bei jedem kurzen Stopp: Stufe 1
+ * hat nur 10 Punkte, bei einem Abbau je Abtastung war sie nach 260 ms leer.
+ * Solche Stopps passieren beim Spielen staendig - die Schleife flackerte.
+ */
+export const SERIES_TRAIL_IDLE_TICKS_PER_DROP = 4;
+
+/**
+ * Der ruhige Grundzustand ohne Serie.
+ *
+ * Muss deutlich schwaecher sein als die erste Stufe, damit der Sprung bei
+ * Serie 1 ueberhaupt auffaellt.
+ */
+export const SERIES_TRAIL_BASE_LIFESPAN_MS = 380;
+export const SERIES_TRAIL_BASE_FREQUENCY_MS = 34;
+export const SERIES_TRAIL_BASE_SCALE = 0.42;
+export const SERIES_TRAIL_BASE_ALPHA = 0.5;
 
 // --- Progression ------------------------------------------------------------
 

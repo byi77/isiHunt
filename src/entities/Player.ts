@@ -13,12 +13,29 @@ import Phaser from 'phaser';
 import {
   PLAYER_ACCEL_RESPONSE,
   PLAYER_TRAIL_MIN_SPEED,
+  SERIES_TRAIL_BASE_ALPHA,
+  SERIES_TRAIL_BASE_FREQUENCY_MS,
   SERIES_TRAIL_BASE_LIFESPAN_MS,
+  SERIES_TRAIL_BASE_SCALE,
+  SERIES_TRAIL_IDLE_TICKS_PER_DROP,
+  SERIES_TRAIL_LINE_WIDTH,
+  SERIES_TRAIL_SAMPLE_MS,
 } from '@/config/GameConfig';
 import type { PlayerStats } from '@/config/talents';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
 import type { TextureKeyValue } from '@/ui/textures';
+
+/** Eine Stufe der Serien-Schleife, wie sie `SERIES_TRAIL_TIERS` beschreibt. */
+export interface SeriesTrailTier {
+  readonly minSeries: number;
+  readonly lifespanMs: number;
+  readonly color: number;
+  readonly frequencyMs: number;
+  readonly scale: number;
+  readonly alpha: number;
+  readonly points: number;
+}
 
 export class Player extends Phaser.GameObjects.Container {
   private readonly core: Phaser.GameObjects.Image;
@@ -31,7 +48,13 @@ export class Player extends Phaser.GameObjects.Container {
   private inertiaFactor = 1;
   /** Weltfarbe - die Spur faellt darauf zurueck, wenn keine Serie laeuft. */
   private accentColor: number;
-  private seriesTier: { lifespanMs: number; color: number } | null = null;
+  private seriesTier: SeriesTrailTier | null = null;
+  /** Gezeichnete Schleife - der Partikel-Emitter untermalt sie nur. */
+  private readonly trailLine: Phaser.GameObjects.Graphics;
+  /** Letzte Positionen, aelteste zuerst. Laenge steuert die Schleifenlaenge. */
+  private trailPoints: { x: number; y: number }[] = [];
+  private trailSampleMs = 0;
+  private trailIdleTicks = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -61,15 +84,20 @@ export class Player extends Phaser.GameObjects.Container {
     // aber dort liegen bleiben, wo die Figur war.
     this.trail = scene.add.particles(0, 0, TextureKey.Glow, {
       lifespan: SERIES_TRAIL_BASE_LIFESPAN_MS,
-      scale: { start: 0.42, end: 0 },
-      alpha: { start: 0.5, end: 0 },
+      scale: { start: SERIES_TRAIL_BASE_SCALE, end: 0 },
+      alpha: { start: SERIES_TRAIL_BASE_ALPHA, end: 0 },
       tint: accentColor,
       blendMode: 'ADD',
-      frequency: 34,
+      frequency: SERIES_TRAIL_BASE_FREQUENCY_MS,
       quantity: 1,
       emitting: false,
     });
     this.trail.setDepth(Depth.Player - 1);
+
+    // Eigenes Graphics-Objekt statt eines Containers-Kindes: Die Schleife
+    // liegt im Weltkoordinatensystem, genau wie der Emitter.
+    this.trailLine = scene.add.graphics();
+    this.trailLine.setDepth(Depth.Player - 1);
 
     this.syncHaloToRadius();
 
@@ -133,6 +161,8 @@ export class Player extends Phaser.GameObjects.Container {
     this.trail.setPosition(this.x, this.y);
     this.trail.emitting = speed > PLAYER_TRAIL_MIN_SPEED;
 
+    this.trackTrail(dtSec * 1000, speed);
+
     this.halo.rotation += dtSec * 1.2;
     // Leichte Neigung in Bewegungsrichtung - reine Spielgefuehl-Politur.
     this.core.rotation = Phaser.Math.Linear(
@@ -171,25 +201,134 @@ export class Player extends Phaser.GameObjects.Container {
    *
    * `null` stellt den ruhigen Grundzustand her (kurze Spur in der Weltfarbe).
    */
-  setSeriesTrail(tier: { lifespanMs: number; color: number } | null): void {
-    // Ohne diesen Vergleich wuerde bei jedem Fang neu gesetzt - `lifespan`
-    // wirkt aber nur auf neu erzeugte Partikel, und ein Farbwechsel je Frame
-    // laesst die Spur flackern.
+  setSeriesTrail(tier: SeriesTrailTier | null): void {
+    // Ohne diesen Vergleich wuerde bei jedem Fang neu gesetzt - die Werte
+    // wirken nur auf neu erzeugte Partikel, und ein Wechsel je Frame laesst
+    // die Spur flackern.
     if (tier === null) {
       if (this.seriesTier === null) return;
       this.seriesTier = null;
-      this.trail.lifespan = SERIES_TRAIL_BASE_LIFESPAN_MS;
-      this.trail.setParticleTint(this.accentColor);
+      this.applyTrail(
+        SERIES_TRAIL_BASE_LIFESPAN_MS,
+        this.accentColor,
+        SERIES_TRAIL_BASE_FREQUENCY_MS,
+        SERIES_TRAIL_BASE_SCALE,
+        SERIES_TRAIL_BASE_ALPHA,
+      );
       return;
     }
 
-    if (this.seriesTier?.color === tier.color && this.seriesTier?.lifespanMs === tier.lifespanMs) {
-      return;
-    }
+    if (this.seriesTier?.minSeries === tier.minSeries) return;
 
     this.seriesTier = tier;
-    this.trail.lifespan = tier.lifespanMs;
-    this.trail.setParticleTint(tier.color);
+    this.applyTrail(tier.lifespanMs, tier.color, tier.frequencyMs, tier.scale, tier.alpha);
+  }
+
+  /**
+   * Setzt die Werte des Partikel-Nebels, der die Schleife untermalt.
+   *
+   * `setParticleTint` faerbt auch bereits fliegende Partikel um. Das ist hier
+   * gewollt: Die Schleife soll beim Stufenwechsel sofort komplett die neue
+   * Farbe tragen, nicht ueber eine Sekunde hinweg durchlaufen.
+   */
+  private applyTrail(
+    lifespanMs: number,
+    color: number,
+    frequencyMs: number,
+    scale: number,
+    alpha: number,
+  ): void {
+    this.trail.lifespan = lifespanMs;
+    this.trail.frequency = frequencyMs;
+    this.trail.setParticleTint(color);
+    this.trail.setParticleScale(scale, scale);
+    this.trail.setParticleAlpha(alpha);
+  }
+
+  /**
+   * Schreibt die aktuelle Position in die Schleife fort.
+   *
+   * In festen Zeitabstaenden abtasten statt in jedem Frame: Sonst haengt die
+   * Schleifenlaenge an der Bildrate - bei 120 Hz waere sie halb so lang wie
+   * bei 60 Hz, obwohl das Schiff denselben Weg zurueckgelegt hat (Regel 5).
+   */
+  private trackTrail(deltaMs: number, speed: number): void {
+    if (this.seriesTier === null) {
+      if (this.trailPoints.length > 0) {
+        this.trailPoints = [];
+        this.trailLine.clear();
+      }
+      return;
+    }
+
+    this.trailSampleMs += deltaMs;
+    if (this.trailSampleMs >= SERIES_TRAIL_SAMPLE_MS) {
+      this.trailSampleMs = 0;
+      // Im Stillstand keinen neuen Punkt setzen - die Schleife wuerde sich
+      // sonst zu einem Knoten unter dem Schiff zusammenziehen.
+      if (speed > PLAYER_TRAIL_MIN_SPEED) {
+        this.trailPoints.push({ x: this.x, y: this.y });
+        this.trailIdleTicks = 0;
+        while (this.trailPoints.length > this.seriesTier.points) this.trailPoints.shift();
+      } else if (this.trailPoints.length > 0) {
+        // Steht das Schiff, laeuft die Schleife hinten aus - aber traege.
+        // Ein Punkt je Abtastung liess sie bei kurzen Stopps komplett
+        // verschwinden (Stufe 1 hat nur 10 Punkte, das waren 260 ms). Beim
+        // Spielen sind solche Stopps staendig, die Schleife flackerte dadurch.
+        this.trailIdleTicks += 1;
+        if (this.trailIdleTicks >= SERIES_TRAIL_IDLE_TICKS_PER_DROP) {
+          this.trailIdleTicks = 0;
+          this.trailPoints.shift();
+        }
+      }
+    }
+
+    this.drawSeriesTrail();
+  }
+
+  /**
+   * Zeichnet die Schleife als durchgehende Linie entlang der letzten
+   * Positionen.
+   *
+   * **Warum eine Linie und nicht nur Partikel.** Der erste Versuch setzte
+   * allein auf den vorhandenen Partikel-Emitter mit `blendMode: 'ADD'` und der
+   * weichen `Glow`-Textur. Technisch entstanden dabei ueber hundert Partikel,
+   * aber sichtbar war nichts: Auf dem hellen Weltraumhintergrund wusch der
+   * additive Modus jede Farbe zu einem diffusen Nebel aus, der sich nicht von
+   * den Relikt-Auren unterscheiden liess. Eine Schleife braucht eine Kante -
+   * und die liefert nur eine gezeichnete Linie.
+   *
+   * Der Partikel-Nebel bleibt als Untermalung erhalten; er gibt der Linie
+   * ihren Schimmer.
+   */
+  private drawSeriesTrail(): void {
+    this.trailLine.clear();
+    if (this.seriesTier === null || this.trailPoints.length < 2) return;
+
+    const { color } = this.seriesTier;
+    const punkte = this.trailPoints;
+
+    // Von hinten nach vorn zeichnen: Das aelteste Segment ist am duennsten und
+    // blassesten, direkt hinter dem Schiff ist die Schleife am kraeftigsten.
+    for (let i = 1; i < punkte.length; i++) {
+      const anteil = i / (punkte.length - 1);
+      const vorher = punkte[i - 1]!;
+      const jetzt = punkte[i]!;
+
+      // Nach hinten auslaufen, aber nicht ins Nichts: Unter etwa einem
+      // Viertel Breite verschwindet die Linie auf dem hellen Hintergrund
+      // ganz, und die Schleife wirkt abgeschnitten statt ausgeblendet.
+      const verlauf = 0.25 + 0.75 * anteil;
+      this.trailLine.lineStyle(
+        SERIES_TRAIL_LINE_WIDTH * this.seriesTier.scale * verlauf,
+        color,
+        this.seriesTier.alpha * verlauf,
+      );
+      this.trailLine.beginPath();
+      this.trailLine.moveTo(vorher.x, vorher.y);
+      this.trailLine.lineTo(jetzt.x, jetzt.y);
+      this.trailLine.strokePath();
+    }
   }
 
   /**
@@ -198,6 +337,7 @@ export class Player extends Phaser.GameObjects.Container {
    */
   override destroy(fromScene?: boolean): void {
     this.trail.destroy();
+    this.trailLine.destroy();
     super.destroy(fromScene);
   }
 

@@ -8,7 +8,15 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { COMBO_GRACE_MS, COMBO_TIERS, SERIES_TRAIL_TIERS } from '@/config/GameConfig';
+import {
+  COMBO_GRACE_MS,
+  COMBO_TIERS,
+  SERIES_TRAIL_BASE_ALPHA,
+  SERIES_TRAIL_BASE_FREQUENCY_MS,
+  SERIES_TRAIL_BASE_LIFESPAN_MS,
+  SERIES_TRAIL_BASE_SCALE,
+  SERIES_TRAIL_TIERS,
+} from '@/config/GameConfig';
 import { RARITY_BY_ID } from '@/config/rarities';
 import { resolveStats } from '@/config/talents';
 import { WORLDS } from '@/config/worlds';
@@ -245,17 +253,41 @@ describe('ScoreSystem - Serie: halten vs. steigern', () => {
 });
 
 describe('trailTierForSeries', () => {
-  it('gibt unterhalb der ersten Stufe keine Schleife', () => {
+  it('gibt ohne laufende Serie keine Schleife', () => {
     expect(trailTierForSeries(0)).toBeNull();
-    expect(trailTierForSeries(SERIES_TRAIL_TIERS[0]!.minSeries - 1)).toBeNull();
   });
 
   it('liefert fuer jede konfigurierte Stufe genau deren Werte', () => {
     for (const tier of SERIES_TRAIL_TIERS) {
-      expect(trailTierForSeries(tier.minSeries)).toEqual({
-        lifespanMs: tier.lifespanMs,
-        color: tier.color,
-      });
+      expect(trailTierForSeries(tier.minSeries)).toEqual(tier);
+    }
+  });
+
+  it('ist ab der ersten Serie sichtbar', () => {
+    // Bei Serie 1 muss bereits eine Stufe greifen: Ein Spieler soll sofort
+    // sehen, dass seine Serie laeuft - nicht erst nach fuenf Faengen.
+    expect(SERIES_TRAIL_TIERS[0]!.minSeries).toBe(1);
+    expect(trailTierForSeries(1)).not.toBeNull();
+  });
+
+  it('hebt sich in jeder Stufe deutlich vom Grundzustand ab', () => {
+    // Sichtbarkeit haengt an allen vier Werten, nicht nur an der Laenge.
+    for (const tier of SERIES_TRAIL_TIERS) {
+      expect(tier.lifespanMs).toBeGreaterThan(SERIES_TRAIL_BASE_LIFESPAN_MS);
+      expect(tier.frequencyMs).toBeLessThan(SERIES_TRAIL_BASE_FREQUENCY_MS);
+      expect(tier.scale).toBeGreaterThan(SERIES_TRAIL_BASE_SCALE);
+      expect(tier.alpha).toBeGreaterThan(SERIES_TRAIL_BASE_ALPHA);
+    }
+  });
+
+  it('steigert jede Stufe gegenueber ihrer Vorgaengerin', () => {
+    for (let i = 1; i < SERIES_TRAIL_TIERS.length; i++) {
+      const vorher = SERIES_TRAIL_TIERS[i - 1]!;
+      const jetzt = SERIES_TRAIL_TIERS[i]!;
+      expect(jetzt.minSeries).toBeGreaterThan(vorher.minSeries);
+      expect(jetzt.lifespanMs).toBeGreaterThanOrEqual(vorher.lifespanMs);
+      expect(jetzt.frequencyMs).toBeLessThanOrEqual(vorher.frequencyMs);
+      expect(jetzt.scale).toBeGreaterThan(vorher.scale);
     }
   });
 

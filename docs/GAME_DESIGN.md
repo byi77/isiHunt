@@ -158,17 +158,26 @@ wuerde sich unfair anfuehlen. Belohnt wird **Flow**, nicht Fehlerfreiheit.
 
 ### Die Schleife
 
-Ab Serie 5 zieht die Figur eine Schleife hinter sich her. Länge und Farbe
-zeigen die Stufe:
+Ab der **ersten** Serie zieht die Figur eine Schleife hinter sich her. Länge
+und Farbe zeigen die Stufe:
 
 | Serie | Schleife | Farbe |
 | ----- | -------- | ----- |
-| 0–4   | keine    | Weltfarbe |
-| 5–9   | kurz     | Blau |
+| 0     | keine    | — |
+| 1–4   | kurz     | Hellblau |
+| 5–9   | etwas länger | Cyan |
 | 10–19 | mittel   | Türkis |
 | 20–34 | lang     | Grün |
 | 35–49 | maximal  | Gold |
-| ab 50 | maximal  | Gleißend |
+| ab 50 | maximal  | Orange |
+
+**Warum eine gezeichnete Linie und kein Partikeleffekt.** Der erste Versuch
+nutzte allein den vorhandenen Partikel-Emitter mit `blendMode: 'ADD'`.
+Technisch entstanden über hundert Partikel — sichtbar war trotzdem nichts: Auf
+dem hellen Weltraumhintergrund wusch der additive Modus jede Farbe zu einem
+diffusen Nebel aus, der sich nicht von den Relikt-Auren unterscheiden ließ.
+Eine Schleife braucht eine Kante, und die liefert nur eine gezeichnete Linie.
+Der Partikelnebel bleibt als Untermalung erhalten.
 
 **Die Länge ist ab Stufe 4 gedeckelt.** Eine unbegrenzt wachsende Spur würde
 auf einem Handy im Hochformat genau die Relikte verdecken, die man fangen

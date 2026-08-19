@@ -36,11 +36,18 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
-- **Eine Schleife hinter der Figur zeigt die laufende Serie.** Ab Serie 5
-  sichtbar; Laenge und Farbe steigen mit der Stufe (blau, tuerkis, gruen,
-  gold, gleissend). Umgesetzt ueber die Lebensdauer der bestehenden
-  Partikelspur - laenger lebende Partikel bleiben weiter hinten liegen, die
-  Dichte bleibt dabei gleich.
+- **Eine Schleife hinter der Figur zeigt die laufende Serie.** Ab der
+  **ersten** Serie sichtbar; Laenge und Farbe steigen mit der Stufe
+  (hellblau, cyan, tuerkis, gruen, gold, orange).
+
+  **Als gezeichnete Linie, nicht als Partikeleffekt.** Der erste Versuch
+  setzte allein auf den vorhandenen Partikel-Emitter mit `blendMode: 'ADD'`.
+  Gemessen entstanden dabei ueber hundert Partikel mit korrekter Farbe und
+  Lebensdauer - sichtbar war trotzdem nichts: Auf dem hellen
+  Weltraumhintergrund wusch der additive Modus jede Farbe zu einem diffusen
+  Nebel aus, der sich nicht von den Relikt-Auren unterscheiden liess. Eine
+  Schleife braucht eine Kante, und die liefert nur eine gezeichnete Linie.
+  Der Partikelnebel bleibt als Untermalung erhalten.
 
   **Die Laenge ist ab Stufe 4 gedeckelt.** Eine unbegrenzt wachsende Spur
   wuerde auf einem Handy im Hochformat genau die Relikte verdecken, die man
