@@ -1167,13 +1167,27 @@ export class MenuScene extends Phaser.Scene {
    */
   private buildFooter(): void {
     const hasLeaderboard = CloudSystem.isAvailable();
-    const settingsY = GAME_HEIGHT - 110;
 
     const primaryHeight = 96;
     const secondaryHeight = 76;
     const tertiaryHeight = 60;
     const settingsHeight = 66;
     const rowGap = 22;
+
+    // Der iOS-Hinweis bekommt eigenen Platz UNTER den Knoepfen, statt ueber
+    // sie gelegt zu werden.
+    //
+    // Vorher hing er fest an `GAME_HEIGHT - 88` und ueberdeckte auf einem
+    // iPhone 13 die EINSTELLUNGEN-Zeile um 49 Pixel. Aufgefallen war das nie:
+    // Der Hinweis erscheint nur im iOS-Browser, und getestet wird in der
+    // Home-Bildschirm-App, wo er ausgeblendet ist. Ihn nur nach oben zu
+    // schieben half nicht - dann traf die Ueberlappung die Reihe darueber.
+    // Nur ein reservierter Bereich loest das: Die Knopfreihen bauen sich von
+    // `settingsY` nach oben auf und wandern dadurch alle mit.
+    const zeigtHinweis = isIos() && !isStandalone();
+    const hinweisHoehe = 76;
+    const hinweisPlatz = zeigtHinweis ? hinweisHoehe + rowGap : 0;
+    const settingsY = GAME_HEIGHT - 110 - hinweisPlatz;
 
     // Abstand zu EINSTELLUNGEN genauso gross wie zwischen den anderen Reihen -
     // sonst reicht der optische Lichtschein der Knoepfe (createButton haelt
@@ -1295,21 +1309,52 @@ export class MenuScene extends Phaser.Scene {
     );
     leaderboardButton.setEnabled(hasLeaderboard);
 
+    // EINSTELLUNGEN und SHOP teilen sich die unterste Reihe. Die Gesamtbreite
+    // (250 + 22 + 150 = 422) liegt bewusst dicht an den Reihen darueber
+    // (436 bzw. 440), damit die drei Bloecke eine gemeinsame Kante bilden.
+    //
+    // Die Breite von EINSTELLUNGEN haengt nicht mehr davon ab, ob der
+    // Online-Dienst eingerichtet ist - der frei gewordene Platz gehoert jetzt
+    // dem SHOP, nicht dem Knopf daneben.
+    const settingsWidth = 250;
+    const shopWidth = 150;
+    const bottomGap = rowGap;
+    const bottomLeft = (GAME_WIDTH - (settingsWidth + bottomGap + shopWidth)) / 2;
+
     createButton(
       this,
-      GAME_WIDTH / 2,
+      bottomLeft + settingsWidth / 2,
       settingsY,
       'EINSTELLUNGEN',
       () => this.scene.start(SceneKey.Settings),
       {
-        width: CloudSystem.isAvailable() ? 244 : 300,
-        height: 66,
+        width: settingsWidth,
+        height: settingsHeight,
         accent: 0x9aa3bd,
         fontSize: FontSize.small,
       },
     );
 
-    this.buildHint();
+    // Gold wie die Coin-Zahl im Profilblock: Der Knopf soll ohne Erklaerung
+    // zeigen, wofuer die gesammelten Muenzen da sind. Alle anderen Knoepfe
+    // dieser Reihe sind grau - der Shop hebt sich bewusst ab.
+    createButton(
+      this,
+      bottomLeft + settingsWidth + bottomGap + shopWidth / 2,
+      settingsY,
+      'SHOP',
+      () => this.scene.start(SceneKey.Shop),
+      {
+        width: shopWidth,
+        height: settingsHeight,
+        accent: Palette.goldHex,
+        fontSize: FontSize.small,
+      },
+    );
+
+    // Der Hinweis darf die Knopfreihe nicht ueberdecken - er bekommt ihre
+    // Oberkante und setzt sich darueber.
+    this.buildHint(settingsY + settingsHeight / 2, hinweisHoehe, rowGap);
   }
 
   /**
@@ -1320,12 +1365,19 @@ export class MenuScene extends Phaser.Scene {
    * Rueckmeldung lautete, es gebe gar keinen Vollbild-Knopf. Der Knopf fehlt
    * auf iOS zu Recht (ADR-0009) - dann muss aber der Ersatz auffindbar sein.
    */
-  private buildHint(): void {
+  /**
+   * @param knopfreiheUnten Unterkante der untersten Knopfreihe.
+   * @param hoehe Hoehe des Hinweiskastens - dieselbe, die `buildFooter()`
+   *   beim Berechnen der Reihen reserviert hat.
+   * @param abstand Abstand zur Knopfreihe.
+   */
+  private buildHint(knopfreiheUnten: number, hoehe: number, abstand: number): void {
     if (isIos() && !isStandalone()) {
-      // Der Kasten sitzt am unteren Rand des Menues.
-      const y = GAME_HEIGHT - 88;
+      const y = knopfreiheUnten + abstand + hoehe / 2;
 
-      createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, 76, Palette.goldHex, { alpha: 0.5 });
+      createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, hoehe, Palette.goldHex, {
+        alpha: 0.5,
+      });
 
       this.add
         .text(

@@ -25,6 +25,8 @@ export const SceneKey = {
   Account: 'Account',
   /** Kaufbarer Talentbaum und Punkt-Reset. */
   Talents: 'Talents',
+  /** Laden fuer Skins und Boosts - die Coin-Senke. */
+  Shop: 'Shop',
   /**
    * Wartungsbildschirm: Version, Neuladen erzwingen, Spielstand zuruecksetzen.
    * Absichtlich versteckt - erreichbar ueber drei Tipps und langen Druck auf

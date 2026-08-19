@@ -35,6 +35,7 @@ import { RulerScene } from '@/scenes/RulerScene';
 import { SettingsScene } from '@/scenes/SettingsScene';
 import { SceneKey } from '@/scenes/SceneKey';
 import { SyncScene } from '@/scenes/SyncScene';
+import { ShopScene } from '@/scenes/ShopScene';
 import { TalentScene } from '@/scenes/TalentScene';
 import { WorldInfoScene } from '@/scenes/WorldInfoScene';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
@@ -99,6 +100,7 @@ function createGameConfig(): Phaser.Types.Core.GameConfig {
       LeaderboardScene,
       SettingsScene,
       AccountScene,
+      ShopScene,
       TalentScene,
       SyncScene,
       AdminScene,

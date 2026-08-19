@@ -9,6 +9,34 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Hinzugefuegt
+
+- **SHOP-Knopf im Menue, rechts neben EINSTELLUNGEN.** Beide teilen sich jetzt
+  die unterste Reihe (250 + 22 + 150 = 422 px), buendig zu den Reihen darueber
+  (436 bzw. 440). Der Shop ist als einziger Knopf dieser Reihe golden - dieselbe
+  Farbe wie die COINS-Zahl im Profilblock, damit ohne Erklaerung klar ist,
+  wofuer die gesammelten Muenzen da sind.
+
+  Die Breite von EINSTELLUNGEN haengt nicht mehr davon ab, ob der Online-Dienst
+  eingerichtet ist; der frei gewordene Platz gehoert jetzt dem Shop.
+
+- **`ShopScene` als Platzhalter.** Zeigt das Guthaben und einen Ausblick, damit
+  der Knopf nicht ins Leere fuehrt und die Navigation schon jetzt vom Playtest
+  abgedeckt ist. Die Ware kommt als eigener Schritt.
+
+### Behoben
+
+- **Der iOS-Hinweis "Vollbild ohne Adressleiste" ueberdeckte die
+  EINSTELLUNGEN-Zeile.** Er hing fest an `GAME_HEIGHT - 88`, waehrend sich die
+  Knopfreihen von `settingsY` nach oben aufbauen - auf einem iPhone 13
+  ueberlappten beide um 49 Pixel. Aufgefallen war das nie: Der Hinweis
+  erscheint nur im iOS-Browser, getestet wird aber in der
+  Home-Bildschirm-App, wo er ausgeblendet ist.
+
+  Der Hinweis bekommt jetzt eigenen Platz unter den Knoepfen, und die Reihen
+  ruecken entsprechend nach oben. Ihn nur zu verschieben genuegte nicht - dann
+  traf die Ueberlappung die Reihe darueber.
+
 ### Geaendert
 
 - **Die Serienbelohnung war nach der Serien-Umstellung praktisch wertlos.**
