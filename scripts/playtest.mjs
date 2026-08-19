@@ -7,15 +7,16 @@
 // Tastatureingaben, nicht ueber gesetzte Positionen: so laeuft derselbe Weg
 // durch InputController und GameScene.update() wie beim Spielen mit der Hand.
 //
-// Vier Suiten, einzeln waehlbar ueber --only:
+// Fuenf Suiten, einzeln waehlbar ueber --only:
 //   screens    Jeder Menue-Bildschirm: oeffnet, Konsole sauber, Screenshot
-//   modes      Solo je Welt, Tageslauf, lokales Duell, Bot-Duell
-//   layout     Canvas-Ueberstand und Trefferflaechen ueber 7 Geraeteformate
+//   modes      Solo je Welt, Tageslauf, Bot-Duell
+//   layout     Canvas-Ueberstand und unterster Knopf ueber 19 Geraeteformate
+//   ios        Dieselben Pruefungen in echtem WebKit statt in Chromium
 //   progress   Levelaufstieg, Talentkauf, Erfolge, Spielstand ueber Neuladen
 //
 // Ersetzt den Handytest nicht (Touch-Eigenheiten, Game-Feel), faengt aber
 // Regressionen in Scene-Fluss, Steuerung, Kollision und Persistenz ab.
-import { chromium, devices } from 'playwright';
+import { chromium, webkit, devices } from 'playwright';
 import { mkdirSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawn } from 'node:child_process';
@@ -135,12 +136,17 @@ const browser = await chromium.launch({
 
 // --- Werkzeuge ----------------------------------------------------------------
 
-/** Neue Seite mit vorgesetztem Spielstand und Konsolenueberwachung. */
-async function openPage(save = makeSave(), viewport = null) {
-  const context = await browser.newContext(
-    viewport
-      ? { viewport, deviceScaleFactor: 2, isMobile: true, hasTouch: true }
-      : { ...devices['iPhone 13'] }
+/**
+ * Neue Seite mit vorgesetztem Spielstand und Konsolenueberwachung.
+ *
+ * `contextOptions` nimmt entweder ein fertiges Playwright-Geraeteprofil
+ * (`devices['iPhone 16']`) oder ein eigenes `{ viewport, ... }`. Der
+ * Skalierungsfaktor kommt dabei aus dem Profil - iPhones laufen mit dpr 3,
+ * ein fest gesetztes 2 wuerde die Groessenrechnung verfaelschen.
+ */
+async function openPage(save = makeSave(), contextOptions = null, engine = browser) {
+  const context = await engine.newContext(
+    contextOptions ?? { ...devices['iPhone 13'] }
   );
   const page = await context.newPage();
   const errors = [];
@@ -405,19 +411,60 @@ async function suiteModes() {
 async function suiteLayout() {
   suite('Layout ueber Geraeteformate');
 
-  // Echte CSS-Viewports gaengiger Geraete im Hochformat.
-  const VIEWPORTS = [
-    ['iPhone SE 2022', 375, 667],
-    ['iPhone 13 / 14', 390, 664],
-    ['iPhone 14 Pro Max', 430, 745],
-    ['Pixel 7', 412, 732],
-    ['Galaxy S20', 360, 740],
-    ['iPad mini', 768, 1024],
-    ['Kurz (Browserleiste)', 390, 600],
+  // Wo Playwright ein gepflegtes Geraeteprofil mitbringt, wird es benutzt -
+  // samt echtem Skalierungsfaktor. Nur was dort fehlt (iPad Air, iPad Pro
+  // 12.9", der Kurz-Fall mit eingeblendeter Browserleiste), steht als
+  // eigener Viewport daneben.
+  const CUSTOM = {
+    // Apple-Geraetedaten, in Playwright 1.62 nicht enthalten.
+    'iPad Air 11"': { viewport: { width: 820, height: 1080 }, deviceScaleFactor: 2 },
+    'iPad Pro 12.9"': { viewport: { width: 1024, height: 1366 }, deviceScaleFactor: 2 },
+    // Sehr schmales Android-Format; in Playwright 1.62 nicht enthalten.
+    'Galaxy S20': { viewport: { width: 360, height: 740 }, deviceScaleFactor: 3 },
+    // Nicht real, sondern der ungueltigste Fall: sehr kurzes Fenster, wie es
+    // Safari mit ausgeklappter Adressleiste erzeugt. Hier bricht ein
+    // Hoehenfehler zuerst durch.
+    'Kurz (Browserleiste)': { viewport: { width: 390, height: 600 }, deviceScaleFactor: 3 },
+  };
+
+  const DEVICE_NAMES = [
+    'iPhone SE',
+    'iPhone 13',
+    'iPhone 14 Pro Max',
+    'iPhone 15',
+    'iPhone 15 Pro Max',
+    'iPhone 16',
+    'iPhone 16 Pro',
+    'iPhone 16 Pro Max',
+    'iPhone 17',
+    'iPhone 17 Pro Max',
+    'iPad Mini',
+    'iPad (gen 7)',
+    'iPad (gen 11)',
+    'iPad Pro 11',
+    'Pixel 7',
   ];
 
-  for (const [name, w, h] of VIEWPORTS) {
-    const { page, context } = await openPage(makeSave({ level: 30 }), { width: w, height: h });
+  const targets = [];
+  for (const name of DEVICE_NAMES) {
+    const d = devices[name];
+    if (!d) {
+      record(`${name} (Profil vorhanden)`, false, 'kein Playwright-Profil dieses Namens');
+      continue;
+    }
+    targets.push([name, { ...d }, d.viewport.width, d.viewport.height]);
+  }
+  for (const [name, opts] of Object.entries(CUSTOM)) {
+    targets.push([
+      name,
+      { ...opts, isMobile: true, hasTouch: true },
+      opts.viewport.width,
+      opts.viewport.height,
+    ]);
+  }
+
+  for (const [name, contextOptions, w, h] of targets) {
+    const { page, context } = await openPage(makeSave({ level: 30 }), contextOptions);
     try {
       await waitForScene(page, 'Menu');
       await page.waitForTimeout(500);
@@ -449,6 +496,124 @@ async function suiteLayout() {
     } finally {
       await context.close();
     }
+  }
+}
+
+// =============================================================================
+// Suite 5: iOS / WebKit
+// =============================================================================
+/**
+ * Faehrt dieselbe Seite in **echtem WebKit** statt in Chromium.
+ *
+ * Warum das eine eigene Suite ist: Die uebrigen Suiten laufen unter Chromium
+ * mit iPhone-Viewport und iPhone-User-Agent - das ist Blink, nicht WebKit.
+ * Genau die Eigenheiten, die dieses Projekt teuer bezahlt hat, stecken aber in
+ * WebKit: `100dvh` und die ein- und ausklappende Adressleiste (viewport.ts),
+ * `env(safe-area-inset-*)` (index.html), und die Frage, ob der Canvas nach
+ * dem Start ueberhaupt an der richtigen Stelle sitzt.
+ *
+ * WebKit hier ist Safaris Engine, aber nicht Safari auf einem echten iPhone:
+ * Es fehlen die echte Adressleisten-Animation, iOS-Gesten und die
+ * Home-Bildschirm-App. Der Pflicht-Handytest bleibt (Abschnitt 10).
+ */
+async function suiteIos() {
+  suite('iOS / WebKit');
+
+  let engine;
+  try {
+    engine = await webkit.launch({ headless: !watch, slowMo: watch ? 60 : 0 });
+  } catch (e) {
+    record(
+      'WebKit verfuegbar',
+      false,
+      `${e.message.split('\n')[0].slice(0, 80)} - `
+        + 'nachinstallieren mit: npx playwright install webkit'
+    );
+    return;
+  }
+
+  try {
+    // Quer durch die Baureihen: Notch, Dynamic Island, kleines und grosses
+    // Display. Alle mit echtem WebKit statt nur mit iPhone-Etikett.
+    const IOS_DEVICES = ['iPhone SE', 'iPhone 13', 'iPhone 15', 'iPhone 16 Pro', 'iPhone 17 Pro Max', 'iPad Pro 11'];
+
+    for (const name of IOS_DEVICES) {
+      const profile = devices[name];
+      if (!profile) {
+        record(`${name} (WebKit)`, false, 'kein Playwright-Profil');
+        continue;
+      }
+
+      const { page, context, errors } = await openPage(
+        makeSave({ level: 30 }),
+        { ...profile },
+        engine
+      );
+      try {
+        await waitForScene(page, 'Menu', 25000);
+        await page.waitForTimeout(700);
+
+        const m = await page.evaluate(() => {
+          const g = window.isiHunt;
+          const r = g.canvas.getBoundingClientRect();
+          const pauseGameY = g.scale.height - 58;
+          const pauseScreenY = r.top + (pauseGameY / g.scale.height) * r.height;
+          return {
+            webkit: /AppleWebKit/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent),
+            overflow: Math.round(r.bottom - window.innerHeight),
+            pauseVisible: pauseScreenY < window.innerHeight - 10,
+            top: Math.round(r.top),
+          };
+        });
+
+        const ok = m.webkit && m.overflow <= 0 && m.pauseVisible && errors.length === 0;
+        record(
+          `${name} in WebKit`,
+          ok,
+          !m.webkit
+            ? 'Engine ist nicht WebKit'
+            : m.overflow > 0
+              ? `Canvas ragt ${m.overflow}px heraus`
+              : errors.length
+                ? errors[0].slice(0, 60)
+                : `buendig, Canvas beginnt bei y=${m.top}`
+        );
+        await page.screenshot({
+          path: `${shotDir}/ios-${name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.png`,
+        });
+      } catch (e) {
+        record(`${name} in WebKit`, false, e.message.slice(0, 70));
+      } finally {
+        await context.close();
+      }
+    }
+
+    // Ein echter Run unter WebKit: Steuerung, Kollision und Punktevergabe
+    // laufen dort ueber andere Eingabe- und Rendering-Pfade als in Chromium.
+    const { page, context, errors } = await openPage(
+      makeSave({ level: 30 }),
+      { ...devices['iPhone 15'] },
+      engine
+    );
+    try {
+      await waitForScene(page, 'Menu', 25000);
+      await page.evaluate(() => window.isiHunt.scene.start('Game', { mode: 'solo' }));
+      await waitForRunLive(page, 30000);
+      const score = await playUntilDone(page);
+      await waitForScene(page, 'Result', 40000);
+      record(
+        'Kompletter Run unter WebKit',
+        score > 0 && errors.length === 0,
+        `Score ${score}${errors.length ? `, ${errors.length} Konsolenfehler` : ''}`
+      );
+      await page.screenshot({ path: `${shotDir}/ios-run-result.png` });
+    } catch (e) {
+      record('Kompletter Run unter WebKit', false, e.message.slice(0, 70));
+    } finally {
+      await context.close();
+    }
+  } finally {
+    await engine.close();
   }
 }
 
@@ -540,6 +705,7 @@ async function suiteProgress() {
 try {
   if (runSuite('screens')) await suiteScreens();
   if (runSuite('layout')) await suiteLayout();
+  if (runSuite('ios')) await suiteIos();
   if (runSuite('progress')) await suiteProgress();
   if (runSuite('modes')) await suiteModes();
 } catch (error) {
