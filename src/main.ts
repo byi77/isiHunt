@@ -47,7 +47,11 @@ import { Palette } from '@/ui/theme';
 function createGameConfig(): Phaser.Types.Core.GameConfig {
   return {
     type: Phaser.AUTO,
-    parent: 'game',
+    // Nicht `game`: dessen Padding (sichere Flaeche + Laufband) zieht Phaser
+    // beim Messen nicht ab und skaliert den Canvas dadurch 32 px zu hoch -
+    // der Pause-Knopf landet unter dem sichtbaren Rand. `game-canvas` fuellt
+    // nur die Innenflaeche. Begruendung in index.html.
+    parent: 'game-canvas',
     backgroundColor: Palette.backdrop,
     scale: {
       mode: Phaser.Scale.FIT,

@@ -208,6 +208,22 @@
         display: block;
       }
 
+      /* Phasers ScaleManager misst seinen Elternknoten ueber dessen
+         Aussenmasse und zieht ein Padding NICHT ab. Haengt er direkt an
+         `#game`, haelt er die 32 px Laufband-Padding fuer nutzbare Hoehe und
+         skaliert den Canvas entsprechend zu gross: Er beginnt unter dem
+         Padding und ragt unten um genau diesen Betrag aus dem Sichtbaren -
+         zuerst trifft es den Pause-Knopf.
+
+         Dieser Zwischencontainer fuellt nur die Innenflaeche von `#game`.
+         Phaser misst ihn und bekommt dadurch die tatsaechlich freie Hoehe,
+         ohne dass Padding oder Hintergrund von `#game` sich aendern. */
+      #game-canvas {
+        width: 100%;
+        height: 100%;
+        position: relative;
+      }
+
       /* Nur die eigentliche 32-px-Laufzeile ist dunkel. Der Bereich zwischen
          iOS-Systemblur und Laufzeile bleibt transparent, sodass dort der
          Welt-Hintergrund weiterlaeuft statt eines blauen Leerfelds. */
@@ -328,6 +344,7 @@
     <div id="page-backdrop" aria-hidden="true"></div>
     <div id="game">
       <div id="safe-area-content" aria-hidden="true">ISI HUNT - JAGE DAS LICHT</div>
+      <div id="game-canvas"></div>
     </div>
     <div id="orientation-lock" aria-live="polite">
       <span>Bitte halte das Handy hochkant, um isiHunt zu spielen.</span>
