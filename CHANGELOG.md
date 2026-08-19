@@ -9,6 +9,30 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Behoben
+
+- **Das Sync-Popup kam endlos wieder und ging nicht mehr weg.** Ausgeloest
+  durch die XP-Umstellung einen Commit zuvor: Der Cloud-Stand lag noch in der
+  alten Fassung (Level 20), der lokale war beim Laden bereits migriert
+  (Level 14). `isRemoteAhead()` verglich beide ungefiltert, hielt den
+  Cloud-Stand fuer weiter, `adoptRemote()` uebernahm ihn - und migrierte ihn
+  dabei wieder auf 14. Beim naechsten Durchlauf begann alles von vorn, samt
+  `scene.restart()` und neuem Popup.
+
+  Der Vergleich gleicht jetzt **beide** Seiten auf die aktuelle Fassung an
+  (`SaveSystem.normalizeForComparison`), bevor er urteilt. Fuer einen
+  aktuellen Stand ist das wirkungslos; nur ein aelterer wird eingeordnet.
+
+  Ein erster Anlauf normalisierte nur die entfernte Seite - das erzeugte
+  denselben Fehler mit umgekehrtem Vorzeichen und liess einen bestehenden
+  Test fehlschlagen. Ein Vergleich braucht beide Seiten in derselben
+  Zeitrechnung.
+
+  Zusaetzlich abgesichert: `MenuScene` startet die Szene nach einem
+  uebernommenen Cloud-Stand nur noch dann neu, wenn sich Level, Coins,
+  Bestwert oder Rundenzahl tatsaechlich geaendert haben. Vorher genuegte eine
+  einzelne falsch-positive Antwort fuer eine Endlosschleife.
+
 ### Geaendert
 
 - **Die XP-Kurve ist jetzt in Runs formuliert, nicht in einer Formel.** Ziel

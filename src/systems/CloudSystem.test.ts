@@ -352,3 +352,56 @@ describe('"wirft nie" - Netzfunktionen ohne konfiguriertes Backend', () => {
     expect(CloudSystem.getSupabaseClient()).toBeNull();
   });
 });
+
+describe('Vergleich mit einem Cloud-Stand aelterer Fassung', () => {
+  // Regression zur Sync-Endlosschleife nach SAVE_VERSION 7 (2026-08-19):
+  // Der Server liefert Staende, die vor der XP-Umstellung hochgeladen wurden.
+  // Ohne Angleichung gilt so ein Stand faelschlich als "weiter", wird
+  // uebernommen, dabei migriert (Level sinkt) - und beim naechsten Vergleich
+  // beginnt alles von vorn. Sichtbar als Sync-Popup, das nie verschwindet.
+
+  function remoteV6(level: number): {
+    data: SaveData;
+    level: number;
+    bestScore: number;
+    totalRuns: number;
+    updatedAt: string;
+  } {
+    const data = createSave({ level, version: 6 });
+    return {
+      data,
+      level,
+      bestScore: data.bestScore,
+      totalRuns: data.totalRuns,
+      updatedAt: new Date().toISOString(),
+    };
+  }
+
+  it('haelt einen v6-Stand nicht fuer voraus, wenn er migriert gleichauf liegt', async () => {
+    const SaveSystem = await import('@/systems/SaveSystem');
+    // Was der Server hat: Level 20, noch unter der alten Kurve.
+    const remote = remoteV6(20);
+    // Was lokal daraus wird, sobald migriert: dasselbe, nur eingeordnet.
+    const local = SaveSystem.normalizeForComparison(remote.data);
+
+    expect(local.level).toBeLessThan(20);
+    expect(CloudSystem.isRemoteAhead(local, remote)).toBe(false);
+    expect(CloudSystem.isLocalAhead(local, remote)).toBe(false);
+  });
+
+  it('erkennt einen wirklich weiter fortgeschrittenen v6-Stand weiterhin', async () => {
+    const SaveSystem = await import('@/systems/SaveSystem');
+    const remote = remoteV6(40);
+    const local = SaveSystem.normalizeForComparison(createSave({ level: 5, version: 6 }));
+
+    expect(CloudSystem.isRemoteAhead(local, remote)).toBe(true);
+  });
+
+  it('erkennt einen lokal weiteren Stand weiterhin', async () => {
+    const SaveSystem = await import('@/systems/SaveSystem');
+    const remote = remoteV6(5);
+    const local = SaveSystem.normalizeForComparison(createSave({ level: 40, version: 6 }));
+
+    expect(CloudSystem.isLocalAhead(local, remote)).toBe(true);
+  });
+});

@@ -176,31 +176,64 @@ function totalTalentRanks(talents: TalentRanks): number {
   return Object.values(talents).reduce((sum: number, rank) => sum + (rank ?? 0), 0);
 }
 
+/**
+ * Bringt einen Cloud-Stand auf die aktuelle Fassung, bevor verglichen wird.
+ *
+ * **Warum das noetig ist.** Ein Stand, der vor einer Migration hochgeladen
+ * wurde, traegt noch die alten Werte. Der lokale Stand ist beim Vergleich
+ * dagegen immer schon migriert (`load()` migriert beim Lesen). Ohne diese
+ * Angleichung vergleicht man zwei verschiedene Zeitrechnungen.
+ *
+ * Konkret passiert nach SAVE_VERSION 7: Der Server lieferte Level 20, lokal
+ * stand nach der XP-Umstellung 14. Der Remote-Stand galt damit als voraus,
+ * `adoptRemote()` migrierte ihn beim Uebernehmen aber wieder auf 14 - und
+ * beim naechsten Durchlauf begann alles von vorn. Ergebnis: ein
+ * Sync-Popup, das sich endlos wiederholte, samt Scene-Neustart.
+ */
+function angeglichen(
+  local: SaveData,
+  remote: RemoteSave,
+): { lokal: SaveData; fern: SaveData; fernLevel: number } {
+  // BEIDE Seiten angleichen, nicht nur die entfernte. Ein einseitiger Aufruf
+  // wuerde einen bereits migrierten lokalen Stand gegen einen soeben
+  // migrierten Cloud-Stand stellen und dabei genau die Verzerrung erzeugen,
+  // die hier verhindert werden soll - nur mit umgekehrtem Vorzeichen.
+  // `normalizeForComparison` ist fuer einen aktuellen Stand ein No-op.
+  const fern = SaveSystem.normalizeForComparison(remote.data);
+  return {
+    lokal: SaveSystem.normalizeForComparison(local),
+    fern,
+    fernLevel: fern.level,
+  };
+}
+
 /** Vergleicht die Fortschrittsmarker, die fuer den Nutzer sichtbar sind. */
 export function isRemoteAhead(local: SaveData, remote: RemoteSave): boolean {
+  const { lokal, fern, fernLevel } = angeglichen(local, remote);
   return (
-    remote.level > local.level ||
-    remote.bestScore > local.bestScore ||
-    remote.totalRuns > local.totalRuns ||
-    remote.data.totalScore > local.totalScore ||
-    Number(remote.data.coins ?? 0) > local.coins ||
-    totalXpForSave(remote.data) > totalXpForSave(local) ||
-    totalTalentRanks(remote.data.talents) > totalTalentRanks(local.talents) ||
-    remote.data.unlockedAchievements.length > local.unlockedAchievements.length
+    fernLevel > lokal.level ||
+    fern.bestScore > lokal.bestScore ||
+    fern.totalRuns > lokal.totalRuns ||
+    fern.totalScore > lokal.totalScore ||
+    Number(fern.coins ?? 0) > lokal.coins ||
+    totalXpForSave(fern) > totalXpForSave(lokal) ||
+    totalTalentRanks(fern.talents) > totalTalentRanks(lokal.talents) ||
+    fern.unlockedAchievements.length > lokal.unlockedAchievements.length
   );
 }
 
 /** Das Gegenstueck fuer einen sicheren Upload nach Offline-Zeit. */
 export function isLocalAhead(local: SaveData, remote: RemoteSave): boolean {
+  const { lokal, fern, fernLevel } = angeglichen(local, remote);
   return (
-    local.level > remote.level ||
-    local.bestScore > remote.bestScore ||
-    local.totalRuns > remote.totalRuns ||
-    local.totalScore > remote.data.totalScore ||
-    local.coins > Number(remote.data.coins ?? 0) ||
-    totalXpForSave(local) > totalXpForSave(remote.data) ||
-    totalTalentRanks(local.talents) > totalTalentRanks(remote.data.talents) ||
-    local.unlockedAchievements.length > remote.data.unlockedAchievements.length
+    lokal.level > fernLevel ||
+    lokal.bestScore > fern.bestScore ||
+    lokal.totalRuns > fern.totalRuns ||
+    lokal.totalScore > fern.totalScore ||
+    lokal.coins > Number(fern.coins ?? 0) ||
+    totalXpForSave(lokal) > totalXpForSave(fern) ||
+    totalTalentRanks(lokal.talents) > totalTalentRanks(fern.talents) ||
+    lokal.unlockedAchievements.length > fern.unlockedAchievements.length
   );
 }
 

@@ -289,9 +289,36 @@ export class MenuScene extends Phaser.Scene {
           detail: JSON.stringify({ remoteAhead }),
         });
         if (remoteAhead) {
-          SaveSystem.adoptRemote(remote.data, local.cloudId ?? AuthSystem.currentUserId()!);
+          const uebernommen = SaveSystem.adoptRemote(
+            remote.data,
+            local.cloudId ?? AuthSystem.currentUserId()!,
+          );
           this.saveSyncBusy = false;
           this.cancelProfileRetry();
+
+          // Nur neu starten, wenn sich sichtbar etwas geaendert hat. Ohne
+          // diese Pruefung genuegt eine falsch-positive `remoteAhead`-Antwort,
+          // um die Szene endlos neu zu starten - genau das passierte nach der
+          // XP-Umstellung, als ein unmigrierter Cloud-Stand dauerhaft als
+          // "weiter" galt. Die Ursache ist behoben (CloudSystem gleicht beide
+          // Seiten an), aber der Neustart soll sich nicht erneut auf eine
+          // einzelne korrekte Antwort verlassen muessen.
+          const veraendert =
+            uebernommen.level !== local.level ||
+            uebernommen.coins !== local.coins ||
+            uebernommen.bestScore !== local.bestScore ||
+            uebernommen.totalRuns !== local.totalRuns;
+
+          if (!veraendert) {
+            DebugSystem.pushLogEntry({
+              timestamp: Date.now(),
+              kind: 'event',
+              label: 'sync:remoteAheadOhneAenderung',
+              detail: JSON.stringify({ level: local.level, coins: local.coins }),
+            });
+            return true;
+          }
+
           this.scene.restart();
           return false;
         }

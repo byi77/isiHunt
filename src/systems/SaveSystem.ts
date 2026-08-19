@@ -124,10 +124,6 @@ function reconcile(raw: Partial<SaveData>): SaveData {
   };
 }
 
-/**
- * Migriert einen Spielstand auf SAVE_VERSION.
- * Neue Versionen hier ergaenzen - niemals alte Zweige loeschen.
- */
 function legacyXpForLevel(level: number): number {
   return Math.floor(80 * Math.pow(level, 1.45));
 }
@@ -216,6 +212,23 @@ function migrate(raw: Partial<SaveData>): SaveData {
     verteileXpNeu(save, xpForLevelV6, xpForLevel);
   }
   return save;
+}
+
+/**
+ * Bringt einen fremden Spielstand auf die aktuelle Fassung, ohne ihn zu
+ * speichern - fuer Vergleiche zwischen lokalem und Cloud-Stand.
+ *
+ * **Warum das noetig ist.** Ein Cloud-Stand, der vor einer Migration
+ * hochgeladen wurde, traegt noch die alten Werte. Wird er ungefiltert mit dem
+ * bereits migrierten lokalen Stand verglichen, wirkt er faelschlich "weiter".
+ * Genau das erzeugte nach der XP-Umstellung (SAVE_VERSION 7) eine
+ * Endlosschleife: Der Server lieferte Level 20, lokal stand nach der
+ * Migration 14, also galt der Remote-Stand als voraus. `adoptRemote()`
+ * migrierte ihn beim Uebernehmen wieder auf 14 - und beim naechsten Vergleich
+ * begann alles von vorn, samt Scene-Neustart und Sync-Popup.
+ */
+export function normalizeForComparison(raw: Partial<SaveData>): SaveData {
+  return migrate(raw);
 }
 
 let cache: SaveData | null = null;
