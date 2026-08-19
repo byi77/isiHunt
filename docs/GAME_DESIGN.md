@@ -188,12 +188,26 @@ sofort.
 
 | Serie | Multiplikator |
 | ----- | ------------- |
-| 0–4   | ×1            |
-| 5–9   | ×1,1          |
-| 10–19 | ×1,25         |
-| 20–34 | ×1,45         |
-| 35–49 | ×1,65         |
-| ab 50 | ×1,85         |
+| 0–1   | ×1            |
+| 2–3   | ×1,15         |
+| 4–6   | ×1,35         |
+| 7–10  | ×1,6          |
+| 11–15 | ×1,9          |
+| ab 16 | ×2,3          |
+
+Der Multiplikator wirkt **nur auf Punkte, nicht auf XP** — die hängen an der
+Zahl der Fänge, damit Fortschritt und Bestenliste nicht dieselbe Schwankung
+teilen.
+
+**Warum die Schwellen so niedrig liegen.** Sie standen bis 2026-08-19 auf
+5/10/20/35/50 — ausgelegt für das alte System, in dem _jeder_ Fang die Serie
+steigerte. Seit nur farbige Relikte steigern (38 % aller Spawns) und das
+Zeitfenster halbiert ist, bräuchte Serie 10 rund 27 Fänge am Stück; gemessen
+reißt die Serie aber alle 17. Vier der fünf Stufen waren damit unerreichbar,
+und der Serienbonus brachte über einen ganzen Run nur noch 3,6 % mehr Punkte.
+
+Mit den neuen Werten kommen im simulierten Lauf **alle sechs Stufen vor**, und
+der Bonus liegt bei rund 23 % über den Run.
 
 Quelle: `src/config/GameConfig.ts` (`COMBO_GRACE_MS`,
 `SERIES_RAISING_MIN_RARITY_INDEX`, `COMBO_TIERS`, `SERIES_TRAIL_TIERS`).

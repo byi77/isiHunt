@@ -9,6 +9,33 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Geaendert
+
+- **Die Serienbelohnung war nach der Serien-Umstellung praktisch wertlos.**
+  Die Multiplikator-Schwellen standen noch auf 5/10/20/35/50 - Werte aus dem
+  alten System, in dem jeder Fang die Serie steigerte. Seit nur farbige
+  Relikte steigern (38 Prozent aller Spawns) und das Zeitfenster halbiert
+  ist, braeuchte Serie 10 rund 27 Faenge am Stueck; gemessen reisst die Serie
+  aber alle 17. **Vier der fuenf Stufen waren unerreichbar**, und der Bonus
+  brachte ueber einen ganzen Run nur noch 3,6 Prozent mehr Punkte.
+
+  Neue Staffelung, Schwellen deutlich frueher und Multiplikatoren staerker:
+
+      Serie  2  ->  x1.15        Serie 11  ->  x1.9
+      Serie  4  ->  x1.35        Serie 16  ->  x2.3
+      Serie  7  ->  x1.6
+
+  Im simulierten Lauf kommen jetzt **alle sechs Stufen vor** (vorher zwei),
+  der Bonus liegt bei rund 23 Prozent, und der Score steigt von rund 2 008
+  auf 2 369.
+
+  Der Multiplikator wirkt weiterhin nur auf Punkte, nicht auf XP.
+
+  Zwei neue Balance-Tests halten das fest: die unteren Stufen muessen
+  innerhalb der gemessenen Serienlaenge erreichbar bleiben, und die hoechste
+  Stufe muss sich deutlich von der ersten abheben. Gegen den Stand davor
+  verifiziert - dort schlagen beide fehl.
+
 ### Behoben
 
 - **Das Sync-Popup kam endlos wieder und ging nicht mehr weg.** Ausgeloest

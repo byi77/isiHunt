@@ -206,14 +206,33 @@ export const COMBO_GRACE_MS = 900;
  */
 export const SERIES_RAISING_MIN_RARITY_INDEX = 2;
 
-/** Ab wie vielen zeitnah gefangenen Relikten welcher Punktemultiplikator gilt. */
+/**
+ * Ab welcher Serie welcher Punktemultiplikator gilt.
+ *
+ * **Warum die Schwellen so niedrig liegen.** Sie waren bis 2026-08-19 auf
+ * 5/10/20/35/50 gesetzt - ausgelegt fuer das alte System, in dem *jeder* Fang
+ * die Serie steigerte. Seit nur noch farbige Relikte steigern (38 Prozent
+ * aller Spawns) und das Zeitfenster halbiert ist, braeuchte Serie 10 rund 27
+ * Faenge am Stueck; gemessen reisst die Serie aber alle 17. Vier der fuenf
+ * Stufen waren damit unerreichbar, und der Serienbonus brachte ueber einen
+ * ganzen Run nur noch 3,6 Prozent mehr Punkte - eine Belohnung, die niemand
+ * bemerkt.
+ *
+ * Mit diesen Werten sind die unteren Stufen im normalen Spiel erreichbar, die
+ * oberen bleiben ein Ziel. Ueber einen Run ergibt das rund 23 Prozent
+ * (simuliert ueber 400 Runden a 183 Faenge).
+ *
+ * Der Multiplikator wirkt **nur auf Punkte**, nicht auf XP - die haengen an
+ * der Zahl der Faenge, damit Fortschritt und Bestenliste nicht dieselbe
+ * Schwankung teilen.
+ */
 export const COMBO_TIERS: readonly { readonly minCombo: number; readonly multiplier: number }[] = [
   { minCombo: 0, multiplier: 1 },
-  { minCombo: 5, multiplier: 1.1 },
-  { minCombo: 10, multiplier: 1.25 },
-  { minCombo: 20, multiplier: 1.45 },
-  { minCombo: 35, multiplier: 1.65 },
-  { minCombo: 50, multiplier: 1.85 },
+  { minCombo: 2, multiplier: 1.15 },
+  { minCombo: 4, multiplier: 1.35 },
+  { minCombo: 7, multiplier: 1.6 },
+  { minCombo: 11, multiplier: 1.9 },
+  { minCombo: 16, multiplier: 2.3 },
 ];
 
 /**
