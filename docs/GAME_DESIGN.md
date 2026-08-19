@@ -55,9 +55,9 @@ Personen an einem Geraet.
 Relikt erscheint  →  Spieler bewegt sich hin  →  eingesammelt
         │                                             │
         │                                    Punkte × Multiplikator
-        │                                    Combo +1, Fenster neu
+        │                              Serie +1 (farbig), Fenster neu
         ↓
-   verblasst (verpasst — Combo bleibt, aber Zeit war verloren)
+   verblasst (verpasst — Serie bleibt, aber Zeit war verloren)
 ```
 
 Die eigentliche Entscheidung des Spielers ist **Prioritaet**: Auf dem Feld
@@ -124,18 +124,60 @@ Quelle: `src/config/rarities.ts` — diese Tabelle ist eine Abschrift, der Code
 ist die Wahrheit. Werte am 2026-08-17 aus dem Code nachgezogen, s.
 `docs/AUDIT_2026-08-17.md` Abschnitt 4.1 und `docs/BALANCE_2026-08-17.md`.
 
-## 6. Combo-System
+## 6. Serien-System
 
-- Jeder Fang: Combo **+1**, Zeitfenster startet neu (Basis **1,8 s**).
-- Faengst du im Fenster nichts, faellt die Combo auf **0**.
-- **Ein verpasstes Relikt bricht die Combo NICHT.**
+Die Serie hat **zwei getrennte Stufen** — das ist der taktische Kern des
+Spiels:
 
-Das ist eine bewusste Abweichung vom Arcade-Standard. Begruendung: Auf dem
-Handy sind Fehlgriffe oft Geraet- statt Spielerfehler (Fettfinger, Ruckler,
-Anruf). Combo-Verlust durch Verpassen wuerde sich unfair anfuehlen. Belohnt
-wird **Flow**, nicht Fehlerfreiheit.
+| | Wirkung |
+| --- | --- |
+| **Halten** | Jeder Fang setzt das Zeitfenster neu (Basis **0,9 s**) |
+| **Steigern** | Nur ein **farbiger** Fang (ungewöhnlich und seltener) erhöht die Serie |
 
-| Combo | Multiplikator |
+- Weiße Relikte (schlicht, gewöhnlich) **halten** die Serie, steigern sie aber
+  nicht.
+- Fängst du im Fenster gar nichts, fällt die Serie auf **0**.
+- **Ein verpasstes Relikt bricht die Serie NICHT.**
+
+**Warum diese Trennung.** Farbige Relikte machen nur 38 % aus und erscheinen im
+Schnitt alle 1,6 s (Rundenanfang) bis 0,9 s (Rundenende) — oft zu selten für
+das Fenster. Genau dann entsteht die Entscheidung: Nimm ich das weiße Relikt
+in Reichweite und rette die Serie, oder jage ich das farbige und riskiere den
+Abriss?
+
+Vorher steigerte **jeder** Fang die Serie, und das Fenster war mit 1,8 s
+doppelt so lang. Pro Fenster erschienen 2,9 bis 5,3 neue Relikte — die Serie
+riss praktisch nie. Im automatisierten Playtest lief sie regelmäßig über 180
+Fänge ohne einen einzigen Abriss; es gab nie etwas zu entscheiden. Nach der
+Umstellung: beste Serie ~19, rund **11 Abrisse pro Runde**.
+
+Dass ein Verpassen die Serie nicht bricht, bleibt eine bewusste Abweichung vom
+Arcade-Standard. Begruendung: Auf dem Handy sind Fehlgriffe oft Geraet- statt
+Spielerfehler (Fettfinger, Ruckler, Anruf). Serienverlust durch Verpassen
+wuerde sich unfair anfuehlen. Belohnt wird **Flow**, nicht Fehlerfreiheit.
+
+### Die Schleife
+
+Ab Serie 5 zieht die Figur eine Schleife hinter sich her. Länge und Farbe
+zeigen die Stufe:
+
+| Serie | Schleife | Farbe |
+| ----- | -------- | ----- |
+| 0–4   | keine    | Weltfarbe |
+| 5–9   | kurz     | Blau |
+| 10–19 | mittel   | Türkis |
+| 20–34 | lang     | Grün |
+| 35–49 | maximal  | Gold |
+| ab 50 | maximal  | Gleißend |
+
+**Die Länge ist ab Stufe 4 gedeckelt.** Eine unbegrenzt wachsende Spur würde
+auf einem Handy im Hochformat genau die Relikte verdecken, die man fangen
+will — und die Steuerung ist ausdrücklich so gebaut, dass die Hand das Ziel
+nicht verdeckt. Ab dort trägt nur noch die Farbe die Information; „lang" von
+„sehr lang" unterscheidet im Spiel ohnehin niemand, „gold statt türkis"
+sofort.
+
+| Serie | Multiplikator |
 | ----- | ------------- |
 | 0–4   | ×1            |
 | 5–9   | ×1,1          |
@@ -144,9 +186,14 @@ wird **Flow**, nicht Fehlerfreiheit.
 | 35–49 | ×1,65         |
 | ab 50 | ×1,85         |
 
-Quelle: `src/config/GameConfig.ts` (`COMBO_GRACE_MS`, `COMBO_TIERS`). Werte
-am 2026-08-17 aus dem Code nachgezogen, s. `docs/AUDIT_2026-08-17.md`
-Abschnitt 4.2.
+Quelle: `src/config/GameConfig.ts` (`COMBO_GRACE_MS`,
+`SERIES_RAISING_MIN_RARITY_INDEX`, `COMBO_TIERS`, `SERIES_TRAIL_TIERS`).
+Werte am 2026-08-17 aus dem Code nachgezogen (s. `docs/AUDIT_2026-08-17.md`
+Abschnitt 4.2), Serien-Umstellung am 2026-08-19.
+
+**Zum Nachjustieren.** Ist die Serie fuer juengere Spieler zu hart, zuerst
+`COMBO_GRACE_MS` erhoehen (z. B. auf 1100) — der Wert wirkt direkter als jede
+andere Stellschraube. Das Talent „Fokus" verlaengert das Fenster zusaetzlich.
 
 ## 7. Progression
 

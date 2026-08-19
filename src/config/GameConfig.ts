@@ -170,11 +170,41 @@ export const LEGENDARY_BONUS_COINS = 3;
 // --- Combo ------------------------------------------------------------------
 
 /**
- * Zeitfenster nach einem Fang, in dem der naechste Fang die Combo haelt.
- * Laeuft es ab, faellt die Combo auf 0. Verpasste Objekte brechen die Combo
- * NICHT - belohnt wird Flow, nicht Perfektion.
+ * Zeitfenster nach einem Fang, in dem der naechste Fang die Serie haelt.
+ * Laeuft es ab, faellt die Serie auf 0. Verpasste Objekte brechen sie NICHT -
+ * belohnt wird Flow, nicht Perfektion.
+ *
+ * **Warum 900 und nicht mehr.** Vorher standen hier 1800 ms. Relikte
+ * erscheinen aber alle 620 ms (am Rundenende alle 341 ms) - pro Zeitfenster
+ * kamen also 2,9 bis 5,3 neue. Die Serie riss nur, wenn man fast zwei
+ * Sekunden lang gar nichts fing; im automatisierten Playtest lief sie
+ * regelmaessig ueber 180 Faenge ohne einen einzigen Abriss. Damit gab es nie
+ * einen Moment, in dem eine Entscheidung noetig war.
+ *
+ * Mit 900 ms kommt im Schnitt gerade ein Relikt pro Fenster. Zusammen mit
+ * `SERIES_RAISING_MIN_RARITY` entsteht daraus die eigentliche Taktik: Farbige
+ * Relikte erscheinen nur alle 1,6 s (Rundenanfang) bis 0,9 s (Rundenende) -
+ * oft zu selten fuer das Fenster. Dann rettet ein weisses die Serie, ohne sie
+ * zu steigern.
+ *
+ * **Beim Nachjustieren hier ansetzen.** Ist der Wert fuer juengere Spieler zu
+ * hart, zuerst diesen erhoehen (z. B. auf 1100) - er wirkt direkter als jede
+ * andere Stellschraube. Das Talent "Ausdauer" verlaengert ihn zusaetzlich.
  */
-export const COMBO_GRACE_MS = 1800;
+export const COMBO_GRACE_MS = 900;
+
+/**
+ * Ab welcher Seltenheit ein Fang die Serie **steigert**.
+ *
+ * Darunter (schlicht, gewoehnlich - die weissen und grauen Relikte) haelt der
+ * Fang die Serie nur am Leben, ohne sie zu erhoehen. Das ist der taktische
+ * Kern: Wer keinen farbigen Fang in Reichweite hat, nimmt bewusst ein
+ * weisses, um die Kette nicht zu verlieren - und bezahlt dafuer mit einer
+ * Stufe, die nicht steigt.
+ *
+ * Der Wert ist ein Index in `RARITY_IDS` (0 = schlicht ... 5 = legendaer).
+ */
+export const SERIES_RAISING_MIN_RARITY_INDEX = 2;
 
 /** Ab wie vielen zeitnah gefangenen Relikten welcher Punktemultiplikator gilt. */
 export const COMBO_TIERS: readonly { readonly minCombo: number; readonly multiplier: number }[] = [
@@ -185,6 +215,34 @@ export const COMBO_TIERS: readonly { readonly minCombo: number; readonly multipl
   { minCombo: 35, multiplier: 1.65 },
   { minCombo: 50, multiplier: 1.85 },
 ];
+
+/**
+ * Die Schleife, die der Spieler ab einer laufenden Serie hinter sich herzieht.
+ *
+ * **Warum die Laenge gedeckelt ist.** Eine Spur, die unbegrenzt mitwaechst,
+ * verdeckt auf einem Handy im Hochformat genau das, was man fangen will - und
+ * die Steuerung ist ausdruecklich so gebaut, dass die Hand das Ziel nicht
+ * verdeckt (`InputController`). Ab Stufe 4 waechst deshalb nur noch die Farbe
+ * weiter, nicht die Laenge. Das ist auch lesbarer: "lang" von "sehr lang" zu
+ * unterscheiden gelingt im Spiel niemandem, "gold statt tuerkis" sofort.
+ *
+ * `lifespanMs` steuert die Laenge - die Spur ist ein Partikel-Emitter, ihre
+ * sichtbare Laenge ergibt sich daraus, wie lange ein Partikel lebt.
+ */
+export const SERIES_TRAIL_TIERS: readonly {
+  readonly minSeries: number;
+  readonly lifespanMs: number;
+  readonly color: number;
+}[] = [
+  { minSeries: 5, lifespanMs: 620, color: 0x4aa3ff },
+  { minSeries: 10, lifespanMs: 820, color: 0x35d6c3 },
+  { minSeries: 20, lifespanMs: 1020, color: 0x5ce27a },
+  { minSeries: 35, lifespanMs: 1200, color: 0xffc738 },
+  { minSeries: 50, lifespanMs: 1200, color: 0xfff2c4 },
+];
+
+/** Lebensdauer der Spur ohne laufende Serie - der ruhige Grundzustand. */
+export const SERIES_TRAIL_BASE_LIFESPAN_MS = 420;
 
 // --- Progression ------------------------------------------------------------
 

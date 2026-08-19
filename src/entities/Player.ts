@@ -10,7 +10,11 @@
 
 import Phaser from 'phaser';
 
-import { PLAYER_ACCEL_RESPONSE, PLAYER_TRAIL_MIN_SPEED } from '@/config/GameConfig';
+import {
+  PLAYER_ACCEL_RESPONSE,
+  PLAYER_TRAIL_MIN_SPEED,
+  SERIES_TRAIL_BASE_LIFESPAN_MS,
+} from '@/config/GameConfig';
 import type { PlayerStats } from '@/config/talents';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
@@ -25,6 +29,9 @@ export class Player extends Phaser.GameObjects.Container {
   private slowRemainingMs = 0;
   private slowFactor = 1;
   private inertiaFactor = 1;
+  /** Weltfarbe - die Spur faellt darauf zurueck, wenn keine Serie laeuft. */
+  private accentColor: number;
+  private seriesTier: { lifespanMs: number; color: number } | null = null;
 
   constructor(
     scene: Phaser.Scene,
@@ -35,6 +42,7 @@ export class Player extends Phaser.GameObjects.Container {
     textureKey: TextureKeyValue = TextureKey.PlayerCore,
   ) {
     super(scene, x, y);
+    this.accentColor = accentColor;
 
     this.aura = scene.add
       .image(0, 0, TextureKey.Glow)
@@ -52,7 +60,7 @@ export class Player extends Phaser.GameObjects.Container {
     // Partikel im Container wuerden mit der Figur mitwandern - eine Spur muss
     // aber dort liegen bleiben, wo die Figur war.
     this.trail = scene.add.particles(0, 0, TextureKey.Glow, {
-      lifespan: 420,
+      lifespan: SERIES_TRAIL_BASE_LIFESPAN_MS,
       scale: { start: 0.42, end: 0 },
       alpha: { start: 0.5, end: 0 },
       tint: accentColor,
@@ -147,9 +155,41 @@ export class Player extends Phaser.GameObjects.Container {
   }
 
   setAccent(color: number): void {
+    this.accentColor = color;
     this.aura.setTint(color);
     this.halo.setTint(color);
-    this.trail.setParticleTint(color);
+    if (this.seriesTier === null) this.trail.setParticleTint(color);
+  }
+
+  /**
+   * Setzt die Schleife auf die Stufe der laufenden Serie.
+   *
+   * Die sichtbare Laenge einer Partikelspur ergibt sich aus der Lebensdauer
+   * ihrer Partikel - laenger lebende Partikel bleiben weiter hinten liegen.
+   * Deshalb wird `lifespan` gesetzt und nicht etwa die Partikelzahl: Die
+   * Dichte der Spur bleibt so gleich, nur ihr Nachlauf waechst.
+   *
+   * `null` stellt den ruhigen Grundzustand her (kurze Spur in der Weltfarbe).
+   */
+  setSeriesTrail(tier: { lifespanMs: number; color: number } | null): void {
+    // Ohne diesen Vergleich wuerde bei jedem Fang neu gesetzt - `lifespan`
+    // wirkt aber nur auf neu erzeugte Partikel, und ein Farbwechsel je Frame
+    // laesst die Spur flackern.
+    if (tier === null) {
+      if (this.seriesTier === null) return;
+      this.seriesTier = null;
+      this.trail.lifespan = SERIES_TRAIL_BASE_LIFESPAN_MS;
+      this.trail.setParticleTint(this.accentColor);
+      return;
+    }
+
+    if (this.seriesTier?.color === tier.color && this.seriesTier?.lifespanMs === tier.lifespanMs) {
+      return;
+    }
+
+    this.seriesTier = tier;
+    this.trail.lifespan = tier.lifespanMs;
+    this.trail.setParticleTint(tier.color);
   }
 
   /**

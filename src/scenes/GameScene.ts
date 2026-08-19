@@ -43,7 +43,7 @@ import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
-import { ScoreSystem } from '@/systems/ScoreSystem';
+import { ScoreSystem, trailTierForSeries } from '@/systems/ScoreSystem';
 import { SpawnSystem } from '@/systems/SpawnSystem';
 import { Depth } from '@/ui/depth';
 import { planetTextureForVariant, playerTextureForLevel } from '@/ui/textures';
@@ -229,6 +229,7 @@ export class GameScene extends Phaser.Scene {
     const { comboReset } = this.scoring.update(deltaMs);
     if (comboReset) {
       eventBus.emitEvent(GameEvent.ComboChanged, { combo: 0, multiplier: 1 });
+      this.player.setSeriesTrail(null);
     }
   }
 
@@ -357,6 +358,7 @@ export class GameScene extends Phaser.Scene {
       bonus: outcome.streakBonus,
     });
     this.player.pulse(orb.rarity.color);
+    this.player.setSeriesTrail(trailTierForSeries(outcome.combo));
 
     // Kamera-Ruckler skaliert mit dem Wert - Legendaeres soll sich fett anfuehlen.
     if (isImpact) {

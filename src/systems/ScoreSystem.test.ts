@@ -8,15 +8,17 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { COMBO_GRACE_MS, COMBO_TIERS } from '@/config/GameConfig';
+import { COMBO_GRACE_MS, COMBO_TIERS, SERIES_TRAIL_TIERS } from '@/config/GameConfig';
 import { RARITY_BY_ID } from '@/config/rarities';
 import { resolveStats } from '@/config/talents';
 import { WORLDS } from '@/config/worlds';
-import { multiplierForCombo, ScoreSystem } from '@/systems/ScoreSystem';
+import { multiplierForCombo, ScoreSystem, trailTierForSeries } from '@/systems/ScoreSystem';
 
 const POOR = RARITY_BY_ID.poor;
 const LEGENDARY = RARITY_BY_ID.legendary;
 const RARE = RARITY_BY_ID.rare;
+const UNCOMMON = RARITY_BY_ID.uncommon;
+const COMMON = RARITY_BY_ID.common;
 
 /** Ein System ohne Talent-Boni: Multiplikatoren neutral bei 1. */
 function createSystem(scoreMultiplier = 1, xpMultiplier = 1): ScoreSystem {
@@ -49,16 +51,16 @@ describe('multiplierForCombo', () => {
 });
 
 describe('ScoreSystem - Fangen', () => {
-  it('zaehlt Punkte mit dem Multiplikator der NEUEN Combo', () => {
+  it('zaehlt Punkte mit dem Multiplikator der NEUEN Serie', () => {
     const system = createSystem();
 
-    // Erster Fang: Combo 1, damit Multiplikator 1.
-    const outcome = system.registerCollect(POOR!);
+    // Erster farbiger Fang: Serie 1, damit Multiplikator 1.
+    const outcome = system.registerCollect(RARE!);
 
     expect(outcome.combo).toBe(1);
     expect(outcome.multiplier).toBe(1);
-    expect(outcome.awardedPoints).toBe(POOR!.points);
-    expect(system.currentScore).toBe(POOR!.points);
+    expect(outcome.awardedPoints).toBe(RARE!.points);
+    expect(system.currentScore).toBe(RARE!.points);
   });
 
   it('meldet einen Stufensprung nur in dem Fang, der ihn ausloest', () => {
@@ -66,7 +68,7 @@ describe('ScoreSystem - Fangen', () => {
     const tier = COMBO_TIERS[1];
     expect(tier).toBeDefined();
 
-    const outcomes = Array.from({ length: tier!.minCombo }, () => system.registerCollect(POOR!));
+    const outcomes = Array.from({ length: tier!.minCombo }, () => system.registerCollect(RARE!));
 
     const jumpIndex = outcomes.findIndex((o) => o.multiplierIncreased);
     expect(outcomes[jumpIndex]?.combo).toBe(tier!.minCombo);
@@ -80,10 +82,10 @@ describe('ScoreSystem - Fangen', () => {
     expect(system.registerCollect(POOR!).awardedPoints).toBe(Math.round(POOR!.points * 1.5));
   });
 
-  it('haelt die Flow-Kette auch ueber unterschiedliche Seltenheiten', () => {
+  it('steigert die Serie ueber unterschiedliche farbige Seltenheiten hinweg', () => {
     const system = createSystem();
-    system.registerCollect(POOR!);
-    system.registerCollect(POOR!);
+    system.registerCollect(RARE!);
+    system.registerCollect(UNCOMMON!);
     const outcome = system.registerCollect(LEGENDARY!);
     expect(outcome.combo).toBe(3);
     expect(outcome.multiplier).toBe(multiplierForCombo(3));
@@ -94,7 +96,7 @@ describe('ScoreSystem - Fangen', () => {
 describe('ScoreSystem - Combo-Zerfall', () => {
   it('haelt die Combo, solange das Fenster laeuft', () => {
     const system = createSystem();
-    system.registerCollect(POOR!);
+    system.registerCollect(RARE!);
 
     expect(system.update(COMBO_GRACE_MS - 1).comboReset).toBe(false);
     expect(system.currentCombo).toBe(1);
@@ -102,7 +104,7 @@ describe('ScoreSystem - Combo-Zerfall', () => {
 
   it('setzt die Combo zurueck, wenn das Fenster ablaeuft', () => {
     const system = createSystem();
-    system.registerCollect(POOR!);
+    system.registerCollect(RARE!);
 
     expect(system.update(COMBO_GRACE_MS).comboReset).toBe(true);
     expect(system.currentCombo).toBe(0);
@@ -110,7 +112,7 @@ describe('ScoreSystem - Combo-Zerfall', () => {
 
   it('meldet den Zerfall nur einmal', () => {
     const system = createSystem();
-    system.registerCollect(POOR!);
+    system.registerCollect(RARE!);
     system.update(COMBO_GRACE_MS);
 
     expect(system.update(COMBO_GRACE_MS).comboReset).toBe(false);
@@ -118,10 +120,10 @@ describe('ScoreSystem - Combo-Zerfall', () => {
 
   it('startet das Fenster bei jedem Fang neu', () => {
     const system = createSystem();
-    system.registerCollect(POOR!);
+    system.registerCollect(RARE!);
     system.update(COMBO_GRACE_MS - 1);
 
-    system.registerCollect(POOR!);
+    system.registerCollect(RARE!);
 
     expect(system.comboTimerRatio).toBe(1);
     expect(system.update(COMBO_GRACE_MS - 1).comboReset).toBe(false);
@@ -130,7 +132,7 @@ describe('ScoreSystem - Combo-Zerfall', () => {
 
   it('bricht die Combo NICHT bei einem verpassten Relikt', () => {
     const system = createSystem();
-    system.registerCollect(POOR!);
+    system.registerCollect(RARE!);
 
     system.registerMiss();
 
@@ -142,7 +144,7 @@ describe('ScoreSystem - Combo-Zerfall', () => {
     const system = createSystem();
     expect(system.comboTimerRatio).toBe(0);
 
-    system.registerCollect(POOR!);
+    system.registerCollect(RARE!);
     expect(system.comboTimerRatio).toBe(1);
 
     system.update(COMBO_GRACE_MS / 2);
@@ -172,6 +174,100 @@ describe('ScoreSystem - Flow-Kette', () => {
     const restarted = system.registerCollect(RARE!);
     expect(restarted.sameRarityStreak).toBe(1);
     expect(restarted.multiplier).toBe(1);
+  });
+});
+
+describe('ScoreSystem - Serie: halten vs. steigern', () => {
+  it('steigert die Serie bei einem farbigen Fang', () => {
+    const system = createSystem();
+    expect(system.registerCollect(UNCOMMON!).combo).toBe(1);
+    expect(system.registerCollect(RARE!).combo).toBe(2);
+  });
+
+  it('steigert die Serie NICHT bei einem weissen Fang', () => {
+    const system = createSystem();
+    system.registerCollect(RARE!);
+    system.registerCollect(RARE!);
+
+    const gerettet = system.registerCollect(POOR!);
+
+    expect(gerettet.combo).toBe(2);
+    expect(gerettet.comboIncreased).toBe(false);
+    expect(gerettet.seriesHeldOnly).toBe(true);
+  });
+
+  it('haelt mit einem weissen Fang das Fenster offen', () => {
+    const system = createSystem();
+    system.registerCollect(RARE!);
+    system.update(COMBO_GRACE_MS - 1);
+
+    // Ohne diesen Rettungsfang waere die Serie im naechsten Frame weg.
+    system.registerCollect(COMMON!);
+
+    expect(system.update(COMBO_GRACE_MS - 1).comboReset).toBe(false);
+    // Der weisse Fang hat gerettet, aber nicht gesteigert: Serie bleibt 1.
+    expect(system.currentCombo).toBe(1);
+  });
+
+  it('laesst die Serie trotz weisser Faenge ablaufen, wenn das Fenster endet', () => {
+    const system = createSystem();
+    system.registerCollect(RARE!);
+    system.registerCollect(POOR!);
+
+    expect(system.update(COMBO_GRACE_MS).comboReset).toBe(true);
+    expect(system.currentCombo).toBe(0);
+  });
+
+  it('zeigt ein laufendes Fenster auch bei Serie 0 - nur weisse Faenge', () => {
+    const system = createSystem();
+    system.registerCollect(POOR!);
+
+    // Die Serie steht auf 0, das Fenster laeuft trotzdem. Zeigte die Anzeige
+    // hier 0, saehe der Spieler nicht, dass sein Fang gewirkt hat.
+    expect(system.currentCombo).toBe(0);
+    expect(system.comboTimerRatio).toBe(1);
+  });
+
+  it('meldet keinen Zerfall, wenn nie eine Serie bestand', () => {
+    const system = createSystem();
+    system.registerCollect(POOR!);
+
+    expect(system.update(COMBO_GRACE_MS).comboReset).toBe(false);
+  });
+
+  it('zaehlt weisse Faenge weiterhin fuer Punkte und Statistik', () => {
+    const system = createSystem();
+    const outcome = system.registerCollect(POOR!);
+
+    expect(outcome.awardedPoints).toBe(POOR!.points);
+    expect(system.toRunStats(WORLDS[0]!.id).collected.poor).toBe(1);
+  });
+});
+
+describe('trailTierForSeries', () => {
+  it('gibt unterhalb der ersten Stufe keine Schleife', () => {
+    expect(trailTierForSeries(0)).toBeNull();
+    expect(trailTierForSeries(SERIES_TRAIL_TIERS[0]!.minSeries - 1)).toBeNull();
+  });
+
+  it('liefert fuer jede konfigurierte Stufe genau deren Werte', () => {
+    for (const tier of SERIES_TRAIL_TIERS) {
+      expect(trailTierForSeries(tier.minSeries)).toEqual({
+        lifespanMs: tier.lifespanMs,
+        color: tier.color,
+      });
+    }
+  });
+
+  it('haelt eine Stufe bis zur naechsten', () => {
+    const [erste, zweite] = SERIES_TRAIL_TIERS;
+    expect(trailTierForSeries(zweite!.minSeries - 1)?.color).toBe(erste!.color);
+  });
+
+  it('deckelt die Laenge, damit die Spur das Spielfeld nicht verdeckt', () => {
+    const laengste = Math.max(...SERIES_TRAIL_TIERS.map((t) => t.lifespanMs));
+    // Auch weit jenseits der hoechsten Stufe waechst die Laenge nicht weiter.
+    expect(trailTierForSeries(500)?.lifespanMs).toBe(laengste);
   });
 });
 

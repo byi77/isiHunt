@@ -9,6 +9,62 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Geaendert
+
+- **Die Serie ist jetzt eine Entscheidung, keine Selbstverstaendlichkeit.**
+  Zwei Aenderungen greifen ineinander:
+
+  1. Das Zeitfenster faellt von 1800 auf **900 ms**.
+  2. Die Serie wird nur noch von **farbigen** Relikten gesteigert
+     (ungewoehnlich und seltener). Weisse halten sie am Leben, ohne sie zu
+     erhoehen.
+
+  Vorher steigerte jeder Fang die Serie, und pro Zeitfenster erschienen 2,9
+  bis 5,3 neue Relikte - sie riss praktisch nie. Im automatisierten Playtest
+  lief sie regelmaessig ueber 180 Faenge ohne einen einzigen Abriss; es gab
+  nie einen Moment, in dem etwas zu entscheiden war.
+
+  Jetzt erscheinen farbige Relikte im Schnitt alle 1,6 s (Rundenanfang) bis
+  0,9 s (Rundenende) - oft zu selten fuer das Fenster. Genau dann entsteht die
+  Wahl: das weisse Relikt in Reichweite nehmen und die Serie retten, oder das
+  farbige jagen und den Abriss riskieren. Gemessen ueber drei simulierte
+  Runden: beste Serie von 183 auf **19**, Abrisse von praktisch 0 auf **11 pro
+  Runde**, Score von rund 2500 auf rund 1580.
+
+  Zum Nachjustieren fuer juengere Spieler zuerst `COMBO_GRACE_MS` erhoehen -
+  der Wert wirkt direkter als jede andere Stellschraube.
+
+### Hinzugefuegt
+
+- **Eine Schleife hinter der Figur zeigt die laufende Serie.** Ab Serie 5
+  sichtbar; Laenge und Farbe steigen mit der Stufe (blau, tuerkis, gruen,
+  gold, gleissend). Umgesetzt ueber die Lebensdauer der bestehenden
+  Partikelspur - laenger lebende Partikel bleiben weiter hinten liegen, die
+  Dichte bleibt dabei gleich.
+
+  **Die Laenge ist ab Stufe 4 gedeckelt.** Eine unbegrenzt wachsende Spur
+  wuerde auf einem Handy im Hochformat genau die Relikte verdecken, die man
+  fangen will - und die Steuerung ist ausdruecklich so gebaut, dass die Hand
+  das Ziel nicht verdeckt. Ab dort traegt nur noch die Farbe die Information.
+
+### Behoben
+
+- **Die Anzeige des Serien-Fensters stand auf 0, sobald nur weisse Relikte
+  gefangen wurden.** `comboTimerRatio` und der Zerfall in `ScoreSystem.update`
+  pruefen jetzt den Timer statt die Serie: Ein weisser Fang haelt das Fenster
+  offen, auch wenn die Serie dabei auf 0 steht. Ohne die Unterscheidung saehe
+  der Spieler nicht, dass sein Rettungsfang gewirkt hat - und ein Fenster bei
+  Serie 0 waere nie abgelaufen.
+
+- **Die Tests der "Flow-Kette" prueften eine Mechanik, die es nicht gab.**
+  Ihre Namen sprachen von "gleicher Seltenheit", der Code kannte so etwas
+  aber nie: `sameRarityStreak` war schlicht ein zweiter Name fuer die Combo.
+  Die Tests bestanden, weil beide Werte identisch waren, und der Test "setzt
+  die Serie bei einer anderen Seltenheit zurueck" war gruen, weil das
+  Zeitfenster ablief - nicht wegen der Seltenheit. Sie pruefen jetzt die
+  tatsaechliche Regel; elf neue Tests decken Halten, Steigern und die
+  Schleifenstufen ab.
+
 ### Hinzugefuegt
 
 - **`npm run playtest -- --sim` rechnet die Runden, statt sie abzuwarten.**
