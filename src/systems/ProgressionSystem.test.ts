@@ -17,6 +17,7 @@ import {
 } from '@/config/GameConfig';
 import { ACHIEVEMENT_BY_ID } from '@/config/achievements';
 import { emptyRarityCounts } from '@/config/rarities';
+import { SHIP_COLORS, SHIP_SHAPES } from '@/config/shop';
 import { DEFAULT_WORLD_ID, WORLDS } from '@/config/worlds';
 import type { RarityId } from '@/config/rarities';
 import type * as ProgressionSystem from '@/systems/ProgressionSystem';
@@ -431,25 +432,29 @@ describe('Laden: Formen und Farben', () => {
       data.coins = 1000;
     });
 
+    // Preis aus der Konfiguration lesen statt fest eintragen: Ein
+    // Balancing-Wechsel soll diesen Test nicht rot faerben, ein Bruch der
+    // Kaufregel dagegen schon.
+    const preis = SHIP_SHAPES.find((shape) => shape.id === 'delta')!.cost;
     const ergebnis = Progression.purchaseShipShape('delta');
 
     expect(ergebnis).not.toBeNull();
     const save = SaveSystem.load();
     expect(save.ownedShipShapes).toContain('delta');
     expect(save.shipShape).toBe('delta');
-    expect(save.coins).toBe(1000 - 400);
-    expect(save.coinsSpent).toBe(400);
+    expect(save.coins).toBe(1000 - preis);
+    expect(save.coinsSpent).toBe(preis);
   });
 
   it('kauft nichts, wenn das Guthaben nicht reicht', () => {
     SaveSystem.update((data) => {
-      data.coins = 100;
+      data.coins = 1;
     });
 
     expect(Progression.purchaseShipShape('delta')).toBeNull();
     const save = SaveSystem.load();
     expect(save.ownedShipShapes).not.toContain('delta');
-    expect(save.coins).toBe(100);
+    expect(save.coins).toBe(1);
   });
 
   it('kauft eine bereits besessene Form kein zweites Mal', () => {
@@ -486,9 +491,11 @@ describe('Laden: Formen und Farben', () => {
       data.coins = 1000;
     });
 
+    const preis = SHIP_COLORS.find((color) => color.id === 'gold')!.cost;
+
     expect(Progression.purchaseShipColor('gold')).not.toBeNull();
     expect(SaveSystem.load().shipColor).toBe('gold');
-    expect(SaveSystem.load().coins).toBe(1000 - 300);
+    expect(SaveSystem.load().coins).toBe(1000 - preis);
     expect(Progression.purchaseShipColor('gold')).toBeNull();
   });
 

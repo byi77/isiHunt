@@ -145,7 +145,7 @@ src/input/      InputController (Touch + Tastatur), DebugKeys
 src/scenes/     Boot, Menu, Game, Hud, Result
 src/systems/    Save, Progression, Score, Spawn — Regeln ohne Darstellung
 src/types/      SaveData, RunStats, ProgressionResult
-src/ui/         theme, textures (prozedural), widgets
+src/ui/         theme, textures (prozedural), shipShapes, widgets
 ```
 
 ## Wiederkehrende Fallen

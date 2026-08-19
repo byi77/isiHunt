@@ -11,6 +11,49 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Der Laden hat jetzt 30 Fluggestalten und 30 Farben.** Fuenf Kategorien:
+  Raumjaeger (13), Flugzeuge (6), fliegende Figuren (5), fliegende Tiere (4)
+  und Drohnen (2). Preise zwischen 0 und 2 600 Muenzen; die teuerste Form
+  entspricht rund 52 Runden.
+
+  Die Farben decken warme, kuehle, gruene, violette und neutrale Toene ab,
+  dazu fuenf teurere "Edelsteine" als Fernziel (Kupfer bis Platin).
+
+  Zu den Vorbildern: Die Science-Fiction-Formen bilden **Typen** ab - ein
+  Jaeger mit vier gespreizten Fluegeln, ein Abfangjaeger mit Kanzel zwischen
+  zwei Flaechen. Solche Silhouetten gehoeren zum Genre-Vokabular. Konkrete
+  geschuetzte Entwuerfe werden bewusst nicht nachgebaut; das Spiel liegt
+  oeffentlich.
+
+- **Neue Datei `src/ui/shipShapes.ts`** mit allen Zeichnungen. Sieben Formen
+  passten noch als `if`-Kette in `textures.ts`; bei dreissig waere das
+  unlesbar geworden. Zeichenhelfer (`voll`, `gespiegelt`, `figur`, `vogel`,
+  `drohne`) halten die einzelnen Formen kurz.
+
+  Die Datei importiert Phaser bewusst nur als Typ: Ein Wertimport zieht
+  dessen Canvas-Erkennung mit und laesst die Datei ausserhalb eines Browsers
+  nicht laden - dieselbe Falle wie frueher bei `ScoreSystem`. Aufgefallen ist
+  das erst, als die Balance-Tests die Zeichnungen importierten.
+
+### Behoben
+
+- **Bei dreissig Karten lagen Knoepfe ausserhalb der Spielflaeche.** Der
+  Playtest meldete das zu Recht: Ein anklickbares Element, das niemand sehen
+  kann, ist ein Bedienfehler. Karten ausserhalb des Sichtfensters werden
+  jetzt ausgeblendet und ihre Trefferflaeche abgeschaltet.
+
+- **Durchgescrollte Karten schienen durch den Kopfbereich.** Die deckende
+  Flaeche darunter war halbtransparent, damit der Hintergrund sichtbar
+  bleibt. Bei dreissig Eintraegen las sich das als Doppelbelichtung -
+  Lesbarkeit geht hier vor Atmosphaere.
+
+- **Zwei Tests hingen an konkreten Preisen** (Delta 400, Gold 300) und
+  brachen bei der Neupreisung. Sie lesen die Kosten jetzt aus der
+  Konfiguration - ein Balancing-Wechsel soll keinen Test rot faerben, ein
+  Bruch der Kaufregel schon.
+
+### Hinzugefuegt
+
 - **Der Laden verkauft Schiffsformen und Farben.** Sieben Formen (Pfeil bis
   Krone, 0 bis 3 000 Muenzen) und sieben Farben (Weltfarbe bis Rosé, 0 bis 700).
   Beides ist frei kombinierbar und wird sofort getragen. Zwei Reiter trennen

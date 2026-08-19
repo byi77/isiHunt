@@ -31,7 +31,15 @@ export interface ShipShapeDef {
   readonly skinIndex: number;
 }
 
-export type ShipShapeId = 'arrow' | 'delta' | 'sickle' | 'ring' | 'twin' | 'star' | 'crown';
+/**
+ * Bewusst ein freier String statt einer Union.
+ *
+ * Bei dreissig und mehr Formen muesste jede Id an zwei Stellen gepflegt
+ * werden. `getShipShape()` faengt Unbekanntes ohnehin mit dem Pfeil ab, und
+ * ein Balance-Test prueft, dass jede Id genau einmal vorkommt und jeder
+ * `skinIndex` eine Zeichnung hat.
+ */
+export type ShipShapeId = string;
 
 /**
  * Preise steigen mit der Auffaelligkeit der Form, nicht mit der Zeichenarbeit.
@@ -42,6 +50,7 @@ export type ShipShapeId = 'arrow' | 'delta' | 'sickle' | 'ring' | 'twin' | 'star
  * entspricht damit etwa 60 Runden - ein Fernziel, aber kein Grind ohne Ende.
  */
 export const SHIP_SHAPES: readonly ShipShapeDef[] = [
+  // --- Raumjaeger ---
   {
     id: 'arrow',
     name: 'Pfeil',
@@ -53,43 +62,212 @@ export const SHIP_SHAPES: readonly ShipShapeDef[] = [
     id: 'delta',
     name: 'Delta',
     description: 'Breite Flügel, ruhige Fläche.',
-    cost: 400,
+    cost: 300,
     skinIndex: 1,
   },
   {
     id: 'sickle',
     name: 'Sichel',
     description: 'Weit ausgestellte Spitzen, schmale Mitte.',
-    cost: 800,
+    cost: 500,
     skinIndex: 2,
   },
   {
     id: 'ring',
-    name: 'Ring',
+    name: 'Ringjäger',
     description: 'Ein offener Kreis um den Rumpf.',
-    cost: 1_200,
+    cost: 700,
     skinIndex: 3,
   },
   {
     id: 'twin',
     name: 'Doppelrumpf',
     description: 'Zwei Hälften, eine Brücke.',
-    cost: 1_800,
+    cost: 900,
     skinIndex: 4,
   },
   {
     id: 'star',
-    name: 'Stern',
+    name: 'Sternenkreuzer',
     description: 'Sechs Zacken, in jede Richtung gleich.',
-    cost: 2_400,
+    cost: 1_100,
     skinIndex: 5,
   },
   {
     id: 'crown',
     name: 'Krone',
     description: 'Drei Zinnen auf breiter Basis.',
-    cost: 3_000,
+    cost: 1_300,
     skinIndex: 6,
+  },
+  {
+    id: 'quadwing',
+    name: 'Vierflügler',
+    description: 'Vier gespreizte Tragflächen um einen Spindelrumpf.',
+    cost: 1_500,
+    skinIndex: 7,
+  },
+  {
+    id: 'podfighter',
+    name: 'Kanzeljäger',
+    description: 'Kugelkanzel zwischen zwei senkrechten Flächen.',
+    cost: 1_700,
+    skinIndex: 8,
+  },
+  {
+    id: 'wedge',
+    name: 'Keilkreuzer',
+    description: 'Langer Keil, breites Heck.',
+    cost: 1_900,
+    skinIndex: 9,
+  },
+  {
+    id: 'saucer',
+    name: 'Scheibenfrachter',
+    description: 'Runde Scheibe mit vorstehender Kanzel.',
+    cost: 2_100,
+    skinIndex: 10,
+  },
+  {
+    id: 'probe',
+    name: 'Sonde',
+    description: 'Kugel mit drei Auslegern. Kennt kein Vorne.',
+    cost: 2_300,
+    skinIndex: 11,
+  },
+  {
+    id: 'funnel',
+    name: 'Trichter',
+    description: 'Weit geöffneter Einlass, schmales Heck.',
+    cost: 2_500,
+    skinIndex: 12,
+  },
+
+  // --- Flugzeuge ---
+  {
+    id: 'glider',
+    name: 'Gleitschirm',
+    description: 'Breite Kappe, ruhiger Flug.',
+    cost: 600,
+    skinIndex: 18,
+  },
+  {
+    id: 'jet',
+    name: 'Düsenjet',
+    description: 'Pfeilflügel, Leitwerk, spitze Nase.',
+    cost: 800,
+    skinIndex: 13,
+  },
+  {
+    id: 'prop',
+    name: 'Propellermaschine',
+    description: 'Gerade Tragfläche, runder Rumpf.',
+    cost: 1_000,
+    skinIndex: 14,
+  },
+  {
+    id: 'biplane',
+    name: 'Doppeldecker',
+    description: 'Zwei Tragflächen mit Streben dazwischen.',
+    cost: 1_200,
+    skinIndex: 15,
+  },
+  {
+    id: 'rocket',
+    name: 'Rakete',
+    description: 'Schlanker Zylinder mit drei Finnen.',
+    cost: 1_400,
+    skinIndex: 17,
+  },
+  {
+    id: 'flyingwing',
+    name: 'Nurflügler',
+    description: 'Reine Fläche ohne abgesetzten Rumpf.',
+    cost: 1_600,
+    skinIndex: 16,
+  },
+
+  // --- Fliegende Figuren ---
+  {
+    id: 'astronaut',
+    name: 'Astronaut',
+    description: 'Helm auf, Arme angelegt.',
+    cost: 1_800,
+    skinIndex: 20,
+  },
+  {
+    id: 'hero',
+    name: 'Held',
+    description: 'Beide Arme nach vorn gestreckt.',
+    cost: 2_000,
+    skinIndex: 19,
+  },
+  {
+    id: 'caped',
+    name: 'Umhangflieger',
+    description: 'Der Umhang weht weit hinter ihm her.',
+    cost: 2_200,
+    skinIndex: 21,
+  },
+  {
+    id: 'winged',
+    name: 'Flügelwesen',
+    description: 'Zwei große Schwingen tragen die Gestalt.',
+    cost: 2_400,
+    skinIndex: 22,
+  },
+  {
+    id: 'jetpack',
+    name: 'Düsenrucksack',
+    description: 'Zwei Schubdüsen am Rücken.',
+    cost: 2_600,
+    skinIndex: 23,
+  },
+
+  // --- Fliegende Tiere ---
+  {
+    id: 'swallow',
+    name: 'Schwalbe',
+    description: 'Spitze Schwingen, gegabelter Schwanz.',
+    cost: 900,
+    skinIndex: 25,
+  },
+  {
+    id: 'eagle',
+    name: 'Adler',
+    description: 'Breite Schwingen, gefächelter Schwanz.',
+    cost: 1_000,
+    skinIndex: 24,
+  },
+  {
+    id: 'dragonfly',
+    name: 'Libelle',
+    description: 'Vier schmale Flügel, langer Hinterleib.',
+    cost: 1_300,
+    skinIndex: 27,
+  },
+  {
+    id: 'bat',
+    name: 'Fledermaus',
+    description: 'Gezackte Häute zwischen den Fingern.',
+    cost: 1_500,
+    skinIndex: 26,
+  },
+
+  // --- Drohnen ---
+  {
+    id: 'quadcopter',
+    name: 'Quadrokopter',
+    description: 'Vier Rotoren im Kreuz.',
+    cost: 1_100,
+    skinIndex: 28,
+  },
+  {
+    id: 'hexacopter',
+    name: 'Hexakopter',
+    description: 'Sechs Rotoren, dichteres Muster.',
+    cost: 1_700,
+    skinIndex: 29,
   },
 ];
 
@@ -102,7 +280,7 @@ export interface ShipColorDef {
   readonly color: number | null;
 }
 
-export type ShipColorId = 'world' | 'gold' | 'ice' | 'ember' | 'toxic' | 'violet' | 'rose';
+export type ShipColorId = string;
 
 /**
  * Farben sind billiger als Formen: Sie aendern die Silhouette nicht und
@@ -114,12 +292,47 @@ export type ShipColorId = 'world' | 'gold' | 'ice' | 'ember' | 'toxic' | 'violet
  */
 export const SHIP_COLORS: readonly ShipColorDef[] = [
   { id: 'world', name: 'Weltfarbe', cost: 0, color: null },
-  { id: 'gold', name: 'Gold', cost: 300, color: 0xffd479 },
-  { id: 'ice', name: 'Eis', cost: 300, color: 0x8fe3ff },
-  { id: 'ember', name: 'Glut', cost: 500, color: 0xff7a3c },
-  { id: 'toxic', name: 'Giftgrün', cost: 500, color: 0x9dff4f },
-  { id: 'violet', name: 'Violett', cost: 700, color: 0xc084fc },
-  { id: 'rose', name: 'Rosé', cost: 700, color: 0xff8fc4 },
+
+  // Warme Toene
+  { id: 'gold', name: 'Gold', cost: 200, color: 0xffd479 },
+  { id: 'sand', name: 'Sand', cost: 200, color: 0xe8cfa0 },
+  { id: 'amber', name: 'Bernstein', cost: 200, color: 0xffb340 },
+  { id: 'peach', name: 'Pfirsich', cost: 250, color: 0xffb59e },
+  { id: 'ember', name: 'Glut', cost: 300, color: 0xff7a3c },
+  { id: 'crimson', name: 'Karmin', cost: 300, color: 0xff4d5e },
+  { id: 'rust', name: 'Rost', cost: 300, color: 0xc75b32 },
+
+  // Kuehle Toene
+  { id: 'ice', name: 'Eis', cost: 200, color: 0x8fe3ff },
+  { id: 'steel', name: 'Stahl', cost: 200, color: 0x9aa3bd },
+  { id: 'azure', name: 'Azur', cost: 250, color: 0x4aa3ff },
+  { id: 'teal', name: 'Petrol', cost: 250, color: 0x35d6c3 },
+  { id: 'mint', name: 'Minze', cost: 250, color: 0x9ff7d8 },
+  { id: 'deepsea', name: 'Tiefsee', cost: 300, color: 0x2f6df0 },
+  { id: 'midnight', name: 'Mitternacht', cost: 400, color: 0x5560c8 },
+
+  // Gruentoene
+  { id: 'forest', name: 'Waldgrün', cost: 250, color: 0x4faf5c },
+  { id: 'lime', name: 'Limette', cost: 250, color: 0xd4ff5c },
+  { id: 'toxic', name: 'Giftgrün', cost: 300, color: 0x9dff4f },
+
+  // Violett und Rosa
+  { id: 'violet', name: 'Violett', cost: 350, color: 0xc084fc },
+  { id: 'orchid', name: 'Orchidee', cost: 350, color: 0xe07aff },
+  { id: 'rose', name: 'Rosé', cost: 350, color: 0xff8fc4 },
+  { id: 'magenta', name: 'Magenta', cost: 400, color: 0xff4fd8 },
+
+  // Helle und dunkle Grundtoene
+  { id: 'ash', name: 'Asche', cost: 250, color: 0x6d7488 },
+  { id: 'snow', name: 'Schnee', cost: 300, color: 0xffffff },
+  { id: 'onyx', name: 'Onyx', cost: 500, color: 0x3a3f52 },
+
+  // Besondere - die teuersten, als Fernziel
+  { id: 'copper', name: 'Kupfer', cost: 600, color: 0xd98d52 },
+  { id: 'emerald', name: 'Smaragd', cost: 700, color: 0x2fd97a },
+  { id: 'sapphire', name: 'Saphir', cost: 700, color: 0x3d7bff },
+  { id: 'ruby', name: 'Rubin', cost: 700, color: 0xff2f5e },
+  { id: 'platinum', name: 'Platin', cost: 900, color: 0xe6f0ff },
 ];
 
 export const DEFAULT_SHIP_SHAPE: ShipShapeId = 'arrow';

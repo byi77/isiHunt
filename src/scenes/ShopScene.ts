@@ -91,6 +91,7 @@ export class ShopScene extends Phaser.Scene {
     this.buildReiter();
     this.buildListe(world.accent);
     this.attachScroll();
+    this.blendeAusserhalbAus();
 
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
   }
@@ -105,12 +106,15 @@ export class ShopScene extends Phaser.Scene {
     const save = SaveSystem.load();
     const y = 250;
 
-    // Halbdeckende Flaeche, damit durchgescrollte Karten nicht zwischen
-    // Vorschau und Reitern hindurchscheinen. Bewusst nicht voll deckend: Der
-    // Weltraum-Hintergrund soll oben sichtbar bleiben, sonst wirkt der Kopf
-    // wie ein aufgesetzter Balken statt wie Teil der Szene.
+    // Voll deckende Flaeche unter dem Kopfbereich.
+    //
+    // Ein erster Versuch liess sie bei 0,82 halbtransparent, damit der
+    // Weltraum-Hintergrund oben sichtbar bleibt. Bei dreissig Karten schienen
+    // die durchgescrollten Titel dann sichtbar durch die Vorschau - Lesbarkeit
+    // geht hier vor Atmosphaere. Der Hintergrund bleibt unterhalb der Liste
+    // ohnehin zu sehen.
     this.add
-      .rectangle(GAME_WIDTH / 2, KOPF_HOEHE / 2, GAME_WIDTH, KOPF_HOEHE, Palette.backdrop, 0.82)
+      .rectangle(GAME_WIDTH / 2, KOPF_HOEHE / 2, GAME_WIDTH, KOPF_HOEHE, Palette.backdrop, 1)
       .setDepth(KOPF_DEPTH - 1);
 
     createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 100, 190, weltAkzent, {
@@ -212,8 +216,37 @@ export class ShopScene extends Phaser.Scene {
           if (objekt.ausgangsY === undefined) continue;
           objekt.y = objekt.ausgangsY - offset;
         }
+        this.blendeAusserhalbAus();
       },
     });
+  }
+
+  /**
+   * Blendet alles aus, was gerade nicht im Sichtfenster liegt.
+   *
+   * Bei dreissig Karten reicht die Liste weit ueber den Bildschirmrand
+   * hinaus. Ohne dieses Ausblenden liegen Knoepfe ausserhalb der
+   * Spielflaeche - der Playtest meldet das zu Recht als Fehler, denn ein
+   * anklickbares Element, das niemand sehen kann, ist ein Bedienfehler.
+   *
+   * `setVisible(false)` statt Zerstoeren: Die Karten kommen beim Scrollen
+   * zurueck, und ein Neuaufbau bei jedem Bildpunkt waere teuer.
+   */
+  private blendeAusserhalbAus(): void {
+    const oben = KOPF_HOEHE;
+    const unten = GAME_HEIGHT - BACK_BUTTON_RESERVED_HEIGHT;
+    for (const objekt of this.inhalt) {
+      const sichtbar = objekt.y > oben - KARTE_HOEHE && objekt.y < unten + KARTE_HOEHE / 2;
+      const ziel = objekt as ScrollElement & {
+        setVisible?: (wert: boolean) => unknown;
+        input?: { enabled: boolean } | null;
+      };
+      ziel.setVisible?.(sichtbar);
+      // Auch die Trefferflaeche abschalten: Ein unsichtbarer, aber
+      // anklickbarer Knopf faengt Tipps ab, die dem darunterliegenden
+      // Element gelten.
+      if (ziel.input) ziel.input.enabled = sichtbar;
+    }
   }
 
   /** Y-Mitte der Karte an Position `index`. */

@@ -9,6 +9,7 @@
 import Phaser from 'phaser';
 
 import { getShipShape } from '@/config/shop';
+import { SHIP_DRAWINGS, SHIP_TEXTURE_SIZE } from '@/ui/shipShapes';
 
 export const TextureKey = {
   Orb: 'tex-orb',
@@ -18,13 +19,8 @@ export const TextureKey = {
   Rays: 'tex-rays',
   Ring: 'tex-ring',
   Vignette: 'tex-vignette',
+  /** Grundfigur - Rueckfall, wenn eine Form fehlt. */
   PlayerCore: 'tex-player-core',
-  PlayerCoreIon: 'tex-player-core-ion',
-  PlayerCoreComet: 'tex-player-core-comet',
-  PlayerCoreRanger: 'tex-player-core-ranger',
-  PlayerCorePulse: 'tex-player-core-pulse',
-  PlayerCoreNova: 'tex-player-core-nova',
-  PlayerCoreCrown: 'tex-player-core-crown',
   PlayerHalo: 'tex-player-halo',
   Pixel: 'tex-pixel',
   Logo: 'asset-isihunt-logo',
@@ -47,14 +43,30 @@ export function createTextures(scene: Phaser.Scene): void {
   createRays(scene);
   createRing(scene);
   createVignette(scene);
-  createPlayerCore(scene, TextureKey.PlayerCore, 0);
-  createPlayerCore(scene, TextureKey.PlayerCoreIon, 1);
-  createPlayerCore(scene, TextureKey.PlayerCoreComet, 2);
-  createPlayerCore(scene, TextureKey.PlayerCoreRanger, 3);
-  createPlayerCore(scene, TextureKey.PlayerCorePulse, 4);
-  createPlayerCore(scene, TextureKey.PlayerCoreNova, 5);
-  createPlayerCore(scene, TextureKey.PlayerCoreCrown, 6);
+  createShipTextures(scene);
   createPlayerHalo(scene);
+}
+
+/**
+ * Texturschluessel einer Fluggestalt.
+ *
+ * Aus dem Index erzeugt statt einzeln aufgelistet: Bei dreissig und mehr
+ * Formen waere eine Handliste eine Fehlerquelle ohne Nutzen.
+ */
+export function shipTextureKey(skinIndex: number): string {
+  return `tex-ship-${skinIndex}`;
+}
+
+/** Legt fuer jede Zeichnung in `SHIP_DRAWINGS` eine Textur an. */
+function createShipTextures(scene: Phaser.Scene): void {
+  SHIP_DRAWINGS.forEach((zeichnen, index) => {
+    withGraphics(scene, shipTextureKey(index), SHIP_TEXTURE_SIZE, SHIP_TEXTURE_SIZE, zeichnen);
+  });
+  // Rueckfall unter dem alten Namen - `TextureKey.PlayerCore` wird an einigen
+  // Stellen direkt verwendet.
+  withGraphics(scene, TextureKey.PlayerCore, SHIP_TEXTURE_SIZE, SHIP_TEXTURE_SIZE, (g) =>
+    SHIP_DRAWINGS[0]?.(g),
+  );
 }
 
 /**
@@ -64,16 +76,7 @@ export function createTextures(scene: Phaser.Scene): void {
  * gehoert jetzt in den Laden - die Begruendung steht in `config/shop.ts`.
  */
 export function playerTextureForShape(shapeId: string): TextureKeyValue {
-  const nachIndex: readonly TextureKeyValue[] = [
-    TextureKey.PlayerCore,
-    TextureKey.PlayerCoreIon,
-    TextureKey.PlayerCoreComet,
-    TextureKey.PlayerCoreRanger,
-    TextureKey.PlayerCorePulse,
-    TextureKey.PlayerCoreNova,
-    TextureKey.PlayerCoreCrown,
-  ];
-  return nachIndex[getShipShape(shapeId).skinIndex] ?? TextureKey.PlayerCore;
+  return shipTextureKey(getShipShape(shapeId).skinIndex) as TextureKeyValue;
 }
 
 /** Liefert die echte Planetentextur fuer eine Raumzonen-Komposition. */
@@ -274,126 +277,6 @@ function createVignette(scene: Phaser.Scene): void {
 }
 
 /** Die Spielfigur: ein kleines, nach oben ausgerichtetes Licht-Raumschiff. */
-/**
- * Zeichnet eine Schiffsform.
- *
- * **Warum jede Form eine eigene Silhouette hat.** Bis 2026-08-20 teilten sich
- * alle sieben Varianten denselben Rumpf; unterschieden wurden sie nur durch
- * kleine angesetzte Bauteile - ein Fluegelpaar, ein Ring, ein Kreis. Der
- * Gedanke dahinter war, dass die Figur in der Bewegung wiedererkennbar bleibt.
- * In der Praxis war der Unterschied unsichtbar: Die Figur ist im Spiel klein,
- * getintet und in Bewegung, und ein Spieler auf Stufe 51 berichtete, nie einen
- * Wechsel bemerkt zu haben. Ein Ring, der hinter dem weissen Rumpf
- * verschwindet, ist keine Belohnung.
- *
- * Jede Form hat deshalb jetzt einen eigenen Umriss. Gemeinsam bleibt nur, was
- * die Lesbarkeit braucht: Spitze nach oben, Triebwerke unten, Breite rund 80
- * von 96 Pixeln.
- */
-function createPlayerCore(scene: Phaser.Scene, key: string, skin: number): void {
-  const size = 96;
-
-  withGraphics(scene, key, size, size, (g) => {
-    const c = size / 2;
-    const v = (x: number, y: number) => new Phaser.Math.Vector2(x, y);
-
-    /** Zwei Lichtduesen am Heck - das einzige Bauteil, das jede Form teilt. */
-    const triebwerke = (linkeX: number, rechteX: number, oben: number, unten: number) => {
-      g.fillStyle(0xffffff, 0.8);
-      g.fillTriangle(linkeX - 4, oben, linkeX + 4, oben, linkeX, unten);
-      g.fillTriangle(rechteX - 4, oben, rechteX + 4, oben, rechteX, unten);
-    };
-
-    g.fillStyle(0xffffff, 1);
-
-    if (skin === 0) {
-      // PFEIL - der Klassiker: schlank, klare Spitze, gekerbtes Heck.
-      g.fillPoints(
-        [v(c, 8), v(64, 38), v(84, 78), v(60, 70), v(c, 88), v(36, 70), v(12, 78), v(32, 38)],
-        true,
-      );
-      g.fillStyle(0xffffff, 0.62);
-      g.fillTriangle(c, 18, 55, 48, 41, 48);
-      triebwerke(35, 61, 76, 91);
-      return;
-    }
-
-    if (skin === 1) {
-      // DELTA - breites Dreieck ohne Einbuchtung, satter Flaeche.
-      g.fillPoints([v(c, 6), v(88, 82), v(c, 66), v(8, 82)], true);
-      g.fillStyle(0xffffff, 0.5);
-      g.fillTriangle(c, 20, 66, 74, 30, 74);
-      triebwerke(38, 58, 66, 84);
-      return;
-    }
-
-    if (skin === 2) {
-      // SICHEL - zwei weit ausgestellte Fluegel, schmaler Mittelrumpf.
-      g.fillPoints(
-        [v(c, 10), v(56, 44), v(92, 84), v(58, 72), v(c, 80), v(38, 72), v(4, 84), v(40, 44)],
-        true,
-      );
-      g.fillStyle(0xffffff, 0.55);
-      g.fillEllipse(c, 40, 18, 34);
-      triebwerke(40, 56, 72, 90);
-      return;
-    }
-
-    if (skin === 3) {
-      // RING - Rumpf mit offenem Kreis, der ueber die Silhouette hinausragt.
-      g.fillPoints([v(c, 14), v(60, 46), v(60, 76), v(36, 76), v(36, 46)], true);
-      g.lineStyle(5, 0xffffff, 0.9);
-      g.strokeCircle(c, 46, 30);
-      g.fillStyle(0xffffff, 0.6);
-      g.fillTriangle(c, 20, 54, 42, 42, 42);
-      triebwerke(41, 55, 74, 92);
-      return;
-    }
-
-    if (skin === 4) {
-      // DOPPELRUMPF - zwei getrennte Haelften, durch eine Bruecke verbunden.
-      g.fillPoints([v(30, 12), v(44, 44), v(44, 80), v(16, 80), v(16, 44)], true);
-      g.fillPoints([v(66, 12), v(80, 44), v(80, 80), v(52, 80), v(52, 44)], true);
-      g.fillStyle(0xffffff, 0.7);
-      g.fillRect(38, 48, 20, 12);
-      triebwerke(30, 66, 78, 92);
-      return;
-    }
-
-    if (skin === 5) {
-      // STERN - sechs Zacken, radialsymmetrisch statt gerichtet.
-      const zacken: Phaser.Math.Vector2[] = [];
-      for (let i = 0; i < 12; i++) {
-        const winkel = (Math.PI * 2 * i) / 12 - Math.PI / 2;
-        const radius = i % 2 === 0 ? 42 : 17;
-        zacken.push(v(c + Math.cos(winkel) * radius, c + Math.sin(winkel) * radius));
-      }
-      g.fillPoints(zacken, true);
-      g.fillStyle(0xffffff, 0.5);
-      g.fillCircle(c, c, 12);
-      return;
-    }
-
-    // KRONE - breite Basis mit drei Zinnen, die einzige Form mit flachem Kopf.
-    g.fillPoints(
-      [
-        v(20, 34),
-        v(30, 12),
-        v(40, 34),
-        v(c, 6),
-        v(56, 34),
-        v(66, 12),
-        v(76, 34),
-        v(82, 80),
-        v(14, 80),
-      ],
-      true,
-    );
-    g.fillStyle(0xffffff, 0.55);
-    g.fillRect(28, 50, 40, 16);
-    triebwerke(32, 64, 78, 92);
-  });
-}
 
 /** Rotierender Ring um die Figur - macht den Sammelradius sichtbar. */
 function createPlayerHalo(scene: Phaser.Scene): void {

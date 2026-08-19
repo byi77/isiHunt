@@ -11,7 +11,16 @@ import {
   TALENT_RESET_COST,
 } from '@/config/GameConfig';
 import { RARITIES } from '@/config/rarities';
+import {
+  DEFAULT_SHIP_COLOR,
+  DEFAULT_SHIP_SHAPE,
+  getShipColor,
+  getShipShape,
+  SHIP_COLORS,
+  SHIP_SHAPES,
+} from '@/config/shop';
 import { talentCost } from '@/config/talents';
+import { SHIP_DRAWINGS } from '@/ui/shipShapes';
 import { WORLDS } from '@/config/worlds';
 
 describe('Phase-5-Balance', () => {
@@ -114,5 +123,63 @@ describe('Serien-Multiplikator', () => {
     const hoechste = COMBO_TIERS[COMBO_TIERS.length - 1]!.multiplier;
     // Ohne deutlichen Abstand lohnt es sich nicht, eine Serie zu halten.
     expect(hoechste / erste).toBeGreaterThan(1.8);
+  });
+});
+
+describe('Laden: Formen und Farben', () => {
+  // Bei dreissig Eintraegen faellt ein doppelter Schluessel oder ein
+  // vergessener `skinIndex` beim Lesen nicht auf. Diese Tests halten die
+  // Tabelle konsistent, ohne dass jemand sie durchzaehlen muss.
+
+  it('vergibt jede Form-Id genau einmal', () => {
+    const ids = SHIP_SHAPES.map((shape) => shape.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('vergibt jede Farb-Id genau einmal', () => {
+    const ids = SHIP_COLORS.map((color) => color.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('hat fuer jeden skinIndex eine Zeichnung', () => {
+    for (const shape of SHIP_SHAPES) {
+      expect(SHIP_DRAWINGS[shape.skinIndex]).toBeTypeOf('function');
+    }
+  });
+
+  it('nutzt jeden skinIndex nur einmal', () => {
+    const indizes = SHIP_SHAPES.map((shape) => shape.skinIndex);
+    expect(new Set(indizes).size).toBe(indizes.length);
+  });
+
+  it('laesst genau einen kostenlosen Einstieg je Kategorie', () => {
+    // Ohne ein Schiff und eine Farbe kann man nicht spielen - aber mehr als
+    // je einen Gratis-Eintrag soll es auch nicht geben.
+    expect(SHIP_SHAPES.filter((shape) => shape.cost === 0)).toHaveLength(1);
+    expect(SHIP_COLORS.filter((color) => color.cost === 0)).toHaveLength(1);
+  });
+
+  it('macht den kostenlosen Eintrag zum Standard', () => {
+    expect(SHIP_SHAPES.find((shape) => shape.cost === 0)?.id).toBe(DEFAULT_SHIP_SHAPE);
+    expect(SHIP_COLORS.find((color) => color.cost === 0)?.id).toBe(DEFAULT_SHIP_COLOR);
+  });
+
+  it('gibt jeder Form einen Namen und eine Beschreibung', () => {
+    for (const shape of SHIP_SHAPES) {
+      expect(shape.name.length).toBeGreaterThan(0);
+      expect(shape.description.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('faellt bei unbekannter Id auf den Standard zurueck', () => {
+    expect(getShipShape('gibtesnicht').id).toBe(DEFAULT_SHIP_SHAPE);
+    expect(getShipColor('gibtesnicht').id).toBe(DEFAULT_SHIP_COLOR);
+  });
+
+  it('haelt die Preise in einer erreichbaren Spanne', () => {
+    // Ein Run bringt rund 50 Muenzen. Die teuerste Form entspricht damit
+    // etwa 52 Runden - ein Fernziel, aber kein endloser Grind.
+    const teuerste = Math.max(...SHIP_SHAPES.map((shape) => shape.cost));
+    expect(teuerste).toBeLessThanOrEqual(3_000);
   });
 });
