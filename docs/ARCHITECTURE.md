@@ -133,7 +133,8 @@ isiHunt/
 │   │   ├── ChallengeSystem.ts  Duell-Zustand: Seed, Punktstaende, Sieger
 │   │   ├── ChallengeSystem.test.ts
 │   │   ├── CloudSystem.ts      Bestenliste und Spielstand ueber Supabase
-│   │   ├── CloudSystem.test.ts
+│   │   ├── CloudSystem.test.ts Backend nicht eingerichtet
+│   │   ├── CloudSystem.configured.test.ts  eingerichtet: Anmelde- und Netzfehler
 │   │   ├── NetworkDuelSystem.ts Netzwerk-Duell: Raum, Uhr-Sync, Realtime-Kanal
 │   │   ├── NetworkDuelSystem.test.ts
 │   │   ├── SpawnSystem.ts      Wann und wo etwas erscheint
@@ -529,11 +530,24 @@ Progression laeuft dadurch gegen die echte Persistenz statt gegen eine Attrappe
 — eine Attrappe haette den Modul-Cache in `SaveSystem` nicht mit abgebildet, und
 genau der ist die Stelle, an der Tests unbemerkt voneinander abhaengig werden.
 
-| Datei                       | Deckt ab                                                     |
-| --------------------------- | ------------------------------------------------------------ |
-| `ScoreSystem.test.ts`       | Multiplikatorstufen, Combo-Zerfall, Rundung, Run-Statistik   |
-| `ProgressionSystem.test.ts` | XP-Kurve, mehrfache Aufstiege, Maximalstufe, Welten, Erfolge |
-| `ChallengeSystem.test.ts`   | Seed-Vergabe, Rundenwechsel, Sieger und Gleichstand          |
+| Datei                            | Deckt ab                                                        |
+| -------------------------------- | --------------------------------------------------------------- |
+| `ScoreSystem.test.ts`            | Multiplikatorstufen, Combo-Zerfall, Rundung, Run-Statistik      |
+| `ProgressionSystem.test.ts`      | XP-Kurve, mehrfache Aufstiege, Maximalstufe, Welten, Erfolge    |
+| `ChallengeSystem.test.ts`        | Seed-Vergabe, Rundenwechsel, Sieger und Gleichstand             |
+| `SaveSystem.test.ts`             | Migration: Persistenz, Schreibfehler, fehlendes `version`-Feld  |
+| `ProgressSyncSystem.test.ts`     | Outbox: Guards, Tagesbonus, Retry, Teilfehlschlag mit mehreren  |
+| `CloudSystem.test.ts`            | reine Funktionen; "wirft nie" **ohne** eingerichtetes Backend   |
+| `CloudSystem.configured.test.ts` | "wirft nie" **mit** Backend: Anmelde-Guard und echter Netzausfall |
+
+**Warum `CloudSystem` zwei Dateien hat.** `vi.mock` gilt fuer das ganze Modul,
+und die beiden Suiten brauchen entgegengesetzte Zustaende von
+`isBackendConfigured`. Der Grund dafuer ist die Lehre aus dem Audit vom
+2026-08-19: Mit abgeschaltetem Backend kehrt jede Netzfunktion an ihrem Guard
+zurueck — alles dahinter ist unerreichbar, und eine Suite kann dann viele
+Funktionen "pruefen", ohne je den Fehlerpfad zu betreten. Die zweite Datei
+trennt deshalb drei Ebenen: nicht eingerichtet, eingerichtet-aber-abgemeldet,
+angemeldet-aber-Netz-tot. Nur die dritte ist der Fall aus dem Funkloch.
 
 **Zwei Regeln, die die Tests brauchbar halten:**
 

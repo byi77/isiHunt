@@ -29,7 +29,12 @@ const MARKERS = [
   { name: 'Optional Chaining (?.)', ios: '13.4', syntax: true, re: /\?\.[a-zA-Z_[(]/ },
   { name: 'Nullish Coalescing (??)', ios: '13.4', syntax: true, re: /\?\?[^=]/ },
   { name: 'Logical Assignment (??=, ||=)', ios: '14.0', syntax: true, re: /\?\?=|\|\|=|&&=/ },
-  { name: 'Private Klassenfelder (#x)', ios: '14.5', syntax: true, re: /[^\w#]#[a-zA-Z_]\w*\s*[=;,)]/ },
+  {
+    name: 'Private Klassenfelder (#x)',
+    ios: '14.5',
+    syntax: true,
+    re: /[^\w#]#[a-zA-Z_]\w*\s*[=;,)]/,
+  },
   { name: 'Error cause', ios: '15.0', syntax: false, re: /,\s*\{\s*cause:/ },
   { name: 'Array.prototype.at()', ios: '15.4', syntax: false, re: /\.at\(\s*-?\d/ },
   { name: 'Object.hasOwn()', ios: '15.4', syntax: false, re: /Object\.hasOwn\(/ },
@@ -40,7 +45,12 @@ const MARKERS = [
   // Ein Versuch lieferte ausschliesslich Treffer der Form `1/d` aus Phasers
   // Easing-Rechnungen - also nur Rauschen.
   { name: 'Static Init Blocks', ios: '16.4', syntax: true, re: /\bstatic\s*\{/ },
-  { name: 'Array.toSorted/toReversed', ios: '16.4', syntax: false, re: /\.to(Sorted|Reversed|Spliced)\(/ },
+  {
+    name: 'Array.toSorted/toReversed',
+    ios: '16.4',
+    syntax: false,
+    re: /\.to(Sorted|Reversed|Spliced)\(/,
+  },
   // `console.group(` ausgenommen - das ist seit jeher verfuegbar und war der
   // einzige Treffer, den ein einfaches `.group(` in Phaser fand.
   { name: 'Array.group()', ios: '17.4', syntax: false, re: /(?<!console)\.group(ToMap)?\(/ },
@@ -132,7 +142,7 @@ console.log(
   '\nMassgeblich ist die zweite Zahl. `structuredClone()` sitzt in\n' +
     'SaveSystem.update() und laeuft damit bei jedem Run-Ende: Zwischen den\n' +
     'beiden Zahlen wuerde das Spiel zwar starten, aber beim ersten Speichern\n' +
-    'abbrechen - schlechter als gar nicht erst zu laden.'
+    'abbrechen - schlechter als gar nicht erst zu laden.',
 );
 
 // Die Grenze wird bewusst festgeschrieben. Steigt sie, weil eine neue
@@ -143,7 +153,7 @@ if (cmp(softMin, ERWARTET) > 0) {
   console.error(
     `\nDie Mindestversion ist auf iOS ${softMin} gestiegen (erwartet: ${ERWARTET}).\n` +
       'Entweder die neue Abhaengigkeit ersetzen oder ERWARTET in\n' +
-      'scripts/check-ios-support.mjs anheben und die Doku nachziehen.'
+      'scripts/check-ios-support.mjs anheben und die Doku nachziehen.',
   );
   process.exit(1);
 }

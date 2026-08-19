@@ -1,0 +1,19 @@
+# Erzeugte und fremde Verzeichnisse.
+dist/
+node_modules/
+public/
+package-lock.json
+
+# TODO.md ist von Prettier nicht stabil formatierbar.
+#
+# Die Datei enthaelt Inline-Code-Spans, die ueber einen Zeilenumbruch gehen
+# (z. B. `npm run\nverify`). Prettier bricht solche Spans bei jedem Lauf
+# anders um: Die Datei konvergiert nicht, sondern meldet auch direkt nach
+# `--write` wieder "Code style issues" - und zerstoert dabei die Einrueckung
+# der verschachtelten Listen.
+#
+# Ein Ausschluss hier statt in den npm-Skripten ist Absicht: `.prettierignore`
+# gilt fuer `format` UND `format:check` gleichermassen. Ein Ausschluss nur im
+# Pruefbefehl haette genau die Asymmetrie wiederhergestellt, die der Audit
+# vom 2026-08-19 als Defekt gefunden hat.
+TODO.md

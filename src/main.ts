@@ -142,6 +142,18 @@ function installDebugLogging(): void {
   DebugSystem.logAppStart({ standalone: isStandalone(), ios: isIos() });
 
   for (const key of Object.values(GameEvent)) {
+    // `TimerChanged` bleibt bewusst draussen: Es feuert in jedem Frame
+    // (~60/s), waehrend der Ringpuffer 400 Eintraege fasst. Mitgeschrieben
+    // ueberschreibt allein ein 90-Sekunden-Run den Puffer 13,5-mal - der
+    // Verlauf reicht dann nur noch 6,7 Sekunden zurueck statt der Minuten,
+    // fuer die dieser Puffer gebaut ist. App-Start, Login und Cloud-Fehler
+    // waren dadurch aus jedem Fehlerbericht verdraengt, der waehrend eines
+    // Runs erstellt wurde (Audit 2026-08-19).
+    //
+    // Der Timerstand geht nicht verloren: `RunStarted` steht mit seiner
+    // Dauer im Puffer, und jeder Eintrag traegt einen Zeitstempel.
+    if (key === GameEvent.TimerChanged) continue;
+
     eventBus.onEvent(key, (payload) => {
       DebugSystem.pushLogEntry({
         timestamp: Date.now(),

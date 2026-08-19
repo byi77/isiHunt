@@ -36,8 +36,10 @@ Vollstaendig begruendet in `docs/CODE_STYLE.md`. Kurzfassung:
 4. **Jeder `eventBus.onEvent` braucht ein `offEvent`** im `SHUTDOWN`-Handler.
    Handler als Klassenfelder schreiben, damit die Referenz gleich bleibt.
 5. **Alles Bewegte rechnet mit `delta`.**
-6. **`systems/` kennt Phaser nicht** (Ausnahme: `SpawnSystem` nutzt
-   `RandomDataGenerator` und `Geom.Rectangle`).
+6. **`systems/` kennt Phaser nicht.** Einzige Ausnahme ist `SpawnSystem`; was
+   es von dort nimmt, muss reine Datenstruktur oder reine Rechnung sein
+   (heute: `RandomDataGenerator`, `Geom.Rectangle`, `Math.Clamp`,
+   `Math.Linear`). Kein zweites Modul bekommt diese Ausnahme.
 7. **Nur Daten ueber den EventBus** — nie GameObjects oder Callbacks.
 8. **No-Guess-Vertrag: wir raten und schaetzen nicht.** Jede Aussage ueber den
    Code steht auf einer gelesenen Datei, einem Werkzeugergebnis oder einer
@@ -197,15 +199,15 @@ npm run ios:check                 # iOS-Mindestversion aus dem Build
 
 Was die Suiten abdecken:
 
-| Suite      | Prueft                                                           |
-| ---------- | ---------------------------------------------------------------- |
-| `screens`  | Jeder Menue-Bildschirm oeffnet ohne Konsolenfehler               |
-| `nav`      | Menuewege hin und zurueck, per echtem Klick auf den Knopf        |
-| `controls` | Ueberlappende, verrutschte oder zu kleine Knoepfe; Scrollen      |
-| `layout`   | Canvas-Ueberstand ueber 19 Geraeteformate                        |
-| `ios`      | Dieselbe Seite in echtem WebKit statt in Chromium                |
-| `progress` | Levelaufstieg, Muenzen, Erfolge, Spielstand ueber ein Neuladen   |
-| `modes`    | Solo in drei Welten, Tageslauf, Bot-Duell                        |
+| Suite      | Prueft                                                         |
+| ---------- | -------------------------------------------------------------- |
+| `screens`  | Jeder Menue-Bildschirm oeffnet ohne Konsolenfehler             |
+| `nav`      | Menuewege hin und zurueck, per echtem Klick auf den Knopf      |
+| `controls` | Ueberlappende, verrutschte oder zu kleine Knoepfe; Scrollen    |
+| `layout`   | Canvas-Ueberstand ueber 19 Geraeteformate                      |
+| `ios`      | Dieselbe Seite in echtem WebKit statt in Chromium              |
+| `progress` | Levelaufstieg, Muenzen, Erfolge, Spielstand ueber ein Neuladen |
+| `modes`    | Solo in drei Welten, Tageslauf, Bot-Duell                      |
 
 Einmalig pro Arbeitskopie fuer die `ios`-Suite (echtes WebKit statt Chromium):
 

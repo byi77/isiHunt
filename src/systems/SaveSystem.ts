@@ -132,10 +132,23 @@ function legacyXpForLevel(level: number): number {
   return Math.floor(80 * Math.pow(level, 1.45));
 }
 
+/**
+ * Version eines eingelesenen Standes.
+ *
+ * Fehlt das Feld, stammt der Stand aus der Zeit vor der Versionierung - das
+ * ist Version 1, nicht die aktuelle. `load()` und `migrate()` lasen dieselbe
+ * Luecke zeitweise verschieden (`?? 1` gegen `?? SAVE_VERSION`); ein Stand
+ * ohne Feld wurde dadurch zwar migriert, die Migration aber nicht
+ * geschrieben (Audit 2026-08-19). Beide Stellen fragen jetzt hier.
+ */
+function versionOf(raw: Partial<SaveData>): number {
+  return raw.version ?? 1;
+}
+
 /** Uebersetzt die alte XP-Kurve in die neue, ohne Fortschritt zu verschenken. */
 function migrate(raw: Partial<SaveData>): SaveData {
   const save = reconcile(raw);
-  const rawVersion = raw.version ?? 1;
+  const rawVersion = versionOf(raw);
   if (rawVersion >= SAVE_VERSION) return save;
 
   // Version 1 hatte noch die alte XP-Kurve. Version 2 bekam bereits die
@@ -176,7 +189,7 @@ export function load(): SaveData {
   try {
     const stored = window.localStorage.getItem(SAVE_KEY);
     const raw = stored ? (JSON.parse(stored) as Partial<SaveData>) : null;
-    const rawVersion = raw?.version ?? SAVE_VERSION;
+    const rawVersion = raw ? versionOf(raw) : SAVE_VERSION;
     cache = raw ? migrate(raw) : createDefaultSave();
 
     // Migrationen müssen sofort persistiert werden. Sonst würde ein alter

@@ -9,6 +9,56 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Behoben
+
+- **Der Debug-Ringpuffer reichte waehrend eines Runs nur 6,7 Sekunden
+  zurueck.** `TimerChanged` feuert in jedem Frame (~60/s) und wurde
+  mitgeschrieben; ein 90-Sekunden-Run ueberschrieb den 400 Eintraege grossen
+  Puffer damit 13,5-mal. App-Start, Login und Cloud-Fehler waren aus jedem
+  Fehlerbericht verdraengt, der waehrend eines Runs entstand — also aus genau
+  denen, fuer die der Puffer gebaut ist. `installDebugLogging()` ueberspringt
+  dieses eine Ereignis jetzt; der Zeitverlauf bleibt ueber `RunStarted` und
+  die Zeitstempel der Eintraege lesbar.
+
+- **`format:check` prueft dieselben Dateien wie `format`.** Der Schreibbefehl
+  erfasste `src/**/*.ts` und `*.{json,md}`, der Pruefbefehl nur `src/**/*.ts` —
+  und der laeuft in CI, `pre-push` und `verify`. Die Differenz war damit
+  strukturell ungeprueft: Sieben Dateien lagen unformatiert im Repo. Beide
+  Befehle decken jetzt zusaetzlich `scripts/**/*.mjs` ab. `TODO.md` steht in
+  einer neuen `.prettierignore` — die Datei enthaelt Inline-Code-Spans ueber
+  Zeilenumbrueche hinweg, an denen Prettier nicht konvergiert; der Ausschluss
+  gilt bewusst fuer beide Befehle, damit keine neue Asymmetrie entsteht.
+
+- **Ein Spielstand ohne `version`-Feld schrieb seine Migration nicht zurueck.**
+  `load()` las die fehlende Angabe als aktuelle Version, `migrate()` dagegen
+  als 1. Der Stand wurde migriert, aber nicht persistiert — der Schutz gegen
+  eine wiederholte Migration griff fuer diesen Fall nicht. Beide Stellen
+  fragen jetzt `versionOf()`. (Kein Datenverlust: Die vorhandenen Migrationen
+  sind idempotent, und der erste `save()` schrieb die Version ohnehin nach.)
+
+### Geaendert
+
+- **Regel 6 nennt jetzt alle vier erlaubten Phaser-Symbole.** `SpawnSystem`
+  nutzt neben `RandomDataGenerator` und `Geom.Rectangle` auch `Math.Clamp` und
+  `Math.Linear`; die Regel kannte nur die ersten beiden. Formuliert ist sie
+  jetzt ueber das Kriterium — reine Datenstruktur oder reine Rechnung — statt
+  ueber eine Liste, die erneut veralten kann.
+
+- **Testabdeckung fuer bislang unerreichbare Pfade.** Drei Luecken, die eine
+  gruene Suite nicht zeigen konnte:
+  - `CloudSystem.configured.test.ts` (neu) prueft die "wirft nie"-Garantie mit
+    **eingerichtetem** Backend. Die bestehende Suite mockt
+    `isBackendConfigured: false`; dahinter kehrt jede Netzfunktion sofort an
+    ihrem Guard zurueck, der Fehlerpfad war unerreichbar. Getrennt geprueft
+    werden jetzt Anmelde-Guard und echter Netzausfall — inklusive des Falls,
+    in dem schon die Anmeldepruefung selbst am Netz scheitert.
+  - `ProgressSyncSystem.test.ts` deckt den Teilfehlschlag mit **mehreren**
+    Ereignissen ab. Bisher legte jeder Test genau einen Run an; die
+    `remaining`-Logik, die es nur fuer diesen Fall gibt, lief nie.
+  - `SaveSystem.test.ts` prueft die Migration eines Standes **ohne**
+    `version`-Feld. Beide Alt-Tests setzten das Feld explizit und konnten den
+    Fehler oben deshalb nicht sehen.
+
 ### Hinzugefuegt
 
 - **Der Playtest zeigt jetzt, woran er gerade arbeitet.** Vorab nennt er die

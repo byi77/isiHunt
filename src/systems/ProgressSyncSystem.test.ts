@@ -17,7 +17,7 @@ import { emptyRarityCounts } from '@/config/rarities';
 import { DEFAULT_WORLD_ID } from '@/config/worlds';
 import type * as ProgressSyncSystemModule from '@/systems/ProgressSyncSystem';
 import type * as SaveSystemModule from '@/systems/SaveSystem';
-import type { ProgressionResult, RunStats } from '@/types';
+import type { ProgressEvent, ProgressionResult, RunStats } from '@/types';
 
 let signedIn = false;
 
@@ -63,6 +63,17 @@ function createRun(overrides: Partial<RunStats> = {}): RunStats {
     xpGained: 50,
     ...overrides,
   };
+}
+
+/**
+ * Liest die Outbox direkt aus dem localStorage.
+ *
+ * `pendingCount()` liefert nur die Anzahl - fuer die Reihenfolge nach einem
+ * Teilfehlschlag braucht es die Ereignisse selbst.
+ */
+function readOutbox(): ProgressEvent[] {
+  const raw = window.localStorage.getItem('isihunt.progress-events');
+  return raw ? (JSON.parse(raw) as ProgressEvent[]) : [];
 }
 
 function createProgression(overrides: Partial<ProgressionResult> = {}): ProgressionResult {
@@ -193,6 +204,68 @@ describe('flushPending (ueber flush())', () => {
     const data = SaveSystem.load();
     expect(data.pendingDailyKey).toBe('2026-08-17');
     expect(data.pendingDailyCoins).toBe(50);
+  });
+});
+
+/**
+ * Teilfehlschlag mit mehreren Ereignissen - der Fall, fuer den die
+ * `remaining`-Logik in `flushPending()` ueberhaupt existiert.
+ *
+ * Audit 2026-08-19: Jeder bestehende Test legte genau ein Ereignis an. Damit
+ * lief die Schleife nie ueber mehr als einen Durchgang, und der Aufbau der
+ * Restliste war komplett ungeprueft - obwohl er ueber `indexOf()` auf
+ * Referenzidentitaet arbeitet und die Reihenfolge der Runs bewahren muss.
+ */
+describe('Teilfehlschlag mit mehreren Ereignissen', () => {
+  it('behaelt ab dem gescheiterten Ereignis alle weiteren in Reihenfolge', async () => {
+    signedIn = true;
+    const first = ProgressSyncSystem.enqueueRun(createRun({ score: 1 }), createProgression());
+    const second = ProgressSyncSystem.enqueueRun(createRun({ score: 2 }), createProgression());
+    const third = ProgressSyncSystem.enqueueRun(createRun({ score: 3 }), createProgression());
+
+    // Das erste geht durch, das zweite scheitert - das dritte darf dann gar
+    // nicht erst versucht werden, sonst kaeme es vor dem zweiten an.
+    submitProgressEvent
+      .mockResolvedValueOnce({ ok: true })
+      .mockResolvedValueOnce({ ok: false, error: 'Netzwerkfehler' })
+      .mockResolvedValueOnce({ ok: true });
+
+    await ProgressSyncSystem.flush();
+
+    expect(submitProgressEvent).toHaveBeenCalledTimes(2);
+
+    const outbox = readOutbox();
+    // Nicht nur die Anzahl: Ein Fix, der einfach alles stehen laesst, haette
+    // hier auch 2 - aber die falschen beiden.
+    expect(outbox.map((event) => event.eventId)).toEqual([second, third]);
+    expect(outbox.map((event) => event.score)).toEqual([2, 3]);
+    expect(first).not.toBeNull();
+  });
+
+  it('leert die Outbox, wenn alle Ereignisse durchgehen', async () => {
+    signedIn = true;
+    ProgressSyncSystem.enqueueRun(createRun({ score: 1 }), createProgression());
+    ProgressSyncSystem.enqueueRun(createRun({ score: 2 }), createProgression());
+    ProgressSyncSystem.enqueueRun(createRun({ score: 3 }), createProgression());
+    submitProgressEvent.mockResolvedValue({ ok: true });
+
+    await ProgressSyncSystem.flush();
+
+    expect(submitProgressEvent).toHaveBeenCalledTimes(3);
+    expect(ProgressSyncSystem.pendingCount()).toBe(0);
+  });
+
+  it('haelt die Reihenfolge, wenn schon das erste Ereignis scheitert', async () => {
+    signedIn = true;
+    const first = ProgressSyncSystem.enqueueRun(createRun({ score: 1 }), createProgression());
+    const second = ProgressSyncSystem.enqueueRun(createRun({ score: 2 }), createProgression());
+    submitProgressEvent.mockResolvedValue({ ok: false, error: 'Netzwerkfehler' });
+
+    await ProgressSyncSystem.flush();
+
+    // Nach dem ersten Fehlschlag wird abgebrochen, nicht weiterprobiert.
+    expect(submitProgressEvent).toHaveBeenCalledTimes(1);
+    expect(readOutbox().map((event) => event.eventId)).toEqual([first, second]);
   });
 });
 

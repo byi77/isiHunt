@@ -88,8 +88,14 @@ dadurch pruefbar. Wer dort einen Tween oder ein GameObject einbaut, zerstoert
 genau diese Eigenschaft.
 
 `SpawnSystem` ist die bewusste Ausnahme: es nutzt Phasers
-`RandomDataGenerator` (seedbar) und `Geom.Rectangle` — beides reine
-Datenstrukturen, kein Rendering.
+`RandomDataGenerator` (seedbar), `Geom.Rectangle` sowie `Math.Clamp` und
+`Math.Linear` — reine Datenstrukturen und reine Rechnung, kein Rendering.
+
+Die Liste ist eine Momentaufnahme, kein Freibrief: Massgeblich ist, dass das
+Genommene ohne Canvas auskommt. Der Audit vom 2026-08-19 fand hier eine
+Luecke — die Regel nannte zwei Symbole, benutzt wurden vier. Wer die Liste
+erweitert, prueft zuerst, ob das Symbol wirklich rein ist, und traegt es
+danach hier **und** in CLAUDE.md nach.
 
 **Auch ein winziger Import zaehlt.** `ScoreSystem` holte sich Phaser fuer ein
 einzelnes `Math.Clamp`. Das sah harmlos aus, zog aber beim Laden des Moduls die
