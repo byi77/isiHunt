@@ -43,6 +43,12 @@ desktop.ini
 .env
 .env.local
 .env.*.local
+# .env.playtest bleibt versioniert: enthaelt bewusst nur leere Werte und wird
+# von `npm run playtest` gebraucht.
+
+# Screenshots der automatisierten Testlaeufe
+playtest-shots/
+smoke-screenshot.png
 
 # Asset-Rohdaten (Quelldateien bleiben lokal, exportierte Assets liegen in public/)
 /art-source/**/*.psd

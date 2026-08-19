@@ -11,11 +11,38 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **`npm run playtest`** spielt isiHunt automatisiert durch — 27 Pruefschritte
+  in vier Suiten: alle Menue-Bildschirme, Solo in drei Welten plus Tageslauf
+  und Bot-Duell, Layout ueber sieben Geraeteformate, sowie Levelaufstieg,
+  Muenzen, Erfolge und Spielstand ueber ein Neuladen hinweg. Gesteuert wird
+  ueber echte Tastatureingaben, nicht ueber gesetzte Positionen. Moeglich
+  ueber `window.isiHunt` aus dem Dev-Build; `.env.playtest` haelt den Lauf
+  offline und am Login vorbei. `--watch` zeigt den Lauf in einem sichtbaren
+  Fenster, `--only=<suite>` grenzt ein. Details in ARCHITECTURE.md 9.3.
+
 - **`npm run smoke`** startet einen echten Chromium (Playwright) gegen den
   laufenden Dev-Server, laedt die Seite in einem mobilen Viewport und
   schlaegt bei Konsolenfehlern fehl. Kein Ersatz fuer den Pflicht-Handytest
   (ARCHITECTURE.md 10), aber faengt kaputte Boots (z.B. fehlerhafte Imports)
   automatisiert ab. Playwright ist dafuer als `devDependency` dazugekommen.
+
+### Behoben
+
+- **Der Pause-Knopf lag auf fast jedem Geraet unter dem sichtbaren Rand.**
+  Phasers ScaleManager misst seinen Elternknoten ueber die Aussenmasse und
+  zieht dessen Padding nicht ab. `#game` traegt oben 32 px fuer sichere
+  Flaeche und Laufband — Phaser hielt diese 32 px fuer nutzbare Hoehe und
+  skalierte den Canvas entsprechend zu gross. Er begann unter dem Padding und
+  ragte unten um genau diesen Betrag heraus; betroffen war alles am unteren
+  Rand, zuerst der Pause-Knopf bei `GAME_HEIGHT - 58`.
+  Gemessen ueber sieben Geraeteformate: sechs schnitten 32 px ab, nur ein sehr
+  schmales Format blieb heil, weil dort `GAME_HEIGHT` ueber den Mindestwert
+  hinauswaechst. Phaser haengt jetzt an einem eigenen Container
+  (`#game-canvas`), der nur die Innenflaeche fuellt; Padding, Hintergrund und
+  `padding-bottom: 0` von `#game` bleiben unangetastet.
+  **Ein erster Versuch ueber `scale.setParentSize()` half nicht** — Phasers
+  `refresh()` misst den Elternknoten sofort wieder selbst und ueberschreibt
+  den Wert. Die Layout-Suite des Playtests sichert den Fix jetzt ab.
 
 ### Sicherheit
 

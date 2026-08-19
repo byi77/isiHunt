@@ -9,7 +9,7 @@ Repository gearbeitet wird.
 
 isiHunt ist ein 2D-Arcade-Collector fuer den Handy-Browser. Der Spieler steuert
 eine Lichtgestalt und faengt Relikte verschiedener Seltenheit, bevor sie
-verblassen. Ein Run dauert 60 Sekunden; Level, Talente und Erfolge tragen den
+verblassen. Ein Run dauert 90 Sekunden; Level, Talente und Erfolge tragen den
 Langzeitfortschritt.
 
 **Stack:** TypeScript (strict) · Phaser 3 · Vite · Ziel: mobiler Browser,

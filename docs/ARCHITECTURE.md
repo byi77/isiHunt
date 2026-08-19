@@ -58,7 +58,8 @@ isiHunt/
 │   ├── generate-icons.mjs      Zeichnet die App-Icons (npm run icons)
 │   ├── bump-version.mjs        Patch-Version +1, vom pre-commit-Hook gerufen
 │   ├── check-deploy.mjs        Liegt der lokale Stand wirklich live? (deploy:check)
-│   └── smoke-test.mjs          Playwright gegen den Dev-Server (npm run smoke)
+│   ├── smoke-test.mjs          Playwright gegen den Dev-Server (npm run smoke)
+│   └── playtest.mjs            Spielt einen ganzen Run automatisiert (npm run playtest)
 ├── src/
 │   ├── config/                 Reine Daten, keine Logik
 │   │   ├── GameConfig.ts       Alle Balancing-Zahlen
@@ -559,6 +560,48 @@ Exceptions beim Boot) automatisiert ab, statt dass sie erst beim manuellen
 Test auffallen. Playwright ist deshalb eine `devDependency`, kein Teil des
 Production-Builds.
 
+### 9.3 Automatisierter Playtest
+
+**`npm run playtest`** (`scripts/playtest.mjs`) prueft in vier Suiten die
+Kette, die Vitest nicht erreicht: Scene-Fluss, Steuerung, Kollision,
+Punktevergabe, Layout und Persistenz. 27 Schritte, rund 15 Minuten.
+
+| Suite      | Deckt ab                                                                 |
+| ---------- | ------------------------------------------------------------------------ |
+| `screens`  | Profil, Talentbaum, Erfolge, Einstellungen, Rangliste, Wartung           |
+| `layout`   | Canvas-Ueberstand und unterster Knopf ueber sieben Geraeteformate        |
+| `progress` | Levelaufstieg, Muenzen, Erfolge, Bestwert, Spielstand ueber Neuladen     |
+| `modes`    | Solo in drei Welten, Tageslauf, Bot-Duell                                |
+
+Einzeln zu fahren ueber `--only=layout` (mehrere kommagetrennt).
+`--watch` oeffnet ein sichtbares Fenster mit gebremster Eingabe.
+
+Drei Bausteine machen das moeglich:
+
+| Baustein                          | Warum es geht                                                                                 |
+| --------------------------------- | --------------------------------------------------------------------------------------------- |
+| `window.isiHunt` (`main.ts` 282)  | Der Dev-Build haengt die Phaser-Instanz an `window`; darueber sind Scenes und Felder lesbar     |
+| Tastatur statt Klick-Koordinaten  | `InputController` nimmt WASD/Pfeile; das umgeht Phasers FIT-Skalierung samt Koordinatenumrechnung |
+| `.env.playtest`                   | Leere Backend-Zugangsdaten ⇒ `AuthSystem` wird nie ready ⇒ MenuScene loescht den vorgesetzten Stand nicht |
+
+**Der Login ist die eigentliche Huerde, nicht das Spielen.** `MenuScene.create()`
+schickt jeden Stand ohne `playerName` in die `AccountScene` (Zeile 76-82) und
+loescht zuvor sogar das lokale Profil, wenn eine Auth-Session existiert, aber
+niemand angemeldet ist (Zeile 71-75). Ein vorgesetzter `localStorage`-Eintrag
+allein genuegt deshalb nicht — erst ohne konfiguriertes Backend bleibt er stehen.
+Genau daran ist der erste Entwurf gescheitert.
+
+**Gesteuert wird, nicht gesetzt.** Der Runner liest die Position des naechsten
+Relikts und drueckt Tasten; er verschiebt den Spieler nicht direkt und
+manipuliert keinen Score. Punkte entstehen dadurch ueber denselben Weg wie beim
+Spielen mit der Hand — `InputController` → `GameScene.update()` → Distanztest →
+`ScoreSystem`. Ein Test, der Positionen setzt, wuerde genau die Kette
+ueberspringen, die er absichern soll.
+
+**Was er nicht ersetzt:** Touch-Eigenheiten echter Geraete, Game-Feel,
+Bildrate unter Last und alles Visuelle jenseits "die Scene laeuft". Der
+Pflicht-Handytest bleibt (Abschnitt 10).
+
 ### Die Falle mit dem Laufwerksbuchstaben
 
 Git startet Hooks unter Windows mit **kleingeschriebenem** Laufwerksbuchstaben
@@ -593,7 +636,7 @@ Ehrlich benannt, damit sie nicht ueberrascht:
 | Grenze                                              | Ab wann relevant                                    | Loesung                                    |
 | --------------------------------------------------- | --------------------------------------------------- | ------------------------------------------ |
 | Kein Object Pooling — jedes Relikt wird neu erzeugt | > 100 gleichzeitige Objekte                         | Pool in `SpawnSystem`                      |
-| Tests decken nur `systems/`, nicht Scenes/Entities  | ab Regressionen in Darstellung oder Eingabe         | `npm run smoke` prueft nur den Boot ohne Konsolenfehler, keine Spiellogik |
+| Tests decken nur `systems/`, nicht Scenes/Entities  | ab Regressionen in Darstellung oder Eingabe         | `npm run playtest` deckt Scene-Fluss, Steuerung, Kollision und Persistenz ab (9.3); Aussehen und Game-Feel bleiben Handarbeit |
 | Kollisionstest ist O(n) ueber alle Objekte          | > ~200 Objekte                                      | Raeumliches Gitter                         |
 | Ton nur prozedural, keine Audiodateien              | Musik oder komplexe Klangkulisse                    | Dateien/Audio-Mixer in M4                  |
 | HUD-Layout nutzt 720×variable Portraithoehe         | nie (FIT skaliert)                                  | —                                          |

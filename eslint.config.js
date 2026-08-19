@@ -38,6 +38,10 @@ export default tseslint.config(
         fetch: 'readonly',
         URL: 'readonly',
         setTimeout: 'readonly',
+        // `window` ist hier kein Node-Global: die an page.evaluate()
+        // uebergebenen Funktionen werden als Quelltext in den Browser
+        // geschickt und laufen dort (scripts/playtest.mjs).
+        window: 'readonly',
       },
     },
     rules: {
