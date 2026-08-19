@@ -564,14 +564,56 @@ Production-Builds.
 
 **`npm run playtest`** (`scripts/playtest.mjs`) prueft in vier Suiten die
 Kette, die Vitest nicht erreicht: Scene-Fluss, Steuerung, Kollision,
-Punktevergabe, Layout und Persistenz. 27 Schritte, rund 15 Minuten.
+Punktevergabe, Layout und Persistenz. 39 Schritte, rund 20 Minuten.
 
 | Suite      | Deckt ab                                                                 |
 | ---------- | ------------------------------------------------------------------------ |
 | `screens`  | Profil, Talentbaum, Erfolge, Einstellungen, Rangliste, Wartung           |
-| `layout`   | Canvas-Ueberstand und unterster Knopf ueber sieben Geraeteformate        |
+| `layout`   | Canvas-Ueberstand und unterster Knopf ueber 19 Geraeteformate            |
 | `progress` | Levelaufstieg, Muenzen, Erfolge, Bestwert, Spielstand ueber Neuladen     |
 | `modes`    | Solo in drei Welten, Tageslauf, Bot-Duell                                |
+
+### 9.4 iOS: Engine und Mindestversion
+
+Zwei getrennte Fragen, zwei getrennte Werkzeuge.
+
+**Laeuft es in Safaris Engine?** `npm run playtest -- --only=ios` faehrt
+dieselbe Seite in **echtem WebKit** statt in Chromium, ueber sechs
+iPhone-/iPad-Profile plus einen kompletten Run. Die uebrigen Suiten laufen
+unter Chromium mit iPhone-Etikett — das ist Blink, nicht WebKit, und genau
+die Eigenheiten, die dieses Projekt teuer bezahlt hat (`100dvh`,
+`env(safe-area-*)`, `visualViewport`), stecken in WebKit. Voraussetzung:
+`npx playwright install webkit`.
+
+**Ab welchem iOS laeuft es?** `npm run ios:check` liest das **gebaute
+Bundle** und meldet die hoechste gefundene Anforderung:
+
+| | |
+| --- | --- |
+| Laedt ueberhaupt ab | **iOS 14.0** (Logical Assignment `??=`) |
+| Vollstaendig nutzbar ab | **iOS 15.4** (`structuredClone()`, `dvh`) |
+
+**Massgeblich ist iOS 15.4.** `structuredClone()` sitzt in
+`SaveSystem.update()` und laeuft bei jedem Run-Ende — dazwischen wuerde das
+Spiel starten und beim ersten Speichern abbrechen, was schlechter ist als
+gar nicht zu laden.
+
+Geprueft wird das Bundle, nicht `src/`: Vite transpiliert auf `es2022` und
+laesst alles darueber stehen, auch aus Phaser und supabase-js. Der Check
+schreibt die Grenze fest und bricht ab, wenn eine neue Abhaengigkeit sie
+anhebt — sonst steigt die Mindestversion still.
+
+Zwei Muster wurden dabei wieder entfernt, weil sie in minifiziertem Code nur
+Rauschen fanden: `.group(` traf ausschliesslich `console.group()`, und ein
+Regex-Literal `/d` ist von einer Division `1/d` nicht zu unterscheiden.
+
+Die Geraeteliste der Layout-Suite kommt aus **Playwrights eigenen Profilen**
+(iPhone SE bis 17 Pro Max, iPad Mini/gen 7/gen 11/Pro 11, Pixel 7) samt
+echtem Skalierungsfaktor — iPhones laufen mit dpr 3, ein fest gesetztes 2
+verfaelschte die Rechnung. Nur was Playwright nicht kennt, steht als eigener
+Viewport daneben: iPad Air 11", iPad Pro 12.9", Galaxy S20 und der
+Kurz-Fall (390x600), der Safari mit ausgeklappter Adressleiste nachbildet —
+dort bricht ein Hoehenfehler zuerst durch.
 
 Einzeln zu fahren ueber `--only=layout` (mehrere kommagetrennt).
 `--watch` oeffnet ein sichtbares Fenster mit gebremster Eingabe.

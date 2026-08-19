@@ -166,8 +166,26 @@ gibt eine Netzwerk-Adresse aus; Handy und PC muessen im selben WLAN sein.
 
 **Automatisiert:** Vitest deckt `ScoreSystem`, `ProgressionSystem` und
 `ChallengeSystem` ab (`npm run test`, Details in `docs/ARCHITECTURE.md` 9.2).
-Neue Logik in `systems/` bekommt Tests; Scenes, Entities und Darstellung sind
-nicht abgedeckt und bleiben Handarbeit auf dem Geraet.
+Neue Logik in `systems/` bekommt Tests.
+
+Scenes, Entities und Darstellung deckt der Browser-Playtest ab
+(`docs/ARCHITECTURE.md` 9.3/9.4):
+
+```bash
+npm run playtest                  # alle Suiten, ~20 Minuten
+npm run playtest -- --only=layout # eine Suite: screens|layout|ios|progress|modes
+npm run playtest -- --watch       # sichtbares Fenster statt headless
+npm run ios:check                 # iOS-Mindestversion aus dem Build
+```
+
+Einmalig pro Arbeitskopie fuer die `ios`-Suite (echtes WebKit statt Chromium):
+
+```bash
+npx playwright install webkit
+```
+
+**Was auch das nicht ersetzt:** Touch-Eigenheiten echter Geraete, Game-Feel
+und Bildrate unter Last bleiben Handarbeit auf dem Geraet.
 
 Zwei Fallen beim Testschreiben:
 

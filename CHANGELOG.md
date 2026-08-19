@@ -11,9 +11,26 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
-- **`npm run playtest`** spielt isiHunt automatisiert durch — 27 Pruefschritte
+- **`npm run ios:check`** ermittelt die iOS-Mindestversion aus dem gebauten
+  Bundle: **laedt ab iOS 14.0**, **voll nutzbar ab iOS 15.4**. Massgeblich
+  ist 15.4 — `structuredClone()` sitzt in `SaveSystem.update()` und laeuft
+  bei jedem Run-Ende, dazwischen wuerde das Spiel starten und beim ersten
+  Speichern abbrechen. Geprueft wird das Bundle statt `src/`, weil Vite auf
+  `es2022` transpiliert und alles darueber stehen laesst, auch aus Phaser.
+  Der Check schreibt die Grenze fest und bricht ab, wenn eine neue
+  Abhaengigkeit sie anhebt.
+
+- **`npm run playtest -- --only=ios`** faehrt die Seite in **echtem WebKit**
+  (Safaris Engine) statt in Chromium — sechs iPhone-/iPad-Profile plus ein
+  kompletter Run. Die uebrigen Suiten laufen unter Chromium mit
+  iPhone-Etikett; das ist Blink, nicht WebKit. Voraussetzung:
+  `npx playwright install webkit`.
+
+- **`npm run playtest`** spielt isiHunt automatisiert durch — 39 Pruefschritte
   in vier Suiten: alle Menue-Bildschirme, Solo in drei Welten plus Tageslauf
-  und Bot-Duell, Layout ueber sieben Geraeteformate, sowie Levelaufstieg,
+  und Bot-Duell, Layout ueber 19 Geraeteformate (iPhone SE bis 17 Pro Max,
+  iPad Mini/Air/Pro 11"/Pro 12.9"/gen 7/gen 11, Pixel 7, Galaxy S20 und ein
+  bewusst zu kurzes Fenster), sowie Levelaufstieg,
   Muenzen, Erfolge und Spielstand ueber ein Neuladen hinweg. Gesteuert wird
   ueber echte Tastatureingaben, nicht ueber gesetzte Positionen. Moeglich
   ueber `window.isiHunt` aus dem Dev-Build; `.env.playtest` haelt den Lauf
