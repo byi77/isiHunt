@@ -71,10 +71,14 @@ braucht, sind zwei Commits.
 
 1. Branch von `main` abzweigen
 2. Arbeiten, dabei **Doku im selben Commit** mitziehen
-3. Lokal `typecheck`, `lint`, `build` gruen bekommen
-4. **Auf einem echten Handy testen** — nicht nur im Browser-Emulator
-5. PR oeffnen, Vorlage ausfuellen
-6. CI muss gruen sein
+3. Lokal `npm run verify` gruen bekommen (Typecheck, Lint, Format, Tests, Build)
+4. Bei Aenderungen an Scenes, Layout oder Navigation: `npm run playtest`
+   (oder gezielt `--only=nav,controls,layout`)
+5. **Auf einem echten Handy testen** — nicht nur im Browser-Emulator.
+   Der Playtest deckt Ablauf und Layout ab, aber weder Touch-Eigenheiten
+   noch Game-Feel oder Bildrate unter Last.
+6. PR oeffnen, Vorlage ausfuellen
+7. CI muss gruen sein
 
 ## Die Doku ist Teil des Codes
 

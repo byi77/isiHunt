@@ -11,6 +11,37 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Zwei neue Playtest-Suiten: `nav` und `controls`.**
+  `nav` klickt sich durch die Menuewege und wieder zurueck — mit **echten
+  Klicks** auf die Knopfposition, nicht per `scene.start()`. Nur so laufen
+  Trefferflaeche, Zeichenreihenfolge und Koordinatenumrechnung mit; der
+  Rueckweg geht ueber den Zurueck-Knopf der Zielseite.
+  `controls` prueft, was sonst erst auf dem Geraet auffaellt: ueberlappende
+  Knoepfe, Elemente ausserhalb der Spielflaeche, zu kleine Tippziele und ob
+  lange Menues sich wirklich per Wischen scrollen lassen.
+
+  **Bewusst konservativ bewertet.** Ueberlappung wird nur zwischen zwei
+  echten Knoepfen gemeldet: Das Logo im Hauptmenue traegt eine
+  640x360-Trefferflaeche (Groesse der Originaltextur, nicht der Anzeige) und
+  ueberdeckt rechnerisch 88 % des VOLLBILD-Knopfes — ein echter Klick liefert
+  trotzdem VOLLBILD, weil Knoepfe auf `Depth.UI` liegen. Tippziele werden in
+  CSS-Pixeln des echten Viewports gemessen; Apples 44 pt sind ein Hinweis,
+  kein Fehler, weil der Zurueck-Knopf mit ~33 CSS-px darunter liegt und seit
+  v0.1.3 auf dem Geraet als gut bedienbar bestaetigt ist.
+
+  Aktueller Stand: keine Ueberlappungen, nichts ausserhalb der Spielflaeche,
+  ProfileScene scrollt (146 px gemessen). Kleinstes Tippziel sind die
+  Weltauswahl-Pfeile mit 28x28 CSS-px.
+
+  **Ein Verdacht war keiner.** Das DOM-Namensfeld schien den Szenenwechsel zu
+  ueberleben; die Ursache lag im Test. Er wechselte ueber den globalen
+  Manager (`game.scene.start`), der die alte Scene mitlaufen laesst — das
+  Spiel ruft immer `this.scene.start` auf der laufenden Scene, und dort
+  raeumt Phaser das Feld zuverlaessig ab. Geprueft mit und ohne eigens
+  gebauten Fix, beide Male sauber; der Fix wurde zurueckgenommen. Alle
+  Suiten wechseln Scenes jetzt ueber `switchScene()` so, wie das Spiel es
+  tut. Der Pruefschritt bleibt als Regressionsschutz und ist gruen.
+
 - **`npm run ios:check`** ermittelt die iOS-Mindestversion aus dem gebauten
   Bundle: **laedt ab iOS 14.0**, **voll nutzbar ab iOS 15.4**. Massgeblich
   ist 15.4 — `structuredClone()` sitzt in `SaveSystem.update()` und laeuft
@@ -26,8 +57,8 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   iPhone-Etikett; das ist Blink, nicht WebKit. Voraussetzung:
   `npx playwright install webkit`.
 
-- **`npm run playtest`** spielt isiHunt automatisiert durch — 39 Pruefschritte
-  in vier Suiten: alle Menue-Bildschirme, Solo in drei Welten plus Tageslauf
+- **`npm run playtest`** spielt isiHunt automatisiert durch — 71 Pruefschritte
+  in sieben Suiten: alle Menue-Bildschirme, Solo in drei Welten plus Tageslauf
   und Bot-Duell, Layout ueber 19 Geraeteformate (iPhone SE bis 17 Pro Max,
   iPad Mini/Air/Pro 11"/Pro 12.9"/gen 7/gen 11, Pixel 7, Galaxy S20 und ein
   bewusst zu kurzes Fenster), sowie Levelaufstieg,

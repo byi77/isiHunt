@@ -59,7 +59,8 @@ isiHunt/
 │   ├── bump-version.mjs        Patch-Version +1, vom pre-commit-Hook gerufen
 │   ├── check-deploy.mjs        Liegt der lokale Stand wirklich live? (deploy:check)
 │   ├── smoke-test.mjs          Playwright gegen den Dev-Server (npm run smoke)
-│   └── playtest.mjs            Spielt einen ganzen Run automatisiert (npm run playtest)
+│   ├── playtest.mjs            Sieben Test-Suiten im Browser (npm run playtest)
+│   └── check-ios-support.mjs   iOS-Mindestversion aus dem Build (npm run ios:check)
 ├── src/
 │   ├── config/                 Reine Daten, keine Logik
 │   │   ├── GameConfig.ts       Alle Balancing-Zahlen
@@ -562,16 +563,103 @@ Production-Builds.
 
 ### 9.3 Automatisierter Playtest
 
-**`npm run playtest`** (`scripts/playtest.mjs`) prueft in vier Suiten die
-Kette, die Vitest nicht erreicht: Scene-Fluss, Steuerung, Kollision,
-Punktevergabe, Layout und Persistenz. 39 Schritte, rund 20 Minuten.
+**`npm run playtest`** (`scripts/playtest.mjs`) prueft in sieben Suiten die
+Kette, die Vitest nicht erreicht: Scene-Fluss, Navigation, Bedienelemente,
+Steuerung, Kollision, Punktevergabe, Layout und Persistenz. Rund 71 Schritte,
+etwa 25 Minuten.
 
-| Suite      | Deckt ab                                                                 |
-| ---------- | ------------------------------------------------------------------------ |
-| `screens`  | Profil, Talentbaum, Erfolge, Einstellungen, Rangliste, Wartung           |
-| `layout`   | Canvas-Ueberstand und unterster Knopf ueber 19 Geraeteformate            |
-| `progress` | Levelaufstieg, Muenzen, Erfolge, Bestwert, Spielstand ueber Neuladen     |
-| `modes`    | Solo in drei Welten, Tageslauf, Bot-Duell                                |
+| Suite      | Deckt ab                                                            |
+| ---------- | ------------------------------------------------------------------- |
+| `screens`  | Profil, Talentbaum, Erfolge, Einstellungen, Rangliste, Wartung      |
+| `nav`      | Menuewege hin und zurueck, per echtem Klick auf den Knopf           |
+| `controls` | Ueberlappung, Lage, Groesse der Tippziele, Scrollen langer Menues   |
+| `layout`   | Canvas-Ueberstand und unterster Knopf ueber 19 Geraeteformate       |
+| `ios`      | Dieselben Pruefungen in echtem WebKit statt in Chromium             |
+| `progress` | Levelaufstieg, Muenzen, Erfolge, Bestwert, Spielstand ueber Neuladen |
+| `modes`    | Solo in drei Welten, Tageslauf, Bot-Duell                           |
+
+Einzeln zu fahren ueber `--only=nav,controls` (kommagetrennt).
+`--watch` oeffnet ein sichtbares Fenster mit gebremster Eingabe.
+
+#### Warum echte Klicks statt `scene.start()`
+
+Die `nav`-Suite liest die Knopfposition aus der laufenden Scene, rechnet sie
+in Bildschirmkoordinaten um und klickt dorthin. Ein `scene.start(...)` wuerde
+selbst dann gruen melden, wenn der Knopf gar nicht erreichbar ist — die
+Trefferflaeche, die Zeichenreihenfolge und die Koordinatenumrechnung laufen
+nur beim echten Klick mit. Dieselbe Kette hat in Phase 1 einen Fehler
+verursacht, bei dem der falsche Knopf gewann.
+
+Der Rueckweg laeuft ueber den Zurueck-Knopf der Zielseite, nicht per
+`scene.start('Menu')` — sonst bliebe ungeprueft, ob es ihn ueberhaupt gibt.
+
+#### Was `controls` prueft, und was bewusst nicht
+
+| Pruefung                | Regel                                                      |
+| ----------------------- | ---------------------------------------------------------- |
+| Ueberlappung            | Nur **zwei echte Knoepfe**; alles andere ist kein Fehler   |
+| Lage                    | Trefferflaeche muss in der Spielflaeche liegen             |
+| Groesse                 | In **CSS-Pixeln** des echten Viewports, nicht in Spielpixeln |
+| Scrollen                | Echter Drag, gemessen am Versatz des Inhalts-Containers    |
+
+**Ueberlappung ist nicht automatisch ein Fehler.** Das Logo im Hauptmenue
+traegt eine 640x360-Trefferflaeche — die Groesse der Originaltextur, nicht der
+Anzeige (400x225) — und ueberdeckt damit rechnerisch 88 % des
+VOLLBILD-Knopfes. Ein echter Klick liefert trotzdem VOLLBILD, weil Knoepfe auf
+`Depth.UI` liegen und Phaser beim vordersten Treffer stoppt. Gemeldet wird
+deshalb nur die Ueberlappung zweier Knoepfe; dort gibt es keine verlaessliche
+Rangfolge.
+
+**Tippziele werden in CSS-Pixeln bewertet.** Die Spielflaeche ist 720 breit
+und wird auf die Geraetebreite skaliert: Ein 60-Spielpixel-Knopf misst auf
+einem 390-px-iPhone nur rund 33 CSS-px. Apples Empfehlung von 44 pt wird als
+**Hinweis** ausgegeben, nicht als Fehler — der Zurueck-Knopf liegt mit ~33
+CSS-px darunter, ist aber seit v0.1.3 auf dem Geraet ausdruecklich als gut
+bedienbar bestaetigt. Ein harter Fehler waere hier eine erfundene Regel. Rot
+wird die Suite erst unter 22 CSS-px.
+
+Aktueller Stand: die Weltauswahl-Pfeile sind mit 28x28 CSS-px die kleinsten
+Ziele, die Hauptknoepfe JAGD und TAGESLAUF erfuellen die Empfehlung.
+
+**Scrollen** misst den scrollenden Inhalts-Container, nicht einen beliebigen
+Knopf: Der Zurueck-Knopf liegt bewusst ausserhalb des Scroll-Inhalts und
+bewegt sich nie mit. Ein Test, der ihn als Referenz nimmt, meldet
+faelschlich "scrollt nicht".
+
+#### Drei Fehlalarme, die beim Bauen entstanden
+
+Alle drei lagen am Test, nicht am Spiel — und alle drei haetten als Bug
+gemeldet werden koennen:
+
+| Meldung                          | Tatsaechliche Ursache                                  |
+| -------------------------------- | ------------------------------------------------------ |
+| "Steuerung bewegt nichts"        | Gemessen wurde waehrend des Countdowns                 |
+| "Spielstand ueberlebt Neuladen nicht" | `addInitScript` ueberschrieb ihn bei jedem Aufbau |
+| "Info-Knopf ist verdeckt"        | `hitTest()` von Hand; der echte Klick loeste ihn aus   |
+
+Daraus die Regel: **Der echte Klick ist der Massstab, nicht die Rechnung.**
+
+#### Der vierte Fehlalarm — und was er ueber Scene-Wechsel lehrt
+
+Ein scheinbarer Fund war der teuerste: Das DOM-Namensfeld aus
+`createTextInput()` schien den Szenenwechsel zu ueberleben und ueber dem
+Talentbaum zu schweben — inklusive Screenshot als Beleg.
+
+Die Ursache lag im Test. Er wechselte per `game.scene.start(x)` ueber den
+**globalen Manager**; das startet x, **beendet die alte Scene aber nicht**.
+Beide liefen parallel, `shutdown` feuerte nie, und das Feld blieb stehen. Das
+Spiel selbst ruft immer `this.scene.start(x)` auf der laufenden Scene — auf
+diesem Weg raeumt Phaser das DOMElement zuverlaessig ab, mit und ohne
+zusaetzlichen Handler.
+
+Nachgeprueft wurde beides: mit einem eigens gebauten Fix und ohne ihn, jeweils
+ueber den echten Wechselweg. Beide Male blieb kein Feld zurueck — der Fix war
+damit ueberfluessig und wurde zurueckgenommen.
+
+Daraus der Helfer `switchScene()`, den alle Suiten benutzen: **Ein Test darf
+Scenes nur so wechseln, wie das Spiel es tut.** Sonst prueft er einen Zustand,
+den es im Spiel nie gibt. Der Pruefschritt selbst ist geblieben und gruen — er
+faengt jetzt einen echten Regress, falls das Aufraeumen einmal ausfaellt.
 
 ### 9.4 iOS: Engine und Mindestversion
 
@@ -678,7 +766,7 @@ Ehrlich benannt, damit sie nicht ueberrascht:
 | Grenze                                              | Ab wann relevant                                    | Loesung                                    |
 | --------------------------------------------------- | --------------------------------------------------- | ------------------------------------------ |
 | Kein Object Pooling — jedes Relikt wird neu erzeugt | > 100 gleichzeitige Objekte                         | Pool in `SpawnSystem`                      |
-| Tests decken nur `systems/`, nicht Scenes/Entities  | ab Regressionen in Darstellung oder Eingabe         | `npm run playtest` deckt Scene-Fluss, Steuerung, Kollision und Persistenz ab (9.3); Aussehen und Game-Feel bleiben Handarbeit |
+| Vitest deckt nur `systems/`, nicht Scenes/Entities  | ab Regressionen in Darstellung oder Eingabe         | `npm run playtest` deckt Scene-Fluss, Navigation, Bedienelemente, Steuerung, Kollision, Layout und Persistenz ab (9.3). Offen bleiben: Touch-Eigenheiten echter Geraete, Game-Feel, Bildrate unter Last, Aussehen jenseits von "laeuft und liegt richtig", Online-Duell und Duell2G |
 | Kollisionstest ist O(n) ueber alle Objekte          | > ~200 Objekte                                      | Raeumliches Gitter                         |
 | Ton nur prozedural, keine Audiodateien              | Musik oder komplexe Klangkulisse                    | Dateien/Audio-Mixer in M4                  |
 | HUD-Layout nutzt 720×variable Portraithoehe         | nie (FIT skaliert)                                  | —                                          |

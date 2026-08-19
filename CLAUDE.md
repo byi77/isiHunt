@@ -172,11 +172,23 @@ Scenes, Entities und Darstellung deckt der Browser-Playtest ab
 (`docs/ARCHITECTURE.md` 9.3/9.4):
 
 ```bash
-npm run playtest                  # alle Suiten, ~20 Minuten
-npm run playtest -- --only=layout # eine Suite: screens|layout|ios|progress|modes
+npm run playtest                  # alle sieben Suiten, ~25 Minuten
+npm run playtest -- --only=nav    # screens|nav|controls|layout|ios|progress|modes
 npm run playtest -- --watch       # sichtbares Fenster statt headless
 npm run ios:check                 # iOS-Mindestversion aus dem Build
 ```
+
+Was die Suiten abdecken:
+
+| Suite      | Prueft                                                           |
+| ---------- | ---------------------------------------------------------------- |
+| `screens`  | Jeder Menue-Bildschirm oeffnet ohne Konsolenfehler               |
+| `nav`      | Menuewege hin und zurueck, per echtem Klick auf den Knopf        |
+| `controls` | Ueberlappende, verrutschte oder zu kleine Knoepfe; Scrollen      |
+| `layout`   | Canvas-Ueberstand ueber 19 Geraeteformate                        |
+| `ios`      | Dieselbe Seite in echtem WebKit statt in Chromium                |
+| `progress` | Levelaufstieg, Muenzen, Erfolge, Spielstand ueber ein Neuladen   |
+| `modes`    | Solo in drei Welten, Tageslauf, Bot-Duell                        |
 
 Einmalig pro Arbeitskopie fuer die `ios`-Suite (echtes WebKit statt Chromium):
 

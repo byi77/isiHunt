@@ -95,6 +95,20 @@ sofort auch auf dem Handy sichtbar.
 | `npm run lint`      | ESLint                                       |
 | `npm run format`    | Prettier ueber alle Quellen                  |
 | `npm run icons`     | App-Icons neu zeichnen                       |
+| `npm run test`      | Vitest ueber `systems/` und `config/`        |
+| `npm run playtest`  | Browser-Playtest, sieben Suiten (~25 Min)    |
+| `npm run smoke`     | Kurzer Boot-Test gegen einen Dev-Server      |
+| `npm run ios:check` | iOS-Mindestversion aus dem Build ermitteln   |
+
+Der Playtest steuert das Spiel in einem echten Browser: Menuewege per Klick,
+ein kompletter Run per Tastatur, Layout ueber 19 Geraeteformate und ein Lauf
+in echtem WebKit. Einzelne Suiten ueber `--only=`, zusehen mit `--watch`:
+
+```bash
+npm run playtest -- --watch --only=nav
+```
+
+Fuer die `ios`-Suite einmalig `npx playwright install webkit`.
 
 ### Online-Funktionen (optional)
 
