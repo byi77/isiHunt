@@ -43,6 +43,8 @@ export default tseslint.config(
         // Browser geschickt und laufen dort (scripts/playtest.mjs).
         window: 'readonly',
         navigator: 'readonly',
+        document: 'readonly',
+        getComputedStyle: 'readonly',
       },
     },
     rules: {

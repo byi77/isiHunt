@@ -7,10 +7,12 @@
 // Tastatureingaben, nicht ueber gesetzte Positionen: so laeuft derselbe Weg
 // durch InputController und GameScene.update() wie beim Spielen mit der Hand.
 //
-// Fuenf Suiten, einzeln waehlbar ueber --only:
+// Sieben Suiten, einzeln waehlbar ueber --only:
 //   screens    Jeder Menue-Bildschirm: oeffnet, Konsole sauber, Screenshot
 //   modes      Solo je Welt, Tageslauf, Bot-Duell
 //   layout     Canvas-Ueberstand und unterster Knopf ueber 19 Geraeteformate
+//   nav        Menuewege hin und zurueck, per echtem Klick
+//   controls   Ueberlappende/verrutschte/zu kleine Knoepfe, Scrollen
 //   ios        Dieselben Pruefungen in echtem WebKit statt in Chromium
 //   progress   Levelaufstieg, Talentkauf, Erfolge, Spielstand ueber Neuladen
 //
@@ -256,6 +258,108 @@ async function playUntilDone(page, maxMs = 140000, onFirstScore = null) {
   return lastScore;
 }
 
+/** Rechnet eine Spielkoordinate in eine Bildschirmkoordinate um. */
+function toScreen(page, gx, gy) {
+  return page.evaluate(
+    ([x, y]) => {
+      const g = window.isiHunt;
+      const r = g.canvas.getBoundingClientRect();
+      return {
+        sx: r.left + (x / g.scale.width) * r.width,
+        sy: r.top + (y / g.scale.height) * r.height,
+      };
+    },
+    [gx, gy]
+  );
+}
+
+/** Klickt einen Punkt der Spielflaeche mit einem echten Mausklick. */
+async function clickGamePoint(page, gx, gy) {
+  const { sx, sy } = await toScreen(page, gx, gy);
+  await page.mouse.click(sx, sy);
+}
+
+/**
+ * Wechselt die Scene so, wie das Spiel es tut: ueber die **laufende Scene**,
+ * nicht ueber den globalen Manager.
+ *
+ * `game.scene.start(x)` startet x, beendet die alte Scene aber **nicht** -
+ * beide laufen dann parallel. Das Spiel ruft immer `this.scene.start(x)`.
+ * Ein Test, der den globalen Manager nimmt, prueft einen Zustand, den es im
+ * Spiel nie gibt, und meldete hier bereits einen Fehler, der keiner war.
+ */
+async function switchScene(page, von, nach, data) {
+  await page.evaluate(
+    ([v, n, d]) => {
+      const scene = window.isiHunt.scene.getScene(v);
+      if (scene) scene.scene.start(n, d);
+      else window.isiHunt.scene.start(n, d);
+    },
+    [von, nach, data ?? undefined]
+  );
+}
+
+/** Aktive Scenes als Liste. */
+function activeScenes(page) {
+  return page.evaluate(() =>
+    window.isiHunt.scene.scenes.filter((s) => s.scene.isActive()).map((s) => s.scene.key)
+  );
+}
+
+/**
+ * Sammelt alle sichtbaren, interaktiven Elemente einer Scene mit Beschriftung,
+ * Weltposition und Trefferflaeche.
+ *
+ * Die Weltposition wird ueber die Elternkette aufaddiert - `x`/`y` allein sind
+ * bei verschachtelten Containern lokal und zeigten beim Bauen auf falsche
+ * Stellen.
+ */
+function collectInteractive(page, sceneKey) {
+  return page.evaluate((key) => {
+    const scene = window.isiHunt.scene.getScene(key);
+    if (!scene) return [];
+    const label = (o) => {
+      let t = '';
+      const dig = (n, d) => {
+        if (d > 3) return;
+        for (const ch of n.list ?? []) {
+          if (ch.type === 'Text' && ch.text && !t) t = ch.text.trim().slice(0, 24);
+          if (ch.list) dig(ch, d + 1);
+        }
+      };
+      dig(o, 0);
+      return t || `(${o.type})`;
+    };
+    const out = [];
+    const walk = (list, depth) => {
+      for (const o of list ?? []) {
+        if (o.input?.enabled && o.visible && o.input.hitArea && (o.alpha ?? 1) > 0.05) {
+          let wx = o.x ?? 0;
+          let wy = o.y ?? 0;
+          let par = o.parentContainer;
+          while (par) {
+            wx += par.x;
+            wy += par.y;
+            par = par.parentContainer;
+          }
+          const h = o.input.hitArea;
+          out.push({
+            label: label(o),
+            type: o.type,
+            x: Math.round(wx),
+            y: Math.round(wy),
+            w: Math.round(h.width ?? 0),
+            h: Math.round(h.height ?? 0),
+          });
+        }
+        if (o.list && depth < 5) walk(o.list, depth + 1);
+      }
+    };
+    walk(scene.children.list, 0);
+    return out;
+  }, sceneKey);
+}
+
 function readSave(page) {
   return page.evaluate((key) => {
     const raw = window.localStorage.getItem(key);
@@ -320,7 +424,7 @@ async function suiteScreens() {
       );
 
       // Zurueck ins Menue, damit der naechste Bildschirm vom selben Punkt startet.
-      await page.evaluate(() => window.isiHunt.scene.start('Menu'));
+      await switchScene(page, key, 'Menu');
       await waitForScene(page, 'Menu', 10000).catch(() => {});
       await page.waitForTimeout(300);
     }
@@ -618,6 +722,346 @@ async function suiteIos() {
 }
 
 // =============================================================================
+// Suite 6: Navigation
+// =============================================================================
+/**
+ * Klickt sich durch die Menuewege wie ein Finger - und wieder zurueck.
+ *
+ * Bewusst mit **echten Klicks** auf Bildschirmkoordinaten statt mit
+ * `scene.start(...)`: Nur so laufen Trefferflaeche, Zeichenreihenfolge und
+ * Koordinatenumrechnung mit. Ein `scene.start()` wuerde selbst dann gruen
+ * melden, wenn der Knopf gar nicht erreichbar ist.
+ *
+ * Beim Bauen zeigte sich, warum das noetig ist: Phasers `hitTest()` von Hand
+ * aufzurufen meldete einen Info-Knopf als "verdeckt", waehrend ein echter
+ * Klick ihn einwandfrei ausloeste. Der Klick ist der Massstab.
+ */
+async function suiteNavigation() {
+  suite('Navigation');
+
+  const save = makeSave({ level: 30, coins: 5000, talentPoints: 5, totalRuns: 12, bestScore: 4200 });
+  const { page, context, errors } = await openPage(save);
+
+  try {
+    await waitForScene(page, 'Menu');
+    await page.waitForTimeout(600);
+
+    // Beschriftung -> erwartete Ziel-Scene. Die Knopfposition wird zur
+    // Laufzeit aus der Scene gelesen, nicht abgetippt: verschiebt jemand den
+    // Knopf, folgt der Test mit, statt falsch rot zu werden.
+    const WEGE = [
+      ['PROFIL', 'Profile'],
+      ['TALENTBAUM', 'Talents'],
+      ['ERFOLGE', 'Achievements'],
+      ['EINSTELLUNGEN', 'Settings'],
+    ];
+
+    for (const [label, ziel] of WEGE) {
+      const vorher = errors.length;
+
+      const buttons = await collectInteractive(page, 'Menu');
+      const treffer = buttons.find((b) => b.label.toUpperCase().startsWith(label));
+      if (!treffer) {
+        record(`Menue -> ${label}`, false, 'Knopf nicht gefunden');
+        continue;
+      }
+
+      await clickGamePoint(page, treffer.x, treffer.y);
+      let angekommen = false;
+      try {
+        await waitForScene(page, ziel, 8000);
+        angekommen = true;
+      } catch {
+        angekommen = false;
+      }
+
+      const frisch = errors.slice(vorher);
+      record(
+        `Menue -> ${label} oeffnet ${ziel}`,
+        angekommen && frisch.length === 0,
+        angekommen
+          ? frisch.length
+            ? frisch[0].slice(0, 60)
+            : `Klick auf ${treffer.x},${treffer.y}`
+          : `Scene ${ziel} wurde nicht aktiv (aktiv: ${(await activeScenes(page)).join(', ')})`
+      );
+
+      if (!angekommen) {
+        await switchScene(page, ziel, 'Menu');
+        await waitForScene(page, 'Menu', 8000).catch(() => {});
+        continue;
+      }
+
+      // Zurueck - ueber den Zurueck-Knopf, nicht per scene.start().
+      await page.waitForTimeout(500);
+      const zurueckBtns = await collectInteractive(page, ziel);
+      const zurueck = zurueckBtns.find((b) => /ZUR(UE|Ü)CK|MEN(UE|Ü)/i.test(b.label));
+
+      if (!zurueck) {
+        record(`${ziel} -> zurueck`, false, 'kein Zurueck-Knopf gefunden');
+        await switchScene(page, ziel, 'Menu');
+        await waitForScene(page, 'Menu', 8000).catch(() => {});
+        continue;
+      }
+
+      await clickGamePoint(page, zurueck.x, zurueck.y);
+      let zurueckOk = false;
+      try {
+        await waitForScene(page, 'Menu', 8000);
+        zurueckOk = true;
+      } catch {
+        zurueckOk = false;
+      }
+      record(
+        `${ziel} -> zurueck ins Menue`,
+        zurueckOk,
+        zurueckOk ? `ueber "${zurueck.label}"` : 'Menue wurde nicht wieder aktiv'
+      );
+
+      if (!zurueckOk) {
+        await switchScene(page, ziel, 'Menu');
+        await waitForScene(page, 'Menu', 8000).catch(() => {});
+      }
+      await page.waitForTimeout(300);
+    }
+  } catch (e) {
+    record('Navigationswege', false, e.message.slice(0, 70));
+  } finally {
+    await context.close();
+  }
+}
+
+// =============================================================================
+// Suite 7: Bedienelemente (Ueberlappung, Position, Groesse, Scrollen)
+// =============================================================================
+/**
+ * Prueft, was sonst erst auf dem Geraet auffaellt: Knoepfe, die ineinander
+ * ragen, aus der Spielflaeche laufen oder zu klein zum Treffen sind - und ob
+ * lange Menues wirklich scrollbar sind.
+ *
+ * **Ueberlappung ist nicht automatisch ein Fehler.** Das Logo im Hauptmenue
+ * traegt eine 640x360-Trefferflaeche (Groesse der Originaltextur, nicht der
+ * Anzeige) und liegt damit unter mehreren Knoepfen. Weil Knoepfe auf
+ * `Depth.UI` liegen und Phaser beim vordersten Treffer stoppt, gewinnt
+ * trotzdem der Knopf - ein echter Klick auf VOLLBILD liefert VOLLBILD.
+ * Gemeldet wird deshalb nur die Ueberlappung **zweier echter Knoepfe**; dort
+ * gibt es keine verlaessliche Rangfolge.
+ */
+async function suiteControls() {
+  suite('Bedienelemente');
+
+  const save = makeSave({ level: 30, coins: 5000, talentPoints: 5, totalRuns: 12, bestScore: 4200 });
+  const { page, context } = await openPage(save);
+
+  // Tippziele werden in **CSS-Pixeln** bewertet, nicht in Spielpixeln: Die
+  // Spielflaeche ist 720 breit und wird auf die Geraetebreite skaliert, ein
+  // 60-px-Knopf misst auf einem 390-px-iPhone also nur ~33 CSS-px.
+  //
+  // Apple empfiehlt 44 pt. Dieser Wert wird hier als *Hinweis* gefuehrt und
+  // nicht als Fehler: Der Zurueck-Knopf liegt mit ~33 CSS-px darunter, ist
+  // aber seit v0.1.3 auf dem Geraet ausdruecklich als gut bedienbar
+  // bestaetigt (TODO.md, Phase 1). Ein harter Fehler waere hier eine
+  // erfundene Regel, die die Suite nur rot faerbt.
+  //
+  // Hart geprueft wird erst die Haelfte davon - so klein, dass Treffen
+  // wirklich zum Gluecksspiel wird.
+  const HINWEIS_CSS_PX = 44;
+  const FEHLER_CSS_PX = 22;
+
+  try {
+    await waitForScene(page, 'Menu');
+    await page.waitForTimeout(600);
+
+    const SCENES = ['Menu', 'Profile', 'Talents', 'Achievements', 'Settings'];
+
+    // Gewechselt wird immer von der gerade offenen Scene aus - siehe
+    // switchScene(): der globale Manager wuerde die alte mitlaufen lassen.
+    let vorige = 'Menu';
+    for (const key of SCENES) {
+      if (key !== 'Menu') {
+        await switchScene(page, 'Menu', key);
+        try {
+          await waitForScene(page, key, 10000);
+        } catch {
+          record(`${key}: Bedienelemente`, false, 'Scene wurde nicht aktiv');
+          continue;
+        }
+        await page.waitForTimeout(700);
+      }
+
+      const items = await collectInteractive(page, key);
+      const spielHoehe = await page.evaluate(() => window.isiHunt.scale.height);
+
+      const knoepfe = items.filter((i) => i.type === 'Container' && i.w > 0 && i.h > 0);
+      const rect = (i) => ({
+        l: i.x - i.w / 2,
+        r: i.x + i.w / 2,
+        t: i.y - i.h / 2,
+        b: i.y + i.h / 2,
+      });
+
+      // 1. Ueberlappung zweier Knoepfe.
+      const kollisionen = [];
+      for (let a = 0; a < knoepfe.length; a++) {
+        for (let b = a + 1; b < knoepfe.length; b++) {
+          const ra = rect(knoepfe[a]);
+          const rb = rect(knoepfe[b]);
+          const ox = Math.min(ra.r, rb.r) - Math.max(ra.l, rb.l);
+          const oy = Math.min(ra.b, rb.b) - Math.max(ra.t, rb.t);
+          if (ox > 2 && oy > 2) {
+            kollisionen.push(
+              `${knoepfe[a].label} / ${knoepfe[b].label} (${Math.round(ox)}x${Math.round(oy)})`
+            );
+          }
+        }
+      }
+      record(
+        `${key}: keine ueberlappenden Knoepfe`,
+        kollisionen.length === 0,
+        kollisionen.length ? kollisionen.slice(0, 2).join(' | ') : `${knoepfe.length} Knoepfe geprueft`
+      );
+
+      // 2. Ausserhalb der Spielflaeche. Scrollbare Scenes ausgenommen: dort
+      //    liegt Inhalt bewusst unterhalb und wird hereingescrollt.
+      const scrollbar = key === 'Profile';
+      const raus = knoepfe.filter((i) => {
+        const r = rect(i);
+        return r.l < -4 || r.r > 724 || r.t < -4 || r.b > spielHoehe + 4;
+      });
+      record(
+        `${key}: alle Knoepfe innerhalb der Spielflaeche`,
+        raus.length === 0 || scrollbar,
+        raus.length === 0
+          ? 'ok'
+          : scrollbar
+            ? `${raus.length} unterhalb, aber Scene scrollt`
+            : raus
+                .slice(0, 2)
+                .map((i) => `${i.label} bei y=${i.y}`)
+                .join(' | ')
+      );
+
+      // 3. Tippziele, umgerechnet in CSS-Pixel des tatsaechlichen Viewports.
+      const cssProSpielpixel = await page.evaluate(() => {
+        const g = window.isiHunt;
+        return g.canvas.getBoundingClientRect().width / g.scale.width;
+      });
+      const inCss = (v) => Math.round(v * cssProSpielpixel);
+
+      const zuKlein = knoepfe.filter(
+        (i) => inCss(i.w) < FEHLER_CSS_PX || inCss(i.h) < FEHLER_CSS_PX
+      );
+      const knapp = knoepfe.filter(
+        (i) =>
+          !zuKlein.includes(i) &&
+          (inCss(i.w) < HINWEIS_CSS_PX || inCss(i.h) < HINWEIS_CSS_PX)
+      );
+
+      record(
+        `${key}: Tippziele treffbar`,
+        zuKlein.length === 0,
+        zuKlein.length
+          ? zuKlein
+              .slice(0, 3)
+              .map((i) => `${i.label} ${inCss(i.w)}x${inCss(i.h)} CSS-px`)
+              .join(' | ')
+          : knapp.length
+            ? `ok; ${knapp.length} unter Apples 44 pt (kleinstes ` +
+              `${Math.min(...knapp.map((i) => Math.min(inCss(i.w), inCss(i.h))))} CSS-px)`
+            : 'alle >= 44 CSS-px'
+      );
+
+      await page.screenshot({ path: `${shotDir}/controls-${key.toLowerCase()}.png` });
+      vorige = key;
+    }
+
+    // 4. Scrollen: ProfileScene ist die einzige Scene mit
+    //    `attachVerticalScroll()`. Gescrollt wird per echtem Drag, nicht ueber
+    //    einen gesetzten Offset - der Drag laeuft durch dieselbe Pointer-Logik
+    //    wie ein Finger.
+    await switchScene(page, vorige, 'Profile');
+    await waitForScene(page, 'Profile', 10000);
+    await page.waitForTimeout(800);
+
+    // Gemessen wird der **scrollende Container selbst**, nicht ein beliebiger
+    // Knopf: Der Zurueck-Knopf liegt bewusst ausserhalb des Scroll-Inhalts und
+    // bewegt sich nie mit. Ein Test, der ihn als Referenz nimmt, meldet
+    // faelschlich "scrollt nicht" - genau das passierte beim Bauen.
+    const vorherY = await page.evaluate(() => {
+      const sc = window.isiHunt.scene.getScene('Profile');
+      const cont = sc.children.list.filter((o) => o.type === 'Container');
+      const inhalt = cont.reduce(
+        (a, b) => ((b.list?.length ?? 0) > (a?.list?.length ?? 0) ? b : a),
+        null
+      );
+      return inhalt ? Math.round(inhalt.y) : null;
+    });
+
+    const von = await toScreen(page, 360, 800);
+    const nach = await toScreen(page, 360, 300);
+    await page.mouse.move(von.sx, von.sy);
+    await page.mouse.down();
+    for (let s = 1; s <= 8; s++) {
+      await page.mouse.move(von.sx, von.sy + ((nach.sy - von.sy) * s) / 8);
+      await page.waitForTimeout(30);
+    }
+    await page.mouse.up();
+    await page.waitForTimeout(600);
+
+    const nachherY = await page.evaluate(() => {
+      const sc = window.isiHunt.scene.getScene('Profile');
+      const cont = sc.children.list.filter((o) => o.type === 'Container');
+      const inhalt = cont.reduce(
+        (a, b) => ((b.list?.length ?? 0) > (a?.list?.length ?? 0) ? b : a),
+        null
+      );
+      return inhalt ? Math.round(inhalt.y) : null;
+    });
+
+    const verschoben = vorherY !== null && nachherY !== null ? Math.abs(nachherY - vorherY) : 0;
+    // Das DOM-Namensfeld liegt als echtes <input> ueber dem Canvas. Verlaesst
+    // man ProfileScene, muss es verschwinden - sonst schwebt es ueber der
+    // naechsten Scene.
+    //
+    // **Der Wechsel muss auf der Scene selbst laufen** (`scene.scene.start`),
+    // nicht auf dem globalen Manager (`game.scene.start`). Nur der erste Weg
+    // beendet die alte Scene; der zweite laesst sie mitlaufen. Ein Test mit
+    // dem globalen Manager meldete hier faelschlich einen Fehler, den es
+    // nicht gibt: Phaser raeumt DOMElements beim Scene-Shutdown selbst ab.
+    await switchScene(page, 'Profile', 'Talents');
+    await waitForScene(page, 'Talents', 10000);
+    await page.waitForTimeout(800);
+    const uebrig = await page.evaluate(() =>
+      [...document.querySelectorAll('input, textarea')].filter((e) => {
+        const r = e.getBoundingClientRect();
+        return r.height > 0 && getComputedStyle(e).display !== 'none';
+      }).length
+    );
+    record(
+      'Namensfeld verschwindet beim Verlassen von Profile',
+      uebrig === 0,
+      uebrig === 0
+        ? 'kein DOM-Eingabefeld mehr sichtbar'
+        : `${uebrig} sichtbares Eingabefeld liegt ueber der naechsten Scene`
+    );
+    await page.screenshot({ path: `${shotDir}/controls-input-nach-wechsel.png` });
+
+    record(
+      'Profile laesst sich per Wischen scrollen',
+      verschoben > 20,
+      vorherY === null
+        ? 'kein Inhalts-Container gefunden'
+        : `Inhalt wanderte ${verschoben} px (${vorherY} -> ${nachherY})`
+    );
+    await page.screenshot({ path: `${shotDir}/controls-profile-scrolled.png` });
+  } catch (e) {
+    record('Bedienelemente', false, e.message.slice(0, 70));
+  } finally {
+    await context.close();
+  }
+}
+
+// =============================================================================
 // Suite 4: Fortschritt und Persistenz
 // =============================================================================
 async function suiteProgress() {
@@ -705,6 +1149,8 @@ async function suiteProgress() {
 try {
   if (runSuite('screens')) await suiteScreens();
   if (runSuite('layout')) await suiteLayout();
+  if (runSuite('nav')) await suiteNavigation();
+  if (runSuite('controls')) await suiteControls();
   if (runSuite('ios')) await suiteIos();
   if (runSuite('progress')) await suiteProgress();
   if (runSuite('modes')) await suiteModes();
