@@ -96,7 +96,8 @@ sofort auch auf dem Handy sichtbar.
 | `npm run format`    | Prettier ueber alle Quellen                  |
 | `npm run icons`     | App-Icons neu zeichnen                       |
 | `npm run test`      | Vitest ueber `systems/` und `config/`        |
-| `npm run playtest`  | Browser-Playtest, sieben Suiten (~25 Min)    |
+| `npm run test:scope` | Nennt die zur Aenderung passende Teststufe  |
+| `npm run playtest`  | Browser-Playtest, sieben Suiten (~20 Min)    |
 | `npm run smoke`     | Kurzer Boot-Test gegen einen Dev-Server      |
 | `npm run ios:check` | iOS-Mindestversion aus dem Build ermitteln   |
 

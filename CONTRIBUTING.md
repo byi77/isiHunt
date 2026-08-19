@@ -72,8 +72,9 @@ braucht, sind zwei Commits.
 1. Branch von `main` abzweigen
 2. Arbeiten, dabei **Doku im selben Commit** mitziehen
 3. Lokal `npm run verify` gruen bekommen (Typecheck, Lint, Format, Tests, Build)
-4. Bei Aenderungen an Scenes, Layout oder Navigation: `npm run playtest`
-   (oder gezielt `--only=nav,controls,layout`)
+4. `npm run test:scope -- --run` — waehlt anhand der geaenderten Dateien
+   die passende Teststufe (keine / klein / mittel / gross / voll) und
+   fuehrt sie aus. Ein Volltest bei einer Doku-Aenderung ist Verschwendung.
 5. **Auf einem echten Handy testen** — nicht nur im Browser-Emulator.
    Der Playtest deckt Ablauf und Layout ab, aber weder Touch-Eigenheiten
    noch Game-Feel oder Bildrate unter Last.

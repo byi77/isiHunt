@@ -11,6 +11,13 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **`npm run test:scope` waehlt die Teststufe anhand der Aenderung.** Fuenf
+  Stufen von _keine_ (Doku, Hooks, CI) ueber klein (~2 Min), mittel (~5 Min)
+  und gross (~11 Min) bis voll (~20 Min, alle Spielmodi). Ein Volltest bei
+  einer Doku-Aenderung kostet 20 Minuten fuer nichts; ein Eingriff in
+  `GameScene` braucht ihn dagegen. Die Regeln runden bewusst nach oben, und
+  ein unbekannter Pfad zaehlt als klein statt als keine.
+
 - **Zwei neue Playtest-Suiten: `nav` und `controls`.**
   `nav` klickt sich durch die Menuewege und wieder zurueck — mit **echten
   Klicks** auf die Knopfposition, nicht per `scene.start()`. Nur so laufen

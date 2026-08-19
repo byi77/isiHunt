@@ -269,8 +269,8 @@ Ein Feature ist fertig, wenn **alle** Punkte zutreffen:
 
 - [ ] `npm run verify` ist gruen (Typecheck, Lint, Formatierung, Tests, Build)
 - [ ] Neue Logik in `systems/` hat Tests (siehe ARCHITECTURE.md 9.2)
-- [ ] Bei Scenes, Layout oder Navigation: `npm run playtest` gruen
-      (ARCHITECTURE.md 9.3)
+- [ ] `npm run test:scope -- --run` gruen — die Stufe richtet sich nach den
+      geaenderten Dateien (ARCHITECTURE.md 9.3)
 - [ ] Auf einem echten Handy getestet (nicht nur im Browser-Emulator) —
       der Playtest ersetzt das nicht, er verkuerzt nur die Runden
 - [ ] Keine neuen Konsolenfehler

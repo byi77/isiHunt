@@ -581,6 +581,32 @@ etwa 25 Minuten.
 Einzeln zu fahren ueber `--only=nav,controls` (kommagetrennt).
 `--watch` oeffnet ein sichtbares Fenster mit gebremster Eingabe.
 
+#### Vier Teststufen statt immer alles
+
+Ein Volltest dauert rund 20 Minuten, weil er acht echte Runden a 90 Sekunden
+spielt. Fuer eine Doku-Aenderung ist das Verschwendung, fuer einen Eingriff in
+`GameScene` das Mindeste. `npm run test:scope` liest die geaenderten Dateien
+und nennt die angemessene Stufe:
+
+| Stufe    | Dauer   | Suiten                                             | Wann                                          |
+| -------- | ------- | -------------------------------------------------- | --------------------------------------------- |
+| _keine_  | 0 Min   | —                                                  | Doku, Hooks, CI, Formatierung                 |
+| klein    | ~2 Min  | `screens`, `nav`                                   | sonstiger Quellcode, der Playtest selbst      |
+| mittel   | ~5 Min  | + `controls`, `layout`                             | `ui/`, einzelne Scenes, Eingabe               |
+| gross    | ~11 Min | + `progress`, `ios`                                | `index.html`, `main.ts`, `viewport.ts`, Persistenz |
+| voll     | ~20 Min | + `modes`                                          | `GameScene`, Balancing, Welten, Entities      |
+
+```bash
+npm run test:scope           # nennt die Stufe zum Arbeitsstand
+npm run test:scope -- HEAD~3 # gegen einen anderen Vergleichspunkt
+npm run test:scope -- --run  # und fuehrt sie gleich aus
+```
+
+**Die Regeln sind bewusst grob und runden nach oben.** Wer eine Aenderung fuer
+harmloser haelt, als die Regel meint, waehlt die Stufe von Hand — der
+umgekehrte Fall faellt dagegen erst auf dem Geraet auf. Ein unbekannter Pfad
+zaehlt als `klein`, nie als `keine`.
+
 #### Warum echte Klicks statt `scene.start()`
 
 Die `nav`-Suite liest die Knopfposition aus der laufenden Scene, rechnet sie

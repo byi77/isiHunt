@@ -171,8 +171,25 @@ Neue Logik in `systems/` bekommt Tests.
 Scenes, Entities und Darstellung deckt der Browser-Playtest ab
 (`docs/ARCHITECTURE.md` 9.3/9.4):
 
+**Nicht jede Aenderung braucht jeden Test.** `npm run test:scope` liest die
+geaenderten Dateien und nennt die angemessene Stufe:
+
+| Stufe   | Dauer   | Wann                                               |
+| ------- | ------- | -------------------------------------------------- |
+| _keine_ | 0 Min   | Doku, Hooks, CI — `npm run verify` genuegt         |
+| klein   | ~2 Min  | sonstiger Quellcode                                |
+| mittel  | ~5 Min  | `ui/`, einzelne Scenes, Eingabe                    |
+| gross   | ~11 Min | `index.html`, `main.ts`, `viewport.ts`, Persistenz |
+| voll    | ~20 Min | `GameScene`, Balancing, Welten, Entities           |
+
 ```bash
-npm run playtest                  # alle sieben Suiten, ~25 Minuten
+npm run test:scope -- --run       # ermittelt die Stufe und faehrt sie
+```
+
+Ein Volltest bei einer Doku-Aenderung kostet 20 Minuten fuer nichts.
+
+```bash
+npm run playtest                  # alle sieben Suiten, ~20 Minuten
 npm run playtest -- --only=nav    # screens|nav|controls|layout|ios|progress|modes
 npm run playtest -- --watch       # sichtbares Fenster statt headless
 npm run ios:check                 # iOS-Mindestversion aus dem Build
