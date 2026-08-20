@@ -267,11 +267,17 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
       kindgerechte Schleife/Route als sichtbaren Fortschritt zeichnen.
 - [ ] Sichere Migration fuer bestehende Coin-Talente und den Supabase-Stand
       planen, bevor die Kosten umgestellt werden.
-- [ ] Coins bleiben Waehrung fuer spaetere Skins und optionale Boni; Skin-Inventar
-      und Shop nur vorbereiten, nicht vor dem Talentpunkte-Umbau bauen.
+- [x] ~~Coins bleiben Waehrung fuer spaetere Skins und optionale Boni;
+      Skin-Inventar und Shop nur vorbereiten, nicht vor dem Talentpunkte-Umbau
+      bauen.~~ **Ueberholt (2026-08-20):** Der Shop ist gebaut und ausgeliefert
+      (v0.1.196 bis v0.1.205) — 30 Fluggestalten, 30 Farben, Anprobe vor dem
+      Kauf, Loeschung beim Wartungs-Reset. Der Talentpunkte-Umbau blieb dabei
+      unberuehrt; die Reihenfolge war doch nicht bindend.
 - [ ] Profilfluss verbessern: beim allerersten Profil einen getrennten sichtbaren
       Spielernamen erfragen; danach im Profil/Aliasbereich aenderbar halten.
-- [ ] Auswaehlbare Profil-Icons/Avatare vorbereiten.
+- [ ] Auswaehlbare Profil-Icons/Avatare vorbereiten. **Anschluss an den Shop:**
+      Sie sollen dort kaufbar sein, mit demselben Besitz- und Anprobe-Muster
+      wie Formen und Farben (`config/shop.ts`).
 - [ ] Level/XP aus dem Hauptmenue ausblenden und erst nach einem klaren
       "JAGD BEGINNEN"-Schritt zeigen.
 - [ ] Den vorhandenen Kettenbonus gegen die konkrete Regel "drei blaue
@@ -365,6 +371,34 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 - [ ] Android-Reihenfolge gegen die Roadmap abgleichen (Roadmap nennt
       "Capacitor, Android-Test, iOS-Build/TestFlight" — Android zuerst als
       Testplattform).
+
+### Offen aus der Shop-Runde (2026-08-20)
+
+- [ ] **Etappe 2 und 3: von 30 auf rund 100 Fluggestalten.** Die Zeichnungen
+      liegen in `src/ui/shipShapes.ts` mit Helfern (`voll`, `gespiegelt`,
+      `figur`, `vogel`, `drohne`); neue Formen werden **hinten** angehaengt,
+      damit gekaufte ihre Zuordnung behalten. Ein Balance-Test prueft, dass
+      jeder `skinIndex` eine Zeichnung hat.
+
+- [ ] **Schleifen-Farben kaufbar machen.** Die Serien-Schleife traegt heute die
+      Stufenfarbe aus `SERIES_TRAIL_TIERS`. Kaufbare Varianten brauchen ein
+      drittes Besitzfeld nach demselben Muster wie Formen und Farben.
+
+- [ ] **Profil-Icons kaufbar machen** (siehe auch P1-Liste oben).
+
+- [ ] **Getragene Figur ueber Geraete hinweg angleichen.** Sie liegt derzeit
+      bewusst nur lokal: Der Server pflegt in `profile_progress` eine eigene
+      `data`-Kopie und kennt die Auswahl nie (`initialize_profile_progress`
+      greift nur beim ersten Mal, `pushSave()` schreibt in `saves`). Braeuchte
+      eine neue RPC, die Auswahl und Besitz vom Client entgegennimmt.
+
+- [ ] **Boosts** — von der Projektleitung vorerst zurueckgestellt. Falls sie
+      kommen: nur Fortschritts-Boosts (XP, Coins), keine Leistungs-Boosts.
+      Ein gekaufter Tempo-Vorteil braeche die Vergleichbarkeit der Rangliste.
+
+- [ ] **Playtest ohne `--sim` fahren.** Steht seit mehreren Balance- und
+      Darstellungsaenderungen aus. `--sim` prueft Rendering, Tweens und
+      Bildrate nicht — genau das, was Schleife und Schiffsformen betrifft.
 
 ### Querschnitt
 
