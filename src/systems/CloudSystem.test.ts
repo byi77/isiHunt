@@ -448,3 +448,45 @@ describe('Muenzen: Ausgeben ist kein Rueckschritt', () => {
     expect(CloudSystem.isLocalAhead(lokal, alsRemote(aermer))).toBe(true);
   });
 });
+
+describe('Wartungs-Reset erkennen', () => {
+  // Ein zurueckgesetztes Profil ist nie "weiter" - `isRemoteAhead()` meldet
+  // dort `false`. Ohne eigene Erkennung passierte nach einem Reset gar
+  // nichts: Der lokale Stand blieb stehen, und der naechste Lauf lud die
+  // alten Werte samt Ladenkaeufen wieder hoch.
+
+  const alsRemote = (save: SaveData) => ({
+    data: save,
+    level: save.level,
+    bestScore: save.bestScore,
+    totalRuns: save.totalRuns,
+    updatedAt: new Date().toISOString(),
+  });
+
+  it('erkennt einen geleerten Cloud-Stand bei bespieltem lokalem Stand', () => {
+    const lokal = createSave({ level: 30, totalRuns: 40, bestScore: 5000, coins: 500 });
+    const leer = createSave({ level: 1, xp: 0, totalRuns: 0, bestScore: 0, coins: 0 });
+
+    expect(CloudSystem.isRemoteReset(lokal, alsRemote(leer))).toBe(true);
+    // Der normale Vergleich sieht darin keinen Fortschritt - genau deshalb
+    // braucht es die eigene Frage.
+    expect(CloudSystem.isRemoteAhead(lokal, alsRemote(leer))).toBe(false);
+  });
+
+  it('haelt ein frisches Profil nicht fuer einen Reset', () => {
+    // Wer noch nie gespielt hat, hat auch nichts zu verlieren. Ohne diese
+    // Unterscheidung verloere ein Neuling seine ersten Kaeufe.
+    const neuling = createSave({ level: 1, xp: 0, totalRuns: 0, bestScore: 0 });
+    const leer = createSave({ level: 1, xp: 0, totalRuns: 0, bestScore: 0 });
+
+    expect(CloudSystem.isRemoteReset(neuling, alsRemote(leer))).toBe(false);
+  });
+
+  it('haelt einen normalen Rueckstand nicht fuer einen Reset', () => {
+    // Ein zweites Geraet, das nur weniger weit ist, darf nichts loeschen.
+    const lokal = createSave({ level: 30, totalRuns: 40, bestScore: 5000 });
+    const hinterher = createSave({ level: 12, totalRuns: 8, bestScore: 900 });
+
+    expect(CloudSystem.isRemoteReset(lokal, alsRemote(hinterher))).toBe(false);
+  });
+});

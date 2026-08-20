@@ -282,14 +282,24 @@ export class MenuScene extends Phaser.Scene {
           totalRuns: profile.value.data.totalRuns,
           updatedAt: profile.value.updatedAt,
         };
-        const remoteAhead = CloudSystem.isRemoteAhead(local, remote);
+        // Ein Reset wird immer uebernommen, auch wenn lokal mehr steht.
+        // `isRemoteAhead()` meldet dort `false` - ein leerer Stand ist nie
+        // "weiter" -, und ohne diese Sonderbehandlung blieb der Reset ohne
+        // Wirkung: Der naechste Lauf lud die alten Werte wieder hoch.
+        const remoteReset = CloudSystem.isRemoteReset(local, remote);
+        const remoteAhead = remoteReset || CloudSystem.isRemoteAhead(local, remote);
         DebugSystem.pushLogEntry({
           timestamp: Date.now(),
           kind: 'event',
           label: 'sync:remoteAheadCheck',
-          detail: JSON.stringify({ remoteAhead }),
+          detail: JSON.stringify({ remoteAhead, remoteReset }),
         });
         if (remoteAhead) {
+          // Nach einem Reset auch die Outbox verwerfen: Sie enthaelt Laeufe,
+          // die der Server gerade geloescht hat - hochgeladen wuerden sie den
+          // Fortschritt sofort wieder aufbauen.
+          if (remoteReset) ProgressSyncSystem.clearOutbox();
+
           const uebernommen = SaveSystem.adoptRemote(
             remote.data,
             local.cloudId ?? AuthSystem.currentUserId()!,
@@ -305,6 +315,7 @@ export class MenuScene extends Phaser.Scene {
           // Seiten an), aber der Neustart soll sich nicht erneut auf eine
           // einzelne korrekte Antwort verlassen muessen.
           const veraendert =
+            remoteReset ||
             uebernommen.level !== local.level ||
             uebernommen.coins !== local.coins ||
             uebernommen.bestScore !== local.bestScore ||

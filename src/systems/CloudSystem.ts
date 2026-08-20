@@ -223,6 +223,35 @@ function totalCoinsEver(save: { coins?: number; coinsSpent?: number }): number {
   return Number(save.coins ?? 0) + Number(save.coinsSpent ?? 0);
 }
 
+/**
+ * Wurde dieses Profil serverseitig zurueckgesetzt?
+ *
+ * **Warum das eine eigene Frage ist.** `isRemoteAhead()` fragt "ist die Cloud
+ * weiter?" - ein zurueckgesetzter Stand ist das nie. Nach einem Reset ueber
+ * die Benutzerverwaltung passierte deshalb gar nichts: Der leere Cloud-Stand
+ * galt als Rueckschritt, der lokale blieb stehen, und der naechste Lauf lud
+ * die alten Werte samt Ladenkaeufen wieder hoch. Der Reset war damit
+ * wirkungslos.
+ *
+ * Ein Reset ist kein Rueckschritt, sondern eine Anweisung. Er muss uebernommen
+ * werden, auch wenn lokal mehr steht.
+ *
+ * Erkannt an einem vollstaendig leeren Cloud-Stand bei bespieltem lokalem
+ * Stand: Ein frisch angelegtes Profil sieht zwar genauso aus, aber dort ist
+ * auch lokal nichts gespielt - und dann gibt es nichts zu ueberschreiben.
+ */
+export function isRemoteReset(local: SaveData, remote: RemoteSave): boolean {
+  const { lokal, fern } = angeglichen(local, remote);
+  const fernLeer =
+    fern.level === 1 &&
+    fern.xp === 0 &&
+    fern.totalRuns === 0 &&
+    fern.totalScore === 0 &&
+    fern.bestScore === 0;
+  const lokalBespielt = lokal.totalRuns > 0 || lokal.level > 1 || lokal.bestScore > 0;
+  return fernLeer && lokalBespielt;
+}
+
 /** Vergleicht die Fortschrittsmarker, die fuer den Nutzer sichtbar sind. */
 export function isRemoteAhead(local: SaveData, remote: RemoteSave): boolean {
   const { lokal, fern, fernLevel } = angeglichen(local, remote);

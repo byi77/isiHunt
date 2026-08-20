@@ -9,6 +9,25 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Behoben
+
+- **Der Wartungs-Reset blieb wirkungslos - der Client uebernahm ihn gar
+  nicht.** Die Serverfunktion loeschte korrekt, aber `isRemoteAhead()` meldet
+  bei einem geleerten Cloud-Stand `false`: Ein leerer Stand ist nie "weiter".
+  Der lokale Stand blieb deshalb stehen, und der naechste Lauf lud die alten
+  Werte samt Ladenkaeufen wieder hoch.
+
+  Ein Reset ist kein Rueckschritt, sondern eine Anweisung. `isRemoteReset()`
+  stellt diese Frage jetzt getrennt und uebernimmt den Stand unabhaengig vom
+  Vergleich.
+
+  Zusaetzlich wird die **Outbox verworfen**: Sie enthaelt Laeufe, die der
+  Server gerade geloescht hat - hochgeladen wuerden sie den Fortschritt
+  sofort wieder aufbauen.
+
+  Drei Tests halten die Unterscheidung fest: Ein frisch angelegtes Profil und
+  ein bloss zurueckliegendes Zweitgeraet loesen keinen Reset aus.
+
 ### Geaendert
 
 - **Der Wartungs-Reset loescht jetzt auch die Ladenkaeufe.** Bisher setzte

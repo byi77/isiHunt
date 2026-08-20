@@ -148,6 +148,19 @@ export function flush(): Promise<void> {
   return flushPromise;
 }
 
+/**
+ * Verwirft alle wartenden Laufereignisse.
+ *
+ * Nach einem Wartungs-Reset: Die Outbox enthaelt Laeufe, die der Server
+ * gerade geloescht hat. Wuerden sie beim naechsten Abgleich hochgehen,
+ * baute sich der Fortschritt sofort wieder auf und der Reset waere
+ * wirkungslos.
+ */
+export function clearOutbox(): void {
+  writeOutbox([]);
+  cancelRetry();
+}
+
 export function pendingCount(): number {
   return readOutbox().length;
 }
