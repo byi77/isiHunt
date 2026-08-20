@@ -14,15 +14,15 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 - **Der Laden hat jetzt 100 Fluggestalten statt 30.** Neu dazugekommen sind
   70 Formen in acht Gruppen:
 
-  | Gruppe | Beispiele |
-  | --- | --- |
-  | Helden und Heldinnen | Heldin, Maskenheld, Kraftheld, Sternenheldin, Blitzheld, Schildheldin, Bogenschuetzin |
-  | Maerchen und Magie | Prinzessin, Fee, Zauberin, Koenigin, Fluegelfee, Nachtfee, Meerjungfrau, Ritter, Drache, Einhorn, Geist, Krake |
-  | Raumfahrzeuge | Sichelmond, Manta, Speerschiff, Kaefer, Anker, Zwillingsscheibe, Kamm, Spirale, Wuerfel, Greifklaue, Segler, Torus, Turm, Kristall, Pyramide, Portal |
-  | Flugzeuge und Fahrzeuge | Wasserflugzeug, Hubschrauber, Deltaflieger, Zeppelin, Heissluftballon, Papierflieger, Rennwagen, U-Boot |
-  | Tiere | Schmetterling, Eule, Kolibri, Storch, Rochen, Qualle, Wespe |
-  | Drohnen und Geraete | Oktokopter, Tricopter, Satellit, Teleskop, Kompass, Schluessel, Zahnrad, Roboter |
-  | Zeichen und Formen | Schneeflocke, Flamme, Tropfen, Herz, Blume, Sanduhr, Auge |
+  | Gruppe                  | Beispiele                                                                                                                                            |
+  | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+  | Helden und Heldinnen    | Heldin, Maskenheld, Kraftheld, Sternenheldin, Blitzheld, Schildheldin, Bogenschuetzin                                                                |
+  | Maerchen und Magie      | Prinzessin, Fee, Zauberin, Koenigin, Fluegelfee, Nachtfee, Meerjungfrau, Ritter, Drache, Einhorn, Geist, Krake                                       |
+  | Raumfahrzeuge           | Sichelmond, Manta, Speerschiff, Kaefer, Anker, Zwillingsscheibe, Kamm, Spirale, Wuerfel, Greifklaue, Segler, Torus, Turm, Kristall, Pyramide, Portal |
+  | Flugzeuge und Fahrzeuge | Wasserflugzeug, Hubschrauber, Deltaflieger, Zeppelin, Heissluftballon, Papierflieger, Rennwagen, U-Boot                                              |
+  | Tiere                   | Schmetterling, Eule, Kolibri, Storch, Rochen, Qualle, Wespe                                                                                          |
+  | Drohnen und Geraete     | Oktokopter, Tricopter, Satellit, Teleskop, Kompass, Schluessel, Zahnrad, Roboter                                                                     |
+  | Zeichen und Formen      | Schneeflocke, Flamme, Tropfen, Herz, Blume, Sanduhr, Auge                                                                                            |
 
   Preise zwischen 800 und 2 900 Muenzen. Neue Zeichenhelfer (`kopf`, `rumpf`,
   `arme`, `beine`, `umhang`, `fluegelpaar`, `stab`) halten die Figuren kurz -
