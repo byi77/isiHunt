@@ -372,13 +372,105 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
       "Capacitor, Android-Test, iOS-Build/TestFlight" — Android zuerst als
       Testplattform).
 
+### Offen aus dem Audit vom 2026-08-19
+
+Sechs Durchgaenge ueber v0.1.185; zwei Defekte und drei latente Schwachstellen.
+Die Defekte sind behoben (v0.1.187/188), die Testluecken nicht. Der Bericht
+liegt als Artefakt vor, nicht im Repo:
+https://claude.ai/code/artifact/5fcc7a9c-e9ea-48ac-a358-917461195ff2
+
+- [ ] **`CloudSystem`: 13 von 30 Exporten ohne Test.** Der Modulkommentar
+      verspricht "Jede Funktion hier gibt ein Ergebnisobjekt zurueck und wirft
+      nie". Die Testdatei nagelt `isBackendConfigured` auf `false` — damit
+      kehrt jede Netzfunktion sofort am Guard zurueck, und der gesamte
+      Fehlerpfad ist **per Konstruktion unerreichbar**. Die Garantie haelt
+      (im Audit empirisch geprueft), ruht aber auf keiner Pruefung.
+      Braeuchte eine zweite Suite mit `isBackendConfigured: true`.
+
+- [ ] **`ProgressSyncSystem`: Teilfehlschlag mit mehreren Ereignissen
+      ungetestet.** Jeder der 14 Tests legt genau **ein** Ereignis an. Die
+      `remaining`-Logik existiert aber fuer den Fall, dass von drei Laeufen
+      der zweite scheitert. Der Pfad ist heute korrekt (im Audit nachgestellt),
+      aber unbewacht.
+
+- [ ] **`ProgressSyncSystem`: `indexOf` haengt an Referenzidentitaet.** Der
+      Code ist korrekt, **weil** `readOutbox()` bei jedem Aufruf frisch
+      `JSON.parse` ausfuehrt. Wuerde jemand die Outbox aus Effizienzgruenden
+      im Speicher halten — eine harmlos aussehende Umstellung — dupliziert die
+      Restlogik Ereignisse. Diese Abhaengigkeit steht nirgends.
+
+- [ ] **Regel 6 in CLAUDE.md praezisieren.** Sie nennt zwei erlaubte
+      Phaser-Symbole fuer `SpawnSystem` (`RandomDataGenerator`,
+      `Geom.Rectangle`), genutzt werden vier (zusaetzlich `Math.Clamp` und
+      `Math.Linear`). Inhaltlich harmlos — reine Mathematik ohne Canvas-Bezug —
+      aber die Ausnahme ist enger formuliert als die Wirklichkeit. Das
+      Vor-Audit meldete hier "vollstaendig konform", weil es die Import-Zeile
+      prueft statt der Symbole.
+
+### Zur Entscheidung offen (aus dem Gespraech 2026-08-19/20)
+
+- [ ] **Talentkosten auf 0, dafuer ein Talentpunkt alle zwei Level?**
+      Als Idee eingebracht, nicht entschieden. **Rechnung dagegen:** Alle 32
+      Talentraenge kosten heute 15 650 Muenzen; bei einem Punkt je zwei Level
+      gaebe es bis Stufe 100 aber **50 Punkte** bei nur 32 Raengen — ab etwa
+      Stufe 64 waere alles voll und die Belohnung wertlos. Der Reiz von
+      Talentpunkten liegt im Verzicht; wenn am Ende ohnehin alles offen ist,
+      bleibt nur eine Reihenfolge statt einer Wahl.
+      Haengt mit Phase 4.1 zusammen (siehe P1).
+
+- [ ] **Welten unterhalb des eigenen Levels sperren?** Als Idee eingebracht.
+      **Drei Einwaende:** (1) Es bestraft gemeinsames Spielen — ein Kind auf
+      Stufe 30 koennte nicht mehr mit einem auf Stufe 8 dieselbe Welt spielen,
+      und genau zwei Geschwister sind die Zielgruppe. (2) Es widerspricht dem
+      Duell-Modus, der eine gemeinsame Welt und denselben Seed braucht.
+      (3) Der Zweck ist bereits geloest: Hoehere Welten geben mehr Punkte und
+      XP — wer unten bleibt, verliert ohnehin. Anreize sind besser als Verbote.
+      Falls es um die Vergleichbarkeit der Bestenliste geht, ist das ein
+      Problem der **Liste**, nicht der Welten (siehe `CloudSystem.ts`,
+      "Ehrliche Grenze" bei `fetchLeaderboard`).
+
+### Balance-Aenderungen ohne Spielertest
+
+- [ ] **Serien-Umstellung mit Emre und Simay pruefen.** Das Zeitfenster ging
+      von 1800 auf 900 ms, und die Serie steigt nur noch bei farbigen
+      Relikten. Gemessen wurde gegen einen Bot, der praeziser steuert als ein
+      Kind: beste Serie von 183 auf 19, rund 11 Abrisse je Runde. Ist es zu
+      hart, zuerst `COMBO_GRACE_MS` erhoehen (z. B. auf 1100) — der Wert wirkt
+      direkter als jede andere Stellschraube.
+
+- [ ] **Neue XP-Kurve pruefen.** Sie ist in Runs formuliert
+      (`XP_PER_RUN_REFERENCE`, gemessen 2 146 XP je Run): 0,5 Runs auf Stufe 1,
+      2,2 ab Stufe 10, 3,0 auf Stufe 99. Der Bezugswert stammt aus vier
+      simulierten Runden — ein echter Messwert von den Kindern fehlt.
+
+- [ ] **Level-Absenkung bei Bestandsstaenden bestaetigen.** `SAVE_VERSION 7`
+      legt die gesamte XP auf die neue Kurve um; Stufe 51 wurde dabei zu 45
+      (auf dem Testgeraet bestaetigt, keine Welt verloren). Bei Emre und Simay
+      steht die Pruefung aus.
+
 ### Offen aus der Shop-Runde (2026-08-20)
 
-- [ ] **Etappe 2 und 3: von 30 auf rund 100 Fluggestalten.** Die Zeichnungen
-      liegen in `src/ui/shipShapes.ts` mit Helfern (`voll`, `gespiegelt`,
-      `figur`, `vogel`, `drohne`); neue Formen werden **hinten** angehaengt,
-      damit gekaufte ihre Zuordnung behalten. Ein Balance-Test prueft, dass
-      jeder `skinIndex` eine Zeichnung hat.
+- [ ] **Etappe 2 und 3: von 30 auf rund 100 Fluggestalten — zugesagt, offen.**
+      Die Vorgabe lautete rund hundert insgesamt; ausgeliefert sind bisher 30
+      (Etappe 1). Es fehlen also **etwa 70**, verteilt auf dieselben fuenf
+      Kategorien: Raumjaeger, Flugzeuge, fliegende Figuren, fliegende Tiere,
+      Drohnen.
+
+      Die Zeichnungen liegen in `src/ui/shipShapes.ts` mit Helfern (`voll`,
+      `gespiegelt`, `figur`, `vogel`, `drohne`). Neue Formen werden **hinten**
+      angehaengt, damit gekaufte ihre Zuordnung behalten; ein Balance-Test
+      prueft, dass jeder `skinIndex` eine Zeichnung hat.
+
+      **Was dabei zaehlt:** die Silhouette. Die Figur ist im Spiel klein,
+      einfarbig und in Bewegung — Binnenzeichnung geht unter. Der frueherer
+      Satz scheiterte genau daran (sieben "Formen" mit demselben Rumpf).
+      Nach jeder Etappe das Vergleichsbild aller Formen rendern und pruefen,
+      ob sie sich nebeneinander unterscheiden.
+
+      **Zu den Vorbildern:** geschuetzte Entwuerfe (X-Wing, TIE-Fighter,
+      Marvel-Figuren) werden nicht nachgebaut — das Spiel liegt oeffentlich.
+      Abgebildet werden die **Typen** dahinter, die zum Genre-Vokabular
+      gehoeren.
 
 - [ ] **Schleifen-Farben kaufbar machen.** Die Serien-Schleife traegt heute die
       Stufenfarbe aus `SERIES_TRAIL_TIERS`. Kaufbare Varianten brauchen ein
