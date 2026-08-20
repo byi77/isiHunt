@@ -242,14 +242,40 @@ function totalCoinsEver(save: { coins?: number; coinsSpent?: number }): number {
  */
 export function isRemoteReset(local: SaveData, remote: RemoteSave): boolean {
   const { lokal, fern } = angeglichen(local, remote);
+
+  // Nur Felder pruefen, die der Login-Bonus nicht anfasst.
+  //
+  // Ein erster Anlauf nahm `coins === 0` als Teil des Signals. Das hielt nicht
+  // einmal zwei Sekunden: `claim_daily_login_bonus()` laeuft direkt nach jedem
+  // Abgleich und schreibt +25 Muenzen. Im Debug-Report war der Reset deshalb
+  // genau einen Sync lang als `remoteCoins: 0` zu sehen und danach wieder 25.
+  //
+  // Der Bonus aendert ausschliesslich `coins`, `totalCoinsEarned` und
+  // `lastLoginBonusKey`. Level, XP, Runs und Bestwert bleiben unberuehrt und
+  // sind damit die verlaesslichen Marker.
   const fernLeer =
     fern.level === 1 &&
     fern.xp === 0 &&
     fern.totalRuns === 0 &&
     fern.totalScore === 0 &&
-    fern.bestScore === 0;
-  const lokalBespielt = lokal.totalRuns > 0 || lokal.level > 1 || lokal.bestScore > 0;
-  return fernLeer && lokalBespielt;
+    fern.bestScore === 0 &&
+    fern.unlockedAchievements.length === 0;
+
+  // Der lokale Stand muss etwas haben, das der ferne nicht hat.
+  //
+  // Ein zweiter Anlauf verlangte hier Spielzeit (`totalRuns > 0`). Auch das
+  // war zu eng: Wer bereits einmal zurueckgesetzt wurde, steht selbst auf
+  // Stufe 1 ohne Runs - und trotzdem koennen Ladenkaeufe offen sein, weil die
+  // ueber ein anderes Feld laufen. Der Besitz gehoert deshalb mit ins Signal.
+  const lokalHatMehr =
+    lokal.totalRuns > 0 ||
+    lokal.level > 1 ||
+    lokal.bestScore > 0 ||
+    lokal.unlockedAchievements.length > 0 ||
+    lokal.ownedShipShapes.length > fern.ownedShipShapes.length ||
+    lokal.ownedShipColors.length > fern.ownedShipColors.length;
+
+  return fernLeer && lokalHatMehr;
 }
 
 /** Vergleicht die Fortschrittsmarker, die fuer den Nutzer sichtbar sind. */

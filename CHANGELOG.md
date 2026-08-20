@@ -11,6 +11,28 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Die Reset-Erkennung schlug nicht an - zwei Gruende, beide im Debug-Report
+  sichtbar.**
+
+  Erstens taeuschte der **taegliche Login-Bonus**: `claim_daily_login_bonus()`
+  laeuft direkt nach jedem Abgleich und schreibt +25 Muenzen. Der
+  zurueckgesetzte Stand war deshalb genau einen Sync lang als
+  `remoteCoins: 0` zu sehen und zwei Sekunden spaeter wieder bei 25. Ein
+  Signal ueber die Muenzen hielt so nie.
+
+  Zweitens verlangte die Erkennung **Spielzeit auf der lokalen Seite**. Wer
+  bereits einmal zurueckgesetzt wurde, steht selbst auf Stufe 1 ohne Runs -
+  offen sind dann nur noch die Ladenkaeufe, und genau die wurden nicht
+  geprueft.
+
+  Die Erkennung nutzt jetzt ausschliesslich Felder, die der Bonus nicht
+  anfasst (Level, XP, Runs, Bestwert, Erfolge) und zieht den Ladenbesitz als
+  eigenes Signal hinzu.
+
+  Zwei Tests bilden beide Faelle aus dem Report nach.
+
+### Behoben
+
 - **Der Wartungs-Reset blieb wirkungslos - der Client uebernahm ihn gar
   nicht.** Die Serverfunktion loeschte korrekt, aber `isRemoteAhead()` meldet
   bei einem geleerten Cloud-Stand `false`: Ein leerer Stand ist nie "weiter".

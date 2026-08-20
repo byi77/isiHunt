@@ -482,6 +482,39 @@ describe('Wartungs-Reset erkennen', () => {
     expect(CloudSystem.isRemoteReset(neuling, alsRemote(leer))).toBe(false);
   });
 
+  it('erkennt den Reset auch, wenn beide Seiten auf Stufe 1 stehen', () => {
+    // Der Fall aus dem Debug-Report vom 2026-08-20: Nach einem frueheren
+    // Reset steht auch lokal Stufe 1 ohne Runs - offen sind nur noch die
+    // Ladenkaeufe. Ein Signal, das Spielzeit verlangt, greift dort nicht.
+    const lokal = createSave({
+      level: 1,
+      totalRuns: 0,
+      bestScore: 0,
+      ownedShipShapes: ['arrow', 'star', 'eagle'],
+      ownedShipColors: ['world', 'gold'],
+    });
+    const leer = createSave({ level: 1, totalRuns: 0, bestScore: 0 });
+
+    expect(CloudSystem.isRemoteReset(lokal, alsRemote(leer))).toBe(true);
+  });
+
+  it('laesst sich vom taeglichen Login-Bonus nicht taeuschen', () => {
+    // `claim_daily_login_bonus()` schreibt direkt nach jedem Abgleich +25
+    // Muenzen. Ein Signal ueber `coins === 0` haelt deshalb keine zwei
+    // Sekunden - im Report war der Reset genau einen Sync lang sichtbar.
+    const lokal = createSave({ level: 30, totalRuns: 40, bestScore: 5000 });
+    const nachBonus = createSave({
+      level: 1,
+      xp: 0,
+      totalRuns: 0,
+      bestScore: 0,
+      coins: 25,
+      totalCoinsEarned: 25,
+    });
+
+    expect(CloudSystem.isRemoteReset(lokal, alsRemote(nachBonus))).toBe(true);
+  });
+
   it('haelt einen normalen Rueckstand nicht fuer einen Reset', () => {
     // Ein zweites Geraet, das nur weniger weit ist, darf nichts loeschen.
     const lokal = createSave({ level: 30, totalRuns: 40, bestScore: 5000 });
