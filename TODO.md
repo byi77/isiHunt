@@ -450,27 +450,32 @@ https://claude.ai/code/artifact/5fcc7a9c-e9ea-48ac-a358-917461195ff2
 
 ### Offen aus der Shop-Runde (2026-08-20)
 
-- [ ] **Etappe 2 und 3: von 30 auf rund 100 Fluggestalten — zugesagt, offen.**
-      Die Vorgabe lautete rund hundert insgesamt; ausgeliefert sind bisher 30
-      (Etappe 1). Es fehlen also **etwa 70**, verteilt auf dieselben fuenf
-      Kategorien: Raumjaeger, Flugzeuge, fliegende Figuren, fliegende Tiere,
-      Drohnen.
+- [x] **Etappe 2 und 3: 100 Fluggestalten — erledigt 2026-08-21, v0.1.209.**
+      Aus 30 wurden 100. Die 70 neuen verteilen sich auf Helden und Heldinnen
+      (10), Maerchen und Magie (12), Raumfahrzeuge (18), Flugzeuge und
+      Fahrzeuge (8), Tiere (7), Drohnen und Geraete (8) sowie Zeichen (7).
+      Preise 800 bis 2 900 Muenzen.
 
-      Die Zeichnungen liegen in `src/ui/shipShapes.ts` mit Helfern (`voll`,
-      `gespiegelt`, `figur`, `vogel`, `drohne`). Neue Formen werden **hinten**
-      angehaengt, damit gekaufte ihre Zuordnung behalten; ein Balance-Test
-      prueft, dass jeder `skinIndex` eine Zeichnung hat.
+      Weibliche Gestalten sind ausdruecklich dabei: Prinzessin, Fee, Zauberin,
+      Koenigin, Fluegelfee, Nachtfee, Meerjungfrau, Heldin, Umhangheldin,
+      Sternenheldin, Schildheldin, Bogenschuetzin.
 
-      **Was dabei zaehlt:** die Silhouette. Die Figur ist im Spiel klein,
-      einfarbig und in Bewegung — Binnenzeichnung geht unter. Der frueherer
-      Satz scheiterte genau daran (sieben "Formen" mit demselben Rumpf).
-      Nach jeder Etappe das Vergleichsbild aller Formen rendern und pruefen,
-      ob sie sich nebeneinander unterscheiden.
+      Neue Helfer in `ui/shipShapes.ts` halten die Figuren kurz: `kopf`,
+      `rumpf`, `arme`, `beine`, `umhang`, `fluegelpaar`, `stab`. Eine Fee ist
+      damit sechs Zeilen statt eines Polygonblocks — bei 40 humanoiden Formen
+      zaehlt das.
 
-      **Zu den Vorbildern:** geschuetzte Entwuerfe (X-Wing, TIE-Fighter,
-      Marvel-Figuren) werden nicht nachgebaut — das Spiel liegt oeffentlich.
-      Abgebildet werden die **Typen** dahinter, die zum Genre-Vokabular
-      gehoeren.
+      **Die Silhouetten-Regel hat sich bewaehrt.** Acht Formen mussten nach
+      dem ersten Vergleichsrendern nachgebessert werden: bei Fluegelfee und
+      Nachtfee verschluckten die Fluegel den Koerper (beide lasen sich als
+      Blatt), Drache und Einhorn waren beide nur "Fluegel mit Klumpen
+      dazwischen", der Anker las sich als Flugzeug mit Tragflaechen, die
+      Schildheldin als Kreis mit Kopf, das Auge als blosse Raute. Ohne das
+      Raster waeren alle acht ausgeliefert worden.
+
+      **Offen:** auf einem echten Geraet im Spiel gesehen sind sie nicht — nur
+      als gerendertes Raster. Ob eine Silhouette in Bewegung mit Tint und Aura
+      noch traegt, sagt das Bild nicht.
 
 - [ ] **Schleifen-Farben kaufbar machen.** Die Serien-Schleife traegt heute die
       Stufenfarbe aus `SERIES_TRAIL_TIERS`. Kaufbare Varianten brauchen ein
