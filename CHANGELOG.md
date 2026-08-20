@@ -9,6 +9,33 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Hinzugefuegt
+
+- **Der Laden hat jetzt 100 Fluggestalten statt 30.** Neu dazugekommen sind
+  70 Formen in acht Gruppen:
+
+  | Gruppe | Beispiele |
+  | --- | --- |
+  | Helden und Heldinnen | Heldin, Maskenheld, Kraftheld, Sternenheldin, Blitzheld, Schildheldin, Bogenschuetzin |
+  | Maerchen und Magie | Prinzessin, Fee, Zauberin, Koenigin, Fluegelfee, Nachtfee, Meerjungfrau, Ritter, Drache, Einhorn, Geist, Krake |
+  | Raumfahrzeuge | Sichelmond, Manta, Speerschiff, Kaefer, Anker, Zwillingsscheibe, Kamm, Spirale, Wuerfel, Greifklaue, Segler, Torus, Turm, Kristall, Pyramide, Portal |
+  | Flugzeuge und Fahrzeuge | Wasserflugzeug, Hubschrauber, Deltaflieger, Zeppelin, Heissluftballon, Papierflieger, Rennwagen, U-Boot |
+  | Tiere | Schmetterling, Eule, Kolibri, Storch, Rochen, Qualle, Wespe |
+  | Drohnen und Geraete | Oktokopter, Tricopter, Satellit, Teleskop, Kompass, Schluessel, Zahnrad, Roboter |
+  | Zeichen und Formen | Schneeflocke, Flamme, Tropfen, Herz, Blume, Sanduhr, Auge |
+
+  Preise zwischen 800 und 2 900 Muenzen. Neue Zeichenhelfer (`kopf`, `rumpf`,
+  `arme`, `beine`, `umhang`, `fluegelpaar`, `stab`) halten die Figuren kurz -
+  eine Fee ist damit sechs Zeilen, kein Polygonblock.
+
+  **Acht Formen wurden nach dem ersten Rendern nachgebessert**, weil sie sich
+  im Vergleichsbild nicht genug unterschieden: Bei Fluegelfee und Nachtfee
+  verschluckten die Fluegel den Koerper (beide lasen sich als Blatt), Drache
+  und Einhorn waren beide nur "Fluegel mit einem Klumpen dazwischen", der
+  Anker sah aus wie ein Flugzeug mit Tragflaechen, die Schildheldin war ein
+  Kreis mit Kopf, und das Auge eine blosse Raute. Was bei dieser Groesse
+  zaehlt, ist allein die Silhouette.
+
 ### Behoben
 
 - **Die Reset-Erkennung schlug nicht an - zwei Gruende, beide im Debug-Report
