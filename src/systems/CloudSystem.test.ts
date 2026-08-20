@@ -410,3 +410,41 @@ describe('Vergleich mit einem Cloud-Stand aelterer Fassung', () => {
     expect(CloudSystem.isLocalAhead(local, remote)).toBe(true);
   });
 });
+
+describe('Muenzen: Ausgeben ist kein Rueckschritt', () => {
+  // Regression zum Fund vom 2026-08-20: Ein Kauf im Laden bucht Muenzen
+  // lokal ab. Verglich `isRemoteAhead()` nur den Kontostand, galt der
+  // Cloud-Stand danach als weiter, wurde uebernommen - und machte den Kauf
+  // rueckgaengig. Die gekaufte Figur blitzte im Menue kurz auf und sprang
+  // auf den Standard zurueck.
+
+  const alsRemote = (save: SaveData) => ({
+    data: save,
+    level: save.level,
+    bestScore: save.bestScore,
+    totalRuns: save.totalRuns,
+    updatedAt: new Date().toISOString(),
+  });
+
+  it('haelt einen Kauf nicht fuer einen Rueckschritt', () => {
+    const vorKauf = createSave({ coins: 1000, coinsSpent: 0, level: 10 });
+    const nachKauf = createSave({ coins: 500, coinsSpent: 500, level: 10 });
+
+    expect(CloudSystem.isRemoteAhead(nachKauf, alsRemote(vorKauf))).toBe(false);
+    expect(CloudSystem.isLocalAhead(nachKauf, alsRemote(vorKauf))).toBe(false);
+  });
+
+  it('erkennt echt dazuverdiente Muenzen weiterhin', () => {
+    const lokal = createSave({ coins: 500, coinsSpent: 500, level: 10 });
+    const reicher = createSave({ coins: 900, coinsSpent: 500, level: 10 });
+
+    expect(CloudSystem.isRemoteAhead(lokal, alsRemote(reicher))).toBe(true);
+  });
+
+  it('erkennt lokal dazuverdiente Muenzen weiterhin', () => {
+    const lokal = createSave({ coins: 900, coinsSpent: 500, level: 10 });
+    const aermer = createSave({ coins: 500, coinsSpent: 500, level: 10 });
+
+    expect(CloudSystem.isLocalAhead(lokal, alsRemote(aermer))).toBe(true);
+  });
+});

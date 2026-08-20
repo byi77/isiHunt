@@ -207,6 +207,22 @@ function angeglichen(
   };
 }
 
+/**
+ * Alle jemals verdienten Muenzen - Kontostand plus Ausgegebenes.
+ *
+ * **Warum nicht der blosse Kontostand.** Wer im Laden kauft, hat danach
+ * weniger Muenzen als die Cloud kennt. Ein Vergleich ueber `coins` allein
+ * haelt den Cloud-Stand deshalb faelschlich fuer weiter, uebernimmt ihn - und
+ * macht den Kauf damit rueckgaengig. Genau das war zu sehen: Die gekaufte
+ * Figur blitzte im Menue kurz auf und sprang auf den Standard zurueck.
+ *
+ * Ausgeben ist kein Rueckschritt, sondern eine Umwandlung. Die Summe aus
+ * beidem waechst monoton und ist damit der richtige Fortschrittsmarker.
+ */
+function totalCoinsEver(save: { coins?: number; coinsSpent?: number }): number {
+  return Number(save.coins ?? 0) + Number(save.coinsSpent ?? 0);
+}
+
 /** Vergleicht die Fortschrittsmarker, die fuer den Nutzer sichtbar sind. */
 export function isRemoteAhead(local: SaveData, remote: RemoteSave): boolean {
   const { lokal, fern, fernLevel } = angeglichen(local, remote);
@@ -215,7 +231,7 @@ export function isRemoteAhead(local: SaveData, remote: RemoteSave): boolean {
     fern.bestScore > lokal.bestScore ||
     fern.totalRuns > lokal.totalRuns ||
     fern.totalScore > lokal.totalScore ||
-    Number(fern.coins ?? 0) > lokal.coins ||
+    totalCoinsEver(fern) > totalCoinsEver(lokal) ||
     totalXpForSave(fern) > totalXpForSave(lokal) ||
     totalTalentRanks(fern.talents) > totalTalentRanks(lokal.talents) ||
     fern.unlockedAchievements.length > lokal.unlockedAchievements.length
@@ -230,7 +246,7 @@ export function isLocalAhead(local: SaveData, remote: RemoteSave): boolean {
     lokal.bestScore > fern.bestScore ||
     lokal.totalRuns > fern.totalRuns ||
     lokal.totalScore > fern.totalScore ||
-    lokal.coins > Number(fern.coins ?? 0) ||
+    totalCoinsEver(lokal) > totalCoinsEver(fern) ||
     totalXpForSave(lokal) > totalXpForSave(fern) ||
     totalTalentRanks(lokal.talents) > totalTalentRanks(fern.talents) ||
     lokal.unlockedAchievements.length > fern.unlockedAchievements.length

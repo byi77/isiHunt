@@ -11,6 +11,28 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Ein Kauf im Laden galt als Rueckschritt und wurde vom Cloud-Stand
+  ueberschrieben.** Die gekaufte Figur blitzte im Menue kurz auf und sprang
+  auf den Standard zurueck; in der Jagd flog weiterhin der Default.
+
+  Ursache: `isRemoteAhead()` verglich den blossen Muenz-**Kontostand**. Ein
+  Kauf bucht lokal ab, der Server weiss davon nichts - also hatte die Cloud
+  mehr Muenzen, galt als weiter und wurde uebernommen. Damit war der Kauf
+  rueckgaengig gemacht.
+
+  Verglichen wird jetzt die Summe aus `coins + coinsSpent`: Ausgeben ist kein
+  Rueckschritt, sondern eine Umwandlung. Diese Summe waechst monoton und ist
+  damit der richtige Fortschrittsmarker. Echt dazuverdiente Muenzen werden
+  weiterhin erkannt - in beide Richtungen.
+
+  Der Fix davor (Besitz beim Abgleich vereinigen) war noetig, aber nicht
+  hinreichend: Er rettete die gekauften Formen, nicht aber die Muenzen - und
+  der `remoteAhead`-Zweig loeste weiterhin einen Scene-Neustart aus.
+
+  Drei neue Tests, gegen den Stand davor verifiziert.
+
+### Behoben
+
 - **Gekaufte Formen und Farben verschwanden beim Profil-Abgleich.** Im Menue
   waren sie kurz zu sehen und sprangen dann auf den Pfeil zurueck; in der Jagd
   flog weiterhin die Standardfigur.
