@@ -420,8 +420,42 @@ export function setPlayerName(name: string): void {
  * Die Cloud-Kennung wird mit uebernommen: ab jetzt zeigen beide Geraete auf
  * denselben Eintrag, und der naechste Abgleich funktioniert in beide Richtungen.
  */
+/**
+ * Vereinigt gekaufte Formen und Farben aus beiden Staenden.
+ *
+ * **Warum das noetig ist.** Ein uebernommener Cloud-Stand ersetzt den lokalen
+ * vollstaendig. Kennt er die Shop-Felder nicht - weil er vor diesem Update
+ * hochgeladen wurde -, fuellt `reconcile()` sie mit den Standardwerten, und
+ * alles Gekaufte ist weg. Genau das passierte: Ein Kauf war im Menue kurz zu
+ * sehen und sprang beim naechsten Profil-Abgleich auf den Pfeil zurueck.
+ *
+ * Besitz wird deshalb nie ersetzt, sondern zusammengelegt. Wer auf zwei
+ * Geraeten kauft, hat am Ende beides - die Muenzen sind ohnehin schon
+ * abgebucht, und etwas wegzunehmen waere der schlimmere Fehler.
+ *
+ * Das **Getragene** kommt dagegen vom Cloud-Stand, sofern er es kennt und
+ * besitzt: So sieht die Figur auf beiden Geraeten gleich aus.
+ */
+function vereinigeShopBesitz(lokal: SaveData, uebernommen: SaveData): SaveData {
+  const formen = [...new Set([...lokal.ownedShipShapes, ...uebernommen.ownedShipShapes])];
+  const farben = [...new Set([...lokal.ownedShipColors, ...uebernommen.ownedShipColors])];
+
+  // Kennt der Cloud-Stand die Felder nicht, hat `reconcile()` sie auf den
+  // Standard gesetzt - dann traegt der lokale Stand weiter, was er trug.
+  const fernKanntFelder =
+    uebernommen.shipShape !== DEFAULT_SHIP_SHAPE || uebernommen.ownedShipShapes.length > 1;
+
+  return {
+    ...uebernommen,
+    ownedShipShapes: formen,
+    ownedShipColors: farben,
+    shipShape: fernKanntFelder ? uebernommen.shipShape : lokal.shipShape,
+    shipColor: fernKanntFelder ? uebernommen.shipColor : lokal.shipColor,
+  };
+}
+
 export function adoptRemote(remote: Partial<SaveData>, cloudId: string): SaveData {
-  const merged = migrate(remote);
+  const merged = vereinigeShopBesitz(load(), migrate(remote));
   merged.cloudId = cloudId;
   save(merged);
   return merged;
@@ -429,8 +463,9 @@ export function adoptRemote(remote: Partial<SaveData>, cloudId: string): SaveDat
 
 /** Übernimmt den gemeinsamen Auth-Profilstand und bewahrt die lokale Sync-ID. */
 export function adoptProfileProgress(remote: Partial<SaveData>): SaveData {
-  const merged = migrate(remote);
-  merged.cloudId = load().cloudId;
+  const lokal = load();
+  const merged = vereinigeShopBesitz(lokal, migrate(remote));
+  merged.cloudId = lokal.cloudId;
   save(merged);
   return merged;
 }

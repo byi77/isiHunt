@@ -535,3 +535,67 @@ describe('Laden: Migration aus der Level-Freischaltung', () => {
     expect(migriert.ownedShipShapes).toEqual(['arrow']);
   });
 });
+
+describe('Laden: Besitz ueberlebt den Profil-Abgleich', () => {
+  // Regression zum Fund vom 2026-08-20: Ein uebernommener Cloud-Stand
+  // ersetzte den lokalen vollstaendig. Kannte er die Shop-Felder nicht - weil
+  // er vor dem Update hochgeladen wurde -, fuellte `reconcile()` sie mit den
+  // Standardwerten. Ein Kauf war im Menue kurz zu sehen und sprang beim
+  // naechsten Abgleich auf den Pfeil zurueck.
+
+  it('behaelt Gekauftes, wenn der Cloud-Stand die Felder nicht kennt', () => {
+    SaveSystem.update((data) => {
+      data.ownedShipShapes = ['arrow', 'star'];
+      data.ownedShipColors = ['world', 'gold'];
+      data.shipShape = 'star';
+      data.shipColor = 'gold';
+    });
+
+    const alterServerStand = { version: 8, level: 30, xp: 100, coins: 500 };
+    const danach = SaveSystem.adoptProfileProgress(alterServerStand);
+
+    expect(danach.shipShape).toBe('star');
+    expect(danach.shipColor).toBe('gold');
+    expect(danach.ownedShipShapes).toContain('star');
+    // Der uebrige Fortschritt kommt weiterhin vom Server.
+    expect(danach.level).toBe(30);
+    expect(danach.coins).toBe(500);
+  });
+
+  it('legt den Besitz beider Geraete zusammen', () => {
+    // Muenzen sind auf beiden Seiten schon abgebucht - etwas wegzunehmen
+    // waere der schlimmere Fehler.
+    SaveSystem.update((data) => {
+      data.ownedShipShapes = ['arrow', 'star'];
+      data.shipShape = 'star';
+    });
+
+    const vomServer = {
+      version: 8,
+      level: 30,
+      ownedShipShapes: ['arrow', 'eagle'],
+      ownedShipColors: ['world', 'ruby'],
+      shipShape: 'eagle',
+      shipColor: 'ruby',
+    };
+    const danach = SaveSystem.adoptProfileProgress(vomServer);
+
+    expect(danach.ownedShipShapes).toEqual(expect.arrayContaining(['arrow', 'star', 'eagle']));
+    // Kennt der Cloud-Stand die Felder, bestimmt er das Getragene - so sieht
+    // die Figur auf beiden Geraeten gleich aus.
+    expect(danach.shipShape).toBe('eagle');
+    expect(danach.shipColor).toBe('ruby');
+  });
+
+  it('gilt genauso fuer adoptRemote', () => {
+    SaveSystem.update((data) => {
+      data.ownedShipColors = ['world', 'gold'];
+      data.shipColor = 'gold';
+    });
+
+    const danach = SaveSystem.adoptRemote({ version: 8, level: 12 }, 'cloud-1');
+
+    expect(danach.shipColor).toBe('gold');
+    expect(danach.ownedShipColors).toContain('gold');
+  });
+});

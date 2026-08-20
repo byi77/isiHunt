@@ -11,6 +11,25 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Gekaufte Formen und Farben verschwanden beim Profil-Abgleich.** Im Menue
+  waren sie kurz zu sehen und sprangen dann auf den Pfeil zurueck; in der Jagd
+  flog weiterhin die Standardfigur.
+
+  Ursache: `adoptProfileProgress()` und `adoptRemote()` ersetzten den lokalen
+  Stand vollstaendig durch den Cloud-Stand. Kennt der die Shop-Felder nicht -
+  weil er vor diesem Update hochgeladen wurde -, fuellt `reconcile()` sie mit
+  den Standardwerten, und alles Gekaufte ist weg.
+
+  Der Besitz wird jetzt **vereinigt statt ersetzt**: Wer auf zwei Geraeten
+  kauft, hat am Ende beides. Die Muenzen sind ohnehin schon abgebucht, und
+  etwas wegzunehmen waere der schlimmere Fehler. Das **Getragene** kommt
+  dagegen vom Cloud-Stand, sofern er es kennt - so sieht die Figur auf beiden
+  Geraeten gleich aus.
+
+  Drei neue Tests halten das fest, gegen den Stand davor verifiziert.
+
+### Behoben
+
 - **Im Laden liess sich eine Form erst nach dem Kauf betrachten.** In der
   Zeile stand sie winzig, die Vorschau oben zeigte immer nur das Getragene -
   wer 2 600 Muenzen ausgibt, kaufte praktisch blind. Ein Tipp auf die Zeile
