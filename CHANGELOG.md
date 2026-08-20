@@ -9,6 +9,35 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Geaendert
+
+- **Der Wartungs-Reset loescht jetzt auch die Ladenkaeufe.** Bisher setzte
+  `admin_reset_user()` Level, Coins, Talente und Erfolge zurueck, liess die
+  gekauften Formen und Farben aber stehen: Ein zurueckgesetzter Spieler
+  startete bei Stufe 1 mit 0 Muenzen und trug weiterhin den Sternenkreuzer
+  fuer 1 100 Muenzen.
+
+  Der Pfeil und die Weltfarbe bleiben - ohne Schiff und ohne Farbe kann man
+  nicht spielen, und beides ist ohnehin kostenlos.
+
+  **Migration noetig:** `supabase/phase_2_12_reset_shop.sql` muss im
+  Supabase-Projekt eingespielt werden. Ohne sie raeumt nur die lokale Seite
+  auf.
+
+  Nebenbei korrigiert: Die Funktion schrieb fest `'version', 6`, obwohl der
+  Spielstand inzwischen bei 8 liegt. Ein zurueckgesetzter Stand lief dadurch
+  beim naechsten Laden erneut durch die Migrationen 7 und 8.
+
+- **Der Client raeumt den Laden beim Reset selbst mit auf.** Die getragene
+  Figur liegt nur im localStorage, die Serverfunktion erreicht sie also
+  nicht. Erkannt wird der Reset an einem leeren Cloud-Stand bei bespieltem
+  lokalem Stand.
+
+  Ein erster Anlauf pruefte allein den Cloud-Stand - das traf aber auch ein
+  frisch angelegtes Profil, und ein Neuling, der vor seiner ersten Anmeldung
+  im Laden kaufte, haette den Kauf verloren. Zwei Tests halten beide Faelle
+  auseinander.
+
 ### Behoben
 
 - **Nach jedem Kauf sprang die Ladenliste an den Anfang zurueck.** Ein Kauf

@@ -620,3 +620,65 @@ describe('Laden: Besitz ueberlebt den Profil-Abgleich', () => {
     expect(danach.ownedShipColors).toContain('gold');
   });
 });
+
+describe('Laden: Wartungs-Reset', () => {
+  // Ein zurueckgesetztes Profil soll auch den Laden ausraeumen. Die getragene
+  // Figur liegt nur lokal, deshalb muss der Client sie selbst aufraeumen -
+  // die Serverfunktion allein erreicht sie nicht.
+
+  it('loescht Kaeufe, wenn ein bespielter Stand leer zurueckkommt', () => {
+    SaveSystem.update((data) => {
+      data.level = 30;
+      data.totalRuns = 40;
+      data.ownedShipShapes = ['arrow', 'star', 'eagle'];
+      data.ownedShipColors = ['world', 'gold'];
+      data.shipShape = 'star';
+      data.shipColor = 'gold';
+    });
+
+    const zurueckgesetzt = {
+      version: 8,
+      level: 1,
+      xp: 0,
+      totalRuns: 0,
+      coins: 0,
+      ownedShipShapes: ['arrow'],
+      ownedShipColors: ['world'],
+      shipShape: 'arrow',
+      shipColor: 'world',
+    };
+    const danach = SaveSystem.adoptProfileProgress(zurueckgesetzt);
+
+    expect(danach.ownedShipShapes).toEqual(['arrow']);
+    expect(danach.ownedShipColors).toEqual(['world']);
+    expect(danach.shipShape).toBe('arrow');
+    expect(danach.shipColor).toBe('world');
+  });
+
+  it('nimmt einem Neuling seinen Kauf NICHT weg', () => {
+    // Ein frisch angelegtes Profil sieht aus wie ein zurueckgesetztes. Wer
+    // vor seiner ersten Anmeldung im Laden kauft, darf das nicht verlieren -
+    // deshalb muss auch der lokale Stand bespielt sein.
+    SaveSystem.update((data) => {
+      data.ownedShipShapes = ['arrow', 'delta'];
+      data.shipShape = 'delta';
+      data.coinsSpent = 300;
+    });
+
+    const frischesProfil = {
+      version: 8,
+      level: 1,
+      xp: 0,
+      totalRuns: 0,
+      coins: 0,
+      ownedShipShapes: ['arrow'],
+      ownedShipColors: ['world'],
+      shipShape: 'arrow',
+      shipColor: 'world',
+    };
+    const danach = SaveSystem.adoptProfileProgress(frischesProfil);
+
+    expect(danach.ownedShipShapes).toContain('delta');
+    expect(danach.shipShape).toBe('delta');
+  });
+});

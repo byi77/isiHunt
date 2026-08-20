@@ -437,6 +437,34 @@ export function setPlayerName(name: string): void {
  * besitzt: So sieht die Figur auf beiden Geraeten gleich aus.
  */
 function vereinigeShopBesitz(lokal: SaveData, uebernommen: SaveData): SaveData {
+  // Ein zurueckgesetztes Profil raeumt auch den Laden aus.
+  //
+  // `admin_reset_user()` setzt serverseitig alles auf Anfang, auch die
+  // Ladenkaeufe. Ohne diese Ausnahme wuerde die Vereinigung unten sie wieder
+  // hereinholen - der zurueckgesetzte Spieler stuende bei Stufe 1 mit 0
+  // Muenzen da und truege weiterhin den Sternenkreuzer fuer 1 100.
+  //
+  // Erkannt wird der Reset an einem leeren Cloud-Stand, waehrend lokal noch
+  // Spielzeit steht: Nur dann wurde tatsaechlich etwas geloescht.
+  //
+  // Ein erster Anlauf pruefte allein den Cloud-Stand (Stufe 1, keine Runs).
+  // Das traf aber auch ein **frisch angelegtes** Profil - ein Neuling, der
+  // vor seiner ersten Anmeldung im Laden kaufte, haette den Kauf verloren.
+  // Der lokale Stand muss deshalb Spuren zeigen, die der ferne nicht hat.
+  const fernLeer = uebernommen.level === 1 && uebernommen.xp === 0 && uebernommen.totalRuns === 0;
+  const lokalBespielt = lokal.totalRuns > 0 || lokal.level > 1;
+  const zurueckgesetzt = fernLeer && lokalBespielt;
+
+  if (zurueckgesetzt) {
+    return {
+      ...uebernommen,
+      ownedShipShapes: [DEFAULT_SHIP_SHAPE],
+      ownedShipColors: [DEFAULT_SHIP_COLOR],
+      shipShape: DEFAULT_SHIP_SHAPE,
+      shipColor: DEFAULT_SHIP_COLOR,
+    };
+  }
+
   return {
     ...uebernommen,
     // Besitz zusammenlegen: Wer auf zwei Geraeten kauft, hat am Ende beides.

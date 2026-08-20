@@ -136,7 +136,9 @@ export class AdminUsersScene extends Phaser.Scene {
       this.resetArmed = true;
       button.setLabel('WIRKLICH RESETTEN?');
       this.statusText
-        .setText('Noch einmal tippen: Highscore, Erfolge, Runs und Coins werden gelöscht.')
+        .setText(
+          'Noch einmal tippen: Highscore, Erfolge, Runs, Coins und Shop-Käufe werden gelöscht.',
+        )
         .setColor(Palette.danger);
       return;
     }
