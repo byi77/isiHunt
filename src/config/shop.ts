@@ -381,3 +381,18 @@ export function shipTint(
   if (!save.ownedShipColors.includes(save.shipColor)) return weltAkzent;
   return getShipColor(save.shipColor).color ?? weltAkzent;
 }
+
+/**
+ * Die Farbe des Schiffsrumpfs.
+ *
+ * Anders als `shipTint()`, das Aura und Halo faerbt: Wer die Weltfarbe
+ * traegt, behaelt einen **weissen** Rumpf. Ein grosser Teil des Spielfelds
+ * traegt die Weltfarbe, und eine gruene Figur auf gruenem Grund ist im
+ * Gewuehl kaum auszumachen - genau das zeigte der erste Versuch, den Rumpf
+ * pauschal mitzufaerben. Gekaufte Farben stechen dagegen bewusst heraus;
+ * dafuer wurden sie gekauft.
+ */
+export function shipHullTint(save: { shipColor: string; ownedShipColors: string[] }): number {
+  if (!save.ownedShipColors.includes(save.shipColor)) return 0xffffff;
+  return getShipColor(save.shipColor).color ?? 0xffffff;
+}

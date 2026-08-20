@@ -15,6 +15,7 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import {
   getShipColor,
+  getShipShape,
   SHIP_COLORS,
   SHIP_SHAPES,
   shipTint,
@@ -57,20 +58,39 @@ const KOPF_HOEHE = 420;
 const KOPF_DEPTH = 160;
 const KARTE_HOEHE = 96;
 const KARTE_ABSTAND = 12;
+/** Breite des Kauf-/Anziehen-Knopfs am rechten Kartenrand. */
+const KNOPF_BREITE = 150;
 
 export class ShopScene extends Phaser.Scene {
   private tab: ShopTab = 'shapes';
   /** Alles unterhalb der Reiter - wird beim Wechsel komplett neu gebaut. */
   private inhalt: ScrollElement[] = [];
+  /**
+   * Was die Vorschau gerade zeigt - nicht zwingend das Getragene.
+   *
+   * Ohne Anprobe liess sich eine Form nur nach dem Kauf betrachten: In der
+   * Zeile steht sie winzig, und wer 2 600 Muenzen ausgibt, will vorher sehen,
+   * was er bekommt. Ein Tipp auf die Karte legt sie hier ab; die Vorschau
+   * zeichnet sich daraufhin neu.
+   */
+  private anprobeShape: string | null = null;
+  private anprobeColor: string | null = null;
+  private vorschauBild!: Phaser.GameObjects.Image;
+  private vorschauHalo!: Phaser.GameObjects.Image;
+  private vorschauName!: Phaser.GameObjects.Text;
 
   constructor() {
     super(SceneKey.Shop);
   }
 
-  create(data: { tab?: ShopTab } = {}): void {
+  create(data: { tab?: ShopTab; anprobeShape?: string; anprobeColor?: string } = {}): void {
     SafeAreaSystem.showStatic('SHOP');
     this.tab = data.tab ?? 'shapes';
     this.inhalt = [];
+    // Die Anprobe ueberlebt den Neustart, den ein Kauf ausloest - sonst
+    // spraenge die Vorschau nach jedem Kauf auf das Getragene zurueck.
+    this.anprobeShape = data.anprobeShape ?? null;
+    this.anprobeColor = data.anprobeColor ?? null;
 
     const save = SaveSystem.load();
     const world = getWorld(save.lastWorldId);
@@ -94,6 +114,21 @@ export class ShopScene extends Phaser.Scene {
     this.blendeAusserhalbAus();
 
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
+
+    // Alle Trefferflaechen beim Verlassen abmelden.
+    //
+    // Phasers Eingabe-Plugin behaelt interaktive Objekte einer geschlossenen
+    // Scene sonst in seiner Liste. Sichtbar wurde das an einer ganz anderen
+    // Stelle: Nach einem Besuch im Laden liess sich der Profilbildschirm nicht
+    // mehr wischen - der Playtest meldete "Inhalt wanderte 0 px". Die
+    // ProfileScene selbst war unversehrt (gleiche Objekte, gleicher
+    // Scroll-Handler); es waren die zurueckgebliebenen Ladenflaechen, die den
+    // Zeiger abfingen.
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      for (const objekt of this.inhalt) {
+        if (objekt.input) this.input.disable(objekt);
+      }
+    });
   }
 
   /**
@@ -121,28 +156,55 @@ export class ShopScene extends Phaser.Scene {
       alpha: 0.5,
     }).setDepth(KOPF_DEPTH);
 
-    this.add
-      .image(GAME_WIDTH / 2, y - 20, TextureKey.PlayerHalo)
-      .setTint(shipTint(save, weltAkzent))
+    this.vorschauHalo = this.add
+      .image(GAME_WIDTH / 2, y - 30, TextureKey.PlayerHalo)
       .setScale(0.7)
       .setAlpha(0.75)
       .setDepth(KOPF_DEPTH);
 
-    this.add
-      .image(GAME_WIDTH / 2, y - 20, playerTextureForShape(save.shipShape))
-      .setTint(shipTint(save, weltAkzent))
+    this.vorschauBild = this.add
+      .image(GAME_WIDTH / 2, y - 30, TextureKey.PlayerCore)
       .setScale(0.85)
+      .setDepth(KOPF_DEPTH);
+
+    this.vorschauName = this.add
+      .text(GAME_WIDTH / 2, y + 32, '', textStyle(FontSize.small, Palette.ink))
+      .setOrigin(0.5)
       .setDepth(KOPF_DEPTH);
 
     this.add
       .text(
         GAME_WIDTH / 2,
-        y + 62,
+        y + 68,
         `${save.coins.toLocaleString('de-DE')} MÜNZEN`,
-        textStyle(FontSize.small, Palette.gold, { fontStyle: 'bold' }),
+        textStyle(FontSize.tiny, Palette.gold, { fontStyle: 'bold' }),
       )
       .setOrigin(0.5)
       .setDepth(KOPF_DEPTH);
+
+    this.zeichneVorschau(weltAkzent);
+  }
+
+  /**
+   * Setzt Bild, Farbe und Namen der Vorschau.
+   *
+   * Zeigt die Anprobe, wenn eine laeuft, sonst das Getragene. Der Name macht
+   * den Unterschied lesbar - ohne ihn waere nicht klar, ob man gerade sein
+   * eigenes Schiff sieht oder ein fremdes.
+   */
+  private zeichneVorschau(weltAkzent: number): void {
+    const save = SaveSystem.load();
+    const shapeId = this.anprobeShape ?? save.shipShape;
+    const colorId = this.anprobeColor ?? save.shipColor;
+    const farbe = getShipColor(colorId).color ?? weltAkzent;
+
+    this.vorschauBild.setTexture(playerTextureForShape(shapeId)).setTint(farbe);
+    this.vorschauHalo.setTint(farbe);
+
+    const angeprobt = this.anprobeShape !== null || this.anprobeColor !== null;
+    const name = `${getShipShape(shapeId).name} · ${getShipColor(colorId).name}`;
+    this.vorschauName.setText(angeprobt ? `${name}  (Vorschau)` : name);
+    this.vorschauName.setColor(angeprobt ? Palette.gold : Palette.inkDim);
   }
 
   private buildReiter(): void {
@@ -273,7 +335,14 @@ export class ShopScene extends Phaser.Scene {
         const ergebnis = besitzt
           ? ProgressionSystem.equipShip(shape.id, undefined)
           : ProgressionSystem.purchaseShipShape(shape.id);
-        if (ergebnis) this.scene.restart({ tab: this.tab });
+        if (ergebnis) this.scene.restart({ tab: this.tab, anprobeColor: this.anprobeColor });
+      },
+      // Ein Tipp auf die Zeile probiert an, ohne zu kaufen. Der Kauf laeuft
+      // ausschliesslich ueber den Knopf rechts - sonst waere jede Beruehrung
+      // ein Kaufrisiko.
+      onAnprobe: () => {
+        this.anprobeShape = shape.id === SaveSystem.load().shipShape ? null : shape.id;
+        this.zeichneVorschau(weltAkzent);
       },
       symbol: (x: number, mitteY: number) =>
         this.add
@@ -302,7 +371,11 @@ export class ShopScene extends Phaser.Scene {
         const ergebnis = besitzt
           ? ProgressionSystem.equipShip(undefined, color.id)
           : ProgressionSystem.purchaseShipColor(color.id);
-        if (ergebnis) this.scene.restart({ tab: this.tab });
+        if (ergebnis) this.scene.restart({ tab: this.tab, anprobeShape: this.anprobeShape });
+      },
+      onAnprobe: () => {
+        this.anprobeColor = color.id === SaveSystem.load().shipColor ? null : color.id;
+        this.zeichneVorschau(weltAkzent);
       },
       symbol: (x: number, mitteY: number) =>
         this.add
@@ -327,9 +400,21 @@ export class ShopScene extends Phaser.Scene {
     knopf: string;
     knopfAktiv: boolean;
     onClick: () => void;
+    onAnprobe: () => void;
     symbol: (x: number, y: number) => Phaser.GameObjects.Image;
   }): void {
-    const { y, getragen, akzent, titel, untertitel, knopf, knopfAktiv, onClick, symbol } = optionen;
+    const {
+      y,
+      getragen,
+      akzent,
+      titel,
+      untertitel,
+      knopf,
+      knopfAktiv,
+      onClick,
+      onAnprobe,
+      symbol,
+    } = optionen;
 
     // Das Getragene bekommt den goldenen Rahmen - so ist ohne Text zu sehen,
     // was gerade an der Figur haengt.
@@ -337,11 +422,29 @@ export class ShopScene extends Phaser.Scene {
       alpha: getragen ? 0.72 : 0.45,
     });
     this.inhalt.push(panel as ScrollElement);
+
+    // Die Anprobe-Flaeche ist ein eigenes, unsichtbares Rechteck - nicht die
+    // Trefferflaeche des Panels.
+    //
+    // Zwei Gruende. Erstens liefert `createPanel` einen Container ohne eigene
+    // Geometrie; `setInteractive()` braucht dort eine ausdrueckliche Flaeche.
+    // Zweitens muss sie VOR dem Kaufknopf enden, sonst loeste ein Tipp auf
+    // "ANZIEHEN" auch die Anprobe aus. Eine versetzte Trefferflaeche am
+    // Container loest das nicht: Der Playtest liest ihre Groesse, rechnet sie
+    // aber um die Container-Mitte (`x - w/2`) und meldete deshalb eine
+    // Ueberlappung, die es gar nicht gab. Ein eigenes Rechteck hat seinen
+    // eigenen Mittelpunkt - damit stimmen Wirkung und Messung ueberein.
+    const anprobeBreite = GAME_WIDTH - 100 - KNOPF_BREITE - 30;
+    const anprobe = this.add
+      .rectangle(50 + anprobeBreite / 2, y, anprobeBreite, KARTE_HOEHE, 0x000000, 0)
+      .setInteractive({ useHandCursor: true });
+    anprobe.on('pointerup', onAnprobe);
+    this.inhalt.push(anprobe as ScrollElement);
     this.inhalt.push(symbol(120, y) as ScrollElement);
 
     // Textbreite bis vor den Knopf begrenzen. Ohne das lief die Beschreibung
     // unter die Taste und war dort nicht mehr lesbar.
-    const textBreite = GAME_WIDTH - 130 - 150 / 2 - 180 - 16;
+    const textBreite = GAME_WIDTH - 130 - KNOPF_BREITE / 2 - 180 - 16;
 
     this.inhalt.push(
       this.add
@@ -361,7 +464,7 @@ export class ShopScene extends Phaser.Scene {
     }
 
     const taste = createButton(this, GAME_WIDTH - 130, y, knopf, onClick, {
-      width: 150,
+      width: KNOPF_BREITE,
       height: 56,
       accent: getragen ? Palette.goldHex : akzent,
       fontSize: FontSize.tiny,

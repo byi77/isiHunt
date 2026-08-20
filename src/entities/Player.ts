@@ -63,6 +63,8 @@ export class Player extends Phaser.GameObjects.Container {
     private stats: PlayerStats,
     accentColor: number,
     textureKey: TextureKeyValue = TextureKey.PlayerCore,
+    /** Rumpffarbe. Standard weiss - siehe `shipHullTint()`. */
+    hullColor: number = 0xffffff,
   ) {
     super(scene, x, y);
     this.accentColor = accentColor;
@@ -73,7 +75,15 @@ export class Player extends Phaser.GameObjects.Container {
       .setScale(2.1)
       .setAlpha(0.75);
     this.halo = scene.add.image(0, 0, TextureKey.PlayerHalo).setTint(accentColor).setAlpha(0.8);
-    this.core = scene.add.image(0, 0, textureKey).setTint(0xffffff);
+    // Der Rumpf traegt die gekaufte Farbe, bei Weltfarbe bleibt er weiss.
+    //
+    // Bis 2026-08-20 stand hier fest `0xffffff` - aus der Zeit, als die Figur
+    // immer weiss war und nur ihr Schein die Weltfarbe trug. Mit kaufbaren
+    // Farben ergab das keinen Sinn: Wer Gold kauft, bekam ein weisses Schiff
+    // mit goldenem Rand. Ihn pauschal mit `accentColor` zu faerben war aber
+    // auch falsch - dann steht eine gruene Figur auf gruenem Grund. Die
+    // Entscheidung faellt in `shipHullTint()`.
+    this.core = scene.add.image(0, 0, textureKey).setTint(hullColor);
 
     this.add([this.aura, this.halo, this.core]);
     this.setDepth(Depth.Player);

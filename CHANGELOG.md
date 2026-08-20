@@ -9,6 +9,43 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Behoben
+
+- **Im Laden liess sich eine Form erst nach dem Kauf betrachten.** In der
+  Zeile stand sie winzig, die Vorschau oben zeigte immer nur das Getragene -
+  wer 2 600 Muenzen ausgibt, kaufte praktisch blind. Ein Tipp auf die Zeile
+  probiert jetzt an: Die Vorschau zeigt die Form gross, der Name traegt den
+  Zusatz "(Vorschau)". Gekauft wird weiterhin nur ueber den Knopf rechts,
+  damit keine Beruehrung zum Kaufrisiko wird.
+
+  Die Anprobe ueberlebt den Neustart, den ein Kauf ausloest - sonst spraenge
+  die Vorschau nach jedem Kauf auf das Getragene zurueck.
+
+- **Der Playtest liess beim Bildschirmwechsel die vorige Scene mitlaufen.** Er
+  wechselte immer von `'Menu'` aus statt von der gerade offenen Scene -
+  `switchScene()` stoppt aber nur die Scene, auf der es aufgerufen wird. Ab dem
+  zweiten Durchlauf blieb die vorige aktiv und fing mit ihren Trefferflaechen
+  die Zeigerereignisse ab.
+
+  Aufgefallen ist das erst mit dem Laden als vierter Scene: Danach liess sich
+  der Profilbildschirm nicht mehr wischen ("Inhalt wanderte 0 px"). Die
+  ProfileScene selbst war unversehrt - gleiche Objekte, gleicher
+  Scroll-Handler; es war die noch laufende Vorgaengerin. Ein erster
+  Erklaerungsversuch (zurueckgebliebene Trefferflaechen des Ladens) war falsch
+  und wurde verworfen, nachdem das Abmelden nichts aenderte.
+
+- **Gekaufte Formen und Farben kamen im Spiel nicht an.** Der Schiffsrumpf
+  stand seit dem ersten Commit fest auf `0xffffff`: Aura und Halo trugen die
+  Farbe, das Schiff selbst blieb weiss. Wer Gold kaufte, bekam ein weisses
+  Schiff mit goldenem Rand.
+
+  Der Rumpf traegt jetzt die gekaufte Farbe. **Bei Weltfarbe bleibt er
+  bewusst weiss:** Ein erster Anlauf faerbte ihn pauschal mit dem Weltakzent
+  und stellte damit eine gruene Figur auf gruenen Grund - im Gewuehl kaum
+  auszumachen. Die Unterscheidung trifft `shipHullTint()`.
+
+  Fuenf neue Tests halten beides fest, gegen den Stand davor verifiziert.
+
 ### Hinzugefuegt
 
 - **Der Laden hat jetzt 30 Fluggestalten und 30 Farben.** Fuenf Kategorien:

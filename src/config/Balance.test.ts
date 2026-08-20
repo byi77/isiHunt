@@ -18,6 +18,8 @@ import {
   getShipShape,
   SHIP_COLORS,
   SHIP_SHAPES,
+  shipHullTint,
+  shipTint,
 } from '@/config/shop';
 import { talentCost } from '@/config/talents';
 import { SHIP_DRAWINGS } from '@/ui/shipShapes';
@@ -181,5 +183,38 @@ describe('Laden: Formen und Farben', () => {
     // etwa 52 Runden - ein Fernziel, aber kein endloser Grind.
     const teuerste = Math.max(...SHIP_SHAPES.map((shape) => shape.cost));
     expect(teuerste).toBeLessThanOrEqual(3_000);
+  });
+});
+
+describe('Schiffsfarbe: Rumpf und Schein', () => {
+  // Regression zum Fund vom 2026-08-20: Der Rumpf stand seit dem ersten
+  // Commit fest auf Weiss. Aura und Halo trugen die Farbe, das Schiff selbst
+  // nicht - wer Gold kaufte, bekam ein weisses Schiff mit goldenem Rand.
+
+  const mitFarbe = (id: string) => ({ shipColor: id, ownedShipColors: ['world', id] });
+
+  it('faerbt den Rumpf in der gekauften Farbe', () => {
+    expect(shipHullTint(mitFarbe('gold'))).toBe(getShipColor('gold').color);
+  });
+
+  it('laesst den Rumpf bei Weltfarbe weiss', () => {
+    // Ein grosser Teil des Spielfelds traegt die Weltfarbe. Eine gruene Figur
+    // auf gruenem Grund ist im Gewuehl kaum auszumachen - genau das zeigte
+    // der erste Versuch, den Rumpf pauschal mitzufaerben.
+    expect(shipHullTint({ shipColor: 'world', ownedShipColors: ['world'] })).toBe(0xffffff);
+  });
+
+  it('faellt auf Weiss zurueck, wenn die Farbe nicht gekauft wurde', () => {
+    // Ein manipulierter Spielstand soll keine ungekaufte Farbe zeigen.
+    expect(shipHullTint({ shipColor: 'platinum', ownedShipColors: ['world'] })).toBe(0xffffff);
+  });
+
+  it('gibt Aura und Halo bei Weltfarbe die Weltfarbe', () => {
+    const welt = 0x123456;
+    expect(shipTint({ shipColor: 'world', ownedShipColors: ['world'] }, welt)).toBe(welt);
+  });
+
+  it('gibt Aura und Halo die gekaufte Farbe', () => {
+    expect(shipTint(mitFarbe('ruby'), 0x123456)).toBe(getShipColor('ruby').color);
   });
 });

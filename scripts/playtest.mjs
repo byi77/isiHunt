@@ -1168,7 +1168,14 @@ async function suiteControls() {
     let vorige = 'Menu';
     for (const key of SCENES) {
       if (key !== 'Menu') {
-        await switchScene(page, 'Menu', key);
+        // Von der GERADE offenen Scene aus wechseln, nicht pauschal von
+        // 'Menu': `switchScene()` ruft `scene.scene.start()` auf der
+        // genannten Scene auf, und nur diese wird dabei gestoppt. Stand fest
+        // 'Menu' hier, blieb ab dem zweiten Durchlauf die vorige Scene aktiv
+        // und fing mit ihren Trefferflaechen die Zeigerereignisse ab.
+        // Sichtbar wurde das erst mit dem Laden als vierter Scene: Danach
+        // liess sich der Profilbildschirm nicht mehr wischen.
+        await switchScene(page, vorige, key);
         try {
           await waitForScene(page, key, 10000);
         } catch {
