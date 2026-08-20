@@ -11,6 +11,17 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Nach jedem Kauf sprang die Ladenliste an den Anfang zurueck.** Ein Kauf
+  startet die Scene neu, damit Guthaben, Besitz und Vorschau frisch aufgebaut
+  werden - dabei ging die Scroll-Position verloren. Wer weit unten kaufte,
+  musste sich seine Stelle jedes Mal neu suchen.
+
+  `attachVerticalScroll()` nimmt jetzt einen `startOffset` entgegen, und der
+  Laden reicht seine Position ueber den Neustart weiter. Beim **Reiterwechsel**
+  bleibt es bewusst bei 0: Die andere Liste hat mit der Stelle nichts zu tun.
+
+### Behoben
+
 - **Die getragene Figur sprang nach jeder Jagd auf den Standard zurueck.** Nach
   dem Kauf war sie im Profilblock zu sehen; sobald eine Runde lief, flog wieder
   der Pfeil - und danach stand auch im Menue wieder der Standard.

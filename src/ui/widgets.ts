@@ -459,6 +459,14 @@ export function attachVerticalScroll(
     dragZoneTop: number;
     dragZoneBottom: number;
     onOffsetChange: (offset: number) => void;
+    /**
+     * Anfangsposition der Liste.
+     *
+     * Fuer Scenes, die sich selbst neu aufbauen: Der Laden startet nach jedem
+     * Kauf neu, und ohne diesen Wert sprang die Liste dabei an den Anfang
+     * zurueck - wer weit unten kaufte, verlor seine Stelle.
+     */
+    startOffset?: number;
   },
 ): void {
   const { maxScroll, dragZoneTop, dragZoneBottom, onOffsetChange } = options;
@@ -473,6 +481,8 @@ export function attachVerticalScroll(
     scrollOffset = Phaser.Math.Clamp(value, 0, maxScroll);
     onOffsetChange(scrollOffset);
   };
+
+  if (options.startOffset) setScrollOffset(options.startOffset);
 
   const onPointerDown = (pointer: Phaser.Input.Pointer): void => {
     if (activePointerId !== null) return;

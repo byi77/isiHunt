@@ -78,12 +78,27 @@ export class ShopScene extends Phaser.Scene {
   private vorschauBild!: Phaser.GameObjects.Image;
   private vorschauHalo!: Phaser.GameObjects.Image;
   private vorschauName!: Phaser.GameObjects.Text;
+  /**
+   * Wie weit die Liste gerade gescrollt ist.
+   *
+   * Ein Kauf startet die Scene neu; ohne diesen Wert sprang die Liste dabei
+   * an den Anfang, und wer weit unten kaufte, musste sich seine Stelle neu
+   * suchen.
+   */
+  private scrollOffset = 0;
 
   constructor() {
     super(SceneKey.Shop);
   }
 
-  create(data: { tab?: ShopTab; anprobeShape?: string; anprobeColor?: string } = {}): void {
+  create(
+    data: {
+      tab?: ShopTab;
+      anprobeShape?: string;
+      anprobeColor?: string;
+      scrollOffset?: number;
+    } = {},
+  ): void {
     SafeAreaSystem.showStatic('SHOP');
     this.tab = data.tab ?? 'shapes';
     this.inhalt = [];
@@ -91,6 +106,9 @@ export class ShopScene extends Phaser.Scene {
     // spraenge die Vorschau nach jedem Kauf auf das Getragene zurueck.
     this.anprobeShape = data.anprobeShape ?? null;
     this.anprobeColor = data.anprobeColor ?? null;
+    // Beim Reiterwechsel bewusst bei 0 anfangen - die andere Liste hat mit
+    // der Stelle nichts zu tun.
+    this.scrollOffset = data.scrollOffset ?? 0;
 
     const save = SaveSystem.load();
     const world = getWorld(save.lastWorldId);
@@ -273,7 +291,9 @@ export class ShopScene extends Phaser.Scene {
       maxScroll,
       dragZoneTop: listeOben,
       dragZoneBottom: sichtbarBis,
+      startOffset: this.scrollOffset,
       onOffsetChange: (offset) => {
+        this.scrollOffset = offset;
         for (const objekt of this.inhalt) {
           if (objekt.ausgangsY === undefined) continue;
           objekt.y = objekt.ausgangsY - offset;
@@ -335,7 +355,14 @@ export class ShopScene extends Phaser.Scene {
         const ergebnis = besitzt
           ? ProgressionSystem.equipShip(shape.id, undefined)
           : ProgressionSystem.purchaseShipShape(shape.id);
-        if (ergebnis) this.scene.restart({ tab: this.tab, anprobeColor: this.anprobeColor });
+        if (!ergebnis) return;
+        // Scroll-Position mitgeben: Ohne sie spraenge die Liste beim Neustart
+        // an den Anfang, und wer weit unten kauft, verliert seine Stelle.
+        this.scene.restart({
+          tab: this.tab,
+          anprobeColor: this.anprobeColor,
+          scrollOffset: this.scrollOffset,
+        });
       },
       // Ein Tipp auf die Zeile probiert an, ohne zu kaufen. Der Kauf laeuft
       // ausschliesslich ueber den Knopf rechts - sonst waere jede Beruehrung
@@ -371,7 +398,12 @@ export class ShopScene extends Phaser.Scene {
         const ergebnis = besitzt
           ? ProgressionSystem.equipShip(undefined, color.id)
           : ProgressionSystem.purchaseShipColor(color.id);
-        if (ergebnis) this.scene.restart({ tab: this.tab, anprobeShape: this.anprobeShape });
+        if (!ergebnis) return;
+        this.scene.restart({
+          tab: this.tab,
+          anprobeShape: this.anprobeShape,
+          scrollOffset: this.scrollOffset,
+        });
       },
       onAnprobe: () => {
         this.anprobeColor = color.id === SaveSystem.load().shipColor ? null : color.id;
