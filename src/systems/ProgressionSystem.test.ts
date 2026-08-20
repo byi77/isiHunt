@@ -581,10 +581,31 @@ describe('Laden: Besitz ueberlebt den Profil-Abgleich', () => {
     const danach = SaveSystem.adoptProfileProgress(vomServer);
 
     expect(danach.ownedShipShapes).toEqual(expect.arrayContaining(['arrow', 'star', 'eagle']));
-    // Kennt der Cloud-Stand die Felder, bestimmt er das Getragene - so sieht
-    // die Figur auf beiden Geraeten gleich aus.
-    expect(danach.shipShape).toBe('eagle');
-    expect(danach.shipColor).toBe('ruby');
+    // Das Getragene bleibt lokal - siehe `vereinigeShopBesitz()`. Der Server
+    // fuehrt es nicht mit, also wuerde ein uebernommener Wert die Auswahl bei
+    // jedem Abgleich zuruecksetzen.
+    expect(danach.shipShape).toBe('star');
+  });
+
+  it('laesst die getragene Figur auch dann lokal, wenn die Cloud eine kennt', () => {
+    // Der Kern des Fehlers vom 2026-08-20: Nach dem Kauf im Menue kurz
+    // sichtbar, nach der ersten Jagd wieder der Pfeil. Der Server pflegt in
+    // `profile_progress` eine eigene Kopie und kennt die Auswahl nie.
+    SaveSystem.update((data) => {
+      data.ownedShipShapes = ['arrow', 'star'];
+      data.shipShape = 'star';
+    });
+
+    const serverMitAnderemStand = {
+      version: 8,
+      level: 30,
+      ownedShipShapes: ['arrow'],
+      shipShape: 'arrow',
+    };
+    const danach = SaveSystem.adoptProfileProgress(serverMitAnderemStand);
+
+    expect(danach.shipShape).toBe('star');
+    expect(danach.ownedShipShapes).toContain('star');
   });
 
   it('gilt genauso fuer adoptRemote', () => {

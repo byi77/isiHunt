@@ -437,20 +437,32 @@ export function setPlayerName(name: string): void {
  * besitzt: So sieht die Figur auf beiden Geraeten gleich aus.
  */
 function vereinigeShopBesitz(lokal: SaveData, uebernommen: SaveData): SaveData {
-  const formen = [...new Set([...lokal.ownedShipShapes, ...uebernommen.ownedShipShapes])];
-  const farben = [...new Set([...lokal.ownedShipColors, ...uebernommen.ownedShipColors])];
-
-  // Kennt der Cloud-Stand die Felder nicht, hat `reconcile()` sie auf den
-  // Standard gesetzt - dann traegt der lokale Stand weiter, was er trug.
-  const fernKanntFelder =
-    uebernommen.shipShape !== DEFAULT_SHIP_SHAPE || uebernommen.ownedShipShapes.length > 1;
-
   return {
     ...uebernommen,
-    ownedShipShapes: formen,
-    ownedShipColors: farben,
-    shipShape: fernKanntFelder ? uebernommen.shipShape : lokal.shipShape,
-    shipColor: fernKanntFelder ? uebernommen.shipColor : lokal.shipColor,
+    // Besitz zusammenlegen: Wer auf zwei Geraeten kauft, hat am Ende beides.
+    // Die Muenzen sind ohnehin auf beiden Seiten abgebucht, und etwas
+    // wegzunehmen waere der schlimmere Fehler.
+    ownedShipShapes: [...new Set([...lokal.ownedShipShapes, ...uebernommen.ownedShipShapes])],
+    ownedShipColors: [...new Set([...lokal.ownedShipColors, ...uebernommen.ownedShipColors])],
+
+    // Das Getragene bleibt **immer** lokal.
+    //
+    // Ein erster Anlauf liess den Cloud-Stand entscheiden, sofern er die
+    // Felder kannte - damit sollte die Figur auf zwei Geraeten gleich
+    // aussehen. In der Praxis brach das den Kauf: Der Server pflegt in
+    // `profile_progress` eine eigene `data`-Kopie und schreibt sie bei jedem
+    // Lauf fort (`submit_progress_event`). Der Client kann dort nichts
+    // hineinschreiben - `initialize_profile_progress` greift nur beim
+    // allerersten Mal (`on conflict do nothing`). Der Cloud-Stand kennt die
+    // Auswahl also nie und setzte sie bei jedem Abgleich auf den Pfeil
+    // zurueck: Nach dem Kauf im Menue kurz sichtbar, nach der ersten Jagd
+    // wieder weg.
+    //
+    // Die getragene Figur ist Geraete-Einstellung, kein Fortschritt - wie der
+    // Ton. Sobald es eine Server-Funktion gibt, die sie mitfuehrt, kann das
+    // hier wieder aufgemacht werden.
+    shipShape: lokal.shipShape,
+    shipColor: lokal.shipColor,
   };
 }
 

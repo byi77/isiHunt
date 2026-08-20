@@ -11,6 +11,35 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Die getragene Figur sprang nach jeder Jagd auf den Standard zurueck.** Nach
+  dem Kauf war sie im Profilblock zu sehen; sobald eine Runde lief, flog wieder
+  der Pfeil - und danach stand auch im Menue wieder der Standard.
+
+  Ursache liegt tiefer als bei den zwei Fixes davor: Der Server pflegt in
+  `profile_progress` eine **eigene** `data`-Kopie und schreibt sie bei jedem
+  Lauf fort (`submit_progress_event`). Der Client kann dort nichts
+  hineinschreiben - `initialize_profile_progress` greift nur beim allerersten
+  Mal (`on conflict do nothing`), und `pushSave()` schreibt in die andere
+  Tabelle (`saves`). Der Cloud-Stand kennt die Auswahl also nie und setzte sie
+  bei jedem Abgleich zurueck.
+
+  Die **getragene** Figur ist jetzt eine Geraete-Einstellung wie der Ton: Sie
+  bleibt immer lokal und wird von keinem Cloud-Stand ueberschrieben. Der
+  **Besitz** wird weiterhin zusammengelegt, damit Kaeufe von zwei Geraeten
+  erhalten bleiben.
+
+  Ein erster Anlauf liess den Cloud-Stand entscheiden, sofern er die Felder
+  kannte - damit sollte die Figur auf beiden Geraeten gleich aussehen. Genau
+  das war der Fehler.
+
+  Sobald eine Server-Funktion die Auswahl mitfuehrt, kann das wieder
+  aufgemacht werden. Vier Tests halten den Zustand fest.
+
+- **Rundenabbruch geprueft:** unkritisch. `abortRun()` schreibt keinen
+  Spielstand und loest keinen Abgleich aus - es geht nur zurueck ins Menue.
+
+### Behoben
+
 - **Ein Kauf im Laden galt als Rueckschritt und wurde vom Cloud-Stand
   ueberschrieben.** Die gekaufte Figur blitzte im Menue kurz auf und sprang
   auf den Standard zurueck; in der Jagd flog weiterhin der Default.
