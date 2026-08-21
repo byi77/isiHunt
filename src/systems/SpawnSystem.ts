@@ -64,6 +64,28 @@ export interface SpawnRequest {
   obstacleMode?: Exclude<ObstacleMode, 'none'>;
 }
 
+/** Hinderniswahrscheinlichkeit aus Welt, Schwierigkeit und Run-Fortschritt. */
+export function phase5ObstacleChance(
+  obstacleMode: ObstacleMode,
+  difficultyScale: number,
+  runProgress: number,
+): number {
+  if (obstacleMode === 'none') return 0;
+  const progress = Math.min(1, Math.max(0, runProgress));
+  const baseChance =
+    WORLD_OBSTACLE_BASE_CHANCE +
+    (WORLD_OBSTACLE_END_CHANCE - WORLD_OBSTACLE_BASE_CHANCE) * progress;
+  return Math.min(WORLD_OBSTACLE_MAX_CHANCE, baseChance * difficultyScale);
+}
+
+/** Sichtfenster-Skalierung der Phase-5-Schwierigkeit vor Welt-Sonderregeln. */
+export function phase5LifetimeScale(difficultyScale: number): number {
+  return Math.max(
+    WORLD_LIFETIME_SCALE_FLOOR,
+    1 - (difficultyScale - 1) * WORLD_LIFETIME_SCALE_PER_DIFFICULTY,
+  );
+}
+
 export class SpawnSystem {
   private timerMs = 0;
 
@@ -112,14 +134,10 @@ export class SpawnSystem {
     // Hindernisse erscheinen anfangs selten und werden gegen Ende etwas
     // wahrscheinlicher, damit die Welt erst lesbar bleibt und dann Druck macht.
     const obstacleRoll = this.rng.frac();
-    const obstacleChance =
-      this.obstacleMode === 'none'
-        ? 0
-        : WORLD_OBSTACLE_BASE_CHANCE +
-          (WORLD_OBSTACLE_END_CHANCE - WORLD_OBSTACLE_BASE_CHANCE) * runProgress;
-    const scaledObstacleChance = Math.min(
-      WORLD_OBSTACLE_MAX_CHANCE,
-      obstacleChance * this.difficultyScale,
+    const scaledObstacleChance = phase5ObstacleChance(
+      this.obstacleMode,
+      this.difficultyScale,
+      runProgress,
     );
 
     // Im Duell darf ein langsamerer erster Spieler den Spawn-Plan nicht durch
@@ -137,10 +155,7 @@ export class SpawnSystem {
       };
     }
 
-    const worldLifetimeScale = Math.max(
-      WORLD_LIFETIME_SCALE_FLOOR,
-      1 - (this.difficultyScale - 1) * WORLD_LIFETIME_SCALE_PER_DIFFICULTY,
-    );
+    const worldLifetimeScale = phase5LifetimeScale(this.difficultyScale);
     return {
       x: position.x,
       y: position.y,

@@ -26,6 +26,7 @@ import {
   DAILY_SCORE_BONUS_STEP,
   DAILY_SCORE_BONUS_XP,
 } from '@/config/GameConfig';
+import { DAILY_KEY_TOLERANCE_MS } from '@/config/backend';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import type {
@@ -51,10 +52,38 @@ function createSeed(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
-export function dailyKeyForToday(date = new Date()): string {
+/** Formatiert ein lokales Kalenderdatum als stabilen Tageslauf-Schlüssel. */
+export function dailyKeyForDate(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${date.getFullYear()}-${month}-${day}`;
+}
+
+export function dailyKeyForToday(date = new Date()): string {
+  return dailyKeyForDate(date);
+}
+
+/**
+ * Spiegelt das serverseitige Fenster aus `phase_2_13_daily_key_window.sql`.
+ *
+ * Der Schlüssel selbst bleibt lokale Gerätezeit, damit der angezeigte
+ * Tageslauf zum Kalender des Spielers passt. Der Server verwendet UTC und
+ * akzeptiert den Vortag, heute und den Folgetag. Diese Client-Prüfung erspart
+ * nur aussichtslose RPC-Aufrufe für alte Offline-Einträge; der Server bleibt
+ * die verbindliche Instanz.
+ */
+export function isDailyKeyWithinClientWindow(dailyKey: string, now = new Date()): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(dailyKey)) return false;
+
+  const parsed = Date.parse(`${dailyKey}T00:00:00Z`);
+  if (!Number.isFinite(parsed)) return false;
+
+  const parsedDate = new Date(parsed);
+  const canonical = `${parsedDate.getUTCFullYear()}-${String(parsedDate.getUTCMonth() + 1).padStart(2, '0')}-${String(parsedDate.getUTCDate()).padStart(2, '0')}`;
+  if (canonical !== dailyKey) return false;
+
+  const today = Date.parse(`${dailyKeyForToday(now)}T00:00:00Z`);
+  return Math.abs(today - parsed) <= DAILY_KEY_TOLERANCE_MS;
 }
 
 function dailySeed(worldId: string, key: string): string {

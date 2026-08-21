@@ -378,6 +378,24 @@ describe('Tages-Herausforderung', () => {
     DailyChallengeSystem.clear();
   });
 
+  it('bildet lokale Kalenderdaten reproduzierbar als Tagesschlüssel ab', () => {
+    const localDate = new Date(2026, 7, 17, 23, 59, 0);
+
+    expect(DailyChallengeSystem.dailyKeyForDate(localDate)).toBe('2026-08-17');
+    expect(DailyChallengeSystem.dailyKeyForToday(localDate)).toBe('2026-08-17');
+  });
+
+  it('akzeptiert im Client-Fenster nur Vortag, heute und Folgetag', () => {
+    const now = new Date(2026, 7, 17, 12, 0, 0);
+
+    expect(DailyChallengeSystem.isDailyKeyWithinClientWindow('2026-08-16', now)).toBe(true);
+    expect(DailyChallengeSystem.isDailyKeyWithinClientWindow('2026-08-17', now)).toBe(true);
+    expect(DailyChallengeSystem.isDailyKeyWithinClientWindow('2026-08-18', now)).toBe(true);
+    expect(DailyChallengeSystem.isDailyKeyWithinClientWindow('2026-08-15', now)).toBe(false);
+    expect(DailyChallengeSystem.isDailyKeyWithinClientWindow('kein-datum', now)).toBe(false);
+    expect(DailyChallengeSystem.isDailyKeyWithinClientWindow('2026-02-30', now)).toBe(false);
+  });
+
   it('markiert den heutigen Tageslauf als noch nicht abgeschlossen', () => {
     const state = DailyChallengeSystem.startDaily(DEFAULT_WORLD_ID);
 

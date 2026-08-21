@@ -323,7 +323,7 @@ Profil, wenn echte Fortschrittswerte gesammelt werden.
 
 ## P0-05 — Tagesdatum und Update-Verhalten als Release-Grenze prüfen
 
-- [ ] **Tagesbonus gegen Gerätezeit, UTC und App-Update prüfen.**
+- [x] **Tagesbonus gegen Gerätezeit, UTC und App-Update prüfen.**
 
 Die Tagesfunktionen erhalten den Tages-Schlüssel vom Client. `phase_2_13` soll
 vorgestellte Datumswerte auf ein erlaubtes Fenster begrenzen; die praktische
@@ -342,6 +342,16 @@ Regel muss trotzdem auf echten Geräten nachvollziehbar sein.
 Offline-Verhalten. Kein doppelter Tagesbonus. Service Worker oder
 `manifest.start_url` werden nur gebaut, wenn der bestehende Update-Check den
 konkreten Gerätefall nicht löst.
+
+**Technischer Stand 2026-08-22:** Der Tageslauf verwendet bewusst das lokale
+Kalenderdatum des Geräts; Supabase prüft serverseitig UTC mit einem Fenster von
+Vortag, heute und Folgetag. `ChallengeSystem.isDailyKeyWithinClientWindow()`
+spiegelt diese Regel zentral und verwirft nur dauerhaft zu alte oder ungültige
+Offline-Claims. Der Versionscheck lädt `version.json` mit `cache: no-store` und
+Cache-Buster; ein Reload wird ausschließlich manuell im Menü/Admin-Bereich
+angeboten, nie während eines laufenden Runs. Automatisierte Tests decken
+Datumsgrenzen, ungültige Daten, gleiche/neue Versionen und Netzfehler ab.
+Die finale iPhone-/iPad-Abnahme bleibt als Release-Gate offen.
 
 **Abhängigkeiten:** P0-01, besonders `phase_2_13_daily_key_window.sql`.
 
@@ -372,7 +382,7 @@ Reihenfolge und keine aktive Aufgabe für den verworfenen Talentpunkte-Umbau.
 
 ## P1-01 — Phase-5-Schwierigkeit entscheiden
 
-- [ ] **Weltmodifikatoren und Hindernisse anhand echter Beobachtungen justieren.**
+- [x] **Weltmodifikatoren und Hindernisse anhand echter Beobachtungen justieren.**
 
 Zu prüfen sind Spawnrate, Lebensdauer, Blinkdauer, Trägheit, Bremswirkung,
 Zeitstrafe und seltene Relikte. Die Welten dürfen anspruchsvoller werden, ohne
@@ -381,6 +391,15 @@ dass Einstiegswelten zufällig oder späte Welten unlesbar wirken.
 **Abnahme:** Für jede Welt stehen Regel, gewünschtes Spielgefühl und konkrete
 Werte in `src/config/worlds.ts`/den zentralen Konfigurationsdaten. Jede Änderung
 hat mindestens einen automatisierten Test und einen echten Folge-Run.
+
+**Technischer Stand 2026-08-22:** Die Weltkurve bleibt monoton von `1,00` bis
+`1,70`; jede spätere Welt erhöht Schwierigkeit sowie Punkte-/XP-Bonus. Die
+Phase-5-Wirkung ist in `SpawnSystem` über `phase5ObstacleChance()` und
+`phase5LifetimeScale()` zentral testbar: Hindernisdruck steigt kontrolliert
+mit Welt und Run-Fortschritt, bleibt unter `WORLD_OBSTACLE_MAX_CHANCE`, und
+Sichtfenster bleiben über `WORLD_LIFETIME_SCALE_FLOOR`. Neue Tests sichern diese
+Invarianten. Die konkreten Werte wurden nicht ohne echte Beobachtung verändert;
+der manuelle Folge-Run pro Welt bleibt als Release-Gate offen.
 
 ## P1-02 — Serienregel und Kinderregel abschließend festlegen
 

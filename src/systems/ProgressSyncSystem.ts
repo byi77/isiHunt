@@ -1,6 +1,6 @@
 /** Offline-Outbox für Fortschrittsereignisse eines angemeldeten Profils. */
 
-import { DAILY_KEY_TOLERANCE_MS, SYNC_RETRY_DELAYS_MS } from '@/config/backend';
+import { SYNC_RETRY_DELAYS_MS } from '@/config/backend';
 import * as AuthSystem from '@/systems/AuthSystem';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
@@ -131,7 +131,7 @@ async function flushPending(): Promise<void> {
   // jedem Abgleich einen aussichtslosen Aufruf aus. Er wird deshalb hier
   // verworfen - der Lauf selbst ist laengst als ProgressEvent gezaehlt, nur
   // der Bonus verfaellt.
-  if (!isDailyKeyStillClaimable(local.pendingDailyKey)) {
+  if (!ChallengeSystem.isDailyKeyWithinClientWindow(local.pendingDailyKey)) {
     clearPendingDaily();
     return;
   }
@@ -145,27 +145,6 @@ async function flushPending(): Promise<void> {
 
   SaveSystem.adoptProfileProgress(daily.value.data);
   clearPendingDaily();
-}
-
-/**
- * Ist der gemerkte Tageslauf noch einloesbar?
- *
- * Spiegelt `daily_key_is_plausible()` aus der Datenbank
- * (`supabase/phase_2_13_daily_key_window.sql`): erlaubt sind der heutige Tag
- * sowie Vortag und Folgetag. **Der Server bleibt die verbindliche Instanz** -
- * diese Pruefung erspart nur den aussichtslosen Aufruf und verhindert, dass
- * ein alter Schluessel dauerhaft haengen bleibt.
- *
- * Ein Tag Toleranz deckt drei legitime Faelle ab: Zeitzone (der Server rechnet
- * in UTC), Mitternacht waehrend eines Laufs, und einen Offline-Lauf, der erst
- * am Folgetag hochgeladen wird.
- */
-function isDailyKeyStillClaimable(dailyKey: string): boolean {
-  const parsed = Date.parse(`${dailyKey}T00:00:00Z`);
-  if (!Number.isFinite(parsed)) return false;
-
-  const today = Date.parse(`${ChallengeSystem.dailyKeyForToday()}T00:00:00Z`);
-  return Math.abs(today - parsed) <= DAILY_KEY_TOLERANCE_MS;
 }
 
 function clearPendingDaily(): void {

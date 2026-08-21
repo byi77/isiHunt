@@ -2,8 +2,13 @@
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { MAX_ACTIVE_COLLECTIBLES } from '@/config/GameConfig';
-import { SpawnSystem } from '@/systems/SpawnSystem';
+import {
+  MAX_ACTIVE_COLLECTIBLES,
+  WORLD_LIFETIME_SCALE_FLOOR,
+  WORLD_OBSTACLE_MAX_CHANCE,
+} from '@/config/GameConfig';
+import { WORLDS } from '@/config/worlds';
+import { phase5LifetimeScale, phase5ObstacleChance, SpawnSystem } from '@/systems/SpawnSystem';
 
 vi.mock('phaser', () => ({
   default: {
@@ -106,5 +111,34 @@ describe('SpawnSystem - reset', () => {
     // Nach reset() muss der naechste update()-Aufruf sofort wieder spawnen,
     // unabhaengig davon, wie viel Rest-Zeit vor dem reset() im Timer stand.
     expect(spawner.update(1, 0, 0, 360, 665)).not.toBeNull();
+  });
+});
+
+describe('SpawnSystem - Phase-5-Schwierigkeitsprofil', () => {
+  it('erhöht den Hindernisdruck kontrolliert mit Welt und Run-Fortschritt', () => {
+    const startChances = WORLDS.map((world) =>
+      phase5ObstacleChance(world.obstacleMode, world.difficultyScale, 0),
+    );
+    const endChances = WORLDS.map((world) =>
+      phase5ObstacleChance(world.obstacleMode, world.difficultyScale, 1),
+    );
+
+    expect(startChances[0]).toBe(0);
+    expect(startChances.slice(1).every((chance, index) => chance > startChances[index]!)).toBe(
+      true,
+    );
+    expect(endChances.every((chance, index) => chance >= startChances[index]!)).toBe(true);
+    expect(endChances[endChances.length - 1]).toBeLessThanOrEqual(WORLD_OBSTACLE_MAX_CHANCE);
+    expect(phase5ObstacleChance('penalty', WORLDS[WORLDS.length - 1]!.difficultyScale, 2)).toBe(
+      endChances[endChances.length - 1],
+    );
+  });
+
+  it('verkleinert Sichtfenster monoton und behält den konfigurierten Boden', () => {
+    const scales = WORLDS.map((world) => phase5LifetimeScale(world.difficultyScale));
+
+    expect(scales[0]).toBe(1);
+    expect(scales.slice(1).every((scale, index) => scale < scales[index]!)).toBe(true);
+    expect(scales[scales.length - 1]).toBeGreaterThanOrEqual(WORLD_LIFETIME_SCALE_FLOOR);
   });
 });
