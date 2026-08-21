@@ -369,7 +369,12 @@ export class OnlineDuelScene extends Phaser.Scene {
       },
       onChannelError: (reason) => {
         if (started) return;
-        statusText.setText(`Verbindungsfehler: ${reason}`).setColor(Palette.danger);
+        // Bei einem Kanalfehler ist das Polling der einzige verbliebene Weg
+        // zur Startzeit - es laeuft deshalb bewusst WEITER. Nur die Meldung
+        // sagt dem Spieler, dass die Verbindung stockt.
+        statusText
+          .setText(`Verbindungsfehler: ${reason}\nEs wird weiter versucht ...`)
+          .setColor(Palette.danger);
       },
     });
 
@@ -403,8 +408,18 @@ export class OnlineDuelScene extends Phaser.Scene {
           const statusResult = await NetworkDuelSystem.getRoomStatus(this.roomCode);
           if (!this.scene.isActive() || started) return;
           if (!statusResult.ok || !statusResult.value?.guestReady) {
+            // BUG belegt (Debug-Report v0.1.205, 2026-08-21): Hier wurde die
+            // Meldung gesetzt, der Poll-Timer lief aber weiter - im Report
+            // sind nach dem Timeout bei t+10s noch 17 weitere
+            // `getRoomStatus`-Aufrufe zu sehen, bis der Test abgebrochen
+            // wurde. Das Warten war also aufgegeben, das Geraet fragte aber
+            // im 1,5-Sekunden-Takt weiter, und der Bildschirm bot ausser
+            // ABBRECHEN nichts an. `cleanupLobby()` raeumt genau das auf -
+            // es wurde bisher nur bei `beginRun()` und beim SHUTDOWN
+            // gerufen, nicht beim Aufgeben.
+            this.cleanupLobby();
             statusText
-              .setText('Geschwister ist nicht rechtzeitig beigetreten.')
+              .setText('Geschwister ist nicht beigetreten.\nCode prüfen und erneut versuchen.')
               .setColor(Palette.danger);
             return;
           }
@@ -453,6 +468,9 @@ export class OnlineDuelScene extends Phaser.Scene {
     const startResult = await NetworkDuelSystem.setStartTime(this.roomCode);
     if (!this.scene.isActive()) return;
     if (!startResult.ok) {
+      // Dieselbe Luecke wie beim Ready-Timeout: Ohne Aufraeumen liefe das
+      // Polling hinter einer stehenden Fehlermeldung weiter.
+      this.cleanupLobby();
       statusText.setText(startResult.error).setColor(Palette.danger);
       return;
     }

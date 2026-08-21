@@ -172,68 +172,26 @@ Reihenfolge der Arbeit steht in P0–P3 darunter.
         ziehen" adressiert — ein `SyncDecisionSystem` koennte das pruefbar
         machen.
 
-- [ ] **Duell-Lobby: 37 Sekunden ohne Rueckmeldung** _(neu 2026-08-21, im
-      Report belegt)_ — der Master stand 37 Sekunden in "Warte auf
-      Geschwister ...", ohne dass die Meldung "Geschwister ist nicht
-      rechtzeitig beigetreten" erschien. Die haengt an
-      `ONLINE_DUEL_READY_TIMEOUT_MS` und feuert nur beim Host.
-      **Zwei Moeglichkeiten, keine geprueft:** Der Timeout ist laenger als
-      37 s, oder der Test wurde vorher abgebrochen. So oder so fehlt in der
-      Lobby eine sichtbare Rueckmeldung, dass ueberhaupt noch etwas laeuft —
-      genau das laesst einen Wartezustand wie einen Absturz wirken (dieselbe
-      Ursache wie beim Auto-Pause-Punkt darunter).
-- [x] **Auto-Pause bei App-Wechsel gebaut (2026-08-21)** — `GameScene`
-      registriert einen `visibilitychange`-Handler und ruft bei
-      `visibilityState === 'hidden'` die neue Methode
-      `pauseForInterruption()`.
-      **Bewusst kein `togglePause()`:** Das ist ein Umschalter, und iOS sendet
-      `visibilitychange` mehrfach kurz hintereinander — der Run waere beim
-      zweiten Ereignis wieder angelaufen, bei ausgeschaltetem Bildschirm.
-      **Fortsetzen bleibt Handarbeit:** Wer aus einem Anruf zurueckkommt, hat
-      den Finger nicht schon auf dem Glas.
-      **Duell:** Hinweis erscheint, Simulation laeuft weiter — Entscheidung
-      vom 2026-08-21, die Fairness-Regel aus `config/challenge.ts` bleibt
-      unangetastet. Ein Vorteil entstuende ohnehin nicht, weil Phaser die
-      Schleife im Hintergrund von sich aus anhaelt.
-      `RunPaused` traegt dafuer jetzt `reason` (`manual` | `interrupted`); der
-      Bildschirm heisst `PAUSE` oder `ANGEHALTEN`. `npm run verify` gruen
-      (310 Tests). `ARCHITECTURE.md` 6.1 und CHANGELOG ergaenzt.
-  - [ ] **Auf dem Geraet bestaetigen** — Run starten, Anruf annehmen bzw.
-        Bildschirm sperren, zurueckkehren. Erwartung: Bildschirm
-        `ANGEHALTEN` mit dem Hinweis "Die App war kurz im Hintergrund", Run
-        laeuft erst nach Tippen auf FORTSETZEN weiter. **Zweiter Fall:** Der
-        Wechsel ins Kontrollzentrum (Wischen von oben, ohne die App zu
-        verlassen) darf keinen zweiten Bildschirm stapeln.
-        _Gehoert in denselben Durchgang wie P0.a.4._
-
-- [x] **Tagesbonus serverseitig abgesichert (2026-08-21)** — beide RPCs
-      pruefen jetzt ueber `daily_key_is_plausible()` Format, gueltiges Datum
-      und hoechstens einen Tag Abstand zum Servertag
-      (`supabase/phase_2_13_daily_key_window.sql`).
-      **Befund bestaetigt:** Vorher stand dort nur
-      `p_daily_key !~ '^\d{4}-\d{2}-\d{2}$'` — `9999-12-31` kam durch, und
-      gesperrt war nur ein *gleicher* Schluessel.
-      **Fenster statt exaktem Servertag** _(Entscheidung 2026-08-21)_: `now()`
-      liefert UTC; zwischen 00:00 und 02:00 deutscher Sommerzeit haette ein
-      strikter Vergleich echte Spieler ausgesperrt. Dazu Laeufe ueber
-      Mitternacht und nachgereichte Offline-Laeufe.
-      **Nebenbefund mitbehoben:** `ProgressSyncSystem` liess einen
-      fehlgeschlagenen Claim unbegrenzt in `pendingDailyKey` stehen. Ein
-      dauerhaft abgelehnter Schluessel haette bei jedem Abgleich einen
-      aussichtslosen Aufruf ausgeloest. Verfall jetzt lokal gespiegelt
-      (`DAILY_KEY_TOLERANCE_MS`), vier neue Tests.
-      **Nebenbefund 2:** Die bestehenden Tagesbonus-Tests hingen an festen
-      Datums-Strings und waeren am Folgetag von selbst rot geworden — Zeit ist
-      jetzt ueber `vi.setSystemTime` fixiert.
-      `npm run verify` gruen (313 Tests).
-  - [x] **SQL in Supabase ausgefuehrt (2026-08-21).** Die Serverpruefung ist
-        damit aktiv.
-  - [ ] **Gegenprobe am Geraet:** Tagesbonus holen, Geraetedatum auf ein Jahr
-        spaeter stellen, erneut versuchen — muss abgelehnt werden. _Gehoert in
-        denselben Durchgang wie P0.a.4._
-  - [ ] **Ungeprueft geblieben:** ob `abs(parsed - current_date) <= 1` in
-        Postgres den erwarteten Integer-Abstand liefert. Steht so im Skript,
-        aber nicht gegen eine echte Datenbank gefahren.
+- [x] **Duell-Lobby: Polling lief nach dem Aufgeben weiter (behoben
+      2026-08-21)** — **Ursache belegt, und es war nicht die vermutete.**
+      Die urspruengliche Notiz nannte zwei Moeglichkeiten: Timeout laenger als
+      37 s, oder Test vorher abgebrochen. **Beide falsch.**
+      `ONLINE_DUEL_READY_TIMEOUT_MS` steht auf 10 Sekunden, und im Report ist
+      der Timeout bei t+9,971 s als Aufruf **ausser Takt** sichtbar (1,03 s
+      Abstand statt der sonst durchgehenden ~1,5 s). Er hat gefeuert, die
+      Meldung wurde gesetzt — und danach liefen noch **17 weitere
+      `getRoomStatus`-Aufrufe** ueber 25 Sekunden.
+      **Ursache:** `cleanupLobby()` stoppt beide Timer, wurde aber nur bei
+      `beginRun()` und beim SHUTDOWN gerufen, nicht beim Aufgeben. Jetzt auch
+      dort und im Fehlerpfad von `trySetStartTime()`.
+      **Meldung verbessert:** sagt jetzt, was zu tun ist ("Code pruefen und
+      erneut versuchen"), statt nur festzustellen, dass es nicht geklappt hat.
+      **Bewusst unveraendert:** Bei einem reinen Kanalfehler laeuft das
+      Polling weiter — es ist dann der einzige Weg zur Startzeit; die Meldung
+      sagt das jetzt dazu. `npm run verify` gruen (313 Tests).
+  - [ ] **Behebt nicht den eigentlichen Duell-Fehlschlag.** Der Gast war nie
+        im Raum (kein `duel:Raum beitreten` im Log). Das bleibt P0.a.3 und
+        braucht einen Report vom **Slave**-Geraet.
 
 #### P0.c — Spielbarkeit mit den Kindern
 

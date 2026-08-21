@@ -38,6 +38,32 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Die Duell-Lobby fragte weiter, nachdem sie aufgegeben hatte.** Der
+  Gastgeber wartet hoechstens `ONLINE_DUEL_READY_TIMEOUT_MS` (10 Sekunden) auf
+  den Beitritt des Gegners und zeigt danach eine Fehlermeldung. Der
+  Polling-Timer lief aber weiter.
+
+  Belegt im Debug-Report v0.1.205: Nach dem Timeout bei t+10s (im Log als
+  Aufruf ausser Takt sichtbar - 1,03 s statt 1,5 s Abstand) folgten noch
+  **17 weitere `getRoomStatus`-Aufrufe** ueber 25 Sekunden, bis der Test
+  abgebrochen wurde. Das Warten war aufgegeben, das Geraet fragte trotzdem im
+  1,5-Sekunden-Takt weiter.
+
+  `cleanupLobby()` raeumt genau das auf, wurde aber nur bei `beginRun()` und
+  beim SHUTDOWN gerufen - nicht beim Aufgeben. Es wird jetzt auch dort und im
+  Fehlerpfad von `trySetStartTime()` gerufen.
+
+  Die Meldung sagt jetzt ausserdem, was zu tun ist ("Code pruefen und erneut
+  versuchen") statt nur festzustellen, dass etwas nicht geklappt hat.
+
+  **Bewusst nicht geaendert:** Bei einem reinen Kanalfehler laeuft das Polling
+  weiter - es ist dann der einzige verbliebene Weg zur Startzeit. Die Meldung
+  sagt das jetzt dazu.
+
+  **Nicht die Ursache des eigentlichen Duell-Fehlschlags.** Der Gast war in
+  diesem Test nie im Raum (kein `duel:Raum beitreten` im Log); warum, zeigt
+  nur ein Report vom zweiten Geraet.
+
 - **Das Menue loeste einen Sturm von Backend-Aufrufen aus.** Ein Debug-Report
   vom 2026-08-21 zeigte rund **25 vollstaendige Abgleiche in zehn Sekunden** -
   zusammen etwa 100 Netzaufrufe, ausgeloest allein durch Herumtippen im Menue.
