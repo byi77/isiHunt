@@ -15,6 +15,9 @@ import {
   SERIES_TRAIL_BASE_FREQUENCY_MS,
   SERIES_TRAIL_BASE_LIFESPAN_MS,
   SERIES_TRAIL_BASE_SCALE,
+  SERIES_TRAIL_CORE_MIN_ALPHA,
+  SERIES_TRAIL_GLOW_ALPHA,
+  SERIES_TRAIL_GLOW_WIDTH_MULTIPLIER,
   SERIES_TRAIL_TIERS,
 } from '@/config/GameConfig';
 import { RARITY_BY_ID } from '@/config/rarities';
@@ -300,6 +303,14 @@ describe('trailTierForSeries', () => {
     const laengste = Math.max(...SERIES_TRAIL_TIERS.map((t) => t.lifespanMs));
     // Auch weit jenseits der hoechsten Stufe waechst die Laenge nicht weiter.
     expect(trailTierForSeries(500)?.lifespanMs).toBe(laengste);
+  });
+
+  it('haelt die Lesbarkeit der Kernspur vom weichen Glow getrennt', () => {
+    expect(SERIES_TRAIL_GLOW_WIDTH_MULTIPLIER).toBeGreaterThan(1);
+    expect(SERIES_TRAIL_GLOW_ALPHA).toBeGreaterThan(0);
+    expect(SERIES_TRAIL_GLOW_ALPHA).toBeLessThan(0.5);
+    expect(SERIES_TRAIL_CORE_MIN_ALPHA).toBeGreaterThan(0.25);
+    expect(SERIES_TRAIL_CORE_MIN_ALPHA).toBeLessThanOrEqual(1);
   });
 });
 

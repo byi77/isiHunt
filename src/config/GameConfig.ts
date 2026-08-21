@@ -313,6 +313,20 @@ export const SERIES_TRAIL_TIERS: readonly {
 export const SERIES_TRAIL_LINE_WIDTH = 14;
 
 /**
+ * Breite der weichen Aussenkontur relativ zur lesbaren Kernlinie.
+ *
+ * Die Aussenkontur darf leuchten, aber nicht die Kante verschlucken. Sie
+ * bleibt deshalb eine eigene, deutlich transparentere Graphics-Spur.
+ */
+export const SERIES_TRAIL_GLOW_WIDTH_MULTIPLIER = 2.4;
+
+/** Maximale Transparenz der weichen Aussenkontur relativ zur Kernlinie. */
+export const SERIES_TRAIL_GLOW_ALPHA = 0.22;
+
+/** Mindesttransparenz der Kernlinie am hintersten Ende der Schleife. */
+export const SERIES_TRAIL_CORE_MIN_ALPHA = 0.38;
+
+/**
  * Abstand zwischen zwei Stuetzpunkten der Schleife.
  *
  * Fest in Millisekunden statt je Frame: Sonst haengt die Schleifenlaenge an

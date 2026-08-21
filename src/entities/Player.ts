@@ -17,6 +17,9 @@ import {
   SERIES_TRAIL_BASE_FREQUENCY_MS,
   SERIES_TRAIL_BASE_LIFESPAN_MS,
   SERIES_TRAIL_BASE_SCALE,
+  SERIES_TRAIL_CORE_MIN_ALPHA,
+  SERIES_TRAIL_GLOW_ALPHA,
+  SERIES_TRAIL_GLOW_WIDTH_MULTIPLIER,
   SERIES_TRAIL_IDLE_TICKS_PER_DROP,
   SERIES_TRAIL_LINE_WIDTH,
   SERIES_TRAIL_SAMPLE_MS,
@@ -49,7 +52,9 @@ export class Player extends Phaser.GameObjects.Container {
   /** Weltfarbe - die Spur faellt darauf zurueck, wenn keine Serie laeuft. */
   private accentColor: number;
   private seriesTier: SeriesTrailTier | null = null;
-  /** Gezeichnete Schleife - der Partikel-Emitter untermalt sie nur. */
+  /** Weiche Aussenkontur; der Partikel-Emitter untermalt beide Linien nur. */
+  private readonly trailGlowLine: Phaser.GameObjects.Graphics;
+  /** Lesbare Kernspur mit klarer Kante. */
   private readonly trailLine: Phaser.GameObjects.Graphics;
   /** Letzte Positionen, aelteste zuerst. Laenge steuert die Schleifenlaenge. */
   private trailPoints: { x: number; y: number }[] = [];
@@ -106,6 +111,8 @@ export class Player extends Phaser.GameObjects.Container {
 
     // Eigenes Graphics-Objekt statt eines Containers-Kindes: Die Schleife
     // liegt im Weltkoordinatensystem, genau wie der Emitter.
+    this.trailGlowLine = scene.add.graphics();
+    this.trailGlowLine.setDepth(Depth.Player - 2);
     this.trailLine = scene.add.graphics();
     this.trailLine.setDepth(Depth.Player - 1);
 
@@ -216,8 +223,10 @@ export class Player extends Phaser.GameObjects.Container {
     // wirken nur auf neu erzeugte Partikel, und ein Wechsel je Frame laesst
     // die Spur flackern.
     if (tier === null) {
-      if (this.seriesTier === null) return;
+      const hadSeries = this.seriesTier !== null;
       this.seriesTier = null;
+      this.clearTrailPath();
+      if (!hadSeries) return;
       this.applyTrail(
         SERIES_TRAIL_BASE_LIFESPAN_MS,
         this.accentColor,
@@ -264,10 +273,7 @@ export class Player extends Phaser.GameObjects.Container {
    */
   private trackTrail(deltaMs: number, speed: number): void {
     if (this.seriesTier === null) {
-      if (this.trailPoints.length > 0) {
-        this.trailPoints = [];
-        this.trailLine.clear();
-      }
+      if (this.trailPoints.length > 0) this.clearTrailPath();
       return;
     }
 
@@ -312,6 +318,7 @@ export class Player extends Phaser.GameObjects.Container {
    * ihren Schimmer.
    */
   private drawSeriesTrail(): void {
+    this.trailGlowLine.clear();
     this.trailLine.clear();
     if (this.seriesTier === null || this.trailPoints.length < 2) return;
 
@@ -325,15 +332,26 @@ export class Player extends Phaser.GameObjects.Container {
       const vorher = punkte[i - 1]!;
       const jetzt = punkte[i]!;
 
-      // Nach hinten auslaufen, aber nicht ins Nichts: Unter etwa einem
-      // Viertel Breite verschwindet die Linie auf dem hellen Hintergrund
-      // ganz, und die Schleife wirkt abgeschnitten statt ausgeblendet.
+      // Nach hinten auslaufen, aber nicht ins Nichts: Die Kernlinie behaelt
+      // eine Mindesttransparenz, waehrend die Aussenkontur weich auslaeuft.
       const verlauf = 0.25 + 0.75 * anteil;
-      this.trailLine.lineStyle(
-        SERIES_TRAIL_LINE_WIDTH * this.seriesTier.scale * verlauf,
+      const coreAlpha = Math.max(SERIES_TRAIL_CORE_MIN_ALPHA, this.seriesTier.alpha * verlauf);
+      const coreWidth = SERIES_TRAIL_LINE_WIDTH * this.seriesTier.scale * verlauf;
+
+      // Zwei bewusst getrennte Linien sind auf hellen Welten robuster als
+      // mehr additive Partikel: erst der breite, weiche Schimmer, dann die
+      // schmale Kante, die die Bewegungsrichtung lesbar macht.
+      this.trailGlowLine.lineStyle(
+        coreWidth * SERIES_TRAIL_GLOW_WIDTH_MULTIPLIER,
         color,
-        this.seriesTier.alpha * verlauf,
+        coreAlpha * SERIES_TRAIL_GLOW_ALPHA,
       );
+      this.trailGlowLine.beginPath();
+      this.trailGlowLine.moveTo(vorher.x, vorher.y);
+      this.trailGlowLine.lineTo(jetzt.x, jetzt.y);
+      this.trailGlowLine.strokePath();
+
+      this.trailLine.lineStyle(coreWidth, color, coreAlpha);
       this.trailLine.beginPath();
       this.trailLine.moveTo(vorher.x, vorher.y);
       this.trailLine.lineTo(jetzt.x, jetzt.y);
@@ -347,8 +365,17 @@ export class Player extends Phaser.GameObjects.Container {
    */
   override destroy(fromScene?: boolean): void {
     this.trail.destroy();
+    this.trailGlowLine.destroy();
     this.trailLine.destroy();
     super.destroy(fromScene);
+  }
+
+  private clearTrailPath(): void {
+    this.trailPoints = [];
+    this.trailSampleMs = 0;
+    this.trailIdleTicks = 0;
+    this.trailGlowLine.clear();
+    this.trailLine.clear();
   }
 
   /** Der Ring zeigt exakt den Sammelradius - wichtig fuer faires Feedback. */

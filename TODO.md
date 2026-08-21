@@ -1,1925 +1,1140 @@
-# TODO — offene Arbeiten
-
-**Stand:** 2026-08-21 · abgeleitet aus dem Spieltest-Feedback von Emre und
-Simay, ergaenzt um zwei Audits
-
-Reihenfolge nach Nutzen, nicht nach Aufwand.
-
-> **Wie diese Datei gelesen wird** _(Struktur neu geordnet 2026-08-21)_
->
-> | Abschnitt          | Bedeutung                                                 |
-> | ------------------ | --------------------------------------------------------- |
-> | **P0**             | Behebt einen belegten Fehler oder macht eine unbelegte     |
-> |                    | Behauptung ueber den Code belegt. Zuerst.                  |
-> | **P1**             | Naechster Kernnutzen fuer die Spieler.                     |
-> | **P2**             | Wettbewerb, Langzeitmotivation, Qualitaetsausbau.          |
-> | **P3**             | Langfrist-Ausbau nach stabiler Basis.                      |
-> | **Zurueckgestellt**| Bewusst nicht eingeplant, mit Bedingung fuer Wiedervorlage.|
-> | **Reserve**        | Fachlich richtig, aber nicht eingeplant. Ohne Checkbox —   |
-> |                    | Einzelpunkte werden bei Bedarf nach oben gezogen.          |
-> | Phasen 1–6, M8     | Historie und Detailplanung. Kein eigener Rang.             |
->
-> **Regel gegen Wildwuchs:** Ein Punkt steht an **einer** Stelle. Steht er
-> woanders auch, wird die zweite Stelle zu einem Verweis (`[x]` mit
-> "hochgezogen nach ..."). Sammelposten mit mehreren Themen in einer Checkbox
-> sind nicht zulaessig — sie sind nie abhakbar und zaehlen doppelt.
-
-## Ueberblick
-
-| Phase   | Inhalt                                                   | Aufwand      |
-| ------- | -------------------------------------------------------- | ------------ |
-| 1       | Bedienbarkeit — **abgeschlossen, erneut bestaetigt**     | —            |
-| 1.1     | Zwei UI-Fehler, Wartungsbildschirm — **fertig**          | —            |
-| 1.2     | Update-Erkennung — **gebaut, ungeprueft**                | Test noetig  |
-| **1.3** | **Bestenliste: gemeinsam + automatisch — abgeschlossen** | —            |
-| 2       | Profil, 90 s, XP-Kurve, Level 100                        | mittel       |
-| **2.5** | Balken oben/unten — Bildschirm ganz nutzen               | mittel+      |
-| **2.6** | **Login & Mehrgeräte-Profil**                            | **hoch**     |
-| 3       | Weltraum statt Fantasy                                   | mittel       |
-| **3.5** | Ton (aus M4 vorgezogen)                                  | mittel       |
-| **3.6** | Dynamic Island — braucht native App                      | Entscheidung |
-| 4       | Bonus, Coins, Talentbaum — erste Fassung abgeschlossen   | —            |
-| **4.1** | ~~Talentpunkte-Neuentwurf~~ — verworfen, siehe P1.a      | —            |
-| 5       | Modi, Hindernisse — gebaut, Spieltest offen (P0.c)       | mittel       |
-| 6       | Freunde, Realtime, Ranked und Rekorde                    | hoch         |
-
-**Fett = neu am 2026-08-13.** Die Phasen sind Detailplanung und Historie; die
-Reihenfolge der Arbeit steht in P0–P3 darunter.
-
-## Priorisierte Gesamtplanung — Feedback, Audit und Architektur (2026-08-21)
-
-> **Aktuelle Entwicklungsphase:** Die spielbaren Grundlagen von Phase 1 bis 5
-> sind gebaut, der Shop seit v0.1.209 mit 100 Fluggestalten ausgeliefert.
->
-> **Der Engpass ist heute kein Feature, sondern ein Beleg.** Vier gebaute und
-> ausgelieferte Fixe sind auf keinem echten Geraet bestaetigt — der wichtigste
-> davon seit 39 Versionen (v0.1.170, Boost-Fix). Solange das so ist, steht
-> jede Aussage ueber Sync, Duell und Darstellung auf einer Code-Lesung. Genau
-> aus dieser Lage sind im August vier Fehlersuchrunden gegen einen Stand
-> entstanden, den das Geraet nie geladen hatte. Deshalb steht die
-> **Geraetetest-Runde (P0.a)** vor allem anderen.
->
-> Danach: **P0.c** (Balancing mit den Kindern), dann **P1**, dann Phase 6.
-> **P0.b ist abgearbeitet** (v0.1.211-213), **P1.a am 2026-08-21 entschieden**
-> — Talente bleiben bei Coin-Kosten, kein Umbau.
->
-> **P0.5** ist abgeschlossen und bleibt nur als technischer Zwischenstatus
-> stehen — keine zweite Prioritaetsliste.
-
-### Kurzfassung — was als naechstes drankommt
-
-| Rang     | Punkt                                          | Aufwand   |
-| -------- | ---------------------------------------------- | --------- |
-| **P0.a** | Vier Geraetebestaetigungen in einem Lauf       | ein Abend |
-| ~~P0.b~~ | ~~vier belegte Fehler~~ — gebaut, v0.1.211-213 | —         |
-| **P0.c** | Phase 5 + Serien-Fenster mit den Kindern       | ein Abend |
-| ~~P1.a~~ | ~~Talentpunkte entscheiden~~ — erledigt        | —         |
-| **P1.b** | Profilfluss, Profil-Icons, Level/XP-Ablauf     | mittel    |
-| **P1.c** | Naechstes Ziel, Erfolgs- und Sammlungsstand    | mittel    |
-| **P1.d** | Balance-Kette: Sync-Gate, `BASELINE_*`         | klein     |
-
-> **Alles, was ohne Geraet ging, ist gebaut.** Was in P0 offen bleibt, braucht
-> dich am Handy (P0.a), die Kinder (P0.c) oder einen Debug-Report vom
-> Slave-Geraet (P0.a.3).
-
-### P0 — erst absichern und messen
-
-> **Was P0 hier heisst:** Ein Punkt steht in P0, wenn er entweder einen
-> belegten Fehler behebt oder eine unbelegte Behauptung ueber den Code zu
-> einer belegten macht. Untersuchungen ohne konkreten Anlass gehoeren nicht
-> hierher — sie stehen in der Reserve weiter unten.
-
-#### P0.a — Geraetetest-Runde: vier offene Bestaetigungen _(neu gebuendelt 2026-08-21)_
-
-> **Warum gebuendelt:** Vier Fixe sind gebaut, gruen getestet und
-> ausgeliefert, aber keiner war auf einem echten Geraet bestaetigt. Solange
-> das offen ist, steht **jede** Aussage ueber Sync, Duell und Darstellung
-> auf einer Code-Lesung statt auf einer Messung — genau die Lage, aus der
-> die vier Fehlersuchrunden im August entstanden sind.
->
-> **Stand 2026-08-21: zwei von vier bestaetigt.** Der Sync-Pfad ist damit
-> zum ersten Mal seit v0.1.170 belegt und nicht mehr nur hergeleitet.
-> Test 3 lief, war aber nicht auswertbar (Report nur vom Master); Test 4
-> ist bewusst verschoben. Beide bleiben offen.
->
-> **Zwei Nebenbefunde aus demselben Report** sind als eigene Punkte in
-> **P0.b** eingetragen — sie haben mit dem Duell nichts zu tun, standen aber
-> im selben Log.
-
-- [x] **1. Boost-Fix bestaetigt (2026-08-21, v0.1.209)** — Wartungsboost
-      wird nach App-Neustart **ohne** "PROFIL ABGLEICHEN" sichtbar.
-      **Damit ist der `isActive()`-Guard-Fix aus v0.1.170 belegt** und nicht
-      mehr nur aus dem Code hergeleitet. Der Strang, der drei Diagnoserunden
-      gekostet hat (Verlauf in P0.d), ist geschlossen.
-      **Was das mit-belegt:** `MenuScene.synchronizeData()` und
-      `checkCloudSave()` laufen beim App-Start tatsaechlich durch — damit
-      steht auch die Retry-Logik aus `SYNC_RETRY_DELAYS_MS` zum ersten Mal
-      auf einem gemessenen Pfad statt auf einem unerreichbaren.
-- [x] **2. Profil-Menues auf dem Geraet bestaetigt (2026-08-21)** — beide
-      Wege (Hauptmenue "PROFIL", Einstellungen "PROFIL ÖFFNEN") fuehren zu
-      `ProfileScene`. Damit ist auch `attachVerticalScroll()` erstmals auf
-      einem Geraet gesehen, inklusive der bis dahin im Projekt nie
-      dagewesenen Kombination aus DOM-Textinput in einem scrollenden
-      Container.
-- [ ] **3. Dritter Zwei-Geraete-Duell-Test — durchgefuehrt, aber nicht
-      auswertbar** _(2026-08-21, Report v0.1.205 vom Master-Geraet)_.
-      **Bewusst uebersprungen, bleibt offen.**
-      **Was der Report belegt:** `duel:Raum erzeugen` ok, `duel:Bereit
-      melden` ok, danach **26 x `duel:Raumstatus laden` ueber 37 Sekunden,
-      alle ok**. Nie erscheint `duel:Startzeit setzen`. Nach
-      `OnlineDuelScene.pollAndSetStartTime()` setzt der Host die Startzeit
-      nur bei `hostReady && guestReady` — `guestReady` war also durchgehend
-      `false`.
-      **Der Polling-Fix aus v0.1.174 ist damit NICHT widerlegt.** Er hat
-      26-mal sauber gepollt, genau wie gebaut; er fand nur nichts, weil
-      nichts da war. Er behebt einen verlorenen `start`-Broadcast, *nachdem*
-      beide im Raum sind — dieser Fall lag anders.
-      **Der Slave ist nie in den Raum gekommen.** Im Report fehlt jedes
-      `duel:Raum beitreten`. Drei Erklaerungen, keine belegt: (a) Code nie
-      eingegeben, (b) `joinRoom()` schlug fehl, (c) Beitritt lief, aber
-      `markReady()` scheiterte.
-      **Warum nicht auswertbar:** Der Report stammt vom **Master**. Was auf
-      dem Slave geschah, kann er per Konstruktion nicht zeigen.
-      **Fuer den naechsten Versuch zwingend: Debug-Report vom SLAVE-Geraet.**
-      Ohne den ist jede weitere Runde wieder eine Vermutung — dieselbe Falle
-      wie bei der Sync-Fehlersuche im August.
-- [ ] **4. Playtest ohne `--sim` fahren** _(2026-08-21 bewusst verschoben,
-      nicht vergessen)_ — steht seit mehreren Balance- und
-      Darstellungsaenderungen aus. `--sim` prueft Rendering, Tweens und
-      Bildrate **nicht** — also genau das, was 100 neue Fluggestalten und
-      die Serien-Schleife betrifft. Die Gestalten sind bisher nur als
-      gerendertes Raster gesehen, nie im laufenden Spiel.
-
-#### P0.b — Belegte Fehler ohne Fix
-
-- [x] **Sync-Sturm im Menue eingegrenzt (2026-08-21)** — Mindestpause von
-      30 Sekunden zwischen zwei vollstaendigen Abgleichen
-      (`SYNC_MIN_INTERVAL_MS`).
-      **Ursache belegt:** `MenuScene.create()` startet einen Abgleich, und
-      `create()` laeuft bei jeder Rueckkehr ins Menue. `saveSyncBusy` half
-      nicht — es wird erst in `checkCloudSave()` gesetzt und sperrt nur
-      *parallele* Laeufe; im Report stand bei jedem `sync:start`
-      `saveSyncBusy: false`.
-      **Zeitstempel modulweit, nicht als Feld:** Phaser legt bei jeder
-      Rueckkehr eine neue Scene-Instanz an — ein Feld waere jedes Mal wieder
-      `0` und der Guard wirkungslos.
-      **Drei Anlaesse umgehen die Sperre:** Netzrueckkehr, Nutzerentscheidung
-      ueber einen Cloud-Stand, und die schon gedrosselte Fehler-Wiederholung.
-      **Nebenbei:** Der Abgleich-Hinweis erscheint jetzt erst, wenn wirklich
-      synchronisiert wird; abgewiesene Aufrufe stehen als `sync:throttled` im
-      Report. `npm run verify` gruen (313 Tests).
-  - [ ] **Ungeprueft:** ob 30 Sekunden sich im Gebrauch richtig anfuehlen —
-        insbesondere beim Wechsel zwischen zwei Geraeten, wo ein Abgleich
-        gewuenscht ist. Beim naechsten Geraetedurchgang mitbeobachten; der
-        Wert steht in `config/backend.ts` und ist leicht zu aendern.
-  - [ ] **Nicht durch einen Unit-Test gedeckt.** Die Regel sitzt in
-        `MenuScene`, das ausserhalb des Browsers nicht laedt (Regel 6). Genau
-        der Fall, den der Querschnitt-Punkt "Ablauflogik nach `systems/`
-        ziehen" adressiert — ein `SyncDecisionSystem` koennte das pruefbar
-        machen.
-
-- [x] **Duell-Lobby: Polling lief nach dem Aufgeben weiter (behoben
-      2026-08-21)** — **Ursache belegt, und es war nicht die vermutete.**
-      Die urspruengliche Notiz nannte zwei Moeglichkeiten: Timeout laenger als
-      37 s, oder Test vorher abgebrochen. **Beide falsch.**
-      `ONLINE_DUEL_READY_TIMEOUT_MS` steht auf 10 Sekunden, und im Report ist
-      der Timeout bei t+9,971 s als Aufruf **ausser Takt** sichtbar (1,03 s
-      Abstand statt der sonst durchgehenden ~1,5 s). Er hat gefeuert, die
-      Meldung wurde gesetzt — und danach liefen noch **17 weitere
-      `getRoomStatus`-Aufrufe** ueber 25 Sekunden.
-      **Ursache:** `cleanupLobby()` stoppt beide Timer, wurde aber nur bei
-      `beginRun()` und beim SHUTDOWN gerufen, nicht beim Aufgeben. Jetzt auch
-      dort und im Fehlerpfad von `trySetStartTime()`.
-      **Meldung verbessert:** sagt jetzt, was zu tun ist ("Code pruefen und
-      erneut versuchen"), statt nur festzustellen, dass es nicht geklappt hat.
-      **Bewusst unveraendert:** Bei einem reinen Kanalfehler laeuft das
-      Polling weiter — es ist dann der einzige Weg zur Startzeit; die Meldung
-      sagt das jetzt dazu. `npm run verify` gruen (313 Tests).
-  - [ ] **Behebt nicht den eigentlichen Duell-Fehlschlag.** Der Gast war nie
-        im Raum (kein `duel:Raum beitreten` im Log). Das bleibt P0.a.3 und
-        braucht einen Report vom **Slave**-Geraet.
-
-#### P0.c — Spielbarkeit mit den Kindern
-
-- [ ] **Phase 5 mit Kindern balancieren:** Schwierige Welten, Hindernisse,
-      Tempo, Sichtfenster und Belohnungen sollen fordernd, aber nie
-      frustrierend sein. **Der einzige P0-Punkt, der direkt am Spielgefuehl
-      arbeitet** — die anderen sichern nur ab.
-- [ ] **Serien-Umstellung mit Emre und Simay pruefen** _(hochgezogen aus
-      "Balance-Aenderungen ohne Spielertest")_. Das Zeitfenster ging von 1800
-      auf 900 ms, und die Serie steigt nur noch bei farbigen Relikten.
-      Gemessen wurde gegen einen Bot, der praeziser steuert als ein Kind:
-      beste Serie von 183 auf 19, rund 11 Abrisse je Runde. Ist es zu hart,
-      zuerst `COMBO_GRACE_MS` erhoehen (z. B. auf 1100) — der Wert wirkt
-      direkter als jede andere Stellschraube. **Gehoert in denselben
-      Spielabend wie Phase 5.**
-
-#### P0.d — Verlauf der Sync-Fehlersuche _(abgeschlossen, als Beleg behalten)_
-
-> **Alles hier ist Historie.** Die einzige offene Arbeit aus diesem Strang
-> ist der Geraetetest, und der steht als **P0.a.1**. Der Verlauf bleibt
-> vollstaendig stehen, weil er die teuerste Lehre des Projekts belegt: Zwei
-> plausible Fixe (Retry, Logging) haben nichts geaendert, weil die Ursache
-> woanders lag — ein `isActive()`-Guard, der bei **jedem** App-Start
-> zuschlug. Wer den Strang kuerzt, verliert den Beleg dafuer, wie leicht
-> eine plausible Hypothese eine Fehlersuche in die Irre fuehrt.
-
-- [x] Button-Trefferflaechen auf dem Testgeraet erneut bestaetigt: funktionieren
-      gut.
-- [x] Zurueck-Navigation auf dem Testgeraet erneut bestaetigt: funktioniert gut.
-- [x] **Phase 2.6 produktiv pruefen:** SQL-Migration in Supabase anwenden und
-      mit einem Profil auf iPhone und iPad testen: Offline spielen, verbinden,
-      dann XP, Coins, Name, Bestwert und Erfolge pruefen.
-      **Der offene Geraetetest dazu steht oben als P0.a.1** — hier darunter
-      steht nur noch, wie die Ursache gefunden wurde.
-  - [x] **BUG gefunden und behoben (2026-08-17), per Debug-Report belegt:**
-        Zwei iPhones, gleiches Profil. iPhone1 offline gespielt → online →
-        Sync-Popup kam, Abgleich lief. iPhone2 offline gespielt → online, im
-        Menue, online gleichzeitig → kein Sync-Popup, der Offline-Run wurde
-        nicht hochgeladen. Nach "PROFIL ABGLEICHEN" zuerst auf iPhone1, dann
-        auf iPhone2 stand am Ende **iPhone2 auf dem (aelteren) Stand von
-        iPhone1** — der iPhone2-Offline-Lauf war verloren.
-        **Ursache, belegt durch den Debug-Report-Verlauf:**
-        `[CloudSystem] Login prüfen fehlgeschlagen` direkt nach `run:ended` —
-        `requireAuthenticatedClient()` ruft `supabase.auth.getUser()` mit dem
-        5s-`BACKEND_TIMEOUT_MS`-Limit auf; iOS meldet das `online`-Ereignis
-        oft, bevor die Verbindung zu Supabase tatsaechlich steht, der erste
-        Versuch lief prompt in den Timeout. Ohne Wiederholung blieb der Run
-        bis zum naechsten `online`-Ereignis oder App-Neustart in der Outbox
-        stehen (`MenuScene` registriert den Listener nur einmalig).
-        **Fix:** `ProgressSyncSystem` plant bei einem Fehlschlag jetzt selbst
-        einen automatischen Wiederholungsversuch (`SYNC_RETRY_DELAYS_MS` in
-        `config/backend.ts`: 5s/15s/60s), unabhaengig vom `MenuScene`- oder
-        `online`-Lebenszyklus. Bricht sauber ab, wenn sich der Nutzer
-        zwischenzeitlich abmeldet. Zwei neue Tests in
-        `ProgressSyncSystem.test.ts`.
-        **Noch offen:** erneuter Geraetetest mit demselben Ablauf (zwei
-        Geraete, Offline-Run auf einem, direkt nach Netzwiederkehr), um zu
-        bestaetigen, dass der Retry den Fall jetzt tatsaechlich auffaengt.
-  - [x] **Zweiter BUG derselben Fehlerklasse gefunden und behoben
-        (2026-08-18):** Emre und Simay per Wartungsboost auf Level 50 +
-        50000 Coins gesetzt; nach App-Start war der Boost bei beiden nicht
-        sichtbar, erst "PROFIL ABGLEICHEN" zog ihn. **Ursache:**
-        `MenuScene.checkCloudSave()` scheiterte beim eingeloggten Profil-
-        Pull, wenn `requireAuthenticatedClient()` innerhalb von
-        `BACKEND_TIMEOUT_MS` (5s) keine Antwort bekam — genau derselbe
-        Timeout-Mechanismus wie beim ersten Bug, nur auf dem Lade- statt dem
-        Sende-Pfad. Der Fehlschlag blieb lautlos: kein Retry, kein
-        sichtbarer Fehler, das UI zeigte weiter den alten lokalen Stand.
-        **Nicht die Ursache:** `isRemoteAhead` selbst — Level und Coins
-        waren dort bereits vor diesem Fix als Vergleichsfelder abgedeckt.
-        **Fix:** `checkCloudSave()` plant bei einem Fehlschlag jetzt
-        denselben automatischen Wiederholungsversuch wie
-        `ProgressSyncSystem` (`SYNC_RETRY_DELAYS_MS`: 5s/15s/60s), inklusive
-        Aufraeumen des Timers im `shutdown`-Handler. `npm run verify` gruen
-        (212 Tests).
-        **Noch offen:** Geraetetest mit einem erneuten Boost, um zu
-        bestaetigen, dass der Retry den Fall auf einem echten iPhone
-        tatsaechlich auffaengt.
-  - [x] **Widerlegt durch echten Test (2026-08-18)** — _ueberholt durch den
-        Befund weiter unten, hier nur noch als Verlauf:_ Der Retry-Fix hat den
-        Fall NICHT behoben. Selbsttest: eigenes Profil (Level bereits ueber
-        50, Coins klar unter 50000) geboostet, Coins blieben nach App-Start
-        unveraendert, erst "PROFIL ABGLEICHEN" zog sie nach. Level-Seite war
-        durch den Test selbst nicht aussagekraeftig (Boost setzt Level fest
-        auf 50, war beim Tester bereits hoeher) - aber die Coins-Bedingung in
-        `isRemoteAhead` (`Number(remote.data.coins) > local.coins`) haette
-        zuschlagen muessen und tat es nicht.
-        **Der mitgelieferte Debug-Report zeigte keinen einzigen Fehler-Log**
-        (nur `app:start`-Eintraege) - das ist keine Entlastung fuer die
-        Timeout-Hypothese, sondern eine Beweisluecke: `checkCloudSave()`
-        loggt im Erfolgs- UND im Fehlerpfad nichts außer `console.warn`/
-        `console.error`, die der Ringpuffer abfaengt. Ob der Timeout-Pfad
-        ueberhaupt lief, war aus dem Report nicht ablesbar.
-        **Fix zurueckgestuft von "behoben" auf "Diagnose eingebaut":**
-        `checkCloudSave()` protokolliert jetzt bei jedem Durchlauf
-        (`sync:profilePull`, `sync:remoteAheadCheck`) Zwischenergebnisse in
-        den Debug-Ringpuffer - claimed/profile ok-Status, lokale und
-        Remote-Level/Coins, das `isRemoteAhead`-Ergebnis. Bewusst dauerhaft,
-        nicht nur zum Debuggen wieder entfernen (siehe die eigene Kritik im
-        CHANGELOG an der letzten voreiligen Entfernung).
-        **Naechster Schritt:** mit dieser Version erneut boosten und einen
-        neuen Debug-Report ziehen - der zeigt jetzt, ob `claimCloudProfile`/
-        `fetchProfileProgress` ueberhaupt den geboosteten Coins-Wert liefern
-        und ob `isRemoteAhead` daraus korrekt `true` berechnet.
-  - [x] **v0.1.169-Report ausgewertet: das neue Log erschien ueberhaupt
-        nicht** — _ueberholt durch den Befund weiter unten, hier nur noch als
-        Verlauf:_ Trotz bestaetigtem Alias-Login zeigte der Report nur
-        `app:start`, keinen einzigen `sync:profilePull`-Eintrag - obwohl
-        `checkCloudSave()` den eingeloggten Zweig, in dem das Logging sitzt,
-        haette durchlaufen muessen. Zwei moegliche Erklaerungen, keine davon
-        bestaetigt: (a) ein frueher Guard in `synchronizeData()`/
-        `checkCloudSave()` (z.B. `saveSyncBusy`, `scene.isActive()`) bricht
-        vor dem Log-Punkt ab, (b) `ProgressSyncSystem.flush()` wirft eine
-        ungefangene Exception statt eines `CloudResult`-Fehlers und landet
-        im `catch` von `synchronizeData()`, der bisher ebenfalls nichts
-        loggte. **Zusaetzliches Logging eingebaut:** `sync:start` (jeder
-        Guard-Zustand beim Betreten von `synchronizeData()`), `sync:threw`
-        (falls `checkCloudSave()` tatsaechlich wirft, mit Stacktrace),
-        `sync:checkCloudSave:signedIn` und `sync:afterFlush` (um zu sehen,
-        ob `ProgressSyncSystem.flush()` durchlaeuft oder haengt). Damit ist
-        JEDER bisher bekannte stille Ausstiegspunkt jetzt sichtbar.
-        **Naechster Schritt:** erneut boosten, neuen Debug-Report ziehen -
-        falls wieder kein `sync:*`-Eintrag erscheint, ist die Ursache
-        ausserhalb von `MenuScene` zu suchen (z.B. `create()` erreicht
-        Zeile `synchronizeData()` gar nicht, oder der Ringpuffer selbst
-        verliert Eintraege vor dem Report).
-  - [x] **Tatsaechliche Ursache gefunden und belegt (v0.1.170-Report,
-        2026-08-18):** Jeder `sync:start`-Eintrag zeigte
-        `"sceneActive":false` - bei JEDEM der neun protokollierten
-        Aufrufe, ohne Ausnahme. Nachvollzogen in
-        `node_modules/phaser/src/scene/SceneManager.js::create()`: Phaser
-        ruft `scene.create.call(scene, settings.data)` auf und setzt
-        `settings.status = CONST.RUNNING` **danach**, erst nach der
-        Rueckkehr aus `create()`. `synchronizeData()` wird am Ende von
-        `MenuScene.create()` als `void this.synchronizeData()`
-        losgeschickt und lief bis zu ihrem ersten `await` **synchron im
-        selben Tick wie `create()`** - genau in diesem Moment lieferte
-        `this.scene.isActive()` garantiert `false`. Der Guard
-        `if (this.saveSyncBusy || !this.scene.isActive()) return;` brach
-        deshalb bei jedem einzigen App-Start sofort ab, bevor
-        `checkCloudSave()` je erreicht wurde - unabhaengig von Netz,
-        Login-Status oder Boost-Wert. Kein Netzwerk-Timeout, keine falsche
-        `isRemoteAhead`-Logik; die ersten zwei "Fixe" fuer dieses Symptom
-        (Retry, erweitertes Logging) haben deshalb nichts geaendert. **Der
-        Bug bestand schon vor allen drei Sync-bezogenen Commits vom
-        2026-08-18** - kein Regressions-Bug, sondern ein alter, bisher nie
-        belegter Fehler.
-        **Fix:** Der `isActive()`-Teil des Einstiegs-Guards ist aus
-        `synchronizeData()` und `checkCloudSave()` entfernt (dort schuetzt
-        nur noch `saveSyncBusy`); die spaeteren `isActive()`-Checks nach
-        jedem `await` bleiben unveraendert bestehen - dort ist `create()`
-        laengst zurueckgekehrt und die Pruefung liefert wieder verlaessliche
-        Werte. `npm run verify` gruen (212 Tests).
-        **Noch offen:** Geraetetest, der bestaetigt, dass ein Boost nach
-        diesem Fix ohne manuellen Abgleich sichtbar wird.
-  - [x] **Diagnose-Infrastruktur aus diesem Bug verallgemeinert
-        (2026-08-18):** Statt bei jedem kuenftigen Backend-Bug erneut
-        manuell Logging nachzuruesten, protokolliert `withTimeout()` in
-        `CloudSystem.ts` jetzt automatisch jeden der ~25 Backend-Aufrufe
-        (Erfolg UND Fehlschlag, Label + Dauer, keine Nutzlast) in den
-        Debug-Ringpuffer. `DEBUG_LOG_BUFFER_SIZE` 200 -> 400, weil dadurch
-        mehr Eintraege pro Menuebesuch anfallen. Nebenbei gefunden und
-        gefixt: `DebugSystem.ts` zog ueber `SoundSystem` transitiv Phaser
-        mit und brach dadurch jeden Vitest-Lauf von `CloudSystem`/
-        `AuthSystem`, sobald diese `DebugSystem` importieren - behoben durch
-        einen dynamischen statt statischen `SoundSystem`-Import in
-        `buildReport()`. `npm run verify` gruen (212 Tests).
-> **Die beiden Punkte, die hier standen, sind hochgezogen:** Der
-> Profil-Menue-Geraetetest steht jetzt als P0.a.2, "Phase 5 mit Kindern
-> balancieren" als P0.c. Inhaltlich unveraendert, nur einsortiert.
-
-### P0.5 — Debug-Modus fuer Tester _(gebaut 2026-08-17, siehe ADR-0016)_
-
-> **Ziel:** Bug-Reports von Emre und Simay ohne Konsole, ohne Admin-PIN.
-> Zehnmal aufs Logo im Hauptmenue tippen schaltet einen schwebenden
-> Debug-Knopf frei, der ueberall im Spiel sichtbar bleibt. Ein Tipp darauf
-> erzeugt einen Text-Report (Geraet, Version, Layout, Ton-Diagnose, die
-> letzten 50 Ereignisse/Fehler) plus Screenshot und oeffnet das native
-> Share-Sheet (WhatsApp waehlbar).
-
-- [x] `DebugSystem.ts` (Ringpuffer, Report-Text, Toggle-Persistenz,
-      Screenshot-zu-File), `DebugConfig.ts`, `ui/debugOverlay.ts`
-- [x] Zehn-Tipp-Geste auf dem Logo in `MenuScene`, PIN-frei und getrennt vom
-      Wartungsbereich
-- [x] `npm run verify` gruen (Typecheck, Lint, Format, 177 Tests, Build)
-- [x] **Am echten iPhone geprueft (2026-08-17):** Tipp-Geste trifft das Logo,
-      WhatsApp uebernimmt beide Dateien (PNG + TXT).
-- [x] **BUG gefunden und behoben: Screenshot komplett schwarz.** Ursache:
-      `main.ts` setzt `type: Phaser.AUTO` ohne `preserveDrawingBuffer: true` -
-      WebGL loescht den Backbuffer sofort nach dem Praesentieren, und
-      `DebugSystem.captureScreenshot()` liest ueber `canvas.toBlob()` einen
-      bereits geleerten Puffer. Fix: `preserveDrawingBuffer: true` in der
-      `render`-Konfiguration.
-- [x] **Fix am echten iPhone bestaetigt (2026-08-17, v0.1.159):** Screenshot
-      zeigt jetzt den tatsaechlichen Spielinhalt statt Schwarz.
-- [x] **BUG gefunden und behoben (2026-08-18): Log-Ringpuffer war rein
-      In-Memory.** Beim Netzwerk-Duell-Testen bemerkt: `logBuffer` in
-      `DebugSystem.ts` war ein einfaches Array ohne `localStorage`-Anbindung
-      - jeder App-Neustart (z. B. App verlassen, um erst einen Screenshot zu
-      pruefen, bevor man teilt) loeschte den kompletten Verlauf. Genau der
-      Moment, in dem ein Fehlerbericht am wichtigsten ist. Fix: Puffer wird
-      gedrosselt (500ms, wegen `TimerChanged` mit ~60 Eintraegen/s waehrend
-      eines Runs) in `localStorage` gespiegelt, zusaetzlich sofort beim
-      `visibilitychange`-Event (App-Wechsel) geschrieben, und beim
-      Modul-Start wiederhergestellt. Neuer `DEBUG_LOG_STORAGE_KEY`, 5 neue
-      Tests.
-
-> **P0.5 damit vollstaendig abgeschlossen.**
-
-### P1 — Fortschritt vor Wettbewerb
-
-#### P1.a — Talentpunkte: entschieden _(2026-08-21)_
-
-> ## Entscheidung: Talente bleiben bei Coin-Kosten. Kein Umbau.
->
-> Die Frage stand seit 2026-08-19 an drei Stellen und blockierte vier
-> P1-Punkte. Sie ist entschieden; P1 ist damit frei.
->
-> **Vollstaendig begruendet in ADR-0018** (`docs/DECISIONS.md`), inklusive der
-> verworfenen Alternative "Baum auf 99 Raenge ausbauen".
-
-**Die Zahlen, im Code nachgerechnet (nicht uebernommen):**
-
-| | Anzahl | Kosten |
-| ----------------- | -----: | -----: |
-| Talentbaum voll | 32 Raenge | **15 650** |
-| Shop voll | 130 Artikel | **16 122** |
-| zusammen | | **31 772** |
-
-Bei rund 475 Muenzen am Tag (10 Runs mittlerer Guete, Login-Bonus und
-Tageslauf eingerechnet): 33 Tage fuer die Talente, 34 fuer den Shop,
-67 Tage fuer alles.
-
-**Der Grund fuer die Entscheidung — er stand vorher nirgends:** Shop und
-Talente kosten fast **exakt gleich viel**. Die urspruengliche Begruendung fuer
-den Umbau lautete, der Reiz von Talentpunkten liege im Verzicht. Seit der Shop
-am 2026-08-20 ausgeliefert wurde, **existiert dieser Verzicht bereits** — nur
-an anderer Stelle: Jede Muenze geht entweder in einen Talentrang oder in eine
-Fluggestalt. Das ist eine echte, taeglich wiederkehrende Abwaegung.
-
-Der Umbau wuerde sie **abschaffen**, nicht schaffen: Talente kaemen automatisch
-mit Leveln, Muenzen waeren nur noch fuer Kosmetik da — zwei getrennte Stroeme,
-zwischen denen es nichts abzuwaegen gibt.
-
-**Dazu die bekannte Rechnung, bestaetigt:** Bei einem Punkt je zwei Level gaebe
-es bis Stufe 100 **50 Punkte fuer 32 Raenge**. Ab etwa Stufe 64 waere alles
-voll und die Belohnung wertlos. Der Coin-Weg hat fuer diesen Fall bereits eine
-Antwort, die der Umbau nicht haette: Ueberschuessige Talentpunkte werden zu
-Muenzen (`COINS_PER_EXTRA_TALENT_POINT = 10`, entschieden 2026-08-13).
-
-**Was gegen die Entscheidung sprach, fair benannt:** Levelaufstiege fuehlen
-sich duenn an — 20 Muenzen bei rund 475 am Tag sind kaum spuerbar, und
-"du hast einen Talentpunkt bekommen" waere fuer ein Kind greifbarer als ein
-Kontostand. **Das Argument bleibt gueltig**, braucht aber keinen Systemumbau;
-es steht als eigener Punkt in P1.b.
-
-**Damit erledigt:**
-
-- [x] ~~Talentpunkte statt Coin-Kosten planen und bauen~~ — verworfen
-- [x] ~~Zahl zuerst entscheiden (99 Aufstiege vs. 32 Raenge)~~ — entfaellt
-- [x] ~~Talentbaum auf die beschlossene Gesamtzahl ausbauen~~ — entfaellt
-      **(nur der Rang-Teil!)** Der zweite Halbsatz des urspruenglichen
-      Eintrags — "darunter eine kindgerechte Schleife/Route als sichtbaren
-      Fortschritt zeichnen" — haengt **nicht** am Umbau und war hier zu
-      Unrecht mit gestrichen. Er steht jetzt eigenstaendig unten.
-- [x] ~~Migration fuer bestehende Coin-Talente~~ — entfaellt, nichts aendert sich
-
-**Bleibt offen, unabhaengig von der Entscheidung:**
-
-- [ ] **Talentbaum tatsaechlich zu einem Baum machen — oder ehrlich
-      umbenennen.** _(zusammengefuehrt 2026-08-21 aus zwei Eintraegen: dem
-      Darstellungs-Halbsatz aus P1 und dem Audit-Punkt "Talentbaum-Konzept
-      eindeutig entscheiden")_
-
-      **Der Stand:** Die Ansicht heisst "Talentbaum", ist aber fachlich eine
-      Liste — sieben Talente in `config/talents.ts`, ohne Verbindungen, ohne
-      Voraussetzungen, jedes unabhaengig kaufbar. Der Name verspricht etwas,
-      das der Bildschirm nicht einloest.
-
-      **Die Entscheidung aus P1.a beruehrt das nicht.** Ob mit Muenzen oder
-      Punkten bezahlt wird, ist unabhaengig davon, wie der Fortschritt
-      **aussieht**. Der urspruengliche Wunsch lautete woertlich: "darunter eine
-      kindgerechte Schleife/Route als sichtbaren Fortschritt zeichnen" — das
-      ist eine Darstellungsfrage, keine Wirtschaftsfrage.
-
-      **Drei Wege, noch nicht entschieden:**
-  - [ ] **(a) Echter Baum mit Voraussetzungen.** Drei erkennbare Aeste:
-        Beweglichkeit (Reichweite, Flinkheit, Magnetismus), Konzentration
-        (Fokus, Ausdauer), Belohnung (Erkenntnis, Gunst). Ein Rang schaltet
-        den naechsten frei. **Kosten:** greift in `ProgressionSystem.
-        purchaseTalent()` ein (Freischaltregeln), braucht neue Felder und eine
-        Migration fuer Staende, die heute schon "unmoegliche" Kombinationen
-        haben. **Nutzen:** echte Wahl, echter Baum.
-  - [ ] **(b) Route/Schleife als reine Darstellung.** Die sieben Talente
-        entlang eines gezeichneten Pfades anordnen, gekaufte Raenge leuchten
-        auf. Keine Voraussetzungen, keine Regelaenderung — nur ein Bild, das
-        Fortschritt zeigt. **Kosten:** reine UI-Arbeit in `TalentScene`.
-        **Nutzen:** loest den urspruenglichen Wunsch ("kindgerechter
-        sichtbarer Fortschritt") ohne Eingriff in die Wirtschaft.
-  - [ ] **(c) Ehrlich umbenennen.** "Talentbaum" wird zu "Talente".
-        **Kosten:** minimal. **Nutzen:** der Name luegt nicht mehr — loest
-        aber den Darstellungswunsch **nicht**.
-
-      **Meine Empfehlung: (b), und (c) faellt dann weg** — eine gezeichnete
-      Route macht den Namen "Baum" nachtraeglich wahr genug fuer ein
-      Kinderspiel, ohne dass Freischaltregeln das Balancing anfassen. (a) ist
-      ein eigenes Feature-Paket und sollte erst kommen, wenn es deutlich mehr
-      als sieben Talente gibt. **Nicht entschieden — das ist deine Wahl.**
-
-#### P1.b — Fortschritt und Profil
-
-- [ ] **Levelaufstiege spuerbar machen** _(neu 2026-08-21, aus der
-      P1.a-Entscheidung)_ — ein Aufstieg gibt heute `COINS_PER_LEVEL = 20`
-      Muenzen. Bei rund 475 Muenzen am Tag sind das gut 4 % eines Tages: kaum
-      wahrnehmbar. Genau daran haengt das einzige starke Argument, das fuer
-      den verworfenen Talentpunkte-Umbau sprach — "du hast einen Punkt
-      bekommen" ist greifbarer als ein Kontostand.
-      **Zwei Wege, nicht ausschliessend:** (a) `COINS_PER_LEVEL` anheben —
-      Einzeiler, aber der Wert will mit den Kindern geprueft sein;
-      (b) den Aufstieg als sichtbaren Moment inszenieren (Ton gibt es bereits,
-      siehe Phase 3.5). **Empfehlung: (b) zuerst** — Aufmerksamkeit wirkt bei
-      Kindern staerker als eine groessere Zahl, und (a) verschiebt zusaetzlich
-      das Wirtschaftsgleichgewicht gegenueber dem Shop.
-      **Gehoert in den Balancing-Abend (P0.c)**, wenn dort ein Levelaufstieg
-      faellt.
-- [x] ~~Coins bleiben Waehrung fuer spaetere Skins und optionale Boni;
-      Skin-Inventar und Shop nur vorbereiten, nicht vor dem Talentpunkte-Umbau
-      bauen.~~ **Ueberholt (2026-08-20):** Der Shop ist gebaut und ausgeliefert
-      (v0.1.196 bis v0.1.205) — 30 Fluggestalten, 30 Farben, Anprobe vor dem
-      Kauf, Loeschung beim Wartungs-Reset. Der Talentpunkte-Umbau blieb dabei
-      unberuehrt; die Reihenfolge war doch nicht bindend.
-- [ ] Profilfluss verbessern: beim allerersten Profil einen getrennten sichtbaren
-      Spielernamen erfragen; danach im Profil/Aliasbereich aenderbar halten.
-- [ ] Auswaehlbare Profil-Icons/Avatare vorbereiten. **Anschluss an den Shop:**
-      Sie sollen dort kaufbar sein, mit demselben Besitz- und Anprobe-Muster
-      wie Formen und Farben (`config/shop.ts`).
-- [ ] Level/XP aus dem Hauptmenue ausblenden und erst nach einem klaren
-      "JAGD BEGINNEN"-Schritt zeigen.
-- [ ] Den vorhandenen Kettenbonus gegen die konkrete Regel "drei blaue
-      Planeten hintereinander = doppelte Punkte" abgleichen und entscheiden,
-      ob beide Boni nebeneinander bestehen sollen.
-
-#### P1.c — Aus dem Audit hochgezogen _(2026-08-21)_
-
-> **Auswahl statt Sammelposten.** Der Audit-Anhang unten enthaelt rund 50
-> Punkte. Diese drei sind hier eingeplant, weil sie auf etwas bereits
-> Gebautes zeigen und mit den zwei bekannten Spielern ueberpruefbar sind.
-> Der Rest bleibt Reserve — siehe den Reserve-Hinweis vor dem Anhang.
-
-- [ ] **Nach dem Run genau ein naechstes Ziel zeigen.** Statt mehrerer gleich
-      starker Menueoptionen eine konkrete Motivation: "Noch 80 Coins bis
-      Magnetismus Rang 1" oder "Noch 2 Runs bis Welt Eisring". Aus
-      Progression, Shop und Talenten gemeinsam abgeleitet. **Warum
-      hochgezogen:** billigster Motivationsgewinn im ganzen Anhang, weil alle
-      drei Datenquellen bereits existieren.
-- [ ] **Fortschritt innerhalb gesperrter Erfolge anzeigen.** Neben "gesperrt"
-      soll "37 / 50 Relikte" oder "Combo 18 / 25" stehen. Die Berechnung darf
-      nicht in der Scene dupliziert werden, sondern kommt aus der
-      Achievement-Definition. **Warum hochgezogen:** Erfolge sind gebaut, aber
-      ohne sichtbaren Fortschritt sind sie fuer Kinder unsichtbare Ziele.
-- [ ] **Sammlungsfortschritt im Shop sichtbar machen.** "12 von 100 Formen",
-      "18 von 30 Farben", neue Gegenstaende markieren. **Warum hochgezogen:**
-      Mit 100 Fluggestalten seit v0.1.209 ist die Liste lang genug, dass ohne
-      Zaehler niemand mehr sieht, wie weit er ist. Filter, Favoriten und
-      Loadouts bleiben dagegen Reserve — die kommen erst, wenn das Sortiment
-      ohne sie unbedienbar wird.
-
-#### P1.d — Balance-Kette absichern _(neu 2026-08-21, nach v0.1.215)_
-
-> **Die Kette funktioniert — nachgemessen, nicht angenommen.**
-> `economy.globalMultiplier` von 1 auf 2: Coins/Run 20 → 40, Talentkosten
-> 250 → 500, Login-Bonus 25 → 50 — und `runsToMaxTalents` bleibt bei
-> **299,9**. Dasselbe auf der XP-Seite: `runsToMaxLevel` bleibt bei **279,4**.
-> Einnahmen und Kosten ziehen mit, das Spielgefuehl in Runs bleibt konstant.
-> Beide Proben wurden danach zurueckgesetzt.
->
-> Die zwei Punkte hier sind **keine Kritik am Entwurf**, sondern zwei
-> Stellen, an denen die Kette still auseinanderlaufen kann.
-
-- [ ] **`balance:sync` in ein Gate einbinden.** Der Generator
-      (`scripts/sync-balance-sql.mjs`) haelt den JSON-Block in
-      `supabase/phase_2_14_balance_chain.sql` mit `balance-data.json`
-      synchron — laeuft aber nur auf Zuruf und in keinem Gate.
-      **Luecke belegt (2026-08-21):** `runBaseCoins` von 20 auf 25 gesetzt,
-      nur im JSON. `npm run verify` meldete 5 rote Tests (die Wertaenderung
-      wird also bemerkt), **das SQL blieb dabei still auf 20**. Niemand merkt,
-      dass die Serverseite zurueckbleibt. Danach zurueckgesetzt.
-      **Zwei Wege:** (a) ein Test, der den JSON-Block aus dem SQL liest und
-      mit `balance-data.json` vergleicht — laeuft ueberall mit, wo `verify`
-      laeuft, rund 20 Zeilen; (b) `balance:sync --check` im `pre-commit`.
-      **Empfehlung: (a)** — braucht keinen Hook und greift auch in der CI.
-- [ ] **Herkunft der `BASELINE_*`-Konstanten festhalten.** In
-      `config/balance.ts` stehen drei eingefrorene Bezugsgroessen
-      (`BASELINE_EXPECTED_XP_PER_RUN` 1 883,985,
-      `BASELINE_EXPECTED_COINS_PER_RUN` 52,186,
-      `BASELINE_EXPECTED_SCORE_PER_RUN` 1 499,076). Gegen sie skalieren
-      `xpRunScale`, `coinRunScale` und `scoreRunScale`.
-      **Das Problem:** Es steht nirgends, aus welchem Stand sie stammen und
-      wann sie neu zu berechnen waeren. Wer an den Rarity-Gewichten oder an
-      `run.expectedCatches` dreht, verschiebt damit auch die Bezugsgroesse —
-      die Skalierung faengt das ab, aber relativ zu einem Stand, den niemand
-      mehr zuordnen kann.
-      **Vorschlag:** Kommentar mit Datum und Herkunft, plus ein Test, der sie
-      gegen die Ableitung aus dem JSON prueft. Sonst driften sie still.
-- [x] **`supabase/phase_2_14_balance_chain.sql` ausgefuehrt (2026-08-21).**
-      Server und Client rechnen damit auf derselben Ableitungslogik.
-
-### P2 — Phase 6: Wettbewerb und Freunde
-
-- [ ] Rangliste per Supabase Realtime aktualisieren, solange sie geoeffnet ist.
-- [ ] Rekord-Ereignis im Spiel sichtbar machen; Web-Push fuer installierte Apps
-      erst danach mit Einwilligung planen.
-- [ ] Serverseitige Laufpruefung als Voraussetzung fuer einen echten
-      Ranked-Modus.
-- [ ] Freundesmodell auf `profiles` aufsetzen: Anfrage, Annahme, Online-Status,
-      Rekord und Coin-Anzeige.
-- [ ] 1vs1-Einladung zuerst als Duell-Link zwischen zwei Geraeten bauen;
-      Echtzeit erst als folgenden Schritt pruefen.
-
-### P3 — erst nach stabilem Kern
-
-- [ ] Wiedergeburt/Prestige konzipieren: klarer Reset-Umfang, dauerhafter
-      Multiplikator, Schutz vor versehentlichem Ausloesen und Migration fuer
-      bestehende Profile.
-
-### Zurueckgestellt — bewusst nicht eingeplant, Anlass abwarten
-
-> **Warum ein eigener Abschnitt (neu 2026-08-21):** Ein Punkt, der im eigenen
-> Text "bewusst zurueckgestellt" sagt, gehoert nicht in "erst absichern und
-> messen". Er ist deshalb nicht geloescht, sondern hierher verschoben — mit
-> der Bedingung davor, unter der er wieder aktiv wird.
-
-**Wird aktiv, sobald eine Veroeffentlichung ueber den Familienkreis hinaus
-konkret geplant wird:**
-
-- [ ] **DSGVO-Einschaetzung fuer Kinderdaten einholen, falls Veroeffentlichung
-      angestrebt wird** _(aktualisiert 2026-08-17)_ — `profiles`/`scores`
-      speichern Aliase von Minderjaehrigen, Supabase-Region `eu-west-1` (EU,
-      kein Drittlandtransfer).
-      **Stand heute bestaetigt: Reichweite ist ausschliesslich enge Familie,
-      keine Freunde, keine Bekannten** — damit greift die Haushaltsausnahme
-      (Art. 2 Abs. 2 lit. c DSGVO) unstrittig, hier besteht kein akuter
-      Klaerungsbedarf.
-      **Die eigentlich offene Frage ist eine andere:** was eine oeffentliche
-      Veroeffentlichung braucht. Das ist kein Graubereich mehr, sondern volle
-      Pflicht: Impressum (TMG/DDG), Datenschutzerklaerung (Art. 13 DSGVO),
-      Auftragsverarbeitungsvertrag mit Supabase (Art. 28), ueberpruefbare
-      Elterneinwilligung fuer Nutzer unter 16 (Art. 8 DSGVO — der aufwendigste
-      Punkt, ein Alterskennzeichen allein ersetzt das nicht), sowie ein
-      Loeschkonzept/Betroffenenrechte-Prozess. Diskutierte, aber ungeprueft
-      abgesegnete Ideen: erzwungene, nicht identifizierende Aliase (reduziert
-      Re-Identifizierbarkeit, ersetzt Art. 8 aber nicht), Timestamps aus der
-      Rangliste entfernen (nur Randwirkung, loest nicht das Kernproblem).
-      **Bewusst zurueckgestellt (2026-08-17):** Veroeffentlichung ist aktuell
-      nicht geplant, das Thema wird erst bei konkretem Anlass wieder
-      aufgegriffen. Bis dahin bleibt die Bestenliste auf den bekannten
-      Personenkreis begrenzt — siehe Vermerk bei Phase 6 unten.
-
-### Reserve — Detailbeschreibungen aus dem Audit (2026-08-21)
-
-> **Status: Reserve, nicht eingeplant.** Die rund 50 Punkte unten stammen aus
-> einem Audit ausserhalb der Architekturpruefung. Sie sind fachlich richtig,
-> aber sie beschreiben ueberwiegend Produktarbeit fuer ein Produkt mit
-> Nutzerbasis — die Zielgruppe hier sind zwei Kinder und die enge Familie, und
-> eine Veroeffentlichung ist laut Abschnitt oben nicht geplant.
->
-> **Deshalb keine Prioritaetsmarken mehr an diesen Punkten.** Sie standen
-> vorher als sieben Sammelposten in P0, P1 und P2 — Checkboxen mit bis zu elf
-> Themen darin, die nie abhakbar sind und die Liste doppelt zaehlen liessen
-> (einmal als Container, einmal im Anhang). Die Sammelposten sind entfernt.
->
-> **So wird dieser Abschnitt benutzt:** Wenn P0 leer ist, wird hier ein
-> einzelner Punkt herausgezogen, begruendet nach oben einsortiert und dort
-> abgearbeitet — so wie es am 2026-08-21 mit dem Tagesbonus (nach P0.b) und
-> mit drei P1-Punkten geschehen ist. **Nicht** blockweise abarbeiten.
->
-> **Vorgemerkt als naechste Kandidaten**, wenn wieder Platz ist — alle drei
-> zeigen auf die Luecke, die den Sync-Bug drei Runden hat leben lassen:
->
-> - `CloudSystem`-Suite mit `isBackendConfigured: true` (siehe "Offen aus dem
->   Audit vom 2026-08-19")
-> - Progressionsinvarianten als feste Regeln pruefen (siehe "Test-, QA- und
->   Release-Prozess")
-> - `SyncDecisionSystem` herausloesen (siehe "Querschnitt")
-
-#### Erste Spielminute und Onboarding
-
-- **Den ersten Run als spielbares Tutorial gestalten.** Das Designziel
-      „in 5 Sekunden verstanden“ bleibt erhalten, aber der erste Durchgang
-      soll die Regeln kontrolliert und ohne langen Text vermitteln. Moeglicher
-      Ablauf: zuerst ein einzelnes Relikt, danach ein farbiges Relikt, dann die
-      erste Serie, anschliessend ein sichtbarer Reichweiten-/Magnetismusfall und
-      erst danach die normale Spawn-Dichte.
-
-- **Kein separates Texttutorial erzwingen.** Die Einfuehrung soll direkt im
-      laufenden Spiel passieren und bei erfahrenen Spielern nach dem ersten
-      abgeschlossenen Einstieg automatisch entfallen. Fuer Tests und Debugging
-      soll sie per Profil-/URL-Option erneut gestartet werden koennen.
-
-- **Nach dem Run genau ein naechstes Ziel zeigen.** _(→ eingeplant als P1.c)_ Statt mehrere gleich
-      starke Menueoptionen nebeneinander zu stellen, soll der Ergebnis- oder
-      Menuebildschirm eine konkrete Motivation geben, zum Beispiel:
-      „Noch 80 Coins bis Magnetismus Rang 1“ oder „Noch 2 Runs bis Welt Eisring“.
-      Die Information soll aus Progression, Shop und Talenten gemeinsam
-      abgeleitet werden.
-
-- **Die ersten drei Minuten als zusammenhaengende Lernkurve pruefen.**
-      Nach dem ersten Run soll der Spieler mindestens eine sichtbare Belohnung,
-      eine erklaerte Mechanik und ein erreichbares naechstes Ziel erhalten.
-      Dabei darf der Bildschirm nicht mit XP, Coins, Erfolgen, Welten und Shop-
-      Hinweisen gleichzeitig ueberladen werden.
-
-#### Progression und Coin-Oekonomie
-
-- **Coin-Quellen und Coin-Senken regelmaessig messen.** Die Quellen sind
-      Grundbelohnung, Sammelboni, Seltenheiten, Levelaufstiege, Erfolge,
-      Tageslauf und Login-Bonus. Ausgaben sind Talente, Talent-Reset,
-      Schiffsformen und Farben. Pro Testprofil und Run-Reihe erfassen:
-      durchschnittliche Coins je Run, Coins je Level, Zeit bis zum ersten
-      Talent, Zeit bis zum ersten kosmetischen Kauf sowie Restguthaben nach
-      10, 25, 50 und 100 Runs.
-
-- **Dem Spieler eine Kaufprognose anzeigen.** Bei Talenten und Shop-
-      Gegenstaenden soll sichtbar sein, wie viele normale Runs ungefaehr bis
-      zum Kauf fehlen. Die Schaetzung ist nur eine Orientierung und muss mit
-      derselben Coin-Berechnung wie die Progression arbeiten.
-
-- **Level 100 und das Endgame bewusst planen.** Nach dem maximalen Level
-      darf der Spieler nicht das Gefuehl bekommen, dass alle langfristigen
-      Ziele verschwunden sind. Moegliche rein kosmetische Endgame-Schleifen:
-      Meisterschaftsstufen, Sammelalben, wechselnde Tages-/Wochenziele,
-      besondere Schweiffarben oder saisonal rotierende Challenge-Abzeichen.
-      Keine unbegrenzte Machtsteigerung, die alte Inhalte entwertet.
-
-- **Das Talentbaum-Konzept eindeutig entscheiden.** _(→ eingeplant als P1.a; die Kostenfrage ist entschieden, Baum vs. Route vs. Umbenennen steht dort offen)_ Die aktuelle Ansicht
-      ist fachlich eine Talentliste. Entweder echte Zweige mit Verbindungen und
-      Voraussetzungen bauen oder die Bezeichnung „Talentbaum“ durch ein
-      klares „Talente“-Menue ersetzen. Bei einem echten Baum drei erkennbare
-      Wege pruefen: Beweglichkeit, Konzentration und Belohnung.
-
-#### Erfolge und langfristige Ziele
-
-- **Fortschritt innerhalb gesperrter Erfolge anzeigen.** _(→ eingeplant als P1.c)_ Neben „gesperrt“
-      soll sichtbar sein: „37 / 50 Relikte“, „Combo 18 / 25“ oder „noch 2 Runs“.
-      Die Berechnung darf nicht in der Scene dupliziert werden, sondern soll
-      aus der Achievement-Definition kommen.
-
-- **Erfolge kategorisieren und nach Naehe sortierbar machen.** Kategorien:
-      Combo, Sammeln, Welten, Spielzeit, Talente, Tageslauf und Spezialaktionen.
-      Zusaetzlich einen Bereich „fast geschafft“ und einen empfohlenen naechsten
-      Erfolg pruefen.
-
-- **Mehr spielerische statt ausschliesslich mengenbasierte Erfolge
-      ergaenzen.** Beispiele: ein legendaeres Relikt ohne Magnetismus fangen,
-      eine Serie nach einem riskanten Umweg retten, ein Hindernis knapp
-      umfliegen oder eine Runde ohne Zeitverlust durch Hindernisse beenden.
-      Die Bedingungen sollen verschiedene Spielstile belohnen und nicht nur
-      lange Spielzeit.
-
-- **Erfolgsbelohnungen beim Ergebnis begrenzen und staffeln.** Viele
-      gleichzeitige Freischaltungen sollen nicht als langer Textblock
-      untergehen. Eine kompakte Auswahl mit anschliessender Detailansicht
-      pruefen; die vollstaendige Liste bleibt im Erfolge-Bildschirm.
-
-#### Shop und kosmetische Sammlung
-
-- **Den Shop bei wachsendem Sortiment filterbar machen.** Filter pruefen:
-      erschwinglich, neu, besessen, nicht besessen und favorisiert. Die
-      Auswahl soll nicht nur eine lange vertikale Liste bleiben.
-
-- **Form und Farbe als kombinierte Vorschau darstellen.** Die Anprobe soll
-      in einer groesseren Vorschau bereits Schiffsform, Rumpffarbe, Aura,
-      Schweif und spaeter Talent-/Magneteffekte zeigen.
-
-- **Favoriten und Loadouts ergaenzen.** Spieler sollen Kombinationen wie
-      „Eis“, „Glut“ oder „Mein Lieblingsschiff“ speichern und mit einem Tipp
-      anlegen koennen. Das bleibt rein kosmetisch und veraendert keine Werte.
-
-- **Sammlungsfortschritt sichtbar machen.** _(→ eingeplant als P1.c)_ Zum Beispiel „12 von 40
-      Formen“ und „18 von 30 Farben“, neue Gegenstaende markieren und zuletzt
-      erworbene Inhalte hervorheben. Sets oder thematische Kollektionen
-      koennen zusaetzliche kosmetische Ziele liefern.
-
-- **Content-Linter fuer Shopdaten ausbauen.** Automatisch pruefen: doppelte
-      IDs, fehlende Zeichnungen, ungueltige Preise, zu lange Namen,
-      fehlende Beschreibungen, nicht vorhandene Farben und nicht darstellbare
-      Kombinationen.
-
-#### Game-Feel, Unterbrechungen und Bedienung
-
-- **Verhalten bei App-Unterbrechungen festlegen.** _(→ Teilaspekt Auto-Pause eingeplant als P0.b)_ Anruf, Bildschirm-
-      sperre, Kontrollzentrum, Safari-Wechsel und verlorener Browserfokus
-      muessen eine eindeutige Regel bekommen. Solo-Runs sollten auf Wunsch
-      automatisch pausieren und „Run pausiert“ anzeigen. Im Duell muss die
-      Regel wegen Fairness gesondert gelten.
-
-- **Wiederaufnahme nach Unterbrechung testen.** Nach `visibilitychange`,
-      `pageshow`, Netzverlust und Rueckkehr darf kein Run still Zeit verlieren,
-      keine Eingabe haengen bleiben und kein alter Pointer weitersteuern.
-
-- **Optionale haptische Rueckmeldung pruefen.** Kurzer Impuls bei Fang,
-      Hindernis, seltenem und legendaerem Relikt. Abschaltbar, nicht als
-      Pflichtfunktion und mit Sound-/Visual-Fallback fuer Geraete ohne
-      Vibrationsunterstuetzung.
-
-- **Feedback-Hierarchie definieren.** Score-Popup, Combo, Schweif,
-      Talent-Aura, Magnetlinien, Hinderniswarnung, Bildschirmimpuls und Sound
-      duerfen sich nicht gegenseitig ueberdecken. Eine Reihenfolge fuer
-      wichtige Ereignisse festlegen: legendaeres Relikt vor seltenem Relikt,
-      Run-Ende vor Nebenfeedback, Spielerziel vor Hintergrunddekoration.
-
-- **Audio in Kategorien und Intensitaeten teilen.** SFX, Combo, seltene
-      Ereignisse, Menue und spaetere Musik getrennt steuern. Wiederholte
-      Combo-Sounds muessen gedrosselt oder dynamisch variiert werden, damit ein
-      langer Run nicht ermuedet.
-
-#### Accessibility und Lesbarkeit
-
-- **Reduced-Motion-Modus einfuehren.** Partikel, Nachbilder, Blinkeffekte,
-      Bildschirmimpulse und schnelle Tweens muessen abgeschwaecht oder ersetzt
-      werden koennen. Die Spielmechanik bleibt unveraendert.
-
-- **High-Contrast-Modus und Farbsehvarianten pruefen.** Seltenheiten,
-      Talentwirkungen und Hindernisse duerfen nicht nur ueber Farbe erkennbar
-      sein. Formen, Muster, Ringtypen, Icons und optionale Audiohinweise als
-      zweite Informationsebene einsetzen.
-
-- **Schrift- und UI-Groessen als Einstellung anbieten.** Besonders kleine
-      Texte in Shop, Talentbaum, Ergebnis und Bestenliste sollen vergroesserbar
-      sein, ohne dass wichtige Aktionen aus dem sicheren Bereich laufen.
-
-- **Touchziel-Grenzen vereinheitlichen.** Alle interaktiven Flaechen sollen
-      die Mindestgroesse fuer Fingerbedienung einhalten. Kleine Weltpfeile,
-      Seitenwechsel und sekundare Aktionen separat auf echten Geraeten testen.
-
-- **Linkshaender- und Einhandmodus pruefen.** Wichtige Aktionen, Timer,
-      Pause und Ergebnisnavigation sollen optional in eine angenehmere Zone
-      verschoben werden koennen, ohne die Spielfeldlogik zu veraendern.
-
-- **Canvas-UI durch Status-/Vorleseebenen ergaenzen.** Fuer Menueaktionen,
-      Ergebnis, Run-Status, Pause und Fehlermeldungen eine zusaetzliche DOM-
-      oder Live-Region pruefen. Das muss nicht jedes Spielfeldobjekt abbilden,
-      soll aber die wichtigsten Zustandswechsel zugreifbar machen.
-
-#### Tageslauf, Zeit und Challenge-Logik
-
-- **Tageslauf-Zeitzone eindeutig festlegen.** Der Client erzeugt den
-      Tages-Schluessel derzeit aus der lokalen Geraetezeit. Serverseitig wird
-      im Tagesbonus-RPC der Schluessel sichtbar nur auf das Datumsformat
-      geprueft. Serverdatum, lokale Anzeige, Sommerzeit, Mitternacht und
-      Offline-Runs muessen eine dokumentierte gemeinsame Regel erhalten.
-
-- **Tagesbonus serverseitig an den aktuellen Tag binden.** _(→ eingeplant als P0.b)_ Pruefen, ob ein
-      Nutzer durch frei gewaehlte gueltige Datumsstrings mehrere Tagesboni
-      hintereinander beanspruchen kann. `claim_daily_bonus()` und
-      `claim_daily_login_bonus()` sollten den Servertag verwenden oder eine
-      nachvollziehbare erlaubte Zeitspanne pruefen.
-
-- **Tageslauf abwechslungsreicher machen.** Neben dem festen Seed weitere
-      rotierende Ziele oder Modifikatoren pruefen: Combo-Ziel, bestimmte
-      Seltenheit, Zeitbonus, Hindernisregel oder Weltvorgabe. Die Bedingungen
-      muessen vorher sichtbar und fair sein.
-
-- **Bot-Duell transparenter gestalten.** Pruefen, ob der Bot als
-      simuliertes Ergebnis erklaert wird und ob seine Schwierigkeit stabil,
-      nachvollziehbar und nicht nur als Multiplikator auf die Spielerleistung
-      wahrgenommen wird. Eine kleine Zielkurve oder ein Ghost-Verlauf waere
-      verstaendlicher als ein rein abstrakter Gegnerwert.
-
-#### Bestenliste und Wettbewerb
-
-- **Vergleichbarkeit der Welten dauerhaft pruefen.** Wenn Welten mehr
-      seltene Beute, andere Lebensdauer oder andere Punktmultiplikatoren
-      erhalten, ist eine gemeinsame Bestenliste nicht automatisch fair.
-      Normalisierten Score, getrennte Weltlisten oder klare Welt-/Regelmarker
-      pruefen.
-
-- **Versions- und Regelstand im Ranking speichern.** Ein Score sollte
-      erkennen lassen, mit welcher Spielversion und welchen Weltregeln er
-      entstanden ist. Bei grossen Balancingaenderungen koennen alte Rekorde
-      archiviert statt still verglichen werden.
-
-- **Casual- und Ranked-Bestenliste trennen.** Solange der Server keinen
-      vollstaendigen Run nachrechnet, sollte die Rangliste als plausibilisiert
-      oder casual gekennzeichnet werden. Ein echter Ranked-Modus braucht eine
-      staerkere serverseitige Verifikation.
-
-- **Netzwerk-Duell gegen Abbruch und Wiederverbindung testen.** Timeout,
-      App-Hintergrund, Netzwechsel, verspaetete Presence-Events, doppeltes
-      Ergebnis und Revanche nach einem Abbruch muessen einen eindeutigen
-      Abschlusszustand besitzen.
-
-#### Backend-Sicherheit, Datenschutz und Betrieb
-
-- **Anmelde- und Codeversuche begrenzen.** Alias/PIN-Anmeldung,
-      Sync-Codes und Duel-Room-Codes brauchen serverseitige Rate-Limits,
-      Fehlversuchszaehler und gegebenenfalls kurze Sperrzeiten. Die sechs-
-      stelligen Codes sind nur dann ausreichend, wenn beliebiges Raten begrenzt
-      wird.
-
-- **Oeffentliche RPC-Berechtigungen regelmaessig pruefen.** Besonders
-      Bereinigungsfunktionen wie `purge_expired_sync_codes()` und
-      `purge_expired_duel_rooms()` sollten nicht unnoetig von anonymen Clients
-      beliebig oft aufgerufen werden koennen. Serverseitige Cron-Bereinigung
-      oder begrenzte Wartungsaufrufe pruefen.
-
-- **Client- und Server-Balancing nicht doppelt pflegen.** Raritaeten,
-      Welten, Punktwerte und plausible Scoregrenzen stehen teilweise sowohl in
-      TypeScript als auch in SQL. Eine gemeinsame generierte Datenquelle oder
-      Contract-Tests zwischen Code und Datenbank pruefen, damit neue Welten und
-      Raritaeten nicht nur auf einer Seite geaendert werden.
-
-- **SQL-Migrationsprozess formalisieren.** Die vielen `phase_2_x.sql`-
-      Dateien brauchen eine nachvollziehbare Reihenfolge, angewendete
-      Versionsnummer, Vorbedingungen, Rollback-Hinweise und eine getrennte
-      Test-/Produktionspruefung. Eine kleine `schema_migrations`-Tabelle oder
-      ein Migrationsprotokoll pruefen.
-
-- **Profilverwaltung vervollstaendigen.** Fuer dauerhafte Online-Profile
-      einen nachvollziehbaren Weg fuer Abmeldung, Datenexport, Profilloeschung,
-      Cloud-Spielstandloeschung und lokalen Reset vorsehen.
-
-- **Alias-Moderation und Schutzbegriffe ergaenzen.** Reservierte Namen,
-      beleidigende Begriffe und missverstaendliche Systemnamen aus der
-      Bestenliste herausfiltern. Die Regeln muessen clientseitig freundlich
-      anzeigen und serverseitig verbindlich pruefen.
-
-#### PWA, Mobile und Offline-Betrieb
-
-- **Echte Offline-PWA pruefen und ergaenzen.** Ein Manifest macht die App
-      installierbar, ersetzt aber keinen Service Worker. App-Shell, gehashte
-      Bundles, Logos und Texturen sollen nach einem erfolgreichen Erstbesuch
-      offline verfuegbar bleiben.
-
-- **PWA-Updates ohne Run-Unterbrechung organisieren.** Neue Versionen erst
-      im Menue oder nach dem Ergebnis anbieten. Kein automatischer Reload
-      waehrend eines laufenden Runs. Cache-Version und `APP_VERSION` sollen
-      nachvollziehbar zusammenpassen.
-
-- **Renderoptionen messen und geraeteabhaengig pruefen.**
-      `preserveDrawingBuffer: true`, hohe GPU-Prioritaet und Antialiasing sind
-      fuer Debug-Screenshots beziehungsweise Optik hilfreich, koennen aber
-      Speicher, Akku und Waerme beeinflussen. Debug-Screenshotpfad und
-      Produktionspfad getrennt messen.
-
-- **Seltene Scenes spaeter lazy laden.** Admin-, Debug-, Bestenlisten- und
-      Online-Duell-Code muss nicht zwingend im ersten App-Bundle liegen. Vorher
-      Startzeit, Cache-Verhalten und echte Mobilgeraete messen.
-
-- **Mobile Performance-Budgets definieren.** Fuer Startzeit, Framezeit,
-      Partikelzahl, aktive GameObjects, Speicher und Akkuverbrauch Messwerte
-      festlegen. Nicht nur „laeuft“, sondern auch „bleibt nach 90 Sekunden auf
-      schwachen Geraeten stabil“ pruefen.
-
-#### Test-, QA- und Release-Prozess
-
-- **Property- und Fuzz-Tests fuer Spielstand und Migrationen ergaenzen.**
-      Zufallsspielstaende, fehlende Felder, falsche Typen, negative Werte,
-      doppelte Achievements, ungueltige Shopbesitze und alte SAVE_VERSIONs
-      automatisch gegen `migrate()` und `reconcile()` testen.
-
-- **Progressionsinvarianten als feste Regeln pruefen.** Coins duerfen nie
-      negativ werden, Talentrang darf nie ueber `maxRank` steigen, ein
-      ProgressEvent darf nur einmal wirken, ein Kauf darf nicht doppelt
-      abgerechnet werden und ein Duell muss bei gleicher Seedfolge identisch
-      bleiben.
-
-- **Zeit- und Netzwerk-Matrix in den Playtest aufnehmen.** Offlinegehen
-      genau beim Run-Ende, Netzverlust waehrend eines Kaufs, App-Abbruch nach
-      einer RPC-Antwort, Wiederaufnahme nach Hintergrund und abgelaufene
-      Sync-/Duel-Codes als echte Browserablaeufe testen.
-
-- **Production-Artefakt statt nur Dev-Server pruefen.** Smoke- und
-      Playtests sollen mindestens einmal gegen den gebauten `dist`-Stand oder
-      eine Preview laufen. So werden relative Assetpfade, Manifest, Version,
-      Cache und Code-Splitting mitgeprueft.
-
-- **Visual Regression fuer zentrale Zustaende etablieren.** Festgelegte
-      Screenshots fuer Start, erster Run, jede Schweifstufe, Talentraenge,
-      Shopvorschau, Ergebnis, Tageslauf und Duellstatus erzeugen. Kleine
-      Layout- oder Kontrastverschlechterungen sollen dadurch auffallen.
-
-- **iOS- und Android-Geraetetests erweitern.** Nicht nur Syntax- und
-      Playwright-Pruefungen, sondern echte Tests fuer Safe Area, Standalone-
-      Modus, Tastatur, Audio-Unlock, App-Hintergrund, Notch, Home-Indikator,
-      schwache Hardware und Hoch-/Querformat dokumentieren.
-
-#### Texte, Lokalisierung und Content-Wartbarkeit
-
-- **UI-Texte zentralisieren.** Viele Meldungen und Beschriftungen stehen
-      direkt in Scenes. Einen Textkatalog mit stabilen IDs, Pluralformen,
-      Zahlenformaten, Datumsformaten und Fehlermeldungen pruefen. Das macht
-      spaetere Sprachversionen und kindgerechte Textanpassungen sicherer.
-
-- **Begriffe vereinheitlichen.** Fuer Run, Serie, Combo, Rang, Level,
-      Coins, Relikt, Talent, Profil und Bestenwert einen verbindlichen Wort-
-      katalog festlegen. So werden Menue, Ergebnis, Talentbaum und Cloud-
-      Meldungen nicht sprachlich uneinheitlich.
-
-- **Content-Validierung ausbauen.** Welt-, Talent-, Raritaets-, Shop- und
-      Achievementdaten automatisch auf doppelte IDs, fehlende Texte,
-      ungueltige Werte, zu lange Labels, fehlende Texturen und widerspruechliche
-      Freischaltbedingungen pruefen.
-
-#### Datenschutz und kinderfreundlicher Betrieb
-
-- **Gespeicherte Daten transparent dokumentieren.** Klar ausweisen, welche
-      Profil-, Fortschritts-, Bestenlisten- und Diagnoseinformationen lokal
-      beziehungsweise online gespeichert werden.
-
-- **Debug- und Diagnoseberichte datensparsam halten.** Keine Tokens,
-      Passwoerter, PINs, vollstaendige Spielstaende oder unnoetige persoenliche
-      Daten in Logs und Share-Reports aufnehmen. Die vorhandene lokale
-      Diagnose sollte diesen Vertrag als automatisierten Test behalten.
-
-- **Loesch- und Widerrufswege fuer Familien sauber gestalten.** Lokalen
-      Spielstand, Cloud-Profil und Ranglisteneintrag getrennt loeschbar machen
-      und jede Aktion deutlich bestaetigen. Ein Reset darf nicht unbemerkt
-      wieder durch eine ausstehende Outbox hergestellt werden.
-
-### Entschieden (2026-08-13)
-
-- **Phase 1 ist abgeschlossen.** Auf dem Handy laeuft v0.1.3, die Knoepfe
-  reagieren. Der Fehler lag an der Auslieferung, nicht am Code.
-- **Bestenliste wird geleert** beim Wechsel auf 90 Sekunden.
-- **Talente werden mit Coins gekauft; Levelaufstiege geben Level-Coins.**
-- **Bestenliste soll uebergreifend sein** — geprueft: sie ist heute pro Welt
-  getrennt. **Nach Phase 1.3 vorgezogen, dringend.**
-- **Jeder Run wird automatisch eingetragen** (Variante B, ohne Filterung auf
-  Bestwerte). Der Knopf im Ergebnisbildschirm entfaellt.
-- **Spielstaende werden automatisch gesichert.** Offline bleibt `localStorage`
-  massgeblich; ein besserer Cloud-Stand wird vor der Uebernahme angezeigt.
-- **`SPIELSTAND` wird zu `EINSTELLUNGEN`.** Die Profiluebertragung bleibt dort
-  als kindgerechter Unterpunkt erhalten.
-
-### Noch offen — erst bei der jeweiligen Phase noetig
-
-- **2.5 Balken:** flexibles Spielfeld oder nur die Balken einfaerben? Ersteres
-  betrifft alle Scenes und verschiebt das Balancing.
-- **3 Weltraum:** sollen die Dokumente jetzt umgeschrieben werden?
-- **3.6 Dynamic Island:** native Umsetzung wird **nach Phase 4** angegangen.
-  Vorbereitung und Planung beginnt jetzt; fuer iOS ohne eigenen Mac laufen
-  Build und Signierung spaeter ueber Codemagic (Cloud) und TestFlight —
-  Details in ADR-0015 (`docs/DECISIONS.md`) und im neuen Abschnitt
-  "M8 — Native App vorbereiten" unten.
-- **2.6 Login & Mehrgeräte-Profil:** wird vor dem Abschluss von Phase 4
-  priorisiert. Der bisherige Sync-Code bleibt als Migration und Notfallweg;
-  der neue Standard wird ein Backend-Profil mit Login.
-- **5 Hindernisse:** entschieden und umgesetzt — ab Nullsektor bestrafen
-- **6 Manipulationsschutz:** vor oder nach Ranked-Modus und Rekord-Meldungen?
-
-### M8 — Native App vorbereiten (geplant, siehe ADR-0015)
-
-> **Blockiert nichts.** Diese Punkte sind reine Konto-/Rahmenvorbereitung
-> ohne Codeänderung und verzögern M4.1, M6 oder M7 nicht. Die eigentliche
-> Umsetzung (Capacitor-Integration, `codemagic.yaml`) bleibt hinter M4.1/M6/M7
-> einsortiert.
-
-**Jetzt schon klärbar:**
-
-- [x] **Apple Developer Account Status geprueft (2026-08-17):** Team-ID
-      `2ML2A7586J`, App Store Connect Zugriff vorhanden, 2FA ueber iPhone
-      aktiv. **Mitgliedschaft ist abgelaufen** (war frueher aktiv) — bewusst
-      noch nicht reaktiviert, da M8 ohnehin erst nach M4.1/M6/M7 beginnt.
-      **Reaktivierung ist der erste Schritt bei M8-Start**, vor App-Eintrag
-      und Bundle-ID-Reservierung (die brauchen eine aktive Mitgliedschaft).
-- [ ] App Store Connect: App-Eintrag "isiHunt" anlegen, Bundle-ID reservieren
-      (Namensschema noch offen, siehe ADR-0015). **Voraussetzung: Mitgliedschaft
-      reaktiviert.**
-- [ ] App Store Connect API Key erzeugen (Rolle "App Manager"/"Admin"),
-      Key-ID/Issuer-ID/`.p8`-Datei sicher verwahren.
-- [ ] Codemagic-Account anlegen, Repository verbinden, API Key als
-      Signing-Integration hinterlegen; vorher Preismodell/Build-Minuten fuer
-      macOS-Builds pruefen.
-- [ ] Testergruppe (E-Mail-Adressen) fuer TestFlight sammeln.
-
-**Erst mit M8 (nach M4.1, M6, M7):**
-
-- [ ] Capacitor-Pakete einbinden, `ios/`-Ordner erzeugen, `capacitor.config.ts`
-      anlegen.
-- [ ] `codemagic.yaml` einrichten, ersten Testbuild durchlaufen lassen.
-- [ ] Update-Check-Mechanismus (`src/core/updateCheck.ts`) fuer die native
-      Variante loesen (deaktivieren oder eigener Hinweis).
-- [ ] Gerätetest der bestehenden Systeme auf echtem TestFlight-Build:
-      Sound-Unlock (`SoundSystem`), Safe-Area (`SafeAreaSystem`,
-      `viewport.ts`), `localStorage`-Persistenz (`SaveSystem`).
-- [ ] Android-Reihenfolge gegen die Roadmap abgleichen (Roadmap nennt
-      "Capacitor, Android-Test, iOS-Build/TestFlight" — Android zuerst als
-      Testplattform).
-
-### Offen aus dem Audit vom 2026-08-19
-
-Sechs Durchgaenge ueber v0.1.185; zwei Defekte und drei latente Schwachstellen.
-Die Defekte sind behoben (v0.1.187/188), die Testluecken nicht. Der Bericht
-liegt als Artefakt vor, nicht im Repo:
-https://claude.ai/code/artifact/5fcc7a9c-e9ea-48ac-a358-917461195ff2
-
-- [ ] **`CloudSystem`: 13 von 30 Exporten ohne Test.** Der Modulkommentar
-      verspricht "Jede Funktion hier gibt ein Ergebnisobjekt zurueck und wirft
-      nie". Die Testdatei nagelt `isBackendConfigured` auf `false` — damit
-      kehrt jede Netzfunktion sofort am Guard zurueck, und der gesamte
-      Fehlerpfad ist **per Konstruktion unerreichbar**. Die Garantie haelt
-      (im Audit empirisch geprueft), ruht aber auf keiner Pruefung.
-      Braeuchte eine zweite Suite mit `isBackendConfigured: true`.
-
-- [ ] **`ProgressSyncSystem`: Teilfehlschlag mit mehreren Ereignissen
-      ungetestet.** Jeder der 14 Tests legt genau **ein** Ereignis an. Die
-      `remaining`-Logik existiert aber fuer den Fall, dass von drei Laeufen
-      der zweite scheitert. Der Pfad ist heute korrekt (im Audit nachgestellt),
-      aber unbewacht.
-
-- [ ] **`ProgressSyncSystem`: `indexOf` haengt an Referenzidentitaet.** Der
-      Code ist korrekt, **weil** `readOutbox()` bei jedem Aufruf frisch
-      `JSON.parse` ausfuehrt. Wuerde jemand die Outbox aus Effizienzgruenden
-      im Speicher halten — eine harmlos aussehende Umstellung — dupliziert die
-      Restlogik Ereignisse. Diese Abhaengigkeit steht nirgends.
-
-- [ ] **Regel 6 in CLAUDE.md praezisieren.** Sie nennt zwei erlaubte
-      Phaser-Symbole fuer `SpawnSystem` (`RandomDataGenerator`,
-      `Geom.Rectangle`), genutzt werden vier (zusaetzlich `Math.Clamp` und
-      `Math.Linear`). Inhaltlich harmlos — reine Mathematik ohne Canvas-Bezug —
-      aber die Ausnahme ist enger formuliert als die Wirklichkeit. Das
-      Vor-Audit meldete hier "vollstaendig konform", weil es die Import-Zeile
-      prueft statt der Symbole.
-
-### Zur Entscheidung offen (aus dem Gespraech 2026-08-19/20)
-
-- [x] **Talentkosten auf 0, dafuer ein Talentpunkt alle zwei Level?**
-      **Entschieden am 2026-08-21: nein.** Talente bleiben bei Coin-Kosten.
-      Die hier festgehaltene Rechnung (50 Punkte fuer 32 Raenge, ab Stufe 64
-      wertlos) hat sich bestaetigt; ausschlaggebend war zusaetzlich, dass Shop
-      und Talente fast gleich viel kosten (16 122 gegen 15 650 Muenzen) — der
-      Verzicht, den der Umbau schaffen sollte, existiert dadurch bereits.
-      Vollstaendige Begruendung in **P1.a**.
-
-- [ ] **Welten unterhalb des eigenen Levels sperren?** Als Idee eingebracht.
-      **Drei Einwaende:** (1) Es bestraft gemeinsames Spielen — ein Kind auf
-      Stufe 30 koennte nicht mehr mit einem auf Stufe 8 dieselbe Welt spielen,
-      und genau zwei Geschwister sind die Zielgruppe. (2) Es widerspricht dem
-      Duell-Modus, der eine gemeinsame Welt und denselben Seed braucht.
-      (3) Der Zweck ist bereits geloest: Hoehere Welten geben mehr Punkte und
-      XP — wer unten bleibt, verliert ohnehin. Anreize sind besser als Verbote.
-      Falls es um die Vergleichbarkeit der Bestenliste geht, ist das ein
-      Problem der **Liste**, nicht der Welten (siehe `CloudSystem.ts`,
-      "Ehrliche Grenze" bei `fetchLeaderboard`).
-
-### Balance-Aenderungen ohne Spielertest
-
-- [x] **Serien-Umstellung mit Emre und Simay pruefen.** **Hochgezogen nach
-      P0.c (2026-08-21)** — gehoert in denselben Spielabend wie das
-      Phase-5-Balancing, statt hier unten getrennt zu warten. Volltext dort.
-
-- [ ] **Neue XP-Kurve pruefen.** Sie ist in Runs formuliert
-      (`XP_PER_RUN_REFERENCE`, gemessen 2 146 XP je Run): 0,5 Runs auf Stufe 1,
-      2,2 ab Stufe 10, 3,0 auf Stufe 99. Der Bezugswert stammt aus vier
-      simulierten Runden — ein echter Messwert von den Kindern fehlt.
-
-- [ ] **Level-Absenkung bei Bestandsstaenden bestaetigen.** `SAVE_VERSION 7`
-      legt die gesamte XP auf die neue Kurve um; Stufe 51 wurde dabei zu 45
-      (auf dem Testgeraet bestaetigt, keine Welt verloren). Bei Emre und Simay
-      steht die Pruefung aus.
-
-### Offen aus der Shop-Runde (2026-08-20)
-
-- [x] **Etappe 2 und 3: 100 Fluggestalten — erledigt 2026-08-21, v0.1.209.**
-      Aus 30 wurden 100. Die 70 neuen verteilen sich auf Helden und Heldinnen
-      (10), Maerchen und Magie (12), Raumfahrzeuge (18), Flugzeuge und
-      Fahrzeuge (8), Tiere (7), Drohnen und Geraete (8) sowie Zeichen (7).
-      Preise 800 bis 2 900 Muenzen.
-
-      Weibliche Gestalten sind ausdruecklich dabei: Prinzessin, Fee, Zauberin,
-      Koenigin, Fluegelfee, Nachtfee, Meerjungfrau, Heldin, Umhangheldin,
-      Sternenheldin, Schildheldin, Bogenschuetzin.
-
-      Neue Helfer in `ui/shipShapes.ts` halten die Figuren kurz: `kopf`,
-      `rumpf`, `arme`, `beine`, `umhang`, `fluegelpaar`, `stab`. Eine Fee ist
-      damit sechs Zeilen statt eines Polygonblocks — bei 40 humanoiden Formen
-      zaehlt das.
-
-      **Die Silhouetten-Regel hat sich bewaehrt.** Acht Formen mussten nach
-      dem ersten Vergleichsrendern nachgebessert werden: bei Fluegelfee und
-      Nachtfee verschluckten die Fluegel den Koerper (beide lasen sich als
-      Blatt), Drache und Einhorn waren beide nur "Fluegel mit Klumpen
-      dazwischen", der Anker las sich als Flugzeug mit Tragflaechen, die
-      Schildheldin als Kreis mit Kopf, das Auge als blosse Raute. Ohne das
-      Raster waeren alle acht ausgeliefert worden.
-
-      **Offen:** auf einem echten Geraet im Spiel gesehen sind sie nicht — nur
-      als gerendertes Raster. Ob eine Silhouette in Bewegung mit Tint und Aura
-      noch traegt, sagt das Bild nicht.
-
-- [ ] **Schleifen-Farben kaufbar machen.** Die Serien-Schleife traegt heute die
-      Stufenfarbe aus `SERIES_TRAIL_TIERS`. Kaufbare Varianten brauchen ein
-      drittes Besitzfeld nach demselben Muster wie Formen und Farben.
-
-- [ ] **Profil-Icons kaufbar machen** (siehe auch P1-Liste oben).
-
-- [ ] **Getragene Figur ueber Geraete hinweg angleichen.** Sie liegt derzeit
-      bewusst nur lokal: Der Server pflegt in `profile_progress` eine eigene
-      `data`-Kopie und kennt die Auswahl nie (`initialize_profile_progress`
-      greift nur beim ersten Mal, `pushSave()` schreibt in `saves`). Braeuchte
-      eine neue RPC, die Auswahl und Besitz vom Client entgegennimmt.
-
-- [ ] **Boosts** — von der Projektleitung vorerst zurueckgestellt. Falls sie
-      kommen: nur Fortschritts-Boosts (XP, Coins), keine Leistungs-Boosts.
-      Ein gekaufter Tempo-Vorteil braeche die Vergleichbarkeit der Rangliste.
-
-- [x] **Playtest ohne `--sim` fahren.** **Hochgezogen nach P0.a.4
-      (2026-08-21)** — gebuendelt mit den drei anderen offenen
-      Geraetebestaetigungen.
-
-### Querschnitt
-
-- [x] Sichtbare deutsche Spieltexte verwenden echte Umlaute (`ä`, `ö`, `ü`);
-      technische IDs und Event-Namen bleiben unverändert.
-
-- [ ] **Ablauflogik aus `MenuScene`/`SyncScene` nach `systems/` ziehen**
-      (aus dem Audit 2026-08-19). `scenes/`, `ui/`, `entities/`, `core/` und
-      `input/` haben zusammen 11.005 Zeilen ohne Unit-Test. Das ist **kein
-      Versäumnis**: Diese Dateien erben von Phaser-Klassen und laden
-      ausserhalb eines Browsers nicht (`getContext() is not implemented` —
-      derselbe Grund, aus dem `ScoreSystem` sein `Math.Clamp` verlor, siehe
-      `docs/CODE_STYLE.md`). Die Architektur schiebt prüfbare Logik deshalb
-      bewusst nach `systems/` (dort 3.300 Zeilen Test auf 4.199 Zeilen Code).
-
-      **Die verbleibende Lücke ist enger, aber real:** In `MenuScene` stehen
-      49 Verzweigungen, viele davon reine Ablauflogik über Netz-, Login- und
-      Spielstandszustände (`synchronizeData()`, `checkCloudSave()`). Genau
-      dort sass der Boost-Bug vom 2026-08-18 — ein falscher
-      `isActive()`-Guard, der `checkCloudSave()` bei jedem Aufruf aus
-      `create()` abbrach. Drei Diagnoserunden, weil kein Test ihn fangen
-      konnte.
-
-      Richtiger Schnitt ist **nicht**, `MenuScene` testbar zu machen, sondern
-      die Entscheidungsketten herauszulösen (z. B. ein `SyncDecisionSystem`,
-      das aus Zuständen eine Handlung ableitet, ohne selbst zu handeln).
-      Dann läuft die Logik ohne Phaser und wird wie `ScoreSystem` geprüft.
-
-      Zusätzlich offen: Der Playtest erreicht **8 von 20 Scenes** (Menu,
-      Game, Result, Profile, Settings, Leaderboard, Achievements, Admin).
-      Nicht abgedeckt sind u. a. `Talent`, `Sync`, `Account`, `Challenge`,
-      `OnlineDuel`, `WorldInfo`, `AdminPin`, `AdminStats`, `AdminUsers`.
+# TODO — Arbeitsplan und Produkt-Audit
+
+**Stand:** 2026-08-21
+**Repository-Version:** `0.1.217`
+**Verbindliche Arbeitsreihenfolge:** die Phasen und Prioritäten in dieser Datei
+**Produkt:** spielbarer mobiler Browser-Prototyp für Emre, Simay und die Familie
+
+Diese Datei ist der operative Leitstand für die nächste Entwicklungsrunde. Sie
+trennt bewusst zwischen:
+
+- **offenen Aufgaben**, die jemand konkret umsetzen oder testen kann,
+- **Entscheidungen**, die vor einer Umsetzung geklärt werden müssen,
+- **Abhängigkeiten und Abnahmekriterien**, damit „im Code vorhanden“ nicht mit
+  „im Produkt bewiesen“ verwechselt wird,
+- **erledigten Arbeiten und Historie**, die als Kontext wichtig bleiben, aber
+  die aktuelle Reihenfolge nicht mehr verdecken.
+
+## So wird diese Datei gelesen
+
+### Prioritäten
+
+| Priorität | Bedeutung | Regel |
+| --- | --- | --- |
+| **P0** | Produktionssicherheit, belegter Fehler oder fehlender Realitätsbeleg | Vor neuen Features erledigen. |
+| **P1** | Nächster sichtbarer Nutzen für die beiden Spieler | Nach P0, sofern keine P0-Abhängigkeit besteht. |
+| **P2** | Wettbewerb, Qualität, Wartbarkeit und größere Produktverbesserungen | Erst beginnen, wenn der Kern stabil und gemessen ist. |
+| **P3** | Langfristiger Ausbau oder native App | Bewusst nicht in die nächste Web-Runde ziehen. |
+| **Parkplatz** | Gute Idee ohne aktuellen Auftrag oder ohne nötige Voraussetzung | Nicht nebenbei anfangen; nur mit Begründung hochziehen. |
+
+### Statusregeln
+
+- `[ ]` bedeutet: offen und aktiv eingeplant.
+- `[x]` bedeutet: mit einem Beleg erledigt. Erledigte Punkte stehen nur im
+  Abschlussarchiv, nicht zusätzlich als offene Aufgabe.
+- **Ungeprüft** bedeutet: Code und automatisierte Tests können grün sein, der
+  relevante Ablauf wurde aber noch nicht auf dem echten Gerät, in Supabase
+  oder im echten Spielverhalten bestätigt.
+- Ein Punkt ist erst erledigt, wenn seine Abnahmekriterien erfüllt sind. Bei
+  Backend- oder Geräteaufgaben gehört ein Datum, eine Version und ein kurzer
+  Testnachweis dazu.
+- Jede Aufgabe steht nur an einer Stelle. Verweise zeigen auf die führende
+  Aufgabe, statt dieselbe Checkbox mehrfach zu kopieren.
+
+### Definition of Done
+
+Für eine Codeaufgabe gilt grundsätzlich:
+
+1. betroffene Dateien und Datenflüsse sind benannt,
+2. automatisierte Tests sind ergänzt oder die Testlücke ist ausdrücklich
+   begründet,
+3. `npm run verify` ist grün,
+4. die relevante Dokumentation ist aktualisiert,
+5. der Stand ist committed, gepusht und auf der Zielumgebung geprüft.
+
+Für eine Geräte- oder Backendaufgabe zusätzlich:
+
+1. die ausgelieferte Versionsnummer ist notiert,
+2. beide Seiten des Ablaufs sind geprüft, nicht nur das Gerät, das den Fehler
+   meldet,
+3. ein Debug-Report, Screenshot oder SQL-Prüfergebnis liegt vor,
+4. Fehler, die nur vermutet und nicht reproduziert wurden, werden als
+   **unbestätigt** dokumentiert.
+
+## Leitstand: Wo das Projekt wirklich steht
+
+| Bereich | Stand | Was noch fehlt |
+| --- | --- | --- |
+| Browser-Spiel, 90-Sekunden-Run, Touch, Pause, Persistenz | gebaut und ausgeliefert | echte Geräteabnahme der aktuellen Spielinhalte |
+| Profil, Alias-Login, Offline-Outbox, Zusammenführung | implementiert | produktive SQL-Prüfung und iPhone-/iPad-End-to-End-Test |
+| Weltraum-Thema, Welten, Hindernisse, Tageslauf, Bot-Duell | implementiert | Balancing mit Emre und Simay |
+| Coins, XP, Punkte, Talente, Shop | implementiert; Balance-Kette seit v0.1.215 | Client/SQL-Synchronitäts-Gate und echte Economy-Messung |
+| Shop | 100 Fluggestalten, Farben und Anprobe vorhanden | Figuren im laufenden Spiel auf Gerät sehen; weitere Kosmetik erst danach |
+| Netzwerk-Duell Phase 1 | Raum, Ready, Startzeit, Ergebnisvergleich vorhanden | dritter Zwei-Geräte-Test mit Report vom Slave |
+| Bestenliste | gemeinsame Casual-Liste und automatischer Eintrag vorhanden | Fairness bei Weltmodifikatoren; Ranked bleibt gesperrt |
+| Debugging und Release | Debug-Report, Versionsanzeige, `verify`, Pre-Push und GitHub-Pages-Deploy vorhanden | Gerätebelege konsequent als Release-Gate verwenden |
+| Supabase-Migrationsstand | im Repository vorhanden, produktiver Ausführungsstand nicht aus dem Code beweisbar | P0-01 ausführen und protokollieren |
+| Native App / Dynamic Island | bewusst noch nicht begonnen | erst nach stabiler Web-Basis und P3-Gate |
+
+### Die nächsten fünf Schritte
+
+1. **P0-01:** Produktionsstand der Supabase-Migrationen klären und fehlende
+   Migrationen anwenden.
+2. **P0-02:** aktuellen Live-Stand `0.1.217` auf iPhone und iPad mit Offline-
+   Runs, Boost, Profil und Synchronisierung prüfen.
+3. **P0-03:** Netzwerk-Duell mit Debug-Report von **Master und Slave** erneut
+   durchführen.
+4. **P0-04:** einen echten Spielabend ohne `--sim` mit Emre und Simay machen;
+   Phase-5-Schwierigkeit, Serienfenster, XP und Coins messen.
+5. Erst danach P1-UX und weitere Features umsetzen.
+
+## Phasenübersicht
+
+| Phase | Priorität | Ziel | Eintrittskriterium | Ergebnis |
+| --- | --- | --- | --- | --- |
+| **0 — Produktionswahrheit** | P0 | SQL, Geräte, Synchronisierung und Release-Stand beweisen | aktueller Live-Stand und Supabase-Zugang vorhanden | belastbarer Basisstand |
+| **1 — Spielgefühl und Balance** | P0 | Schwierigkeit, Serien, XP, Coins und Tageslauf mit echten Spielern prüfen | Phase 0 ohne Datenverlust bestanden | dokumentierte Balance-Entscheidungen |
+| **2 — Fortschritt und visuelles Polishing** | P1 | Level, Talente, Ziele, Sammlung und sichtbares Spielgefühl verständlich machen | Phase 1 liefert stabile Werte | sichtbarer nächster Grund weiterzuspielen |
+| **3 — Balance-Kette und Datenverträge** | P1 | Client, Tests und SQL dauerhaft synchron halten | erste Economy-Werte aus Phase 1 liegen vor | Änderungen an einer Stelle bleiben sicher |
+| **4 — Soziales Spiel** | P2 | Duell, Freunde, Rangliste und Ranked fair erweitern | Geräte-Duell und Datenschutz-Grundlage stabil | kontrollierter Wettbewerb |
+| **5 — Qualität und Betrieb** | P2 | Accessibility, Performance, Tests, PWA und Backend-Betrieb härten | Kernfeatures bewährt | weniger Regressions- und Betriebsrisiko |
+| **6 — Native App und Endgame** | P3 | Capacitor, TestFlight, Live Activity, Prestige | Web-Produkt und Zielgruppe entschieden | eigenständiger späterer Ausbau |
+
+## Audit gegen die gestrige TODO-Historie
+
+Der Abgleich wurde gegen `HEAD` (`1a634b2`) und die Änderungen vom 2026-08-20
+bzw. 2026-08-21 durchgeführt:
+
+- `53029d2` hat die Shop-Runde ergänzt: weitere Formen, kaufbare
+  Schleifenfarben, Profil-Icons, Geräte-Synchronisierung der Kosmetik und den
+  echten Playtest ohne `--sim`.
+- `1ad5095` hat die 100 Formen als gebaut markiert. Der wichtige Vorbehalt
+  blieb ausdrücklich bestehen: Die Formen wurden nur im Raster gesehen, nicht
+  im laufenden Spiel mit Bewegung, Tint und Aura.
+- `06dbe46` hat den Wunsch nach einer sichtbaren Talent-Route wieder
+  hergestellt, nachdem der ursprüngliche Sammelpunkt zu weit als erledigt
+  markiert worden war.
+- `1a634b2` hat ausschließlich die zwei offenen Balance-Kettenpunkte ergänzt:
+  SQL-Synchronitäts-Gate und Herkunft der `BASELINE_*`-Werte.
+- `c73fb7d` hat Auto-Pause und Tagesbonus-Schutz aus offen nach gebaut
+  verschoben; die Geräte-Gegenprobe blieb offen.
+
+In diesen Commits ist kein Beleg für eine Löschung durch einen anderen Autor zu
+sehen; die Commits stammen vom selben Git-Autor. Der konkrete Punkt
+„Schweif optimieren“ war allerdings auch in `HEAD` nicht als eigene Checkbox
+vorhanden. Er war nur indirekt über Schweiffarben, Visual Regression,
+Partikel/Performance, Feedback-Hierarchie und Shopvorschau verteilt. Deshalb
+steht er ab jetzt explizit in **P2-11**.
 
 ---
 
-## Erledigt — der Knopf-Fehler lag an der Auslieferung
+# Phase 0 — Produktionswahrheit und Abnahme (P0)
 
-> **Aufgeloest am 2026-08-13.** Auf dem Testgeraet lief durchgehend **v0.1.0**,
-> waehrend lokal laengst korrigiert war. Alle vier Fehlersuchrunden liefen
-> gegen einen Stand, den das Handy nie geladen hatte — jede Rueckmeldung
-> beschrieb korrekt den **alten** Code und schickte die Suche in eine neue
-> falsche Richtung.
+## P0-01 — Supabase-Migrationsstand herstellen und beweisen
 
-**Was daraus folgt** (eingebaut, siehe `CODE_STYLE.md` 1.9):
+- [ ] **Produktions-SQL prüfen, anwenden und protokollieren.**
 
-- [x] `pre-push`-Hook blockiert Pushes ohne Versionssprung
-- [x] `index.html` als `no-cache` — sie ist die einzige Datei ohne Inhalts-Hash
-      und damit die einzige, die einen Deploy blockieren kann
-- [x] Versionsnummer im DOM statt nur im Canvas (auch sichtbar, wenn Phaser
-      nicht startet)
-- [x] `npm run verify` fuehrt dieselbe Kette wie die CI, inklusive
-      `format:check` — dessen Fehlen hatte die CI rot gemacht, ohne dass es
-      lokal auffiel
+**Warum zuerst:** Der Client enthält Auth, Outbox, Tagesbonus, Shop, Talente,
+Duell und Balance-Funktionen, die nur funktionieren, wenn die passenden RPCs,
+RLS-Regeln und Tabellen in genau dem erwarteten Stand existieren. Aus dem
+Repository lässt sich nicht sicher ablesen, welche Migrationen im Supabase-
+Projekt bereits ausgeführt wurden. Die frühere Notiz „ausgeführt“ wird deshalb
+nicht als Beleg akzeptiert, solange kein SQL-Editor-Nachweis oder ein
+reproduzierbares Prüfergebnis vorliegt.
 
-**Die Korrekturen an den Trefferflaechen bleiben gueltig** — jede behob eine
-nachgewiesene Ursache, auch wenn keine das gemeldete Symptom ausgeloest hat:
+**Ausführungsreihenfolge im SQL-Editor:**
 
-- [x] Trefferflaeche wanderte mit dem Druck-Effekt (Container wurde skaliert)
-- [x] Trefferflaeche war um `displayOriginX` verschoben
-- [x] `updateBounds()` ohne `displayScale`-Nachzug
-- [x] Vergroesserte Flaechen erzeugten Ueberlappung → falscher Knopf gewann
-- [x] Ausrichtung wird gemessen statt gerechnet (`makeAlignedHitArea`)
+1. `supabase/schema.sql`
+2. `supabase/phase_2_6_auth.sql`
+3. `supabase/phase_2_7_admin_tools.sql`
+4. `supabase/phase_2_8_unify_identity.sql`
+5. `supabase/phase_2_9_fix_auth_email_sync.sql`
+6. `supabase/phase_2_10_lock_saves_access.sql`
+7. `supabase/phase_2_11_duel_rooms.sql`
+8. `supabase/phase_2_12_reset_shop.sql`
+9. `supabase/phase_2_13_daily_key_window.sql`
+10. `supabase/phase_2_14_balance_chain.sql`
 
-**Bestaetigt am 2026-08-13:** Auf dem Handy laeuft v0.1.3, die Version ist
-sichtbar, **die Knoepfe reagieren gut**. Der Fehler ist damit erledigt — er lag
-ausschliesslich an der Auslieferung, nicht am Code.
+Die Dateien sind wiederholbar angelegt, trotzdem vor jedem Lauf prüfen, ob
+eine Migration bereits ausgeführt wurde. `cleanup_leaderboard.sql`,
+`cleanup_2026-08-17_test_leftovers.sql` und
+`maintenance_reset_except_byi77.sql` sind **keine normalen Migrationen** und
+dürfen nur bei ausdrücklich bestätigtem Anlass ausgeführt werden.
 
-- [x] Auf dem Geraet gegengeprueft (Browser)
-- [ ] Offen bleibt nur der Sonderfall Home-Bildschirm-App → Phase 1.2
+**Zusätzliche Dashboard-Einstellung:** Für den Alias-Login muss bei Supabase
+unter Authentication → Providers → Email die Bestätigungspflicht deaktiviert
+sein. Es wird keine zustellbare E-Mail-Adresse abgefragt.
+
+**Prüfen:**
+
+- Authentifizierung mit einem Testprofil funktioniert.
+- `get_profile_progress`, `initialize_profile_progress` und
+  `submit_progress_event` sind für das eigene Profil erreichbar.
+- Fremde Profile und direkte Tabellenzugriffe sind durch RLS nicht lesbar oder
+  veränderbar.
+- `purchase_talent`, `reset_talents`, `claim_daily_bonus`,
+  `claim_daily_login_bonus` und `admin_boost_user` existieren in der erwarteten
+  Signatur.
+- `balance_config()` enthält dieselben Kernwerte wie
+  `src/config/balance-data.json`.
+- `profile_level_from_xp` und `max_plausible_score` verwenden die neue
+  Balance-Kette.
+- Bestehende Testdaten und das Admin-Konto bleiben unverändert.
+
+**Abnahme:** Datum, Supabase-Projekt, ausgeführte Dateien, Ergebnis der
+Prüfqueries und eventuelle Abweichungen in `docs/` oder im Commit-Verlauf
+notieren. Ohne diesen Nachweis bleibt P0-01 offen.
+
+**Abhängigkeiten:** keine. Blockiert P0-02, P0-03 und jede Aussage über
+Mehrgeräte-Sync oder Server-Balance.
+
+## P0-02 — iPhone-/iPad-Abnahme für Profil und Offline-Sync
+
+- [ ] **Mehrgeräte-Profil mit dem aktuellen Live-Stand vollständig prüfen.**
+
+**Voraussetzungen:** P0-01 erledigt, Live-Version im Browser/Home-Bildschirm
+ist `0.1.217` oder der tatsächlich getestete Commit, beide Geräte zeigen diese
+Version, Debug-Modus ist verfügbar.
+
+**Testaufbau:**
+
+- iPhone A und iPad B mit demselben Alias-Profil anmelden.
+- Vor jedem Teiltest Versionsnummer und Uhrzeit notieren.
+- Den Debug-Report auf **beiden** Geräten aktivieren; bei Fehlern immer beide
+  Reports teilen, nicht nur den Master- oder das zuerst auffällige Gerät.
+- Netzwerk gezielt über den Geräteeinstellungen trennen und wieder aktivieren,
+  nicht nur den Browser schließen.
+
+**Durchläufe:**
+
+1. **Boost nach Neustart:** Admin-Boost auf ein eindeutig niedrigeres Testprofil
+   anwenden, App auf beiden Geräten beenden und neu öffnen. Der neue Level und
+   Coinstand müssen ohne manuellen „Profil abgleichen“-Knopf erscheinen.
+2. **Offline-Run A:** Netzwerk auf A aus, einen vollständigen Solo-Run spielen,
+   App in den Hintergrund schicken und wieder öffnen, danach Netzwerk an.
+3. **Offline-Run B:** während A noch synchronisiert oder unmittelbar danach auf
+   B offline einen eigenen Run spielen, anschließend Netzwerk an.
+4. **Profiländerung:** Namen auf einem Gerät ändern; auf dem anderen Gerät
+   aktualisieren und prüfen, dass Profil und Ranglisteneintrag denselben Namen
+   verwenden.
+5. **Bestwerte und Erfolge:** unterschiedliche Scores, höchste Combo und neue
+   Erfolge auf beiden Geräten prüfen.
+6. **Tagesbonus:** Tageslauf und Login-Bonus höchstens einmal beanspruchen;
+   derselbe Tag darf bei erneutem Öffnen oder auf dem zweiten Gerät nicht
+   doppelt gutgeschrieben werden.
+
+**Abnahme:**
+
+- Kein abgeschlossener Run fehlt.
+- Kein Event wird doppelt angerechnet.
+- XP, Coins, Bestwert, Combo, Erfolge, Level und Name werden zusammengeführt.
+- Die Outbox ist nach erfolgreicher Synchronisierung leer.
+- Bei einem Netzfehler bleibt der lokale Fortschritt erhalten und ein Retry
+  erfolgt ohne manuellen Szenenwechsel.
+- Der Menü-Sync wird bei wiederholter Rückkehr nicht zum Request-Sturm; die
+  30-Sekunden-Drosselung wird beobachtet und als akzeptabel oder zu ändern
+  dokumentiert.
+- Boost und Profil-Pull funktionieren nach App-Start, nicht nur nach einem
+  manuellen Abgleich.
+
+**Beleg:** pro Gerät Version, Ablauf, Ergebnis, Debug-Report bei Abweichungen
+und ein kurzer Satz „kein Datenverlust / Datenverlust in …“.
+
+**Abhängigkeiten:** P0-01. Verwandte technische Stellen:
+`MenuScene`, `ProgressSyncSystem`, `CloudSystem`, `SaveSystem`,
+`src/config/backend.ts`.
+
+## P0-03 — Netzwerk-Duell mit Master- und Slave-Report
+
+- [ ] **Dritten Zwei-Geräte-Test reproduzierbar abschließen.**
+
+**Ausgangslage:** Im letzten aussagekräftigen Report hat der Master einen Raum
+erstellt und weiter gepollt, aber es gab auf dem Master keinen Beleg für
+`duel:Raum beitreten` des Slaves. Das beweist weder einen neuen Fehler im
+Polling-Fix noch dessen Erfolg. Der nächste Versuch braucht deshalb zwingend
+den Report des Slave-Geräts.
+
+**Ablauf:**
+
+1. Master erstellt einen Raum und teilt den Code.
+2. Slave gibt den Code ein; auf beiden Geräten Report-Aufzeichnung starten.
+3. Beide drücken „bereit“.
+4. Master startet `JAGD`; Slave darf nicht manuell in eine andere Scene
+   wechseln.
+5. In beiden Reports müssen Raumbeitritt, Ready, gemeinsame Startzeit und
+   Run-Beginn auftauchen.
+6. Beide spielen bis zum Ergebnisbildschirm.
+7. Test wiederholen: einmal mit Abbruch des Wartens, einmal mit App-Hintergrund
+   oder kurzem Netzwechsel.
+
+**Besonders prüfen:**
+
+- `guestReady` wird auf dem Master tatsächlich wahr.
+- Der Slave verlässt „Warte auf Geschwister …“ und startet mit derselben
+  serverzeitbasierten Startzeit.
+- Der Polling-Timer stoppt nach Start, Abbruch, Timeout und Fehler.
+- Ein Kanalfehler hinterlässt keinen endlosen Ladezustand.
+- Der Gegner wird nach einem echten Abbruch sichtbar gemeldet.
+- Online-Duell-Ergebnisse werden nicht in die Casual-Bestenliste geschrieben.
+
+**Abnahme:** mindestens ein kompletter erfolgreicher Lauf auf beiden Geräten
+plus ein sauberer Abbruch. Bei Fehlschlag die beiden Reports gemeinsam
+auswerten; keine Ursache aus nur einem Gerät ableiten.
+
+**Abhängigkeiten:** P0-01. Technische Basis ist
+`OnlineDuelScene`, `NetworkDuelSystem` und
+`supabase/phase_2_11_duel_rooms.sql`.
+
+## P0-04 — Echter Spielabend ohne `--sim`
+
+- [ ] **Phase 5, Serienfenster und Belohnungen mit Emre und Simay testen.**
+
+`--sim` prüft Spawn- und Berechnungslogik, aber nicht die tatsächliche
+Lesbarkeit, Touch-Steuerung, Bewegung, Tween-Geschwindigkeit, Frustration oder
+Bildrate. Genau diese Punkte sind nach den Welt-, Hindernis- und Shop-
+Änderungen offen.
+
+**Testmatrix:**
+
+| Bereich | Was beobachten | Was notieren |
+| --- | --- | --- |
+| erste Minute | Wird Sammeln, Serie und Weltmechanik ohne Erklärung verstanden? | Zeit bis zum ersten Fang, Rückfragen, Abbruch |
+| Welten | Sind Bremse, Blinkeffekt und Zeitstrafe fair lesbar? | Welt, Regelverständnis, Fruststelle |
+| Serie | Sind 900 ms und farbige Relikte als Kettenregel spielbar? | höchste Combo, Abrisse, Ursache des Abrisses |
+| Hindernisse | Wird ausgewichen oder nur zufällig bestraft? | Treffer, Reaktion, empfundenes Tempo |
+| XP | Fühlt sich ein Levelaufstieg erreichbar und lohnend an? | Runs/Level, sichtbarer Moment, Verständnis |
+| Coins | Ist die Belohnung nach einem Run nachvollziehbar? | Coins je Run, erstes Talent, erstes Shop-Item |
+| Tageslauf | Sind Seed, Ziel und Belohnung verständlich? | Abschluss, Score-Tier, Bonusverständnis |
+| Shop | Sind 100 Formen in Bewegung erkennbar? | Auswahl, Anprobe, Verwechslungen |
+
+**Messregeln:** Keine Werte während des laufenden Testabends heimlich ändern.
+Pro Änderung eine neue Version bauen. Rohbeobachtungen und Zahlen getrennt
+notieren; „zu schwer“ ist eine wichtige Rückmeldung, aber noch keine konkrete
+Stellschraube.
+
+**Abnahme:** Für jede Welt und jeden Modus gibt es eine Entscheidung:
+„beibehalten“, „Wert ändern“ oder „Regel erklären“. Änderungen erfolgen danach
+ausschließlich über die zentrale Balance-/Konfigurationsquelle, mit Tests,
+`npm run balance:sync`, `npm run verify`, Commit und Deploy.
+
+**Abhängigkeiten:** P0-01 für Tagesbonus/Server-RPC; P0-02 für ein verlässliches
+Profil, wenn echte Fortschrittswerte gesammelt werden.
+
+## P0-05 — Tagesdatum und Update-Verhalten als Release-Grenze prüfen
+
+- [ ] **Tagesbonus gegen Gerätezeit, UTC und App-Update prüfen.**
+
+Die Tagesfunktionen erhalten den Tages-Schlüssel vom Client. `phase_2_13` soll
+vorgestellte Datumswerte auf ein erlaubtes Fenster begrenzen; die praktische
+Regel muss trotzdem auf echten Geräten nachvollziehbar sein.
+
+**Prüfen:**
+
+- kurz vor und nach lokaler Mitternacht,
+- Gerätedatum einen Tag vor und zurück,
+- Offline-Start, Offline-Abschluss und spätere Synchronisierung,
+- Login-Bonus auf beiden Geräten am selben Tag,
+- App-Update-Hinweis in der Home-Bildschirm-App,
+- „Neu laden erzwingen“ ohne laufenden Run zu verlieren.
+
+**Abnahme:** Eine dokumentierte Regel für Zeitzone, erlaubtes Fenster und
+Offline-Verhalten. Kein doppelter Tagesbonus. Service Worker oder
+`manifest.start_url` werden nur gebaut, wenn der bestehende Update-Check den
+konkreten Gerätefall nicht löst.
+
+**Abhängigkeiten:** P0-01, besonders `phase_2_13_daily_key_window.sql`.
+
+## P0-06 — Dokumentations- und Release-Stand bereinigen
+
+- [ ] **Widersprüche zwischen TODO, Roadmap und Entscheidungsdokumenten
+  auflösen.**
+
+Beim Audit wurden veraltete Aussagen gefunden, insbesondere die alte
+Roadmap-Planung „Talentpunkte statt Coin-Kosten“, obwohl ADR-0018 genau diese
+Alternative verwirft. Außerdem darf „SQL ausgeführt“ nicht behauptet werden,
+wenn kein produktiver Nachweis vorliegt.
+
+**Vorgehen:**
+
+- `docs/ROADMAP.md` auf die Entscheidung „Talente bleiben bei Coins“ bringen.
+- `docs/GAME_DESIGN.md`, `docs/BALANCE_CHAIN.md` und `docs/DECISIONS.md` auf
+  aktuelle XP-, Coin-, Shop- und Talentbegriffe prüfen.
+- Mit `rg` nach den verworfenen Talentpunkte-Plänen suchen.
+- Version, Datum und tatsächlichen SQL-Stand in der Dokumentation angleichen.
+
+**Abnahme:** Eine neue Person findet in TODO, Roadmap und ADR dieselbe
+Reihenfolge und keine aktive Aufgabe für den verworfenen Talentpunkte-Umbau.
 
 ---
 
-## Phase 1 — Bedienbarkeit _(abgeschlossen 2026-08-13)_
+# Phase 1 — Spielgefühl und Balance (P0, nach der Geräteabnahme)
 
-- [x] Einheitlicher Zurueck-Knopf oben links (`createBackButton`)
-- [x] Zurueck-Knopf der Bestenliste aus dem Bereich des Namensfeldes geholt
-- [x] Pause und "Run verlassen" im laufenden Spiel
-- [x] iOS-Vollbildhinweis in einem eigenen Kasten
-- [x] Weltenauswahl der Bestenliste von 12 auf 50 CSS-px vergroessert
-- [x] Versionsnummer im Menue (damit Test-Rueckmeldungen zuordenbar sind)
-- [x] **Auf dem Geraet gegengeprueft** — v0.1.3 sichtbar, Knoepfe reagieren
+## P1-01 — Phase-5-Schwierigkeit entscheiden
 
-### Phase 1.1 — Sofort, kleine Fehler _(erledigt 2026-08-13)_
+- [ ] **Weltmodifikatoren und Hindernisse anhand echter Beobachtungen justieren.**
 
-- [x] **BUG: Version stand zweimal unten rechts.** Sie war doppelt eingebaut —
-      im DOM (`main.ts`) und zusaetzlich im Canvas (`MenuScene`). Die
-      Canvas-Variante ist entfernt; das DOM gewinnt, weil es die Nummer auch
-      zeigt, wenn Phaser gar nicht startet.
+Zu prüfen sind Spawnrate, Lebensdauer, Blinkdauer, Trägheit, Bremswirkung,
+Zeitstrafe und seltene Relikte. Die Welten dürfen anspruchsvoller werden, ohne
+dass Einstiegswelten zufällig oder späte Welten unlesbar wirken.
 
-- [x] **BUG: Code-Feld sass auf dem Knopf "CODE EINLOESEN".** Nachgemessen:
-      24 Spielpixel Abstand = rund 13 CSS-px auf dem iPhone. Jetzt 74 px,
-      etwa eine Fingerbreite.
-      **Regel daraus:** Jedes DOM-Element ueber dem Canvas braucht mindestens
-      60 Spielpixel Abstand zu allem Bedienbaren.
+**Abnahme:** Für jede Welt stehen Regel, gewünschtes Spielgefühl und konkrete
+Werte in `src/config/worlds.ts`/den zentralen Konfigurationsdaten. Jede Änderung
+hat mindestens einen automatisierten Test und einen echten Folge-Run.
 
-- [x] **Wartungsbildschirm** (`AdminScene`): Version, Startweg (Browser oder
-      Home-Bildschirm), "Neu laden erzwingen", Spielstand zuruecksetzen mit
-      Doppelbestaetigung. Erreichbar ueber langen Druck auf die Versionsnummer.
+## P1-02 — Serienregel und Kinderregel abschließend festlegen
 
-- [x] **Layout-Werte im Wartungsbildschirm**: Fenstergroesse, sichere Raender,
-      Balken oben und unten, Massstab. Ein Browser-Simulator kennt keine
-      sicheren Raender — diese Zahlen gibt es nur auf dem Geraet.
+- [ ] **Allgemeinen Kettenbonus und die gewünschte „drei blaue Planeten“-Regel
+  zusammenführen oder bewusst verwerfen.**
 
-- [x] **Pixel-Lineal** (`RulerScene`, über den Wartungsbildschirm): festes
-      DOM-Raster über den kompletten Viewport. Bildschirmrand oben ist CSS-y 0,
-      die Skala reicht bis zur exakten Unterkante; Safe Area und Spielfeld sind
-      zusätzlich markiert.
+Aktuell existiert ein zeitbasierter Combo-Bonus; die frühere Produktidee „drei
+blaue Planeten hintereinander = doppelte Punkte“ ist davon nicht automatisch
+abgedeckt. Die Regeln dürfen sich nicht unbemerkt multiplizieren und die
+Punkte-/XP-Kette sprengen.
 
-- [x] **Streifen ausserhalb des Spielfelds tragen die Weltfarbe** statt Schwarz.
-      Das Spielfeld ist 9:16, moderne Handys sind schmaler — der harte Balken
-      war der sichtbare Bruch dazwischen.
+**Entscheidung:** entweder nur die bestehende Combo behalten, die blaue Regel
+als klar getrennten Bonus ergänzen oder die blaue Regel streichen. Die
+Entscheidung muss ein Beispiel mit drei bis fünf Fängen, Punktwerten und
+Combo-Stufen enthalten.
 
-### Phase 1.3 — Bestenliste _(abgeschlossen 2026-08-13)_
+**Abnahme:** Regel steht in `docs/GAME_DESIGN.md`, Rohwert in der zentralen
+Balance-Konfiguration, UI-Erklärung und Testfall sind vorhanden.
 
-> Von Phase 2 hierher gezogen. Beides zusammen, weil das eine ohne das andere
-> wenig bringt: Eine gemeinsame Liste, die sich nur auf Knopfdruck fuellt,
-> bleibt leer.
+## P1-03 — XP-Kurve und Level-Absenkung mit echten Profilen prüfen
 
-- [x] **Gemeinsame Liste ueber alle Welten** als Standardansicht.
-      **Geprueft:** Heute ist sie pro Welt getrennt — `scores.world_id` ist
-      Pflichtfeld, `fetchLeaderboard(worldId)` filtert mit
-      `.eq('world_id', ...)`, und `LeaderboardScene` hat Weltentabs. Fuenf
-      Welten = fuenf getrennte Listen.
-  - [x] `fetchLeaderboard()` ohne `worldId` aufrufbar machen
-  - [x] `world_id` bleibt in der Datenbank (die Herkunft ginge sonst verloren)
-        und erscheint in der Zeile als Farbmarke, nicht als Text
-  - [x] Weltentabs bleiben als Filter erhalten, sind aber nicht mehr die
-        einzige Ansicht
-  - [x] Neuer Index: `scores (score desc, created_at asc)` — der vorhandene
-        `scores_world_rank_idx` greift ohne `world_id`-Filter nicht
+- [ ] **Neue XP-Kurve und Bestandsmigration empirisch bestätigen.**
 
-- [x] **Automatisch eintragen nach jedem Run** _(entschieden: jeder Run,
-      Variante B)_
-  - [x] Der Knopf "IN DIE BESTENLISTE" im Ergebnisbildschirm entfaellt
-  - [x] **Die bisherige Begruendung wird damit widerlegt** und ersetzt, nicht
-        umgangen: In `ResultScene.ts` steht heute "Automatisch waere bequemer,
-        wuerde die Liste aber mit jedem Uebungslauf fluten. Ein Eintrag soll
-        eine Entscheidung sein."
-  - [x] **Voraussetzung:** Ohne Namen geht kein Eintrag. Der Name muss also
-        beim ersten Start abgefragt werden → haengt an Phase 2 (Profil).
-        Bis dahin: eintragen nur, wenn ein Name gesetzt ist
-  - [x] Fehlschlaege bleiben still — ein misslungener Eintrag darf den
-        Ergebnisbildschirm nicht stoeren (`CloudResult` wirft ohnehin nie)
-  - [x] Duell-Runden weiterhin **nicht** eintragen (Fairness-Regel 3)
+Die Kurve wird in Runs abgeleitet; der Bezugswert stammt überwiegend aus
+Simulation. Die SAVE-Version kann bestehende Profile auf eine niedrigere
+Levelzahl abbilden. Das ist technisch vorgesehen, aber für die betroffenen
+Spieler erklärungsbedürftig.
 
-- [x] **Top 10 statt Top 5.** **Geprueft: `LEADERBOARD_LIMIT` steht bereits auf
-      10** (`config/backend.ts:31`), und `fetchLeaderboard` benutzt den Wert.
-      Nachgerechnet passen auch alle zehn Zeilen auf den Schirm (Platz 10 bei
-      y=952, das Namensfeld beginnt erst bei 1042).
-      Die Anzahl sichtbarer Zeilen haengt weiterhin von der Datenbank ab; der
-      Code laedt jetzt bis zu zehn Eintraege.
+**Prüfen:**
 
-> **Vorbehalt zur Gesamtliste:** Sie ist fair, **solange die Welten mechanisch
-> gleich sind** (`GAME_DESIGN.md` 7.3). Mit den Weltmodifikatoren aus Phase 5 —
-> Sonnenhort mit doppelter Legendaer-Chance — endet das. Dann braucht es eine
-> Normalisierung oder wieder getrennte Listen.
+- Runs bis Level 10 und mehrere Levelaufstiege,
+- XP-Restwert nach einem Levelaufstieg,
+- Profil mit altem Stand vor und nach Migration,
+- keine verlorenen Talente, Erfolge, Coins oder Welten,
+- Verhältnis von Levelaufstieg, Coin-Belohnung und tatsächlicher Spielzeit.
 
-### Phase 1.2 — Warum die Home-Bildschirm-App nicht aktualisiert _(neu)_
+**Abnahme:** Kurve bleibt, wird gezielt geändert oder bekommt eine begründete
+Ausnahme. Keine Änderung direkt in einer Scene; Werte gehören in
+`src/config/balance-data.json`.
 
-> **Geprueft: Es gibt keinen Service Worker im Projekt** (kein `serviceWorker`,
-> kein `sw.js`, kein Workbox). Die uebliche Erklaerung "veralteter Service
-> Worker" scheidet damit aus.
->
-> **Ungeprueft** bleibt, was iOS stattdessen tut. Als Home-Bildschirm-App
-> benutzt Safari einen eigenen, langlebigen Cache. Dass das `no-cache`-Meta
-> dort nicht so greift wie im Browser, ist durch die Beobachtung belegt — die
-> genaue Regel dahinter nicht.
+## P1-04 — Coin-Economy mit echten Runs vermessen
 
-- [x] **`version.json` beim Build erzeugen** (`vite.config.ts`, Plugin
-      `isihunt-version-manifest`) — sie sagt, welcher Stand verfuegbar ist
-- [x] **Update-Erkennung** (`core/updateCheck.ts`): laedt `version.json` mit
-      Cache-Buster und vergleicht mit `APP_VERSION`. Jeder Fehler wird
-      verschluckt — ohne Netz verhaelt sich das Spiel wie vorher
-- [x] **Hinweis im Menue**, wenn eine neuere Fassung bereitliegt. Nur als
-      Angebot, nie selbsttaetig
-- [x] **`forceReload()`** haengt einen neuen Suchteil an die Adresse. Ein
-      blosses `location.reload()` genuegt auf iOS nicht
+- [ ] **Quellen, Senken und Kaufgeschwindigkeit aus der Balance-Kette gegen
+  echte Spielwerte halten.**
 
-**Noch offen — erst nach dem Test auf dem Geraet entscheiden:**
+**Quellen:** Run-Grundbetrag, Sammlung, Seltenheiten, Erfolge, Levelaufstieg,
+Login-Bonus, Tagesabschluss und Score-Tiers. **Senken:** Talente,
+Talent-Reset, Formen, Farben und später weitere kosmetische Gegenstände.
 
-- [x] **Messen:** Version in der Home-Bildschirm-App ablesen. Erscheint der
-      Update-Hinweis dort? Funktioniert "Neu laden erzwingen"?
-- [ ] **Nur falls das nicht reicht:** Service Worker mit
-      `updateViaCache: 'none'`. Dann ist das Update-Verhalten steuerbar statt
-      Safaris Gutduenken ueberlassen. Braucht einen ADR — neue Abhaengigkeit,
-      neuer Lebenszyklus. **Bewusst noch nicht gebaut**, solange die einfachere
-      Loesung ungeprueft ist.
-- [ ] `manifest.webmanifest`: `start_url` mit Versionsparameter — erzwingt
-      einen neuen Cache-Schluessel. _Wirkung ungeprueft_
+**Messreihe pro Testprofil:** durchschnittliche Coins je Run, Coins je Level,
+Zeit bis zum ersten Talent, Zeit bis zum ersten Shopkauf und Kontostand nach
+10, 25, 50 und 100 Runs. Zusätzlich mindestens ein schwacher, mittlerer und
+starker Run.
 
-## Phase 2 — Identitaet, Spielzeit, Fortschritt _(in Arbeit)_
+**Abnahme:** Zieltempo ist dokumentiert. Einzelne Zahlen werden nicht in
+Scenes korrigiert; die Anpassung erfolgt über die zentrale Balancequelle und
+wird auf XP, Punkte, Coins, Kosten und Tagesbelohnungen durchgerechnet.
 
-- [x] Profil: Name beim ersten Start abfragen, Icon dazu, im Profil
-      aenderbar
-- [x] Name im Startmenue anzeigen
-- [x] Weltenauswahl als vertikalen Carousel mit einer scharfen Welt sowie
-      geblurten Nachbarn und Hoch-/Runter-Wischbewegung bauen
-- [x] Namensfeld aus der Bestenliste entfernen (zieht ins Profil)
-- [x] Levelanzeige im Profil und Hauptmenue prominent sichtbar
-- [x] `RUN_DURATION_MS` 60 s → 90 s
-- [x] Designziel 2 in `GAME_DESIGN.md` anpassen ("in 90 Sekunden gespielt")
-- [x] XP-Kurve: `floor(80 · n^1.45)` → `floor(750 · √n)`
-- [x] `MAX_LEVEL = 100`, Deckelung in `ProgressionSystem.applyRun()`
-- [x] **Bestenliste leeren**: einmaliger, bewusst manueller Datenbankwechsel
-      ueber `supabase/cleanup_leaderboard.sql`. Entschieden am 2026-08-13.
-- [x] Bestenliste auf einen Eintrag je `cloudId` umstellen: nur der beste Run
-      bleibt; Name und Welt werden beim neuen Bestwert aktualisiert
-- [x] Einmalige Bereinigung ueber `supabase/cleanup_leaderboard.sql` ausfuehren
-      (loescht die bisherigen Eintraege, danach ist `player_id` Pflicht)
+## P1-05 — Levelaufstieg als Belohnungsmoment sichtbar machen
 
-> Die gemeinsame Bestenliste und der automatische Eintrag standen hier — beides
-> ist am 2026-08-13 nach **Phase 1.3** vorgezogen worden.
+- [ ] **Levelaufstieg für Kinder verständlich und spürbar inszenieren.**
 
-- [x] XP-Tabelle in `GAME_DESIGN.md` 7.1 ersetzen
+`COINS_PER_LEVEL = 20` ist im Verhältnis zur Tagesökonomie klein. Bevor der
+Betrag erhöht wird, soll der vorhandene Sound, ein klares Level-Up-Overlay und
+eine verständliche „Du hast bekommen“-Zusammenfassung getestet werden.
 
-> Die Bestenliste wird erst nach ausdruecklicher Bestaetigung geleert. Das ist
-> eine einmalige, nicht rueckgaengige Datenbankaktion und kein lokaler
-> Code-Schritt.
+**Abnahme:** Nach einem Levelaufstieg sieht der Spieler Level, XP-Restwert,
+Coins, mögliche neue Welt/Optik und das nächste Ziel in einem zusammenhängenden
+Moment. Eine Zahlenerhöhung wird nur nach P1-04 beschlossen.
 
-**Zielwerte, nachgerechnet:** Level 10 nach 17 Runs ≈ 31 min · Level 100 nach
-552 Runs ≈ 17 h · Grundlage 900 XP je 90-s-Run, 110 s je Durchgang.
+## P1-06 — Ersten Run und erste drei Minuten als Lernkurve gestalten
 
-**Entschieden am 2026-08-13:** Ueberschuessige Talentpunkte werden zu **Coins**.
-99 Punkte stehen 32 Talentraengen gegenueber — ab etwa Level 33 ist alles
-ausgebaut, die restlichen 67 haetten sonst kein Ziel.
+- [ ] **Onboarding ohne Textwand direkt im Spiel verbessern.**
 
-- [x] `ProgressionSystem`: Sind alle Talente auf Maximalrang, wird der Punkt
-      nicht vergeben, sondern in Coins gutgeschrieben
-- [x] Umrechnungskurs steht in `GameConfig.ts` (10 Coins je Punkt)
-- [x] Der Ergebnisbildschirm erklaert die Umwandlung ("Alle Talente ausgebaut -
-      +N Coins"), sonst wirkt ein ausbleibender Talentpunkt wie ein Fehler
-- [x] Coins-Feld und Migration sind als kleiner Unterbau von Phase 4 vorhanden;
-      weitere Coin-Quellen und die Talentbaum-Oberflaeche bleiben Phase 4.
+Der erste Run soll nacheinander ein normales Relikt, ein farbiges Relikt, eine
+Serie und eine Talent-/Reichweitenwirkung verständlich machen. Erfahrene
+Spieler sollen nach dem ersten vollständigen Einstieg nicht dauerhaft gebremst
+werden; für Tests braucht es einen reproduzierbaren Reset oder Debug-Schalter.
 
-> **Erledigt am 2026-08-14:** Coins-Feld, Migration, Umrechnung (10 Coins je
-> ueberschuessigem Talentpunkt) und die Rueckmeldung im Ergebnis sind gebaut.
-
-## Phase 2.5 — Bildschirm ganz nutzen _(neu 2026-08-13)_
-
-> **Ausgangslage:** Das Referenzlayout ist 720 × 1280, also 9:16. Moderne iPhones
-> sind deutlich schmaler:
->
-> | Geraet            | Viewport  | Canvas nach FIT | Balken gesamt |
-> | ----------------- | --------- | --------------- | ------------- |
-> | iPhone SE         | 375 × 667 | 375 × 667       | **0 px**      |
-> | iPhone 12/13      | 390 × 844 | 390 × 693       | 151 px        |
-> | iPhone 14 Pro     | 393 × 852 | 393 × 699       | 153 px        |
-> | iPhone 15 Pro Max | 430 × 932 | 430 × 764       | 168 px        |
->
-> Die frueheren Balken waren die Folge von `Phaser.Scale.FIT` bei fest
-> gewaehltem 9:16. Die interne Hoehe waechst jetzt auf hohen, schmalen
-> Geraeten mit der verfuegbaren sicheren Portrait-Flaeche.
-
-- [x] **Spielfeld an das Geraet anpassen statt einzupassen.** Die Breite bleibt
-      720 px, die interne Hoehe uebernimmt beim Start die verfuegbare
-      Portrait-Flaeche (mindestens 1280 px). Die zusaetzliche Hoehe ist echte
-      Spielflaeche; die Rundendauer bleibt unveraendert.
-- [x] **Entscheidung:** Mehr Hoehe bedeutet laengere Laufwege. Das ist bewusst
-      akzeptiert; Spawn-Grenzen und untere Layout-Elemente verwenden bereits
-      `GAME_HEIGHT` und wachsen mit.
-- [x] **Zwischenloesung umgesetzt (2026-08-13):** Die Streifen tragen die
-      Randfarben der Welt statt Schwarz.
-- [x] **Safe-Area-Hintergrund:** Sterne und ein subtiler Nebelschein liegen
-      jetzt auch in den DOM-Streifen ausserhalb des Canvas.
-- [x] **Werkzeug:** Das Pixel-Lineal (`RulerScene`) macht die
-      Bewertung messbar — "von 0 bis 160" statt "oben ist was".
-- [x] `docs/GAME_DESIGN.md` 9 anpassen (variable Hoehe dokumentiert)
-- [x] Hochformat erzwingen: Manifest, best-effort Screen-Orientation-Lock und
-      Landscape-Fallback fuer Browser ohne Orientierungs-API
-- [x] Tablet-Kompatibilitaet geprueft: iPad nutzt weiterhin ein zentriertes,
-      unveraendertes Hochformat-Layout. Eine breitere Nutzung wird bewusst mit
-      dem spaeteren nativen Layout geplant, damit iPhone-Bedienung und
-      Koordinaten nicht auseinanderlaufen.
-
-## Phase 2.6 — Login & Mehrgeräte-Profil _(priorisiert, App integriert)_
-
-> **Ziel:** Ein Profil kann dauerhaft auf mehreren eigenen Geräten genutzt
-> werden, zum Beispiel auf iPhone und iPad. Beide Geräte melden sich mit
-> demselben Profil an; Offline-Runs werden später sicher zusammengeführt.
->
-> **Warum:** Der heutige Sync-Code ist ein einmaliger Spielstand-Umzug. Zwei
-> Geräte können danach zwar dieselbe `cloudId` kennen, aber ein vollständiger
-> Upload kann den Stand des anderen Geräts ersetzen. Das ist für ein dauerhaft
-> gemeinsames Profil nicht ausreichend.
-
-### Technischer Plan
-
-- [x] **Supabase Auth einführen:** Login und Sitzung werden vom Backend
-      verwaltet. Alias/Passwort ist der erste plattformübergreifende Weg;
-      Apple-Login kann später für die native App ergänzt werden. Eine echte
-      E-Mail wird weder abgefragt noch in Rangliste oder Profilanzeige verwendet.
-- [x] **Profil-Tabelle und RLS-Skript anlegen:** `profiles.id` referenziert
-      `auth.users.id`; Name, Erstellungs- und Änderungszeitpunkt liegen im
-      Backend. `SaveData.cloudId` wird auf diese Profil-ID migriert.
-- [ ] **SQL in Supabase ausführen und prüfen:** RLS erlaubt Lesen und Schreiben des
-      eigenen Profils nur über `auth.uid()`. Ranglisten-Schreiben bleibt eine
-      kontrollierte RPC; fremde Spielstände und Login-Daten bleiben verborgen.
-- [x] **Login-UX in der App:** Auf dem ersten Gerät Profil anlegen oder
-      einloggen; auf einem weiteren Gerät einloggen und Profil laden. Der
-      Offline-Spielstart bleibt möglich, wenn das Netz vorübergehend fehlt.
-- [x] **Offline-Outbox je Gerät:** abgeschlossene Solo-Runs werden lokal mit
-      eindeutiger `event_id` vorgemerkt und bei Start, Rückkehr des Netzes und
-      nach einem Run übertragen. Wiederholtes Senden darf nichts doppelt zählen.
-- [x] **Zusammenführung statt Komplettüberschreiben:** XP und Coins aus
-      bestätigten Solo-Runs werden addiert, Erfolge vereinigt, Bestwert und
-      Best-Combo maximiert. Talentkäufe werden serverseitig atomar geprüft.
-- [x] **Profiländerungen synchronisieren:** Namensänderungen werden auf allen
-      Geräten sichtbar und aktualisieren auch den Ranglisteneintrag.
-- [x] **Migration ohne Verlust vorbereiten:** Bestehende `cloudId`-Profile können nach dem
-      ersten Login übernommen werden. Der alte Sync-Code bleibt zunächst als
-      einmaliger Migrations- und Notfallweg erhalten.
-- [ ] **Tests mit iPhone und iPad:** beide Geräte offline bespielen, danach
-      verbinden; Level, Coins, Bestwert, Erfolge, Name und Wiederholungen prüfen.
-
-### Lieferreihenfolge
-
-1. Supabase Auth, `profiles` und RLS.
-2. Login, Sitzung und Migration des bestehenden lokalen Profils.
-3. Ereignisse, Offline-Outbox und idempotente Zusammenführung.
-4. Der manuelle Gerätewechsel bleibt nur intern als Migrationsweg; die
-   sichtbare Gerätewechsel-UI ist entfernt.
-5. Echter iPhone-/iPad-Test; erst danach weitere Phase-4-Fortschrittsquellen
-   als synchronisierte Ereignisse anschließen.
-
-**SQL-Migration:** `supabase/phase_2_6_auth.sql` nach `schema.sql` im
-Supabase SQL Editor ausführen. Danach in Supabase unter Authentication ->
-Providers -> Email die Bestätigungspflicht deaktivieren, weil der Alias-Login
-keine zustellbare E-Mail-Adresse verwendet. Ohne diese Schritte bleibt der
-Login-Code bewusst funktionslos und das lokale Spiel läuft trotzdem weiter.
-
-> **Native Anschluss:** Das Auth-Modell funktioniert zunächst als Web-App und
-> später in Capacitor/TestFlight. Der native Build bleibt für Phase 8 geplant
-> (siehe ADR-0015 in `docs/DECISIONS.md`); die Mehrgeräte-Datenstruktur muss
-> dafür nicht neu erfunden werden.
-
-## Phase 3 — Themenwechsel ins Weltall
-
-- [x] ADR-0013: Themen- und Zielgruppenwechsel (mit verworfener Alternative)
-- [x] `tex-player-core`: Raumschiff statt vierzackiger Stern
-- [x] Relikte als Planeten (Rotation als Illusion — Phaser ist 2D)
-- [x] Hintergrund: weltabhaengige Sternfarben, Nebelkompositionen und
-      Planetenlayouts
-- [x] Echte Planetentexturen je Welt und neues isiHunt-Logo als PNG-Assets
-- [x] Skins fuer die Figur, freigeschaltet ab Level 5/15/30/50/75/100
-
-> **Phase-3-Start 2026-08-14:** ADR-0013 ist angenommen. Raumschiff,
-> Planeten-Relikte, Raumzonen-Namen, weltabhaengige Raumkulissen und
-> Level-Skins sind umgesetzt.
-
-- [x] `worlds.ts`: Fantasy-Namen → Weltraum-Regionen
-- [x] `GAME_DESIGN.md`: Pitch, Zielgruppe, Referenz
-- [x] `ART_STYLE.md`: Formensprache, Assets, Welten-Farbtabelle
-
-> **Unantastbar:** Die sechs Seltenheitsfarben. Planetensprites duerfen ihre
-> Weltdetails behalten; die Seltenheit wird weiterhin durch Glow, Strahlenkranz
-> und Fang-Effekte eindeutig angezeigt.
-
-- [ ] **Neues App-Icon** _(Wunsch des Nutzers, 2026-08-18)_: **"Ich brauche
-      ein neues App-Icon, ein modernes und thematisch passendes."** Der
-      Themenwechsel Fantasy → Weltraum (ADR-0013) ist fuer die Spieltexturen
-      laengst umgesetzt (Zeile oben: "Raumschiff statt vierzackiger Stern"),
-      aber die App-Icons selbst sind davon unberuehrt geblieben: Sie zeigen
-      weiterhin einen generischen vierzackigen Stern (siehe
-      `scripts/generate-icons.mjs`, Kommentar "derselbe vierzackige Stern in
-      Gold auf dem Grundton" — ein Relikt aus der Zeit vor dem Weltraum-
-      Thema), waehrend Menue und Spiel laengst das Raumschiff-Logo
-      (`public/assets/isihunt-logo-v2.png`) zeigen.
-      **Betroffene Dateien:** `public/favicon.png`, `public/apple-touch-icon.png`,
-      `public/icon-192.png`, `public/icon-512.png` — Groessen und Zweck stehen
-      im `manifest.webmanifest` und in `docs/ART_STYLE.md` Abschnitt 6.
-      **Technischer Weg bereits vorbereitet:** Das Icon wird prozedural per
-      `npm run icons` (`scripts/generate-icons.mjs`) erzeugt, kein Bildeditor
-      noetig — wer das Motiv aendert, aendert den Zeichencode im Skript.
-      Wichtige Einschraenkung aus demselben Skript: Android beschneidet
-      "maskable" Icons zu einem Kreis/Squircle und garantiert nur die
-      inneren 80 % der Flaeche (`STAR_RADIUS_RATIO = 0.3` haelt das Motiv
-      deshalb bewusst klein) — ein neues Motiv muss dieselbe Kreisprobe
-      bestehen. Alternative: falls das neue Motiv zu fein fuer den
-      prozeduralen PNG-Encoder ist (z. B. Details wie beim Raumschiff-Logo),
-      waere ein Export aus dem bestehenden Logo-Artwork der pragmatischere
-      Weg statt neuer Zeichencode.
-
-## Phase 3.5 — Ton _(neu 2026-08-13, aus M4 vorgezogen)_
-
-> Vorgezogen, weil Ton bei einem Arcade-Spiel keine Politur ist, sondern
-> Rueckmeldung: Ein Knopf, der klickt, fuehlt sich getroffen an — das haette
-> bei der Trefferflaechen-Suche sogar diagnostisch geholfen.
-
-- [x] `SoundSystem` neben den anderen Systemen (`ARCHITECTURE.md` 10 sieht es
-      dort bereits vor)
-- [x] **Knopf-Klick** — kurz und trocken, bei jedem `pointerup` in `widgets.ts`
-- [x] **Fang-Sounds je Seltenheit**, Tonhoehe steigend mit dem Wert;
-      gruen/blau/lila/orange bekommen mehrstimmige, epischere Fanfaren;
-      legendaer bekommt einen eigenen Klang
-- [x] Weltwechsel im Hoch-/Runter-Wheel bekommt einen kurzen Auswahlton
-- [x] **Combo-Stufe erreicht**, **Levelaufstieg**, **Run-Ende**
-- [x] Stummschalter, Zustand im Spielstand (`reconcile()` braucht dafuer keine
-      Migration)
-- [x] **Toene prozedural erzeugen** (WebAudio-Oszillatoren) statt Dateien zu
-      laden — passt zu ADR-0004: keine Assets, keine Ladezeit, alles im Code
-- [x] **Fallstrick iOS:** Audio startet erst nach einer Nutzergeste. Der
-      AudioContext muss beim ersten Tipp entsperrt werden, sonst bleibt es
-      stumm — und zwar lautlos, ohne Fehlermeldung
-- [x] `ART_STYLE.md` um einen Abschnitt Ton ergaenzen
-
-> **Erledigt am 2026-08-14:** Phase 3.5 ist mit prozeduralen WebAudio-Toenen,
-> gespeicherter Ton-Einstellung und iOS-Freischaltung beim ersten Tipp gebaut.
-
-## Phase 3.6 — Dynamic Island _(neu 2026-08-13)_
-
-> **Ehrlich vorab:** Die Dynamic Island laesst sich aus einer Web-App heraus
-> **nicht** ansteuern. Sie gehoert dem System; Inhalte dort kommen aus Live
-> Activities (ActivityKit) und setzen eine native App voraus. Im Browser gibt
-> es keine Schnittstelle dafuer.
->
-> Erreichbar waere sie erst mit Capacitor (M8, siehe ADR-0015), und auch dann
-> nur ueber ein natives Plugin.
-
-- [x] **Entscheidung:** Native Umsetzung kommt nach Phase 4. Die Vorbereitung
-      wird jetzt dokumentiert, aber der Web-Stand bleibt bis dahin aktiv.
-- [ ] **Was ohne native App geht** — und optisch in dieselbe Richtung zielt:
-  - [x] Der Bereich _um_ die Island gehoert der Seite: Safe-Area-Laufband im
-        Menue und Restzeit-Anzeige waehrend des Runs.
-  - [ ] `theme-color` je Zustand umschalten — faerbt auf iOS die Statusleiste
-        und damit die Umgebung der Island. Im Menue ruhig, im Run in der
-        Weltfarbe, bei einem legendaeren Fang kurz aufleuchtend.
-        _Aufwand: gering, Wirkung sichtbar_
-  - [x] Der `safe-area-inset-top`-Bereich wird im Web-Stand fuer Laufband und
-        Restzeit genutzt; die Systemuhr bleibt unangetastet.
-- [ ] **Laufband im Vollbild/Home-Bildschirm-Modus stabilisieren.**
-      Ursache: `black-translucent` legte den Webinhalt absichtlich hinter die
-      iOS-Statusleiste; das bei `top: 0` fixierte Laufband lag dadurch direkt
-      in der Dynamic Island. Zusaetzlich existierte die DOM-ID doppelt.
-      Vor der Ursachenbehebung ausprobiert:
-  - [x] HTML-Laufband in den `#game`-Container verschoben, damit es im
-        Vollbild gemeinsam mit dem Canvas enthalten ist.
-  - [x] `z-index`, `position: fixed`, Safe-Area-Hoehe und einen 28-px-Fallback
-        fuer `env(safe-area-inset-top)` angepasst.
-  - [x] Phaser `fullscreenTarget` auf `#game` gesetzt, damit nicht nur der
-        Canvas in den Vollbildmodus geht.
-  - [x] Cache-/Auslieferungsproblem ausgeschlossen: v0.1.52 ist live, das
-        Problem besteht laut aktuellem Geraetetest weiterhin.
-  - [x] Nach Abgleich mit Apples und WebKits dokumentiertem Standalone-Verhalten
-        auf eine reservierte schwarze iOS-Statusleiste umgestellt. Das
-        Laufband ist jetzt ein eigener 32-px-App-Kopfbereich darunter; die
-        fehleranfaellige Laufzeitmessung und der doppelte DOM-Knoten entfallen.
-        Geraetetest v0.1.58: auf dem iPhone 16 Pro weiterhin nicht sichtbar.
-  - [x] Naechster Ansatz: nicht mehr auf eine von iOS beim Installieren
-        gespeicherte Statusleistenart verlassen. Der dunkle Kopf reicht wieder
-        bis zum Displayrand, waehrend Text und Canvas mit
-        `safe-area-inset-top` plus modellabhaengigem Fallback unterhalb der
-        Island beginnen. Echter Geraetetest mit v0.1.59 steht aus.
-  - [x] Geraetetest bis v0.1.65: Geometrie oben 94 CSS-px und unten 0 CSS-px,
-        aber `black-translucent` legt den iOS-Systemblur weiterhin ueber die
-        Laufzeile. Deshalb ab v0.1.66 undurchsichtige schwarze Statusleiste;
-        Web-Viewport und Laufzeile beginnen direkt darunter. Geraetetest offen.
-  - [x] Geraetetest v0.1.66: iOS reserviert den Statusbereich entgegen dem
-        erwarteten Verhalten nicht; Laufzeile verschwindet und Logo wird
-        abgeschnitten. Ab v0.1.67 wieder sichere 126-CSS-px-Geometrie, aber der
-        32-px-Blur-Schutz ist transparent und zeigt den Welt-Hintergrund. Nur
-        die eigentliche Laufzeile bleibt dunkel. Geraetetest offen.
-- [ ] Erst mit M8 (Capacitor, siehe ADR-0015): Live Activity mit Punktestand
-      und Restzeit waehrend eines Runs; bis dahin wird die Anzeige als
-      Prototyp beobachtet.
-
-> **Entscheidung fuer die native Live Activity:** Zunaechst soll sie waehrend
-> des gesamten Runs sichtbar bleiben und laufend sinnvolle Informationen zeigen.
-> Welche Inhalte dauerhaft bleiben, wird nach dem ersten Test entschieden.
-
-## Phase 4 — Belohnung — abgeschlossen
-
-- [x] Punkte-Popup auffaelliger (`floatingScore` mit animiertem Bonus-Hinweis)
-- [x] Zeitbasierter Kettenbonus mit sichtbarem Multiplikator
-- [ ] **Exakte Kinderregel nach Phase 4.1 entscheiden:** drei blaue Planeten
-      hintereinander → doppelte Punkte. Sie ist nicht mit dem bestehenden
-      allgemeinen Kettenbonus gleichzusetzen.
-- [x] Coin-System: Feld im Spielstand, Anzeige, Quellen (Run, Erfolge und
-      Levelaufstiege)
-- [x] Talentbaum-Oberflaeche mit Rangkauf ueber Profil
-- [x] Talente zuruecksetzen gegen 250 Coins, ohne Erstattung
-- [x] Coin-Balance auf etwa einen Talent-Rang je fünf abgeschlossene Runden
-- [x] **Vitest** — 62 Tests in npm run verify
-
-> **Erledigt am 2026-08-14:** Phase 4 ist lokal und offline vollstaendig
-> umgesetzt. Fuer angemeldete Profile muessen die beiden neuen RPC-Funktionen
-> aus supabase/phase_2_6_auth.sql noch einmal im Supabase SQL Editor
-> ausgefuehrt werden.
-
-### Balancing noch nachtesten
-
-> Erste technische Runde umgesetzt: Die Phase-5-Strafen wurden reduziert und
-> die Solo-Grundbelohnung auf 25 Coins angepasst. Die offenen Punkte brauchen
-> noch echte Runs mit Emre und Simay, bevor sie als abgeschlossen gelten.
-
-- [ ] **Phase-5-Schwierigkeit:** Weltmodifikatoren und Hindernisse mit den
-      Kindern testen; Spawnrate, Lebensdauer, Blinkdauer, Bremswirkung und
-      Zeitstrafe so einstellen, dass die Welten fordernd, aber nicht frustrierend
-      werden.
-- [ ] **Coin-/Talent-Balance:** Coin-Einnahmen pro Runde, Relikt und Levelaufstieg
-      gegen Talentkosten und Resetkosten prüfen; Ziel bleibt ungefähr ein
-      sinnvoller Talent-Rang nach etwa fünf normalen Runden.
-- [x] **Talentpunkte-Migration:** geprüft, dass alte Talentpunkte genau einmal
-      korrekt in Coins überführt werden und keine doppelten Gutschriften entstehen.
-
-## Phase 5 — Herausforderung
-
-- [x] Tages-Herausforderung mit festem Seed (UTC-Tag + Welt bilden den Seed)
-- [x] Duell gegen Bot mit drei deterministischen Schwierigkeitsstufen
-- [x] Weltmodifikatoren umgesetzt: Trägheit, kürzere Lebensdauer, Blinken und
-      erhöhte seltene Planeten
-- [x] Hindernisse: keine in Sternenweide, bremsend in Eisring/Glutnebel,
-      zeitbestrafend in Nullsektor/Sonnenkrone
-- [x] `GAME_DESIGN.md` §10 präzisieren: keine Lebenspunkte und kein Game Over;
-      Einstiegswelten bestrafen nur mit lesbaren Bremsen, spätere Welten mit
-      kurzem Zeitverlust.
-- [x] **Welt-Detailscreen vor jedem Run** _(neu 2026-08-17)_: Die Mechanik
-      einer Welt (`plannedModifier`) stand bisher nur in `config/worlds.ts`,
-      im Weltenkarussell erschien nur der reine Stimmungstext (`flavor`) ohne
-      Mechanik-Angabe — fuer ein Balancing-Gespraech mit Kindern reicht das
-      nicht, sie muessten die Wirkung raten statt sie nachzulesen.
-      Neue `WorldInfoScene` zeigt jetzt Besonderheit, Hindernismodus
-      (`obstacleMode` in Klartext übersetzt) und Punkt-/XP-Bonus in Prozent.
-      JAGD, DUELL und TAGESLAUF fuehren jetzt alle erst ueber diesen Screen,
-      bevor der eigentliche Modus startet; ein `(i)`-Symbol auf der
-      ausgewaehlten Karussell-Karte oeffnet ihn auch ohne Rundenstart.
-      `npm run verify` gruen (Typecheck, Lint, Format, 184 Tests, Build).
-      **Im Dev-Server getestet und bestaetigt (2026-08-17).**
-- [ ] ~~Ranked-Modus~~ — blockiert, siehe Phase 6
-
-## Phase 6 — Sozial
-
-> **Vermerk 2026-08-17:** Diese Phase vergroessert absichtlich die Reichweite
-> der Bestenliste (Freunde, Realtime, Ranked). Solange die DSGVO-Einschaetzung
-> fuer Kinderdaten (siehe P0 oben) nicht geklaert ist, darf keiner dieser
-> Punkte den Personenkreis ueber "bekannt" hinaus erweitern — das gilt
-> insbesondere fuer Realtime-Sync und eine oeffentlich beworbene Rangliste.
-
-- [x] Zeitstempel in der Bestenliste anzeigen
-- [ ] **Punkte serverseitig bewerten** (Supabase Edge Function, Run nachspielen)
-      — Vorbedingung fuer Ranked und Rekord-Meldungen
-- [ ] Realtime-Sync der Bestenliste
-- [ ] Freundesliste auf die dauerhafte Profil-/Geräteidentität aus Phase 2.6
-      aufsetzen (kein zweites Identitätssystem)
-- [ ] Freundesliste mit Online/Offline, Rekord, Coins
-- [ ] ~~Duell per geteiltem Link (ADR-0010 Schritt 1)~~ — uebersprungen,
-      direkt Schritt 2 gebaut (siehe unten)
-- [x] **Netzwerk-Duell, Phase 1** (ADR-0010 Schritt 2) _(neu 2026-08-17/18)_:
-      Raum-Code, Uhr-Synchronisation, gemeinsamer serverzeitbasierter
-      Countdown, Ergebnisvergleich am Ende. Noch **kein** Live-Score
-      waehrend des Laufs. `supabase/phase_2_11_duel_rooms.sql` ausgefuehrt.
-      `npm run verify` gruen, 22 neue Tests.
-  - [x] **Erster Zwei-Geraete-Test (2026-08-18), zwei Bugs gefunden und
-        behoben:**
-        (1) Realtime-Kanal lehnte JEDEN Beitritt mit "Unauthorized" ab -
-        die RLS-Policy auf `realtime.messages` wertet ihre Subquery gegen
-        `duel_rooms` mit den Rechten der verbindenden Rolle aus, nicht als
-        security definer; ohne direkten (spaltenbeschraenkten) SELECT-Grant
-        auf `code`/`expires_at` konnte sie nicht auswerten. Fix in
-        `phase_2_11_duel_rooms.sql`, erneut ausgefuehrt.
-        (2) Presence-Tracking war komplett wirkungslos: beide Spieler
-        nutzten denselben Presence-Key (den Raum-Code statt eines
-        individuellen Schluessels), und `channel.track(...)` fehlte
-        komplett - ohne aktives Tracking kann kein `leave`-Event entstehen.
-        Fix: `localPlayerIndex` als Presence-Key, `track()` nach
-        erfolgreichem Verbinden, `NetworkDuelSystem.updateHandlers()` fuer
-        einen scene-uebergreifenden Handler-Wechsel (Lobby vs. laufender
-        Run), neues `GameEvent.OpponentDisconnected` mit sichtbarem
-        HUD-Hinweis.
-  - [x] **Zweiter Zwei-Geraete-Test (2026-08-18), Ursache gefunden und
-        wahrscheinlicher Fix gebaut, noch NICHT am Geraet bestaetigt:**
-        Ablauf: Master erstellt Code, Slave tritt bei. Master startet JAGD,
-        spielt die Runde komplett durch, landet im Ergebnis ("Dein
-        Geschwister spielt noch seine Runde"). Der Slave haengt
-        waehrenddessen durchgehend bei "Uhr wird abgeglichen .../Warte auf
-        Geschwister ...". **Wichtig, gegen Ferndiagnose-Versuchung:** Master
-        kam im selben Testlauf, gegen dieselbe Datenbank/Policy, durch - das
-        schliesst einen generellen Server-/RLS-Fehler aus.
-        **Erneuter Testlauf mit verbessertem Logging (v0.1.173,
-        2026-08-18):** Debug-Report vom Slave zeigte trotz aktivem Duell
-        (`Scenes OnlineDuel`) keinen einzigen `NetworkDuelSystem`-Eintrag -
-        weder Erfolg noch Fehler. Grund dafuer selbst gefunden:
-        `NetworkDuelSystem` hat sein eigenes, dupliziertes `withTimeout`
-        (siehe Kommentar dort), das anders als `CloudSystem.withTimeout`
-        NICHT das automatische Erfolgs-/Fehler-Logging vom 2026-08-18-Fix
-        bekommen hatte - dieselbe Luecke wie beim Boost-Bug, nur an einer
-        zweiten, uebersehenen Stelle. Jetzt behoben, `duel:*`-Eintraege im
-        Ringpuffer.
-        **Eigentliche Ursache, im Code belegt (nicht nur vermutet):**
-        `NetworkDuelSystem.broadcastStartTime()`/`broadcastReady()` rufen
-        `activeChannel?.send(...)` mit `void` auf. Supabase Realtime
-        `RealtimeChannel.send()` loest ohne `broadcast.ack`-Option **sofort
-        mit "ok" auf, sobald die Nachricht lokal in die Warteschlange
-        gestellt wurde** - nicht wenn sie beim Empfaenger ankam (Quelle:
-        `node_modules/@supabase/realtime-js/dist/main/RealtimeChannel.js`,
-        `send()`, Zeile ~576). Ein verlorener `start`-Broadcast liess den
-        empfangenden Client unbegrenzt in der Lobby haengen, obwohl
-        `set_duel_start_time` die Zeit bereits erfolgreich serverseitig
-        gespeichert hatte.
-        **Fix:** `OnlineDuelScene.runLobbyFlow()` pollt jetzt zusaetzlich
-        zum Broadcast-Handler alle `ONLINE_DUEL_START_POLL_INTERVAL_MS`
-        (1,5s, neu in `config/onlineDuel.ts`) `getRoomStatus()` fuer BEIDE
-        Rollen - findet die bereits gespeicherte Startzeit unabhaengig
-        davon, ob das `start`-Event ankam. Sauber aufgeraeumt in
-        `beginRun()`/`cleanupLobby()`. `npm run verify` gruen (212 Tests).
-  - [ ] **Dritter Zwei-Geraete-Test noetig (seit v0.1.174 live):** bestaetigen,
-        dass der Slave nach dem Polling-Fix tatsaechlich startet, statt bei
-        "Warte auf Geschwister ..." haengen zu bleiben. Ablauf wie beim
-        zweiten Test: Master erstellt Code, Slave tritt bei, Master startet
-        JAGD. Der urspruengliche Report erwaehnte zusaetzlich
-        "Verbindungsfehler: channel error: transport failure" - der zweite
-        Testlauf zeigte das nicht mehr, blieb aber unbestaetigt, ob das am
-        Fix liegt oder Zufall des Testlaufs war - im dritten Test mit
-        beobachten.
-  - [x] **Neu (2026-08-18): Kein sichtbares Feedback bei App-Hintergrund.**
-        **Hochgezogen nach P0.b (2026-08-21)** — belegter Fehler mit
-        vorhandener Infrastruktur, gehoert nicht als Unterpunkt eines
-        Unterpunkts hierher. Ursachenbeschreibung bleibt zur Nachvollziehbarkeit
-        stehen:
-        Phaser pausiert die Update-Loop automatisch, wenn die Seite in den
-        Hintergrund geht (App-Wechsel, Sperrbildschirm) - das ist
-        Standardverhalten, aber die App zeigt dabei nichts an. Im ersten
-        Test wirkte das wie ein kompletter Absturz ("Bildschirm hing,
-        nichts ging mehr"). Es gibt bereits ein Pause-Overlay
-        (`HudScene.showPauseOverlay()`), aber nur fuer den manuellen
-        Pause-Knopf - kein `visibilitychange`-Handler, der es automatisch
-        zeigt. Betrifft nicht nur Netzwerk-Duelle, aber dort am
-        sichtbarsten, weil der Gegner in der Zwischenzeit weiterwartet.
-  - [ ] Phase 2: Live-Punktestand des Gegners waehrend des Laufs im HUD
-  - [ ] Phase 3: Rematch fuer Online-Duelle, Reconnect waehrend einer
-        laufenden Runde, Anzeigename statt "Spieler 2"
-  - [ ] **Phase 4 — volle gegenseitige Live-Sicht** _(Wunsch des Nutzers,
-        2026-08-18)_: **"Eigentlich habe ich gedacht man kann sich
-        gegenseitig zusehen wie der andere spielt - also Master-Spiel ist
-        sichtbar auf Slave und Slave-Spiel ist sichtbar auf Master."** Beide
-        Spieler sehen also nicht nur den Punktestand des anderen, sondern
-        sein komplettes laufendes Spielfeld in Echtzeit: Spielfigur,
-        Bewegung, jeden Fang - vermutlich als zweites, kleineres Spielfeld
-        oder Bildschirmteilung. Reihenfolge vom Nutzer explizit bestaetigt:
-        **erst Phase 2 (nur Punktestand) bauen und testen, danach Phase 4
-        (volle Sicht) angehen** - nicht gleichzeitig. Einschaetzung dazu:
-        technisch machbar (staendige Positionsdaten statt eines 400ms-Takts,
-        zweiter Render-Pfad, neue HUD-Flaeche), aber ein eigenes
-        Feature-Paket mit eigenem Umfang, kein Anhaengsel an Phase 2.
-  - [ ] **Naeherungserkennung fuer Geraete im selben Raum** _(Wunsch des
-        Nutzers, 2026-08-18)_: **"Wenn die Geraete nebeneinander sind mit
-        Abstand von 1-2m, dann kann man doch eine Technik einbauen die
-        erkennt dass Master und Slave gerade nebeneinander sitzen"** - Ziel:
-        Beitritt zum Duell-Raum automatisch erkennen/vorschlagen, statt den
-        6-stelligen Code manuell abzutippen, wenn beide Kinder ohnehin im
-        selben Zimmer sitzen. Technisch ein eigenes Thema, nicht Teil des
-        bestehenden Realtime-Ansatzes - moegliche Wege (noch nicht
-        recherchiert, welcher im mobilen Browser tatsaechlich zuverlaessig
-        funktioniert): Web Bluetooth (eingeschraenkte Unterstuetzung,
-        insbesondere iOS Safari), lokale Netzwerk-Discovery, oder ein
-        Naeherungssignal ueber Lautsprecher/Mikrofon (Audio-Beacon). Vor
-        einer Umsetzung braucht es zuerst eine eigene Machbarkeitspruefung,
-        welcher Weg auf den tatsaechlichen Geraeten (iPhones) ueberhaupt
-        geht.
-- [ ] Rekord-Meldung im laufenden Spiel; echte Push-Meldung nur fuer
-      installierte Web-Apps (iOS-Grenze)
+**Abnahme:** Nach drei Minuten kann ein neuer Spieler erklären, was gesammelt
+wird, was die Serie macht, wofür XP/Coins sind und was als Nächstes erreichbar
+ist. Der Bildschirm zeigt nicht gleichzeitig alle Systeme als gleich wichtige
+Hinweise.
 
 ---
 
-## Aufraeumen
+# Phase 2 — Fortschritt, Profil, Sammlung und visuelles Polishing (P1)
 
-- [x] **PRIO HOCH — Testdaten aus der Produktions-Supabase-Datenbank
-      geloescht** _(neu 2026-08-17, erledigt 2026-08-17)_
+## P2-01 — Talentdarstellung entscheiden und umsetzen
 
-  > **Was passiert ist:** Beim Nachziehen von Testabdeckung fuer
-  > `CloudSystem` (Audit-Block, siehe `docs/AUDIT_2026-08-17.md` Abschnitt
-  > 5.2) hat ein erster, ungemockter Testlauf tatsaechlich gegen die echte
-  > Produktions-Supabase-Instanz gesprochen — nicht gegen eine Attrappe. Der
-  > Grund: `isBackendConfigured` (`src/config/backend.ts`) wird beim
-  > Modul-Laden aus `import.meta.env.VITE_SUPABASE_URL`/`_ANON_KEY`
-  > berechnet. Die lokale, gitignorete `.env`-Datei auf diesem Rechner
-  > enthaelt dieselben echten Zugangsdaten wie `.env.production`, und Vite/
-  > Vitest laedt `.env` automatisch bei jedem lokalen Lauf — auch bei
-  > Tests. Ohne expliziten Mock verhaelt sich ein Testlauf also identisch
-  > zur echten App und schreibt in dieselbe Datenbank wie echte Spieler.
-  >
-  > **Usecase, der das ausgeloest hat:** Der Test sollte pruefen, dass
-  > `CloudSystem`-Funktionen (`pushSave()`, `createSyncCode()`, etc.) bei
-  > fehlender Backend-Konfiguration sauber `{ ok: false }` zurueckgeben statt
-  > zu werfen (die im Modulkommentar von `CloudSystem.ts` versprochene
-  > "wirft nie"-Garantie). Die Testannahme war "in dieser Umgebung ist kein
-  > Backend konfiguriert" — das stimmte in der CI (kein `.env`), aber nicht
-  > lokal (echte `.env` vorhanden). Dadurch lief `pushSave()` durch, legte
-  > einen echten Spielstand-Datensatz an, und `createSyncCode()` erzeugte
-  > einen echten, einloesbaren Sync-Code dazu.
-  >
-  > **Sofort behoben im Code:** `src/systems/CloudSystem.test.ts` mockt
-  > seither `@/config/backend` fest auf "nicht konfiguriert"
-  > (`vi.mock('@/config/backend', ...)`), unabhaengig davon, ob lokal eine
-  > `.env` mit echten Werten liegt. Kuenftige Testlaeufe koennen nicht mehr
-  > versehentlich gegen die echte Datenbank schreiben. **Das hier offene
-  > Aufraeumen betrifft nur die zwei bereits entstandenen Altdatensaetze.**
-  - [x] Vorab per SQL Editor gegengeprueft statt blind geloescht
-        (`supabase/cleanup_2026-08-17_test_leftovers.sql`): `saves`-Zeile
-        `id = 'b91ec0c5-999f-4408-8cc7-587bb0c065c5'` mit `level=1,
-        best_score=0, total_runs=0, updated_at 07:01:12 UTC` — eindeutig ein
-        unbespielter Testdatensatz. `sync_codes`-Zeile `code = '67N0B2'`,
-        `save_id` passend, `created_at 07:01:13 UTC` — eine Sekunde nach dem
-        saves-Eintrag. **Korrektur zur urspruenglichen Vermutung:** ein
-        verknuepfter `scores`-Eintrag ("der Score-Eintrag hat keinen
-        plausiblen playerName") liess sich nicht bestaetigen — die Abfrage
-        auf `player_id = 'b91ec0c5-...'` lieferte keine Zeile. Nur zwei
-        DELETEs noetig, nicht drei.
-  - [x] Beide Zeilen geloescht (`delete from public.sync_codes ...`, danach
-        `delete from public.saves ...`, in dieser Reihenfolge wegen der
-        Fremdschluessel-Beziehung).
+- [ ] **Entscheidung „Baum, Route oder ehrliche Liste“ abschließen.**
 
-- [ ] `src/ui/hitDebug.ts` entfernen, sobald der Knopf-Fehler bestaetigt behoben
-      ist — es ist ein Diagnosewerkzeug, kein Feature
-- [x] `ideen.txt` in die priorisierte Planung oben ueberfuehrt; die Datei bleibt
-      als unveraenderte Quelle des Kinderfeedbacks erhalten.
+Die sieben Talente sind aktuell fachlich eine unabhängige Liste ohne
+Voraussetzungen. Die Coin-Kosten sind durch ADR-0018 entschieden und werden
+nicht erneut auf Talentpunkte umgebaut.
+
+**Empfohlene Variante:** eine kindgerechte gezeichnete Route als reine
+Darstellung. Gekaufte Ränge leuchten auf; die Wirtschafts- und
+Freischaltregeln bleiben unverändert. Ein echter Baum mit Voraussetzungen ist
+ein separates Feature und braucht eine Migration für bereits gekaufte
+Kombinationen. Wenn keine Route gewünscht ist, heißt der Bildschirm ehrlich
+„Talente“ statt „Talentbaum“.
+
+**Abnahme:** Entscheidung in ADR/TODO notiert, `TalentScene` spiegelt sie
+korrekt, keine versteckten Voraussetzungen und keine Änderung bestehender
+Coin-Käufe ohne eigene Entscheidung.
+
+## P2-02 — Ein klares nächstes Ziel nach jedem Run
+
+- [ ] **Nach dem Ergebnis genau eine priorisierte Motivation zeigen.**
+
+Beispiele: „Noch 80 Coins bis Magnetismus Rang 1“, „Noch 2 Runs bis Eisring“
+oder „Noch 3 Relikte für Erfolg X“. Die Auswahl muss aus Progression, Shop,
+Talenten und Welten gemeinsam abgeleitet werden, darf aber nicht in mehreren
+Scenes separat eigene Logik berechnen.
+
+**Abnahme:** Ein Spieler weiß nach dem Run, was er als Nächstes tun kann. Bei
+maximalem Level oder vollständig gekaufter Kategorie gibt es einen sinnvollen
+kosmetischen oder Tageslauf-Fallback.
+
+## P2-03 — Profilfluss und Identität vereinfachen
+
+- [ ] **Erstprofil, Alias und sichtbaren Spielernamen als einen verständlichen
+  Ablauf gestalten.**
+
+Der technische Alias-Login und der sichtbare Name sind inzwischen gekoppelt,
+aber der erste Start, spätere Änderung und Offline-Verhalten müssen aus
+Kindersicht klar sein. Keine zweite Identität und kein separates Namensfeld in
+der Bestenliste wieder einführen.
+
+**Abnahme:** Erststart, Login auf zweitem Gerät, Namensänderung offline/online
+und Konflikt bei bereits belegtem Namen sind als konkrete Abläufe beschrieben
+und getestet.
+
+## P2-04 — Level-/XP-Anzeige und Ergebnis-Reihenfolge überarbeiten
+
+- [ ] **Fortschritt nicht als konkurrierendes Dashboard, sondern im richtigen
+  Moment zeigen.**
+
+Prüfen, ob Level und XP im Hauptmenü dauerhaft sichtbar bleiben oder erst nach
+„JAGD BEGINNEN“/im Ergebnis prominent werden. Ziel ist eine klare Hierarchie:
+Ergebnis → Belohnung → nächstes Ziel → optionale Details.
+
+**Abnahme:** Ergebnis, Hauptmenü und Profil haben keine widersprüchlichen XP-
+oder Coin-Werte und überladen den Spieler nicht mit gleich starken Aktionen.
+
+## P2-05 — Erfolge mit Fortschritt und Kategorien versehen
+
+- [ ] **Gesperrte Erfolge zeigen ihren konkreten Fortschritt.**
+
+Beispiele: `37 / 50 Relikte`, `Combo 18 / 25`, `noch 2 Tagesläufe`. Die
+Berechnung kommt aus der Achievement-Definition bzw. einem zentralen
+Progressionshelfer, nicht aus jeder Scene separat.
+
+Danach Kategorien für Combo, Sammeln, Welten, Spielzeit, Talente, Tageslauf
+und Spezialaktionen prüfen. „Fast geschafft“ darf erst hinzukommen, wenn die
+Grundanzeige verständlich bleibt.
+
+**Abnahme:** Spieler können den nächsten erreichbaren Erfolg erkennen;
+Belohnungen werden im Ergebnis kompakt gruppiert und sind im Erfolge-Screen
+vollständig nachlesbar.
+
+## P2-06 — Sammlung und Shop für 100 Formen bedienbar machen
+
+- [ ] **Sammlungsfortschritt und neue Inhalte sichtbar machen.**
+
+Mindestens „X von Y Formen“, „X von Y Farben“, Besitzstatus, neu seit dem
+letzten Besuch und zuletzt gekauft. Filter, Favoriten und Loadouts kommen erst,
+wenn der echte Gerätestest zeigt, dass die Liste allein unbedienbar wird.
+
+**Abnahme:** Ein Kind findet eine gekaufte Form wieder, erkennt Besitz und kann
+eine Anprobe von Kauf und Ausrüsten unterscheiden. Die 100 Formen werden im
+laufenden Spiel getestet, nicht nur im Raster-Renderer.
+
+## P2-07 — Weitere Kosmetik sauber abgrenzen
+
+- [ ] **Schleifenfarben und Profil-Icons als eigene Besitztypen planen.**
+
+Schleifenfarben brauchen ein drittes Besitzfeld neben Formen und Rumpffarben.
+Profil-Icons brauchen Regeln für Besitz, Vorschau, Ausrüstung und
+Gerätewechsel. Werte und Ranglistenvergleich dürfen dadurch nicht verändert
+werden.
+
+**Abnahme:** Datenmodell, Preisquelle, Anprobe, Kauf, Reset-Verhalten und
+Migration sind definiert, bevor UI-Code entsteht.
+
+## P2-08 — Kosmetik über Geräte synchronisieren
+
+- [ ] **Getragene Figur und Besitz zwischen Geräten angleichen.**
+
+Der Server kennt aktuell die lokale Auswahl nicht vollständig; `profile_progress`
+und lokale Shop-Daten müssen bewusst getrennt oder zusammengeführt werden.
+Vor einer RPC-Erweiterung klären: Besitz ist dauerhaft serverseitig, Ausrüstung
+ist zuletzt gewählte Darstellung, Wartungs-Reset löscht beides oder nur
+Besitz, und Offline-Käufe werden idempotent übertragen.
+
+**Abnahme:** Kauf auf Gerät A erscheint auf B, ein lokaler Offline-Kauf geht
+nicht verloren und ein Reset hinterlässt keinen nicht bezahlten Gegenstand.
+
+## P2-09 — App-Icon an das Weltraumthema anpassen
+
+- [ ] **Generisches Stern-Icon durch ein raumschifftaugliches, maskables Motiv
+  ersetzen.**
+
+Betroffen sind `public/favicon.png`, `public/apple-touch-icon.png`,
+`public/icon-192.png` und `public/icon-512.png`. Der technische Weg ist
+`npm run icons` über `scripts/generate-icons.mjs`; Android beschneidet maskable
+Icons, daher muss das Motiv innerhalb der sicheren Innenfläche bleiben.
+
+**Abnahme:** Browser-Favicon, iOS-Home-Bildschirm und Android-Maskable-Preview
+zeigen dasselbe erkennbare Motiv; Build und iOS-/Android-Check bleiben grün.
+
+## P2-10 — Temporäres Trefferflächen-Debugging entfernen
+
+- [ ] **`src/ui/hitDebug.ts` nach der aktuellen Geräteabnahme entfernen oder
+  bewusst als dauerhaftes Dev-Werkzeug dokumentieren.**
+
+Die Diagnose war für den alten Button-/Auslieferungsfehler wichtig, ist aber
+kein Produktfeature. Vor dem Entfernen prüfen, dass Debug-Report und
+Wartungsbereich die nötige Diagnose weiterhin liefern.
+
+**Abnahme:** Kein Production-Bundle lädt das Werkzeug, die Dev-Hilfe ist bei
+Bedarf über eine dokumentierte Option verfügbar oder vollständig archiviert.
+
+## P2-11 — Visuelles Polishing: Schweif, Glow und Effekte
+
+- [ ] **Schweif und optisches Feedback als eigenes Feature-Paket optimieren.**
+
+Das ist mehr als „Schleifenfarben kaufbar machen“: Der Schweif ist während
+jedes Fangs sichtbar und bestimmt wesentlich, ob sich Bewegung, Combo und
+Seltenheit gut anfühlen. Die Optimierung darf erst nach dem echten Spielabend
+finalisiert werden, damit nicht nach statischen Screenshots für einen Bot,
+sondern für die tatsächliche Größe und Bewegung auf iPhone/iPad gestaltet wird.
+
+**Zu prüfen und getrennt zu entscheiden:**
+
+- **Form:** Länge, Breite, Krümmung, Segmentierung, Nachlauf und Verhalten bei
+  Richtungswechseln; der Schweif darf nicht wie ein starrer Balken aussehen.
+- **Stufen:** klare, aber nicht überladene Unterschiede für normale Fänge,
+  Combo-Stufen und besondere/legendäre Relikte.
+- **Farbe:** Weltfarbe, Seltenheitsfarbe, Combofarbe und mögliche kaufbare
+  Variante dürfen sich nicht gegenseitig unlesbar machen.
+- **Glow und Aura:** Helligkeit, Weichheit, Kern-/Randkontrast und die
+  Abstimmung mit Talent-Aura, Magnetlinien und Planetenglow.
+- **Partikel und Nachbilder:** Menge, Lebensdauer, Spawnrate und Cleanup über
+  einen vollständigen 90-Sekunden-Run; kein wachsender Speicher- oder
+  Performanceverlust.
+- **Fangmoment:** kurzer visueller Impuls für selten/episch/legendär, ohne
+  Score-Popup, Hinderniswarnung oder Zielanzeige zu verdecken.
+- **Lesbarkeit:** Sichtbarkeit auf kleinen Displays, bei heller Weltfarbe,
+  bei mehreren Effekten gleichzeitig und im Duell.
+- **Kosmetik:** kaufbare Schweiffarben/Varianten bleiben rein optisch und
+  werden über denselben Besitz-/Anprobe-/Reset-Weg wie Formen und Farben
+  behandelt.
+
+**Betroffene Stellen:** `src/entities/Player.ts` für Partikelemitter,
+Linienzeichnung und Bewegungspfad, `src/systems/ScoreSystem.ts` für die
+Zuordnung von Serie zu Schweifstufe, `GameScene`/HUD für die
+Laufzeitdarstellung, `src/config/GameConfig.ts` für die aktuellen
+Effektparameter, `src/config/shop.ts` für kaufbare Varianten,
+`TalentScene`/Shopvorschau für Anprobe und `SoundSystem` nur für passend
+abgestimmte Ereignisse.
+
+**Vorgehen:**
+
+1. Vergleichsset mit allen Schweif-/Combo-Stufen im Production-Build erzeugen.
+2. Auf mindestens iPhone und iPad je einen vollständigen Run aufnehmen.
+3. Nur eine Effektgruppe pro Änderung anpassen: Form, Farbe, Glow, Partikel
+   oder Timing.
+4. Performance und Lesbarkeit gegen `P5-04`/`P5-05` prüfen.
+5. Kaufbare Varianten erst nach dem Basisschweif freigeben.
+
+**Abnahme:** Jede Stufe ist im Standbild und in Bewegung unterscheidbar, kein
+Effekt verdeckt eine wichtige Information, ein 90-Sekunden-Run bleibt stabil,
+und die finale Regel ist in `docs/GAME_DESIGN.md`/`docs/ART_STYLE.md`
+dokumentiert. Neue Werte werden nicht als verstreute Scene-Konstanten angelegt.
+
+**Autonomer Zwischenstand 2026-08-21:** `Player` zeichnet die Serie jetzt als
+getrennte Glow-/Kernspur und leert die Stützpunkte beim Serienende sofort;
+`GameConfig` hält die drei neuen Darstellungsparameter zentral. Typecheck,
+Lint, 316 Unit-Tests und Production-Build sind lokal grün. Die Checkbox bleibt
+bis zur echten iPhone-/iPad-Abnahme offen; dort werden insbesondere helle
+Welten, Richtungswechsel, mehrere Effekte und ein kompletter 90-Sekunden-Run
+geprüft.
+
+---
+
+# Phase 3 — Balance-Kette und technische Datenverträge (P1)
+
+## P3-01 — JSON-zu-SQL-Synchronität als CI-Test erzwingen
+
+- [ ] **`balance:sync` beziehungsweise den SQL-Block in `npm run verify`
+  absichern.**
+
+`src/config/balance-data.json` ist die Rohquelle; `src/config/balance.ts`
+leitet Clientwerte ab; `supabase/phase_2_14_balance_chain.sql` enthält eine
+manuell synchronisierte JSON-Kopie für Server-RPCs. Der Generator läuft derzeit
+auf Zuruf. Ein Test muss den `$json$ ... $json$::jsonb`-Block aus der SQL-Datei
+lesen und strukturell gegen die JSON-Datei vergleichen.
+
+**Warum:** Ein Testlauf hat bereits gezeigt, dass eine Änderung nur im JSON
+von den Client-Tests erkannt wird, während SQL still auf dem alten Wert bleiben
+kann.
+
+**Empfehlung:** vergleichender Test in `Balance.test.ts` oder einer separaten
+Contract-Testdatei, nicht nur ein Pre-Commit-Hook. So greift die Prüfung auch
+in CI und auf anderen Rechnern.
+
+**Abnahme:** Eine absichtliche Abweichung zwischen JSON und SQL macht `npm run
+verify` rot; nach `npm run balance:sync` wird sie reproduzierbar behoben.
+
+## P3-02 — Herkunft der Balance-Baselines dokumentieren
+
+- [ ] **`BASELINE_*`-Werte und ihre Neuberechnung dauerhaft nachvollziehbar
+  machen.**
+
+`src/config/balance.ts` skaliert XP, Coins und Punkte relativ zu eingefrorenen
+Bezugswerten. Für jede Baseline muss festgehalten werden: aus welcher
+Rohkonfiguration sie stammt, an welchem Datum sie festgelegt wurde, welche
+Einheiten gelten und wann eine Neuberechnung nötig ist (z. B. neue Rarität,
+Gewicht, erwartete Fangzahl oder Referenz-Combo).
+
+**Abnahme:** Kommentar und Test prüfen, dass die Baselines zur dokumentierten
+Ableitung passen. Ein späterer Entwickler kann erkennen, ob er eine Baseline
+ändern oder nur einen Rohwert ändern darf.
+
+## P3-03 — Vollständige Einnahmen-/Kosten-Inventur schützen
+
+- [ ] **Alle XP-, Punkte- und Coin-Generatoren sowie Kosten einmal gegen die
+  zentrale Kette auditieren.**
+
+Die Inventur muss mindestens abdecken:
+
+- Punkte je Relikt, Combo-Stufen, Weltmultiplikatoren und Score-Grenzen,
+- XP je Relikt, Run, Welt, Level und Tagesabschluss,
+- Coins aus Run, Sammlung, Seltenheit, Erfolge, Level, Login und Tageslauf,
+- Kosten für Talente, Talent-Reset, Formen, Farben und künftige Kosmetik,
+- Offline-Outbox und serverseitige Wiederholung ohne Doppelgutschrift.
+
+**Abnahme:** Für jede Quelle/Senke gibt es eine Code-Stelle, einen zentralen
+Rohwert oder eine begründete Ausnahme. `rg` findet keine unbeabsichtigte
+zweite Währungskonstante in Scenes/RPCs.
+
+## P3-04 — Balance-Snapshot als Änderungsbericht ausgeben
+
+- [ ] **Bei jeder Balance-Änderung automatisch die wichtigsten abgeleiteten
+  Werte prüfen.**
+
+Der Snapshot soll mindestens erwartete Punkte/XP/Coins je Run, Runs bis Level
+100, Runs bis maximalem Talentbaum, Kosten von Reset/Shop-Beispielen und die
+Tageshöchstbelohnung zeigen. Änderungen an einem Rohwert sollen sichtbar
+machen, welche Systeme mitgezogen werden.
+
+**Abnahme:** Testbericht oder CLI-Ausgabe wird bei `npm run verify` oder einem
+gezielten Balance-Befehl erzeugt; die Werte sind nicht als zweite Wahrheit im
+Dokument zu pflegen.
+
+## P3-05 — Progressionsinvarianten als feste Tests ausbauen
+
+- [ ] **Wirtschafts- und Sync-Invarianten als Regressionen festschreiben.**
+
+Zu prüfen sind: Coins nie negativ, Talentrang nie über `maxRank`, Kauf zieht
+genau einmal ab, Reset erstattet nicht versehentlich, ein ProgressEvent wirkt
+idempotent, täglicher Bonus nur einmal je erlaubtem Tag, Level 100 deckelt XP,
+und gleicher Seed erzeugt im Duell denselben Reliktablauf.
+
+**Abnahme:** Jeder Fehlerfall hat einen Test; Zufalls- oder Migrationsdaten
+werden mit Property-/Fuzz-Tests ergänzt, sobald die deterministischen Regeln
+stehen.
+
+---
+
+# Phase 4 — Soziales Spiel und Wettbewerb (P2)
+
+Diese Phase darf die Reichweite der Rangliste erst über den bekannten
+Familienkreis hinaus erweitern, wenn P4-06 Datenschutz/Moderation geklärt ist.
+
+## P4-01 — Netzwerk-Duell Phase 1 stabilisieren
+
+- [ ] **Auf Basis von P0-03 alle Abbruch-, Wiederverbindungs- und
+  Hintergrundzustände definieren.**
+
+Der Grundablauf muss nicht nur starten, sondern auch bei App-Wechsel,
+Bildschirmsperre, Netzverlust, verspätetem Presence-Event, Timeout und doppeltem
+Ergebnis einen eindeutigen Zustand erreichen.
+
+**Abnahme:** Kein endloser Ladebildschirm, keine weiterlaufenden Timer nach
+Abbruch, keine doppelte Ergebnisbuchung und eine klare Meldung mit nächster
+Aktion.
+
+## P4-02 — Live-Punktestand des Gegners
+
+- [ ] **Zuerst nur den gegnerischen Score im HUD übertragen.**
+
+Der Nutzerwunsch ist ausdrücklich gestuft: erst Score, testen, danach eventuell
+vollständige Live-Sicht. Übertragungstakt, Netzpufferung, veraltete Werte und
+Abbruch müssen dokumentiert werden. Der eigene Score bleibt maßgeblich für das
+lokale Ergebnis.
+
+**Abnahme:** Beide Geräte sehen während eines erfolgreichen Duells einen
+verständlichen, nicht flackernden gegnerischen Zwischenstand; Netzverlust zeigt
+„letzter Stand“ statt falscher Aktualität.
+
+## P4-03 — Rematch, Reconnect und sichtbarer Spielername
+
+- [ ] **Nach einem stabilen Duell ein zweites Duell ohne vollständigen Neustart
+  ermöglichen.**
+
+Dazu gehören Raum-Lebensdauer, neues Ready, erneuter Seed/Startzeit,
+Wiederbeitritt während der Lobby und ein echter Anzeigename statt „Spieler 2“.
+Reconnect während einer laufenden Runde bleibt bewusst schwieriger als Lobby-
+Reconnect und braucht eine eigene Entscheidung.
+
+## P4-04 — Vollständige gegenseitige Live-Sicht als eigenes Paket
+
+- [ ] **Erst nach P4-02 prüfen, ob beide Spieler das Spielfeld des anderen sehen
+  sollen.**
+
+Das ist nicht nur ein weiteres HUD-Element: Positionsdaten, Fangereignisse,
+ein zweiter Renderpfad oder eine Bildschirmteilung, Bandbreite, Rate-Limit und
+Datenschutz müssen geklärt werden. Nicht gemeinsam mit Score-Live-Sicht in
+einem kleinen Fix verstecken.
+
+**Abnahme:** eigenes Konzept, Performance-Messung auf iPhone und klare Regel,
+welche Daten übertragen werden.
+
+## P4-05 — Rangliste fair und nachvollziehbar machen
+
+- [ ] **Weltmodifikatoren, Versionen und Casual/Ranked sauber trennen.**
+
+Die gemeinsame Liste ist nur fair, solange Welten mechanisch vergleichbar sind.
+Mit unterschiedlichen XP-/Score-Multiplikatoren, Hindernissen und seltenen
+Relikten braucht sie entweder Normalisierung, getrennte Regelklassen oder gut
+sichtbare Marker. Scores müssen zusätzlich Regel-/Versionsstand speichern.
+
+**Abnahme:** Eine dokumentierte Vergleichsregel beantwortet, ob ein Score aus
+Welt A gegen Welt B antreten darf. Alte Rekorde werden nicht still unter neuen
+Regeln verglichen.
+
+## P4-06 — Serverseitige Laufprüfung vor Ranked und Rekordmeldungen
+
+- [ ] **Run-Ergebnis serverseitig plausibilisieren oder nachspielen.**
+
+Die aktuelle Browser-Rangliste bleibt manipulierbar. `max_plausible_score` ist
+eine Plausibilitätsgrenze, keine vollständige Verifikation. Für Ranked braucht
+es eine Edge Function oder einen anderen serverseitigen Ablauf, der Seed,
+Fangfolge, Dauer, Score, XP und Coins gegen die Balance-Regeln prüft.
+
+**Abnahme:** Ein manipuliertes Ergebnis wird abgewiesen, ein gültiger Run
+landet idempotent, und die Funktion kennt den gleichen Balance-/Versionsstand
+wie der Client.
+
+## P4-07 — Freunde und Realtime erst nach Identitäts-/Datenschutz-Gate
+
+- [ ] **Freundesmodell auf dem bestehenden Profil statt auf einer zweiten
+  Identität aufbauen.**
+
+Benötigt werden Anfrage, Annahme, Entfernen, Online-/Offline-Status, Rekord und
+optional Coin-Anzeige. P4-06 und P4-08 sind Vorbedingungen, damit keine
+manipulierbare öffentliche Liste mit Kindernamen entsteht.
+
+## P4-08 — Datenschutz, Moderation und öffentliche Reichweite entscheiden
+
+- [ ] **Vor einer Veröffentlichung außerhalb der Familie eine belastbare
+  Rechts- und Produktentscheidung treffen.**
+
+Dann gehören mindestens Datenschutzerklärung, Lösch- und Exportweg,
+Auftragsverarbeitung, Eltern-/Alterskonzept, Alias-Moderation,
+Reservierte-/Schimpfwortfilter, Rate-Limits und Begrenzung von Login-, Sync-
+und Duel-Code-Versuchen dazu. Die aktuelle Nutzung bleibt bewusst im engen
+Familienkreis; das ist ein Gate, kein akuter Feature-Blocker.
+
+## P4-09 — Rekord-Meldungen und Push
+
+- [ ] **Rekord im laufenden Spiel/Ergebnis sichtbar melden; Push erst danach
+  entscheiden.**
+
+Eine lokale Meldung braucht keine öffentliche Reichweite. Web-Push für
+installierte Apps braucht Einwilligung, Geräteverwaltung, Datenschutz und
+eine klare Begrenzung, damit ein Spiel nicht nervt.
+
+## P4-10 — Nähe-Erkennung als Machbarkeitsprüfung
+
+- [ ] **Automatischen Duellbeitritt zunächst nur recherchieren und prototypisch
+  auf den echten iPhones prüfen.**
+
+Web Bluetooth, lokale Netzwerkerkennung und Audio-Beacon haben sehr
+unterschiedliche iOS-Safari-Grenzen. Erst Browser-/iOS-Unterstützung und
+Berechtigungen prüfen; erst danach eine Technik auswählen. Der sechsstellige
+Raumcode bleibt bis dahin der verlässliche Fallback.
+
+---
+
+# Phase 5 — Qualität, Accessibility und Betrieb (P2)
+
+## P5-01 — Tests über Browser-Grenzen sinnvoll erweitern
+
+- [ ] **Ablauflogik aus `MenuScene`/`SyncScene` schrittweise in testbare Systeme
+  ziehen.**
+
+Nicht die Phaser-Scene künstlich im Node-Test laden. Stattdessen Entscheidungen
+wie „Remote ahead“, „Retry planen“, „Sync drosseln“, „bei Logout abbrechen“ in
+reine Helfer/Systeme verschieben. `SyncDecisionSystem` ist ein möglicher
+Schnitt, kein fest beschlossener Klassenname.
+
+**Abnahme:** Entscheidungslogik ist ohne Canvas testbar; die Scene orchestriert
+nur UI und Lebenszyklus. Kein großer Umbau ohne konkreten Fehlerfall.
+
+## P5-02 — Konfiguriertes Backend und Netzwerk-Matrix testen
+
+- [ ] **Die bestehende `CloudSystem.configured.test.ts` um die noch fehlenden
+  Fehler- und RPC-Verträge ergänzen.**
+
+Der alte Audit-Punkt „13 von 30 Exporten ohne Test“ ist durch eine konfigurierte
+Suite teilweise überholt. Nicht die alte Zahl übernehmen, sondern aktuelle
+Lücken aus dem Modulvertrag schließen: Timeout, Auth-Fehler, RPC-Fehler,
+idempotente Wiederholung, abgelaufene Codes und unerwartete Nutzlasten.
+
+Zusätzlich echte Browserabläufe für Netzverlust genau beim Run-Ende, während
+eines Kaufs, nach einer RPC-Antwort und beim App-Hintergrund aufnehmen.
+
+## P5-03 — Migrationen und Spielstände robust gegen Zufallsdaten machen
+
+- [ ] **Property-/Fuzz-Tests für `migrate()` und `reconcile()` ergänzen.**
+
+Testdaten brauchen fehlende Felder, alte SAVE-Versionen, negative/zu große
+Werte, doppelte Achievements, ungültige Shopbesitze, kaputte JSON-Typen und
+abgebrochene Outbox-Ereignisse. Die Migration darf nicht still Coins oder
+Talente vervielfachen.
+
+## P5-04 — Production-Artefakt und Visual Regression prüfen
+
+- [ ] **Smoke-/Playtests mindestens einmal gegen `dist`/Preview ausführen.**
+
+Dev-Server und Production-Build unterscheiden sich bei relativen Assets,
+Version, Manifest, Cache und Code-Splitting. Für Start, ersten Run,
+Schweifstufen, Talent, Shop, Ergebnis, Tageslauf und Duellstatus feste
+Screenshot-Zustände definieren.
+
+## P5-05 — Mobile Performance messen
+
+- [ ] **Performance-Budgets für einen 90-Sekunden-Run definieren.**
+
+Zu messen sind Startzeit, Framezeit, aktive GameObjects, Partikel,
+Speicher, Akku/Hitze und Verhalten nach wiederholten Runs. `preserveDrawingBuffer`
+hilft Debug-Screenshots, kann aber Produktionskosten haben; Debug- und
+Produktionspfad getrennt bewerten. Seltene Scenes dürfen erst nach Messung
+lazy geladen werden.
+
+## P5-06 — Accessibility und Lesbarkeit als System prüfen
+
+- [ ] **Reduced Motion, Kontrast, Farbsehvarianten, Schriftgröße und Touchziele
+  als zusammenhängendes Paket umsetzen.**
+
+Seltenheit, Talentwirkung und Hindernis dürfen nicht nur über Farbe erkennbar
+sein. Blinkeffekte, Partikel, Bildschirmimpulse und schnelle Tweens brauchen
+eine reduzierte Variante. Kleine Weltpfeile und sekundäre Aktionen müssen die
+Fingerzielgröße einhalten.
+
+Danach Einhand-/Linkshänderoption und wichtige DOM-/Live-Region-Texte für
+Menü, Ergebnis, Pause und Fehler prüfen. Das gesamte Spielfeld muss nicht
+sofort vorgelesen werden.
+
+## P5-07 — Audio, Haptik und Feedback-Hierarchie ordnen
+
+- [ ] **Rückmeldungen priorisieren, bevor weitere Effekte hinzukommen.**
+
+Legendärer Fang, Run-Ende, Zielerreichung, Combo, Hindernis und normale Fänge
+dürfen sich nicht akustisch/visuell überdecken. Haptik ist optional und braucht
+einen Sound-/Visual-Fallback. Audio-Kategorien und Intensitäten sollen getrennt
+abschaltbar sein.
+
+## P5-08 — UI-Texte und Content-Daten zentralisieren
+
+- [ ] **Begriffe, Textkatalog und Content-Validierung ordnen.**
+
+Run, Serie/Combo, Rang/Level, Coins, Relikt, Talent, Profil und Bestwert
+brauchen einen verbindlichen Wortkatalog. Welt-, Talent-, Raritäts-, Shop- und
+Achievementdaten sollen auf doppelte IDs, fehlende Texte, Preise, Zeichen-
+funktionen, zu lange Labels und ungültige Freischaltungen geprüft werden.
+
+## P5-09 — SQL-Migrationsprozess formalisieren
+
+- [ ] **Aus einzelnen `phase_2_x.sql`-Dateien einen nachvollziehbaren
+  Produktionsprozess machen.**
+
+Ein Migrationslog oder eine `schema_migrations`-Tabelle soll Version, Datum,
+Umgebung, Hash/Commit, Ausführender und Ergebnis dokumentieren. Destruktive
+Cleanup-Skripte bleiben getrennt. Rollback-Hinweise und Vorbedingungen müssen
+bei neuen Migrationen im Header stehen.
+
+## P5-10 — PWA-Offlinebetrieb und Updates gezielt entscheiden
+
+- [ ] **Service Worker nur bei einem belegten Bedarf einführen.**
+
+Das Manifest macht die App installierbar, ersetzt aber keinen Service Worker.
+Zuerst P0-05 auswerten. Falls die Home-Bildschirm-App weiter alte Bundles lädt,
+App-Shell, gehashte Assets, `updateViaCache: 'none'`, Cache-Version und
+„Update erst im Menü/Ergebnis“ entwerfen. Niemals während eines laufenden Runs
+automatisch reloaden.
+
+## P5-11 — Konto-, Daten- und Diagnose-Lebenszyklus vervollständigen
+
+- [ ] **Abmeldung, lokaler Reset, Cloud-Löschung, Export und Outbox-Verhalten
+  eindeutig machen.**
+
+Ein Reset darf nicht durch eine ausstehende Outbox rückgängig gemacht werden.
+Debug- und Share-Reports dürfen keine Tokens, PINs oder unnötigen persönlichen
+Daten enthalten. Für eine Veröffentlichung außerhalb der Familie werden diese
+Wege verpflichtend; im Familienbetrieb zunächst dokumentieren und testen.
+
+---
+
+# Phase 6 — Native App und langfristiges Endgame (P3)
+
+## P6-01 — Native-App-Voraussetzungen erst bei Web-Reife starten
+
+- [ ] **Capacitor, Codemagic, TestFlight und Android-Test nach dem Web-Gate
+  vorbereiten.**
+
+Die Apple-Mitgliedschaft war beim letzten Check abgelaufen. Bei Start dieser
+Phase zuerst Mitgliedschaft reaktivieren, dann Bundle-ID/App-Store-Eintrag,
+API-Key sicher verwahren, Codemagic-Signing konfigurieren, Android-Test und
+TestFlight-Gruppe klären. Keine Secrets in Git.
+
+**Danach:** Capacitor-Wrapper, `ios/`, `capacitor.config.ts`,
+`codemagic.yaml`, nativer Update-Hinweis und Gerätetests für Sound-Unlock,
+Safe Area und `localStorage`.
+
+## P6-02 — Dynamic Island / Live Activity
+
+- [ ] **Live Activity erst als natives Feature nach P6-01 bauen.**
+
+Eine Web-App kann die Dynamic Island nicht direkt steuern. Bis dahin bleibt
+die Web-Safe-Area und die Restzeitanzeige ein Prototyp. Für die native Variante
+zuerst minimale Live Activity mit Score und Restzeit während des gesamten Runs
+definieren; dauerhafte Inhalte erst nach einem Test entscheiden.
+
+## P6-03 — Prestige/Endgame ohne unbegrenzte Machtspirale
+
+- [ ] **Wiedergeburt/Prestige erst nach validierter Level-100-Kurve konzipieren.**
+
+Vor einer Umsetzung müssen Reset-Umfang, dauerhafter kosmetischer oder kleiner
+Multiplikator, Schutz vor versehentlichem Auslösen, bestehende Profile,
+Talente, Shop und Migration feststehen. Keine Lösung, die alte Welten für neue
+Spieler entwertet oder unendliche Leistungssteigerung erzeugt.
+
+## P6-04 — Boosts nur als bewusstes, nicht wettbewerbsverzerrendes System
+
+- [ ] **Boosts bleiben zurückgestellt; bei Wiederaufnahme nur XP-/Coin-
+  Fortschrittsboosts untersuchen.**
+
+Tempo-, Reichweiten- oder Leistungsboosts würden die Vergleichbarkeit der
+Rangliste und das Spielgefühl verändern. Jeder Boost braucht Ablaufdauer,
+Offline-Regel, Missbrauchsschutz, UI-Erklärung und eine Balance-Entscheidung.
+
+---
+
+# Parkplatz — gute Ideen ohne nächste Priorität
+
+Diese Punkte werden nicht vergessen, aber erst nach einem konkreten Anlass
+hochgezogen:
+
+- zusätzliche Achievement-Typen für riskante Spielweisen statt nur Mengen,
+- Kaufprognose „ungefähr noch X normale Runs“ bei Talent und Shop,
+- Shop-Filter nach neu, besessen, erschwinglich und Favorit,
+- kombinierte kosmetische Vorschau mit Form, Farbe, Aura, Schweif und späteren
+  Effekten,
+- Loadouts/Favoriten für rein kosmetische Kombinationen,
+- wechselnde Tages-/Wochenziele und Sammelalben nach Level 100,
+- thematische Shop-Sets und kosmetische Abzeichen,
+- zusätzliche Bot-Transparenz durch Ghost-Verlauf statt nur Endwert,
+- `theme-color` je Menü-/Run-Zustand als Web-Annäherung an die Dynamic Island,
+- Linkshänder-/Einhandmodus, falls die Geräteabnahme einen Bedarf zeigt,
+- seltene Scenes lazy laden, falls das Performance-Budget gerissen wird,
+- Realtime-Rangliste, sobald ein echter Nutzen und ein sicherer Scope vorliegen.
+
+**Regel:** Ein Parkplatzpunkt wird nur dann zu einer aktiven Aufgabe, wenn ein
+Spieltest, ein konkreter Nutzerwunsch, ein Sicherheitsbefund oder ein
+Performance-Messwert seinen Nutzen belegt. Dann bekommt er eine eigene ID,
+Priorität, Abhängigkeit und Abnahme.
+
+---
+
+# Entscheidungen, die nicht wieder aufgemacht werden sollen
+
+| Entscheidung | Stand | Konsequenz |
+| --- | --- | --- |
+| Talente mit Coins statt Talentpunkten | **entschieden, ADR-0018** | Kein Talentpunkte-Umbau, keine Migration dafür. Die Darstellung bleibt separat offen (P2-01). |
+| Welten unter dem eigenen Level sperren | **verworfen** | Gemeinsames Spielen und Duell bleiben möglich; höhere Welten motivieren über Belohnung. |
+| Duell-Link als erster Netzwerkweg | **übersprungen** | Raumcode/Realtime Phase 1 ist gebaut; Stabilität kommt vor weiteren Varianten. |
+| Öffentliche Bestenliste | **nicht freigegeben** | Familienkreis bleibt der aktuelle Scope; Datenschutz/Moderation ist ein Gate. |
+| Dynamic Island im Web | **nicht möglich** | Native Live Activity erst in Phase 6. |
+| Boosts mit Leistungsänderung | **zurückgestellt** | Keine Vorteile, die Score-/Ranked-Vergleiche verfälschen. |
+| Service Worker | **nicht automatisch bauen** | Erst Update-/Offline-Bedarf auf echten Geräten belegen. |
+
+---
+
+# Erledigt und als Beleg archiviert
+
+Diese Punkte sind abgeschlossen und werden nicht erneut als offene Aufgaben
+geführt. Details und Ursachen bleiben in den verlinkten Dokumenten bzw. in der
+Git-Historie.
+
+- **Bedienbarkeit:** einheitliche Zurück-Navigation, Pause, Run verlassen,
+  große Trefferflächen, Safe Area, Pixel-Lineal und sichtbare Version.
+- **Auslieferung:** Pre-Commit-Versionserhöhung, Pre-Push-Verify,
+  `index.html`-Cache-Regeln, Versionsanzeige im DOM und automatischer
+  GitHub-Pages-Deploy.
+- **Debugging:** Ringpuffer, persistenter Debug-Report, Screenshot/Share,
+  Audio-Diagnose und iPhone-Bestätigung; die historische Sync-Fehlersuche ist
+  als Ursachenbeleg in der Git-Historie nachvollziehbar.
+- **Profil:** Alias-Login, Profilidentität, Offline-Outbox, idempotente
+  Ereignisse, Zusammenführung von XP/Coins/Erfolgen/Bestwert und Retry-Pfade
+  sind implementiert; die reale Mehrgeräteabnahme ist P0-02.
+- **Weltraum:** Raumschiff, Planeten, Raumzonen, Weltenmultiplikatoren,
+  Textur- und Level-Skins sind umgesetzt.
+- **Belohnung:** Score-Popups, Combo, Coins, Level-Belohnungen, Talente,
+  Reset, Shop und Achievement-Belohnungen sind umgesetzt.
+- **Balance-Kette:** `src/config/balance-data.json`,
+  `src/config/balance.ts`, `scripts/sync-balance-sql.mjs` und
+  `supabase/phase_2_14_balance_chain.sql` bilden die zentrale Ableitung.
+  Die Gate- und Baseline-Aufgaben stehen in P3-01 bis P3-04.
+- **Phase 5:** Tageslauf, Bot-Duell, Weltmodifikatoren, Hindernisse und
+  World-Info-Screen sind gebaut; echte Zielgruppen-Balance ist P0-04/P1-01.
+- **Shop:** 100 Fluggestalten, Farben und Vorschau sind ausgeliefert; echte
+  Sichtbarkeit in einem laufenden Run ist Teil von P0-04.
+- **Netzwerk-Duell:** Raumcode, Ready, gemeinsame Startzeit, Presence und
+  Ergebnisvergleich sind gebaut; der Slave-Test bleibt P0-03.
+- **Testlücken, die inzwischen geschlossen wurden:** Die konfigurierte
+  `CloudSystem`-Suite und der Mehrere-Ereignisse-Test für die Outbox existieren
+  bereits. Die alte Audit-Zahl „13 von 30 ohne Test“ ist deshalb kein aktueller
+  Arbeitsauftrag mehr; aktuelle Lücken gehören in P5-02.
+
+## Relevante Dokumente
+
+- [Architektur](docs/ARCHITECTURE.md) — Szenen, Systeme, Datenfluss und Tests
+- [Spielregeln](docs/GAME_DESIGN.md) — Run, Score, Progression und Welten
+- [Balance-Kette](docs/BALANCE_CHAIN.md) — zentrale Rohwerte und Ableitungen
+- [Entscheidungen](docs/DECISIONS.md) — ADRs, insbesondere ADR-0018
+- [Roadmap](docs/ROADMAP.md) — Produktmeilensteine; bei Widerspruch zuerst
+  P0-06 aktualisieren
+- [Code-Stil](docs/CODE_STYLE.md) — Definition of Done und Testregeln
+- [Audit 2026-08-17](docs/AUDIT_2026-08-17.md) — technischer Audit-Kontext
+
+## Release-Befehle
+
+```text
+npm run balance:sync
+npm run verify
+git diff --check
+git push origin main
+npm run deploy:wait
+```
+
+Für eine SQL-Änderung zusätzlich den SQL-Editor-Schritt aus **P0-01**
+dokumentieren. Ein grüner Frontend-Build beweist nicht, dass die Supabase-
+Migration ausgeführt wurde.
