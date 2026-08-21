@@ -3,7 +3,7 @@
  *
  * Warum ein eigenes Skript statt fertiger Bilddateien: Das Spiel zeichnet auch
  * seine Spieltexturen prozedural (src/ui/textures.ts). Die Icons folgen
- * derselben Linie - dieselbe Sternform, dieselben Farben, und wer das Motiv
+ * derselben Linie - dieselbe kompakte Schiffsform, dieselben Farben, und wer das Motiv
  * aendert, aendert eine Zahl statt fuenf Bilddateien.
  *
  * Warum ein PNG-Encoder von Hand: Icons brauchen echte PNG-Dateien (iOS
@@ -25,15 +25,16 @@ const OUTPUT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'public')
 const BACKDROP = [0x0b, 0x10, 0x20];
 const GOLD = [0xff, 0xd4, 0x79];
 const WHITE = [0xff, 0xff, 0xff];
+const ENGINE = [0x55, 0xd9, 0xff];
 
 /**
- * Anteil der Bildbreite, den der Stern einnimmt.
+ * Anteil der Bildbreite, den das Schiff einnimmt.
  *
  * Bewusst klein: Android schneidet "maskable" Icons zu einem Kreis oder
  * Squircle zu und garantiert nur die inneren 80 % der Flaeche. Ein groesserer
- * Stern verlaere seine Zacken.
+ * Schiff verlaere seine Silhouette.
  */
-const STAR_RADIUS_RATIO = 0.3;
+const SHIP_RADIUS_RATIO = 0.3;
 
 const ICONS = [
   { file: 'icon-192.png', size: 192 },
@@ -103,15 +104,9 @@ function encodePng(size, pixels) {
 
 // --- Zeichnen ---------------------------------------------------------------
 
-/** Zackenstern als Punktliste - dieselbe Form wie die Spielfigur. */
-function starPolygon(center, outer, inner, spikes, rotation) {
-  const points = [];
-  for (let i = 0; i < spikes * 2; i++) {
-    const radius = i % 2 === 0 ? outer : inner;
-    const angle = (Math.PI / spikes) * i + rotation;
-    points.push([center + Math.cos(angle) * radius, center + Math.sin(angle) * radius]);
-  }
-  return points;
+/** Normierte Punktliste fuer das kompakte, nach oben fliegende Schiff. */
+function shipPolygon(center, radius, points) {
+  return points.map(([x, y]) => [center + x * radius, center + y * radius]);
 }
 
 function isInside(polygon, x, y) {
@@ -135,10 +130,28 @@ function mix(a, b, t) {
 function drawIcon(size) {
   const pixels = new Uint8Array(size * size * 4);
   const center = size / 2;
-  const outer = size * STAR_RADIUS_RATIO;
-
-  const star = starPolygon(center, outer, outer * 0.34, 4, -Math.PI / 2);
-  const innerStar = starPolygon(center, outer * 0.52, outer * 0.19, 4, -Math.PI / 2 + Math.PI / 4);
+  const radius = size * SHIP_RADIUS_RATIO;
+  const hull = shipPolygon(center, radius, [
+    [0, -1],
+    [0.3, -0.2],
+    [0.27, 0.52],
+    [0.1, 0.38],
+    [0, 0.88],
+    [-0.1, 0.38],
+    [-0.27, 0.52],
+    [-0.3, -0.2],
+  ]);
+  const cockpit = shipPolygon(center, radius, [
+    [0, -0.62],
+    [0.12, -0.24],
+    [0, 0.12],
+    [-0.12, -0.24],
+  ]);
+  const exhaust = shipPolygon(center, radius, [
+    [-0.08, 0.42],
+    [0.08, 0.42],
+    [0, 1.1],
+  ]);
 
   // Kantenglaettung durch Ueberabtastung: 3x3 Proben je Bildpunkt. Ohne das
   // saehen die Zacken bei 64 px wie eine Treppe aus.
@@ -161,9 +174,11 @@ function drawIcon(size) {
           const glow = Math.max(0, 1 - distance) ** 2;
           let color = mix(BACKDROP, GOLD, glow * 0.22);
 
-          if (isInside(innerStar, px, py)) {
+          if (isInside(exhaust, px, py)) {
+            color = mix(ENGINE, WHITE, 0.35);
+          } else if (isInside(cockpit, px, py)) {
             color = mix(GOLD, WHITE, 0.45);
-          } else if (isInside(star, px, py)) {
+          } else if (isInside(hull, px, py)) {
             color = GOLD;
           }
 

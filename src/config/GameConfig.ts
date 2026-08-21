@@ -335,6 +335,9 @@ export const SERIES_TRAIL_CORE_MIN_ALPHA = 0.38;
  */
 export const SERIES_TRAIL_SAMPLE_MS = 26;
 
+/** Abtastpunkte je Quadratic-Bezier-Teilkurve fuer eine weiche Spur. */
+export const SERIES_TRAIL_SMOOTHING_DIVISIONS = 8;
+
 /**
  * Wie viele Abtastungen im Stillstand vergehen, bis die Schleife hinten einen
  * Punkt verliert.

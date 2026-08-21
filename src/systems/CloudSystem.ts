@@ -72,6 +72,80 @@ interface PendingLeaderboardScore {
 }
 
 const PENDING_LEADERBOARD_SCORE_KEY = 'isihunt.pending-leaderboard-score.v1';
+const PENDING_COSMETIC_SYNC_KEY = 'isihunt.pending-cosmetic-sync.v1';
+
+interface PendingCosmeticSync {
+  ownedShipShapes: string[];
+  ownedShipColors: string[];
+  ownedShipAuras: string[];
+  shipShape: string;
+  shipColor: string;
+  shipAura: string;
+}
+
+function cosmeticSnapshot(save: SaveData = SaveSystem.load()): PendingCosmeticSync {
+  return {
+    ownedShipShapes: [...save.ownedShipShapes],
+    ownedShipColors: [...save.ownedShipColors],
+    ownedShipAuras: [...save.ownedShipAuras],
+    shipShape: save.shipShape,
+    shipColor: save.shipColor,
+    shipAura: save.shipAura,
+  };
+}
+
+function readPendingCosmeticSync(): PendingCosmeticSync | null {
+  try {
+    const raw = window.localStorage.getItem(PENDING_COSMETIC_SYNC_KEY);
+    if (!raw) return null;
+    const value = recordFrom(JSON.parse(raw));
+    if (!value) return null;
+    const arrays = ['ownedShipShapes', 'ownedShipColors', 'ownedShipAuras'].map((key) => {
+      const entries = value[key];
+      return Array.isArray(entries)
+        ? [...new Set(entries.filter((entry): entry is string => typeof entry === 'string'))]
+        : [];
+    });
+    if (
+      typeof value.shipShape !== 'string' ||
+      typeof value.shipColor !== 'string' ||
+      typeof value.shipAura !== 'string'
+    ) {
+      return null;
+    }
+    return {
+      ownedShipShapes: arrays[0]!,
+      ownedShipColors: arrays[1]!,
+      ownedShipAuras: arrays[2]!,
+      shipShape: value.shipShape,
+      shipColor: value.shipColor,
+      shipAura: value.shipAura,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** Merkt den aktuellen Kosmetikstand fuer den naechsten Online-Abgleich vor. */
+export function queueCosmeticSync(save: SaveData = SaveSystem.load()): void {
+  try {
+    window.localStorage.setItem(PENDING_COSMETIC_SYNC_KEY, JSON.stringify(cosmeticSnapshot(save)));
+  } catch {
+    // Privater Browsermodus darf den Kauf nicht blockieren.
+  }
+}
+
+export function clearPendingCosmeticSync(): void {
+  try {
+    window.localStorage.removeItem(PENDING_COSMETIC_SYNC_KEY);
+  } catch {
+    // Siehe queueCosmeticSync.
+  }
+}
+
+export function hasPendingCosmeticSync(): boolean {
+  return readPendingCosmeticSync() !== null;
+}
 
 function readPendingLeaderboardScore(): PendingLeaderboardScore | null {
   try {
@@ -836,6 +910,39 @@ async function requireAuthenticatedClient(): Promise<CloudResult<SupabaseClient>
   }
 
   return { ok: true, value: supabase };
+}
+
+/** Überträgt Besitz und Ausrüstung atomar; bei Offline bleibt der Snapshot liegen. */
+export async function flushPendingCosmetics(): Promise<CloudResult<RemoteProfileProgress | null>> {
+  const pending = readPendingCosmeticSync();
+  if (!pending) return { ok: true, value: null };
+
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const result = await withTimeout(
+    authenticated.value.rpc('sync_profile_cosmetics', {
+      p_owned_ship_shapes: pending.ownedShipShapes,
+      p_owned_ship_colors: pending.ownedShipColors,
+      p_owned_ship_auras: pending.ownedShipAuras,
+      p_ship_shape: pending.shipShape,
+      p_ship_color: pending.shipColor,
+      p_ship_aura: pending.shipAura,
+    }),
+    'Kosmetik synchronisieren',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  const profile = normalizeProfileProgress(result.value.data);
+  if (!profile) return { ok: false, error: 'Ungueltige Kosmetik-Antwort' };
+
+  // Der Server vereinigt Besitzlisten. Dadurch kann ein Kauf auf Gerät A
+  // nicht den Kauf von Gerät B überschreiben; die Auswahl kommt vom letzten
+  // erfolgreichen Snapshot.
+  SaveSystem.adoptProfileProgress(profile.data);
+  clearPendingCosmeticSync();
+  return { ok: true, value: profile };
 }
 
 /**

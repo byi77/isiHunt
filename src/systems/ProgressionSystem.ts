@@ -23,6 +23,7 @@ import {
 import { auraLevelReached, SHIP_AURAS, SHIP_COLORS, SHIP_SHAPES } from '@/config/shop';
 import { TALENTS, talentCost, type TalentId } from '@/config/talents';
 import { WORLDS } from '@/config/worlds';
+import * as CloudSystem from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import type { ProgressionResult, RunStats, SaveData } from '@/types';
 
@@ -258,7 +259,10 @@ export function purchaseShipShape(shapeId: string): SaveData | null {
     data.shipShape = shape.id;
     gekauft = true;
   });
-  return gekauft ? SaveSystem.recordCosmeticPurchase('shapes', shape.id) : null;
+  if (!gekauft) return null;
+  const updated = SaveSystem.recordCosmeticPurchase('shapes', shape.id);
+  CloudSystem.queueCosmeticSync(updated);
+  return updated;
 }
 
 /** Kauft eine Farbe. Gleiche Regeln wie bei den Formen. */
@@ -276,7 +280,10 @@ export function purchaseShipColor(colorId: string): SaveData | null {
     data.shipColor = color.id;
     gekauft = true;
   });
-  return gekauft ? SaveSystem.recordCosmeticPurchase('colors', color.id) : null;
+  if (!gekauft) return null;
+  const updated = SaveSystem.recordCosmeticPurchase('colors', color.id);
+  CloudSystem.queueCosmeticSync(updated);
+  return updated;
 }
 
 /**
@@ -303,7 +310,10 @@ export function purchaseShipAura(auraId: string): SaveData | null {
     data.shipAura = aura.id;
     gekauft = true;
   });
-  return gekauft ? SaveSystem.recordCosmeticPurchase('auras', aura.id) : null;
+  if (!gekauft) return null;
+  const updated = SaveSystem.recordCosmeticPurchase('auras', aura.id);
+  CloudSystem.queueCosmeticSync(updated);
+  return updated;
 }
 
 /**
@@ -328,7 +338,9 @@ export function equipShip(shapeId?: string, colorId?: string, auraId?: string): 
       geaendert = true;
     }
   });
-  return geaendert ? result : null;
+  if (!geaendert) return null;
+  CloudSystem.queueCosmeticSync(result);
+  return result;
 }
 
 /** Setzt alle Talentränge gegen die konfigurierte Reset-Gebühr zurück. */

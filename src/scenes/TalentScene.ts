@@ -32,17 +32,6 @@ import {
   createWorldBackdrop,
 } from '@/ui/widgets';
 
-/** Reine Darstellung: Reihenfolge und Linien sind keine Kaufvoraussetzungen. */
-const TALENT_ROUTE_LAYOUT: readonly { id: TalentId; column: 0 | 1; row: number }[] = [
-  { id: 'reach', column: 0, row: 0 },
-  { id: 'swiftness', column: 1, row: 0 },
-  { id: 'magnetism', column: 1, row: 1 },
-  { id: 'endurance', column: 0, row: 1 },
-  { id: 'focus', column: 0, row: 2 },
-  { id: 'insight', column: 1, row: 2 },
-  { id: 'fortune', column: 1, row: 3 },
-];
-
 export interface TalentSceneData {
   returnTo?: SceneKeyValue;
 }
@@ -59,7 +48,7 @@ export class TalentScene extends Phaser.Scene {
 
   create(data: TalentSceneData = {}): void {
     this.returnTo = data.returnTo ?? SceneKey.Profile;
-    SafeAreaSystem.showStatic('TALENTE');
+    SafeAreaSystem.showStatic('TALENTBAUM');
 
     const save = SaveSystem.load();
     const world = getWorld(save.lastWorldId);
@@ -90,10 +79,13 @@ export class TalentScene extends Phaser.Scene {
       .setTint(shipTint(save, world.accent))
       .setScale(0.26);
 
-    const routeTop = sections.next(116) + 24;
-    this.buildTalentRoute(routeTop, world.accent);
+    const rowTop = sections.next(96);
+    const rowStep = 108;
+    TALENTS.forEach((talent, index) =>
+      this.buildTalentRow(talent.id, rowTop + index * rowStep, world.accent),
+    );
 
-    const resetY = Math.min(GAME_HEIGHT - 190, routeTop + 3 * 140 + 155);
+    const resetY = Math.min(GAME_HEIGHT - 190, rowTop + TALENTS.length * rowStep + 16);
     const resetButton = createButton(
       this,
       GAME_WIDTH / 2,
@@ -125,87 +117,44 @@ export class TalentScene extends Phaser.Scene {
       .setAlign('center');
   }
 
-  private buildTalentRoute(routeTop: number, accent: number): void {
-    const points = TALENT_ROUTE_LAYOUT.map((entry) => ({
-      ...entry,
-      x: entry.column === 0 ? 180 : 540,
-      y: routeTop + entry.row * 140,
-    }));
-
-    const routeLine = this.add.graphics();
-    routeLine.lineStyle(8, accent, 0.24);
-    routeLine.beginPath();
-    points.forEach((point, index) => {
-      if (index === 0) routeLine.moveTo(point.x, point.y);
-      else routeLine.lineTo(point.x, point.y);
-    });
-    routeLine.strokePath();
-    routeLine.fillStyle(accent, 0.34);
-    points.forEach((point) => routeLine.fillCircle(point.x, point.y, 18));
-
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        routeTop - 72,
-        'Jeder Knoten ist unabhaengig. Kaufe in beliebiger Reihenfolge.',
-        textStyle(FontSize.tiny, Palette.inkDim),
-      )
-      .setOrigin(0.5)
-      .setAlign('center');
-
-    points.forEach((point) => this.buildTalentNode(point.id, point.x, point.y, accent));
-  }
-
-  private buildTalentNode(id: TalentId, x: number, y: number, accent: number): void {
+  private buildTalentRow(id: TalentId, y: number, accent: number): void {
     const talent = TALENTS.find((entry) => entry.id === id)!;
     const save = SaveSystem.load();
     const rank = save.talents[id] ?? 0;
-    const cardWidth = 320;
-    const cardHeight = 112;
-    if (rank > 0) {
-      this.add
-        .image(x, y, TextureKey.Glow)
-        .setDisplaySize(cardWidth + 30, cardHeight + 20)
-        .setTint(accent)
-        .setAlpha(0.18 + Math.min(rank, talent.maxRank) * 0.035)
-        .setBlendMode(Phaser.BlendModes.ADD);
-    }
-    createPanel(this, x, y, cardWidth, cardHeight, accent, {
-      alpha: rank > 0 ? 0.68 : 0.5,
+    createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 100, 96, accent, {
+      alpha: 0.5,
       radius: 14,
     });
     this.add
-      .text(
-        x - 144,
-        y - 38,
-        talent.name,
-        textStyle(FontSize.small, toCss(accent), { fontStyle: 'bold' }),
-      )
+      .text(66, y - 24, talent.name, textStyle(FontSize.body, toCss(accent), { fontStyle: 'bold' }))
       .setOrigin(0, 0.5);
     this.add
-      .text(x - 144, y - 7, talent.description, textStyle(14, Palette.inkDim))
+      .text(66, y + 10, talent.description, textStyle(FontSize.tiny, Palette.inkDim))
       .setOrigin(0, 0.5)
-      .setWordWrapWidth(168);
+      .setWordWrapWidth(315);
     this.add
       .text(
-        x - 144,
-        y + 38,
-        `RANG ${rank}/${talent.maxRank}  ${talent.perRank}`,
-        textStyle(14, Palette.gold, { fontStyle: 'bold' }),
+        405,
+        y - 20,
+        'RANG ' + rank + '/' + talent.maxRank,
+        textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }),
       )
-      .setOrigin(0, 0.5);
+      .setOrigin(0.5);
+    this.add
+      .text(405, y + 12, talent.perRank, textStyle(FontSize.tiny, Palette.gold))
+      .setOrigin(0.5);
     const cost = talentCost(rank);
     const purchaseButton = createButton(
       this,
-      x + 76,
-      y + 18,
-      rank >= talent.maxRank ? 'MAX' : `${cost.toLocaleString('de-DE')} C`,
+      605,
+      y,
+      rank >= talent.maxRank ? 'MAX' : cost + ' COINS',
       () => void this.purchase(id),
       {
-        width: 126,
-        height: 52,
+        width: 150,
+        height: 58,
         accent: rank >= talent.maxRank ? 0x778099 : accent,
-        fontSize: 14,
+        fontSize: FontSize.tiny,
       },
     );
     purchaseButton.setEnabled(rank < talent.maxRank && save.coins >= cost);

@@ -308,6 +308,31 @@ describe('"wirft nie" - Netzfunktionen ohne konfiguriertes Backend', () => {
     });
   });
 
+  it('merkt Kosmetik fuer den Offline-Sync vor und kann sie verwerfen', () => {
+    const save = createSave({
+      ownedShipShapes: [DEFAULT_SHIP_SHAPE, 'star'],
+      shipShape: 'star',
+    });
+
+    CloudSystem.queueCosmeticSync(save);
+    expect(CloudSystem.hasPendingCosmeticSync()).toBe(true);
+
+    CloudSystem.clearPendingCosmeticSync();
+    expect(CloudSystem.hasPendingCosmeticSync()).toBe(false);
+  });
+
+  it('laesst Kosmetik bei fehlendem Backend vorgemerkt', async () => {
+    CloudSystem.queueCosmeticSync(
+      createSave({ ownedShipColors: [DEFAULT_SHIP_COLOR, 'gold'], shipColor: 'gold' }),
+    );
+
+    await expect(CloudSystem.flushPendingCosmetics()).resolves.toEqual({
+      ok: false,
+      error: expect.any(String),
+    });
+    expect(CloudSystem.hasPendingCosmeticSync()).toBe(true);
+  });
+
   it('syncSaveSafely liefert ein Fehlerergebnis statt zu werfen', async () => {
     await expect(CloudSystem.syncSaveSafely()).resolves.toEqual({
       ok: false,

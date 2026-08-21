@@ -570,7 +570,16 @@ export function setOfflinePlayerName(name: string): void {
  * Das **Getragene** kommt dagegen vom Cloud-Stand, sofern er es kennt und
  * besitzt: So sieht die Figur auf beiden Geraeten gleich aus.
  */
-function vereinigeShopBesitz(lokal: SaveData, uebernommen: SaveData): SaveData {
+function hatExpliziteShopAuswahl(remote: Partial<SaveData>): boolean {
+  const source = asRecord(remote);
+  return ['shipShape', 'shipColor', 'shipAura'].some((key) => typeof source[key] === 'string');
+}
+
+function vereinigeShopBesitz(
+  lokal: SaveData,
+  uebernommen: SaveData,
+  remoteSelectionKnown = false,
+): SaveData {
   // Ein zurueckgesetztes Profil raeumt auch den Laden aus.
   //
   // `admin_reset_user()` setzt serverseitig alles auf Anfang, auch die
@@ -603,14 +612,18 @@ function vereinigeShopBesitz(lokal: SaveData, uebernommen: SaveData): SaveData {
     };
   }
 
+  const ownedShipShapes = [...new Set([...lokal.ownedShipShapes, ...uebernommen.ownedShipShapes])];
+  const ownedShipColors = [...new Set([...lokal.ownedShipColors, ...uebernommen.ownedShipColors])];
+  const ownedShipAuras = [...new Set([...lokal.ownedShipAuras, ...uebernommen.ownedShipAuras])];
+
   return {
     ...uebernommen,
     // Besitz zusammenlegen: Wer auf zwei Geraeten kauft, hat am Ende beides.
     // Die Muenzen sind ohnehin auf beiden Seiten abgebucht, und etwas
     // wegzunehmen waere der schlimmere Fehler.
-    ownedShipShapes: [...new Set([...lokal.ownedShipShapes, ...uebernommen.ownedShipShapes])],
-    ownedShipColors: [...new Set([...lokal.ownedShipColors, ...uebernommen.ownedShipColors])],
-    ownedShipAuras: [...new Set([...lokal.ownedShipAuras, ...uebernommen.ownedShipAuras])],
+    ownedShipShapes,
+    ownedShipColors,
+    ownedShipAuras,
     // Kaufhinweise bleiben lokal erhalten; die eigentliche Cloud-Synchronisation
     // dieser Metadaten ist bewusst Teil von P2-08, nicht dieses UI-Schritts.
     newCosmeticIds: [
@@ -618,31 +631,38 @@ function vereinigeShopBesitz(lokal: SaveData, uebernommen: SaveData): SaveData {
     ],
     lastPurchasedCosmetic: lokal.lastPurchasedCosmetic ?? uebernommen.lastPurchasedCosmetic ?? null,
 
-    // Das Getragene bleibt **immer** lokal.
-    //
-    // Ein erster Anlauf liess den Cloud-Stand entscheiden, sofern er die
-    // Felder kannte - damit sollte die Figur auf zwei Geraeten gleich
-    // aussehen. In der Praxis brach das den Kauf: Der Server pflegt in
-    // `profile_progress` eine eigene `data`-Kopie und schreibt sie bei jedem
-    // Lauf fort (`submit_progress_event`). Der Client kann dort nichts
-    // hineinschreiben - `initialize_profile_progress` greift nur beim
-    // allerersten Mal (`on conflict do nothing`). Der Cloud-Stand kennt die
-    // Auswahl also nie und setzte sie bei jedem Abgleich auf den Pfeil
-    // zurueck: Nach dem Kauf im Menue kurz sichtbar, nach der ersten Jagd
-    // wieder weg.
-    //
-    // Die getragene Figur ist Geraete-Einstellung, kein Fortschritt - wie der
-    // Ton. Sobald es eine Server-Funktion gibt, die sie mitfuehrt, kann das
-    // hier wieder aufgemacht werden.
-    shipShape: lokal.shipShape,
-    shipColor: lokal.shipColor,
-    shipAura: lokal.shipAura,
+    // Auth-Profilstaende enthalten die serverseitig gespeicherte letzte
+    // Auswahl. Fehlt das Feld bei einem alten anonymen Stand, bleibt die
+    // lokale Auswahl erhalten, damit ein veralteter Cloud-Stand keinen Kauf
+    // zuruecksetzt. Sobald der Cloud-Stand den lokalen Gegenstand kennt, darf
+    // seine serverseitige Auswahl auf beide Geraete uebernommen werden.
+    shipShape:
+      remoteSelectionKnown &&
+      uebernommen.ownedShipShapes.includes(lokal.shipShape) &&
+      ownedShipShapes.includes(uebernommen.shipShape)
+        ? uebernommen.shipShape
+        : lokal.shipShape,
+    shipColor:
+      remoteSelectionKnown &&
+      uebernommen.ownedShipColors.includes(lokal.shipColor) &&
+      ownedShipColors.includes(uebernommen.shipColor)
+        ? uebernommen.shipColor
+        : lokal.shipColor,
+    shipAura:
+      remoteSelectionKnown &&
+      uebernommen.ownedShipAuras.includes(lokal.shipAura) &&
+      ownedShipAuras.includes(uebernommen.shipAura)
+        ? uebernommen.shipAura
+        : lokal.shipAura,
   };
 }
 
 export function adoptRemote(remote: Partial<SaveData>, cloudId: string): SaveData {
   const lokal = load();
-  const merged = preservePendingIdentity(lokal, vereinigeShopBesitz(lokal, migrate(remote)));
+  const merged = preservePendingIdentity(
+    lokal,
+    vereinigeShopBesitz(lokal, migrate(remote), hatExpliziteShopAuswahl(remote)),
+  );
   merged.cloudId = cloudId;
   save(merged);
   return merged;
@@ -651,7 +671,10 @@ export function adoptRemote(remote: Partial<SaveData>, cloudId: string): SaveDat
 /** Übernimmt den gemeinsamen Auth-Profilstand und bewahrt die lokale Sync-ID. */
 export function adoptProfileProgress(remote: Partial<SaveData>): SaveData {
   const lokal = load();
-  const merged = preservePendingIdentity(lokal, vereinigeShopBesitz(lokal, migrate(remote)));
+  const merged = preservePendingIdentity(
+    lokal,
+    vereinigeShopBesitz(lokal, migrate(remote), hatExpliziteShopAuswahl(remote)),
+  );
   merged.cloudId = lokal.cloudId;
   save(merged);
   return merged;

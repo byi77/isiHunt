@@ -23,6 +23,7 @@ import {
   SERIES_TRAIL_IDLE_TICKS_PER_DROP,
   SERIES_TRAIL_LINE_WIDTH,
   SERIES_TRAIL_SAMPLE_MS,
+  SERIES_TRAIL_SMOOTHING_DIVISIONS,
 } from '@/config/GameConfig';
 import type { PlayerStats } from '@/config/talents';
 import { Depth } from '@/ui/depth';
@@ -478,6 +479,24 @@ export class Player extends Phaser.GameObjects.Container {
       const anteil = i / (punkte.length - 1);
       const vorher = punkte[i - 1]!;
       const jetzt = punkte[i]!;
+      const naechstes = punkte[i + 1] ?? jetzt;
+      // Die Mittelpunkte verhindern harte Knicke: Jeder Stützpunkt lenkt die
+      // Kurve, wird aber nicht als Ecke sichtbar. Die Segmentbreite und das
+      // Ausblenden bleiben trotzdem pro Abschnitt steuerbar.
+      const start =
+        i === 1
+          ? vorher
+          : {
+              x: (vorher.x + jetzt.x) / 2,
+              y: (vorher.y + jetzt.y) / 2,
+            };
+      const ziel =
+        i === punkte.length - 1
+          ? jetzt
+          : {
+              x: (jetzt.x + naechstes.x) / 2,
+              y: (jetzt.y + naechstes.y) / 2,
+            };
 
       // Nach hinten auslaufen, aber nicht ins Nichts: Die Kernlinie behaelt
       // eine Mindesttransparenz, waehrend die Aussenkontur weich auslaeuft.
@@ -493,16 +512,18 @@ export class Player extends Phaser.GameObjects.Container {
         color,
         coreAlpha * SERIES_TRAIL_GLOW_ALPHA,
       );
-      this.trailGlowLine.beginPath();
-      this.trailGlowLine.moveTo(vorher.x, vorher.y);
-      this.trailGlowLine.lineTo(jetzt.x, jetzt.y);
-      this.trailGlowLine.strokePath();
+      new Phaser.Curves.QuadraticBezier(
+        new Phaser.Math.Vector2(start.x, start.y),
+        new Phaser.Math.Vector2(jetzt.x, jetzt.y),
+        new Phaser.Math.Vector2(ziel.x, ziel.y),
+      ).draw(this.trailGlowLine, SERIES_TRAIL_SMOOTHING_DIVISIONS);
 
       this.trailLine.lineStyle(coreWidth, color, coreAlpha);
-      this.trailLine.beginPath();
-      this.trailLine.moveTo(vorher.x, vorher.y);
-      this.trailLine.lineTo(jetzt.x, jetzt.y);
-      this.trailLine.strokePath();
+      new Phaser.Curves.QuadraticBezier(
+        new Phaser.Math.Vector2(start.x, start.y),
+        new Phaser.Math.Vector2(jetzt.x, jetzt.y),
+        new Phaser.Math.Vector2(ziel.x, ziel.y),
+      ).draw(this.trailLine, SERIES_TRAIL_SMOOTHING_DIVISIONS);
     }
   }
 

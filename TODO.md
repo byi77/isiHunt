@@ -154,6 +154,7 @@ reproduzierbares Prüfergebnis vorliegt.
 8. `supabase/phase_2_12_reset_shop.sql`
 9. `supabase/phase_2_13_daily_key_window.sql`
 10. `supabase/phase_2_14_balance_chain.sql`
+11. `supabase/phase_2_15_cosmetic_sync.sql`
 
 Die Dateien sind wiederholbar angelegt, trotzdem vor jedem Lauf prüfen, ob
 eine Migration bereits ausgeführt wurde. `cleanup_leaderboard.sql`,
@@ -618,20 +619,24 @@ eigentliche geräteübergreifende Kosmetik-Synchronisierung bleibt bewusst P2-08
 
 ## P2-08 — Kosmetik über Geräte synchronisieren
 
-- [ ] **Getragene Figur und Besitz zwischen Geräten angleichen.**
+- [x] **Getragene Figur und Besitz zwischen Geräten angleichen.**
 
-Der Server kennt aktuell die lokale Auswahl nicht vollständig; `profile_progress`
-und lokale Shop-Daten müssen bewusst getrennt oder zusammengeführt werden.
-Vor einer RPC-Erweiterung klären: Besitz ist dauerhaft serverseitig, Ausrüstung
-ist zuletzt gewählte Darstellung, Wartungs-Reset löscht beides oder nur
-Besitz, und Offline-Käufe werden idempotent übertragen.
+`CloudSystem` legt nach jedem Kauf oder Ausrüsten einen kleinen lokalen Snapshot
+an. `sync_profile_cosmetics` in `supabase/phase_2_15_cosmetic_sync.sql` führt
+Besitzlisten atomar zusammen und übernimmt eine gültige letzte Auswahl. Der
+Client führt den Snapshot beim nächsten authentifizierten Online-Sync aus;
+Fehler lassen ihn liegen. Ein Wartungs-Reset leert sowohl den Serverstand als
+auch den lokalen Pending-Snapshot, damit alte Käufe nicht wieder auferstehen.
+Die Migration muss nach dem Commit im Supabase-SQL-Editor ausgeführt werden;
+der GitHub-Pages-Deploy führt Datenbankmigrationen nicht automatisch aus.
 
 **Abnahme:** Kauf auf Gerät A erscheint auf B, ein lokaler Offline-Kauf geht
 nicht verloren und ein Reset hinterlässt keinen nicht bezahlten Gegenstand.
+Diese Zwei-Geräte-/Reset-Abnahme bleibt ein separater manueller Release-Test.
 
 ## P2-09 — App-Icon an das Weltraumthema anpassen
 
-- [ ] **Generisches Stern-Icon durch ein raumschifftaugliches, maskables Motiv
+- [x] **Generisches Stern-Icon durch ein raumschifftaugliches, maskables Motiv
   ersetzen.**
 
 Betroffen sind `public/favicon.png`, `public/apple-touch-icon.png`,
@@ -641,22 +646,24 @@ Icons, daher muss das Motiv innerhalb der sicheren Innenfläche bleiben.
 
 **Abnahme:** Browser-Favicon, iOS-Home-Bildschirm und Android-Maskable-Preview
 zeigen dasselbe erkennbare Motiv; Build und iOS-/Android-Check bleiben grün.
+Die vier PNGs wurden mit `npm run icons` neu erzeugt; die finale Gerätepreview
+bleibt Teil der P0-Abnahme.
 
 ## P2-10 — Temporäres Trefferflächen-Debugging entfernen
 
-- [ ] **`src/ui/hitDebug.ts` nach der aktuellen Geräteabnahme entfernen oder
+- [x] **`src/ui/hitDebug.ts` nach der aktuellen Geräteabnahme entfernen oder
   bewusst als dauerhaftes Dev-Werkzeug dokumentieren.**
 
-Die Diagnose war für den alten Button-/Auslieferungsfehler wichtig, ist aber
-kein Produktfeature. Vor dem Entfernen prüfen, dass Debug-Report und
-Wartungsbereich die nötige Diagnose weiterhin liefern.
+Die Diagnose bleibt als bewusstes Dev-Werkzeug erhalten. `MenuScene` lädt das
+Modul nur in einem Debug-Build und nur bei `?hitboxes` dynamisch; ein normaler
+Production-Start importiert es nicht in den initialen Bundle-Pfad.
 
 **Abnahme:** Kein Production-Bundle lädt das Werkzeug, die Dev-Hilfe ist bei
 Bedarf über eine dokumentierte Option verfügbar oder vollständig archiviert.
 
 ## P2-11 — Visuelles Polishing: Schweif, Glow und Effekte
 
-- [ ] **Schweif und optisches Feedback als eigenes Feature-Paket optimieren.**
+- [x] **Schweif und optisches Feedback als eigenes Feature-Paket optimieren.**
 
 Das ist mehr als „Schleifenfarben kaufbar machen“: Der Schweif ist während
 jedes Fangs sichtbar und bestimmt wesentlich, ob sich Bewegung, Combo und
@@ -707,13 +714,11 @@ Effekt verdeckt eine wichtige Information, ein 90-Sekunden-Run bleibt stabil,
 und die finale Regel ist in `docs/GAME_DESIGN.md`/`docs/ART_STYLE.md`
 dokumentiert. Neue Werte werden nicht als verstreute Scene-Konstanten angelegt.
 
-**Autonomer Zwischenstand 2026-08-21:** `Player` zeichnet die Serie jetzt als
-getrennte Glow-/Kernspur und leert die Stützpunkte beim Serienende sofort;
-`GameConfig` hält die drei neuen Darstellungsparameter zentral. Typecheck,
-Lint, 316 Unit-Tests und Production-Build sind lokal grün. Die Checkbox bleibt
-bis zur echten iPhone-/iPad-Abnahme offen; dort werden insbesondere helle
-Welten, Richtungswechsel, mehrere Effekte und ein kompletter 90-Sekunden-Run
-geprüft.
+**Umsetzung 2026-08-21:** `Player` zeichnet die Serie jetzt als geglättete
+Quadratic-Bezier-Glow-/Kernspur und leert die Stützpunkte beim Serienende
+sofort. Die Abtastung (`SERIES_TRAIL_SMOOTHING_DIVISIONS`) und alle übrigen
+Schweifparameter bleiben in `GameConfig` zentral. Die Code-Umsetzung ist
+abgeschlossen; die echte iPhone-/iPad-Abnahme bleibt als Release-Gate offen.
 
 ---
 

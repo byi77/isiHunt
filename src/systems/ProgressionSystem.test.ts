@@ -587,6 +587,23 @@ describe('Laden: Besitz ueberlebt den Profil-Abgleich', () => {
     expect(danach.shipShape).toBe('star');
   });
 
+  it('uebernimmt die Cloud-Auswahl, sobald der Server den lokalen Besitz kennt', () => {
+    SaveSystem.update((data) => {
+      data.ownedShipShapes = ['arrow', 'star'];
+      data.shipShape = 'star';
+    });
+
+    const serverMitGemeinsamemBesitz = {
+      version: 8,
+      ownedShipShapes: ['arrow', 'star', 'eagle'],
+      shipShape: 'eagle',
+    };
+    const danach = SaveSystem.adoptProfileProgress(serverMitGemeinsamemBesitz);
+
+    expect(danach.ownedShipShapes).toEqual(expect.arrayContaining(['star', 'eagle']));
+    expect(danach.shipShape).toBe('eagle');
+  });
+
   it('laesst die getragene Figur auch dann lokal, wenn die Cloud eine kennt', () => {
     // Der Kern des Fehlers vom 2026-08-20: Nach dem Kauf im Menue kurz
     // sichtbar, nach der ersten Jagd wieder der Pfeil. Der Server pflegt in

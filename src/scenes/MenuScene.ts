@@ -8,7 +8,12 @@
 import Phaser from 'phaser';
 
 import { SYNC_MIN_INTERVAL_MS, SYNC_RETRY_DELAYS_MS } from '@/config/backend';
-import { DAILY_LOGIN_BONUS_COINS, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import {
+  DAILY_LOGIN_BONUS_COINS,
+  DEBUG_ENABLED,
+  GAME_HEIGHT,
+  GAME_WIDTH,
+} from '@/config/GameConfig';
 import { WORLDS } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { isIos, isStandalone } from '@/core/display';
@@ -17,7 +22,6 @@ import { SceneKey } from '@/scenes/SceneKey';
 import type { WorldInfoMode } from '@/scenes/WorldInfoScene';
 import { Depth } from '@/ui/depth';
 import { installDebugOverlay, removeDebugOverlay } from '@/ui/debugOverlay';
-import { attachHitDebug } from '@/ui/hitDebug';
 import * as AuthSystem from '@/systems/AuthSystem';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
@@ -125,8 +129,13 @@ export class MenuScene extends Phaser.Scene {
     void this.synchronizeData();
     window.addEventListener('online', this.onlineHandler);
 
-    // Nur mit ?hitboxes in der Adresse - zeigt, was Phaser fuer anfassbar haelt.
-    attachHitDebug(this);
+    // Nur im Dev-Build und nur mit ?hitboxes laden - das Debug-Werkzeug bleibt
+    // damit aus dem initialen Production-Bundle heraus.
+    if (DEBUG_ENABLED && new URLSearchParams(window.location.search).has('hitboxes')) {
+      void import('@/ui/hitDebug').then(({ attachHitDebug }) => {
+        if (this.scene.isActive()) attachHitDebug(this);
+      });
+    }
 
     this.events.once('shutdown', () => {
       this.cleanupWorldList();
@@ -220,6 +229,11 @@ export class MenuScene extends Phaser.Scene {
       const saveSynced = await this.checkCloudSave();
       if (!this.scene.isActive()) return;
 
+      if (saveSynced && AuthSystem.isSignedIn()) {
+        await CloudSystem.flushPendingCosmetics();
+        if (!this.scene.isActive()) return;
+      }
+
       await CloudSystem.flushPendingLeaderboardScore();
       if (!this.scene.isActive()) return;
 
@@ -229,6 +243,7 @@ export class MenuScene extends Phaser.Scene {
       const hasPendingData =
         ProgressSyncSystem.hasPendingData() ||
         CloudSystem.hasPendingLeaderboardScore() ||
+        CloudSystem.hasPendingCosmeticSync() ||
         this.savePromptObjects.length > 0;
       SyncStatusSystem.setDataSyncStatus(saveSynced && !hasPendingData ? 'up-to-date' : 'pending');
     } catch (error) {
@@ -345,7 +360,10 @@ export class MenuScene extends Phaser.Scene {
           // Nach einem Reset auch die Outbox verwerfen: Sie enthaelt Laeufe,
           // die der Server gerade geloescht hat - hochgeladen wuerden sie den
           // Fortschritt sofort wieder aufbauen.
-          if (remoteReset) ProgressSyncSystem.clearOutbox();
+          if (remoteReset) {
+            ProgressSyncSystem.clearOutbox();
+            CloudSystem.clearPendingCosmeticSync();
+          }
 
           const uebernommen = SaveSystem.adoptRemote(
             remote.data,
@@ -381,6 +399,11 @@ export class MenuScene extends Phaser.Scene {
           this.scene.restart();
           return false;
         }
+
+        // Nach einem normalen Pull wird der vereinigte lokale Stand als
+        // Snapshot vorgemerkt. So erreichen auch alte lokale Käufe das neue
+        // serverseitige Kosmetik-RPC, ohne einen Reset wieder aufzubauen.
+        CloudSystem.queueCosmeticSync();
       }
       this.saveSyncBusy = false;
       this.cancelProfileRetry();
