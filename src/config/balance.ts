@@ -1,4 +1,4 @@
-import balanceData from './balance-data.json';
+import balanceData from './balance-data.json' with { type: 'json' };
 
 /**
  * Eine einzige Quelle fuer alle spielrelevanten Balance-Zahlen.
@@ -33,10 +33,25 @@ function weightedAverage(field: 'points' | 'xp'): number {
 export const EXPECTED_POINTS_PER_CATCH = weightedAverage('points');
 export const EXPECTED_XP_PER_CATCH = weightedAverage('xp');
 
-/** Referenzwerte der aktuell ausgelieferten Balance. */
-const BASELINE_EXPECTED_XP_PER_RUN = 1_883.985;
-const BASELINE_EXPECTED_COINS_PER_RUN = 52.186;
-const BASELINE_EXPECTED_SCORE_PER_RUN = 1_499.07625;
+/**
+ * Eingefrorene Bezugsgroessen fuer die relative Skalierung.
+ *
+ * Diese Werte sind keine aktuellen Messwerte, sondern die bewusst stabile
+ * Referenz aus vier simulierten Startwelt-Runs vor der Zentralisierung der
+ * Balance-Kette. Aendert sich die Rohkonfiguration, wird dagegen skaliert;
+ * die Referenz darf nur nach einer bewusst dokumentierten Neumessung wechseln.
+ */
+export const BALANCE_BASELINES = {
+  capturedAt: '2026-08-19',
+  source: 'Vier simulierte Startwelt-Runs vor der Zentralisierung',
+  expectedXpPerRun: 1_883.985,
+  expectedCoinsPerRun: 52.186,
+  expectedScorePerRun: 1_499.07625,
+} as const;
+
+const BASELINE_EXPECTED_XP_PER_RUN = BALANCE_BASELINES.expectedXpPerRun;
+const BASELINE_EXPECTED_COINS_PER_RUN = BALANCE_BASELINES.expectedCoinsPerRun;
+const BASELINE_EXPECTED_SCORE_PER_RUN = BALANCE_BASELINES.expectedScorePerRun;
 
 export const EXPECTED_XP_PER_RUN =
   EXPECTED_XP_PER_CATCH * BALANCE.run.expectedCatches * BALANCE.progression.xp.globalMultiplier;
@@ -186,3 +201,53 @@ export function getBalanceSnapshot(): BalanceSnapshot {
 }
 
 export const BALANCE_SNAPSHOT = getBalanceSnapshot();
+
+export interface BalanceReport extends BalanceSnapshot {
+  readonly baselines: typeof BALANCE_BASELINES;
+  readonly daily: {
+    readonly completionCoins: number;
+    readonly completionXp: number;
+    readonly scoreTierCoins: number;
+    readonly scoreTierXp: number;
+    readonly maxCoins: number;
+    readonly maxXp: number;
+    readonly maxScoreThreshold: number;
+  };
+  readonly costs: {
+    readonly talentReset: number;
+    readonly talents: readonly number[];
+  };
+}
+
+/**
+ * Deterministischer Änderungsbericht für die Balance-Kette.
+ *
+ * Der Bericht liest keine zweite Konfiguration: Alle Werte kommen aus den
+ * oben definierten Ableitungen und werden nur für CLI/CI zusammengefasst.
+ */
+export function getBalanceReport(): BalanceReport {
+  const daily = BALANCE.economy.sources.daily;
+  const dailyXp = BALANCE.progression.xp;
+
+  return {
+    ...getBalanceSnapshot(),
+    baselines: BALANCE_BASELINES,
+    daily: {
+      completionCoins: coinsForRuns(daily.completionRuns),
+      completionXp: xpForRuns(dailyXp.dailyCompletionRuns),
+      scoreTierCoins: coinsForRuns(daily.scoreTierRuns),
+      scoreTierXp: xpForRuns(dailyXp.dailyScoreTierRuns),
+      maxCoins: coinsForRuns(daily.completionRuns + daily.scoreTierCount * daily.scoreTierRuns),
+      maxXp: xpForRuns(
+        dailyXp.dailyCompletionRuns + daily.scoreTierCount * dailyXp.dailyScoreTierRuns,
+      ),
+      maxScoreThreshold: scoreForRuns(daily.scoreTierCount),
+    },
+    costs: {
+      talentReset: TALENT_RESET_COST,
+      talents: TALENT_COSTS,
+    },
+  };
+}
+
+export const BALANCE_REPORT = getBalanceReport();

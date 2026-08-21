@@ -30,6 +30,16 @@ import * as CloudSystem from '@/systems/CloudSystem';
 import type { RemoteSave } from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
+import {
+  clearSyncPending,
+  createSyncFlowState,
+  decideRedeemResult,
+  setSyncBusy,
+  showSyncCode,
+  showSyncComparison,
+  showSyncStart,
+  validateSyncCode,
+} from '@/systems/SyncFlowSystem';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import type { TextInputHandle } from '@/ui/textInput';
 import { createTextInput } from '@/ui/textInput';
@@ -53,15 +63,12 @@ function runs(count: number): string {
 
 export class SyncScene extends Phaser.Scene {
   /** Verhindert doppelte Netzaufrufe durch mehrfaches Tippen. */
-  private busy = false;
+  private flow = createSyncFlowState();
   private statusText!: Phaser.GameObjects.Text;
   private codeInput: TextInputHandle | null = null;
   private transient: Phaser.GameObjects.GameObject[] = [];
   private contentOffset = 0;
   private statusPage!: StatusPageHandle;
-
-  /** Nur in der Vergleichsphase gesetzt. */
-  private pending: { cloudId: string; save: RemoteSave } | null = null;
 
   constructor() {
     super(SceneKey.Sync);
@@ -69,8 +76,7 @@ export class SyncScene extends Phaser.Scene {
 
   create(): void {
     SafeAreaSystem.showStatic('PROFIL ÜBERTRAGEN');
-    this.busy = false;
-    this.pending = null;
+    this.flow = createSyncFlowState();
     this.transient = [];
 
     const world = getWorld(SaveSystem.load().lastWorldId);
@@ -99,6 +105,7 @@ export class SyncScene extends Phaser.Scene {
 
   private buildStart(): void {
     this.clearTransient();
+    this.flow = showSyncStart(this.flow);
 
     const save = SaveSystem.load();
 
@@ -245,12 +252,12 @@ export class SyncScene extends Phaser.Scene {
   // --- Phase: Code anzeigen ---------------------------------------------------
 
   private async generateCode(): Promise<void> {
-    if (this.busy) return;
-    this.busy = true;
+    if (this.flow.busy) return;
+    this.flow = setSyncBusy(this.flow, true);
     this.statusPage.setStatus('Spielstand wird hochgeladen ...', Palette.inkDim);
 
     const result = await CloudSystem.createSyncCode();
-    this.busy = false;
+    this.flow = setSyncBusy(this.flow, false);
     if (!this.scene.isActive()) return;
 
     if (!result.ok) {
@@ -258,6 +265,7 @@ export class SyncScene extends Phaser.Scene {
       return;
     }
 
+    this.flow = showSyncCode(this.flow);
     this.showCode(result.value);
   }
 
@@ -333,35 +341,35 @@ export class SyncScene extends Phaser.Scene {
   // --- Phase: Vergleich -------------------------------------------------------
 
   private async redeem(): Promise<void> {
-    if (this.busy) return;
+    if (this.flow.busy) return;
 
     const raw = this.codeInput?.getValue() ?? '';
-    const code = CloudSystem.normalizeSyncCode(raw);
+    const validation = validateSyncCode(raw);
 
-    if (code.length !== SYNC_CODE_LENGTH) {
-      this.statusPage.setStatus(`Ein Code hat ${SYNC_CODE_LENGTH} Zeichen.`, Palette.danger);
+    if (!validation.ok) {
+      this.statusPage.setStatus(validation.message, Palette.danger);
       return;
     }
 
-    this.busy = true;
+    this.flow = setSyncBusy(this.flow, true);
     this.statusPage.setStatus('Code wird geprüft ...', Palette.inkDim);
 
-    const result = await CloudSystem.redeemSyncCode(code);
-    this.busy = false;
+    const result = await CloudSystem.redeemSyncCode(validation.code);
+    this.flow = setSyncBusy(this.flow, false);
     if (!this.scene.isActive()) return;
 
-    if (!result.ok) {
-      this.statusPage.setStatus(result.error, Palette.danger);
+    const decision = decideRedeemResult(result);
+    if (decision.kind === 'error') {
+      this.statusPage.setStatus(decision.message, Palette.danger);
       return;
     }
-
-    if (!result.value) {
+    if (decision.kind === 'expired') {
       this.statusPage.setStatus('Code unbekannt oder abgelaufen.', Palette.danger);
       return;
     }
 
-    this.pending = result.value;
-    this.showComparison(result.value.save);
+    this.flow = showSyncComparison(this.flow, decision.pending);
+    this.showComparison(decision.pending.save);
   }
 
   private showComparison(remote: RemoteSave): void {
@@ -486,10 +494,11 @@ export class SyncScene extends Phaser.Scene {
   }
 
   private adopt(): void {
-    if (!this.pending) return;
+    const pending = this.flow.pending;
+    if (!pending) return;
 
-    SaveSystem.adoptRemote(this.pending.save.data, this.pending.cloudId);
-    this.pending = null;
+    SaveSystem.adoptRemote(pending.save.data, pending.cloudId);
+    this.flow = clearSyncPending(this.flow);
 
     // Ins Menue statt hier zu bleiben: Level, Welten und Bestwert haben sich
     // gerade geaendert, und das Menue ist der Bildschirm, der das zeigt.

@@ -1,7 +1,7 @@
 # TODO — Arbeitsplan und Produkt-Audit
 
 **Stand:** 2026-08-21
-**Repository-Version:** `0.1.217`
+**Repository-Version:** siehe `package.json`; zuletzt live geprüft: `0.1.219`
 **Verbindliche Arbeitsreihenfolge:** die Phasen und Prioritäten in dieser Datei
 **Produkt:** spielbarer mobiler Browser-Prototyp für Emre, Simay und die Familie
 
@@ -671,7 +671,7 @@ geprüft.
 
 ## P3-01 — JSON-zu-SQL-Synchronität als CI-Test erzwingen
 
-- [ ] **`balance:sync` beziehungsweise den SQL-Block in `npm run verify`
+- [x] **`balance:sync` beziehungsweise den SQL-Block in `npm run verify`
   absichern.**
 
 `src/config/balance-data.json` ist die Rohquelle; `src/config/balance.ts`
@@ -691,9 +691,13 @@ in CI und auf anderen Rechnern.
 **Abnahme:** Eine absichtliche Abweichung zwischen JSON und SQL macht `npm run
 verify` rot; nach `npm run balance:sync` wird sie reproduzierbar behoben.
 
+**Erledigt 2026-08-21:** `Balance.test.ts` vergleicht den JSON-Block aus der
+Migration strukturell mit `balance-data.json`; `npm run verify` führt den
+Vertrag automatisch aus.
+
 ## P3-02 — Herkunft der Balance-Baselines dokumentieren
 
-- [ ] **`BASELINE_*`-Werte und ihre Neuberechnung dauerhaft nachvollziehbar
+- [x] **`BASELINE_*`-Werte und ihre Neuberechnung dauerhaft nachvollziehbar
   machen.**
 
 `src/config/balance.ts` skaliert XP, Coins und Punkte relativ zu eingefrorenen
@@ -706,9 +710,13 @@ Gewicht, erwartete Fangzahl oder Referenz-Combo).
 Ableitung passen. Ein späterer Entwickler kann erkennen, ob er eine Baseline
 ändern oder nur einen Rohwert ändern darf.
 
+**Erledigt 2026-08-21:** `BALANCE_BASELINES` enthält Datum, Herkunft und die
+drei eingefrorenen Run-Referenzen; `docs/BALANCE_CHAIN.md` erklärt Einheit,
+Neumessungsregeln und die erlaubte Änderung.
+
 ## P3-03 — Vollständige Einnahmen-/Kosten-Inventur schützen
 
-- [ ] **Alle XP-, Punkte- und Coin-Generatoren sowie Kosten einmal gegen die
+- [x] **Alle XP-, Punkte- und Coin-Generatoren sowie Kosten einmal gegen die
   zentrale Kette auditieren.**
 
 Die Inventur muss mindestens abdecken:
@@ -723,9 +731,14 @@ Die Inventur muss mindestens abdecken:
 Rohwert oder eine begründete Ausnahme. `rg` findet keine unbeabsichtigte
 zweite Währungskonstante in Scenes/RPCs.
 
+**Erledigt 2026-08-21:** `docs/BALANCE_INVENTORY.md` dokumentiert Client-,
+Server-, Outbox- und Legacy-Pfade. `npm run balance:inventory` blockiert neue
+Inline-Gutschriften oder direkte Währungsabzüge in produktiven Scenes,
+Entities und Systems.
+
 ## P3-04 — Balance-Snapshot als Änderungsbericht ausgeben
 
-- [ ] **Bei jeder Balance-Änderung automatisch die wichtigsten abgeleiteten
+- [x] **Bei jeder Balance-Änderung automatisch die wichtigsten abgeleiteten
   Werte prüfen.**
 
 Der Snapshot soll mindestens erwartete Punkte/XP/Coins je Run, Runs bis Level
@@ -737,9 +750,13 @@ machen, welche Systeme mitgezogen werden.
 gezielten Balance-Befehl erzeugt; die Werte sind nicht als zweite Wahrheit im
 Dokument zu pflegen.
 
+**Erledigt 2026-08-21:** `npm run balance:report` importiert die echte
+TypeScript-Ableitung und gibt Run-, Level-, Talent-, Tages- und Shopwerte als
+deterministisches JSON aus. Die Berechnung wird nicht dupliziert.
+
 ## P3-05 — Progressionsinvarianten als feste Tests ausbauen
 
-- [ ] **Wirtschafts- und Sync-Invarianten als Regressionen festschreiben.**
+- [x] **Wirtschafts- und Sync-Invarianten als Regressionen festschreiben.**
 
 Zu prüfen sind: Coins nie negativ, Talentrang nie über `maxRank`, Kauf zieht
 genau einmal ab, Reset erstattet nicht versehentlich, ein ProgressEvent wirkt
@@ -749,6 +766,11 @@ und gleicher Seed erzeugt im Duell denselben Reliktablauf.
 **Abnahme:** Jeder Fehlerfall hat einen Test; Zufalls- oder Migrationsdaten
 werden mit Property-/Fuzz-Tests ergänzt, sobald die deterministischen Regeln
 stehen.
+
+**Erledigt 2026-08-21:** `ProgressionInvariant.test.ts` prüft nichtnegative
+Run-Erträge, Max-Level-XP-Deckelung, exklusive Sync-Richtung und neutrale
+Gleichstände. Die vorhandenen Talent-, Reset-, Tagesbonus-, Outbox- und
+Seed-Tests bleiben die Detailregressionen für die einzelnen Pfade.
 
 ---
 
@@ -877,7 +899,7 @@ Raumcode bleibt bis dahin der verlässliche Fallback.
 
 ## P5-01 — Tests über Browser-Grenzen sinnvoll erweitern
 
-- [ ] **Ablauflogik aus `MenuScene`/`SyncScene` schrittweise in testbare Systeme
+- [x] **Ablauflogik aus `MenuScene`/`SyncScene` schrittweise in testbare Systeme
   ziehen.**
 
 Nicht die Phaser-Scene künstlich im Node-Test laden. Stattdessen Entscheidungen
@@ -887,6 +909,11 @@ Schnitt, kein fest beschlossener Klassenname.
 
 **Abnahme:** Entscheidungslogik ist ohne Canvas testbar; die Scene orchestriert
 nur UI und Lebenszyklus. Kein großer Umbau ohne konkreten Fehlerfall.
+
+**Erledigt 2026-08-21:** `SyncFlowSystem.ts` kapselt Codevalidierung,
+Busy-Schutz, Phasenwechsel und Redeem-Entscheidung. `SyncScene` orchestriert
+weiterhin Darstellung und Netzaufrufe; `SyncFlowSystem.test.ts` prüft den
+Ablauf ohne Phaser/Canvas.
 
 ## P5-02 — Konfiguriertes Backend und Netzwerk-Matrix testen
 
@@ -903,21 +930,35 @@ eines Kaufs, nach einer RPC-Antwort und beim App-Hintergrund aufnehmen.
 
 ## P5-03 — Migrationen und Spielstände robust gegen Zufallsdaten machen
 
-- [ ] **Property-/Fuzz-Tests für `migrate()` und `reconcile()` ergänzen.**
+- [x] **Property-/Fuzz-Tests für `migrate()` und `reconcile()` ergänzen.**
 
 Testdaten brauchen fehlende Felder, alte SAVE-Versionen, negative/zu große
 Werte, doppelte Achievements, ungültige Shopbesitze, kaputte JSON-Typen und
 abgebrochene Outbox-Ereignisse. Die Migration darf nicht still Coins oder
 Talente vervielfachen.
 
+**Erledigt 2026-08-21:** `SaveSystem.fuzz.test.ts` erzeugt 250
+deterministische beschädigte Payloads und prüft Versions-, Zahlen-, Relikt-,
+Talent- und Shop-Invarianten. `reconcile()` filtert jetzt Typen, begrenzt
+Zahlen, dedupliziert Listen und setzt ungültige Ausrüstung auf besessene
+Defaults zurück; die Aura-Felder sind eingeschlossen.
+
 ## P5-04 — Production-Artefakt und Visual Regression prüfen
 
-- [ ] **Smoke-/Playtests mindestens einmal gegen `dist`/Preview ausführen.**
+- [x] **Smoke-/Playtests mindestens einmal gegen `dist`/Preview ausführen.**
 
 Dev-Server und Production-Build unterscheiden sich bei relativen Assets,
 Version, Manifest, Cache und Code-Splitting. Für Start, ersten Run,
 Schweifstufen, Talent, Shop, Ergebnis, Tageslauf und Duellstatus feste
 Screenshot-Zustände definieren.
+
+**Erledigt 2026-08-21:** `npm run production:check` baut zuerst den echten
+Production-Stand, startet `vite preview`, prüft `version.json`, Manifest,
+Canvas, Titel und Browserfehler auf iPhone-13- und Desktop-Viewport und legt
+feste Start-Screenshots plus JSON-Bericht unter
+`playtest-shots/production/` ab. Die vorhandenen Dev-Playtest-Suiten liefern
+weiterhin die tieferen Spielzustands-Screenshots; der Production-Gate bleibt
+bewusst ohne das nur im Dev-Build exportierte `window.isiHunt`.
 
 ## P5-05 — Mobile Performance messen
 

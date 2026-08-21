@@ -36,3 +36,51 @@ derselben Ableitungslogik wie der Client.
 
 Wenn `balance-data.json` geändert wurde, aktualisiert `npm run balance:sync`
 den JSON-Block der Migration automatisch.
+
+## Eingefrorene Baselines
+
+`src/config/balance.ts` enthält drei bewusst eingefrorene Bezugsgrößen:
+
+| Baseline              |          Wert | Einheit                |
+| --------------------- | ------------: | ---------------------- |
+| `expectedXpPerRun`    |   `1 883,985` | XP je Referenz-Run     |
+| `expectedCoinsPerRun` |      `52,186` | Coins je Referenz-Run  |
+| `expectedScorePerRun` | `1 499,07625` | Punkte je Referenz-Run |
+
+Sie stammen aus vier simulierten Startwelt-Runs vom `2026-08-19`, vor der
+Zentralisierung der Balance-Kette. Sie sind der Maßstab, gegen den neue
+Rohwerte skaliert werden, nicht die aktuelle Messung. Eine neue Rarität,
+geänderte Gewichte, andere erwartete Fangzahlen oder eine neue Referenz-Combo
+erfordern deshalb zuerst eine dokumentierte Neumessung und eine bewusste
+Entscheidung, ob nur die Rohwerte oder auch die Baseline geändert werden.
+Die Herkunft steht zusätzlich maschinenlesbar in `BALANCE_BASELINES`, damit
+Tests und der Snapshot dieselbe Quelle verwenden.
+
+## Verträge und Inventur
+
+Der Test in `src/config/Balance.test.ts` liest den `$json$`-Block aus
+`supabase/phase_2_14_balance_chain.sql` und vergleicht ihn strukturell mit
+`balance-data.json`. Eine Abweichung macht `npm run verify` rot; mit
+`npm run balance:sync` wird der Serverblock reproduzierbar aktualisiert.
+
+`npm run balance:inventory` scannt die produktiven Scenes, Entities und
+Systems auf neue Inline-Coin-Gutschriften, direkte Coin-Abzüge sowie harte
+XP-/Punkte-/Bonusfelder. Test-Fixtures und die ausdrücklich zentralen
+Konfigurationstabellen werden nicht als Laufzeitquelle behandelt.
+
+Die vollständige Einnahmen-/Kosten-Inventur liegt in
+`docs/BALANCE_INVENTORY.md`. Dort ist für jede Quelle und Senke die Rohquelle,
+die Laufzeitstelle, der Serverpfad und die begründete Ausnahme dokumentiert.
+
+## Änderungsbericht
+
+```text
+npm run balance:report
+```
+
+Der Befehl importiert die echte TypeScript-Ableitung und gibt deterministisch
+aus: Punkte/XP/Coins pro Fang und Run, Runs bis Level 100 und Talentmaximum,
+Tagesabschluss und maximale Tagesbelohnung, Talentkosten sowie Beispiele für
+die teuersten und günstigsten bezahlten Shop-Einträge. Er enthält kein zweites
+Berechnungsmodell und ist deshalb die schnellste Kontrolle nach einer Änderung
+an `balance-data.json`.

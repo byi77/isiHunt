@@ -35,17 +35,25 @@ export interface LevelProgress {
   ratio: number;
 }
 
+function safeCount(value: number | undefined): number {
+  return Number.isFinite(value) ? Math.max(0, Math.floor(value!)) : 0;
+}
+
 /** Coins bleiben wertvoll: Fangmenge und hochwertige Beute helfen, nicht Masse allein. */
 export function coinsForRun(run: RunStats): number {
+  const totalCollected = safeCount(run.totalCollected);
+  const rare = safeCount(run.collected.rare);
+  const epic = safeCount(run.collected.epic);
+  const legendary = safeCount(run.collected.legendary);
   const collectionBonus = Math.min(
     MAX_COLLECTION_BONUS_COINS,
-    Math.floor(run.totalCollected / COLLECTION_STEP_SIZE) * COINS_PER_COLLECTION_STEP,
+    Math.floor(totalCollected / COLLECTION_STEP_SIZE) * COINS_PER_COLLECTION_STEP,
   );
   const rarityBonus =
-    Math.floor(run.collected.rare / RARE_CATCHES_PER_BONUS_COIN) +
-    Math.floor(run.collected.epic / EPIC_CATCHES_PER_BONUS_STEP) * EPIC_BONUS_COINS_PER_STEP +
-    run.collected.legendary * LEGENDARY_BONUS_COINS;
-  return COINS_PER_RUN + collectionBonus + rarityBonus;
+    Math.floor(rare / RARE_CATCHES_PER_BONUS_COIN) +
+    Math.floor(epic / EPIC_CATCHES_PER_BONUS_STEP) * EPIC_BONUS_COINS_PER_STEP +
+    legendary * LEGENDARY_BONUS_COINS;
+  return Math.max(0, COINS_PER_RUN + collectionBonus + rarityBonus);
 }
 
 function grantLevelReward(data: SaveData): number {
@@ -77,29 +85,48 @@ export function getLevelProgress(save: SaveData): LevelProgress {
 export function applyRun(run: RunStats): ProgressionResult {
   const before = SaveSystem.load();
   const levelBefore = before.level;
-  const isNewBestScore = run.score > before.bestScore;
+  const safeScore = safeCount(run.score);
+  const safeBestCombo = safeCount(run.bestCombo);
+  const safeXpGained = safeCount(run.xpGained);
+  const safeCollected = { ...run.collected };
+  for (const rarityId of Object.keys(safeCollected)) {
+    safeCollected[rarityId as keyof typeof safeCollected] = safeCount(
+      safeCollected[rarityId as keyof typeof safeCollected],
+    );
+  }
+  const safeRun = {
+    ...run,
+    score: safeScore,
+    bestCombo: safeBestCombo,
+    xpGained: safeXpGained,
+    collected: safeCollected,
+    totalCollected: safeCount(run.totalCollected),
+    missed: safeCount(run.missed),
+    durationMs: safeCount(run.durationMs),
+  };
+  const isNewBestScore = safeScore > before.bestScore;
   const recordTimestamp = normalizedTimestamp(run.completedAt);
   const talentPointsGained = 0;
   let coinsGained = 0;
-  const runCoins = coinsForRun(run);
+  const runCoins = coinsForRun(safeRun);
   coinsGained += runCoins;
 
   const after = SaveSystem.update((data) => {
     data.totalRuns += 1;
-    data.totalScore += run.score;
-    data.totalPlayTimeMs += Math.max(0, run.durationMs ?? 0);
-    data.bestScore = Math.max(data.bestScore, run.score);
+    data.totalScore += safeScore;
+    data.totalPlayTimeMs += safeCount(run.durationMs);
+    data.bestScore = Math.max(data.bestScore, safeScore);
     if (isNewBestScore) data.bestScoreRecordedAt = recordTimestamp;
-    data.bestCombo = Math.max(data.bestCombo, run.bestCombo);
+    data.bestCombo = Math.max(data.bestCombo, safeBestCombo);
     data.lastWorldId = run.worldId;
     data.coins += runCoins;
 
-    for (const [rarityId, count] of Object.entries(run.collected)) {
+    for (const [rarityId, count] of Object.entries(safeCollected)) {
       data.collected[rarityId as keyof typeof data.collected] += count;
     }
 
     // XP verrechnen; mehrere Levelaufstiege in einem Run sind moeglich.
-    data.xp += run.xpGained;
+    data.xp += safeXpGained;
     let guard = 0;
     while (data.level < MAX_LEVEL && data.xp >= xpForLevel(data.level) && guard < MAX_LEVEL) {
       data.xp -= xpForLevel(data.level);
@@ -122,7 +149,7 @@ export function applyRun(run: RunStats): ProgressionResult {
   ).map((w) => w.id);
 
   // Achievements erst NACH der XP-Verrechnung pruefen: manche haengen am Level.
-  const unlockedAchievementIds = evaluateAchievements(after, run);
+  const unlockedAchievementIds = evaluateAchievements(after, safeRun);
   const achievementCoins = unlockedAchievementIds.reduce(
     (sum, id) => sum + (ACHIEVEMENT_BY_ID[id]?.coinReward ?? 0),
     0,

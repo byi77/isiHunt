@@ -110,7 +110,8 @@ function asRecord(value: unknown): Record<string, unknown> {
 
 function nonNegativeNumber(value: unknown, fallback: number): number {
   const number = typeof value === 'number' ? value : Number(value);
-  return Number.isFinite(number) ? Math.max(0, number) : fallback;
+  const safeFallback = Number.isFinite(fallback) ? Math.max(0, fallback) : 0;
+  return Number.isFinite(number) ? Math.max(0, number) : safeFallback;
 }
 
 function nonNegativeInteger(value: unknown, fallback: number): number {
