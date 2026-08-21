@@ -67,6 +67,8 @@ export interface SaveData {
 
   /** Anzeigename im Profil und in der Bestenliste. Leer beim ersten Start. */
   playerName: string;
+  /** Offline geaenderter Name, der noch serverseitig geprueft werden muss. */
+  pendingPlayerName?: string | null;
   /**
    * Kennung dieses Spielstands im Online-Speicher.
    *

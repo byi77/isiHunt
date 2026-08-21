@@ -470,7 +470,7 @@ Hinweise.
 
 ## P2-01 — Talentdarstellung entscheiden und umsetzen
 
-- [ ] **Entscheidung „Baum, Route oder ehrliche Liste“ abschließen.**
+- [x] **Entscheidung „Baum, Route oder ehrliche Liste“ abschließen.**
 
 Die sieben Talente sind aktuell fachlich eine unabhängige Liste ohne
 Voraussetzungen. Die Coin-Kosten sind durch ADR-0018 entschieden und werden
@@ -487,9 +487,15 @@ Kombinationen. Wenn keine Route gewünscht ist, heißt der Bildschirm ehrlich
 korrekt, keine versteckten Voraussetzungen und keine Änderung bestehender
 Coin-Käufe ohne eigene Entscheidung.
 
+**Umsetzung:** Die Darstellung ist eine unabhängige, gezeichnete Route ohne
+Kaufvoraussetzungen. `TalentScene` zeigt sieben verbundene Knoten; gekaufte
+Ränge erhalten Glow und alle Käufe bleiben bei den bestehenden Coin-/Server-
+Regeln. Die Oberfläche heißt bewusst `TALENTE`, damit kein echter
+Voraussetzungsbaum versprochen wird.
+
 ## P2-02 — Ein klares nächstes Ziel nach jedem Run
 
-- [ ] **Nach dem Ergebnis genau eine priorisierte Motivation zeigen.**
+- [x] **Nach dem Ergebnis genau eine priorisierte Motivation zeigen.**
 
 Beispiele: „Noch 80 Coins bis Magnetismus Rang 1“, „Noch 2 Runs bis Eisring“
 oder „Noch 3 Relikte für Erfolg X“. Die Auswahl muss aus Progression, Shop,
@@ -500,9 +506,14 @@ Scenes separat eigene Logik berechnen.
 maximalem Level oder vollständig gekaufter Kategorie gibt es einen sinnvollen
 kosmetischen oder Tageslauf-Fallback.
 
+**Umsetzung:** `NextGoalSystem` leitet genau ein Ziel aus Talenten, naher Welt,
+Shop und Endgame ab. `ResultScene` zeigt zuerst Belohnung, danach das Ziel und
+erst darunter die Relikt-Details. Die Zielberechnung liegt zentral und wird
+durch `NextGoalSystem.test.ts` gegen Sofortkauf, Levelnähe und Endgame geprüft.
+
 ## P2-03 — Profilfluss und Identität vereinfachen
 
-- [ ] **Erstprofil, Alias und sichtbaren Spielernamen als einen verständlichen
+- [x] **Erstprofil, Alias und sichtbaren Spielernamen als einen verständlichen
   Ablauf gestalten.**
 
 Der technische Alias-Login und der sichtbare Name sind inzwischen gekoppelt,
@@ -514,9 +525,15 @@ der Bestenliste wieder einführen.
 und Konflikt bei bereits belegtem Namen sind als konkrete Abläufe beschrieben
 und getestet.
 
+**Umsetzung:** Online-Namen werden vor dem lokalen Speichern auf Verfügbarkeit
+geprüft; ein belegter Name überschreibt den bisherigen lokalen Namen nicht.
+Offline-Namen werden sichtbar gespeichert und als `pendingPlayerName` beim
+nächsten Online-Abgleich atomar mit Alias, Profil und Rangliste vereinheitlicht.
+Der Erststart bleibt ein einziger Account-/Profilfluss.
+
 ## P2-04 — Level-/XP-Anzeige und Ergebnis-Reihenfolge überarbeiten
 
-- [ ] **Fortschritt nicht als konkurrierendes Dashboard, sondern im richtigen
+- [x] **Fortschritt nicht als konkurrierendes Dashboard, sondern im richtigen
   Moment zeigen.**
 
 Prüfen, ob Level und XP im Hauptmenü dauerhaft sichtbar bleiben oder erst nach
@@ -525,6 +542,11 @@ Ergebnis → Belohnung → nächstes Ziel → optionale Details.
 
 **Abnahme:** Ergebnis, Hauptmenü und Profil haben keine widersprüchlichen XP-
 oder Coin-Werte und überladen den Spieler nicht mit gleich starken Aktionen.
+
+**Umsetzung:** `ResultScene` folgt jetzt der festen Hierarchie Ergebnis →
+Belohnung mit XP-/Level-Fortschritt → genau ein nächstes Ziel → optionale
+Ausbeute-Details. Menü und Profil bleiben kompakte Fortschrittsanker; sie
+verwenden weiterhin denselben `SaveData`-/`ProgressionSystem`-Stand.
 
 ## P2-05 — Erfolge mit Fortschritt und Kategorien versehen
 

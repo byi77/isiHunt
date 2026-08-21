@@ -277,6 +277,7 @@ export class MenuScene extends Phaser.Scene {
     this.saveSyncBusy = true;
 
     const local = SaveSystem.load();
+    if (local.pendingPlayerName) await this.synchronizePendingIdentity(local.pendingPlayerName);
     if (AuthSystem.isSignedIn()) {
       // Erst lokale Offline-Runs ablegen, dann den gemeinsamen Profilstand
       // lesen. Ein Remote-Stand wird nur übernommen, wenn er weiter ist; eine
@@ -425,6 +426,37 @@ export class MenuScene extends Phaser.Scene {
 
     this.saveSyncBusy = false;
     return true;
+  }
+
+  /** Fuehrt einen offline geaenderten Namen beim naechsten Netzlauf zusammen. */
+  private async synchronizePendingIdentity(name: string): Promise<void> {
+    const safeName = CloudSystem.sanitizePlayerName(name);
+    if (!safeName) return;
+
+    const playerId = AuthSystem.currentUserId() ?? SaveSystem.ensureCloudId();
+    const availability = await CloudSystem.isPlayerNameAvailable(safeName, playerId);
+    if (!availability.ok || !availability.value) {
+      DebugSystem.pushLogEntry({
+        timestamp: Date.now(),
+        kind: 'event',
+        label: 'sync:pendingIdentity',
+        detail: availability.ok ? 'name bereits vergeben' : availability.error,
+      });
+      return;
+    }
+
+    const result = AuthSystem.isSignedIn()
+      ? await CloudSystem.updateProfileIdentity(safeName)
+      : await CloudSystem.updateLeaderboardName(playerId, safeName);
+    if (result.ok) SaveSystem.setPlayerName(safeName);
+    else {
+      DebugSystem.pushLogEntry({
+        timestamp: Date.now(),
+        kind: 'event',
+        label: 'sync:pendingIdentity',
+        detail: result.error,
+      });
+    }
   }
 
   /**
@@ -1359,7 +1391,7 @@ export class MenuScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       tertiaryY,
-      'TALENTBAUM',
+      'TALENTE',
       () => this.scene.start(SceneKey.Talents, { returnTo: SceneKey.Menu }),
       { width: tertiaryWidth, height: tertiaryHeight, accent: 0xb782ff, fontSize: FontSize.tiny },
     );

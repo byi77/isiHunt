@@ -205,7 +205,9 @@ export class ProfileScene extends Phaser.Scene {
       }
 
       const currentPlayerId = AuthSystem.currentUserId() ?? SaveSystem.load().cloudId;
-      if (CloudSystem.isAvailable() && navigator.onLine) {
+      const canWriteOnline =
+        CloudSystem.isAvailable() && navigator.onLine && !SaveSystem.isTestProfileActive();
+      if (canWriteOnline) {
         saving = true;
         saveButton?.setEnabled(false);
         const availability = await CloudSystem.isPlayerNameAvailable(name, currentPlayerId);
@@ -221,10 +223,6 @@ export class ProfileScene extends Phaser.Scene {
           status.setText('Dieser Spielername ist bereits vergeben.').setColor(Palette.gold);
           return;
         }
-      }
-
-      SaveSystem.setPlayerName(name);
-      if (CloudSystem.isAvailable() && !SaveSystem.isTestProfileActive()) {
         if (AuthSystem.isSignedIn()) {
           const result = await CloudSystem.updateProfileIdentity(name);
           if (!result.ok) {
@@ -246,6 +244,21 @@ export class ProfileScene extends Phaser.Scene {
           await CloudSystem.syncSaveSafely();
         }
       }
+
+      // Erst nach erfolgreicher Online-Pruefung/Serveraenderung lokal
+      // uebernehmen. So bleibt ein Name bei einem Konflikt unveraendert.
+      // Offline darf der Spieler den sichtbaren Namen trotzdem sofort nutzen;
+      // der Menue-Sync versucht die Identitaet spaeter erneut zu vereinheitlichen.
+      if (!canWriteOnline && CloudSystem.isAvailable() && !navigator.onLine) {
+        SaveSystem.setOfflinePlayerName(name);
+        status
+          .setText('Offline gespeichert. Beim naechsten Online-Abgleich wird der Name geprueft.')
+          .setColor(Palette.gold);
+        saving = false;
+        saveButton?.setEnabled(true);
+        return;
+      }
+      SaveSystem.setPlayerName(name);
       this.scene.start(SceneKey.Menu);
     };
 
@@ -290,6 +303,10 @@ export class ProfileScene extends Phaser.Scene {
       status
         .setText('Lokales Offline-Profil erstellt. Du kannst es später online verbinden.')
         .setColor(toCss(world.accent));
+    } else if (save.pendingPlayerName) {
+      status
+        .setText('Offline-Name wartet auf den naechsten Online-Abgleich.')
+        .setColor(Palette.gold);
     }
 
     addContent(

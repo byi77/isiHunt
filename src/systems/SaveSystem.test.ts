@@ -89,4 +89,13 @@ describe('SaveSystem.load Migration', () => {
     expect(persisted.version).toBe(SAVE_VERSION);
     expect(persisted.coins).toBe(data.coins);
   });
+
+  it('bewahrt einen offline geaenderten Namen bei einem spaeteren Remote-Pull', async () => {
+    SaveSystem.setOfflinePlayerName('OfflineName');
+
+    const adopted = SaveSystem.adoptProfileProgress({ level: 8, playerName: 'CloudName' });
+
+    expect(adopted.playerName).toBe('OfflineName');
+    expect(adopted.pendingPlayerName).toBe('OfflineName');
+  });
 });

@@ -19,10 +19,17 @@ import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import { accessibleRarityLabel } from '@/systems/AccessibilitySystem';
+import { getNextGoal } from '@/systems/NextGoalSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { planetTextureForVariant, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
-import { createBar, createButton, createVignette, createWorldBackdrop } from '@/ui/widgets';
+import {
+  createBar,
+  createButton,
+  createPanel,
+  createVignette,
+  createWorldBackdrop,
+} from '@/ui/widgets';
 import type { ProgressionResult, RunStats } from '@/types';
 
 export interface ResultSceneData {
@@ -60,8 +67,9 @@ export class ResultScene extends Phaser.Scene {
       .setAlpha(0.45);
 
     this.buildScoreHeader(stats, progression, world.accent);
+    this.buildProgression(stats, progression, world.accent);
+    this.buildNextGoal(world.accent);
     this.buildBreakdown(stats, world.spaceVariant);
-    this.buildProgression(progression, world.accent);
     ProgressSyncSystem.enqueueRun(stats, progression);
     this.submitLeaderboardScore(stats);
     this.uploadSave();
@@ -107,19 +115,19 @@ export class ResultScene extends Phaser.Scene {
       .setOrigin(0.5);
   }
 
-  /** Wie viele Relikte je Seltenheit - die Zeile mit dem Sammel-Kick. */
+  /** Wie viele Relikte je Seltenheit - optionale Details unter dem Ziel. */
   private buildBreakdown(stats: RunStats, spaceVariant: number): void {
-    const y = 336;
+    const y = 748;
 
     this.add.text(60, y, 'AUSBEUTE', textStyle(FontSize.tiny, Palette.inkDim)).setLetterSpacing(6);
 
     RARITIES.forEach((rarity, index) => {
-      const rowY = y + 44 + index * 40;
+      const rowY = y + 42 + index * 32;
       const count = stats.collected[rarity.id];
 
       this.add
         .image(72, rowY, planetTextureForVariant(spaceVariant))
-        .setScale(0.055)
+        .setScale(0.045)
         .setAlpha(count > 0 ? 1 : 0.28);
 
       this.add
@@ -127,7 +135,7 @@ export class ResultScene extends Phaser.Scene {
           104,
           rowY,
           accessibleRarityLabel(rarity.id, rarity.label),
-          textStyle(FontSize.small, count > 0 ? toCss(rarity.color) : Palette.inkDim),
+          textStyle(FontSize.tiny, count > 0 ? toCss(rarity.color) : Palette.inkDim),
         )
         .setOrigin(0, 0.5);
 
@@ -136,7 +144,7 @@ export class ResultScene extends Phaser.Scene {
           GAME_WIDTH - 60,
           rowY,
           String(count),
-          textStyle(FontSize.small, count > 0 ? Palette.ink : Palette.inkDim, {
+          textStyle(FontSize.tiny, count > 0 ? Palette.ink : Palette.inkDim, {
             fontStyle: count > 0 ? 'bold' : 'normal',
           }),
         )
@@ -144,11 +152,30 @@ export class ResultScene extends Phaser.Scene {
     });
   }
 
-  /** XP-Zuwachs, Levelaufstiege, neue Welten und Achievements. */
-  private buildProgression(progression: ProgressionResult, accent: number): void {
+  /** Belohnung zuerst: XP, Coins und unmittelbare Freischaltungen. */
+  private buildProgression(stats: RunStats, progression: ProgressionResult, accent: number): void {
     const save = SaveSystem.load();
     const levelProgress = ProgressionSystem.getLevelProgress(save);
-    let y = 622;
+    const panelTop = 300;
+    const panelHeight = 238;
+    createPanel(
+      this,
+      GAME_WIDTH / 2,
+      panelTop + panelHeight / 2,
+      GAME_WIDTH - 120,
+      panelHeight,
+      accent,
+      {
+        alpha: 0.58,
+        radius: 18,
+      },
+    );
+
+    this.add
+      .text(60, panelTop + 27, 'BELOHNUNG', textStyle(FontSize.tiny, Palette.inkDim))
+      .setLetterSpacing(6);
+
+    const y = panelTop + 67;
 
     this.add
       .text(
@@ -163,15 +190,13 @@ export class ResultScene extends Phaser.Scene {
       .text(
         GAME_WIDTH - 60,
         y,
-        levelProgress.xpNeeded === 0
-          ? 'MAX LEVEL'
-          : `${levelProgress.xpInLevel} / ${levelProgress.xpNeeded} XP`,
+        `+${stats.xpGained.toLocaleString('de-DE')} XP`,
         textStyle(FontSize.tiny, Palette.ink),
       )
       .setOrigin(1, 0.5);
 
     const bar = createBar(this, 60, y + 28, GAME_WIDTH - 120, 10, accent);
-    bar.setRatio(0);
+    bar.setRatio(levelProgress.ratio);
     this.tweens.addCounter({
       from: 0,
       to: levelProgress.ratio,
@@ -181,7 +206,18 @@ export class ResultScene extends Phaser.Scene {
       onUpdate: (tween) => bar.setRatio(tween.getValue() ?? 0),
     });
 
-    y += 66;
+    this.add
+      .text(
+        60,
+        y + 48,
+        levelProgress.xpNeeded === 0
+          ? 'MAX LEVEL'
+          : `${levelProgress.xpInLevel} / ${levelProgress.xpNeeded} XP im aktuellen Level`,
+        textStyle(FontSize.tiny, Palette.inkDim),
+      )
+      .setOrigin(0, 0.5);
+
+    const highlightY = y + 78;
 
     const highlights: { text: string; color: string }[] = [];
 
@@ -213,9 +249,14 @@ export class ResultScene extends Phaser.Scene {
       }
     }
 
-    highlights.slice(0, 4).forEach((entry, index) => {
+    highlights.slice(0, 3).forEach((entry, index) => {
       const label = this.add
-        .text(GAME_WIDTH / 2, y + index * 34, entry.text, textStyle(FontSize.small, entry.color))
+        .text(
+          GAME_WIDTH / 2,
+          highlightY + index * 28,
+          entry.text,
+          textStyle(FontSize.tiny, entry.color),
+        )
         .setOrigin(0.5)
         .setAlpha(0);
 
@@ -226,6 +267,44 @@ export class ResultScene extends Phaser.Scene {
         delay: 500 + index * 180,
       });
     });
+  }
+
+  /** Genau eine Handlungsempfehlung, zentral aus dem fertigen Spielstand. */
+  private buildNextGoal(accent: number): void {
+    const goal = getNextGoal(SaveSystem.load());
+    const panelTop = 556;
+    const panelHeight = 148;
+    createPanel(
+      this,
+      GAME_WIDTH / 2,
+      panelTop + panelHeight / 2,
+      GAME_WIDTH - 120,
+      panelHeight,
+      accent,
+      {
+        alpha: 0.66,
+        radius: 18,
+      },
+    );
+
+    this.add
+      .text(60, panelTop + 25, 'NÄCHSTES ZIEL', textStyle(FontSize.tiny, Palette.inkDim))
+      .setLetterSpacing(6);
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        panelTop + 65,
+        goal.title,
+        textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
+      )
+      .setOrigin(0.5)
+      .setWordWrapWidth(GAME_WIDTH - 170)
+      .setAlign('center');
+    this.add
+      .text(GAME_WIDTH / 2, panelTop + 108, goal.detail, textStyle(FontSize.tiny, Palette.ink))
+      .setOrigin(0.5)
+      .setWordWrapWidth(GAME_WIDTH - 170)
+      .setAlign('center');
   }
 
   private buildButtons(worldId: string, accent: number): void {

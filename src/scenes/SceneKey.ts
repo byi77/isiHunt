@@ -23,7 +23,7 @@ export const SceneKey = {
   Settings: 'Settings',
   /** Freiwilliger Login fuer ein gemeinsames Profil auf mehreren Geraeten. */
   Account: 'Account',
-  /** Kaufbarer Talentbaum und Punkt-Reset. */
+  /** Kaufbare Talente als unabhaengige Route und Reset. */
   Talents: 'Talents',
   /** Laden fuer Skins und Boosts - die Coin-Senke. */
   Shop: 'Shop',

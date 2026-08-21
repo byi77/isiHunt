@@ -71,6 +71,7 @@ export function createDefaultSave(): SaveData {
     soundEnabled: true,
     hapticsEnabled: true,
     playerName: '',
+    pendingPlayerName: null,
     cloudId: null,
   };
 }
@@ -208,6 +209,7 @@ function reconcile(raw: Partial<SaveData>): SaveData {
     hapticsEnabled:
       typeof source.hapticsEnabled === 'boolean' ? source.hapticsEnabled : base.hapticsEnabled,
     playerName: stringOr(source.playerName, base.playerName),
+    pendingPlayerName: nullableStringOr(source.pendingPlayerName, base.pendingPlayerName ?? null),
     cloudId: nullableStringOr(source.cloudId, base.cloudId),
   };
 }
@@ -487,6 +489,15 @@ export function ensureCloudId(): string {
 export function setPlayerName(name: string): void {
   update((data) => {
     data.playerName = name;
+    data.pendingPlayerName = null;
+  });
+}
+
+/** Speichert einen Namen offline, ohne den Serverstand als bestaetigt auszugeben. */
+export function setOfflinePlayerName(name: string): void {
+  update((data) => {
+    data.playerName = name;
+    data.pendingPlayerName = name;
   });
 }
 
@@ -579,7 +590,8 @@ function vereinigeShopBesitz(lokal: SaveData, uebernommen: SaveData): SaveData {
 }
 
 export function adoptRemote(remote: Partial<SaveData>, cloudId: string): SaveData {
-  const merged = vereinigeShopBesitz(load(), migrate(remote));
+  const lokal = load();
+  const merged = preservePendingIdentity(lokal, vereinigeShopBesitz(lokal, migrate(remote)));
   merged.cloudId = cloudId;
   save(merged);
   return merged;
@@ -588,8 +600,18 @@ export function adoptRemote(remote: Partial<SaveData>, cloudId: string): SaveDat
 /** Übernimmt den gemeinsamen Auth-Profilstand und bewahrt die lokale Sync-ID. */
 export function adoptProfileProgress(remote: Partial<SaveData>): SaveData {
   const lokal = load();
-  const merged = vereinigeShopBesitz(lokal, migrate(remote));
+  const merged = preservePendingIdentity(lokal, vereinigeShopBesitz(lokal, migrate(remote)));
   merged.cloudId = lokal.cloudId;
   save(merged);
   return merged;
+}
+
+/** Ein nicht bestaetigter Offline-Name darf kein Remote-Pull verlieren. */
+function preservePendingIdentity(lokal: SaveData, merged: SaveData): SaveData {
+  if (!lokal.pendingPlayerName) return merged;
+  return {
+    ...merged,
+    playerName: lokal.playerName,
+    pendingPlayerName: lokal.pendingPlayerName,
+  };
 }
