@@ -168,6 +168,97 @@ export interface AdminDashboard {
 }
 
 /**
+ * Zahlen aus RPC-/REST-Antworten sind nicht vertrauenswuerdig: Supabase kann
+ * bei einer geaenderten SQL-Funktion `null`, Strings oder sogar Werte liefern,
+ * die nach `Number()` zu `NaN` werden. `NaN` darf nie in Spielstand oder UI
+ * gelangen, weil es dort jede weitere Berechnung unbrauchbar macht.
+ */
+function finiteNonNegative(value: unknown, fallback = 0): number {
+  const number = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(number) ? Math.max(0, number) : fallback;
+}
+
+function recordFrom(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === 'object' && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+/** Normalisiert und validiert die Nutzlast von `get_save`. */
+export function normalizeRemoteSave(raw: unknown): RemoteSave | null {
+  const row = Array.isArray(raw) ? raw[0] : raw;
+  const value = recordFrom(row);
+  const data = recordFrom(value?.data);
+  if (!value || !data) return null;
+
+  return {
+    data: data as unknown as SaveData,
+    level: Math.max(1, finiteNonNegative(value.level, 1)),
+    bestScore: finiteNonNegative(value.best_score),
+    totalRuns: finiteNonNegative(value.total_runs),
+    updatedAt: typeof value.updated_at === 'string' ? value.updated_at : '',
+  };
+}
+
+/** Normalisiert eine Profil-RPC-Antwort; fehlerhafte Antworten werden verworfen. */
+export function normalizeProfileProgress(raw: unknown): RemoteProfileProgress | null {
+  const row = Array.isArray(raw) ? raw[0] : raw;
+  const value = recordFrom(row);
+  const data = recordFrom(value?.data);
+  if (!value || !data) return null;
+
+  return {
+    data: data as unknown as SaveData,
+    totalXp: finiteNonNegative(value.total_xp),
+    updatedAt: typeof value.updated_at === 'string' ? value.updated_at : '',
+  };
+}
+
+/** Normalisiert die aggregierte Admin-Antwort und filtert kaputte Userzeilen. */
+export function normalizeAdminDashboard(raw: unknown): AdminDashboard | null {
+  const value = Array.isArray(raw) ? raw[0] : raw;
+  const dashboard = recordFrom(value);
+  if (!dashboard) return null;
+
+  const users = Array.isArray(dashboard.users)
+    ? dashboard.users.flatMap((entry): AdminUserStats[] => {
+        const user = recordFrom(entry);
+        if (!user) return [];
+        return [
+          {
+            playerName: typeof user.playerName === 'string' ? user.playerName : 'Ohne Namen',
+            level: Math.max(1, finiteNonNegative(user.level, 1)),
+            totalRuns: finiteNonNegative(user.totalRuns),
+            totalPlayTimeMs: finiteNonNegative(user.totalPlayTimeMs),
+            totalCoinsEarned: finiteNonNegative(user.totalCoinsEarned),
+            currentCoins: finiteNonNegative(user.currentCoins),
+            totalDailyRuns: finiteNonNegative(user.totalDailyRuns),
+            totalXp: finiteNonNegative(user.totalXp),
+            bestScore: finiteNonNegative(user.bestScore),
+            bestCombo: finiteNonNegative(user.bestCombo),
+            achievementCount: finiteNonNegative(user.achievementCount),
+            updatedAt: typeof user.updatedAt === 'string' ? user.updatedAt : '',
+          },
+        ];
+      })
+    : [];
+
+  return {
+    profileCount: finiteNonNegative(dashboard.profileCount),
+    playedProfileCount: finiteNonNegative(dashboard.playedProfileCount),
+    totalRuns: finiteNonNegative(dashboard.totalRuns),
+    totalPlayTimeMs: finiteNonNegative(dashboard.totalPlayTimeMs),
+    totalCoinsEarned: finiteNonNegative(dashboard.totalCoinsEarned),
+    totalCoinsHeld: finiteNonNegative(dashboard.totalCoinsHeld),
+    totalDailyRuns: finiteNonNegative(dashboard.totalDailyRuns),
+    totalXp: finiteNonNegative(dashboard.totalXp),
+    totalAchievements: finiteNonNegative(dashboard.totalAchievements),
+    highestScore: finiteNonNegative(dashboard.highestScore),
+    users,
+  };
+}
+
+/**
  * Summe aller Talentraenge - ein Kauf auf einem anderen Geraet aendert oft
  * weder Level noch Bestwert noch Coins (die sind ja gerade dafuer ausgegeben),
  * bliebe ohne diese Summe fuer den Vergleich unsichtbar.
@@ -722,19 +813,14 @@ export async function fetchSave(cloudId: string): Promise<CloudResult<RemoteSave
   if (!result.ok) return result;
   if (result.value.error) return { ok: false, error: result.value.error.message };
 
-  const row = Array.isArray(result.value.data) ? result.value.data[0] : null;
-  if (!row) return { ok: true, value: null };
+  if (result.value.data === null || result.value.data === undefined) {
+    return { ok: true, value: null };
+  }
 
-  return {
-    ok: true,
-    value: {
-      data: row.data as SaveData,
-      level: Number(row.level),
-      bestScore: Number(row.best_score),
-      totalRuns: Number(row.total_runs),
-      updatedAt: String(row.updated_at),
-    },
-  };
+  const remote = normalizeRemoteSave(result.value.data);
+  return remote
+    ? { ok: true, value: remote }
+    : { ok: false, error: 'Ungueltige Spielstand-Antwort' };
 }
 
 // --- Auth-Profil und Mehrgeräte-Fortschritt -------------------------------
@@ -750,65 +836,6 @@ async function requireAuthenticatedClient(): Promise<CloudResult<SupabaseClient>
   }
 
   return { ok: true, value: supabase };
-}
-
-function readProfileProgress(raw: unknown): RemoteProfileProgress | null {
-  const row = Array.isArray(raw) ? raw[0] : raw;
-  if (!row || typeof row !== 'object') return null;
-
-  const value = row as {
-    data?: unknown;
-    total_xp?: unknown;
-    updated_at?: unknown;
-  };
-  if (!value.data || typeof value.data !== 'object') return null;
-
-  return {
-    data: value.data as SaveData,
-    totalXp: Number(value.total_xp ?? 0),
-    updatedAt: String(value.updated_at ?? ''),
-  };
-}
-
-function readAdminDashboard(raw: unknown): AdminDashboard | null {
-  const value = Array.isArray(raw) ? raw[0] : raw;
-  if (!value || typeof value !== 'object') return null;
-
-  const dashboard = value as Record<string, unknown>;
-  const users = Array.isArray(dashboard.users)
-    ? dashboard.users
-        .filter(
-          (entry): entry is Record<string, unknown> => Boolean(entry) && typeof entry === 'object',
-        )
-        .map((entry) => ({
-          playerName: String(entry.playerName ?? 'Ohne Namen'),
-          level: Math.max(1, Number(entry.level ?? 1)),
-          totalRuns: Math.max(0, Number(entry.totalRuns ?? 0)),
-          totalPlayTimeMs: Math.max(0, Number(entry.totalPlayTimeMs ?? 0)),
-          totalCoinsEarned: Math.max(0, Number(entry.totalCoinsEarned ?? 0)),
-          currentCoins: Math.max(0, Number(entry.currentCoins ?? 0)),
-          totalDailyRuns: Math.max(0, Number(entry.totalDailyRuns ?? 0)),
-          totalXp: Math.max(0, Number(entry.totalXp ?? 0)),
-          bestScore: Math.max(0, Number(entry.bestScore ?? 0)),
-          bestCombo: Math.max(0, Number(entry.bestCombo ?? 0)),
-          achievementCount: Math.max(0, Number(entry.achievementCount ?? 0)),
-          updatedAt: String(entry.updatedAt ?? ''),
-        }))
-    : [];
-
-  return {
-    profileCount: Math.max(0, Number(dashboard.profileCount ?? 0)),
-    playedProfileCount: Math.max(0, Number(dashboard.playedProfileCount ?? 0)),
-    totalRuns: Math.max(0, Number(dashboard.totalRuns ?? 0)),
-    totalPlayTimeMs: Math.max(0, Number(dashboard.totalPlayTimeMs ?? 0)),
-    totalCoinsEarned: Math.max(0, Number(dashboard.totalCoinsEarned ?? 0)),
-    totalCoinsHeld: Math.max(0, Number(dashboard.totalCoinsHeld ?? 0)),
-    totalDailyRuns: Math.max(0, Number(dashboard.totalDailyRuns ?? 0)),
-    totalXp: Math.max(0, Number(dashboard.totalXp ?? 0)),
-    totalAchievements: Math.max(0, Number(dashboard.totalAchievements ?? 0)),
-    highestScore: Math.max(0, Number(dashboard.highestScore ?? 0)),
-    users,
-  };
 }
 
 /**
@@ -829,7 +856,7 @@ export async function fetchAdminDashboard(): Promise<CloudResult<AdminDashboard 
   if (!result.ok) return result;
   if (result.value.error) return { ok: false, error: result.value.error.message };
 
-  return { ok: true, value: readAdminDashboard(result.value.data) };
+  return { ok: true, value: normalizeAdminDashboard(result.value.data) };
 }
 
 /** Gibt einem Profil serverseitig einen Teststand fuer Wartungszwecke. */
@@ -880,7 +907,7 @@ export async function fetchProfileProgress(): Promise<CloudResult<RemoteProfileP
   if (!result.ok) return result;
   if (result.value.error) return { ok: false, error: result.value.error.message };
 
-  return { ok: true, value: readProfileProgress(result.value.data) };
+  return { ok: true, value: normalizeProfileProgress(result.value.data) };
 }
 
 /** Erstellt den gemeinsamen Stand, falls das Profil noch keinen besitzt. */
@@ -900,7 +927,7 @@ export async function initializeProfileProgress(
   if (!result.ok) return result;
   if (result.value.error) return { ok: false, error: result.value.error.message };
 
-  return { ok: true, value: readProfileProgress(result.value.data) };
+  return { ok: true, value: normalizeProfileProgress(result.value.data) };
 }
 
 /** Übernimmt ein bestehendes, anonymes Cloud-Profil nach dem Login. */
@@ -920,7 +947,7 @@ export async function claimCloudProfile(
   if (!result.ok) return result;
   if (result.value.error) return { ok: false, error: result.value.error.message };
 
-  return { ok: true, value: readProfileProgress(result.value.data) };
+  return { ok: true, value: normalizeProfileProgress(result.value.data) };
 }
 
 /**
@@ -957,7 +984,7 @@ export async function purchaseTalent(
   );
   if (!result.ok) return result;
   if (result.value.error) return { ok: false, error: result.value.error.message };
-  return { ok: true, value: readProfileProgress(result.value.data) };
+  return { ok: true, value: normalizeProfileProgress(result.value.data) };
 }
 
 /** Setzt den Talentbaum zurück und erstattet alle investierten Punkte. */
@@ -971,7 +998,7 @@ export async function resetTalents(): Promise<CloudResult<RemoteProfileProgress 
   );
   if (!result.ok) return result;
   if (result.value.error) return { ok: false, error: result.value.error.message };
-  return { ok: true, value: readProfileProgress(result.value.data) };
+  return { ok: true, value: normalizeProfileProgress(result.value.data) };
 }
 
 /** Beansprucht den einmaligen Tagesbonus atomar im gemeinsamen Profil. */
@@ -993,7 +1020,7 @@ export async function claimDailyBonus(
   );
   if (!result.ok) return result;
   if (result.value.error) return { ok: false, error: result.value.error.message };
-  return { ok: true, value: readProfileProgress(result.value.data) };
+  return { ok: true, value: normalizeProfileProgress(result.value.data) };
 }
 
 /** Beansprucht den kleinen Login-Bonus; der Server erlaubt ihn nur einmal je Tag. */
@@ -1017,7 +1044,7 @@ export async function claimDailyLoginBonus(
     ok: true,
     value: {
       claimed: value.claimed === true,
-      profile: readProfileProgress(value.profile),
+      profile: normalizeProfileProgress(value.profile),
     },
   };
 }
@@ -1046,7 +1073,7 @@ export async function submitProgressEvent(
   );
   if (!result.ok) return result;
   if (result.value.error) return { ok: false, error: result.value.error.message };
-  return { ok: true, value: readProfileProgress(result.value.data) };
+  return { ok: true, value: normalizeProfileProgress(result.value.data) };
 }
 
 // --- Sync-Codes --------------------------------------------------------------

@@ -21,6 +21,7 @@ export const GameEvent = {
   TimerChanged: 'timer:changed',
   Collected: 'run:collected',
   Missed: 'run:missed',
+  ObstacleHit: 'run:obstacle-hit',
   RunStarted: 'run:started',
   RunEnded: 'run:ended',
   RunPaused: 'run:paused',
@@ -58,6 +59,7 @@ export interface GameEventPayloads {
     y: number;
   };
   [GameEvent.Missed]: { rarityId: RarityId };
+  [GameEvent.ObstacleHit]: { kind: 'brake' | 'penalty' };
   [GameEvent.RunStarted]: { worldId: string; durationMs: number };
   [GameEvent.RunEnded]: { stats: RunStats; progression: ProgressionResult };
   /**

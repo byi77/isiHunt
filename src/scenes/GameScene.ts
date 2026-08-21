@@ -42,6 +42,9 @@ import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as NetworkDuelSystem from '@/systems/NetworkDuelSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
+import { PerformanceMonitor } from '@/systems/PerformanceSystem';
+import type { PerformanceReport } from '@/systems/PerformanceSystem';
+import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { ScoreSystem, trailTierForSeries } from '@/systems/ScoreSystem';
@@ -88,6 +91,9 @@ export class GameScene extends Phaser.Scene {
   private mode: RunMode = 'solo';
   private playerIndex = 0;
   private challenge: ChallengeState | null = null;
+  private readonly performanceMonitor: PerformanceMonitor | null = DEBUG_ENABLED
+    ? new PerformanceMonitor()
+    : null;
 
   constructor() {
     super(SceneKey.Game);
@@ -202,6 +208,10 @@ export class GameScene extends Phaser.Scene {
       });
     }
 
+    // Der Messpunkt beginnt nach dem Scene-Aufbau. So misst startupMs den
+    // sichtbaren Weg bis "LOS!" und nicht die Boot-/Asset-Ladezeit aller
+    // bereits registrierten Phaser-Scenes.
+    this.performanceMonitor?.reset();
     this.runCountdown();
 
     // Aufraeumen bei Scene-Restart, damit keine Objekte oder Listener leaken.
@@ -233,6 +243,11 @@ export class GameScene extends Phaser.Scene {
     this.updateObstacles(delta);
     this.updateSpawning(delta);
     this.updateTimer(delta);
+    this.performanceMonitor?.recordFrame(
+      delta,
+      this.collectibles.length + this.obstacles.length,
+      this.children.list.filter((child) => child.type === 'ParticleEmitter').length,
+    );
   }
 
   // --- Update-Schritte ------------------------------------------------------
@@ -347,8 +362,9 @@ export class GameScene extends Phaser.Scene {
         this.scoring.registerMiss();
         const penaltyLabel = `-${(WORLD_PENALTY_MS / 1000).toFixed(1).replace('.', ',')} s`;
         floatingScore(this, obstacle.x, obstacle.y, penaltyLabel, 0xa855f7);
-        this.cameras.main.shake(120, 0.004);
+        if (!prefersReducedMotion()) this.cameras.main.shake(120, 0.004);
       }
+      eventBus.emitEvent(GameEvent.ObstacleHit, { kind: obstacle.kind });
       obstacle.destroy();
       this.obstacles.splice(index, 1);
     }
@@ -379,7 +395,7 @@ export class GameScene extends Phaser.Scene {
     this.player.setSeriesTrail(trailTierForSeries(outcome.combo));
 
     // Kamera-Ruckler skaliert mit dem Wert - Legendaeres soll sich fett anfuehlen.
-    if (isImpact) {
+    if (isImpact && !prefersReducedMotion()) {
       this.cameras.main.shake(180, 0.006);
       this.cameras.main.flash(140, 255, 255, 255, false);
     }
@@ -516,6 +532,7 @@ export class GameScene extends Phaser.Scene {
     if (this.phase === 'ended') return;
 
     this.phase = 'running';
+    this.performanceMonitor?.markRunStarted();
     this.spawner.reset();
     eventBus.emitEvent(GameEvent.RunStarted, {
       worldId: this.world.id,
@@ -526,6 +543,7 @@ export class GameScene extends Phaser.Scene {
   private endRun(): void {
     if (this.phase === 'ended') return;
     this.phase = 'ended';
+    this.performanceMonitor?.finishRun();
 
     const stats = {
       ...this.scoring.toRunStats(this.world.id),
@@ -577,6 +595,11 @@ export class GameScene extends Phaser.Scene {
       this.scene.stop(SceneKey.Hud);
       this.scene.start(SceneKey.Result, { stats, progression });
     });
+  }
+
+  /** Nur im DEV-Build fuer den Performance-Check sichtbar. */
+  getPerformanceReport(): PerformanceReport | null {
+    return this.performanceMonitor?.getReport() ?? null;
   }
 
   /**

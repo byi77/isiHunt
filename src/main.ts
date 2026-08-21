@@ -11,7 +11,14 @@
 
 import Phaser from 'phaser';
 
-import { APP_VERSION, configureGameHeight, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import {
+  APP_VERSION,
+  configureGameHeight,
+  DEBUG_ENABLED,
+  GAME_HEIGHT,
+  GAME_WIDTH,
+  PERFORMANCE_MODE,
+} from '@/config/GameConfig';
 import { isIos, isStandalone } from '@/core/display';
 import { eventBus, GameEvent } from '@/core/EventBus';
 import { requestPortraitOrientationLock } from '@/core/orientation';
@@ -71,10 +78,10 @@ function createGameConfig(): Phaser.Types.Core.GameConfig {
       // Runde Pixel: verhindert flimmernde Kanten bei nicht-ganzzahliger Skalierung.
       roundPixels: true,
       powerPreference: 'high-performance',
-      // WebGL loescht den Backbuffer sonst sofort nach dem Praesentieren -
-      // DebugSystem.captureScreenshot() liest ueber canvas.toBlob() dann
-      // einen bereits geleerten Puffer und liefert ein schwarzes Bild.
-      preserveDrawingBuffer: true,
+      // Screenshots brauchen den Backbuffer nur im DEV-Build. Im Production-
+      // Pfad darf WebGL ihn freigeben, damit Speicherbandbreite und Akku nicht
+      // fuer Debug-Aufnahmen gebunden bleiben.
+      preserveDrawingBuffer: DEBUG_ENABLED && !PERFORMANCE_MODE,
     },
     input: {
       activePointers: 3,

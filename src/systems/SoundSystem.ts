@@ -11,6 +11,13 @@ import { COMBO_TIERS } from '@/config/GameConfig';
 import { eventBus, GameEvent } from '@/core/EventBus';
 import type { RarityId } from '@/config/rarities';
 import * as SaveSystem from '@/systems/SaveSystem';
+import * as HapticsSystem from '@/systems/HapticsSystem';
+import {
+  acceptFeedback,
+  createFeedbackGate,
+  feedbackKindForRarity,
+  type FeedbackKind,
+} from '@/systems/FeedbackSystem';
 
 interface WebkitWindow extends Window {
   webkitAudioContext?: typeof AudioContext;
@@ -27,6 +34,7 @@ interface ToneSpec {
 let audioContext: AudioContext | null = null;
 let initialized = false;
 let resumePromise: Promise<boolean> | null = null;
+let feedbackGate = createFeedbackGate();
 
 // Auf iOS bleibt der allererste `resume()`-Aufruf nach einem Kaltstart
 // manchmal dauerhaft in der Warteschleife haengen - kein resolve, kein
@@ -186,10 +194,15 @@ const RARITY_FREQUENCIES: Readonly<Record<RarityId, number>> = {
 };
 
 export function playUiClick(): void {
+  if (!allowFeedback('ui')) return;
+  HapticsSystem.playFeedback('ui');
   scheduleTone({ frequency: 520, duration: 0.045, type: 'triangle', volume: 0.035 });
 }
 
 function playCollected(rarityId: RarityId): void {
+  const feedbackKind = feedbackKindForRarity(rarityId);
+  if (!allowFeedback(feedbackKind)) return;
+  HapticsSystem.playFeedback(feedbackKind);
   const frequency = RARITY_FREQUENCIES[rarityId];
   const epicTier =
     rarityId === 'legendary'
@@ -257,6 +270,8 @@ function playCollected(rarityId: RarityId): void {
 
 /** Kurzer, klarer Schritt beim Wechsel der Welt im Wheel-Carousel. */
 export function playWorldSelect(spaceVariant: number): void {
+  if (!allowFeedback('ui')) return;
+  HapticsSystem.playFeedback('ui');
   const root = 300 + Math.max(0, spaceVariant) * 42;
   playSequence([
     { frequency: root, duration: 0.055, type: 'triangle', volume: 0.026 },
@@ -266,6 +281,8 @@ export function playWorldSelect(spaceVariant: number): void {
 
 function playComboTier(combo: number): void {
   if (!COMBO_TIERS.some((tier) => tier.minCombo === combo) || combo === 0) return;
+  if (!allowFeedback('combo')) return;
+  HapticsSystem.playFeedback('combo');
 
   const frequency = 620 + combo * 3;
   playSequence([
@@ -275,6 +292,8 @@ function playComboTier(combo: number): void {
 }
 
 function playRunStarted(): void {
+  if (!allowFeedback('run-start')) return;
+  HapticsSystem.playFeedback('run-start');
   playSequence([
     { frequency: 440, duration: 0.08, type: 'triangle', volume: 0.035 },
     { frequency: 660, duration: 0.14, delay: 0.08, type: 'triangle', volume: 0.04 },
@@ -282,6 +301,8 @@ function playRunStarted(): void {
 }
 
 function playRunEnded(levelsGained: number): void {
+  if (!allowFeedback('run-end')) return;
+  HapticsSystem.playFeedback('run-end');
   if (levelsGained > 0) {
     playSequence([
       { frequency: 523, duration: 0.1, type: 'triangle', volume: 0.04 },
@@ -297,6 +318,26 @@ function playRunEnded(levelsGained: number): void {
   ]);
 }
 
+function playObstacleHit(kind: 'brake' | 'penalty'): void {
+  if (!allowFeedback('obstacle')) return;
+  HapticsSystem.playFeedback('obstacle');
+  scheduleTone({
+    frequency: kind === 'penalty' ? 190 : 240,
+    duration: 0.12,
+    type: 'square',
+    volume: 0.035,
+  });
+}
+
+function allowFeedback(kind: FeedbackKind): boolean {
+  // Ein Ereignis, das waehrend iOS-resume noch keinen Ton spielen kann, darf
+  // den naechsten echten Ton nicht durch den Prioritaets-Gate blockieren.
+  if (soundEnabled() && audioContext?.state === 'running') {
+    return acceptFeedback(feedbackGate, kind, performance.now());
+  }
+  return true;
+}
+
 // Als benannte, modulweite Referenzen statt Inline-Arrow-Functions - nur so
 // ist die Funktionsreferenz bei `offEvent` dieselbe wie bei `onEvent`
 // (CODE_STYLE.md 1.4, dasselbe Muster wie GameScene/HudScene).
@@ -307,6 +348,8 @@ const onRunStarted = (): void => playRunStarted();
 const onRunEnded: (payload: { progression: { levelsGained: number } }) => void = ({
   progression,
 }) => playRunEnded(progression.levelsGained);
+const onObstacleHit: (payload: { kind: 'brake' | 'penalty' }) => void = ({ kind }) =>
+  playObstacleHit(kind);
 const onVisibilityChange = (): void => {
   if (document.visibilityState === 'hidden') {
     if (audioContext?.state === 'running') {
@@ -327,6 +370,7 @@ function registerEventListeners(): void {
   eventBus.onEvent(GameEvent.ComboChanged, onComboChanged);
   eventBus.onEvent(GameEvent.RunStarted, onRunStarted);
   eventBus.onEvent(GameEvent.RunEnded, onRunEnded);
+  eventBus.onEvent(GameEvent.ObstacleHit, onObstacleHit);
 }
 
 function unregisterEventListeners(): void {
@@ -334,6 +378,7 @@ function unregisterEventListeners(): void {
   eventBus.offEvent(GameEvent.ComboChanged, onComboChanged);
   eventBus.offEvent(GameEvent.RunStarted, onRunStarted);
   eventBus.offEvent(GameEvent.RunEnded, onRunEnded);
+  eventBus.offEvent(GameEvent.ObstacleHit, onObstacleHit);
 }
 
 /**
@@ -345,6 +390,7 @@ function unregisterEventListeners(): void {
  * nie doppelt registriert werden koennen.
  */
 export function shutdown(): void {
+  feedbackGate = createFeedbackGate();
   if (!initialized) return;
   initialized = false;
 
@@ -360,6 +406,7 @@ export function shutdown(): void {
 /** Einmalig beim App-Start aufrufen. Die Listener bleiben ueber Scenes hinweg. */
 export function initialize(): void {
   if (initialized) shutdown();
+  feedbackGate = createFeedbackGate();
   initialized = true;
 
   registerEventListeners();

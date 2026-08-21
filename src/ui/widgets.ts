@@ -13,6 +13,7 @@ import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import * as SoundSystem from '@/systems/SoundSystem';
+import { ensureTouchTarget, prefersReducedMotion } from '@/systems/AccessibilitySystem';
 
 export interface ButtonHandle {
   container: Phaser.GameObjects.Container;
@@ -110,8 +111,9 @@ export function createButton(
   onClick: () => void,
   options: { width?: number; height?: number; accent?: number; fontSize?: number } = {},
 ): ButtonHandle {
-  const width = options.width ?? 380;
-  const height = options.height ?? 92;
+  const target = ensureTouchTarget(options.width ?? 380, options.height ?? 92);
+  const width = target.width;
+  const height = target.height;
   const accent = options.accent ?? Palette.goldHex;
 
   // Buttons liegen immer über normalen Texten und Statusanzeigen. Dadurch
@@ -799,6 +801,7 @@ export function createDriftLayers(
 ): void {
   const starTints = [0xffffff, 0xc4ecff, 0xffd7b0, 0xe8d1ff, 0xfff1b8] as const;
   const starTint = starTints[spaceVariant % starTints.length] ?? 0xffffff;
+  if (prefersReducedMotion()) return;
   const layers: readonly {
     count: number;
     scale: number;
@@ -865,6 +868,8 @@ export function createAmbientMotes(
     blendMode: 'ADD',
   });
 
+  if (prefersReducedMotion()) emitter.stop();
+
   emitter.setDepth(Depth.AmbientMotes);
   return emitter;
 }
@@ -891,6 +896,8 @@ export function createVignette(
 
 /** Kurze Partikel-Explosion beim Einsammeln. */
 export function burst(scene: Phaser.Scene, x: number, y: number, color: number, count = 12): void {
+  if (prefersReducedMotion()) return;
+
   const emitter = scene.add.particles(0, 0, TextureKey.Shard, {
     speed: { min: 90, max: 280 },
     scale: { start: 0.7, end: 0 },
@@ -922,6 +929,8 @@ export function shockwave(
   color: number,
   targetScale = 1,
 ): void {
+  if (prefersReducedMotion()) return;
+
   const ring = scene.add
     .image(x, y, TextureKey.Ring)
     .setTint(color)
@@ -985,6 +994,14 @@ export function floatingScore(
         .setScale(0.7)
         .setDepth(Depth.FloatingScore)
     : null;
+
+  if (prefersReducedMotion()) {
+    scene.time.delayedCall(700, () => {
+      text.destroy();
+      bonusLabel?.destroy();
+    });
+    return;
+  }
 
   scene.tweens.add({
     targets: bonusLabel ? [text, bonusLabel] : text,

@@ -9,6 +9,7 @@
 import Phaser from 'phaser';
 
 import { Depth } from '@/ui/depth';
+import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 
 export type ObstacleKind = 'brake' | 'penalty';
 
@@ -56,21 +57,23 @@ export class Obstacle extends Phaser.GameObjects.Container {
     this.setDepth(Depth.Obstacle);
     scene.add.existing(this);
 
-    scene.tweens.add({
-      targets: glow,
-      alpha: { from: 0.2, to: 0.5 },
-      scale: { from: 2, to: 2.35 },
-      duration: 700,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.InOut',
-    });
-    scene.tweens.add({
-      targets: this,
-      scale: { from: 0.4, to: 1 },
-      duration: 220,
-      ease: 'Back.Out',
-    });
+    if (!prefersReducedMotion()) {
+      scene.tweens.add({
+        targets: glow,
+        alpha: { from: 0.2, to: 0.5 },
+        scale: { from: 2, to: 2.35 },
+        duration: 700,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.InOut',
+      });
+      scene.tweens.add({
+        targets: this,
+        scale: { from: 0.4, to: 1 },
+        duration: 220,
+        ease: 'Back.Out',
+      });
+    }
   }
 
   tick(deltaMs: number, bounds: Phaser.Geom.Rectangle): void {

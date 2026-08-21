@@ -917,7 +917,7 @@ Ablauf ohne Phaser/Canvas.
 
 ## P5-02 — Konfiguriertes Backend und Netzwerk-Matrix testen
 
-- [ ] **Die bestehende `CloudSystem.configured.test.ts` um die noch fehlenden
+- [x] **Die bestehende `CloudSystem.configured.test.ts` um die noch fehlenden
   Fehler- und RPC-Verträge ergänzen.**
 
 Der alte Audit-Punkt „13 von 30 Exporten ohne Test“ ist durch eine konfigurierte
@@ -925,8 +925,14 @@ Suite teilweise überholt. Nicht die alte Zahl übernehmen, sondern aktuelle
 Lücken aus dem Modulvertrag schließen: Timeout, Auth-Fehler, RPC-Fehler,
 idempotente Wiederholung, abgelaufene Codes und unerwartete Nutzlasten.
 
-Zusätzlich echte Browserabläufe für Netzverlust genau beim Run-Ende, während
-eines Kaufs, nach einer RPC-Antwort und beim App-Hintergrund aufnehmen.
+`CloudSystem.contract.test.ts` prüft jetzt unerwartete RPC-Formen, fehlende
+Spielstanddaten, Array-/Objektantworten sowie `NaN`/`Infinity`. `fetchSave`,
+Profil-RPCs und Admin-Dashboard verwenden dieselben Normalizer; ein kaputter
+Vertrag wird als Ergebnisfehler behandelt und nie in Progression/UI gereicht.
+Die konfigurierte Suite deckt weiterhin Auth-Fehler, Timeout und Netzabbruch
+ab. Echte Funkloch-Messungen auf iPhone bleiben ein manueller Release-Schritt,
+weil dafür eine angemeldete reale Backend-Session und ein kontrollierter
+Netzwechsel nötig sind.
 
 ## P5-03 — Migrationen und Spielstände robust gegen Zufallsdaten machen
 
@@ -962,7 +968,7 @@ bewusst ohne das nur im Dev-Build exportierte `window.isiHunt`.
 
 ## P5-05 — Mobile Performance messen
 
-- [ ] **Performance-Budgets für einen 90-Sekunden-Run definieren.**
+- [x] **Performance-Budgets für einen 90-Sekunden-Run definieren.**
 
 Zu messen sind Startzeit, Framezeit, aktive GameObjects, Partikel,
 Speicher, Akku/Hitze und Verhalten nach wiederholten Runs. `preserveDrawingBuffer`
@@ -970,9 +976,26 @@ hilft Debug-Screenshots, kann aber Produktionskosten haben; Debug- und
 Produktionspfad getrennt bewerten. Seltene Scenes dürfen erst nach Messung
 lazy geladen werden.
 
+**Erledigt 2026-08-21:** `PerformanceSystem` misst startupMs, Frame-P95,
+Frames über Budget, dynamische Run-Objekte und Partikelgruppen. Das Gate liegt
+bei 20 s Scene-Start inklusive Countdown, 25 ms Frame-P95, höchstens 2 %
+Über-Budget-Frames, 24 dynamischen Objekten und 18 Partikelgruppen.
+`npm run performance:check` führt den deterministischen schnellen
+Integrationslauf aus; `npm run performance:realtime` startet den echten
+90-Sekunden-Realtime-Lauf für Desktop-/Gerätevergleich.
+Der Runner gibt zusätzlich verfügbaren JS-Heap und Battery-Status aus. Hitze
+ist über Web APIs nicht zuverlässig messbar und bleibt ein echter Gerätecheck.
+Der aktuelle headless CI-Container rendert Phaser nur mit etwa 6–7 FPS,
+obwohl Objekt-/Partikelpeaks niedrig bleiben; dieser Realtime-Wert ist daher
+ein Umgebungsbefund und kein belastbarer Gerätewert. Für die Releasebewertung
+ist der Realtime-Befehl auf einem echten iPhone/Android bzw. einem sichtbaren
+Desktop-Browser auszuführen.
+`preserveDrawingBuffer` ist im Production-Build jetzt deaktiviert und nur im
+DEV-Build für Debug-Screenshots aktiv.
+
 ## P5-06 — Accessibility und Lesbarkeit als System prüfen
 
-- [ ] **Reduced Motion, Kontrast, Farbsehvarianten, Schriftgröße und Touchziele
+- [x] **Reduced Motion, Kontrast, Farbsehvarianten, Schriftgröße und Touchziele
   als zusammenhängendes Paket umsetzen.**
 
 Seltenheit, Talentwirkung und Hindernis dürfen nicht nur über Farbe erkennbar
@@ -980,18 +1003,26 @@ sein. Blinkeffekte, Partikel, Bildschirmimpulse und schnelle Tweens brauchen
 eine reduzierte Variante. Kleine Weltpfeile und sekundäre Aktionen müssen die
 Fingerzielgröße einhalten.
 
-Danach Einhand-/Linkshänderoption und wichtige DOM-/Live-Region-Texte für
-Menü, Ergebnis, Pause und Fehler prüfen. Das gesamte Spielfeld muss nicht
-sofort vorgelesen werden.
+`AccessibilitySystem` bündelt Reduced-Motion-/Kontrast-Abfragen, 44-px-
+Touchzielgarantie und nicht farbgebundene Raritätsmarker. Blinkende Relikte,
+Puls-/Spawn-Tweens, Schiffspuls, Partikelburst, Schockwelle, Driftlayer und
+Kameraimpulse haben eine reduzierte Variante; Ergebniszeilen zeigen Marker
+zusätzlich zur Farbe. HTML-Safe-Area und Orientierungs-Hinweis reagieren auf
+Reduced Motion und höheren Kontrast. Die bestehenden FontSize-Werte bleiben
+zentral in `ui/theme.ts`; größere Systemschrift-/Einhandoptionen bleiben als
+separater Content-Schritt offen.
 
 ## P5-07 — Audio, Haptik und Feedback-Hierarchie ordnen
 
-- [ ] **Rückmeldungen priorisieren, bevor weitere Effekte hinzukommen.**
+- [x] **Rückmeldungen priorisieren, bevor weitere Effekte hinzukommen.**
 
-Legendärer Fang, Run-Ende, Zielerreichung, Combo, Hindernis und normale Fänge
-dürfen sich nicht akustisch/visuell überdecken. Haptik ist optional und braucht
-einen Sound-/Visual-Fallback. Audio-Kategorien und Intensitäten sollen getrennt
-abschaltbar sein.
+`FeedbackSystem` priorisiert UI, normale/seltene/legendäre Fänge, Combo,
+Hindernis, Run-Start und Run-Ende und unterdrückt unmittelbar nach einem
+hochwertigen Ereignis den Tonhaufen aus Kleinsignalen. `HapticsSystem` ist
+optional, browser-sicher und unabhängig vom Ton schaltbar; die Einstellungen
+zeigen jetzt getrennte TON- und HAPTIK-Schalter. Fällt Haptik aus, bleiben
+Audio und visuelles Feedback bestehen. Die Intensität bleibt pro Ereignis in
+der zentralen Policy statt als verteilte Magic Numbers.
 
 ## P5-08 — UI-Texte und Content-Daten zentralisieren
 

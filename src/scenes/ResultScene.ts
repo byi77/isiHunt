@@ -18,6 +18,7 @@ import * as AuthSystem from '@/systems/AuthSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
+import { accessibleRarityLabel } from '@/systems/AccessibilitySystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { planetTextureForVariant, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
@@ -125,7 +126,7 @@ export class ResultScene extends Phaser.Scene {
         .text(
           104,
           rowY,
-          rarity.label,
+          accessibleRarityLabel(rarity.id, rarity.label),
           textStyle(FontSize.small, count > 0 ? toCss(rarity.color) : Palette.inkDim),
         )
         .setOrigin(0, 0.5);

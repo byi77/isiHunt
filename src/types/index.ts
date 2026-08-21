@@ -62,6 +62,8 @@ export interface SaveData {
   shipAura: string;
   /** Audio-Feedback in den Einstellungen ein- oder ausgeschaltet. */
   soundEnabled: boolean;
+  /** Haptisches Feedback ist separat vom Ton schaltbar. */
+  hapticsEnabled: boolean;
 
   /** Anzeigename im Profil und in der Bestenliste. Leer beim ersten Start. */
   playerName: string;

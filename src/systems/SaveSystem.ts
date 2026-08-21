@@ -69,6 +69,7 @@ export function createDefaultSave(): SaveData {
     shipColor: DEFAULT_SHIP_COLOR,
     shipAura: DEFAULT_SHIP_AURA,
     soundEnabled: true,
+    hapticsEnabled: true,
     playerName: '',
     cloudId: null,
   };
@@ -204,6 +205,8 @@ function reconcile(raw: Partial<SaveData>): SaveData {
     shipAura: ownedShipAuras.includes(selectedAura) ? selectedAura : DEFAULT_SHIP_AURA,
     soundEnabled:
       typeof source.soundEnabled === 'boolean' ? source.soundEnabled : base.soundEnabled,
+    hapticsEnabled:
+      typeof source.hapticsEnabled === 'boolean' ? source.hapticsEnabled : base.hapticsEnabled,
     playerName: stringOr(source.playerName, base.playerName),
     cloudId: nullableStringOr(source.cloudId, base.cloudId),
   };
@@ -399,8 +402,10 @@ export function reset(): SaveData {
  * wieder geladen. Geräteeinstellungen wie der Ton bleiben erhalten.
  */
 export function clearLocalProfile(): SaveData {
+  const current = load();
   const fresh = createDefaultSave();
-  fresh.soundEnabled = load().soundEnabled;
+  fresh.soundEnabled = current.soundEnabled;
+  fresh.hapticsEnabled = current.hapticsEnabled;
   save(fresh);
   return fresh;
 }

@@ -91,6 +91,7 @@ function makeSave(overrides = {}) {
     unlockedAchievements: [],
     lastWorldId: null,
     soundEnabled: false,
+    hapticsEnabled: false,
     playerName: 'Playtest',
     cloudId: null,
     ...overrides,

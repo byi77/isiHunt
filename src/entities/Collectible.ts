@@ -13,6 +13,7 @@ import type { RarityDef } from '@/config/rarities';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
 import type { TextureKeyValue } from '@/ui/textures';
+import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 
 /** Zeitfenster am Lebensende, in dem das Relikt sichtbar verblasst. */
 const FADE_OUT_MS = 700;
@@ -92,16 +93,20 @@ export class Collectible extends Phaser.GameObjects.Container {
       Math.sin(angle) * rarity.driftSpeed * driftMultiplier,
     );
 
-    this.setScale(0);
-    scene.tweens.add({
-      targets: this,
-      scale: 1,
-      duration: 220,
-      ease: 'Back.Out',
-    });
+    if (prefersReducedMotion()) {
+      this.setScale(1);
+    } else {
+      this.setScale(0);
+      scene.tweens.add({
+        targets: this,
+        scale: 1,
+        duration: 220,
+        ease: 'Back.Out',
+      });
+    }
 
     // Seltene Relikte pulsieren staerker - sie sollen ins Auge springen.
-    if (rarity.points >= RARITY_RAYS_MIN_POINTS) {
+    if (rarity.points >= RARITY_RAYS_MIN_POINTS && !prefersReducedMotion()) {
       scene.tweens.add({
         targets: this.glow,
         alpha: { from: 0.55, to: 1 },
@@ -171,7 +176,7 @@ export class Collectible extends Phaser.GameObjects.Container {
       this.setAlpha(ratio);
       // Zusaetzliches Blinken, damit das Ablaufen nicht nur ueber Alpha laeuft.
       this.setScale(0.75 + ratio * 0.25);
-    } else if (this.blinking) {
+    } else if (this.blinking && !prefersReducedMotion()) {
       // Nullsektor macht Relikte kurz unsichtbar, aber nicht unberechenbar:
       // der Sammelradius bleibt unverändert und der Effekt ist rhythmisch.
       const blink = (this.ageMs % 720) / 720;
@@ -183,6 +188,12 @@ export class Collectible extends Phaser.GameObjects.Container {
   collect(onDone: () => void): void {
     if (this.collected) return;
     this.collected = true;
+
+    if (prefersReducedMotion()) {
+      this.setAlpha(0);
+      onDone();
+      return;
+    }
 
     this.scene.tweens.add({
       targets: this,

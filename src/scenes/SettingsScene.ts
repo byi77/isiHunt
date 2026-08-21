@@ -14,6 +14,7 @@ import { SceneKey } from '@/scenes/SceneKey';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
+import * as HapticsSystem from '@/systems/HapticsSystem';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import {
   createBackButton,
@@ -62,7 +63,7 @@ export class SettingsScene extends Phaser.Scene {
     const layout = createMenuLayout();
     const sections = layout.sections;
     const profileY = sections.next(330);
-    const soundY = sections.next(180);
+    const soundY = sections.next(300);
     const legalY = sections.next(350);
 
     addContent(
@@ -111,7 +112,7 @@ export class SettingsScene extends Phaser.Scene {
     );
 
     addContent(
-      createPanel(this, GAME_WIDTH / 2, soundY, GAME_WIDTH - 120, 180, world.accent, {
+      createPanel(this, GAME_WIDTH / 2, soundY, GAME_WIDTH - 120, 300, world.accent, {
         alpha: 0.5,
         radius: 20,
       }),
@@ -119,7 +120,7 @@ export class SettingsScene extends Phaser.Scene {
 
     addContent(
       this.add
-        .text(GAME_WIDTH / 2, soundY - 60, 'TON', textStyle(FontSize.body, Palette.gold))
+        .text(GAME_WIDTH / 2, soundY - 118, 'FEEDBACK', textStyle(FontSize.body, Palette.gold))
         .setOrigin(0.5)
         .setLetterSpacing(3),
     );
@@ -127,22 +128,47 @@ export class SettingsScene extends Phaser.Scene {
     const soundButton = createButton(
       this,
       GAME_WIDTH / 2,
-      soundY + 10,
+      soundY - 35,
       SoundSystem.isEnabled() ? 'TON: AN' : 'TON: AUS',
       () => {
         const enabled = !SoundSystem.isEnabled();
         SoundSystem.setEnabled(enabled);
         soundButton.setLabel(enabled ? 'TON: AN' : 'TON: AUS');
       },
-      { width: 360, height: 70, accent: world.accent, fontSize: FontSize.body },
+      { width: 360, height: 64, accent: world.accent, fontSize: FontSize.body },
     );
     addContent(soundButton.container);
     addContent(
       this.add
         .text(
           GAME_WIDTH / 2,
-          soundY + 55,
+          soundY + 5,
           'LAUTSTÄRKE: IPHONE-TASTEN',
+          textStyle(FontSize.tiny, Palette.inkDim),
+        )
+        .setOrigin(0.5)
+        .setLetterSpacing(2),
+    );
+
+    const hapticsButton = createButton(
+      this,
+      GAME_WIDTH / 2,
+      soundY + 62,
+      HapticsSystem.isEnabled() ? 'HAPTIK: AN' : 'HAPTIK: AUS',
+      () => {
+        const enabled = !HapticsSystem.isEnabled();
+        HapticsSystem.setEnabled(enabled);
+        hapticsButton.setLabel(enabled ? 'HAPTIK: AN' : 'HAPTIK: AUS');
+      },
+      { width: 360, height: 64, accent: world.accent, fontSize: FontSize.body },
+    );
+    addContent(hapticsButton.container);
+    addContent(
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          soundY + 105,
+          'VIBRATION: GERAETEHAPTIK',
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0.5)

@@ -338,6 +338,29 @@
           visibility: hidden;
         }
       }
+
+      /* Canvas-Effekte werden zusaetzlich im Spielcode reduziert. Diese
+         Regel deckt HTML-/PWA-Uebergaenge und System-Scrollverhalten ab. */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.001ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.001ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
+
+      /* Mehr Kontrast fuer Safe-Area-Ticker und Orientierungs-Hinweis. Die
+         Phaser-Texte bleiben mit Palette.ink und Markerzeichen lesbar. */
+      @media (prefers-contrast: more) {
+        #safe-area-content,
+        #orientation-lock {
+          color: #ffffff;
+          text-shadow: 0 0 3px #000000;
+        }
+      }
     </style>
   </head>
   <body>

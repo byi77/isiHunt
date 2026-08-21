@@ -437,6 +437,8 @@ export const SAVE_VERSION = 8;
 
 /** Debug-Tastatur nur im Dev-Build (`npm run dev`), nie im Production-Build. */
 export const DEBUG_ENABLED = import.meta.env.DEV;
+/** Browser-Performance-Gate mit production-nahem Renderer, aber DEV-Hooks. */
+export const PERFORMANCE_MODE = import.meta.env.MODE === 'performance';
 
 /**
  * Versionsnummer, bei jedem Commit hochgezaehlt (scripts/bump-version.mjs).
