@@ -954,7 +954,7 @@ waere "du hast einen Talentpunkt bekommen" greifbarer als ein Kontostand, der
 sich kaum bewegt.
 
 **Das Argument ist gueltig und wird nicht weggewischt** — es braucht aber
-keinen Systemumbau. Es steht als eigener Punkt in `TODO.md` (P1.b,
+keinen Systemumbau. Es steht als eigener Punkt in `TODO.md` (P1-05,
 "Levelaufstiege spuerbar machen") mit zwei moeglichen Wegen: den Muenzbetrag
 anheben, oder den Aufstieg als sichtbaren Moment inszenieren.
 

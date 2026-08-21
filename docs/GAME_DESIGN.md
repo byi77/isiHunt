@@ -1,7 +1,7 @@
 # Game Design Document — isiHunt
 
 **Version:** 0.1
-**Stand:** 2026-08-12
+**Stand:** 2026-08-22 · Produktstand v0.1.227
 **Status:** lebendes Dokument — jede Balancing- oder Regelaenderung wird hier
 zuerst beschrieben, dann implementiert.
 
@@ -34,7 +34,7 @@ kommt nicht ins Spiel.
 setzt voraus, dass "Orange = extrem selten" bereits verinnerlicht ist.
 
 **Referenz:** World of Warcraft — nicht als Genre, sondern als _Grammatik_:
-Item-Qualitaetsfarben, Erfahrungsbalken, Talentpunkte, Zonen mit
+Item-Qualitaetsfarben, Erfahrungsbalken, Coin-basierte Talente, Zonen mit
 Levelanforderung, Erfolge. Das sind erprobte Fortschrittsmuster, die hier auf
 eine kurze Arcade-Schleife komprimiert werden.
 
@@ -269,14 +269,18 @@ spielenden Person ab und ist nicht im Code hinterlegt — konkrete
 Runs-bis-Level-Tabellen mit mehreren Fangquoten-Annahmen stehen in
 `docs/BALANCE_2026-08-17.md` Abschnitt 2.
 
-Jeder Levelaufstieg gibt **1 Talentpunkt**, solange noch mindestens ein Talent
-nicht voll ausgebaut ist. Danach wird der Punkt automatisch in **10 Coins**
-umgewandelt. So bleibt jeder weitere Levelaufstieg eine Belohnung.
+Jeder Levelaufstieg gibt die zentral konfigurierte Levelbelohnung von
+`COINS_PER_LEVEL = 20` Coins. Talente werden nicht über Talentpunkte, sondern
+atomar mit Coins gekauft; überschüssige alte `talentPoints` werden nur in der
+Save-/RPC-Migration kompatibel behandelt. So bleibt jeder Levelaufstieg eine
+Belohnung und Coins bleiben die gemeinsame Entscheidung zwischen Talent und
+Kosmetik.
 
 ### 7.2 Talente
 
-Dauerhafte Upgrades. Datenmodell und Wirkung sind implementiert, die
-Vergabe-Oberflaeche folgt in M2.
+Dauerhafte Upgrades. Die sieben Talente sind unabhängige Coin-basierte Ränge
+ohne Voraussetzungen. Kauf, Reset und die Darstellung im Profil sind
+implementiert; die visuelle Politur bleibt ein eigener Produktpunkt.
 
 | Talent      | Max. Rang | Pro Rang              |
 | ----------- | --------- | --------------------- |

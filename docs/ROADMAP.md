@@ -1,6 +1,6 @@
 # Roadmap — isiHunt
 
-**Stand:** 2026-08-17 · Die detaillierte und verbindliche Aufgabenreihenfolge
+**Stand:** 2026-08-22 · Produktstand v0.1.227 · Die detaillierte und verbindliche Aufgabenreihenfolge
 steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 
 ## Bereits spielbar
@@ -40,11 +40,12 @@ Raumschiff-Skins und schwierigere Welten freigeschaltet.
 
 ### M4 — Belohnung, Coins und Talente ✅
 
-Punkte-Popups, Kettenbonus, Coins, Erfolge und die erste Coin-basierte Fassung
-des Talentbaums sind spielbar.
+Punkte-Popups, Kettenbonus, Coins, Erfolge und die erste Coin-basierte
+Talent-/Shop-Ansicht sind spielbar.
 
-> Diese Fassung wird als Nächstes gezielt weiterentwickelt: Talentpunkte statt
-> Coin-Kosten und ein Baum mit klarer Level-100-Logik sind als M4.1 geplant.
+> Die Coin-basierte Talent-/Shop-Wirtschaft ist die geltende Entscheidung
+> (ADR-0018). Als nächster Produkt-Schritt bleibt die Darstellung der sieben
+> unabhängigen Talente; ein Talentpunkte-Umbau ist verworfen.
 
 ### M5 — Herausforderungen und Modi ✅
 
@@ -55,15 +56,16 @@ Person oder einen Bot sowie Weltmodifikatoren und Hindernisse sind vorhanden.
 
 ## Nächste Meilensteine
 
-### M4.1 — Talentpunkte und Profilidentität
+### M4.1 — Talentdarstellung und Profilidentität
 
-- Talentpunkte pro Levelaufstieg statt Coin-Kosten.
-- Gesamtzahl der Talent-Ränge festlegen: 99 durch Levelaufstiege oder 100 mit
-  einem Startpunkt.
-- Talentbaum als sichtbare, kindgerechte Fortschrittsroute gestalten.
-- Bestehende Talent-/Coin-Stände sicher migrieren.
+- Coin-basierte Talente beibehalten; kein Talentpunkte-Umbau und keine
+  Talentpunkte-Bestandsmigration.
+- Die sieben unabhängigen Talent-Ränge als ehrliche, kindgerechte Liste
+  verständlich darstellen und visuell weiter polieren.
+- Bestehende Coin-, Talent- und Kosmetikstände erhalten und geräteübergreifend
+  synchron halten.
 - Profil-Icons, getrennten sichtbaren Spielernamen und Skin-Inventar
-  vorbereiten.
+  weiterführen.
 
 ### M6 — Freunde, Wettbewerb und Realtime
 
@@ -77,8 +79,8 @@ Person oder einen Bot sowie Weltmodifikatoren und Hindernisse sind vorhanden.
 ### M7 — Prestige
 
 Wiedergeburt als freiwilliger, geschützter Reset mit dauerhaftem Multiplikator.
-Der genaue Reset-Umfang und die Belohnung werden erst nach dem Talentpunkte-
-Umbau festgelegt.
+Der genaue Reset-Umfang und die Belohnung werden erst nach validierter
+Level-100-Kurve, Coin-Economy und Zielgruppen-Abnahme festgelegt.
 
 ### M8 — Native App
 

@@ -1,5 +1,7 @@
 # Balance-Kette
 
+**Stand:** 2026-08-22 · Client-Live-Stand v0.1.227
+
 Alle Zahlen, die Punkte, XP oder Coins erzeugen bzw. verbrauchen, beginnen in
 `src/config/balance-data.json`. Die Berechnung liegt in `src/config/balance.ts`.
 
@@ -29,10 +31,13 @@ npm test -- --run src/config/Balance.test.ts
 Der exportierte `BALANCE_SNAPSHOT` zeigt die erwarteten Werte pro Fang/Run und
 die ungefähre Run-Anzahl bis Level 100 bzw. zum vollständigen Talentbaum.
 
-Für ein bereits eingerichtetes Supabase-Projekt muss zusätzlich die Migration
-`supabase/phase_2_14_balance_chain.sql` ausgeführt werden. Sie hält Level-XP,
-Tagesboni, Talentkosten, Resetkosten und die Score-Plausibilitätsprüfung auf
-derselben Ableitungslogik wie der Client.
+Für ein konkretes Supabase-Projekt müssen die Migrationen in der Reihenfolge
+aus `TODO.md` ausgeführt und separat nachgewiesen werden. Der Repository-Stand
+beweist keine produktive Ausführung. `supabase/phase_2_14_balance_chain.sql`
+hält Level-XP, Tagesboni, Talentkosten, Resetkosten und die
+Score-Plausibilitätsprüfung auf derselben Ableitungslogik wie der Client.
+`supabase/phase_2_15_cosmetic_sync.sql` ergänzt den atomaren Geräteabgleich für
+Kosmetikbesitz und Ausrüstung sowie den vollständigen Admin-Reset.
 
 Wenn `balance-data.json` geändert wurde, aktualisiert `npm run balance:sync`
 den JSON-Block der Migration automatisch.

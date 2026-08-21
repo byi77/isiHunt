@@ -1,7 +1,7 @@
 # TODO — Arbeitsplan und Produkt-Audit
 
-**Stand:** 2026-08-21
-**Repository-Version:** siehe `package.json`; zuletzt live geprüft: `0.1.219`
+**Stand:** 2026-08-22
+**Repository-Version:** siehe `package.json`; zuletzt live geprüft: `0.1.227`
 **Verbindliche Arbeitsreihenfolge:** die Phasen und Prioritäten in dieser Datei
 **Produkt:** spielbarer mobiler Browser-Prototyp für Emre, Simay und die Familie
 
@@ -68,7 +68,7 @@ Für eine Geräte- oder Backendaufgabe zusätzlich:
 | Browser-Spiel, 90-Sekunden-Run, Touch, Pause, Persistenz | gebaut und ausgeliefert | echte Geräteabnahme der aktuellen Spielinhalte |
 | Profil, Alias-Login, Offline-Outbox, Zusammenführung | implementiert | produktive SQL-Prüfung und iPhone-/iPad-End-to-End-Test |
 | Weltraum-Thema, Welten, Hindernisse, Tageslauf, Bot-Duell | implementiert | Balancing mit Emre und Simay |
-| Coins, XP, Punkte, Talente, Shop | implementiert; Balance-Kette seit v0.1.215 | Client/SQL-Synchronitäts-Gate und echte Economy-Messung |
+| Coins, XP, Punkte, Talente, Shop | implementiert; Balance-Kette seit v0.1.227 | Client/SQL-Synchronitäts-Gate und echte Economy-Messung |
 | Shop | 100 Fluggestalten, Farben und Anprobe vorhanden | Figuren im laufenden Spiel auf Gerät sehen; weitere Kosmetik erst danach |
 | Netzwerk-Duell Phase 1 | Raum, Ready, Startzeit, Ergebnisvergleich vorhanden | dritter Zwei-Geräte-Test mit Report vom Slave |
 | Bestenliste | gemeinsame Casual-Liste und automatischer Eintrag vorhanden | Fairness bei Weltmodifikatoren; Ranked bleibt gesperrt |
@@ -80,7 +80,7 @@ Für eine Geräte- oder Backendaufgabe zusätzlich:
 
 1. **P0-01:** Produktionsstand der Supabase-Migrationen klären und fehlende
    Migrationen anwenden.
-2. **P0-02:** aktuellen Live-Stand `0.1.217` auf iPhone und iPad mit Offline-
+2. **P0-02:** aktuellen Live-Stand `0.1.227` auf iPhone und iPad mit Offline-
    Runs, Boost, Profil und Synchronisierung prüfen.
 3. **P0-03:** Netzwerk-Duell mit Debug-Report von **Master und Slave** erneut
    durchführen.
@@ -100,7 +100,7 @@ Für eine Geräte- oder Backendaufgabe zusätzlich:
 | **5 — Qualität und Betrieb** | P2 | Accessibility, Performance, Tests, PWA und Backend-Betrieb härten | Kernfeatures bewährt | weniger Regressions- und Betriebsrisiko |
 | **6 — Native App und Endgame** | P3 | Capacitor, TestFlight, Live Activity, Prestige | Web-Produkt und Zielgruppe entschieden | eigenständiger späterer Ausbau |
 
-## Audit gegen die gestrige TODO-Historie
+## Abgeschlossener Audit gegen die gestrige TODO-Historie
 
 Der Abgleich wurde gegen `HEAD` (`1a634b2`) und die Änderungen vom 2026-08-20
 bzw. 2026-08-21 durchgeführt:
@@ -357,7 +357,7 @@ Die finale iPhone-/iPad-Abnahme bleibt als Release-Gate offen.
 
 ## P0-06 — Dokumentations- und Release-Stand bereinigen
 
-- [ ] **Widersprüche zwischen TODO, Roadmap und Entscheidungsdokumenten
+- [x] **Widersprüche zwischen TODO, Roadmap und Entscheidungsdokumenten
   auflösen.**
 
 Beim Audit wurden veraltete Aussagen gefunden, insbesondere die alte
@@ -375,6 +375,14 @@ wenn kein produktiver Nachweis vorliegt.
 
 **Abnahme:** Eine neue Person findet in TODO, Roadmap und ADR dieselbe
 Reihenfolge und keine aktive Aufgabe für den verworfenen Talentpunkte-Umbau.
+
+**Erledigt 2026-08-22:** Aktive Produktdokumente nennen jetzt den Live-Stand
+`v0.1.227`, die sieben unabhängigen Coin-Talente und die Migrationen bis
+`phase_2_15_cosmetic_sync.sql`. Historische ADR-, Audit- und Changelog-Stellen
+bleiben als Historie erhalten und sind entsprechend nicht als offene Planung
+zu lesen. Es wird ausdrücklich nicht behauptet, dass SQL produktiv ausgeführt
+wurde; dafür bleibt P0-01 mit einem reproduzierbaren Dashboard-/SQL-Nachweis
+zuständig.
 
 ---
 

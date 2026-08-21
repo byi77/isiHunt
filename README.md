@@ -7,7 +7,8 @@ Lichtgestalt durch Fantasy-Welten und sammelst Relikte ein, bevor sie
 verblassen. Kurz spielbar fuer zwischendurch, mit Level-, Talent- und
 Achievement-System fuer alle, die dranbleiben.
 
-**Status:** v0.1 — spielbarer Prototyp. Siehe [docs/ROADMAP.md](docs/ROADMAP.md).
+**Status:** v0.1.227 — spielbarer mobiler Browser-Stand. Siehe
+[docs/ROADMAP.md](docs/ROADMAP.md).
 
 ---
 
@@ -19,7 +20,7 @@ Achievement-System fuer alle, die dranbleiben.
   aus MMOs bekannte Item-Qualitaet.
 - **Ketten zaehlen.** Sammelst du ohne Pause weiter, steigt der Multiplikator
   bis x5. Ein zu langes Zoegern setzt ihn zurueck.
-- **Fortschritt bleibt.** XP → Charakterlevel → Talentpunkte → neue Welten und
+- **Fortschritt bleibt.** XP → Charakterlevel → Coin-basierte Talente → neue Welten und
   Erfolge.
 - **Duell zu zweit.** Zwei Personen, ein Geraet, je 90 Sekunden — beide jagen
   dieselben Relikte in derselben Reihenfolge.

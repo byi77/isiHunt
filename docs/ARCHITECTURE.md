@@ -1,6 +1,6 @@
 # Architektur — isiHunt
 
-**Stand:** 2026-08-12 · gilt fuer v0.1
+**Stand:** 2026-08-22 · gilt fuer v0.1.227
 
 Dieses Dokument beschreibt, **wie** der Code aufgebaut ist und **warum**.
 Entscheidungen mit Alternativen stehen in [DECISIONS.md](DECISIONS.md).
@@ -130,7 +130,7 @@ isiHunt/
 │   │   ├── ProgressSyncSystem.ts Offline-Outbox fuer angemeldete Profile
 │   │   ├── ProgressSyncSystem.test.ts
 │   │   ├── SyncStatusSystem.ts Sichtbarer Sync-Status im Menue
-│   │   ├── ProgressionSystem.ts XP, Level, Talentpunkte, Erfolge
+│   │   ├── ProgressionSystem.ts XP, Level, Coin-Talente, Erfolge
 │   │   ├── ProgressionSystem.test.ts
 │   │   ├── ScoreSystem.ts      Punkte + Combo eines Runs
 │   │   ├── ScoreSystem.test.ts
