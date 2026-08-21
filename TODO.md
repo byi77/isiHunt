@@ -68,13 +68,19 @@ Reihenfolge der Arbeit steht in P0–P3 darunter.
 
 ### Kurzfassung — was als naechstes drankommt
 
-| Rang     | Punkt                                    | Aufwand    |
-| -------- | ---------------------------------------- | ---------- |
-| **P0.a** | Vier Geraetebestaetigungen in einem Lauf | ein Abend  |
-| **P0.b** | Auto-Pause · Tagesbonus auf Servertag    | klein      |
-| **P0.c** | Phase 5 + Serien-Fenster mit den Kindern | ein Abend  |
-| ~~P1.a~~ | ~~Talentpunkte entscheiden~~ — erledigt  | —          |
-| **P1.b** | Profilfluss, Profil-Icons, Level/XP-Ablauf | mittel   |
+| Rang     | Punkt                                          | Aufwand   |
+| -------- | ---------------------------------------------- | --------- |
+| **P0.a** | Vier Geraetebestaetigungen in einem Lauf       | ein Abend |
+| ~~P0.b~~ | ~~vier belegte Fehler~~ — gebaut, v0.1.211-213 | —         |
+| **P0.c** | Phase 5 + Serien-Fenster mit den Kindern       | ein Abend |
+| ~~P1.a~~ | ~~Talentpunkte entscheiden~~ — erledigt        | —         |
+| **P1.b** | Profilfluss, Profil-Icons, Level/XP-Ablauf     | mittel    |
+| **P1.c** | Naechstes Ziel, Erfolgs- und Sammlungsstand    | mittel    |
+| **P1.d** | Balance-Kette: Sync-Gate, `BASELINE_*`         | klein     |
+
+> **Alles, was ohne Geraet ging, ist gebaut.** Was in P0 offen bleibt, braucht
+> dich am Handy (P0.a), die Kinder (P0.c) oder einen Debug-Report vom
+> Slave-Geraet (P0.a.3).
 
 ### P0 — erst absichern und messen
 
@@ -558,6 +564,46 @@ es steht als eigener Punkt in P1.b.
       Zaehler niemand mehr sieht, wie weit er ist. Filter, Favoriten und
       Loadouts bleiben dagegen Reserve — die kommen erst, wenn das Sortiment
       ohne sie unbedienbar wird.
+
+#### P1.d — Balance-Kette absichern _(neu 2026-08-21, nach v0.1.215)_
+
+> **Die Kette funktioniert — nachgemessen, nicht angenommen.**
+> `economy.globalMultiplier` von 1 auf 2: Coins/Run 20 → 40, Talentkosten
+> 250 → 500, Login-Bonus 25 → 50 — und `runsToMaxTalents` bleibt bei
+> **299,9**. Dasselbe auf der XP-Seite: `runsToMaxLevel` bleibt bei **279,4**.
+> Einnahmen und Kosten ziehen mit, das Spielgefuehl in Runs bleibt konstant.
+> Beide Proben wurden danach zurueckgesetzt.
+>
+> Die zwei Punkte hier sind **keine Kritik am Entwurf**, sondern zwei
+> Stellen, an denen die Kette still auseinanderlaufen kann.
+
+- [ ] **`balance:sync` in ein Gate einbinden.** Der Generator
+      (`scripts/sync-balance-sql.mjs`) haelt den JSON-Block in
+      `supabase/phase_2_14_balance_chain.sql` mit `balance-data.json`
+      synchron — laeuft aber nur auf Zuruf und in keinem Gate.
+      **Luecke belegt (2026-08-21):** `runBaseCoins` von 20 auf 25 gesetzt,
+      nur im JSON. `npm run verify` meldete 5 rote Tests (die Wertaenderung
+      wird also bemerkt), **das SQL blieb dabei still auf 20**. Niemand merkt,
+      dass die Serverseite zurueckbleibt. Danach zurueckgesetzt.
+      **Zwei Wege:** (a) ein Test, der den JSON-Block aus dem SQL liest und
+      mit `balance-data.json` vergleicht — laeuft ueberall mit, wo `verify`
+      laeuft, rund 20 Zeilen; (b) `balance:sync --check` im `pre-commit`.
+      **Empfehlung: (a)** — braucht keinen Hook und greift auch in der CI.
+- [ ] **Herkunft der `BASELINE_*`-Konstanten festhalten.** In
+      `config/balance.ts` stehen drei eingefrorene Bezugsgroessen
+      (`BASELINE_EXPECTED_XP_PER_RUN` 1 883,985,
+      `BASELINE_EXPECTED_COINS_PER_RUN` 52,186,
+      `BASELINE_EXPECTED_SCORE_PER_RUN` 1 499,076). Gegen sie skalieren
+      `xpRunScale`, `coinRunScale` und `scoreRunScale`.
+      **Das Problem:** Es steht nirgends, aus welchem Stand sie stammen und
+      wann sie neu zu berechnen waeren. Wer an den Rarity-Gewichten oder an
+      `run.expectedCatches` dreht, verschiebt damit auch die Bezugsgroesse —
+      die Skalierung faengt das ab, aber relativ zu einem Stand, den niemand
+      mehr zuordnen kann.
+      **Vorschlag:** Kommentar mit Datum und Herkunft, plus ein Test, der sie
+      gegen die Ableitung aus dem JSON prueft. Sonst driften sie still.
+- [x] **`supabase/phase_2_14_balance_chain.sql` ausgefuehrt (2026-08-21).**
+      Server und Client rechnen damit auf derselben Ableitungslogik.
 
 ### P2 — Phase 6: Wettbewerb und Freunde
 
