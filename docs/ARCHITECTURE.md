@@ -593,6 +593,46 @@ Pulsieren laeuft jetzt auf ein eigenes Feld (`ruheScale`), die Neigung auf
 `neigung`, und `applyAura()` setzt beides zusammen mit dem Aura-Anteil auf das
 Bild.
 
+**Eine Aura bricht die Farbregel bewusst.** Die Prismaflut laeuft durch alle
+360 Grad und ueberschreibt die getragene Farbe damit. Bei 25 000 Muenzen und
+Stufe 50 ist sie selbst die Aussage, nicht die Farbe darunter. Die Ausnahme
+steht als `VOLLER_FARBKREIS_INDEX` in der Datei und nicht im Test - sie
+gehoert zur Definition der Bewegung, nicht zu ihrer Pruefung. Ein Waechtertest
+zaehlt die Ausbrecher und schlaegt an, sobald es zwei werden.
+
+Sie brachte ausserdem ein Feld mit, das den anderen acht fehlte:
+`TintShift.saturation`. Bei Weltfarbe bleibt der Rumpf weiss, und Weiss hat
+die Saettigung 0 - ein Farbtondreh aendert daran nichts. Ohne dieses Feld
+waere die teuerste Aura des Spiels auf dem Standardschiff **unsichtbar**
+geblieben. Aufgefallen ist das nicht beim Lesen, sondern an einem Test, der
+die Farben eines weissen Rumpfs durchzaehlt und genau eine fand.
+
+**Drei Schreiber auf dem Schein.** Mit der Prismaflut faerbt die Aura auch
+Schein und Halo (sonst truege ein Regenbogenschiff einen goldenen Rand). Damit
+konkurrieren dort drei Quellen: der Fangimpuls (`pulse`), die Serienstufe und
+die Aura. Die Reihenfolge ist festgelegt - Impuls vor Serie vor Aura. Der
+Impuls haelt den Schein fuer seine Tween-Dauer (`pulseRestMs`); ohne diese
+Sperre haette `applyAura()` ihn im naechsten Frame ueberschrieben, und das
+wichtigste Feedback im Spiel waere unter einer getragenen Aura verschwunden.
+
+**Die Aura laeuft erst mit dem Run.** Zwischen `setAura()` und dem ersten
+`move()` liegt der Countdown, und dort laeuft `GameScene.update()` nicht
+(`phase !== 'running'`). Der Ruhe-Tween ruft `applyAura()` aber per `onUpdate`
+und haengt an Phasers Zeit, nicht an der Scene - er zeichnete die Figur
+deshalb die ganze Wartezeit ueber auf dem t=0-Frame. Bei der Prismaflut war
+das ein kraeftiges Rot statt der Weltfarbe, mehrere Sekunden vor jedem Run.
+Ein Laufflag (`auraLaeuft`) haelt sie bis zum Startpfiff in ihrer Ruhefarbe.
+
+Aufgefallen ist das erst beim Messen der Rumpffarbe im laufenden Browser -
+weder Typecheck noch Vitest sehen, was Phasers Tween-Zeit tut.
+
+**Reduzierte Bewegung heisst Standbild, nicht Zeitlupe.** Bei
+`prefers-reduced-motion` wird die Aura einmal bei einem festen Zeitpunkt
+ausgewertet und bleibt stehen (`stehendesBild()`). Ein bloss verlangsamter
+Farbwechsel waere immer noch ein Farbwechsel. Farbton und eine gedaempfte
+Helligkeit bleiben aber erhalten - wer 25 000 Muenzen ausgegeben hat, soll
+seine Aura auch dann sehen, sie darf nur nicht zucken.
+
 **Im Duell traegt niemand eine Aura.** Dieselbe Fairness-Regel wie bei den
 Farben (`config/challenge.ts`): Eine flackernde Figur neben einer ruhigen
 waere auf einen Blick zuzuordnen, und der Vergleich soll am Spiel haengen,

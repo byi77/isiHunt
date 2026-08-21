@@ -32,6 +32,26 @@ import { spawn } from 'node:child_process';
 
 const PORT = 5199;
 
+/**
+ * Fristen fuer Szenenwechsel und Rundenende.
+ *
+ * ## Warum sie grosszuegig sind
+ *
+ * Diese Werte entscheiden nicht, wie schnell das Spiel sein muss - dafuer
+ * gibt es eigene Messungen. Sie entscheiden nur, wann der Test aufgibt. Zu
+ * knapp gesetzt meldet er Fehler, die keine sind: Im Volllauf schlugen
+ * nacheinander drei verschiedene Schritte fehl (Settings, glutmark,
+ * frostzinne), alle drei liefen einzeln gruen, keiner war zweimal derselbe.
+ * Ein Testlauf, dessen Ergebnis vom Zufall abhaengt, ist wertlos - er kostet
+ * 20 Minuten und beantwortet nichts.
+ *
+ * Der Preis fuer grosszuegige Fristen ist gering: Sie greifen nur im
+ * Fehlerfall. Laeuft alles, wartet niemand laenger.
+ */
+const SCENE_TIMEOUT_MS = 20000;
+/** Ende einer 90-Sekunden-Runde, inklusive Countdown und Auswertung. */
+const RESULT_TIMEOUT_MS = 60000;
+
 const argv = process.argv.slice(2);
 const watch = argv.includes('--watch');
 /**
@@ -273,7 +293,21 @@ async function openPage(save = makeSave(), contextOptions = null, engine = brows
   return { page, context, errors };
 }
 
-async function waitForScene(page, key, timeoutMs = 20000) {
+/**
+ * Kuerzt eine Fehlermeldung auf die Zeile, die etwas aussagt.
+ *
+ * Playwright haengt an seine Meldungen einen mehrzeiligen Aufrufpfad. Der
+ * frueher genutzte `slice(0, 60)` schnitt mitten im Satz ab - im Bericht
+ * stand "Execution context was destroyed, most likely " und der Rest fehlte,
+ * also genau die Stelle, die den Grund genannt haette.
+ */
+function kurzerFehler(e) {
+  const [roh = ''] = String(e?.message ?? e).split(/\r?\n/);
+  const ersteZeile = roh.trim();
+  return ersteZeile.length > 110 ? `${ersteZeile.slice(0, 107)}...` : ersteZeile;
+}
+
+async function waitForScene(page, key, timeoutMs = SCENE_TIMEOUT_MS) {
   await page.waitForFunction((k) => window.isiHunt?.scene?.isActive(k), key, {
     timeout: timeoutMs,
   });
@@ -698,7 +732,10 @@ async function suiteModes() {
       );
       await waitForRunLive(page);
       const score = await playUntilDone(page);
-      await waitForScene(page, 'Result', 40000);
+      // 40 s reichten im Volllauf nicht: Der glutmark-Run stand nach seinen
+      // 90 Sekunden Spielzeit noch nicht in der Auswertung, einzeln lief
+      // dieselbe Welt gruen. Siehe `RESULT_TIMEOUT_MS`.
+      await waitForScene(page, 'Result', RESULT_TIMEOUT_MS);
       record(
         `Solo-Run in Welt ${worldId}`,
         score > 0 && errors.length === 0,
@@ -706,9 +743,16 @@ async function suiteModes() {
       );
       await page.screenshot({ path: `${shotDir}/mode-solo-${worldId}.png` });
     } catch (e) {
-      record(`Solo-Run in Welt ${worldId}`, false, e.message.slice(0, 60));
+      record(`Solo-Run in Welt ${worldId}`, false, kurzerFehler(e));
     } finally {
-      await context.close();
+      // Erst zur Ruhe kommen lassen, dann schliessen.
+      //
+      // Ohne diese Pause meldete der frostzinne-Run "Execution context was
+      // destroyed": Eine Auswertung aus dem Run lief noch, waehrend der
+      // Context bereits zuklappte. Das ist die Naht zwischen zwei Welten -
+      // jede oeffnet ihren eigenen Context - und kein Fehler des Spiels.
+      await page.waitForTimeout(300).catch(() => {});
+      await context.close().catch(() => {});
     }
   }
 
@@ -770,7 +814,7 @@ async function suiteModes() {
       );
       await page.screenshot({ path: `${shotDir}/mode-${mode}.png` });
     } catch (e) {
-      record(`${label} spielbar`, false, e.message.slice(0, 60));
+      record(`${label} spielbar`, false, kurzerFehler(e));
     } finally {
       await context.close();
     }
@@ -865,7 +909,7 @@ async function suiteLayout() {
           : `buendig, unterster Knopf bei y=${m.pauseY}/${m.viewportH}`,
       );
     } catch (e) {
-      record(`${name} (${w}x${h})`, false, e.message.slice(0, 60));
+      record(`${name} (${w}x${h})`, false, kurzerFehler(e));
     } finally {
       await context.close();
     }
@@ -963,7 +1007,7 @@ async function suiteIos() {
           path: `${shotDir}/ios-${name.replace(/[^a-z0-9]+/gi, '-').toLowerCase()}.png`,
         });
       } catch (e) {
-        record(`${name} in WebKit`, false, e.message.slice(0, 70));
+        record(`${name} in WebKit`, false, kurzerFehler(e));
       } finally {
         await context.close();
       }
@@ -981,7 +1025,7 @@ async function suiteIos() {
       await page.evaluate(() => window.isiHunt.scene.start('Game', { mode: 'solo' }));
       await waitForRunLive(page, 30000);
       const score = await playUntilDone(page);
-      await waitForScene(page, 'Result', 40000);
+      await waitForScene(page, 'Result', RESULT_TIMEOUT_MS);
       record(
         'Kompletter Run unter WebKit',
         score > 0 && errors.length === 0,
@@ -989,7 +1033,7 @@ async function suiteIos() {
       );
       await page.screenshot({ path: `${shotDir}/ios-run-result.png` });
     } catch (e) {
-      record('Kompletter Run unter WebKit', false, e.message.slice(0, 70));
+      record('Kompletter Run unter WebKit', false, kurzerFehler(e));
     } finally {
       await context.close();
     }
@@ -1053,10 +1097,18 @@ async function suiteNavigation() {
       await clickGamePoint(page, treffer.x, treffer.y);
       let angekommen = false;
       try {
-        await waitForScene(page, ziel, 8000);
+        await waitForScene(page, ziel, SCENE_TIMEOUT_MS);
         angekommen = true;
       } catch {
-        angekommen = false;
+        // Nachfassen statt sofort scheitern.
+        //
+        // Im Volllauf meldete dieser Schritt "Scene Settings wurde nicht
+        // aktiv (aktiv: Settings)" - die Scene war da, nur eben ein paar
+        // Millisekunden nach dem Timeout. Dieselbe Pruefung lief einzeln in
+        // Millisekunden durch; unter der Last von 20 Minuten Volllauf reichte
+        // die Frist nicht. Eine hoehere Frist allein loest das nicht
+        // zuverlaessig, ein zweiter Blick nach dem Timeout schon.
+        angekommen = (await activeScenes(page)).includes(ziel);
       }
 
       const frisch = errors.slice(vorher);
@@ -1072,7 +1124,7 @@ async function suiteNavigation() {
 
       if (!angekommen) {
         await switchScene(page, ziel, 'Menu');
-        await waitForScene(page, 'Menu', 8000).catch(() => {});
+        await waitForScene(page, 'Menu', SCENE_TIMEOUT_MS).catch(() => {});
         continue;
       }
 
@@ -1084,14 +1136,14 @@ async function suiteNavigation() {
       if (!zurueck) {
         record(`${ziel} -> zurueck`, false, 'kein Zurueck-Knopf gefunden');
         await switchScene(page, ziel, 'Menu');
-        await waitForScene(page, 'Menu', 8000).catch(() => {});
+        await waitForScene(page, 'Menu', SCENE_TIMEOUT_MS).catch(() => {});
         continue;
       }
 
       await clickGamePoint(page, zurueck.x, zurueck.y);
       let zurueckOk = false;
       try {
-        await waitForScene(page, 'Menu', 8000);
+        await waitForScene(page, 'Menu', SCENE_TIMEOUT_MS);
         zurueckOk = true;
       } catch {
         zurueckOk = false;
@@ -1104,12 +1156,12 @@ async function suiteNavigation() {
 
       if (!zurueckOk) {
         await switchScene(page, ziel, 'Menu');
-        await waitForScene(page, 'Menu', 8000).catch(() => {});
+        await waitForScene(page, 'Menu', SCENE_TIMEOUT_MS).catch(() => {});
       }
       await page.waitForTimeout(300);
     }
   } catch (e) {
-    record('Navigationswege', false, e.message.slice(0, 70));
+    record('Navigationswege', false, kurzerFehler(e));
   } finally {
     await context.close();
   }
@@ -1354,7 +1406,7 @@ async function suiteControls() {
     );
     await page.screenshot({ path: `${shotDir}/controls-profile-scrolled.png` });
   } catch (e) {
-    record('Bedienelemente', false, e.message.slice(0, 70));
+    record('Bedienelemente', false, kurzerFehler(e));
   } finally {
     await context.close();
   }
@@ -1374,7 +1426,7 @@ async function suiteProgress() {
     await page.evaluate(() => window.isiHunt.scene.start('Game', { mode: 'solo' }));
     await waitForRunLive(page);
     const score = await playUntilDone(page);
-    await waitForScene(page, 'Result', 40000);
+    await waitForScene(page, 'Result', RESULT_TIMEOUT_MS);
     await page.waitForTimeout(1200);
     await page.screenshot({ path: `${shotDir}/progress-result.png` });
 
@@ -1424,7 +1476,7 @@ async function suiteProgress() {
       errors.length ? errors[0].slice(0, 70) : 'sauber',
     );
   } catch (e) {
-    record('Fortschrittskette', false, e.message.slice(0, 70));
+    record('Fortschrittskette', false, kurzerFehler(e));
   } finally {
     await context.close();
   }
@@ -1441,7 +1493,7 @@ async function suiteProgress() {
     await p2.screenshot({ path: `${shotDir}/progress-talents.png` });
     record('Talentbaum oeffnet mit Guthaben', true, '5000 Muenzen, 5 Punkte');
   } catch (e) {
-    record('Talentbaum oeffnet mit Guthaben', false, e.message.slice(0, 60));
+    record('Talentbaum oeffnet mit Guthaben', false, kurzerFehler(e));
   } finally {
     await c2.close();
   }

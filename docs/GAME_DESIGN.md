@@ -383,7 +383,7 @@ nicht schwaecher, nur unauffaelliger.
 | --------- | ----------------------- | -------------- | ------------ |
 | Form      | Silhouette (Textur)     | 300 – 3 000    | Pfeil        |
 | Farbe     | Rumpf, Aura, Halo       | 200 – 900      | Weltfarbe    |
-| Aura      | Bewegung, den Run ueber | 4 000 – 10 000 | Keine        |
+| Aura      | Bewegung, den Run ueber | 4 000 – 25 000 | Keine        |
 
 \* Referenzwerte. Die tatsaechlichen Preise skalieren mit der Einnahmenrate
 (`balancedCoinCost`), damit eine Aenderung an der Muenzquelle nicht jeden
@@ -410,6 +410,26 @@ Schiff im Gewuehl verliert, verliert die Runde; und eine Figur, die den
 eigenen Sammelradius ueberdeckt, macht das Feedback des Halos unlesbar. Beide
 Grenzen sind in `Balance.test.ts` ueber eine Sekunde Laufzeit je Aura
 geprueft.
+
+### Die Prismaflut
+
+Eine Aura steht ausserhalb der Reihe: 25 000 Muenzen **und** Stufe 50. Das
+sind rund 500 Runden, mehr als das Doppelte der bis dahin teuersten Aura — und
+Muenzen allein reichen nicht.
+
+Warum die zweite Huerde. Ein reiner Preis belohnt Geduld; wer lange genug
+spielt, bekommt alles. Bei einem Stueck, das "jeder haben will", ist genau das
+zu wenig: Es soll aussagen, dass jemand weit gekommen **und** lange dabei ist.
+Genau eine Aura hat diese Huerde — zwei waeren ein System, eine ist eine
+Aussage.
+
+Sie ist die einzige Aura, die die gekaufte Farbe ueberschreibt (voller
+Farbkreis statt hoechstens 60 Grad). Auch das ist Absicht: Bei diesem Preis
+ist die Aura selbst die Aussage, nicht die Farbe darunter.
+
+Gesperrt bleibt sie im Laden **sichtbar** und laeuft dort in voller Bewegung,
+mit "STUFE 50" statt eines Preises auf dem Knopf. Ein Fernziel, das man nie zu
+Gesicht bekommt, ist keins.
 
 **Im Duell traegt niemand etwas Gekauftes.** Beide Spieler fliegen dieselbe
 Grundform in der Weltfarbe, ohne Aura (`GameScene`, `nonProgressionMode`).

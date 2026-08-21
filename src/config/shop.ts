@@ -858,6 +858,14 @@ export interface ShipAuraDef {
    * Aura ploetzlich eine andere Bewegung.
    */
   readonly animIndex: number | null;
+  /**
+   * Mindestlevel, ab dem sie ueberhaupt kaufbar ist. `0` = keine Bedingung.
+   *
+   * Nur die Prismaflut nutzt das. Bei allen anderen Auren entscheidet allein
+   * das Guthaben - eine Stufenhuerde bei acht von neun Eintraegen waere eine
+   * zweite Waehrung, die niemand verlangt hat.
+   */
+  readonly minLevel: number;
 }
 
 /** Wie bei `ShipShapeId` bewusst ein freier String, nicht eine Union. */
@@ -870,6 +878,11 @@ export type ShipAuraId = string;
  * uebrigen liegen zwischen 4 000 und 10 000 Muenzen. Zum Vergleich: Ein Run
  * bringt rund 50 Muenzen, die teuerste **Form** kostet 3 000. Die erste Aura
  * ist damit ein Ziel fuer nach dem Laden, nicht daneben.
+ *
+ * **Die Prismaflut steht ausserhalb dieser Reihe.** 25 000 Muenzen sind rund
+ * 500 Runden - mehr als das Doppelte der bis dahin teuersten Aura. Dazu Stufe
+ * 50, damit Geduld allein nicht reicht: Wer sie traegt, hat beides
+ * aufgebracht. Genau das soll man ihr ansehen.
  */
 const SHIP_AURAS_REFERENCE: readonly ShipAuraDef[] = [
   {
@@ -878,6 +891,22 @@ const SHIP_AURAS_REFERENCE: readonly ShipAuraDef[] = [
     description: 'Die Figur bleibt ruhig.',
     cost: 0,
     animIndex: null,
+    minLevel: 0,
+  },
+  // Die Prismaflut steht bewusst an zweiter Stelle, nicht am Ende.
+  //
+  // Nach Preis sortiert gehoerte sie ganz nach unten - und genau dort hat sie
+  // im ersten Screenshot niemand gesehen: Sie lag hinter acht Karten und dem
+  // Zurueck-Balken. Das teuerste Stueck des Spiels war das einzige, das man
+  // beim Oeffnen nicht zu Gesicht bekam. Ein Fernziel wirkt nur, wenn es
+  // sofort ins Auge faellt.
+  {
+    id: 'prismasurge',
+    name: 'Prismaflut',
+    description: 'Läuft durch alle Farben und blitzt dabei auf. Ab Stufe 50.',
+    cost: 25_000,
+    animIndex: 8,
+    minLevel: 50,
   },
   {
     id: 'wingbeat',
@@ -885,6 +914,7 @@ const SHIP_AURAS_REFERENCE: readonly ShipAuraDef[] = [
     description: 'Die Gestalt schlägt seitlich aus, wie Schwingen im Flug.',
     cost: 4_000,
     animIndex: 0,
+    minLevel: 0,
   },
   {
     id: 'heartbeat',
@@ -892,6 +922,7 @@ const SHIP_AURAS_REFERENCE: readonly ShipAuraDef[] = [
     description: 'Zwei schnelle Schläge, dann eine Pause. Etwas Lebendiges.',
     cost: 4_500,
     animIndex: 3,
+    minLevel: 0,
   },
   {
     id: 'tumble',
@@ -899,6 +930,7 @@ const SHIP_AURAS_REFERENCE: readonly ShipAuraDef[] = [
     description: 'Langsames Kippen im Raum, ohne festen Takt.',
     cost: 5_000,
     animIndex: 5,
+    minLevel: 0,
   },
   {
     id: 'spin',
@@ -906,6 +938,7 @@ const SHIP_AURAS_REFERENCE: readonly ShipAuraDef[] = [
     description: 'Dreht sich um die eigene Achse — mit Vorder- und Rückseite.',
     cost: 6_000,
     animIndex: 1,
+    minLevel: 0,
   },
   {
     id: 'phantom',
@@ -913,6 +946,7 @@ const SHIP_AURAS_REFERENCE: readonly ShipAuraDef[] = [
     description: 'Wird durchscheinend und wieder fest.',
     cost: 6_500,
     animIndex: 4,
+    minLevel: 0,
   },
   {
     id: 'prism',
@@ -920,6 +954,7 @@ const SHIP_AURAS_REFERENCE: readonly ShipAuraDef[] = [
     description: 'Der Farbton wandert, ohne die getragene Farbe zu verlieren.',
     cost: 7_500,
     animIndex: 2,
+    minLevel: 0,
   },
   {
     id: 'starfire',
@@ -927,6 +962,7 @@ const SHIP_AURAS_REFERENCE: readonly ShipAuraDef[] = [
     description: 'Unruhiges Flackern, das sich nie genau wiederholt.',
     cost: 9_000,
     animIndex: 6,
+    minLevel: 0,
   },
   {
     id: 'singularity',
@@ -934,6 +970,7 @@ const SHIP_AURAS_REFERENCE: readonly ShipAuraDef[] = [
     description: 'Sog bis fast zum Punkt, dann der Rücksprung.',
     cost: 10_000,
     animIndex: 7,
+    minLevel: 0,
   },
 ];
 
@@ -956,6 +993,17 @@ export function getShipColor(id: string): ShipColorDef {
 
 export function getShipAura(id: string): ShipAuraDef {
   return SHIP_AURAS.find((aura) => aura.id === id) ?? SHIP_AURAS[0]!;
+}
+
+/**
+ * Ob das Level fuer diese Aura reicht.
+ *
+ * Getrennt vom Guthaben gefragt, weil der Laden beides verschieden anzeigt:
+ * Wer zu wenig Muenzen hat, sieht den Preis und kann darauf hinsparen. Wer
+ * die Stufe nicht hat, sieht stattdessen die Stufe - sparen hilft ihm nicht.
+ */
+export function auraLevelReached(aura: ShipAuraDef, level: number): boolean {
+  return level >= aura.minLevel;
 }
 
 /**

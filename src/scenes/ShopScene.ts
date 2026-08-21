@@ -22,6 +22,7 @@ import Phaser from 'phaser';
 
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import {
+  auraLevelReached,
   getShipAura,
   getShipColor,
   getShipShape,
@@ -38,7 +39,13 @@ import { SceneKey } from '@/scenes/SceneKey';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
-import { applyTintShift, AURA_FRAME_RUHE, SHIP_ANIMATIONS } from '@/ui/shipAnimations';
+import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
+import {
+  applyTintShift,
+  AURA_FRAME_RUHE,
+  SHIP_ANIMATIONS,
+  stehendesBild,
+} from '@/ui/shipAnimations';
 import { playerTextureForShape, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import {
@@ -282,10 +289,13 @@ export class ShopScene extends Phaser.Scene {
       // Unsichtbare Karten nicht rechnen: Bei neun Auren ist das wenig, aber
       // `blendeAusserhalbAus` hat sie ohnehin abgeschaltet.
       if (!eintrag.bild.visible) continue;
+      const animation = eintrag.animIndex === null ? undefined : SHIP_ANIMATIONS[eintrag.animIndex];
       const frame =
-        eintrag.animIndex === null
+        animation === undefined
           ? AURA_FRAME_RUHE
-          : (SHIP_ANIMATIONS[eintrag.animIndex]?.(this.vorschauAuraMs) ?? AURA_FRAME_RUHE);
+          : prefersReducedMotion()
+            ? stehendesBild(animation)
+            : animation(this.vorschauAuraMs);
       // 0,42 ist die Grundgroesse der Kartensymbole, siehe `buildAuraKarte`.
       eintrag.bild.setScale(0.42 * frame.scaleX, 0.42 * frame.scaleY);
       eintrag.bild.rotation = frame.rotation;
@@ -298,8 +308,13 @@ export class ShopScene extends Phaser.Scene {
   private spieleVorschauAura(timeMs: number): void {
     const auraId = this.anprobeAura ?? SaveSystem.load().shipAura;
     const index = getShipAura(auraId).animIndex;
+    const animation = index === null ? undefined : SHIP_ANIMATIONS[index];
     const frame =
-      index === null ? AURA_FRAME_RUHE : (SHIP_ANIMATIONS[index]?.(timeMs) ?? AURA_FRAME_RUHE);
+      animation === undefined
+        ? AURA_FRAME_RUHE
+        : prefersReducedMotion()
+          ? stehendesBild(animation)
+          : animation(timeMs);
 
     // 0,85 ist die Grundgroesse der Vorschau, siehe `buildVorschau`.
     this.vorschauBild.setScale(0.85 * frame.scaleX, 0.85 * frame.scaleY);
@@ -521,18 +536,26 @@ export class ShopScene extends Phaser.Scene {
     const save = SaveSystem.load();
     const besitzt = save.ownedShipAuras.includes(aura.id);
     const getragen = save.shipAura === aura.id;
+    const stufeReicht = auraLevelReached(aura, save.level);
     const y = this.karteY(index);
 
+    // Eine gesperrte Aura bleibt sichtbar und anprobierbar.
+    //
+    // Sie zu verstecken, bis die Stufe erreicht ist, waere der naheliegende
+    // Weg - und der falsche: Ein Fernziel wirkt nur, wenn man es sieht. Wer
+    // auf Stufe 12 die Prismaflut laufen sieht und "ab Stufe 50" darunter
+    // liest, hat einen Grund weiterzuspielen. Wer sie nie zu Gesicht bekommt,
+    // vermisst sie auch nicht.
     this.buildKarte({
       y,
       getragen,
       akzent: weltAkzent,
       titel: aura.name,
       untertitel: aura.description,
-      knopf: this.knopfText(besitzt, getragen, aura.cost),
-      knopfAktiv: !getragen && (besitzt || save.coins >= aura.cost),
+      knopf: stufeReicht ? this.knopfText(besitzt, getragen, aura.cost) : `STUFE ${aura.minLevel}`,
+      knopfAktiv: stufeReicht && !getragen && (besitzt || save.coins >= aura.cost),
       onClick: () => {
-        if (getragen) return;
+        if (getragen || !stufeReicht) return;
         const ergebnis = besitzt
           ? ProgressionSystem.equipShip(undefined, undefined, aura.id)
           : ProgressionSystem.purchaseShipAura(aura.id);

@@ -20,7 +20,7 @@ import {
   TALENT_RESET_COST,
   xpForLevel,
 } from '@/config/GameConfig';
-import { SHIP_AURAS, SHIP_COLORS, SHIP_SHAPES } from '@/config/shop';
+import { auraLevelReached, SHIP_AURAS, SHIP_COLORS, SHIP_SHAPES } from '@/config/shop';
 import { TALENTS, talentCost, type TalentId } from '@/config/talents';
 import { WORLDS } from '@/config/worlds';
 import * as SaveSystem from '@/systems/SaveSystem';
@@ -279,7 +279,15 @@ export function purchaseShipColor(colorId: string): SaveData | null {
   return gekauft ? result : null;
 }
 
-/** Kauft eine Aura. Gleiche Regeln wie bei Formen und Farben. */
+/**
+ * Kauft eine Aura.
+ *
+ * Wie bei Formen und Farben, mit einer zusaetzlichen Huerde: Manche Auren
+ * verlangen ein Mindestlevel (heute nur die Prismaflut). Die Pruefung steht
+ * **hier** und nicht nur in der Ladenanzeige - ein manipulierter Aufruf soll
+ * die Stufe nicht umgehen koennen, genau wie er kein ungekauftes Schiff
+ * tragen kann.
+ */
 export function purchaseShipAura(auraId: string): SaveData | null {
   const aura = SHIP_AURAS.find((entry) => entry.id === auraId);
   if (!aura) return null;
@@ -287,6 +295,7 @@ export function purchaseShipAura(auraId: string): SaveData | null {
   let gekauft = false;
   const result = SaveSystem.update((data) => {
     if (data.ownedShipAuras.includes(aura.id)) return;
+    if (!auraLevelReached(aura, data.level)) return;
     if (data.coins < aura.cost) return;
     data.coins -= aura.cost;
     data.coinsSpent += aura.cost;

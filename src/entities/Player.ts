@@ -26,9 +26,21 @@ import {
 } from '@/config/GameConfig';
 import type { PlayerStats } from '@/config/talents';
 import { Depth } from '@/ui/depth';
-import { applyTintShift, SHIP_ANIMATIONS, type AuraAnimation } from '@/ui/shipAnimations';
+import {
+  applyTintShift,
+  SHIP_ANIMATIONS,
+  stehendesBild,
+  type AuraAnimation,
+} from '@/ui/shipAnimations';
 import { TextureKey } from '@/ui/textures';
 import type { TextureKeyValue } from '@/ui/textures';
+import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
+
+/**
+ * Wie lange der Fangimpuls den Schein behaelt, bevor die Aura ihn
+ * zurueckbekommt. Entspricht der Dauer des Impuls-Tweens.
+ */
+const PULSE_HOLD_MS = 220;
 
 /** Eine Stufe der Serien-Schleife, wie sie `SERIES_TRAIL_TIERS` beschreibt. */
 export interface SeriesTrailTier {
@@ -83,6 +95,28 @@ export class Player extends Phaser.GameObjects.Container {
   private ruheScale = 1;
   /** Neigung aus der Bewegung, getrennt von der Drehung der Aura. */
   private neigung = 0;
+  /**
+   * Solange > 0, gehoert der Schein dem Fangimpuls, nicht der Aura.
+   *
+   * Ohne diese Sperre ueberschriebe `applyAura()` die Reliktfarbe aus
+   * `pulse()` im naechsten Frame - der Fangimpuls waere unter einer
+   * getragenen Aura unsichtbar, und gerade er ist das wichtigste Feedback
+   * im Spiel.
+   */
+  private pulseRestMs = 0;
+  /**
+   * Ob die Aura laeuft. Vor dem Startpfiff steht sie.
+   *
+   * Der Ruhe-Tween ruft `applyAura()` per `onUpdate` und haengt an Phasers
+   * Zeit, nicht an `GameScene.update()` - er laeuft also auch waehrend des
+   * Countdowns, wo `move()` den Zaehler noch nicht fortschreibt. Ohne dieses
+   * Flag zeichnete er die Figur die ganze Wartezeit ueber auf dem t=0-Frame:
+   * bei der Prismaflut ein kraeftiges Rot statt der Weltfarbe.
+   *
+   * Ein blosses `auraMs === 0` als Bedingung reicht dafuer nicht - der Wert
+   * ist auch im ersten echten Frame noch fast 0.
+   */
+  private auraLaeuft = false;
 
   constructor(
     scene: Phaser.Scene,
@@ -148,16 +182,19 @@ export class Player extends Phaser.GameObjects.Container {
     // Eine Aura muss ihre eigene Skalierung daraufsetzen koennen, und zwei
     // Schreiber auf demselben `scale` bedeuten, dass der letzte gewinnt - je
     // nach Reihenfolge im Frame flackernd.
-    this.ruheScale = 0.94;
-    scene.tweens.add({
-      targets: this,
-      ruheScale: { from: 0.94, to: 1.06 },
-      duration: 1100,
-      yoyo: true,
-      repeat: -1,
-      ease: 'Sine.InOut',
-      onUpdate: () => this.applyAura(),
-    });
+    this.ruheScale = 1;
+    if (!prefersReducedMotion()) {
+      this.ruheScale = 0.94;
+      scene.tweens.add({
+        targets: this,
+        ruheScale: { from: 0.94, to: 1.06 },
+        duration: 1100,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.InOut',
+        onUpdate: () => this.applyAura(),
+      });
+    }
   }
 
   get collectRadius(): number {
@@ -223,7 +260,9 @@ export class Player extends Phaser.GameObjects.Container {
       1 - Math.exp(-8 * dtSec),
     );
 
+    this.auraLaeuft = true;
     this.auraMs += dtSec * 1000;
+    this.pulseRestMs = Math.max(0, this.pulseRestMs - dtSec * 1000);
     this.applyAura();
   }
 
@@ -237,6 +276,9 @@ export class Player extends Phaser.GameObjects.Container {
   setAura(animIndex: number | null): void {
     this.auraAnimation = animIndex === null ? null : (SHIP_ANIMATIONS[animIndex] ?? null);
     this.auraMs = 0;
+    // Erst der erste `move()` startet sie - siehe `auraLaeuft`. Die Aura
+    // gehoert zum Spiel, nicht zum Warten davor.
+    this.auraLaeuft = false;
     this.applyAura();
   }
 
@@ -249,7 +291,14 @@ export class Player extends Phaser.GameObjects.Container {
    * zwar weiterzaehlt, der Tween aber dazwischen mehrfach feuert.
    */
   private applyAura(): void {
-    const frame = this.auraAnimation?.(this.auraMs) ?? null;
+    // Bei reduziertem Bewegungswunsch die Aura einmal einfrieren statt sie
+    // je Frame neu zu rechnen - siehe `stehendesBild()`.
+    const frame =
+      this.auraAnimation === null || !this.auraLaeuft
+        ? null
+        : prefersReducedMotion()
+          ? stehendesBild(this.auraAnimation)
+          : this.auraAnimation(this.auraMs);
     if (frame === null) {
       this.core.setScale(this.ruheScale);
       this.core.rotation = this.neigung;
@@ -262,10 +311,33 @@ export class Player extends Phaser.GameObjects.Container {
     this.core.rotation = this.neigung + frame.rotation;
     this.core.setAlpha(frame.alpha);
     this.core.setTint(applyTintShift(this.hullColor, frame.tint));
+
+    // Schein und Ring laufen mit, wenn die Aura den Farbton dreht.
+    //
+    // Ohne das truege eine Figur im vollen Farblauf weiterhin einen
+    // goldenen Schein - das sieht nach halb fertigem Effekt aus, nicht nach
+    // der teuersten Aura des Spiels. Bei den uebrigen Auren (`hue` nahe 0)
+    // aendert die Rechnung praktisch nichts, deshalb braucht es hier keine
+    // Fallunterscheidung.
+    //
+    // Zwei Faelle haben Vorrang vor der Aura: ein laufender Fangimpuls
+    // (wichtigstes Feedback im Spiel) und eine laufende Serie, der die Spur
+    // gehoert (siehe `setSeriesTrail`).
+    if (this.seriesTier === null && this.pulseRestMs <= 0) {
+      const scheinFarbe = applyTintShift(this.accentColor, frame.tint);
+      this.aura.setTint(scheinFarbe);
+      this.halo.setTint(scheinFarbe);
+    }
   }
 
   /** Kurzer visueller Impuls beim Einsammeln. */
   pulse(color: number): void {
+    // Fuer diese Zeit haelt der Impuls den Schein - siehe `pulseRestMs`.
+    this.pulseRestMs = PULSE_HOLD_MS;
+    if (prefersReducedMotion()) {
+      this.aura.setTint(color).setScale(2.1).setAlpha(0.75);
+      return;
+    }
     this.scene.tweens.add({
       targets: this.aura,
       scale: { from: 2.6, to: 2.1 },

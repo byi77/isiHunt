@@ -7,6 +7,7 @@ import {
   COMBO_TIERS,
   DAILY_COMPLETION_BONUS_COINS,
   DAILY_LOGIN_BONUS_COINS,
+  MAX_LEVEL,
   SERIES_RAISING_MIN_RARITY_INDEX,
   TALENT_RESET_COST,
 } from '@/config/GameConfig';
@@ -33,7 +34,13 @@ import {
   shipTint,
 } from '@/config/shop';
 import { talentCost } from '@/config/talents';
-import { applyTintShift, AURA_FRAME_RUHE, SHIP_ANIMATIONS } from '@/ui/shipAnimations';
+import {
+  applyTintShift,
+  AURA_FRAME_RUHE,
+  SHIP_ANIMATIONS,
+  stehendesBild,
+  VOLLER_FARBKREIS_INDEX,
+} from '@/ui/shipAnimations';
 import { SHIP_DRAWINGS } from '@/ui/shipShapes';
 import { WORLDS } from '@/config/worlds';
 
@@ -334,6 +341,10 @@ describe('Laden: Auren', () => {
 
   it('haelt die Farbverschiebung in ihrem Wertebereich', () => {
     for (const [index, animation] of SHIP_ANIMATIONS.entries()) {
+      // Die Prismaflut laeuft bewusst durch den ganzen Farbkreis - die
+      // Begruendung steht bei ihrer Definition. Sie ist die **einzige**
+      // Ausnahme; kommt eine zweite dazu, faellt der Test unten.
+      if (index === VOLLER_FARBKREIS_INDEX) continue;
       for (const t of zeitpunkte) {
         const { tint } = animation(t);
         expect(tint.lightness, `Aura ${index} bei ${t} ms`).toBeGreaterThanOrEqual(-1);
@@ -343,6 +354,16 @@ describe('Laden: Auren', () => {
         expect(Math.abs(tint.hue)).toBeLessThanOrEqual(60);
       }
     }
+  });
+
+  it('laesst genau eine Aura aus der 60-Grad-Regel ausbrechen', () => {
+    // Der Waechter zur Ausnahme oben. Ohne ihn koennte jemand eine zweite
+    // Aura durch den vollen Farbkreis schicken, indem er sie einfach in die
+    // Ausnahmeliste einträgt - hier faellt auf, dass es zwei geworden sind.
+    const ausbrecher = SHIP_ANIMATIONS.map((animation, index) => ({ index, animation })).filter(
+      ({ animation }) => zeitpunkte.some((t) => Math.abs(animation(t).tint.hue) > 60),
+    );
+    expect(ausbrecher.map((a) => a.index)).toEqual([VOLLER_FARBKREIS_INDEX]);
   });
 
   it('rechnet jede Aura ohne NaN', () => {
@@ -419,6 +440,24 @@ describe('Farbverschiebung der Auren', () => {
     }
   });
 
+  it('hebt die Saettigung an, senkt sie aber nie', () => {
+    // Wer eine kraeftige Farbe gekauft hat, soll sie behalten - die Aura
+    // darf sie leuchten lassen, nicht ausbleichen.
+    const kraeftig = 0xff2f5e; // Rubin
+    const mitAura = applyTintShift(kraeftig, { lightness: 0, hue: 0, saturation: 0.3 });
+    expect(mitAura).toBe(kraeftig);
+  });
+
+  it('faerbt Weiss ueber die Saettigung der Aura', () => {
+    // Regression zum Fund vom 2026-08-21: Weiss hat die Saettigung 0, ein
+    // Farbtondreh allein aendert daran nichts. Ohne diesen Weg waere die
+    // teuerste Aura des Spiels auf dem Standardschiff unsichtbar.
+    const ohne = applyTintShift(0xffffff, { lightness: 0, hue: 200, saturation: 0 });
+    const mit = applyTintShift(0xffffff, { lightness: 0, hue: 200, saturation: 0.85 });
+    expect(ohne).toBe(0xffffff);
+    expect(mit).not.toBe(0xffffff);
+  });
+
   it('macht Schwarz nicht bunt', () => {
     // Schwarz hat keinen Farbton. Ein Dreh im Farbkreis darf daran nichts
     // aendern - sonst faerbte sich der Onyx-Rumpf unter der Aura ein.
@@ -439,5 +478,139 @@ describe('Aura: nur tragen, was gekauft wurde', () => {
 
   it('liefert null fuer den Standard', () => {
     expect(shipAuraIndex({ shipAura: 'none', ownedShipAuras: ['none'] })).toBeNull();
+  });
+});
+
+describe('Prismaflut: die ultimative Aura', () => {
+  const prismaflut = SHIP_ANIMATIONS[VOLLER_FARBKREIS_INDEX]!;
+  const definition = SHIP_AURAS.find((aura) => aura.animIndex === VOLLER_FARBKREIS_INDEX)!;
+  /** Ein voller Farbdurchlauf dauert 3,2 s - vier Sekunden decken ihn ab. */
+  const zeitpunkte = Array.from({ length: 400 }, (_, i) => i * 10);
+
+  it('ist im Laden eingetragen und die teuerste Aura', () => {
+    expect(definition.id).toBe('prismasurge');
+    const andere = SHIP_AURAS.filter((aura) => aura.id !== definition.id).map((a) => a.cost);
+    expect(definition.cost).toBeGreaterThan(Math.max(...andere));
+  });
+
+  it('verlangt als einzige Aura ein Mindestlevel', () => {
+    // Eine Stufenhuerde bei mehreren Auren waere eine zweite Waehrung neben
+    // den Muenzen. Genau eine ist die Aussage; zwei waeren ein System.
+    const mitHuerde = SHIP_AURAS.filter((aura) => aura.minLevel > 0);
+    expect(mitHuerde).toHaveLength(1);
+    expect(mitHuerde[0]!.id).toBe(definition.id);
+  });
+
+  it('haelt die Stufenhuerde unterhalb des Maximallevels', () => {
+    // Eine Huerde auf Stufe 100 waere kein Fernziel, sondern ein Abschluss -
+    // wer sie erreicht, hat nichts mehr, wofuer er sie tragen koennte.
+    expect(definition.minLevel).toBeGreaterThan(0);
+    expect(definition.minLevel).toBeLessThan(MAX_LEVEL);
+  });
+
+  it('laeuft durch den gesamten Farbkreis', () => {
+    // Der Kaufgrund: ein echter Regenbogen, keine Schwankung um einen Ton.
+    const toene = zeitpunkte.map((t) => prismaflut(t).tint.hue);
+    expect(Math.min(...toene)).toBeLessThan(20);
+    expect(Math.max(...toene)).toBeGreaterThan(340);
+  });
+
+  it('laeuft in eine Richtung statt hin und her', () => {
+    // Eine Welle liefe vor und zurueck und saehe aus wie ein Farbfehler.
+    // Ein Durchlauf liest sich als Regenbogen - er darf nur an der Naht
+    // von 360 zurueck auf 0 springen.
+    const toene = zeitpunkte.slice(0, 320).map((t) => prismaflut(t).tint.hue);
+    let rueckschritte = 0;
+    for (let i = 1; i < toene.length; i++) {
+      if (toene[i]! < toene[i - 1]!) rueckschritte++;
+    }
+    // Bei 3,2 s Periode und 3,2 s Messfenster genau eine Naht.
+    expect(rueckschritte).toBeLessThanOrEqual(1);
+  });
+
+  it('blitzt auf, ohne dauerhaft hell zu stehen', () => {
+    // "Funkeln" heisst: meistens ruhig, gelegentlich hell. Stuende die
+    // Helligkeit dauerhaft oben, waere es kein Blitzen, sondern Ueberstrahlen.
+    const helligkeiten = zeitpunkte.map((t) => prismaflut(t).tint.lightness);
+    const spitzen = helligkeiten.filter((l) => l > 0.4).length;
+    expect(spitzen).toBeGreaterThan(0);
+    expect(spitzen / helligkeiten.length).toBeLessThan(0.35);
+  });
+
+  it('bleibt jederzeit voll deckend', () => {
+    // Anders als das Phantom: Diese Aura soll gesehen werden, nicht
+    // verschwinden. Ein erster Entwurf liess sie pulsieren - auf hellen
+    // Welten war die Figur dann in der Haelfte der Frames kaum auszumachen.
+    for (const t of zeitpunkte) {
+      expect(prismaflut(t).alpha).toBe(1);
+    }
+  });
+
+  it('bleibt in denselben Groessengrenzen wie jede andere Aura', () => {
+    // Prestige rechtfertigt keine Figur, die den Sammelradius ueberdeckt.
+    for (const t of zeitpunkte) {
+      const frame = prismaflut(t);
+      expect(frame.scaleX, `bei ${t} ms`).toBeGreaterThan(0.05);
+      expect(frame.scaleX).toBeLessThanOrEqual(1.5);
+      expect(frame.scaleY).toBeGreaterThan(0.05);
+      expect(frame.scaleY).toBeLessThanOrEqual(1.5);
+    }
+  });
+
+  it('faerbt auch eine weisse Figur bunt', () => {
+    // Der Rumpf ist bei Weltfarbe weiss (`shipHullTint`). Weiss hat keinen
+    // Farbton - ohne die Saettigung aus der Aura bliebe die teuerste Aura
+    // des Spiels auf dem Standardschiff komplett wirkungslos.
+    const farben = zeitpunkte.slice(0, 80).map((t) => applyTintShift(0xffffff, prismaflut(t).tint));
+    expect(new Set(farben).size).toBeGreaterThan(10);
+  });
+});
+
+describe('Aura: Start und Ruhelage', () => {
+  it('faengt bei t = 0 nicht schon mitten im Effekt an', () => {
+    // Regression zum Fund vom 2026-08-21: Waehrend des Countdowns stand die
+    // Figur auf dem t=0-Frame, weil der Ruhe-Tween `applyAura()` ruft, bevor
+    // `move()` den Zaehler startet. Bei der Prismaflut war das ein kraeftiges
+    // Rot statt der Weltfarbe, mehrere Sekunden lang.
+    //
+    // Behoben ist das ueber ein Laufflag im Player. Dieser Test haelt die
+    // andere Haelfte fest: Der erste Frame darf keine starke Abweichung von
+    // der Ruhelage sein - sonst springt die Figur beim Startpfiff sichtbar.
+    for (const [index, animation] of SHIP_ANIMATIONS.entries()) {
+      const start = animation(0);
+      expect(Math.abs(start.scaleX - 1), `Aura ${index} scaleX`).toBeLessThan(0.35);
+      expect(Math.abs(start.scaleY - 1), `Aura ${index} scaleY`).toBeLessThan(0.35);
+      expect(Math.abs(start.rotation), `Aura ${index} rotation`).toBeLessThan(0.3);
+    }
+  });
+});
+
+describe('Aura bei reduziertem Bewegungswunsch', () => {
+  it('steht still statt langsamer zu laufen', () => {
+    // Ein verlangsamter Farbwechsel waere immer noch ein Farbwechsel - und
+    // damit genau das, was `prefers-reduced-motion` ausschliessen soll.
+    for (const animation of SHIP_ANIMATIONS) {
+      const a = stehendesBild(animation);
+      const b = stehendesBild(animation);
+      expect(a).toEqual(b);
+    }
+  });
+
+  it('nimmt jede Bewegung heraus', () => {
+    for (const [index, animation] of SHIP_ANIMATIONS.entries()) {
+      const frame = stehendesBild(animation);
+      expect(frame.scaleX, `Aura ${index}`).toBe(1);
+      expect(frame.scaleY).toBe(1);
+      expect(frame.rotation).toBe(0);
+      expect(frame.alpha).toBe(1);
+    }
+  });
+
+  it('daempft die Helligkeit, behaelt aber den Farbton', () => {
+    // Wer 25 000 Muenzen ausgegeben hat, soll seine Aura auch dann sehen -
+    // sie darf nur nicht mehr zucken.
+    const frame = stehendesBild(SHIP_ANIMATIONS[VOLLER_FARBKREIS_INDEX]!);
+    expect(Math.abs(frame.tint.lightness)).toBeLessThanOrEqual(0.2);
+    expect(frame.tint.hue).not.toBe(0);
   });
 });

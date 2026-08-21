@@ -29,6 +29,11 @@
  * eine. `tint` mischt deshalb immer von der **getragenen** Farbe aus: heller,
  * dunkler oder ein Stueck weiter im Farbkreis, aber nie unabhaengig von ihr.
  * Gold bleibt als Gold erkennbar, auch wenn es pulsiert.
+ *
+ * **Eine Ausnahme:** Die Prismaflut (`VOLLER_FARBKREIS_INDEX`) laeuft bewusst
+ * durch alle 360 Grad und ueberschreibt die getragene Farbe. Die Begruendung
+ * steht bei ihrer Definition; der Balance-Test kennt genau diese eine Aura
+ * als Ausnahme und schlaegt an, sobald eine zweite dazukommt.
  */
 
 /**
@@ -42,6 +47,21 @@ export interface TintShift {
   readonly lightness: number;
   /** Drehung im Farbkreis, in Grad. */
   readonly hue: number;
+  /**
+   * Mindestsaettigung, die die Aura selbst mitbringt. 0 = nur die getragene.
+   *
+   * **Warum das noetig ist.** Bei Weltfarbe bleibt der Rumpf weiss
+   * (`shipHullTint`), und Weiss hat die Saettigung 0. Ein Farbtondreh auf
+   * einer ungesaettigten Farbe aendert nichts - die Prismaflut waere auf dem
+   * Standardschiff komplett unsichtbar geblieben. Aufgefallen ist das nicht
+   * beim Lesen, sondern an einem Test, der die Farben eines weissen Rumpfs
+   * durchzaehlt: Er fand genau eine.
+   *
+   * Nur die Prismaflut nutzt das Feld. Die uebrigen Auren lassen es bei 0
+   * und bleiben damit genau so weit von der getragenen Farbe entfernt wie
+   * bisher.
+   */
+  readonly saturation?: number;
 }
 
 /**
@@ -247,6 +267,79 @@ const singularitaet: AuraAnimation = (t) => {
 };
 
 /**
+ * 8 Prismaflut: die ultimative Aura.
+ *
+ * ## Warum sie die 60-Grad-Regel bricht
+ *
+ * Jede andere Aura verschiebt den Farbton hoechstens 60 Grad, damit die
+ * gekaufte Farbe erkennbar bleibt (siehe Kopfkommentar). Diese hier laeuft
+ * durch den **ganzen** Farbkreis und ueberschreibt die getragene Farbe damit
+ * vollstaendig.
+ *
+ * Das ist eine bewusste, einmalige Ausnahme, kein Versehen: Bei einer Aura,
+ * die 25 000 Muenzen und Stufe 50 verlangt, ist sie selbst die Aussage. Wer
+ * sie traegt, zeigt nicht seine Farbe, sondern dass er sie hat. Der
+ * Balance-Test kennt sie deshalb namentlich als Ausnahme - laeuft eine
+ * **zweite** Aura aus der Reihe, schlaegt er an.
+ *
+ * ## Warum drei Rechnungen statt einer
+ *
+ * Die acht anderen Auren machen jeweils eine Sache. Diese ueberlagert drei,
+ * und genau das macht den Unterschied zwischen "noch eine Bewegung" und
+ * "die, die jeder haben will":
+ *
+ * 1. **Der Farblauf** dreht gleichmaessig durch alle 360 Grad. Gleichmaessig
+ *    und nicht als Welle - eine Welle liefe hin und zurueck und saehe aus wie
+ *    ein Farbfehler, ein Durchlauf liest sich als Regenbogen.
+ * 2. **Das Funkeln** sind zwei schnelle Wellen mit teilerfremden Perioden auf
+ *    der Helligkeit. Weil sie nie gemeinsam an ihren Anfang zurueckkehren,
+ *    blitzt es unregelmaessig auf, statt im Takt zu pulsieren.
+ * 3. **Der Herzschlag** darunter gibt der Figur eine ruhige Grundbewegung,
+ *    damit das Funkeln nicht als Flackern eines Standbildes wirkt.
+ *
+ * ## Warum sie trotzdem lesbar bleibt
+ *
+ * Die Saettigung wird beim Blitz **heruntergezogen**, nicht hoch: Ein Blitz
+ * ist weisses Licht, kein satteres Bunt. Und die Deckkraft bleibt bei 1 - die
+ * Figur darf schillern, aber im Gewuehl nie verschwinden. Der erste Entwurf
+ * liess sie zwischen 0,5 und 1 pulsieren; auf hellen Welten war die Figur
+ * dann in der Haelfte der Frames kaum auszumachen.
+ */
+const prismaflut: AuraAnimation = (t) => {
+  // Ein voller Durchlauf in 3,2 Sekunden - langsam genug, dass sich jede
+  // Farbe zeigt, schnell genug, dass man den Lauf sieht statt einer Farbe.
+  const durchlauf = umlauf(t, 3_200) * 360;
+
+  // Zwei teilerfremde Perioden: Das Muster wiederholt sich praktisch nie.
+  const funkeln = (welle(t, 191) + welle(t, 313, 2.1)) / 2;
+  // Nur die Spitzen zaehlen als Blitz - `pow` mit hohem Exponenten schneidet
+  // das ruhige Mittelfeld weg und laesst die Ausschlaege stehen.
+  const blitz = Math.pow(Math.max(0, funkeln), 3);
+
+  // Ruhiger Herzschlag darunter, halb so stark wie die eigene Aura.
+  const p = umlauf(t, 1_400);
+  const schlag = p < 0.18 ? Math.sin((p / 0.18) * Math.PI) * 0.5 : 0;
+
+  return {
+    scaleX: 1 + 0.1 * schlag + 0.06 * blitz,
+    scaleY: 1 + 0.1 * schlag + 0.06 * blitz,
+    // Leichtes Wiegen, damit die Figur nicht starr im Farblauf steht.
+    rotation: welle(t, 2_300) * 0.07,
+    tint: {
+      // Grundhelligkeit leicht angehoben, damit die Farben leuchten, und der
+      // Blitz setzt kurze weisse Spitzen darauf.
+      lightness: 0.18 + 0.55 * blitz,
+      hue: durchlauf,
+      // Die Aura bringt ihre Farbe selbst mit - sonst bliebe sie auf dem
+      // weissen Standardrumpf unsichtbar. Beim Blitz faellt sie zurueck:
+      // Ein Blitz ist weisses Licht, kein satteres Bunt.
+      saturation: 0.85 * (1 - blitz),
+    },
+    alpha: 1,
+  };
+};
+
+/**
  * Alle Auren, in der Reihenfolge ihres `animIndex`.
  *
  * Wie bei `SHIP_DRAWINGS` gilt: Die Reihenfolge darf sich **nie** aendern. Ein
@@ -262,7 +355,55 @@ export const SHIP_ANIMATIONS: readonly AuraAnimation[] = [
   taumel,
   sternenbrand,
   singularitaet,
+  prismaflut,
 ];
+
+/**
+ * Der `animIndex` der Aura, die bewusst durch den ganzen Farbkreis laeuft.
+ *
+ * Bewusst hier und nicht im Test: Die Ausnahme gehoert zur Definition der
+ * Bewegung, nicht zu ihrer Pruefung. Der Balance-Test liest sie von hier und
+ * schlaegt an, sobald eine **zweite** Aura die 60-Grad-Regel bricht.
+ */
+export const VOLLER_FARBKREIS_INDEX = 8;
+
+/**
+ * Ein **stehendes** Bild der Aura, fuer Spieler mit `prefers-reduced-motion`.
+ *
+ * `prefersReducedMotion` gilt nicht nur fuer Tweens. Gerade die Prismaflut -
+ * voller Farblauf mit Blitzen - ist genau das, wovor diese Einstellung
+ * schuetzen soll. Sie ganz abzuschalten waere aber falsch: Wer 25 000 Muenzen
+ * ausgegeben hat, soll seine Aura auch dann sehen.
+ *
+ * Der Kompromiss ist ein **Standbild**, kein gedaempfter Lauf: Die Aura wird
+ * einmal bei einem festen Zeitpunkt ausgewertet und bleibt dann stehen. Ein
+ * bloss verlangsamter Farbwechsel waere immer noch ein Farbwechsel - und
+ * damit immer noch das, was die Einstellung ausschliessen soll.
+ *
+ * Der Zeitpunkt ist bewusst nicht 0: Dort stehen mehrere Auren in ihrer
+ * Ruhelage und saehen aus, als traege die Figur gar nichts.
+ */
+export function stehendesBild(animation: AuraAnimation): AuraFrame {
+  const frame = animation(REDUZIERT_ZEITPUNKT_MS);
+  return {
+    scaleX: 1,
+    scaleY: 1,
+    rotation: 0,
+    // Farbton und eine gedaempfte Helligkeit bleiben - die Figur traegt
+    // sichtbar etwas Besonderes, es bewegt sich nur nichts mehr.
+    tint: { lightness: Math.min(0.2, Math.max(-0.2, frame.tint.lightness)), hue: frame.tint.hue },
+    alpha: 1,
+  };
+}
+
+/**
+ * Der Augenblick, den `stehendesBild()` einfriert.
+ *
+ * 800 ms liegen bei jeder der neun Auren ausserhalb ihrer Ruhelage, aber bei
+ * keiner auf einem Extrem: Die Prismaflut steht dort bei rund 90 Grad im
+ * Farbkreis, der Kreisel halb gedreht.
+ */
+const REDUZIERT_ZEITPUNKT_MS = 800;
 
 /**
  * Wendet eine Farbverschiebung auf die getragene Farbe an.
@@ -273,7 +414,8 @@ export const SHIP_ANIMATIONS: readonly AuraAnimation[] = [
  * Saettigung erhalten, waehrend nur die Helligkeit wandert.
  */
 export function applyTintShift(color: number, shift: TintShift): number {
-  if (shift.lightness === 0 && shift.hue === 0) return color;
+  const saettigung = shift.saturation ?? 0;
+  if (shift.lightness === 0 && shift.hue === 0 && saettigung === 0) return color;
 
   const [h, s, v] = rgbZuHsv(color);
   const neuerH = (((h + shift.hue) % 360) + 360) % 360;
@@ -283,7 +425,10 @@ export function applyTintShift(color: number, shift: TintShift): number {
   const neuesV = klemme(
     shift.lightness >= 0 ? v + (1 - v) * shift.lightness : v * (1 + shift.lightness),
   );
-  const neuesS = shift.lightness > 0 ? klemme(s * (1 - shift.lightness * 0.55)) : s;
+  const aufgehellt = shift.lightness > 0 ? klemme(s * (1 - shift.lightness * 0.55)) : s;
+  // Die Aura hebt die Saettigung an, senkt sie aber nie: Wer eine kraeftige
+  // Farbe traegt, soll sie behalten.
+  const neuesS = Math.max(aufgehellt, klemme(saettigung));
 
   return hsvZuRgb(neuerH, neuesS, neuesV);
 }

@@ -11,6 +11,32 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Prismaflut: die ultimative Aura.** Eine neunte Aura, die sich bewusst von
+  den acht anderen abhebt — sie ueberlagert drei Effekte statt einen:
+
+  1. Der Farbton laeuft in 3,2 Sekunden durch **alle 360 Grad** — ein echter
+     Regenbogen, kein Schimmern um einen Ton.
+  2. Zwei schnelle Wellen mit teilerfremden Perioden lassen sie unregelmaessig
+     **aufblitzen**, statt im Takt zu pulsieren.
+  3. Darunter laeuft ein ruhiger Herzschlag, damit das Funkeln nicht wie das
+     Flackern eines Standbildes wirkt.
+
+  **25 000 Muenzen und Stufe 50.** Rund 500 Runden, mehr als das Doppelte der
+  bis dahin teuersten Aura — und Geduld allein reicht nicht. Wer sie traegt,
+  hat beides aufgebracht. Gesperrt ist sie trotzdem sichtbar: Der Laden zeigt
+  sie laufend mit "STUFE 50" auf dem Knopf, denn ein Fernziel wirkt nur, wenn
+  man es sieht.
+
+  **Sie bricht bewusst die 60-Grad-Regel.** Jede andere Aura haelt sich
+  zurueck, damit die gekaufte Farbe erkennbar bleibt. Diese hier ueberschreibt
+  sie — bei einer Aura dieser Groessenordnung ist sie selbst die Aussage. Die
+  Ausnahme ist benannt (`VOLLER_FARBKREIS_INDEX`), und ein Test schlaegt an,
+  sobald eine **zweite** Aura ausbricht.
+
+  Ausserdem laufen Schein und Ring der Figur jetzt im Farblauf mit; vorher
+  haette ein Regenbogenschiff einen goldenen Schein behalten. Waehrend des
+  Countdowns steht die Aura noch still - sie faengt mit dem Startpfiff an.
+
 - **Auren: eine dritte Kategorie im Laden.** Neben Form und Farbe traegt die
   Figur jetzt eine **Bewegung**, die den ganzen Run ueber laeuft. Acht Stueck
   stehen zur Wahl:
