@@ -1,7 +1,7 @@
 /** Erfolge mit sichtbaren Rängen und steigenden Anforderungen. */
 
 import type { RunStats, SaveData } from '@/types';
-import { COINS_PER_ACHIEVEMENT } from '@/config/GameConfig';
+import { achievementCoinReward } from '@/config/balance';
 
 export interface AchievementDef {
   readonly id: string;
@@ -27,7 +27,7 @@ function achievement(
     name,
     description,
     rank,
-    coinReward: COINS_PER_ACHIEVEMENT + (rank - 1) * 15,
+    coinReward: achievementCoinReward(rank),
     check,
   };
 }

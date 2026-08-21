@@ -8,7 +8,7 @@
 import Phaser from 'phaser';
 
 import { SYNC_MIN_INTERVAL_MS, SYNC_RETRY_DELAYS_MS } from '@/config/backend';
-import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { DAILY_LOGIN_BONUS_COINS, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { WORLDS } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { isIos, isStandalone } from '@/core/display';
@@ -517,7 +517,7 @@ export class MenuScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         GAME_HEIGHT / 2 + 18,
-        '+25 COINS',
+        `+${DAILY_LOGIN_BONUS_COINS} COINS`,
         textStyle(FontSize.heading, Palette.ink, { fontStyle: 'bold' }),
       )
       .setOrigin(0.5)

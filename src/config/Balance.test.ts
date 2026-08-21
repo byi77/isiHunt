@@ -10,6 +10,13 @@ import {
   SERIES_RAISING_MIN_RARITY_INDEX,
   TALENT_RESET_COST,
 } from '@/config/GameConfig';
+import {
+  BALANCE,
+  BALANCE_SNAPSHOT,
+  EXPECTED_POINTS_PER_CATCH,
+  EXPECTED_XP_PER_CATCH,
+  TALENT_COSTS,
+} from '@/config/balance';
 import { RARITIES } from '@/config/rarities';
 import {
   DEFAULT_SHIP_COLOR,
@@ -26,6 +33,24 @@ import { SHIP_DRAWINGS } from '@/ui/shipShapes';
 import { WORLDS } from '@/config/worlds';
 
 describe('Phase-5-Balance', () => {
+  it('haelt Punkte und XP je Relikt in einer zentralen Tabelle', () => {
+    const rarities = Object.values(BALANCE.rarities);
+    expect(rarities.reduce((sum, rarity) => sum + rarity.weight, 0)).toBe(100);
+    expect(rarities.every((rarity) => rarity.points > 0 && rarity.xp > 0)).toBe(true);
+    expect(EXPECTED_POINTS_PER_CATCH).toBeGreaterThan(0);
+    expect(EXPECTED_XP_PER_CATCH).toBeGreaterThan(EXPECTED_POINTS_PER_CATCH);
+    for (const [id, values] of Object.entries(BALANCE.rarities)) {
+      expect(RARITIES.find((rarity) => rarity.id === id)).toMatchObject(values);
+    }
+  });
+
+  it('berechnet die Langzeitziele aus denselben Referenz-Runs', () => {
+    expect(BALANCE_SNAPSHOT.runsToMaxLevel).toBeGreaterThan(200);
+    expect(BALANCE_SNAPSHOT.runsToMaxLevel).toBeLessThan(600);
+    expect(BALANCE_SNAPSHOT.runsToMaxTalents).toBeGreaterThan(200);
+    expect(TALENT_COSTS).toEqual([250, 350, 500, 650, 850]);
+  });
+
   it('laesst die ersten drei Welten ohne Zeitverlust-Hindernisse', () => {
     expect(WORLDS.slice(0, 3).every((world) => world.obstacleMode !== 'penalty')).toBe(true);
   });

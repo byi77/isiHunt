@@ -7,6 +7,8 @@
  * Achse: seltener = wertvoller = schneller = kuerzer sichtbar.
  */
 
+import { BALANCE } from './balance';
+
 export type RarityId = 'poor' | 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
 
 export interface RarityDef {
@@ -34,9 +36,7 @@ export const RARITIES: readonly RarityDef[] = [
     id: 'poor',
     label: 'Schlicht',
     color: 0x9d9d9d,
-    points: 2,
-    xp: 2,
-    weight: 34,
+    ...BALANCE.rarities.poor,
     lifetimeMs: 5200,
     driftSpeed: 30,
     radius: 30,
@@ -45,9 +45,7 @@ export const RARITIES: readonly RarityDef[] = [
     id: 'common',
     label: 'Gewöhnlich',
     color: 0xffffff,
-    points: 3,
-    xp: 3,
-    weight: 28,
+    ...BALANCE.rarities.common,
     lifetimeMs: 4600,
     driftSpeed: 45,
     radius: 30,
@@ -56,9 +54,7 @@ export const RARITIES: readonly RarityDef[] = [
     id: 'uncommon',
     label: 'Ungewöhnlich',
     color: 0x1eff00,
-    points: 7,
-    xp: 8,
-    weight: 20,
+    ...BALANCE.rarities.uncommon,
     lifetimeMs: 3800,
     driftSpeed: 70,
     radius: 32,
@@ -67,9 +63,7 @@ export const RARITIES: readonly RarityDef[] = [
     id: 'rare',
     label: 'Selten',
     color: 0x0070dd,
-    points: 18,
-    xp: 20,
-    weight: 11,
+    ...BALANCE.rarities.rare,
     lifetimeMs: 3000,
     driftSpeed: 105,
     radius: 34,
@@ -78,9 +72,7 @@ export const RARITIES: readonly RarityDef[] = [
     id: 'epic',
     label: 'Episch',
     color: 0xa335ee,
-    points: 45,
-    xp: 55,
-    weight: 5.5,
+    ...BALANCE.rarities.epic,
     lifetimeMs: 2400,
     driftSpeed: 140,
     radius: 38,
@@ -89,9 +81,7 @@ export const RARITIES: readonly RarityDef[] = [
     id: 'legendary',
     label: 'Legendär',
     color: 0xff8000,
-    points: 100,
-    xp: 130,
-    weight: 1.5,
+    ...BALANCE.rarities.legendary,
     lifetimeMs: 2000,
     driftSpeed: 190,
     radius: 44,

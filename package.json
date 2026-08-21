@@ -1,6 +1,6 @@
 {
   "name": "isihunt",
-  "version": "0.1.214",
+  "version": "0.1.215",
   "private": true,
   "type": "module",
   "description": "isiHunt - ein farbenfroher 2D-Arcade-Collector fuer mobile Browser",
@@ -20,6 +20,7 @@
     "playtest": "node scripts/playtest.mjs",
     "ios:check": "node scripts/check-ios-support.mjs",
     "test:scope": "node scripts/test-scope.mjs",
+    "balance:sync": "node scripts/sync-balance-sql.mjs",
     "icons": "node scripts/generate-icons.mjs",
     "format": "prettier --write \"src/**/*.ts\" \"scripts/**/*.mjs\" \"*.{json,md}\"",
     "format:check": "prettier --check \"src/**/*.ts\" \"scripts/**/*.mjs\" \"*.{json,md}\""

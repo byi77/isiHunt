@@ -13,7 +13,15 @@
 import Phaser from 'phaser';
 
 import { CHALLENGE_DURATION_MS } from '@/config/challenge';
-import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import {
+  DAILY_COMPLETION_BONUS_COINS,
+  DAILY_COMPLETION_BONUS_XP,
+  DAILY_SCORE_BONUS_COINS,
+  DAILY_SCORE_BONUS_MAX_TIERS,
+  DAILY_SCORE_BONUS_XP,
+  GAME_HEIGHT,
+  GAME_WIDTH,
+} from '@/config/GameConfig';
 import { getWorld } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
@@ -124,7 +132,7 @@ export class ChallengeScene extends Phaser.Scene {
             `Du spielst ${seconds} Sekunden.`,
             'Der Seed ist heute für alle gleich.',
             'Keine Talente - gleiche Voraussetzungen.',
-            'Einmal täglich: bis zu 150 Bonus-Coins und 1.500 XP.',
+            `Einmal täglich: bis zu ${DAILY_COMPLETION_BONUS_COINS + DAILY_SCORE_BONUS_MAX_TIERS * DAILY_SCORE_BONUS_COINS} Bonus-Coins und ${DAILY_COMPLETION_BONUS_XP + DAILY_SCORE_BONUS_MAX_TIERS * DAILY_SCORE_BONUS_XP} XP.`,
             'Der Lauf zählt zusätzlich als normaler Fortschritt.',
           ]
         : kind === 'bot'

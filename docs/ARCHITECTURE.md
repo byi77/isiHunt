@@ -60,10 +60,13 @@ isiHunt/
 │   ├── check-deploy.mjs        Liegt der lokale Stand wirklich live? (deploy:check)
 │   ├── smoke-test.mjs          Playwright gegen den Dev-Server (npm run smoke)
 │   ├── playtest.mjs            Sieben Test-Suiten im Browser (npm run playtest)
-│   └── check-ios-support.mjs   iOS-Mindestversion aus dem Build (npm run ios:check)
+│   ├── check-ios-support.mjs   iOS-Mindestversion aus dem Build (npm run ios:check)
+│   └── sync-balance-sql.mjs    JSON-Balance in die Supabase-Migration spiegeln
 ├── src/
 │   ├── config/                 Reine Daten, keine Logik
-│   │   ├── GameConfig.ts       Alle Balancing-Zahlen
+│   │   ├── balance-data.json   Eine Quelle fuer Punkte, XP, Coins und Kosten
+│   │   ├── balance.ts          Ableitungen und Balance-Snapshot
+│   │   ├── GameConfig.ts       Kompatibilitaets-Fassade fuer alte Imports
 │   │   ├── rarities.ts         Seltenheitsstufen
 │   │   ├── worlds.ts           Welten
 │   │   ├── talents.ts          Talente + Stat-Aufloesung

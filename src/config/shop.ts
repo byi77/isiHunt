@@ -1,3 +1,5 @@
+import { balancedCoinCost } from './balance';
+
 /**
  * Der Laden: kaufbare Schiffsformen und Farben.
  *
@@ -49,7 +51,7 @@ export type ShipShapeId = string;
  * bringt rund 50 Muenzen, ein Levelaufstieg 20 dazu. Die teuerste Form
  * entspricht damit etwa 60 Runden - ein Fernziel, aber kein Grind ohne Ende.
  */
-export const SHIP_SHAPES: readonly ShipShapeDef[] = [
+const SHIP_SHAPES_REFERENCE: readonly ShipShapeDef[] = [
   // --- Raumjaeger ---
   {
     id: 'arrow',
@@ -749,6 +751,11 @@ export const SHIP_SHAPES: readonly ShipShapeDef[] = [
   { id: 'eye', name: 'Auge', description: 'Mandelform mit Pupille.', cost: 1_600, skinIndex: 97 },
 ];
 
+export const SHIP_SHAPES: readonly ShipShapeDef[] = SHIP_SHAPES_REFERENCE.map((shape) => ({
+  ...shape,
+  cost: balancedCoinCost(shape.cost),
+}));
+
 /** Eine kaufbare Farbe fuer Schiff, Aura und Halo. */
 export interface ShipColorDef {
   readonly id: ShipColorId;
@@ -768,7 +775,7 @@ export type ShipColorId = string;
  * gezeichnet und zur Laufzeit getintet werden (siehe CLAUDE.md, "Texturen
  * sind weiss"). Eine Farbe kostet damit keinen Speicher und keine Ladezeit.
  */
-export const SHIP_COLORS: readonly ShipColorDef[] = [
+const SHIP_COLORS_REFERENCE: readonly ShipColorDef[] = [
   { id: 'world', name: 'Weltfarbe', cost: 0, color: null },
 
   // Warme Toene
@@ -812,6 +819,11 @@ export const SHIP_COLORS: readonly ShipColorDef[] = [
   { id: 'ruby', name: 'Rubin', cost: 700, color: 0xff2f5e },
   { id: 'platinum', name: 'Platin', cost: 900, color: 0xe6f0ff },
 ];
+
+export const SHIP_COLORS: readonly ShipColorDef[] = SHIP_COLORS_REFERENCE.map((color) => ({
+  ...color,
+  cost: balancedCoinCost(color.cost),
+}));
 
 export const DEFAULT_SHIP_SHAPE: ShipShapeId = 'arrow';
 export const DEFAULT_SHIP_COLOR: ShipColorId = 'world';

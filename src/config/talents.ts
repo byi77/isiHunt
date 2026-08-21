@@ -10,6 +10,11 @@ import {
   PLAYER_BASE_SPEED,
   RUN_DURATION_MS,
 } from './GameConfig';
+import {
+  BALANCE,
+  TALENT_COSTS as BALANCED_TALENT_COSTS,
+  talentCost as balanceTalentCost,
+} from './balance';
 
 export type TalentId =
   'reach' | 'swiftness' | 'magnetism' | 'endurance' | 'focus' | 'insight' | 'fortune';
@@ -79,10 +84,10 @@ export type TalentRanks = Partial<Record<TalentId, number>>;
 
 /** Kosten des nächsten Rangs: steigend, damit der Talentbaum langfristig bleibt. */
 /** Ein brauchbarer Rang soll etwa vier bis sechs normale Runs erfordern. */
-export const TALENT_COSTS = [250, 350, 500, 650, 850] as const;
+export const TALENT_COSTS = BALANCED_TALENT_COSTS;
 
 export function talentCost(currentRank: number): number {
-  return TALENT_COSTS[Math.min(Math.max(0, currentRank), TALENT_COSTS.length - 1)]!;
+  return balanceTalentCost(currentRank);
 }
 
 /**
@@ -113,7 +118,7 @@ export function resolveStats(ranks: TalentRanks): PlayerStats {
     magnetRadius: rank(ranks, 'magnetism') * 35,
     runDurationMs: RUN_DURATION_MS + rank(ranks, 'endurance') * 3000,
     comboGraceMs: COMBO_GRACE_MS + rank(ranks, 'focus') * 150,
-    xpMultiplier: 1 + rank(ranks, 'insight') * 0.05,
-    scoreMultiplier: 1 + rank(ranks, 'fortune') * 0.05,
+    xpMultiplier: 1 + rank(ranks, 'insight') * BALANCE.talents.insightXpPerRank,
+    scoreMultiplier: 1 + rank(ranks, 'fortune') * BALANCE.talents.fortuneScorePerRank,
   };
 }

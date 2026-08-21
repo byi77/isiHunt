@@ -25,6 +25,7 @@ import {
   WORLD_INERTIA_FACTOR,
   WORLD_PENALTY_MS,
 } from '@/config/GameConfig';
+import { XP_GLOBAL_MULTIPLIER } from '@/config/balance';
 import type { RarityDef } from '@/config/rarities';
 import { resolveStats } from '@/config/talents';
 import type { PlayerStats } from '@/config/talents';
@@ -152,7 +153,7 @@ export class GameScene extends Phaser.Scene {
     this.scoring = new ScoreSystem(
       this.stats.comboGraceMs,
       this.stats.scoreMultiplier * this.world.scoreMultiplier,
-      this.stats.xpMultiplier * this.world.xpMultiplier,
+      this.stats.xpMultiplier * this.world.xpMultiplier * XP_GLOBAL_MULTIPLIER,
     );
 
     // Nur im Duell wird geseedet - beide Spieler bekommen dieselbe Abfolge.

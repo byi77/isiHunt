@@ -5,6 +5,8 @@
  * Balancing dreht, steht hier oder in einer der anderen config/-Dateien.
  */
 
+import * as Balance from './balance';
+
 /** Feste Breite fuer die interne Hochformat-Aufloesung. */
 export const GAME_WIDTH = 720;
 
@@ -148,6 +150,11 @@ export const WORLD_SHORT_LIFETIME_SCALE = 0.85;
 export const WORLD_RARE_LIFETIME_SCALE = 0.75;
 export const WORLD_RARE_PROMOTION_CHANCE = 0.18;
 
+export const RARE_CATCHES_PER_BONUS_COIN = Balance.RARE_CATCHES_PER_BONUS_COIN;
+export const EPIC_CATCHES_PER_BONUS_STEP = Balance.EPIC_CATCHES_PER_BONUS_STEP;
+export const EPIC_BONUS_COINS_PER_STEP = Balance.EPIC_BONUS_COINS_PER_STEP;
+export const LEGENDARY_BONUS_COINS = Balance.LEGENDARY_BONUS_COINS;
+
 /** +-Streuung auf das Spawn-Intervall, damit der Takt nicht metronomisch wirkt. */
 export const SPAWN_INTERVAL_JITTER_MIN = 0.8;
 export const SPAWN_INTERVAL_JITTER_MAX = 1.2;
@@ -157,15 +164,6 @@ export const WORLD_OBSTACLE_MAX_CHANCE = 0.24;
 export const WORLD_LIFETIME_SCALE_FLOOR = 0.55;
 /** Wie stark jeder Schwierigkeitsschritt ueber 1 die Lebensdauer kuerzt. */
 export const WORLD_LIFETIME_SCALE_PER_DIFFICULTY = 0.35;
-
-/** Seltene Faenge je Run, die einen zusaetzlichen Coin wert sind. */
-export const RARE_CATCHES_PER_BONUS_COIN = 5;
-/** Epische Faenge je Run, die den zusaetzlichen Coin-Bonus ausloesen. */
-export const EPIC_CATCHES_PER_BONUS_STEP = 2;
-/** Coins je ausgeloestem Epic-Bonusschritt. */
-export const EPIC_BONUS_COINS_PER_STEP = 2;
-/** Coins je legendaerem Fang. */
-export const LEGENDARY_BONUS_COINS = 3;
 
 // --- Combo ------------------------------------------------------------------
 
@@ -193,6 +191,9 @@ export const LEGENDARY_BONUS_COINS = 3;
  */
 export const COMBO_GRACE_MS = 900;
 
+export const SERIES_RAISING_MIN_RARITY_INDEX = Balance.SERIES_RAISING_MIN_RARITY_INDEX;
+export const COMBO_TIERS = Balance.COMBO_TIERS;
+
 /**
  * Ab welcher Seltenheit ein Fang die Serie **steigert**.
  *
@@ -204,7 +205,6 @@ export const COMBO_GRACE_MS = 900;
  *
  * Der Wert ist ein Index in `RARITY_IDS` (0 = schlicht ... 5 = legendaer).
  */
-export const SERIES_RAISING_MIN_RARITY_INDEX = 2;
 
 /**
  * Ab welcher Serie welcher Punktemultiplikator gilt.
@@ -226,15 +226,6 @@ export const SERIES_RAISING_MIN_RARITY_INDEX = 2;
  * der Zahl der Faenge, damit Fortschritt und Bestenliste nicht dieselbe
  * Schwankung teilen.
  */
-export const COMBO_TIERS: readonly { readonly minCombo: number; readonly multiplier: number }[] = [
-  { minCombo: 0, multiplier: 1 },
-  { minCombo: 2, multiplier: 1.15 },
-  { minCombo: 4, multiplier: 1.35 },
-  { minCombo: 7, multiplier: 1.6 },
-  { minCombo: 11, multiplier: 1.9 },
-  { minCombo: 16, multiplier: 2.3 },
-];
-
 /**
  * Die Schleife, die der Spieler ab einer laufenden Serie hinter sich herzieht.
  *
@@ -354,7 +345,7 @@ export const SERIES_TRAIL_BASE_ALPHA = 0.5;
 // --- Progression ------------------------------------------------------------
 
 /** Hoechste erreichbare Charakterstufe. */
-export const MAX_LEVEL = 100;
+export const MAX_LEVEL = Balance.MAX_LEVEL;
 
 /**
  * Wie viel XP ein durchschnittlicher Run einbringt.
@@ -369,7 +360,7 @@ export const MAX_LEVEL = 100;
  * Fangaufkommen spuerbar, gehoert dieser Wert nachgemessen - dann stimmt die
  * ganze Kurve wieder.
  */
-export const XP_PER_RUN_REFERENCE = 2146;
+export const XP_PER_RUN_REFERENCE = Balance.XP_PER_RUN_REFERENCE;
 
 /**
  * Wie viele Runs ein Levelaufstieg kosten soll.
@@ -383,42 +374,25 @@ export const XP_PER_RUN_REFERENCE = 2146;
  * Level 1 und 4,6 auf Level 99 - der Anfang war zu schnell (mehrere Aufstiege
  * pro Run), das Ende zu zaeh.
  */
-const RUNS_PER_LEVEL_START = 0.5;
-const RUNS_PER_LEVEL_SETTLED = 2.2;
-const RUNS_PER_LEVEL_MAX = 3;
 /** Ab dieser Stufe ist die Anlaufphase vorbei. */
-const RUNS_PER_LEVEL_RAMP_END = 10;
 
 /** XP fuer den Aufstieg von `level` auf `level + 1`; auf Maximalstufe 0. */
-export const xpForLevel = (level: number): number => {
-  if (level >= MAX_LEVEL) return 0;
-
-  const runs =
-    level <= RUNS_PER_LEVEL_RAMP_END
-      ? RUNS_PER_LEVEL_START +
-        ((RUNS_PER_LEVEL_SETTLED - RUNS_PER_LEVEL_START) * (level - 1)) /
-          (RUNS_PER_LEVEL_RAMP_END - 1)
-      : RUNS_PER_LEVEL_SETTLED +
-        ((RUNS_PER_LEVEL_MAX - RUNS_PER_LEVEL_SETTLED) * (level - RUNS_PER_LEVEL_RAMP_END)) /
-          (MAX_LEVEL - 1 - RUNS_PER_LEVEL_RAMP_END);
-
-  return Math.round(runs * XP_PER_RUN_REFERENCE);
-};
+export const xpForLevel = Balance.xpForLevel;
 
 /** Veralteter Speicherwert; neue Talentkäufe laufen vollständig über Coins. */
-export const TALENT_POINTS_PER_LEVEL = 1;
+export const TALENT_POINTS_PER_LEVEL = Balance.TALENT_POINTS_PER_LEVEL;
 /** Veraltete Umrechnung fuer Spielstände aus der Talentpunkt-Phase. */
-export const COINS_PER_EXTRA_TALENT_POINT = 10;
+export const COINS_PER_EXTRA_TALENT_POINT = Balance.COINS_PER_EXTRA_TALENT_POINT;
 /** Grundbelohnung fuer jede abgeschlossene Solo-Runde. */
-export const COINS_PER_RUN = 20;
+export const COINS_PER_RUN = Balance.COINS_PER_RUN;
 /** Alle 25 Relikte gibt es einen kleinen Fangbonus. */
-export const COINS_PER_COLLECTION_STEP = 3;
-export const COLLECTION_STEP_SIZE = 25;
-export const MAX_COLLECTION_BONUS_COINS = 18;
+export const COINS_PER_COLLECTION_STEP = Balance.COINS_PER_COLLECTION_STEP;
+export const COLLECTION_STEP_SIZE = Balance.COLLECTION_STEP_SIZE;
+export const MAX_COLLECTION_BONUS_COINS = Balance.MAX_COLLECTION_BONUS_COINS;
 /** Einmalige Belohnung je neu freigeschaltetem Achievement. */
-export const COINS_PER_ACHIEVEMENT = 20;
+export const COINS_PER_ACHIEVEMENT = Balance.COINS_PER_ACHIEVEMENT;
 /** Coins pro Levelaufstieg als dauerhafte Spielbelohnung. */
-export const COINS_PER_LEVEL = 20;
+export const COINS_PER_LEVEL = Balance.COINS_PER_LEVEL;
 /**
  * Kosten eines Talent-Resets.
  *
@@ -428,17 +402,17 @@ export const COINS_PER_LEVEL = 20;
  * ohnehin fast kostenlos - die Untergrenze zaehlt fuer Einsteiger.
  * S. docs/BALANCE_2026-08-17.md Abschnitt 3.
  */
-export const TALENT_RESET_COST = 100;
+export const TALENT_RESET_COST = Balance.TALENT_RESET_COST;
 /** Einmalige Begruessung pro Kalendertag fuer einen echten Profil-Login. */
-export const DAILY_LOGIN_BONUS_COINS = 25;
+export const DAILY_LOGIN_BONUS_COINS = Balance.DAILY_LOGIN_BONUS_COINS;
 /** Fester Bonus für den ersten abgeschlossenen Tageslauf des Tages. */
-export const DAILY_COMPLETION_BONUS_COINS = 90;
-export const DAILY_COMPLETION_BONUS_XP = 750;
+export const DAILY_COMPLETION_BONUS_COINS = Balance.DAILY_COMPLETION_BONUS_COINS;
+export const DAILY_COMPLETION_BONUS_XP = Balance.DAILY_COMPLETION_BONUS_XP;
 /** Drei Leistungsstufen machen den Tageslauf wertvoll, aber endlich. */
-export const DAILY_SCORE_BONUS_STEP = 1_500;
-export const DAILY_SCORE_BONUS_COINS = 20;
-export const DAILY_SCORE_BONUS_XP = 250;
-export const DAILY_SCORE_BONUS_MAX_TIERS = 3;
+export const DAILY_SCORE_BONUS_STEP = Balance.DAILY_SCORE_BONUS_STEP;
+export const DAILY_SCORE_BONUS_COINS = Balance.DAILY_SCORE_BONUS_COINS;
+export const DAILY_SCORE_BONUS_XP = Balance.DAILY_SCORE_BONUS_XP;
+export const DAILY_SCORE_BONUS_MAX_TIERS = Balance.DAILY_SCORE_BONUS_MAX_TIERS;
 
 // --- Persistenz -------------------------------------------------------------
 
