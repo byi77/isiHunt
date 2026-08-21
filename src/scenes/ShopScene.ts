@@ -36,6 +36,12 @@ import {
 } from '@/config/shop';
 import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
+import {
+  cosmeticCategoryLabel,
+  cosmeticStatusText,
+  getCosmeticCollectionSummary,
+  getShopCollectionSummaryText,
+} from '@/systems/CosmeticCollectionSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
@@ -180,6 +186,9 @@ export class ShopScene extends Phaser.Scene {
       for (const objekt of this.inhalt) {
         if (objekt.input) this.input.disable(objekt);
       }
+      // Neu-Markierungen gelten fuer einen Besuch, der aktuelle Kauf bleibt
+      // separat als "zuletzt gekauft" sichtbar.
+      SaveSystem.markCosmeticsSeen(this.tab);
     });
   }
 
@@ -204,7 +213,7 @@ export class ShopScene extends Phaser.Scene {
       .rectangle(GAME_WIDTH / 2, KOPF_HOEHE / 2, GAME_WIDTH, KOPF_HOEHE, Palette.backdrop, 1)
       .setDepth(KOPF_DEPTH - 1);
 
-    createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 100, 190, weltAkzent, {
+    createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 100, 230, weltAkzent, {
       alpha: 0.5,
     }).setDepth(KOPF_DEPTH);
 
@@ -231,6 +240,16 @@ export class ShopScene extends Phaser.Scene {
         `${save.coins.toLocaleString('de-DE')} MÜNZEN`,
         textStyle(FontSize.tiny, Palette.gold, { fontStyle: 'bold' }),
       )
+      .setOrigin(0.5)
+      .setDepth(KOPF_DEPTH);
+
+    const summary = getShopCollectionSummaryText(save);
+    this.add
+      .text(GAME_WIDTH / 2, y + 91, summary.counts, textStyle(FontSize.tiny, Palette.inkDim))
+      .setOrigin(0.5)
+      .setDepth(KOPF_DEPTH);
+    this.add
+      .text(GAME_WIDTH / 2, y + 110, summary.activity, textStyle(FontSize.tiny, Palette.gold))
       .setOrigin(0.5)
       .setDepth(KOPF_DEPTH);
 
@@ -326,11 +345,13 @@ export class ShopScene extends Phaser.Scene {
   private buildReiter(): void {
     const y = 385;
     const luecke = 12;
-    const reiter: readonly { readonly id: ShopTab; readonly label: string }[] = [
-      { id: 'shapes', label: 'FORMEN' },
-      { id: 'colors', label: 'FARBEN' },
-      { id: 'auras', label: 'AUREN' },
-    ];
+    const save = SaveSystem.load();
+    const reiter: readonly { readonly id: ShopTab; readonly label: string }[] = (
+      ['shapes', 'colors', 'auras'] as const
+    ).map((id) => {
+      const summary = getCosmeticCollectionSummary(save, id);
+      return { id, label: `${cosmeticCategoryLabel(id)} ${summary.owned}/${summary.total}` };
+    });
     // Breite aus der Anzahl rechnen statt fest: Mit dem dritten Reiter passen
     // die frueheren 200 px nicht mehr nebeneinander, und ein Knopf, der ueber
     // den Rand haengt, ist genau das, was die `controls`-Suite meldet.
@@ -452,6 +473,7 @@ export class ShopScene extends Phaser.Scene {
       getragen,
       akzent: weltAkzent,
       titel: shape.name,
+      status: cosmeticStatusText(save, 'shapes', shape.id, getragen),
       untertitel: shape.description,
       knopf: this.knopfText(besitzt, getragen, shape.cost),
       knopfAktiv: !getragen && (besitzt || save.coins >= shape.cost),
@@ -496,7 +518,8 @@ export class ShopScene extends Phaser.Scene {
       getragen,
       akzent: weltAkzent,
       titel: color.name,
-      untertitel: color.color === null ? 'Passt sich der Welt an.' : '',
+      status: cosmeticStatusText(save, 'colors', color.id, getragen),
+      untertitel: color.color === null ? 'Passt sich der Welt an.' : 'Feste Schiffsfarbe.',
       knopf: this.knopfText(besitzt, getragen, color.cost),
       knopfAktiv: !getragen && (besitzt || save.coins >= color.cost),
       onClick: () => {
@@ -551,6 +574,7 @@ export class ShopScene extends Phaser.Scene {
       getragen,
       akzent: weltAkzent,
       titel: aura.name,
+      status: cosmeticStatusText(save, 'auras', aura.id, getragen),
       untertitel: aura.description,
       knopf: stufeReicht ? this.knopfText(besitzt, getragen, aura.cost) : `STUFE ${aura.minLevel}`,
       knopfAktiv: stufeReicht && !getragen && (besitzt || save.coins >= aura.cost),
@@ -606,6 +630,7 @@ export class ShopScene extends Phaser.Scene {
     getragen: boolean;
     akzent: number;
     titel: string;
+    status: string;
     untertitel: string;
     knopf: string;
     knopfAktiv: boolean;
@@ -618,6 +643,7 @@ export class ShopScene extends Phaser.Scene {
       getragen,
       akzent,
       titel,
+      status,
       untertitel,
       knopf,
       knopfAktiv,
@@ -655,6 +681,19 @@ export class ShopScene extends Phaser.Scene {
     // Textbreite bis vor den Knopf begrenzen. Ohne das lief die Beschreibung
     // unter die Taste und war dort nicht mehr lesbar.
     const textBreite = GAME_WIDTH - 130 - KNOPF_BREITE / 2 - 180 - 16;
+
+    this.inhalt.push(
+      this.add
+        .text(
+          180,
+          y - 35,
+          status,
+          textStyle(FontSize.tiny, getragen ? Palette.gold : Palette.inkDim, {
+            fontStyle: 'bold',
+          }),
+        )
+        .setOrigin(0, 0.5) as ScrollElement,
+    );
 
     this.inhalt.push(
       this.add

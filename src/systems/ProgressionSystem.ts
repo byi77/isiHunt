@@ -248,7 +248,7 @@ export function purchaseShipShape(shapeId: string): SaveData | null {
   if (!shape) return null;
 
   let gekauft = false;
-  const result = SaveSystem.update((data) => {
+  SaveSystem.update((data) => {
     if (data.ownedShipShapes.includes(shape.id)) return;
     if (data.coins < shape.cost) return;
     data.coins -= shape.cost;
@@ -258,7 +258,7 @@ export function purchaseShipShape(shapeId: string): SaveData | null {
     data.shipShape = shape.id;
     gekauft = true;
   });
-  return gekauft ? result : null;
+  return gekauft ? SaveSystem.recordCosmeticPurchase('shapes', shape.id) : null;
 }
 
 /** Kauft eine Farbe. Gleiche Regeln wie bei den Formen. */
@@ -267,7 +267,7 @@ export function purchaseShipColor(colorId: string): SaveData | null {
   if (!color) return null;
 
   let gekauft = false;
-  const result = SaveSystem.update((data) => {
+  SaveSystem.update((data) => {
     if (data.ownedShipColors.includes(color.id)) return;
     if (data.coins < color.cost) return;
     data.coins -= color.cost;
@@ -276,7 +276,7 @@ export function purchaseShipColor(colorId: string): SaveData | null {
     data.shipColor = color.id;
     gekauft = true;
   });
-  return gekauft ? result : null;
+  return gekauft ? SaveSystem.recordCosmeticPurchase('colors', color.id) : null;
 }
 
 /**
@@ -293,7 +293,7 @@ export function purchaseShipAura(auraId: string): SaveData | null {
   if (!aura) return null;
 
   let gekauft = false;
-  const result = SaveSystem.update((data) => {
+  SaveSystem.update((data) => {
     if (data.ownedShipAuras.includes(aura.id)) return;
     if (!auraLevelReached(aura, data.level)) return;
     if (data.coins < aura.cost) return;
@@ -303,7 +303,7 @@ export function purchaseShipAura(auraId: string): SaveData | null {
     data.shipAura = aura.id;
     gekauft = true;
   });
-  return gekauft ? result : null;
+  return gekauft ? SaveSystem.recordCosmeticPurchase('auras', aura.id) : null;
 }
 
 /**

@@ -6,6 +6,11 @@ import { ACHIEVEMENTS } from '@/config/achievements';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
+import {
+  achievementCategoryLabel,
+  getNextAchievement,
+  getAchievementProgress,
+} from '@/systems/AchievementProgressSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
@@ -59,6 +64,7 @@ export class AchievementsScene extends Phaser.Scene {
     const pageCount = Math.ceil(ACHIEVEMENTS.length / pageSize);
     const page = Math.min(pageCount - 1, Math.max(0, data.page ?? 0));
     const pageAchievements = ACHIEVEMENTS.slice(page * pageSize, (page + 1) * pageSize);
+    const nextAchievement = getNextAchievement(ACHIEVEMENTS, save);
     const columnX = [190, 530] as const;
     const rowTop = sections.next(112);
     const rowStep = 145;
@@ -70,7 +76,8 @@ export class AchievementsScene extends Phaser.Scene {
       const x = columnX[column];
       const y = rowTop + row * rowStep;
 
-      createPanel(this, x, y, 316, 112, accent, {
+      const progress = getAchievementProgress(achievement, save);
+      createPanel(this, x, y, 316, 124, accent, {
         alpha: isUnlocked ? 0.58 : 0.38,
         radius: 14,
       });
@@ -88,6 +95,26 @@ export class AchievementsScene extends Phaser.Scene {
           y - 35,
           `RANG ${achievement.rank} · +${achievement.coinReward}`,
           textStyle(FontSize.small, isUnlocked ? Palette.gold : Palette.inkDim, {
+            fontStyle: 'bold',
+          }),
+        )
+        .setOrigin(0, 0.5);
+      if (nextAchievement?.id === achievement.id) {
+        this.add
+          .text(
+            x + 8,
+            y - 13,
+            'NÄCHSTES ZIEL',
+            textStyle(FontSize.tiny, Palette.gold, { fontStyle: 'bold' }),
+          )
+          .setOrigin(0, 0.5);
+      }
+      this.add
+        .text(
+          x + 8,
+          y - 35,
+          achievementCategoryLabel(progress.category),
+          textStyle(FontSize.tiny, isUnlocked ? Palette.gold : Palette.inkDim, {
             fontStyle: 'bold',
           }),
         )
@@ -122,6 +149,17 @@ export class AchievementsScene extends Phaser.Scene {
         .setOrigin(0, 0)
         .setWordWrapWidth(230)
         .setLineSpacing(2);
+      this.add
+        .text(
+          x - 102,
+          y + 48,
+          progress.trackable ? `FORTSCHRITT  ${progress.label}` : progress.label,
+          textStyle(FontSize.tiny, isUnlocked ? Palette.gold : Palette.inkDim, {
+            fontStyle: 'bold',
+          }),
+        )
+        .setOrigin(0, 0.5)
+        .setWordWrapWidth(230);
     });
 
     this.add

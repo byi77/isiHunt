@@ -60,6 +60,13 @@ export interface SaveData {
   shipColor: string;
   /** Aktuell getragene Aura - die Bewegung der Figur. */
   shipAura: string;
+  /** Kosmetik, die seit dem letzten Besuch im jeweiligen Shop-Reiter neu ist. */
+  newCosmeticIds?: string[];
+  /** Letzter Kauf fuer die sichtbare Rueckmeldung im Laden. */
+  lastPurchasedCosmetic?: {
+    category: 'shapes' | 'colors' | 'auras';
+    id: string;
+  } | null;
   /** Audio-Feedback in den Einstellungen ein- oder ausgeschaltet. */
   soundEnabled: boolean;
   /** Haptisches Feedback ist separat vom Ton schaltbar. */

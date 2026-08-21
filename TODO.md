@@ -550,7 +550,7 @@ verwenden weiterhin denselben `SaveData`-/`ProgressionSystem`-Stand.
 
 ## P2-05 — Erfolge mit Fortschritt und Kategorien versehen
 
-- [ ] **Gesperrte Erfolge zeigen ihren konkreten Fortschritt.**
+- [x] **Gesperrte Erfolge zeigen ihren konkreten Fortschritt.**
 
 Beispiele: `37 / 50 Relikte`, `Combo 18 / 25`, `noch 2 Tagesläufe`. Die
 Berechnung kommt aus der Achievement-Definition bzw. einem zentralen
@@ -564,9 +564,17 @@ Grundanzeige verständlich bleibt.
 Belohnungen werden im Ergebnis kompakt gruppiert und sind im Erfolge-Screen
 vollständig nachlesbar.
 
+**Umsetzung (2026-08-21):** `AchievementProgressSystem` ist die einzige
+Berechnungsstelle für Kategorien, aktuelle Werte, Zielwerte und Einheiten.
+Die Erfolge-Seite zeigt pro Karte Kategorie, Fortschritt und das zentral
+ermittelte „NÄCHSTES ZIEL“. Historische IDs werden fachlich korrigiert (z. B.
+`combo_125`/`combo_150` sind Tagesläufe, Score-Ziele werden aus den echten
+Definitionen gelesen). Run-only-Ziele wie „3 legendäre in einem Run“ werden
+als Run-Ziel markiert, statt einen irreführenden Gesamtwert zu behaupten.
+
 ## P2-06 — Sammlung und Shop für 100 Formen bedienbar machen
 
-- [ ] **Sammlungsfortschritt und neue Inhalte sichtbar machen.**
+- [x] **Sammlungsfortschritt und neue Inhalte sichtbar machen.**
 
 Mindestens „X von Y Formen“, „X von Y Farben“, Besitzstatus, neu seit dem
 letzten Besuch und zuletzt gekauft. Filter, Favoriten und Loadouts kommen erst,
@@ -576,9 +584,17 @@ wenn der echte Gerätestest zeigt, dass die Liste allein unbedienbar wird.
 eine Anprobe von Kauf und Ausrüsten unterscheiden. Die 100 Formen werden im
 laufenden Spiel getestet, nicht nur im Raster-Renderer.
 
+**Umsetzung (2026-08-21):** `CosmeticCollectionSystem` liefert getrennte
+Zähler für Formen, Farben und Auren, Besitzstatus pro Karte sowie die
+Zusammenfassung „X/Y“. `SaveData.newCosmeticIds` markiert Inhalte bis zum
+Besuch des jeweiligen Reiters als neu; `lastPurchasedCosmetic` zeigt den
+letzten Kauf unabhängig davon weiter an. Die Shop-Karte trennt Anprobe
+(Kartenfläche) von Kauf/Ausrüsten (Button), und die drei Reiter zeigen ihre
+Besitzquote direkt im Tab.
+
 ## P2-07 — Weitere Kosmetik sauber abgrenzen
 
-- [ ] **Schleifenfarben und Profil-Icons als eigene Besitztypen planen.**
+- [x] **Schleifenfarben und Profil-Icons als eigene Besitztypen planen.**
 
 Schleifenfarben brauchen ein drittes Besitzfeld neben Formen und Rumpffarben.
 Profil-Icons brauchen Regeln für Besitz, Vorschau, Ausrüstung und
@@ -587,6 +603,18 @@ werden.
 
 **Abnahme:** Datenmodell, Preisquelle, Anprobe, Kauf, Reset-Verhalten und
 Migration sind definiert, bevor UI-Code entsteht.
+
+**Umsetzung (2026-08-21):** Die vorhandenen Kosmetiktypen sind ausdrücklich
+getrennt: `ownedShipShapes`, `ownedShipColors` und `ownedShipAuras` bleiben
+eigene Besitzlisten; ebenso bleiben `shipShape`, `shipColor` und `shipAura`
+separate Ausrüstungsfelder. Die Preisquelle bleibt ausschließlich
+`src/config/shop.ts` mit `balancedCoinCost`; Vorschau, Kaufprüfung und
+Ausrüsten laufen über ihre jeweiligen `ProgressionSystem`-Funktionen. Ein
+vollständiger Reset bzw. Profil-Reset setzt alle drei Listen auf die jeweiligen
+Gratis-Defaults zurück. Alte Spielstände erhalten die neuen optionalen
+Hinweisfelder über `SaveSystem.reconcile`, ohne eine neue harte Save-Version
+zu erzwingen. Profil-/Cloud-Pulls bewahren die lokalen Kaufhinweise; die
+eigentliche geräteübergreifende Kosmetik-Synchronisierung bleibt bewusst P2-08.
 
 ## P2-08 — Kosmetik über Geräte synchronisieren
 

@@ -68,6 +68,8 @@ export function createDefaultSave(): SaveData {
     shipShape: DEFAULT_SHIP_SHAPE,
     shipColor: DEFAULT_SHIP_COLOR,
     shipAura: DEFAULT_SHIP_AURA,
+    newCosmeticIds: [],
+    lastPurchasedCosmetic: null,
     soundEnabled: true,
     hapticsEnabled: true,
     playerName: '',
@@ -131,6 +133,22 @@ function nullableStringOr(value: unknown, fallback: string | null): string | nul
 function stringArray(value: unknown, fallback: string[]): string[] {
   if (!Array.isArray(value)) return [...fallback];
   return [...new Set(value.filter((entry): entry is string => typeof entry === 'string'))];
+}
+
+const COSMETIC_CATEGORIES = ['shapes', 'colors', 'auras'] as const;
+
+function cosmeticPurchaseOr(
+  value: unknown,
+  fallback: SaveData['lastPurchasedCosmetic'],
+): SaveData['lastPurchasedCosmetic'] {
+  const entry = asRecord(value);
+  return COSMETIC_CATEGORIES.includes(entry.category as (typeof COSMETIC_CATEGORIES)[number]) &&
+    typeof entry.id === 'string'
+    ? {
+        category: entry.category as (typeof COSMETIC_CATEGORIES)[number],
+        id: entry.id,
+      }
+    : (fallback ?? null);
 }
 
 /**
@@ -204,6 +222,11 @@ function reconcile(raw: Partial<SaveData>): SaveData {
     shipShape: ownedShipShapes.includes(selectedShape) ? selectedShape : DEFAULT_SHIP_SHAPE,
     shipColor: ownedShipColors.includes(selectedColor) ? selectedColor : DEFAULT_SHIP_COLOR,
     shipAura: ownedShipAuras.includes(selectedAura) ? selectedAura : DEFAULT_SHIP_AURA,
+    newCosmeticIds: stringArray(source.newCosmeticIds, base.newCosmeticIds ?? []),
+    lastPurchasedCosmetic: cosmeticPurchaseOr(
+      source.lastPurchasedCosmetic,
+      base.lastPurchasedCosmetic,
+    ),
     soundEnabled:
       typeof source.soundEnabled === 'boolean' ? source.soundEnabled : base.soundEnabled,
     hapticsEnabled:
@@ -391,6 +414,26 @@ export function update(mutator: (data: SaveData) => void): SaveData {
   return data;
 }
 
+/** Merkt einen Kauf fuer die Shop-Uebersicht als neu und zuletzt gekauft. */
+export function recordCosmeticPurchase(
+  category: 'shapes' | 'colors' | 'auras',
+  id: string,
+): SaveData {
+  return update((data) => {
+    const key = `${category}:${id}`;
+    data.newCosmeticIds = [...new Set([...(data.newCosmeticIds ?? []), key])];
+    data.lastPurchasedCosmetic = { category, id };
+  });
+}
+
+/** Entfernt die Neu-Markierung des besuchten Shop-Reiters. */
+export function markCosmeticsSeen(category: 'shapes' | 'colors' | 'auras'): SaveData {
+  const prefix = `${category}:`;
+  return update((data) => {
+    data.newCosmeticIds = (data.newCosmeticIds ?? []).filter((key) => !key.startsWith(prefix));
+  });
+}
+
 /** Setzt den Spielstand zurueck (Debug-Taste / spaeter Einstellungsmenue). */
 export function reset(): SaveData {
   const fresh = createDefaultSave();
@@ -555,6 +598,8 @@ function vereinigeShopBesitz(lokal: SaveData, uebernommen: SaveData): SaveData {
       shipShape: DEFAULT_SHIP_SHAPE,
       shipColor: DEFAULT_SHIP_COLOR,
       shipAura: DEFAULT_SHIP_AURA,
+      newCosmeticIds: [],
+      lastPurchasedCosmetic: null,
     };
   }
 
@@ -566,6 +611,12 @@ function vereinigeShopBesitz(lokal: SaveData, uebernommen: SaveData): SaveData {
     ownedShipShapes: [...new Set([...lokal.ownedShipShapes, ...uebernommen.ownedShipShapes])],
     ownedShipColors: [...new Set([...lokal.ownedShipColors, ...uebernommen.ownedShipColors])],
     ownedShipAuras: [...new Set([...lokal.ownedShipAuras, ...uebernommen.ownedShipAuras])],
+    // Kaufhinweise bleiben lokal erhalten; die eigentliche Cloud-Synchronisation
+    // dieser Metadaten ist bewusst Teil von P2-08, nicht dieses UI-Schritts.
+    newCosmeticIds: [
+      ...new Set([...(lokal.newCosmeticIds ?? []), ...(uebernommen.newCosmeticIds ?? [])]),
+    ],
+    lastPurchasedCosmetic: lokal.lastPurchasedCosmetic ?? uebernommen.lastPurchasedCosmetic ?? null,
 
     // Das Getragene bleibt **immer** lokal.
     //
