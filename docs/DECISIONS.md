@@ -884,3 +884,92 @@ ein anderes stillschweigend ueberschreibt.
   nachtraeglich an und korrigiert `update_profile_identity`, damit auch
   kuenftige Namensaenderungen die Login-Adresse mitziehen. Ebenfalls
   einmalig manuell auszufuehren, nach `phase_2_8_unify_identity.sql`.
+
+---
+
+## ADR-0018 — Talente bleiben bei Coin-Kosten; der Talentpunkte-Umbau wird verworfen
+
+**Datum:** 2026-08-21 · **Status:** Angenommen
+
+### Kontext
+
+Seit dem 2026-08-19 stand die Idee im Raum, Talente nicht mehr mit Muenzen zu
+bezahlen, sondern mit Talentpunkten, die es bei jedem Levelaufstieg gibt. Die
+Begruendung lautete: **der Reiz von Talentpunkten liegt im Verzicht** — wer
+nur begrenzt viele Punkte hat, muss sich entscheiden.
+
+Die Frage blockierte vier Punkte in der Planung (Baumausbau, Migration,
+Punkteanzahl, Bezeichnung) und stand an drei Stellen gleichzeitig in `TODO.md`,
+wobei die entscheidende Rechnung nur an einer davon notiert war.
+
+**Nachgerechnet am 2026-08-21 (aus `config/talents.ts` und `config/shop.ts`):**
+
+|                 |      Anzahl | Kosten |
+| --------------- | ----------: | -----: |
+| Talentbaum voll |   32 Raenge | 15 650 |
+| Shop voll       | 130 Artikel | 16 122 |
+| zusammen        |             | 31 772 |
+
+Bei rund 475 Muenzen am Tag (zehn Runs mittlerer Guete, Login-Bonus und
+Tageslauf eingerechnet) sind das 33 Tage fuer die Talente, 34 fuer den Shop.
+
+### Entscheidung
+
+**Talente werden weiterhin mit Muenzen gekauft.** Der Umbau auf Talentpunkte
+wird verworfen, nicht vertagt.
+
+Zwei Gruende, der erste ist der ausschlaggebende:
+
+**1. Der Verzicht existiert bereits.** Shop und Talentbaum kosten fast exakt
+dasselbe. Seit der Shop am 2026-08-20 ausgeliefert wurde, geht jede Muenze
+entweder in einen Talentrang oder in eine Fluggestalt — eine echte, taeglich
+wiederkehrende Abwaegung. Der Umbau wuerde sie **abschaffen** statt schaffen:
+Talente kaemen automatisch mit Leveln, Muenzen waeren nur noch fuer Kosmetik
+da. Zwei getrennte Stroeme, zwischen denen es nichts abzuwaegen gibt.
+
+Dieser Zusammenhang war zum Zeitpunkt der urspruenglichen Idee noch nicht
+sichtbar — der Shop existierte damals nicht.
+
+**2. Die Punktezahl geht nicht auf.** Bei einem Punkt je zwei Level gaebe es
+bis Stufe 100 fuenfzig Punkte fuer 32 Raenge. Ab etwa Stufe 64 waere alles
+ausgebaut und jeder weitere Punkt wertlos. Der Coin-Weg hat fuer genau diesen
+Fall bereits eine Antwort (ADR-Kontext: entschieden am 2026-08-13):
+ueberschuessige Talentpunkte werden zu Muenzen umgerechnet
+(`COINS_PER_EXTRA_TALENT_POINT = 10`).
+
+### Verworfene Alternative
+
+**Baum auf 99 Raenge ausbauen, damit die Punkte aufgehen.** Das haette die
+Zahlen in Einklang gebracht, aber den Umfang verdreifacht — sieben Talente mit
+je 14 Raengen statt vier bis fuenf. Bei `TALENT_COSTS`, das nach dem fuenften
+Rang nicht weiter steigt, waeren die zusaetzlichen Raenge ausserdem beliebig
+billig. Der eigentliche Zweck (eine Wahl erzwingen) waere damit erneut
+verfehlt.
+
+### Was gegen die Entscheidung spricht
+
+**Levelaufstiege fuehlen sich duenn an.** Ein Aufstieg gibt `COINS_PER_LEVEL`
+= 20 Muenzen; bei rund 475 am Tag sind das gut vier Prozent. Fuer ein Kind
+waere "du hast einen Talentpunkt bekommen" greifbarer als ein Kontostand, der
+sich kaum bewegt.
+
+**Das Argument ist gueltig und wird nicht weggewischt** — es braucht aber
+keinen Systemumbau. Es steht als eigener Punkt in `TODO.md` (P1.b,
+"Levelaufstiege spuerbar machen") mit zwei moeglichen Wegen: den Muenzbetrag
+anheben, oder den Aufstieg als sichtbaren Moment inszenieren.
+
+### Konsequenzen
+
+- **Am Code aendert sich nichts.** `config/talents.ts`, `TALENT_COSTS` und
+  `ProgressionSystem.purchaseTalent()` bleiben, wie sie sind. Keine Migration,
+  kein Eingriff in bestehende Spielstaende.
+- Vier Planungspunkte entfallen ersatzlos (Umbau, Punktezahl, Baumausbau,
+  Migration). P1 ist damit nicht mehr blockiert.
+- **Offen bleibt allein die Bezeichnung:** Die Ansicht ist fachlich eine
+  Talentliste — sieben Talente ohne Verbindungen oder Voraussetzungen. Ein
+  echter Baum waere ein eigenes Feature-Paket; empfohlen wird stattdessen, das
+  Wort "Talentbaum" durch "Talente" zu ersetzen.
+- **Die Kopplung Shop/Talente wird damit zur tragenden Saeule der
+  Wirtschaft.** Wenn kuenftig Shop-Preise oder Coin-Einnahmen geaendert
+  werden, verschiebt sich zwangslaeufig auch das Tempo im Talentbaum. Beide
+  Seiten gehoeren ab jetzt gemeinsam betrachtet.

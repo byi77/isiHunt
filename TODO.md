@@ -39,7 +39,7 @@ Reihenfolge nach Nutzen, nicht nach Aufwand.
 | **3.5** | Ton (aus M4 vorgezogen)                                  | mittel       |
 | **3.6** | Dynamic Island — braucht native App                      | Entscheidung |
 | 4       | Bonus, Coins, Talentbaum — erste Fassung abgeschlossen   | —            |
-| **4.1** | **Talentpunkte — Entscheidung offen, siehe P1.a**        | Entscheidung |
+| **4.1** | ~~Talentpunkte-Neuentwurf~~ — verworfen, siehe P1.a      | —            |
 | 5       | Modi, Hindernisse — gebaut, Spieltest offen (P0.c)       | mittel       |
 | 6       | Freunde, Realtime, Ranked und Rekorde                    | hoch         |
 
@@ -59,9 +59,9 @@ Reihenfolge der Arbeit steht in P0–P3 darunter.
 > entstanden, den das Geraet nie geladen hatte. Deshalb steht die
 > **Geraetetest-Runde (P0.a)** vor allem anderen.
 >
-> Danach: **P0.b** (zwei belegte Fehler ohne Fix), **P0.c** (Balancing mit den
-> Kindern), dann die eine blockierende Entscheidung in **P1.a**
-> (Talentpunkte), dann Phase 6.
+> Danach: **P0.c** (Balancing mit den Kindern), dann **P1**, dann Phase 6.
+> **P0.b ist abgearbeitet** (v0.1.211-213), **P1.a am 2026-08-21 entschieden**
+> — Talente bleiben bei Coin-Kosten, kein Umbau.
 >
 > **P0.5** ist abgeschlossen und bleibt nur als technischer Zwischenstatus
 > stehen — keine zweite Prioritaetsliste.
@@ -73,7 +73,7 @@ Reihenfolge der Arbeit steht in P0–P3 darunter.
 | **P0.a** | Vier Geraetebestaetigungen in einem Lauf | ein Abend  |
 | **P0.b** | Auto-Pause · Tagesbonus auf Servertag    | klein      |
 | **P0.c** | Phase 5 + Serien-Fenster mit den Kindern | ein Abend  |
-| **P1.a** | Talentpunkte: entscheiden, nicht bauen   | Gespraech  |
+| ~~P1.a~~ | ~~Talentpunkte entscheiden~~ — erledigt  | —          |
 | **P1.b** | Profilfluss, Profil-Icons, Level/XP-Ablauf | mittel   |
 
 ### P0 — erst absichern und messen
@@ -403,49 +403,84 @@ Reihenfolge der Arbeit steht in P0–P3 darunter.
 
 ### P1 — Fortschritt vor Wettbewerb
 
-#### P1.a — Die eine Entscheidung, die P1 blockiert _(zusammengefuehrt 2026-08-21)_
+#### P1.a — Talentpunkte: entschieden _(2026-08-21)_
 
-> **Warum hier:** Das Talentpunkte-Thema stand bisher an drei Stellen — als
-> pausierter P1-Block, als offene Frage im Gespraechsprotokoll und als
-> "Talentbaum-Konzept eindeutig entscheiden" im Audit-Anhang. Die Rechnung,
-> die es entscheidet, stand nur an der mittleren Stelle. Alles drei ist hier
-> zusammengezogen; die anderen zwei Stellen verweisen hierher.
+> ## Entscheidung: Talente bleiben bei Coin-Kosten. Kein Umbau.
 >
-> **Solange das offen ist, sind vier P1-Punkte und der halbe Talentbaum
-> blockiert.** Es ist eine Entscheidung, kein Bauauftrag — sie kostet ein
-> Gespraech, nicht eine Woche.
+> Die Frage stand seit 2026-08-19 an drei Stellen und blockierte vier
+> P1-Punkte. Sie ist entschieden; P1 ist damit frei.
+>
+> **Vollstaendig begruendet in ADR-0018** (`docs/DECISIONS.md`), inklusive der
+> verworfenen Alternative "Baum auf 99 Raenge ausbauen".
 
-- [ ] **Entscheiden: bleiben Talente bei Coin-Kosten, oder kommen
-      Talentpunkte?** Die Argumente stehen vollstaendig da, ein Urteil fehlt:
-  - **Gegen den Umbau (Rechnung vom 2026-08-19/20):** Alle 32 Talentraenge
-    kosten heute 15 650 Muenzen. Bei einem Punkt je zwei Level gaebe es bis
-    Stufe 100 aber **50 Punkte** bei nur 32 Raengen — ab etwa Stufe 64 waere
-    alles voll und die Belohnung wertlos. Der Reiz von Talentpunkten liegt im
-    Verzicht; wenn am Ende ohnehin alles offen ist, bleibt nur eine
-    Reihenfolge statt einer Wahl.
-  - **Gegen den Umbau, zweites Argument (aus Phase 2):** Der Ueberschuss ist
-    beim Coin-Weg bereits geloest — sind alle Talente auf Maximalrang, wird
-    der Punkt nicht vergeben, sondern zu Coins (10 je Punkt, `GameConfig.ts`).
-    Das Problem, das der Umbau loesen wollte, hat also schon eine Antwort.
-  - **Fuer den Umbau:** Levelaufstiege haetten eine eigene, spuerbare
-    Belohnung statt nur Coins. Kindgerecht ist "du hast einen Punkt bekommen"
-    greifbarer als ein Kontostand.
-  - **Falls Umbau:** Von Level 1 bis 100 gibt es nur 99 Aufstiege. Entweder
-    hat der Baum 99 Raenge, oder ein neues Profil startet mit einem
-    Talentpunkt, damit 100 Raenge erreichbar sind.
-- [ ] **Erst nach der Entscheidung:** Bezeichnung klaeren. Die aktuelle
-      Ansicht ist fachlich eine Talentliste, kein Baum. Entweder echte Zweige
-      mit Verbindungen und Voraussetzungen bauen (drei Wege pruefen:
-      Beweglichkeit, Konzentration, Belohnung) oder das Wort "Talentbaum"
-      durch ein klares "Talente"-Menue ersetzen. _(aus dem Audit 2026-08-21)_
-- [ ] **Nur falls der Umbau kommt:** Talentbaum auf die beschlossene
-      Gesamtzahl ausbauen; darunter eine kindgerechte Schleife/Route als
-      sichtbaren Fortschritt zeichnen.
-- [ ] **Nur falls der Umbau kommt:** Sichere Migration fuer bestehende
-      Coin-Talente und den Supabase-Stand planen, bevor die Kosten umgestellt
-      werden.
+**Die Zahlen, im Code nachgerechnet (nicht uebernommen):**
+
+| | Anzahl | Kosten |
+| ----------------- | -----: | -----: |
+| Talentbaum voll | 32 Raenge | **15 650** |
+| Shop voll | 130 Artikel | **16 122** |
+| zusammen | | **31 772** |
+
+Bei rund 475 Muenzen am Tag (10 Runs mittlerer Guete, Login-Bonus und
+Tageslauf eingerechnet): 33 Tage fuer die Talente, 34 fuer den Shop,
+67 Tage fuer alles.
+
+**Der Grund fuer die Entscheidung — er stand vorher nirgends:** Shop und
+Talente kosten fast **exakt gleich viel**. Die urspruengliche Begruendung fuer
+den Umbau lautete, der Reiz von Talentpunkten liege im Verzicht. Seit der Shop
+am 2026-08-20 ausgeliefert wurde, **existiert dieser Verzicht bereits** — nur
+an anderer Stelle: Jede Muenze geht entweder in einen Talentrang oder in eine
+Fluggestalt. Das ist eine echte, taeglich wiederkehrende Abwaegung.
+
+Der Umbau wuerde sie **abschaffen**, nicht schaffen: Talente kaemen automatisch
+mit Leveln, Muenzen waeren nur noch fuer Kosmetik da — zwei getrennte Stroeme,
+zwischen denen es nichts abzuwaegen gibt.
+
+**Dazu die bekannte Rechnung, bestaetigt:** Bei einem Punkt je zwei Level gaebe
+es bis Stufe 100 **50 Punkte fuer 32 Raenge**. Ab etwa Stufe 64 waere alles
+voll und die Belohnung wertlos. Der Coin-Weg hat fuer diesen Fall bereits eine
+Antwort, die der Umbau nicht haette: Ueberschuessige Talentpunkte werden zu
+Muenzen (`COINS_PER_EXTRA_TALENT_POINT = 10`, entschieden 2026-08-13).
+
+**Was gegen die Entscheidung sprach, fair benannt:** Levelaufstiege fuehlen
+sich duenn an — 20 Muenzen bei rund 475 am Tag sind kaum spuerbar, und
+"du hast einen Talentpunkt bekommen" waere fuer ein Kind greifbarer als ein
+Kontostand. **Das Argument bleibt gueltig**, braucht aber keinen Systemumbau;
+es steht als eigener Punkt in P1.b.
+
+**Damit erledigt:**
+
+- [x] ~~Talentpunkte statt Coin-Kosten planen und bauen~~ — verworfen
+- [x] ~~Zahl zuerst entscheiden (99 Aufstiege vs. 32 Raenge)~~ — entfaellt
+- [x] ~~Talentbaum auf die beschlossene Gesamtzahl ausbauen~~ — entfaellt
+- [x] ~~Migration fuer bestehende Coin-Talente~~ — entfaellt, nichts aendert sich
+
+**Bleibt offen, unabhaengig von der Entscheidung:**
+
+- [ ] **Bezeichnung klaeren.** Die Ansicht ist fachlich eine Talentliste, kein
+      Baum: sieben Talente ohne Verbindungen oder Voraussetzungen. Entweder
+      echte Zweige bauen (drei Wege pruefen: Beweglichkeit, Konzentration,
+      Belohnung) oder das Wort "Talentbaum" durch "Talente" ersetzen.
+      **Empfehlung: umbenennen** — echte Zweige waeren ein eigenes
+      Feature-Paket, und die sieben Talente sind fuer einen Baum zu wenige.
+      _(aus dem Audit 2026-08-21)_
 
 #### P1.b — Fortschritt und Profil
+
+- [ ] **Levelaufstiege spuerbar machen** _(neu 2026-08-21, aus der
+      P1.a-Entscheidung)_ — ein Aufstieg gibt heute `COINS_PER_LEVEL = 20`
+      Muenzen. Bei rund 475 Muenzen am Tag sind das gut 4 % eines Tages: kaum
+      wahrnehmbar. Genau daran haengt das einzige starke Argument, das fuer
+      den verworfenen Talentpunkte-Umbau sprach — "du hast einen Punkt
+      bekommen" ist greifbarer als ein Kontostand.
+      **Zwei Wege, nicht ausschliessend:** (a) `COINS_PER_LEVEL` anheben —
+      Einzeiler, aber der Wert will mit den Kindern geprueft sein;
+      (b) den Aufstieg als sichtbaren Moment inszenieren (Ton gibt es bereits,
+      siehe Phase 3.5). **Empfehlung: (b) zuerst** — Aufmerksamkeit wirkt bei
+      Kindern staerker als eine groessere Zahl, und (a) verschiebt zusaetzlich
+      das Wirtschaftsgleichgewicht gegenueber dem Shop.
+      **Gehoert in den Balancing-Abend (P0.c)**, wenn dort ein Levelaufstieg
+      faellt.
 - [x] ~~Coins bleiben Waehrung fuer spaetere Skins und optionale Boni;
       Skin-Inventar und Shop nur vorbereiten, nicht vor dem Talentpunkte-Umbau
       bauen.~~ **Ueberholt (2026-08-20):** Der Shop ist gebaut und ausgeliefert
@@ -615,7 +650,7 @@ konkret geplant wird:**
       besondere Schweiffarben oder saisonal rotierende Challenge-Abzeichen.
       Keine unbegrenzte Machtsteigerung, die alte Inhalte entwertet.
 
-- **Das Talentbaum-Konzept eindeutig entscheiden.** _(→ zusammengefuehrt in P1.a)_ Die aktuelle Ansicht
+- **Das Talentbaum-Konzept eindeutig entscheiden.** _(→ entschieden in P1.a; offen bleibt nur die Bezeichnung, siehe dort)_ Die aktuelle Ansicht
       ist fachlich eine Talentliste. Entweder echte Zweige mit Verbindungen und
       Voraussetzungen bauen oder die Bezeichnung „Talentbaum“ durch ein
       klares „Talente“-Menue ersetzen. Bei einem echten Baum drei erkennbare
@@ -1009,11 +1044,12 @@ https://claude.ai/code/artifact/5fcc7a9c-e9ea-48ac-a358-917461195ff2
 ### Zur Entscheidung offen (aus dem Gespraech 2026-08-19/20)
 
 - [x] **Talentkosten auf 0, dafuer ein Talentpunkt alle zwei Level?**
-      **Verschoben nach P1.a (2026-08-21)** — die Frage stand hier, in P1 und
-      im Audit-Anhang gleichzeitig, die entscheidende Rechnung aber nur hier.
-      Beides ist jetzt unter **P1.a** zusammengefuehrt und wird dort
-      entschieden. Der Eintrag hier ist nur noch ein Verweis, keine offene
-      Aufgabe.
+      **Entschieden am 2026-08-21: nein.** Talente bleiben bei Coin-Kosten.
+      Die hier festgehaltene Rechnung (50 Punkte fuer 32 Raenge, ab Stufe 64
+      wertlos) hat sich bestaetigt; ausschlaggebend war zusaetzlich, dass Shop
+      und Talente fast gleich viel kosten (16 122 gegen 15 650 Muenzen) — der
+      Verzicht, den der Umbau schaffen sollte, existiert dadurch bereits.
+      Vollstaendige Begruendung in **P1.a**.
 
 - [ ] **Welten unterhalb des eigenen Levels sperren?** Als Idee eingebracht.
       **Drei Einwaende:** (1) Es bestraft gemeinsames Spielen — ein Kind auf
