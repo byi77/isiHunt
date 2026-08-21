@@ -146,20 +146,32 @@ Reihenfolge der Arbeit steht in P0–P3 darunter.
 
 #### P0.b — Belegte Fehler ohne Fix
 
-- [ ] **Sync-Sturm im Menue eingrenzen** _(neu 2026-08-21, im Report belegt)_
-      — zwischen 15:04:10 und 15:04:20 stehen im Debug-Report **rund 25
-      vollstaendige Sync-Durchlaeufe in 10 Sekunden**, jeder mit `Login
-      pruefen`, `Bestehendes Profil uebernehmen`, `Login-Bonus abholen` und
-      `Bestwert eintragen` — zusammen etwa **100 Backend-Aufrufe in 10
-      Sekunden**, ausgeloest allein durch Herumtippen im Menue. Im Abschnitt
-      ab 22:58 (v0.1.210) ist es schwaecher, aber noch da: drei Durchlaeufe
-      in sieben Sekunden.
-      **Kein Absturz, aber unangeforderte Last** auf Akku, Netz und
-      Supabase-Kontingent. `synchronizeData()` hat mit `saveSyncBusy` nur
-      einen Schutz gegen *parallele*, nicht gegen *aufeinanderfolgende*
-      Laeufe. Zu pruefen: eine Mindestpause zwischen zwei Durchlaeufen.
-      **Ungeprueft:** was die Durchlaeufe im Einzelnen ausloest — dazu
-      muesste `sync:start` seinen Ausloeser mitprotokollieren.
+- [x] **Sync-Sturm im Menue eingegrenzt (2026-08-21)** — Mindestpause von
+      30 Sekunden zwischen zwei vollstaendigen Abgleichen
+      (`SYNC_MIN_INTERVAL_MS`).
+      **Ursache belegt:** `MenuScene.create()` startet einen Abgleich, und
+      `create()` laeuft bei jeder Rueckkehr ins Menue. `saveSyncBusy` half
+      nicht — es wird erst in `checkCloudSave()` gesetzt und sperrt nur
+      *parallele* Laeufe; im Report stand bei jedem `sync:start`
+      `saveSyncBusy: false`.
+      **Zeitstempel modulweit, nicht als Feld:** Phaser legt bei jeder
+      Rueckkehr eine neue Scene-Instanz an — ein Feld waere jedes Mal wieder
+      `0` und der Guard wirkungslos.
+      **Drei Anlaesse umgehen die Sperre:** Netzrueckkehr, Nutzerentscheidung
+      ueber einen Cloud-Stand, und die schon gedrosselte Fehler-Wiederholung.
+      **Nebenbei:** Der Abgleich-Hinweis erscheint jetzt erst, wenn wirklich
+      synchronisiert wird; abgewiesene Aufrufe stehen als `sync:throttled` im
+      Report. `npm run verify` gruen (313 Tests).
+  - [ ] **Ungeprueft:** ob 30 Sekunden sich im Gebrauch richtig anfuehlen —
+        insbesondere beim Wechsel zwischen zwei Geraeten, wo ein Abgleich
+        gewuenscht ist. Beim naechsten Geraetedurchgang mitbeobachten; der
+        Wert steht in `config/backend.ts` und ist leicht zu aendern.
+  - [ ] **Nicht durch einen Unit-Test gedeckt.** Die Regel sitzt in
+        `MenuScene`, das ausserhalb des Browsers nicht laedt (Regel 6). Genau
+        der Fall, den der Querschnitt-Punkt "Ablauflogik nach `systems/`
+        ziehen" adressiert — ein `SyncDecisionSystem` koennte das pruefbar
+        machen.
+
 - [ ] **Duell-Lobby: 37 Sekunden ohne Rueckmeldung** _(neu 2026-08-21, im
       Report belegt)_ — der Master stand 37 Sekunden in "Warte auf
       Geschwister ...", ohne dass die Meldung "Geschwister ist nicht

@@ -84,3 +84,25 @@ export const SYNC_RETRY_DELAYS_MS = [5000, 15000, 60000];
  * naechsten Tag hochgeladen.
  */
 export const DAILY_KEY_TOLERANCE_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Mindestabstand zwischen zwei vollstaendigen Abgleichen im Menue.
+ *
+ * **Warum es den braucht.** `MenuScene.create()` startet einen Abgleich, und
+ * `create()` laeuft bei **jeder** Rueckkehr ins Menue - nach jedem Run, nach
+ * jedem Bildschirmwechsel, nach jedem Zurueck-Knopf. Ein Debug-Report vom
+ * 2026-08-21 zeigte dadurch rund 25 vollstaendige Durchlaeufe in zehn
+ * Sekunden, zusammen etwa 100 Backend-Aufrufe - ausgeloest allein durch
+ * Herumtippen im Menue.
+ *
+ * Das vorhandene `saveSyncBusy` schuetzte dagegen nicht: Es wird erst in
+ * `checkCloudSave()` gesetzt und ist nach jedem Durchlauf wieder `false` -
+ * es verhindert *parallele*, nicht *aufeinanderfolgende* Laeufe. Im Report
+ * stand bei jedem einzelnen `sync:start` entsprechend `saveSyncBusy: false`.
+ *
+ * 30 Sekunden sind lang genug, um das Tippen im Menue zu daempfen, und kurz
+ * genug, dass ein Wechsel auf ein zweites Geraet sich noch wie sofort
+ * anfuehlt. Ausdrueckliche Anlaesse (Netz kehrt zurueck, Nutzer entscheidet
+ * ueber einen Cloud-Stand) umgehen die Sperre bewusst.
+ */
+export const SYNC_MIN_INTERVAL_MS = 30_000;

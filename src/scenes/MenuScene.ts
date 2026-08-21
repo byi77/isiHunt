@@ -7,7 +7,7 @@
 
 import Phaser from 'phaser';
 
-import { SYNC_RETRY_DELAYS_MS } from '@/config/backend';
+import { SYNC_MIN_INTERVAL_MS, SYNC_RETRY_DELAYS_MS } from '@/config/backend';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { WORLDS } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
@@ -42,6 +42,17 @@ import {
   createWorldBackdrop,
 } from '@/ui/widgets';
 
+/**
+ * Wann zuletzt ein vollstaendiger Abgleich begonnen hat.
+ *
+ * **Modulweit, nicht als Feld der Scene.** Phaser legt bei jeder Rueckkehr
+ * ins Menue eine neue `MenuScene`-Instanz an - ein Feld waere dort jedes Mal
+ * wieder `0`, und der Abstand liesse sich nie messen. Genau das ist der
+ * Unterschied zum vorhandenen `saveSyncBusy`, das den Sturm nicht aufhalten
+ * konnte.
+ */
+let lastSyncStartedAt = 0;
+
 export class MenuScene extends Phaser.Scene {
   private selectedWorld!: WorldDef;
   private worldBackdrop!: Phaser.GameObjects.Container;
@@ -55,7 +66,10 @@ export class MenuScene extends Phaser.Scene {
   private profileRetryTimer: ReturnType<typeof setTimeout> | null = null;
   private profileRetryAttempt = 0;
   private readonly onlineHandler = (): void => {
-    void this.synchronizeData();
+    // Ausdruecklicher Anlass: Das Netz ist gerade zurueckgekehrt, ein
+    // wartender Offline-Run soll sofort hoch - nicht erst nach der
+    // Mindestpause.
+    void this.synchronizeData(true);
   };
 
   constructor() {
@@ -129,7 +143,14 @@ export class MenuScene extends Phaser.Scene {
    * verschwindet der Hinweis sofort; der Profilstatus bleibt dann bewusst auf
    * „noch nicht aktuell“, bis ein erfolgreicher Abgleich möglich war.
    */
-  private async synchronizeData(): Promise<void> {
+  /**
+   * @param force Ueberspringt die Mindestpause. Nur fuer ausdrueckliche
+   *   Anlaesse: das Netz kehrt zurueck, oder der Nutzer hat gerade selbst
+   *   ueber einen Cloud-Stand entschieden. Der Aufruf aus `create()` setzt
+   *   ihn bewusst **nicht** - er ist der haeufigste und der, der den Sturm
+   *   ausgeloest hat.
+   */
+  private async synchronizeData(force = false): Promise<void> {
     // BUG gefunden und belegt (2026-08-18, siehe TODO.md): Phaser setzt den
     // Scene-Status erst NACH dem Rueckkehren aus `create()` auf RUNNING
     // (SceneManager.create(): `scene.create.call(...)` vor
@@ -153,21 +174,46 @@ export class MenuScene extends Phaser.Scene {
         testProfile: SaveSystem.isTestProfileActive(),
         signedIn: AuthSystem.isSignedIn(),
         online: navigator.onLine,
+        sinceLastSyncMs: lastSyncStartedAt === 0 ? null : Date.now() - lastSyncStartedAt,
+        forced: force,
       }),
     });
     if (this.saveSyncBusy) return;
 
+    // Diese beiden Zweige bleiben ungedrosselt: Sie sprechen kein Backend an,
+    // setzen aber die sichtbare Statusanzeige. Wuerde die Sperre davor
+    // greifen, bliebe nach dem ersten Drosseln ein veralteter Status stehen.
     if (!CloudSystem.isAvailable() || SaveSystem.isTestProfileActive()) {
       SyncStatusSystem.setDataSyncStatus('local-only');
       return;
     }
 
-    this.showSyncPopup();
     if (!navigator.onLine) {
       SyncStatusSystem.setDataSyncStatus('offline');
-      this.hideSyncPopup();
       return;
     }
+
+    // Ab hier kostet jeder Durchlauf echte Netzaufrufe.
+    //
+    // `create()` laeuft bei jeder Rueckkehr ins Menue - nach jedem Run, nach
+    // jedem Zurueck-Knopf. Ohne Mindestabstand ergab das im Debug-Report vom
+    // 2026-08-21 rund 25 volle Durchlaeufe in zehn Sekunden (etwa 100
+    // Backend-Aufrufe), allein durchs Herumtippen. `saveSyncBusy` half
+    // dagegen nicht: Es sperrt nur *parallele* Laeufe und stand bei jedem
+    // Eintrag im Report auf `false`.
+    const sinceLastSync = Date.now() - lastSyncStartedAt;
+    if (!force && lastSyncStartedAt > 0 && sinceLastSync < SYNC_MIN_INTERVAL_MS) {
+      DebugSystem.pushLogEntry({
+        timestamp: Date.now(),
+        kind: 'event',
+        label: 'sync:throttled',
+        detail: JSON.stringify({ sinceLastSyncMs: sinceLastSync }),
+      });
+      return;
+    }
+    lastSyncStartedAt = Date.now();
+
+    this.showSyncPopup();
 
     SyncStatusSystem.setDataSyncStatus('syncing');
     try {
@@ -396,7 +442,9 @@ export class MenuScene extends Phaser.Scene {
     this.profileRetryAttempt += 1;
     this.profileRetryTimer = setTimeout(() => {
       this.profileRetryTimer = null;
-      if (this.scene.isActive()) void this.synchronizeData();
+      // Ausdruecklich: Die Wiederholung ist selbst schon gedrosselt
+      // (`SYNC_RETRY_DELAYS_MS`) und verpuffte sonst an der Mindestpause.
+      if (this.scene.isActive()) void this.synchronizeData(true);
     }, delay);
   }
 
@@ -567,7 +615,9 @@ export class MenuScene extends Phaser.Scene {
           this.saveSyncBusy = false;
           if (result.ok) {
             this.clearSavePrompt();
-            void this.synchronizeData();
+            // Der Nutzer hat gerade selbst entschieden - darauf muss der
+            // Bildschirm sofort reagieren.
+            void this.synchronizeData(true);
           } else {
             SyncStatusSystem.setDataSyncStatus('pending');
           }

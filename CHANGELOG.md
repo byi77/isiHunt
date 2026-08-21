@@ -38,6 +38,33 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Das Menue loeste einen Sturm von Backend-Aufrufen aus.** Ein Debug-Report
+  vom 2026-08-21 zeigte rund **25 vollstaendige Abgleiche in zehn Sekunden** -
+  zusammen etwa 100 Netzaufrufe, ausgeloest allein durch Herumtippen im Menue.
+
+  Ursache: `MenuScene.create()` startet einen Abgleich, und `create()` laeuft
+  bei **jeder** Rueckkehr ins Menue - nach jedem Run, nach jedem
+  Bildschirmwechsel, nach jedem Zurueck-Knopf.
+
+  Das vorhandene `saveSyncBusy` schuetzte nicht dagegen: Es wird erst in
+  `checkCloudSave()` gesetzt und ist nach jedem Durchlauf wieder `false` - es
+  sperrt _parallele_, nicht _aufeinanderfolgende_ Laeufe. Im Report stand bei
+  jedem einzelnen `sync:start` entsprechend `saveSyncBusy: false`.
+
+  Neu ist eine Mindestpause von 30 Sekunden (`SYNC_MIN_INTERVAL_MS`). Der
+  Zeitstempel liegt **modulweit**, nicht als Feld der Scene: Phaser legt bei
+  jeder Rueckkehr eine neue Instanz an, ein Feld waere jedes Mal wieder `0`.
+
+  Drei Anlaesse umgehen die Sperre bewusst: Netzrueckkehr (`online`), eine
+  Nutzerentscheidung ueber einen Cloud-Stand, und die ohnehin schon gedrosselte
+  Wiederholung nach einem Fehlschlag.
+
+  Nebenbei aufgeraeumt: Der Abgleich-Hinweis erscheint jetzt erst, wenn
+  tatsaechlich synchronisiert wird - vorher wurde er auch offline kurz
+  geoeffnet und sofort wieder geschlossen. Abgewiesene Aufrufe stehen als
+  `sync:throttled` im Debug-Report, damit ein kuenftiger Sturm nicht wieder
+  unsichtbar bleibt.
+
 - **Der Tagesbonus liess sich durch Vorstellen der Geraeteuhr beliebig oft
   abholen.** `claim_daily_bonus()` und `claim_daily_login_bonus()` bekommen den
   Tag als Text vom Client - gebildet aus `new Date()`, also aus der
