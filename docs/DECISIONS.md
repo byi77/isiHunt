@@ -965,11 +965,24 @@ anheben, oder den Aufstieg als sichtbaren Moment inszenieren.
   kein Eingriff in bestehende Spielstaende.
 - Vier Planungspunkte entfallen ersatzlos (Umbau, Punktezahl, Baumausbau,
   Migration). P1 ist damit nicht mehr blockiert.
-- **Offen bleibt allein die Bezeichnung:** Die Ansicht ist fachlich eine
-  Talentliste — sieben Talente ohne Verbindungen oder Voraussetzungen. Ein
-  echter Baum waere ein eigenes Feature-Paket; empfohlen wird stattdessen, das
-  Wort "Talentbaum" durch "Talente" zu ersetzen.
+- **Offen bleibt die Darstellung — und das ist eine eigene Frage.** Die
+  Ansicht ist fachlich eine Talentliste: sieben Talente ohne Verbindungen oder
+  Voraussetzungen, obwohl sie "Talentbaum" heisst. **Dieser ADR entscheidet
+  darueber ausdruecklich nicht.** Womit bezahlt wird und wie der Fortschritt
+  aussieht, sind unabhaengige Fragen; der urspruengliche Wunsch aus der
+  Planung lautete woertlich "darunter eine kindgerechte Schleife/Route als
+  sichtbaren Fortschritt zeichnen" und haengt an keiner Kostenentscheidung.
+  Drei Wege stehen in `TODO.md` (P1.a) zur Wahl: echter Baum mit
+  Voraussetzungen, gezeichnete Route als reine Darstellung, oder ehrliches
+  Umbenennen.
 - **Die Kopplung Shop/Talente wird damit zur tragenden Saeule der
-  Wirtschaft.** Wenn kuenftig Shop-Preise oder Coin-Einnahmen geaendert
-  werden, verschiebt sich zwangslaeufig auch das Tempo im Talentbaum. Beide
-  Seiten gehoeren ab jetzt gemeinsam betrachtet.
+  Wirtschaft.** Beide Seiten gehoeren ab jetzt gemeinsam betrachtet.
+  **Nachtrag (2026-08-21, nach der Balance-Kette):** Der urspruengliche Satz
+  hier lautete, eine Aenderung der Coin-Einnahmen verschiebe zwangslaeufig das
+  Tempo im Talentbaum. Das gilt seit `config/balance.ts` nicht mehr
+  uneingeschraenkt — Talent-, Reset- und Shop-Kosten werden ueber
+  `balancedCoinCost()` mit der Einnahmenrate mitskaliert, sodass die Dauer in
+  Runs erhalten bleibt (nachgemessen: `economy.globalMultiplier` verdoppelt,
+  `runsToMaxTalents` bleibt bei 299,9). **Was bestehen bleibt:** Wer einzelne
+  Shop-Preise oder einzelne Talentkosten von Hand verschiebt statt ueber die
+  Kette, umgeht diese Kopplung — dann gilt der Satz wieder.

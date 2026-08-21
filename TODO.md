@@ -453,17 +453,53 @@ es steht als eigener Punkt in P1.b.
 - [x] ~~Talentpunkte statt Coin-Kosten planen und bauen~~ — verworfen
 - [x] ~~Zahl zuerst entscheiden (99 Aufstiege vs. 32 Raenge)~~ — entfaellt
 - [x] ~~Talentbaum auf die beschlossene Gesamtzahl ausbauen~~ — entfaellt
+      **(nur der Rang-Teil!)** Der zweite Halbsatz des urspruenglichen
+      Eintrags — "darunter eine kindgerechte Schleife/Route als sichtbaren
+      Fortschritt zeichnen" — haengt **nicht** am Umbau und war hier zu
+      Unrecht mit gestrichen. Er steht jetzt eigenstaendig unten.
 - [x] ~~Migration fuer bestehende Coin-Talente~~ — entfaellt, nichts aendert sich
 
 **Bleibt offen, unabhaengig von der Entscheidung:**
 
-- [ ] **Bezeichnung klaeren.** Die Ansicht ist fachlich eine Talentliste, kein
-      Baum: sieben Talente ohne Verbindungen oder Voraussetzungen. Entweder
-      echte Zweige bauen (drei Wege pruefen: Beweglichkeit, Konzentration,
-      Belohnung) oder das Wort "Talentbaum" durch "Talente" ersetzen.
-      **Empfehlung: umbenennen** — echte Zweige waeren ein eigenes
-      Feature-Paket, und die sieben Talente sind fuer einen Baum zu wenige.
-      _(aus dem Audit 2026-08-21)_
+- [ ] **Talentbaum tatsaechlich zu einem Baum machen — oder ehrlich
+      umbenennen.** _(zusammengefuehrt 2026-08-21 aus zwei Eintraegen: dem
+      Darstellungs-Halbsatz aus P1 und dem Audit-Punkt "Talentbaum-Konzept
+      eindeutig entscheiden")_
+
+      **Der Stand:** Die Ansicht heisst "Talentbaum", ist aber fachlich eine
+      Liste — sieben Talente in `config/talents.ts`, ohne Verbindungen, ohne
+      Voraussetzungen, jedes unabhaengig kaufbar. Der Name verspricht etwas,
+      das der Bildschirm nicht einloest.
+
+      **Die Entscheidung aus P1.a beruehrt das nicht.** Ob mit Muenzen oder
+      Punkten bezahlt wird, ist unabhaengig davon, wie der Fortschritt
+      **aussieht**. Der urspruengliche Wunsch lautete woertlich: "darunter eine
+      kindgerechte Schleife/Route als sichtbaren Fortschritt zeichnen" — das
+      ist eine Darstellungsfrage, keine Wirtschaftsfrage.
+
+      **Drei Wege, noch nicht entschieden:**
+  - [ ] **(a) Echter Baum mit Voraussetzungen.** Drei erkennbare Aeste:
+        Beweglichkeit (Reichweite, Flinkheit, Magnetismus), Konzentration
+        (Fokus, Ausdauer), Belohnung (Erkenntnis, Gunst). Ein Rang schaltet
+        den naechsten frei. **Kosten:** greift in `ProgressionSystem.
+        purchaseTalent()` ein (Freischaltregeln), braucht neue Felder und eine
+        Migration fuer Staende, die heute schon "unmoegliche" Kombinationen
+        haben. **Nutzen:** echte Wahl, echter Baum.
+  - [ ] **(b) Route/Schleife als reine Darstellung.** Die sieben Talente
+        entlang eines gezeichneten Pfades anordnen, gekaufte Raenge leuchten
+        auf. Keine Voraussetzungen, keine Regelaenderung — nur ein Bild, das
+        Fortschritt zeigt. **Kosten:** reine UI-Arbeit in `TalentScene`.
+        **Nutzen:** loest den urspruenglichen Wunsch ("kindgerechter
+        sichtbarer Fortschritt") ohne Eingriff in die Wirtschaft.
+  - [ ] **(c) Ehrlich umbenennen.** "Talentbaum" wird zu "Talente".
+        **Kosten:** minimal. **Nutzen:** der Name luegt nicht mehr — loest
+        aber den Darstellungswunsch **nicht**.
+
+      **Meine Empfehlung: (b), und (c) faellt dann weg** — eine gezeichnete
+      Route macht den Namen "Baum" nachtraeglich wahr genug fuer ein
+      Kinderspiel, ohne dass Freischaltregeln das Balancing anfassen. (a) ist
+      ein eigenes Feature-Paket und sollte erst kommen, wenn es deutlich mehr
+      als sieben Talente gibt. **Nicht entschieden — das ist deine Wahl.**
 
 #### P1.b — Fortschritt und Profil
 
@@ -650,7 +686,7 @@ konkret geplant wird:**
       besondere Schweiffarben oder saisonal rotierende Challenge-Abzeichen.
       Keine unbegrenzte Machtsteigerung, die alte Inhalte entwertet.
 
-- **Das Talentbaum-Konzept eindeutig entscheiden.** _(→ entschieden in P1.a; offen bleibt nur die Bezeichnung, siehe dort)_ Die aktuelle Ansicht
+- **Das Talentbaum-Konzept eindeutig entscheiden.** _(→ eingeplant als P1.a; die Kostenfrage ist entschieden, Baum vs. Route vs. Umbenennen steht dort offen)_ Die aktuelle Ansicht
       ist fachlich eine Talentliste. Entweder echte Zweige mit Verbindungen und
       Voraussetzungen bauen oder die Bezeichnung „Talentbaum“ durch ein
       klares „Talente“-Menue ersetzen. Bei einem echten Baum drei erkennbare
