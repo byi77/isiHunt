@@ -20,7 +20,7 @@ import {
   TALENT_RESET_COST,
   xpForLevel,
 } from '@/config/GameConfig';
-import { SHIP_COLORS, SHIP_SHAPES } from '@/config/shop';
+import { SHIP_AURAS, SHIP_COLORS, SHIP_SHAPES } from '@/config/shop';
 import { TALENTS, talentCost, type TalentId } from '@/config/talents';
 import { WORLDS } from '@/config/worlds';
 import * as SaveSystem from '@/systems/SaveSystem';
@@ -252,13 +252,31 @@ export function purchaseShipColor(colorId: string): SaveData | null {
   return gekauft ? result : null;
 }
 
+/** Kauft eine Aura. Gleiche Regeln wie bei Formen und Farben. */
+export function purchaseShipAura(auraId: string): SaveData | null {
+  const aura = SHIP_AURAS.find((entry) => entry.id === auraId);
+  if (!aura) return null;
+
+  let gekauft = false;
+  const result = SaveSystem.update((data) => {
+    if (data.ownedShipAuras.includes(aura.id)) return;
+    if (data.coins < aura.cost) return;
+    data.coins -= aura.cost;
+    data.coinsSpent += aura.cost;
+    data.ownedShipAuras = [...data.ownedShipAuras, aura.id];
+    data.shipAura = aura.id;
+    gekauft = true;
+  });
+  return gekauft ? result : null;
+}
+
 /**
- * Zieht eine bereits gekaufte Form oder Farbe an.
+ * Zieht eine bereits gekaufte Form, Farbe oder Aura an.
  *
  * Was nicht im Besitz ist, wird still abgelehnt - ein manipulierter
  * Spielstand soll keine ungekaufte Form tragen koennen.
  */
-export function equipShip(shapeId?: string, colorId?: string): SaveData | null {
+export function equipShip(shapeId?: string, colorId?: string, auraId?: string): SaveData | null {
   let geaendert = false;
   const result = SaveSystem.update((data) => {
     if (shapeId && data.ownedShipShapes.includes(shapeId) && data.shipShape !== shapeId) {
@@ -267,6 +285,10 @@ export function equipShip(shapeId?: string, colorId?: string): SaveData | null {
     }
     if (colorId && data.ownedShipColors.includes(colorId) && data.shipColor !== colorId) {
       data.shipColor = colorId;
+      geaendert = true;
+    }
+    if (auraId && data.ownedShipAuras.includes(auraId) && data.shipAura !== auraId) {
+      data.shipAura = auraId;
       geaendert = true;
     }
   });

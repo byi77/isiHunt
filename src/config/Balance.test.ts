@@ -19,16 +19,21 @@ import {
 } from '@/config/balance';
 import { RARITIES } from '@/config/rarities';
 import {
+  DEFAULT_SHIP_AURA,
   DEFAULT_SHIP_COLOR,
   DEFAULT_SHIP_SHAPE,
+  getShipAura,
   getShipColor,
   getShipShape,
+  SHIP_AURAS,
   SHIP_COLORS,
   SHIP_SHAPES,
+  shipAuraIndex,
   shipHullTint,
   shipTint,
 } from '@/config/shop';
 import { talentCost } from '@/config/talents';
+import { applyTintShift, AURA_FRAME_RUHE, SHIP_ANIMATIONS } from '@/ui/shipAnimations';
 import { SHIP_DRAWINGS } from '@/ui/shipShapes';
 import { WORLDS } from '@/config/worlds';
 
@@ -241,5 +246,198 @@ describe('Schiffsfarbe: Rumpf und Schein', () => {
 
   it('gibt Aura und Halo die gekaufte Farbe', () => {
     expect(shipTint(mitFarbe('ruby'), 0x123456)).toBe(getShipColor('ruby').color);
+  });
+});
+
+describe('Laden: Auren', () => {
+  // Eine Aura ist eine Rechnung, die 90 Sekunden lang je Frame laeuft. Ein
+  // Vorzeichenfehler faellt beim Lesen nicht auf, im Spiel dagegen sofort -
+  // als Figur, die verschwindet oder sich auf Bildschirmgroesse aufblaest.
+  // Diese Tests halten die Grenzen fest, in denen sie spielbar bleibt.
+
+  /** Vier Sekunden in Schritten von 10 ms - deckt jede Periode mehrfach ab. */
+  const zeitpunkte = Array.from({ length: 400 }, (_, i) => i * 10);
+
+  it('vergibt jede Aura-Id genau einmal', () => {
+    const ids = SHIP_AURAS.map((aura) => aura.id);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+
+  it('hat fuer jeden animIndex eine Bewegung', () => {
+    for (const aura of SHIP_AURAS) {
+      if (aura.animIndex === null) continue;
+      expect(SHIP_ANIMATIONS[aura.animIndex]).toBeTypeOf('function');
+    }
+  });
+
+  it('nutzt jeden animIndex nur einmal', () => {
+    const indizes = SHIP_AURAS.map((aura) => aura.animIndex).filter((i) => i !== null);
+    expect(new Set(indizes).size).toBe(indizes.length);
+  });
+
+  it('laesst genau einen kostenlosen Eintrag, und das ist der Standard', () => {
+    const gratis = SHIP_AURAS.filter((aura) => aura.cost === 0);
+    expect(gratis).toHaveLength(1);
+    expect(gratis[0]!.id).toBe(DEFAULT_SHIP_AURA);
+    // Der Standard ist "keine Aura" - wer nichts gekauft hat, bewegt sich
+    // nicht anders als vor diesem Update.
+    expect(gratis[0]!.animIndex).toBeNull();
+  });
+
+  it('gibt jeder Aura einen Namen und eine Beschreibung', () => {
+    for (const aura of SHIP_AURAS) {
+      expect(aura.name.length).toBeGreaterThan(0);
+      expect(aura.description.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('faellt bei unbekannter Id auf den Standard zurueck', () => {
+    expect(getShipAura('gibtesnicht').id).toBe(DEFAULT_SHIP_AURA);
+  });
+
+  it('macht jede Aura teurer als die teuerste Form', () => {
+    // Die Auren sind das Fernziel nach dem Laden, nicht daneben. Waere eine
+    // billiger als eine Form, waere die Reihenfolge des Fortschritts kaputt.
+    const teuersteForm = Math.max(...SHIP_SHAPES.map((shape) => shape.cost));
+    for (const aura of SHIP_AURAS) {
+      if (aura.cost === 0) continue;
+      expect(aura.cost).toBeGreaterThan(teuersteForm);
+    }
+  });
+
+  it('haelt die Figur jederzeit sichtbar', () => {
+    // Wer sein Schiff im Gewuehl verliert, verliert die Runde. Keine Aura
+    // darf es unter diese Schwellen druecken - auch nicht fuer einen Frame.
+    for (const [index, animation] of SHIP_ANIMATIONS.entries()) {
+      for (const t of zeitpunkte) {
+        const frame = animation(t);
+        expect(frame.alpha, `Aura ${index} bei ${t} ms`).toBeGreaterThanOrEqual(0.3);
+        expect(frame.alpha).toBeLessThanOrEqual(1);
+        // Der Kreisel darf sich schmal drehen, aber nie ganz verschwinden.
+        expect(frame.scaleX, `Aura ${index} bei ${t} ms`).toBeGreaterThan(0.05);
+        expect(frame.scaleY).toBeGreaterThan(0.05);
+      }
+    }
+  });
+
+  it('laesst die Figur nicht ueber das Spielfeld wachsen', () => {
+    // Eine Figur, die auf das Doppelte anschwillt, deckt den Sammelradius ab
+    // und macht das Feedback des Halos unlesbar.
+    for (const [index, animation] of SHIP_ANIMATIONS.entries()) {
+      for (const t of zeitpunkte) {
+        const frame = animation(t);
+        expect(frame.scaleX, `Aura ${index} bei ${t} ms`).toBeLessThanOrEqual(1.5);
+        expect(frame.scaleY).toBeLessThanOrEqual(1.5);
+      }
+    }
+  });
+
+  it('haelt die Farbverschiebung in ihrem Wertebereich', () => {
+    for (const [index, animation] of SHIP_ANIMATIONS.entries()) {
+      for (const t of zeitpunkte) {
+        const { tint } = animation(t);
+        expect(tint.lightness, `Aura ${index} bei ${t} ms`).toBeGreaterThanOrEqual(-1);
+        expect(tint.lightness).toBeLessThanOrEqual(1);
+        // Ueber 60 Grad ist die getragene Farbe nicht mehr wiederzuerkennen -
+        // und genau die hat der Spieler bezahlt.
+        expect(Math.abs(tint.hue)).toBeLessThanOrEqual(60);
+      }
+    }
+  });
+
+  it('rechnet jede Aura ohne NaN', () => {
+    // Eine Division durch eine Periode oder eine negative Basis unter `pow`
+    // liefert still NaN. Phaser zeichnet daraufhin gar nichts mehr - die
+    // Figur verschwindet, ohne dass eine Ausnahme faellt.
+    for (const [index, animation] of SHIP_ANIMATIONS.entries()) {
+      for (const t of zeitpunkte) {
+        const frame = animation(t);
+        const werte = {
+          scaleX: frame.scaleX,
+          scaleY: frame.scaleY,
+          rotation: frame.rotation,
+          alpha: frame.alpha,
+          lightness: frame.tint.lightness,
+          hue: frame.tint.hue,
+        };
+        for (const [name, wert] of Object.entries(werte)) {
+          expect(Number.isFinite(wert), `Aura ${index}, ${name} bei ${t} ms`).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('laeuft bei t = 0 ohne Sprung los', () => {
+    // Die Vorschau setzt den Zaehler bei jedem Wechsel auf 0 zurueck. Waere
+    // der Anfang ein Sprung, saehe jeder Wechsel wie ein Zeichenfehler aus.
+    for (const [index, animation] of SHIP_ANIMATIONS.entries()) {
+      const start = animation(0);
+      const gleichDanach = animation(16);
+      expect(Math.abs(start.scaleX - gleichDanach.scaleX), `Aura ${index}`).toBeLessThan(0.1);
+      expect(Math.abs(start.alpha - gleichDanach.alpha)).toBeLessThan(0.1);
+    }
+  });
+});
+
+describe('Farbverschiebung der Auren', () => {
+  it('laesst die Farbe ohne Verschiebung unveraendert', () => {
+    expect(applyTintShift(0xffd479, AURA_FRAME_RUHE.tint)).toBe(0xffd479);
+  });
+
+  it('haelt den Farbton fest, wenn nur die Helligkeit wandert', () => {
+    // Der Kern des Entwurfs: Gold bleibt Gold, auch wenn es pulsiert. Ohne
+    // das waere die gekaufte Farbe unter der Aura unsichtbar - der Spieler
+    // haette zwei Kategorien bezahlt und saehe nur eine.
+    const gold = 0xffd479;
+    const heller = applyTintShift(gold, { lightness: 0.4, hue: 0 });
+    const dunkler = applyTintShift(gold, { lightness: -0.4, hue: 0 });
+
+    const rot = (c: number): number => (c >> 16) & 0xff;
+    const blau = (c: number): number => c & 0xff;
+
+    // Gold hat mehr Rot als Blau. Diese Ordnung muss beide Verschiebungen
+    // ueberleben - sonst ist es kein Gold mehr.
+    expect(rot(heller)).toBeGreaterThan(blau(heller));
+    expect(rot(dunkler)).toBeGreaterThan(blau(dunkler));
+    // Und die Richtung muss stimmen.
+    expect(blau(heller)).toBeGreaterThan(blau(gold));
+    expect(rot(dunkler)).toBeLessThan(rot(gold));
+  });
+
+  it('bleibt in jedem Kanal innerhalb von 8 Bit', () => {
+    // Ein Ueberlauf in einem Kanal faerbt die Figur schlagartig falsch -
+    // sichtbar erst im Spiel, nicht beim Lesen.
+    for (const farbe of [0x000000, 0xffffff, 0xffd479, 0x2f6df0, 0xff2f5e]) {
+      for (const lightness of [-1, -0.5, 0, 0.5, 1]) {
+        for (const hue of [-60, -20, 0, 20, 60]) {
+          const ergebnis = applyTintShift(farbe, { lightness, hue });
+          expect(ergebnis).toBeGreaterThanOrEqual(0);
+          expect(ergebnis).toBeLessThanOrEqual(0xffffff);
+          expect(Number.isInteger(ergebnis)).toBe(true);
+        }
+      }
+    }
+  });
+
+  it('macht Schwarz nicht bunt', () => {
+    // Schwarz hat keinen Farbton. Ein Dreh im Farbkreis darf daran nichts
+    // aendern - sonst faerbte sich der Onyx-Rumpf unter der Aura ein.
+    expect(applyTintShift(0x000000, { lightness: 0, hue: 45 })).toBe(0x000000);
+  });
+});
+
+describe('Aura: nur tragen, was gekauft wurde', () => {
+  it('traegt eine gekaufte Aura', () => {
+    expect(shipAuraIndex({ shipAura: 'wingbeat', ownedShipAuras: ['none', 'wingbeat'] })).toBe(0);
+  });
+
+  it('verweigert eine ungekaufte Aura', () => {
+    // Gegenstueck zu `shipTint()`: Ein manipulierter Spielstand soll keine
+    // ungekaufte Aura zeigen koennen.
+    expect(shipAuraIndex({ shipAura: 'singularity', ownedShipAuras: ['none'] })).toBeNull();
+  });
+
+  it('liefert null fuer den Standard', () => {
+    expect(shipAuraIndex({ shipAura: 'none', ownedShipAuras: ['none'] })).toBeNull();
   });
 });

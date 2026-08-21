@@ -26,6 +26,7 @@ import {
 } from '@/config/GameConfig';
 import type { PlayerStats } from '@/config/talents';
 import { Depth } from '@/ui/depth';
+import { applyTintShift, SHIP_ANIMATIONS, type AuraAnimation } from '@/ui/shipAnimations';
 import { TextureKey } from '@/ui/textures';
 import type { TextureKeyValue } from '@/ui/textures';
 
@@ -60,6 +61,28 @@ export class Player extends Phaser.GameObjects.Container {
   private trailPoints: { x: number; y: number }[] = [];
   private trailSampleMs = 0;
   private trailIdleTicks = 0;
+  /** Die getragene Aura-Bewegung, oder `null` fuer keine. */
+  private auraAnimation: AuraAnimation | null = null;
+  /**
+   * Laufzeit der Aura.
+   *
+   * Eigener Zaehler statt `scene.time.now`: Die Bewegung muss am `delta`
+   * haengen (Regel 5), sonst laeuft sie im `--sim`-Playtest, der `update()`
+   * selbst taktet, gegen die Wanduhr statt gegen die Spielzeit.
+   */
+  private auraMs = 0;
+  /** Rumpffarbe ohne Aura - die Aura verschiebt immer von hier aus. */
+  private readonly hullColor: number;
+  /**
+   * Grundskalierung des Rumpfs, wie der Ruhe-Tween sie gerade setzt.
+   *
+   * Die Aura multipliziert damit, statt `scale` direkt zu setzen: Sonst
+   * ueberschriebe sie das sanfte Pulsieren aus dem Konstruktor, und ein Schiff
+   * ohne Aura saehe lebendiger aus als eins mit.
+   */
+  private ruheScale = 1;
+  /** Neigung aus der Bewegung, getrennt von der Drehung der Aura. */
+  private neigung = 0;
 
   constructor(
     scene: Phaser.Scene,
@@ -89,6 +112,7 @@ export class Player extends Phaser.GameObjects.Container {
     // auch falsch - dann steht eine gruene Figur auf gruenem Grund. Die
     // Entscheidung faellt in `shipHullTint()`.
     this.core = scene.add.image(0, 0, textureKey).setTint(hullColor);
+    this.hullColor = hullColor;
 
     this.add([this.aura, this.halo, this.core]);
     this.setDepth(Depth.Player);
@@ -119,13 +143,20 @@ export class Player extends Phaser.GameObjects.Container {
     this.syncHaloToRadius();
 
     // Sanftes Pulsieren - die Figur wirkt auch im Stillstand lebendig.
+    //
+    // Der Tween laeuft auf `ruheScale` und nicht mehr auf `this.core` direkt:
+    // Eine Aura muss ihre eigene Skalierung daraufsetzen koennen, und zwei
+    // Schreiber auf demselben `scale` bedeuten, dass der letzte gewinnt - je
+    // nach Reihenfolge im Frame flackernd.
+    this.ruheScale = 0.94;
     scene.tweens.add({
-      targets: this.core,
-      scale: { from: 0.94, to: 1.06 },
+      targets: this,
+      ruheScale: { from: 0.94, to: 1.06 },
       duration: 1100,
       yoyo: true,
       repeat: -1,
       ease: 'Sine.InOut',
+      onUpdate: () => this.applyAura(),
     });
   }
 
@@ -182,11 +213,55 @@ export class Player extends Phaser.GameObjects.Container {
 
     this.halo.rotation += dtSec * 1.2;
     // Leichte Neigung in Bewegungsrichtung - reine Spielgefuehl-Politur.
-    this.core.rotation = Phaser.Math.Linear(
-      this.core.rotation,
+    //
+    // Auf ein eigenes Feld statt direkt auf `core.rotation`: Die Aura addiert
+    // ihre Drehung darauf, und wer beide auf dasselbe Attribut schreibt,
+    // ueberschreibt den jeweils anderen.
+    this.neigung = Phaser.Math.Linear(
+      this.neigung,
       (this.velocity.x / this.stats.moveSpeed) * 0.4,
       1 - Math.exp(-8 * dtSec),
     );
+
+    this.auraMs += dtSec * 1000;
+    this.applyAura();
+  }
+
+  /**
+   * Legt die getragene Aura an.
+   *
+   * `null` stellt den ruhigen Grundzustand her. Der Zaehler beginnt bei jedem
+   * Wechsel neu, damit eine Bewegung immer an ihrem Anfang einsetzt - mitten
+   * im Sog einer Singularitaet zu starten sieht wie ein Fehler aus.
+   */
+  setAura(animIndex: number | null): void {
+    this.auraAnimation = animIndex === null ? null : (SHIP_ANIMATIONS[animIndex] ?? null);
+    this.auraMs = 0;
+    this.applyAura();
+  }
+
+  /**
+   * Schreibt den aktuellen Augenblick der Aura auf den Rumpf.
+   *
+   * Wird aus zwei Richtungen gerufen: aus `move()` je Frame und aus dem
+   * Ruhe-Tween, der `ruheScale` fortschreibt. Ohne den zweiten Aufruf bliebe
+   * das Pulsieren stehen, sobald die Figur stillsteht und `move()` die Aura
+   * zwar weiterzaehlt, der Tween aber dazwischen mehrfach feuert.
+   */
+  private applyAura(): void {
+    const frame = this.auraAnimation?.(this.auraMs) ?? null;
+    if (frame === null) {
+      this.core.setScale(this.ruheScale);
+      this.core.rotation = this.neigung;
+      this.core.setAlpha(1);
+      this.core.setTint(this.hullColor);
+      return;
+    }
+
+    this.core.setScale(this.ruheScale * frame.scaleX, this.ruheScale * frame.scaleY);
+    this.core.rotation = this.neigung + frame.rotation;
+    this.core.setAlpha(frame.alpha);
+    this.core.setTint(applyTintShift(this.hullColor, frame.tint));
   }
 
   /** Kurzer visueller Impuls beim Einsammeln. */

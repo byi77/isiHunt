@@ -47,7 +47,7 @@ import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { ScoreSystem, trailTierForSeries } from '@/systems/ScoreSystem';
 import { SpawnSystem } from '@/systems/SpawnSystem';
 import { Depth } from '@/ui/depth';
-import { shipHullTint, shipTint } from '@/config/shop';
+import { shipAuraIndex, shipHullTint, shipTint } from '@/config/shop';
 import { planetTextureForVariant, playerTextureForShape } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import {
@@ -147,6 +147,10 @@ export class GameScene extends Phaser.Scene {
       nonProgressionMode ? undefined : playerTextureForShape(save.shipShape),
       nonProgressionMode ? 0xffffff : shipHullTint(save),
     );
+    // Aus demselben Grund wie die Farbe: Im Duell traegt niemand eine Aura.
+    // Eine flackernde Figur neben einer ruhigen waere auf einen Blick
+    // zuzuordnen - der Vergleich soll am Spiel haengen, nicht am Guthaben.
+    this.player.setAura(nonProgressionMode ? null : shipAuraIndex(save));
     this.player.setWorldInertia(this.world.modifier === 'inertia' ? WORLD_INERTIA_FACTOR : 1);
 
     this.input_ = new InputController(this);

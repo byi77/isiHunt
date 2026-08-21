@@ -11,6 +11,42 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Auren: eine dritte Kategorie im Laden.** Neben Form und Farbe traegt die
+  Figur jetzt eine **Bewegung**, die den ganzen Run ueber laeuft. Acht Stueck
+  stehen zur Wahl:
+
+  | Aura          | Was sie macht                                          | Preis  |
+  | ------------- | ------------------------------------------------------ | ------ |
+  | Fluegelschlag | Schlaegt seitlich aus, wie Schwingen im Flug           | 4 000  |
+  | Herzschlag    | Zwei schnelle Schlaege, dann eine Pause                | 4 500  |
+  | Taumel        | Langsames Kippen im Raum, ohne festen Takt             | 5 000  |
+  | Kreisel       | Dreht sich um die eigene Achse, mit Vorder-/Rueckseite | 6 000  |
+  | Phantom       | Wird durchscheinend und wieder fest                    | 6 500  |
+  | Prisma        | Der Farbton wandert, ohne die Farbe zu verlieren       | 7 500  |
+  | Sternenbrand  | Unruhiges Flackern, das sich nie genau wiederholt      | 9 000  |
+  | Singularitaet | Sog bis fast zum Punkt, dann der Ruecksprung           | 10 000 |
+
+  Die Preise (Referenzwerte, vor der Balancing-Skalierung) liegen bewusst
+  ueber der teuersten Form (3 000): Auren sind das Fernziel **nach** dem
+  Laden, nicht daneben. Ein Balance-Test haelt diese Ordnung fest.
+
+  Wer nichts kauft, traegt "Keine" und bewegt sich wie bisher.
+
+  Drei Entwurfsentscheidungen dahinter:
+
+  - **Die Vorschau laeuft.** Form und Farbe lassen sich auf einem Standbild
+    beurteilen, eine Aura nicht — ihr ganzer Kaufgrund ist das, was ein
+    Standbild gerade nicht zeigt. Der Laden spielt die angeprobte Aura
+    deshalb tatsaechlich ab, in der Vorschau **und** auf den Karten der
+    Liste, wo sie auf der eigenen Form laeuft.
+  - **Die gekaufte Farbe bleibt sichtbar.** Eine Aura verschiebt den Farbton
+    hoechstens 60 Grad und mischt immer von der getragenen Farbe aus. Gold
+    bleibt unter jeder Aura als Gold erkennbar — sonst waere die
+    Farb-Kategorie unter einer Aura wertlos.
+  - **Im Duell traegt niemand eine Aura.** Gleiche Fairness-Regel wie bei den
+    Farben: Eine flackernde Figur neben einer ruhigen waere auf einen Blick
+    zuzuordnen.
+
 - **Der Laden hat jetzt 100 Fluggestalten statt 30.** Neu dazugekommen sind
   70 Formen in acht Gruppen:
 

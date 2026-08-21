@@ -104,7 +104,7 @@ isiHunt/
 │   │   ├── SettingsScene.ts    Ton, Spielstand-Aktionen; Profil-Knopf zeigt
 │   │   │                       auf ProfileScene
 │   │   ├── TalentScene.ts      Talentbaum-Oberflaeche mit Rangkauf
-│   │   ├── ShopScene.ts        Laden: Schiffsformen und Farben gegen Muenzen
+│   │   ├── ShopScene.ts        Laden: Formen, Farben und Auren gegen Muenzen
 │   │   ├── AchievementsScene.ts Erfolgsliste
 │   │   ├── GameScene.ts        Die Simulation (Solo und Duell)
 │   │   ├── HudScene.ts         Anzeige waehrend des Runs
@@ -151,6 +151,8 @@ isiHunt/
 │   │   ├── theme.ts            Farben, Schriftgroessen
 │   │   ├── depth.ts            Zeichenreihenfolge aller Ebenen
 │   │   ├── textures.ts         Prozedurale Grafiken
+│   │   ├── shipShapes.ts       Die Zeichnungen aller Fluggestalten
+│   │   ├── shipAnimations.ts   Die Bewegungen der legendaeren Auren
 │   │   ├── hitDebug.ts         Trefferflaechen sichtbar machen (?hitboxes)
 │   │   ├── debugOverlay.ts     Schwebender Debug-Knopf ausserhalb des Canvas (ADR-0016)
 │   │   ├── textInput.ts        Echtes HTML-Eingabefeld ueber dem Canvas
@@ -550,6 +552,57 @@ Punktzahlen → Vignette → Einblendungen.
 
 Vorher lagen diese Zahlen als `setDepth(60)` in Entities, Scenes und Widgets
 verstreut. Wer eine neue Ebene einzog, musste alle Dateien durchsuchen.
+
+## 9.1.1 Die Auren: Bewegung als dritte Kategorie
+
+Neben Form (Textur) und Farbe (Tint) traegt eine Figur seit 2026-08-21 eine
+**Aura** — eine Bewegung, die den ganzen Run ueber laeuft. Sie ist die
+teuerste der drei Kategorien und die einzige, die man auf einem Standbild
+nicht sehen kann.
+
+**Eine Aura ist eine Funktion der Zeit, kein Tween.** `src/ui/shipAnimations.ts`
+definiert sie als `(timeMs: number) => AuraFrame`: Laufzeit hinein, Aussehen
+heraus (Skalierung, Drehung, Transparenz, Farbverschiebung). Wer sie abspielen
+will, ruft sie je Frame auf und schreibt das Ergebnis auf sein Bild.
+
+Der Grund ist die Zahl der Abspielstellen. Eine Aura laeuft an drei Orten: an
+der Spielfigur (`Player.applyAura`), in der Ladenvorschau und auf den
+Ladenkarten (beides `ShopScene.update`). Als Phaser-Tween haette jeder Ort
+seine eigene Kette aus `tweens.add()` gebraucht — drei Fassungen derselben
+Bewegung, die beim naechsten Feinschliff auseinanderlaufen. So stammen alle
+drei aus derselben Funktion, und die Vorschau zeigt garantiert das, was man
+nach dem Kauf bekommt.
+
+Nebeneffekt: Die Datei importiert Phaser nicht einmal als Typ-Wert und laeuft
+damit in Node. Die Bewegungen sind in `Balance.test.ts` gegen ihre Grenzen
+geprueft (Sichtbarkeit, Maximalgroesse, Wertebereich, keine `NaN`) — ein
+Tween liesse sich nur im Browser pruefen.
+
+**Die Farbe wird verschoben, nicht ersetzt.** Eine Aura, die den Rumpf durch
+den Farbkreis schickt, macht die gekaufte Farbe unsichtbar — der Spieler
+haette zwei Kategorien bezahlt und saehe nur eine. `applyTintShift()` rechnet
+deshalb ueber HSV und mischt immer von der getragenen Farbe aus: heller,
+dunkler oder ein Stueck weiter im Kreis (hoechstens 60 Grad), aber nie
+unabhaengig von ihr. Gold bleibt unter jeder Aura als Gold erkennbar.
+
+**Zwei Schreiber auf einem Attribut.** Der Rumpf trug schon vorher ein sanftes
+Dauerpulsieren und eine Neigung in Bewegungsrichtung. Beide schrieben direkt
+auf `core.scale` bzw. `core.rotation`. Mit der Aura als drittem Schreiber
+haette der letzte im Frame gewonnen — je nach Reihenfolge flackernd. Das
+Pulsieren laeuft jetzt auf ein eigenes Feld (`ruheScale`), die Neigung auf
+`neigung`, und `applyAura()` setzt beides zusammen mit dem Aura-Anteil auf das
+Bild.
+
+**Im Duell traegt niemand eine Aura.** Dieselbe Fairness-Regel wie bei den
+Farben (`config/challenge.ts`): Eine flackernde Figur neben einer ruhigen
+waere auf einen Blick zuzuordnen, und der Vergleich soll am Spiel haengen,
+nicht am Guthaben.
+
+**Nicht ueberall sichtbar.** Menue, Profil und Talentbaum zeigen die Figur als
+kleines Standbild neben dem Guthaben; dort laeuft die Aura bewusst nicht. Drei
+Nebenbildschirme mit eigener `update()`-Schleife nur fuer ein 40-Pixel-Symbol
+waere Aufwand ohne Gegenwert, und im Menue lenkt eine bewegte Figur vom
+Startknopf ab.
 
 ## 9.2 Tests
 

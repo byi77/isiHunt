@@ -15,8 +15,13 @@ import {
   SAVE_VERSION,
   xpForLevel,
 } from '@/config/GameConfig';
-import { emptyRarityCounts } from '@/config/rarities';
-import { DEFAULT_SHIP_COLOR, DEFAULT_SHIP_SHAPE, shapesEarnedByLegacyLevel } from '@/config/shop';
+import { emptyRarityCounts, RARITY_IDS } from '@/config/rarities';
+import {
+  DEFAULT_SHIP_AURA,
+  DEFAULT_SHIP_COLOR,
+  DEFAULT_SHIP_SHAPE,
+  shapesEarnedByLegacyLevel,
+} from '@/config/shop';
 import { DEFAULT_WORLD_ID } from '@/config/worlds';
 import type { SaveData } from '@/types';
 
@@ -59,8 +64,10 @@ export function createDefaultSave(): SaveData {
     lastWorldId: DEFAULT_WORLD_ID,
     ownedShipShapes: [DEFAULT_SHIP_SHAPE],
     ownedShipColors: [DEFAULT_SHIP_COLOR],
+    ownedShipAuras: [DEFAULT_SHIP_AURA],
     shipShape: DEFAULT_SHIP_SHAPE,
     shipColor: DEFAULT_SHIP_COLOR,
+    shipAura: DEFAULT_SHIP_AURA,
     soundEnabled: true,
     playerName: '',
     cloudId: null,
@@ -95,47 +102,109 @@ function createUuid(): string {
   ].join('-');
 }
 
+function asRecord(value: unknown): Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : {};
+}
+
+function nonNegativeNumber(value: unknown, fallback: number): number {
+  const number = typeof value === 'number' ? value : Number(value);
+  return Number.isFinite(number) ? Math.max(0, number) : fallback;
+}
+
+function nonNegativeInteger(value: unknown, fallback: number): number {
+  return Math.floor(nonNegativeNumber(value, fallback));
+}
+
+function stringOr(value: unknown, fallback: string): string {
+  return typeof value === 'string' ? value : fallback;
+}
+
+function nullableStringOr(value: unknown, fallback: string | null): string | null {
+  return typeof value === 'string' || value === null ? value : fallback;
+}
+
+function stringArray(value: unknown, fallback: string[]): string[] {
+  if (!Array.isArray(value)) return [...fallback];
+  return [...new Set(value.filter((entry): entry is string => typeof entry === 'string'))];
+}
+
 /**
  * Fuellt fehlende Felder aus dem Default auf. Schuetzt gegen halb geschriebene
  * oder aeltere Staende, ohne dass jede Feld-Ergaenzung eine Migration braucht.
  */
 function reconcile(raw: Partial<SaveData>): SaveData {
   const base = createDefaultSave();
+  const source = asRecord(raw);
+  const rawRuns = nonNegativeInteger(source.totalRuns, base.totalRuns);
+  const ownedShipShapes = [
+    ...new Set([DEFAULT_SHIP_SHAPE, ...stringArray(source.ownedShipShapes, base.ownedShipShapes)]),
+  ];
+  const ownedShipColors = [
+    ...new Set([DEFAULT_SHIP_COLOR, ...stringArray(source.ownedShipColors, base.ownedShipColors)]),
+  ];
+  const ownedShipAuras = [
+    ...new Set([DEFAULT_SHIP_AURA, ...stringArray(source.ownedShipAuras, base.ownedShipAuras)]),
+  ];
+  const collected = emptyRarityCounts();
+  const rawCollected = asRecord(source.collected);
+  for (const rarityId of RARITY_IDS) {
+    collected[rarityId] = nonNegativeInteger(rawCollected[rarityId], 0);
+  }
+  const talents = { ...base.talents };
+  const rawTalents = asRecord(source.talents);
+  for (const [talentId, rank] of Object.entries(rawTalents)) {
+    if (typeof rank === 'number' && Number.isFinite(rank)) {
+      talents[talentId as keyof typeof talents] = Math.max(0, Math.floor(rank));
+    }
+  }
+  const selectedShape = stringOr(source.shipShape, base.shipShape);
+  const selectedColor = stringOr(source.shipColor, base.shipColor);
+  const selectedAura = stringOr(source.shipAura, base.shipAura);
   return {
     ...base,
-    ...raw,
     version: SAVE_VERSION,
-    coins: Math.max(0, raw.coins ?? base.coins),
-    totalPlayTimeMs: Math.max(0, raw.totalPlayTimeMs ?? (raw.totalRuns ?? 0) * RUN_DURATION_MS),
-    totalCoinsEarned: Math.max(0, raw.totalCoinsEarned ?? base.totalCoinsEarned),
-    coinsSpent: Math.max(0, raw.coinsSpent ?? base.coinsSpent),
-    lastLoginBonusKey: raw.lastLoginBonusKey ?? base.lastLoginBonusKey,
-    lastDailyKey: raw.lastDailyKey ?? base.lastDailyKey,
-    dailyBestScore: Math.max(0, raw.dailyBestScore ?? base.dailyBestScore),
-    totalDailyRuns: Math.max(0, raw.totalDailyRuns ?? base.totalDailyRuns),
-    pendingDailyKey: raw.pendingDailyKey ?? base.pendingDailyKey,
-    pendingDailyEventId: raw.pendingDailyEventId ?? base.pendingDailyEventId,
-    pendingDailyCoins: Math.max(0, raw.pendingDailyCoins ?? base.pendingDailyCoins),
-    pendingDailyScore: Math.max(0, raw.pendingDailyScore ?? base.pendingDailyScore),
-    soundEnabled: raw.soundEnabled ?? base.soundEnabled,
+    level: Math.max(1, Math.min(MAX_LEVEL, nonNegativeInteger(source.level, base.level))),
+    xp: nonNegativeInteger(source.xp, base.xp),
+    talentPoints: nonNegativeInteger(source.talentPoints, base.talentPoints),
+    coins: nonNegativeInteger(source.coins, base.coins),
+    talents,
+    bestScore: nonNegativeInteger(source.bestScore, base.bestScore),
+    bestCombo: nonNegativeInteger(source.bestCombo, base.bestCombo),
+    totalScore: nonNegativeInteger(source.totalScore, base.totalScore),
+    totalRuns: rawRuns,
+    totalPlayTimeMs: nonNegativeNumber(source.totalPlayTimeMs, rawRuns * RUN_DURATION_MS),
+    totalCoinsEarned: nonNegativeInteger(source.totalCoinsEarned, base.totalCoinsEarned),
+    coinsSpent: nonNegativeInteger(source.coinsSpent, base.coinsSpent),
+    lastLoginBonusKey: nullableStringOr(source.lastLoginBonusKey, base.lastLoginBonusKey),
+    lastDailyKey: nullableStringOr(source.lastDailyKey, base.lastDailyKey),
+    dailyBestScore: nonNegativeInteger(source.dailyBestScore, base.dailyBestScore),
+    totalDailyRuns: nonNegativeInteger(source.totalDailyRuns, base.totalDailyRuns),
+    pendingDailyKey: nullableStringOr(source.pendingDailyKey, base.pendingDailyKey),
+    pendingDailyEventId: nullableStringOr(source.pendingDailyEventId, base.pendingDailyEventId),
+    pendingDailyCoins: nonNegativeInteger(source.pendingDailyCoins, base.pendingDailyCoins),
+    pendingDailyScore: nonNegativeInteger(source.pendingDailyScore, base.pendingDailyScore),
     bestScoreRecordedAt:
-      typeof raw.bestScoreRecordedAt === 'string' &&
-      Number.isFinite(Date.parse(raw.bestScoreRecordedAt))
-        ? new Date(raw.bestScoreRecordedAt).toISOString()
+      typeof source.bestScoreRecordedAt === 'string' &&
+      Number.isFinite(Date.parse(source.bestScoreRecordedAt))
+        ? new Date(source.bestScoreRecordedAt).toISOString()
         : base.bestScoreRecordedAt,
-    collected: { ...base.collected, ...(raw.collected ?? {}) },
-    talents: { ...base.talents, ...(raw.talents ?? {}) },
-    unlockedAchievements: raw.unlockedAchievements ?? base.unlockedAchievements,
+    collected,
+    unlockedAchievements: stringArray(source.unlockedAchievements, base.unlockedAchievements),
+    lastWorldId: stringOr(source.lastWorldId, base.lastWorldId),
     // Der Pfeil und die Weltfarbe gehoeren immer dazu - sonst stuende ein
     // Spieler ohne Schiff da, wenn eine Liste beschaedigt ankommt.
-    ownedShipShapes: [
-      ...new Set([DEFAULT_SHIP_SHAPE, ...(raw.ownedShipShapes ?? base.ownedShipShapes)]),
-    ],
-    ownedShipColors: [
-      ...new Set([DEFAULT_SHIP_COLOR, ...(raw.ownedShipColors ?? base.ownedShipColors)]),
-    ],
-    shipShape: raw.shipShape ?? base.shipShape,
-    shipColor: raw.shipColor ?? base.shipColor,
+    ownedShipShapes,
+    ownedShipColors,
+    ownedShipAuras,
+    shipShape: ownedShipShapes.includes(selectedShape) ? selectedShape : DEFAULT_SHIP_SHAPE,
+    shipColor: ownedShipColors.includes(selectedColor) ? selectedColor : DEFAULT_SHIP_COLOR,
+    shipAura: ownedShipAuras.includes(selectedAura) ? selectedAura : DEFAULT_SHIP_AURA,
+    soundEnabled:
+      typeof source.soundEnabled === 'boolean' ? source.soundEnabled : base.soundEnabled,
+    playerName: stringOr(source.playerName, base.playerName),
+    cloudId: nullableStringOr(source.cloudId, base.cloudId),
   };
 }
 
@@ -191,14 +260,18 @@ function verteileXpNeu(
  * geschrieben (Audit 2026-08-19). Beide Stellen fragen jetzt hier.
  */
 function versionOf(raw: Partial<SaveData>): number {
-  return raw.version ?? 1;
+  const version = asRecord(raw).version;
+  return typeof version === 'number' && Number.isFinite(version) ? Math.floor(version) : 1;
 }
 
 /** Uebersetzt die alte XP-Kurve in die neue, ohne Fortschritt zu verschenken. */
 function migrate(raw: Partial<SaveData>): SaveData {
   const save = reconcile(raw);
   const rawVersion = versionOf(raw);
-  if (rawVersion >= SAVE_VERSION) return save;
+  if (rawVersion >= SAVE_VERSION) {
+    if (save.level >= MAX_LEVEL) save.xp = 0;
+    return save;
+  }
 
   // Version 1 hatte noch die alte XP-Kurve. Version 2 bekam bereits die
   // aktuelle Kurve; Version 3 fuegt nur das Coins-Feld hinzu.
@@ -238,6 +311,7 @@ function migrate(raw: Partial<SaveData>): SaveData {
       ...new Set([...save.ownedShipShapes, ...shapesEarnedByLegacyLevel(save.level)]),
     ];
   }
+  if (save.level >= MAX_LEVEL) save.xp = 0;
   return save;
 }
 
@@ -460,8 +534,10 @@ function vereinigeShopBesitz(lokal: SaveData, uebernommen: SaveData): SaveData {
       ...uebernommen,
       ownedShipShapes: [DEFAULT_SHIP_SHAPE],
       ownedShipColors: [DEFAULT_SHIP_COLOR],
+      ownedShipAuras: [DEFAULT_SHIP_AURA],
       shipShape: DEFAULT_SHIP_SHAPE,
       shipColor: DEFAULT_SHIP_COLOR,
+      shipAura: DEFAULT_SHIP_AURA,
     };
   }
 
@@ -472,6 +548,7 @@ function vereinigeShopBesitz(lokal: SaveData, uebernommen: SaveData): SaveData {
     // wegzunehmen waere der schlimmere Fehler.
     ownedShipShapes: [...new Set([...lokal.ownedShipShapes, ...uebernommen.ownedShipShapes])],
     ownedShipColors: [...new Set([...lokal.ownedShipColors, ...uebernommen.ownedShipColors])],
+    ownedShipAuras: [...new Set([...lokal.ownedShipAuras, ...uebernommen.ownedShipAuras])],
 
     // Das Getragene bleibt **immer** lokal.
     //
@@ -491,6 +568,7 @@ function vereinigeShopBesitz(lokal: SaveData, uebernommen: SaveData): SaveData {
     // hier wieder aufgemacht werden.
     shipShape: lokal.shipShape,
     shipColor: lokal.shipColor,
+    shipAura: lokal.shipAura,
   };
 }
 

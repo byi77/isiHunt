@@ -1,7 +1,7 @@
 import { balancedCoinCost } from './balance';
 
 /**
- * Der Laden: kaufbare Schiffsformen und Farben.
+ * Der Laden: kaufbare Schiffsformen, Farben und Auren.
  *
  * ## Warum die Formen nicht mehr am Level haengen
  *
@@ -825,8 +825,126 @@ export const SHIP_COLORS: readonly ShipColorDef[] = SHIP_COLORS_REFERENCE.map((c
   cost: balancedCoinCost(color.cost),
 }));
 
+/**
+ * Eine kaufbare Aura - die dritte Kategorie neben Form und Farbe.
+ *
+ * ## Warum sie teurer ist als beides
+ *
+ * Formen und Farben sind Standbilder: Wer sie traegt, unterscheidet sich auf
+ * einem Screenshot. Eine Aura sieht man nur in Bewegung, dafuer aber die
+ * ganze Runde lang - sie ist das auffaelligste, was eine Figur tragen kann.
+ * Deshalb ist sie das Fernziel: Die guenstigste kostet mehr als die teuerste
+ * Form, die teuerste entspricht rund 200 Runden.
+ *
+ * ## Warum sie mit den anderen Kategorien kombiniert und nicht ersetzt
+ *
+ * Eine Aura veraendert weder Textur noch Grundfarbe - sie moduliert nur, was
+ * Form und Farbe bereits festgelegt haben (siehe `ui/shipAnimations.ts`,
+ * "Warum die Farbe verschoben und nicht ersetzt wird"). Damit behalten die
+ * beiden guenstigeren Kategorien ihren Wert: Wer Gold gekauft hat, sieht auch
+ * unter der Aura Gold.
+ */
+export interface ShipAuraDef {
+  readonly id: ShipAuraId;
+  readonly name: string;
+  /** Kurze Beschreibung fuer die Ladenkarte. */
+  readonly description: string;
+  /** Preis in Muenzen. 0 = von Anfang an dabei (die Aura "keine"). */
+  readonly cost: number;
+  /**
+   * Index der Bewegung in `SHIP_ANIMATIONS`, oder `null` fuer "keine Aura".
+   *
+   * Wie bei `skinIndex`: darf sich nie aendern, sonst traegt eine gekaufte
+   * Aura ploetzlich eine andere Bewegung.
+   */
+  readonly animIndex: number | null;
+}
+
+/** Wie bei `ShipShapeId` bewusst ein freier String, nicht eine Union. */
+export type ShipAuraId = string;
+
+/**
+ * Die Preise steigen mit der Auffaelligkeit, nicht mit der Rechenarbeit.
+ *
+ * "Keine" bleibt kostenlos - eine Aura ist Schmuck, kein Eintrittspreis. Die
+ * uebrigen liegen zwischen 4 000 und 10 000 Muenzen. Zum Vergleich: Ein Run
+ * bringt rund 50 Muenzen, die teuerste **Form** kostet 3 000. Die erste Aura
+ * ist damit ein Ziel fuer nach dem Laden, nicht daneben.
+ */
+const SHIP_AURAS_REFERENCE: readonly ShipAuraDef[] = [
+  {
+    id: 'none',
+    name: 'Keine',
+    description: 'Die Figur bleibt ruhig.',
+    cost: 0,
+    animIndex: null,
+  },
+  {
+    id: 'wingbeat',
+    name: 'Flügelschlag',
+    description: 'Die Gestalt schlägt seitlich aus, wie Schwingen im Flug.',
+    cost: 4_000,
+    animIndex: 0,
+  },
+  {
+    id: 'heartbeat',
+    name: 'Herzschlag',
+    description: 'Zwei schnelle Schläge, dann eine Pause. Etwas Lebendiges.',
+    cost: 4_500,
+    animIndex: 3,
+  },
+  {
+    id: 'tumble',
+    name: 'Taumel',
+    description: 'Langsames Kippen im Raum, ohne festen Takt.',
+    cost: 5_000,
+    animIndex: 5,
+  },
+  {
+    id: 'spin',
+    name: 'Kreisel',
+    description: 'Dreht sich um die eigene Achse — mit Vorder- und Rückseite.',
+    cost: 6_000,
+    animIndex: 1,
+  },
+  {
+    id: 'phantom',
+    name: 'Phantom',
+    description: 'Wird durchscheinend und wieder fest.',
+    cost: 6_500,
+    animIndex: 4,
+  },
+  {
+    id: 'prism',
+    name: 'Prisma',
+    description: 'Der Farbton wandert, ohne die getragene Farbe zu verlieren.',
+    cost: 7_500,
+    animIndex: 2,
+  },
+  {
+    id: 'starfire',
+    name: 'Sternenbrand',
+    description: 'Unruhiges Flackern, das sich nie genau wiederholt.',
+    cost: 9_000,
+    animIndex: 6,
+  },
+  {
+    id: 'singularity',
+    name: 'Singularität',
+    description: 'Sog bis fast zum Punkt, dann der Rücksprung.',
+    cost: 10_000,
+    animIndex: 7,
+  },
+];
+
+export const SHIP_AURAS: readonly ShipAuraDef[] = SHIP_AURAS_REFERENCE.map((aura) => ({
+  ...aura,
+  cost: balancedCoinCost(aura.cost),
+}));
+
 export const DEFAULT_SHIP_SHAPE: ShipShapeId = 'arrow';
 export const DEFAULT_SHIP_COLOR: ShipColorId = 'world';
+export const DEFAULT_SHIP_AURA: ShipAuraId = 'none';
 
 export function getShipShape(id: string): ShipShapeDef {
   return SHIP_SHAPES.find((shape) => shape.id === id) ?? SHIP_SHAPES[0]!;
@@ -834,6 +952,21 @@ export function getShipShape(id: string): ShipShapeDef {
 
 export function getShipColor(id: string): ShipColorDef {
   return SHIP_COLORS.find((color) => color.id === id) ?? SHIP_COLORS[0]!;
+}
+
+export function getShipAura(id: string): ShipAuraDef {
+  return SHIP_AURAS.find((aura) => aura.id === id) ?? SHIP_AURAS[0]!;
+}
+
+/**
+ * Die Bewegung, die die Figur tragen soll - oder `null` fuer keine.
+ *
+ * Wie bei `shipTint()` gilt: Nur tragen, was auch gekauft wurde. Ein
+ * manipulierter Spielstand soll keine ungekaufte Aura zeigen.
+ */
+export function shipAuraIndex(save: { shipAura: string; ownedShipAuras: string[] }): number | null {
+  if (!save.ownedShipAuras.includes(save.shipAura)) return null;
+  return getShipAura(save.shipAura).animIndex;
 }
 
 /**

@@ -1,24 +1,35 @@
 /**
- * Der Laden: Schiffsformen und Farben gegen Muenzen.
+ * Der Laden: Schiffsformen, Farben und Auren gegen Muenzen.
  *
- * Zwei Reiter statt einer langen Liste - Formen und Farben verhalten sich
- * gleich (kaufen, dann anziehen), sind aber verschiedene Entscheidungen. Wer
- * eine Form sucht, will nicht an Farben vorbeiscrollen.
+ * Drei Reiter statt einer langen Liste - alle drei verhalten sich gleich
+ * (kaufen, dann anziehen), sind aber verschiedene Entscheidungen. Wer eine
+ * Form sucht, will nicht an Farben vorbeiscrollen.
  *
  * Die Vorschau zeigt immer die gerade gewaehlte Kombination, nicht nur den
  * angetippten Eintrag: Eine Form sieht in Gold anders aus als in Eisblau, und
  * genau das ist der Kaufgrund.
+ *
+ * ## Warum die Vorschau laeuft und nicht steht
+ *
+ * Fuer Formen und Farben genuegt ein Standbild - beide sind auf einem
+ * Screenshot zu beurteilen. Fuer eine Aura nicht: Ihr ganzer Kaufgrund ist
+ * das, was ein Standbild gerade nicht zeigt. Die Vorschau spielt die
+ * angeprobte Aura deshalb tatsaechlich ab (`update()`), sonst gaebe jemand
+ * zehntausend Muenzen fuer etwas aus, das er vorher nie gesehen hat.
  */
 
 import Phaser from 'phaser';
 
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import {
+  getShipAura,
   getShipColor,
   getShipShape,
+  SHIP_AURAS,
   SHIP_COLORS,
   SHIP_SHAPES,
   shipTint,
+  type ShipAuraDef,
   type ShipColorDef,
   type ShipShapeDef,
 } from '@/config/shop';
@@ -27,6 +38,7 @@ import { SceneKey } from '@/scenes/SceneKey';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
+import { applyTintShift, AURA_FRAME_RUHE, SHIP_ANIMATIONS } from '@/ui/shipAnimations';
 import { playerTextureForShape, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import {
@@ -40,7 +52,7 @@ import {
   createWorldBackdrop,
 } from '@/ui/widgets';
 
-type ShopTab = 'shapes' | 'colors';
+type ShopTab = 'shapes' | 'colors' | 'auras';
 
 /**
  * Ein Listenelement mit gemerkter Ausgangsposition.
@@ -75,6 +87,17 @@ export class ShopScene extends Phaser.Scene {
    */
   private anprobeShape: string | null = null;
   private anprobeColor: string | null = null;
+  private anprobeAura: string | null = null;
+  /** Laufzeit der Vorschau-Aura. Siehe `update()`. */
+  private vorschauAuraMs = 0;
+  /** Grundfarbe der Vorschau ohne Aura - die Aura verschiebt von hier aus. */
+  private vorschauFarbe = 0xffffff;
+  /** Die mitlaufenden Symbole der Aura-Karten, siehe `buildAuraKarte`. */
+  private auraSymbole: {
+    bild: Phaser.GameObjects.Image;
+    animIndex: number | null;
+    grundfarbe: number;
+  }[] = [];
   private vorschauBild!: Phaser.GameObjects.Image;
   private vorschauHalo!: Phaser.GameObjects.Image;
   private vorschauName!: Phaser.GameObjects.Text;
@@ -96,16 +119,20 @@ export class ShopScene extends Phaser.Scene {
       tab?: ShopTab;
       anprobeShape?: string;
       anprobeColor?: string;
+      anprobeAura?: string;
       scrollOffset?: number;
     } = {},
   ): void {
     SafeAreaSystem.showStatic('SHOP');
     this.tab = data.tab ?? 'shapes';
     this.inhalt = [];
+    this.auraSymbole = [];
     // Die Anprobe ueberlebt den Neustart, den ein Kauf ausloest - sonst
     // spraenge die Vorschau nach jedem Kauf auf das Getragene zurueck.
     this.anprobeShape = data.anprobeShape ?? null;
     this.anprobeColor = data.anprobeColor ?? null;
+    this.anprobeAura = data.anprobeAura ?? null;
+    this.vorschauAuraMs = 0;
     // Beim Reiterwechsel bewusst bei 0 anfangen - die andere Liste hat mit
     // der Stelle nichts zu tun.
     this.scrollOffset = data.scrollOffset ?? 0;
@@ -214,27 +241,86 @@ export class ShopScene extends Phaser.Scene {
     const save = SaveSystem.load();
     const shapeId = this.anprobeShape ?? save.shipShape;
     const colorId = this.anprobeColor ?? save.shipColor;
+    const auraId = this.anprobeAura ?? save.shipAura;
     const farbe = getShipColor(colorId).color ?? weltAkzent;
 
+    this.vorschauFarbe = farbe;
     this.vorschauBild.setTexture(playerTextureForShape(shapeId)).setTint(farbe);
     this.vorschauHalo.setTint(farbe);
+    // Beim Wechsel von vorn: Mitten im Sog einer Singularitaet einzusteigen
+    // sieht aus wie ein Fehler, nicht wie eine Bewegung.
+    this.vorschauAuraMs = 0;
+    this.spieleVorschauAura(0);
 
-    const angeprobt = this.anprobeShape !== null || this.anprobeColor !== null;
-    const name = `${getShipShape(shapeId).name} · ${getShipColor(colorId).name}`;
+    const angeprobt =
+      this.anprobeShape !== null || this.anprobeColor !== null || this.anprobeAura !== null;
+    const aura = getShipAura(auraId);
+    // Die Aura nur nennen, wenn eine getragen wird - "Pfeil · Gold · Keine"
+    // liest sich wie ein Mangel.
+    const teile = [getShipShape(shapeId).name, getShipColor(colorId).name];
+    if (aura.animIndex !== null) teile.push(aura.name);
+    const name = teile.join(' · ');
     this.vorschauName.setText(angeprobt ? `${name}  (Vorschau)` : name);
     this.vorschauName.setColor(angeprobt ? Palette.gold : Palette.inkDim);
   }
 
+  /**
+   * Spielt die Aura der Vorschau ab.
+   *
+   * Phaser ruft `update()` je Frame - dieselbe Rechnung, die im Spiel an der
+   * Figur haengt (`Player.applyAura`), laeuft hier auf dem Vorschaubild. Die
+   * Bewegung ist damit garantiert dieselbe, die man nach dem Kauf bekommt:
+   * Sie stammt aus derselben Funktion und nicht aus einer nachgebauten
+   * Tween-Kette, die beim naechsten Feinschliff auseinanderliefe.
+   */
+  override update(_time: number, delta: number): void {
+    if (this.vorschauBild === undefined) return;
+    this.vorschauAuraMs += delta;
+    this.spieleVorschauAura(this.vorschauAuraMs);
+
+    for (const eintrag of this.auraSymbole) {
+      // Unsichtbare Karten nicht rechnen: Bei neun Auren ist das wenig, aber
+      // `blendeAusserhalbAus` hat sie ohnehin abgeschaltet.
+      if (!eintrag.bild.visible) continue;
+      const frame =
+        eintrag.animIndex === null
+          ? AURA_FRAME_RUHE
+          : (SHIP_ANIMATIONS[eintrag.animIndex]?.(this.vorschauAuraMs) ?? AURA_FRAME_RUHE);
+      // 0,42 ist die Grundgroesse der Kartensymbole, siehe `buildAuraKarte`.
+      eintrag.bild.setScale(0.42 * frame.scaleX, 0.42 * frame.scaleY);
+      eintrag.bild.rotation = frame.rotation;
+      eintrag.bild.setAlpha(frame.alpha);
+      eintrag.bild.setTint(applyTintShift(eintrag.grundfarbe, frame.tint));
+    }
+  }
+
+  /** Setzt einen Augenblick der angeprobten Aura auf das Vorschaubild. */
+  private spieleVorschauAura(timeMs: number): void {
+    const auraId = this.anprobeAura ?? SaveSystem.load().shipAura;
+    const index = getShipAura(auraId).animIndex;
+    const frame =
+      index === null ? AURA_FRAME_RUHE : (SHIP_ANIMATIONS[index]?.(timeMs) ?? AURA_FRAME_RUHE);
+
+    // 0,85 ist die Grundgroesse der Vorschau, siehe `buildVorschau`.
+    this.vorschauBild.setScale(0.85 * frame.scaleX, 0.85 * frame.scaleY);
+    this.vorschauBild.rotation = frame.rotation;
+    this.vorschauBild.setAlpha(frame.alpha);
+    this.vorschauBild.setTint(applyTintShift(this.vorschauFarbe, frame.tint));
+  }
+
   private buildReiter(): void {
     const y = 385;
-    const breite = 200;
-    const luecke = 16;
-    const links = (GAME_WIDTH - (breite * 2 + luecke)) / 2;
-
+    const luecke = 12;
     const reiter: readonly { readonly id: ShopTab; readonly label: string }[] = [
       { id: 'shapes', label: 'FORMEN' },
       { id: 'colors', label: 'FARBEN' },
+      { id: 'auras', label: 'AUREN' },
     ];
+    // Breite aus der Anzahl rechnen statt fest: Mit dem dritten Reiter passen
+    // die frueheren 200 px nicht mehr nebeneinander, und ein Knopf, der ueber
+    // den Rand haengt, ist genau das, was die `controls`-Suite meldet.
+    const breite = (GAME_WIDTH - 60 - luecke * (reiter.length - 1)) / reiter.length;
+    const links = (GAME_WIDTH - (breite * reiter.length + luecke * (reiter.length - 1))) / 2;
 
     reiter.forEach((eintrag, index) => {
       const aktiv = this.tab === eintrag.id;
@@ -268,6 +354,10 @@ export class ShopScene extends Phaser.Scene {
       SHIP_SHAPES.forEach((shape, index) => this.buildFormKarte(shape, index, weltAkzent));
       return;
     }
+    if (this.tab === 'auras') {
+      SHIP_AURAS.forEach((aura, index) => this.buildAuraKarte(aura, index, weltAkzent));
+      return;
+    }
     SHIP_COLORS.forEach((color, index) => this.buildFarbKarte(color, index, weltAkzent));
   }
 
@@ -282,7 +372,7 @@ export class ShopScene extends Phaser.Scene {
    */
   private attachScroll(): void {
     const listeOben = this.karteY(0) - KARTE_HOEHE / 2;
-    const anzahl = this.tab === 'shapes' ? SHIP_SHAPES.length : SHIP_COLORS.length;
+    const anzahl = this.eintraegeImReiter();
     const listeUnten = this.karteY(anzahl - 1) + KARTE_HOEHE / 2;
     const sichtbarBis = GAME_HEIGHT - BACK_BUTTON_RESERVED_HEIGHT;
     const maxScroll = Math.max(0, listeUnten - sichtbarBis + 20);
@@ -361,6 +451,7 @@ export class ShopScene extends Phaser.Scene {
         this.scene.restart({
           tab: this.tab,
           anprobeColor: this.anprobeColor,
+          anprobeAura: this.anprobeAura,
           scrollOffset: this.scrollOffset,
         });
       },
@@ -402,6 +493,7 @@ export class ShopScene extends Phaser.Scene {
         this.scene.restart({
           tab: this.tab,
           anprobeShape: this.anprobeShape,
+          anprobeAura: this.anprobeAura,
           scrollOffset: this.scrollOffset,
         });
       },
@@ -415,6 +507,69 @@ export class ShopScene extends Phaser.Scene {
           .setTint(getShipColor(color.id).color ?? weltAkzent)
           .setScale(0.55),
     });
+  }
+
+  /**
+   * Eine Aura-Karte.
+   *
+   * Das Symbol links zeigt die **eigene Figur** in der Bewegung dieser Aura,
+   * nicht ein abstraktes Zeichen: Eine Aura laesst sich nur an einer Form
+   * beurteilen, und die Form, die zaehlt, ist die getragene. Anders als bei
+   * Formen und Farben laeuft das Symbol deshalb mit - siehe `update()`.
+   */
+  private buildAuraKarte(aura: ShipAuraDef, index: number, weltAkzent: number): void {
+    const save = SaveSystem.load();
+    const besitzt = save.ownedShipAuras.includes(aura.id);
+    const getragen = save.shipAura === aura.id;
+    const y = this.karteY(index);
+
+    this.buildKarte({
+      y,
+      getragen,
+      akzent: weltAkzent,
+      titel: aura.name,
+      untertitel: aura.description,
+      knopf: this.knopfText(besitzt, getragen, aura.cost),
+      knopfAktiv: !getragen && (besitzt || save.coins >= aura.cost),
+      onClick: () => {
+        if (getragen) return;
+        const ergebnis = besitzt
+          ? ProgressionSystem.equipShip(undefined, undefined, aura.id)
+          : ProgressionSystem.purchaseShipAura(aura.id);
+        if (!ergebnis) return;
+        this.scene.restart({
+          tab: this.tab,
+          anprobeShape: this.anprobeShape,
+          anprobeColor: this.anprobeColor,
+          scrollOffset: this.scrollOffset,
+        });
+      },
+      onAnprobe: () => {
+        this.anprobeAura = aura.id === SaveSystem.load().shipAura ? null : aura.id;
+        this.zeichneVorschau(weltAkzent);
+      },
+      symbol: (x: number, mitteY: number) => {
+        const bild = this.add
+          .image(x, mitteY, playerTextureForShape(this.anprobeShape ?? save.shipShape))
+          .setTint(shipTint(save, weltAkzent))
+          .setScale(0.42);
+        // Die Karte merkt sich ihre Aura, damit `update()` sie fortschreiben
+        // kann, ohne die Zuordnung neu suchen zu muessen.
+        this.auraSymbole.push({
+          bild,
+          animIndex: aura.animIndex,
+          grundfarbe: shipTint(save, weltAkzent),
+        });
+        return bild;
+      },
+    });
+  }
+
+  /** Wie viele Eintraege der aktive Reiter hat. */
+  private eintraegeImReiter(): number {
+    if (this.tab === 'shapes') return SHIP_SHAPES.length;
+    if (this.tab === 'auras') return SHIP_AURAS.length;
+    return SHIP_COLORS.length;
   }
 
   private knopfText(besitzt: boolean, getragen: boolean, kosten: number): string {

@@ -129,9 +129,9 @@ ist die Wahrheit. Werte am 2026-08-17 aus dem Code nachgezogen, s.
 Die Serie hat **zwei getrennte Stufen** — das ist der taktische Kern des
 Spiels:
 
-| | Wirkung |
-| --- | --- |
-| **Halten** | Jeder Fang setzt das Zeitfenster neu (Basis **0,9 s**) |
+|              | Wirkung                                                                |
+| ------------ | ---------------------------------------------------------------------- |
+| **Halten**   | Jeder Fang setzt das Zeitfenster neu (Basis **0,9 s**)                 |
 | **Steigern** | Nur ein **farbiger** Fang (ungewöhnlich und seltener) erhöht die Serie |
 
 - Weiße Relikte (schlicht, gewöhnlich) **halten** die Serie, steigern sie aber
@@ -161,15 +161,15 @@ wuerde sich unfair anfuehlen. Belohnt wird **Flow**, nicht Fehlerfreiheit.
 Ab der **ersten** Serie zieht die Figur eine Schleife hinter sich her. Länge
 und Farbe zeigen die Stufe:
 
-| Serie | Schleife | Farbe |
-| ----- | -------- | ----- |
-| 0     | keine    | — |
-| 1–4   | kurz     | Hellblau |
-| 5–9   | etwas länger | Cyan |
-| 10–19 | mittel   | Türkis |
-| 20–34 | lang     | Grün |
-| 35–49 | maximal  | Gold |
-| ab 50 | maximal  | Orange |
+| Serie | Schleife     | Farbe    |
+| ----- | ------------ | -------- |
+| 0     | keine        | —        |
+| 1–4   | kurz         | Hellblau |
+| 5–9   | etwas länger | Cyan     |
+| 10–19 | mittel       | Türkis   |
+| 20–34 | lang         | Grün     |
+| 35–49 | maximal      | Gold     |
+| ab 50 | maximal      | Orange   |
 
 **Warum eine gezeichnete Linie und kein Partikeleffekt.** Der erste Versuch
 nutzte allein den vorhandenen Partikel-Emitter mit `blendMode: 'ADD'`.
@@ -372,6 +372,49 @@ spielen. Der Bestwert waere dann keine Leistung mehr, sondern Geduld.
 legendaeres Relikt auf dem Feld liegt, duerfte in Ruhe zielen — das waere ein
 Vorteil, den der erste Spieler nicht hatte. Der Bildschirm erscheint trotzdem,
 denn Aussteigen muss moeglich bleiben; er beendet dann das ganze Duell.
+
+## 7.6 Der Laden: Form, Farbe, Aura
+
+Muenzen haben drei Senken im Laden. Alle drei sind rein kosmetisch — nichts
+davon macht schneller, groesser oder punktestaerker. Wer nichts kauft, ist
+nicht schwaecher, nur unauffaelliger.
+
+| Kategorie | Was sie aendert         | Preisspanne\*  | Gratis dabei |
+| --------- | ----------------------- | -------------- | ------------ |
+| Form      | Silhouette (Textur)     | 300 – 3 000    | Pfeil        |
+| Farbe     | Rumpf, Aura, Halo       | 200 – 900      | Weltfarbe    |
+| Aura      | Bewegung, den Run ueber | 4 000 – 10 000 | Keine        |
+
+\* Referenzwerte. Die tatsaechlichen Preise skalieren mit der Einnahmenrate
+(`balancedCoinCost`), damit eine Aenderung an der Muenzquelle nicht jeden
+Preis einzeln nachziehen muss.
+
+**Warum die Auren so viel teurer sind.** Ein Run bringt rund 50 Muenzen. Die
+teuerste Form entspricht damit etwa 60 Runden, die teuerste Aura rund 200. Das
+ist Absicht: Formen und Farben sind das, was man sich in den ersten Wochen
+leistet, Auren das Ziel danach. Eine Aura, die weniger kostet als eine Form,
+haette die Reihenfolge des Fortschritts umgedreht — ein Balance-Test haelt
+deshalb fest, dass **jede** Aura teurer ist als die teuerste Form.
+
+**Warum sie sich kombinieren statt zu ersetzen.** Die drei Kategorien greifen
+auf verschiedene Ebenen zu: Die Form bestimmt die Textur, die Farbe deren
+Tint, die Aura moduliert beides ueber die Zeit. Eine Aura, die den Rumpf durch
+den Farbkreis schickt, haette die gekaufte Farbe unsichtbar gemacht — der
+Spieler haette zwei Kategorien bezahlt und saehe nur eine. Die
+Farbverschiebung bleibt deshalb bei hoechstens 60 Grad und mischt immer von
+der getragenen Farbe aus.
+
+**Grenzen, die die Spielbarkeit schuetzen.** Keine Aura darf die Figur unter
+30 % Deckkraft druecken oder auf mehr als das 1,5-fache aufblaehen. Wer sein
+Schiff im Gewuehl verliert, verliert die Runde; und eine Figur, die den
+eigenen Sammelradius ueberdeckt, macht das Feedback des Halos unlesbar. Beide
+Grenzen sind in `Balance.test.ts` ueber eine Sekunde Laufzeit je Aura
+geprueft.
+
+**Im Duell traegt niemand etwas Gekauftes.** Beide Spieler fliegen dieselbe
+Grundform in der Weltfarbe, ohne Aura (`GameScene`, `nonProgressionMode`).
+Jede der drei Kategorien wuerde die zwei auf einen Blick unterscheidbar
+machen; der Vergleich soll am Spiel haengen, nicht am Guthaben (s. 4.1).
 
 ## 8. Steuerung
 

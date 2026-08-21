@@ -52,10 +52,14 @@ export interface SaveData {
   ownedShipShapes: string[];
   /** Im Laden gekaufte Farben. Die Weltfarbe ist immer dabei. */
   ownedShipColors: string[];
+  /** Im Laden gekaufte Auren. "Keine" ist immer dabei. */
+  ownedShipAuras: string[];
   /** Aktuell getragene Form. */
   shipShape: string;
   /** Aktuell getragene Farbe. */
   shipColor: string;
+  /** Aktuell getragene Aura - die Bewegung der Figur. */
+  shipAura: string;
   /** Audio-Feedback in den Einstellungen ein- oder ausgeschaltet. */
   soundEnabled: boolean;
 

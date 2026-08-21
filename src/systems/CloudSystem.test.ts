@@ -17,7 +17,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { emptyRarityCounts } from '@/config/rarities';
-import { DEFAULT_SHIP_COLOR, DEFAULT_SHIP_SHAPE } from '@/config/shop';
+import { DEFAULT_SHIP_AURA, DEFAULT_SHIP_COLOR, DEFAULT_SHIP_SHAPE } from '@/config/shop';
 import { DEFAULT_WORLD_ID } from '@/config/worlds';
 import type * as CloudSystemModule from '@/systems/CloudSystem';
 import type { SaveData } from '@/types';
@@ -70,8 +70,10 @@ function createSave(overrides: Partial<SaveData> = {}): SaveData {
     lastWorldId: DEFAULT_WORLD_ID,
     ownedShipShapes: [DEFAULT_SHIP_SHAPE],
     ownedShipColors: [DEFAULT_SHIP_COLOR],
+    ownedShipAuras: [DEFAULT_SHIP_AURA],
     shipShape: DEFAULT_SHIP_SHAPE,
     shipColor: DEFAULT_SHIP_COLOR,
+    shipAura: DEFAULT_SHIP_AURA,
     soundEnabled: true,
     playerName: '',
     cloudId: null,
