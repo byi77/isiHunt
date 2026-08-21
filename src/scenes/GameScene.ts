@@ -181,6 +181,7 @@ export class GameScene extends Phaser.Scene {
 
     eventBus.onEvent(GameEvent.PauseRequested, this.onPauseRequested);
     eventBus.onEvent(GameEvent.AbortRequested, this.onAbortRequested);
+    document.addEventListener('visibilitychange', this.onVisibilityChange);
 
     // Waehrend eines Netzwerk-Duells soll ein Verbindungsabbruch des Gegners
     // sichtbar werden, ohne den eigenen Run zu unterbrechen (Planungsnotiz:
@@ -208,6 +209,13 @@ export class GameScene extends Phaser.Scene {
   // `onEvent` - sonst wird nicht abgemeldet (CODE_STYLE.md 1.4).
   private readonly onPauseRequested = (): void => this.togglePause();
   private readonly onAbortRequested = (): void => this.abortRun();
+
+  // Kein EventBus-Handler, sondern ein DOM-Listener: Die Unterbrechung kommt
+  // vom Geraet, nicht aus dem Spiel. Als Klassenfeld, damit
+  // `removeEventListener` dieselbe Referenz bekommt (CODE_STYLE.md 1.4).
+  private readonly onVisibilityChange = (): void => {
+    if (document.visibilityState === 'hidden') this.pauseForInterruption();
+  };
 
   update(_time: number, delta: number): void {
     if (this.phase !== 'running') return;
@@ -586,7 +594,7 @@ export class GameScene extends Phaser.Scene {
     // in Ruhe zielen - das bricht die Fairness gegenueber dem ersten Spieler
     // (config/challenge.ts). Aussteigen bleibt moeglich.
     if (this.mode !== 'solo') {
-      eventBus.emitEvent(GameEvent.RunPaused, undefined);
+      eventBus.emitEvent(GameEvent.RunPaused, { reason: 'manual' });
       return;
     }
 
@@ -595,8 +603,43 @@ export class GameScene extends Phaser.Scene {
       eventBus.emitEvent(GameEvent.RunResumed, undefined);
     } else {
       this.scene.pause();
-      eventBus.emitEvent(GameEvent.RunPaused, undefined);
+      eventBus.emitEvent(GameEvent.RunPaused, { reason: 'manual' });
     }
+  }
+
+  /**
+   * Haelt den Run an, weil das Geraet die Seite verlassen hat - Anruf,
+   * Bildschirmsperre, App-Wechsel.
+   *
+   * **Warum nicht `togglePause()`:** Das waere ein Umschalter. iOS sendet
+   * `visibilitychange` mehrfach kurz hintereinander (Kontrollzentrum ueber
+   * der Seite, dann echter Wechsel); ein Umschalter startete den Run beim
+   * zweiten Ereignis wieder - bei ausgeschaltetem Bildschirm. Diese Methode
+   * pausiert nur, sie setzt nie fort.
+   *
+   * **Warum kein automatisches Fortsetzen bei der Rueckkehr:** Wer aus einem
+   * Anruf zurueckkommt, haelt den Finger nicht schon auf dem Glas. Ein Run,
+   * der ohne Vorwarnung weiterlaeuft, kostet genau die Sekunden, die der
+   * Spieler zum Ankommen braucht. Fortgesetzt wird ueber den vorhandenen
+   * Knopf im Pause-Bildschirm.
+   */
+  pauseForInterruption(): void {
+    if (this.phase !== 'running') return;
+
+    // Im Duell laeuft die Simulation weiter (dieselbe Fairness-Regel wie im
+    // Umschalter oben), der Hinweis erscheint aber trotzdem: Ohne ihn wirkt
+    // ein zurueckkehrender Spieler auf einen eingefrorenen Bildschirm - genau
+    // die Beobachtung, die diesen Punkt ausgeloest hat ("Bildschirm hing,
+    // nichts ging mehr"). Phaser haelt die Update-Schleife im Hintergrund
+    // ohnehin an; ein Vorteil entsteht durch den Hinweis also nicht.
+    if (this.mode !== 'solo') {
+      eventBus.emitEvent(GameEvent.RunPaused, { reason: 'interrupted' });
+      return;
+    }
+
+    if (this.scene.isPaused()) return;
+    this.scene.pause();
+    eventBus.emitEvent(GameEvent.RunPaused, { reason: 'interrupted' });
   }
 
   /**
@@ -628,6 +671,7 @@ export class GameScene extends Phaser.Scene {
   private cleanup(): void {
     eventBus.offEvent(GameEvent.PauseRequested, this.onPauseRequested);
     eventBus.offEvent(GameEvent.AbortRequested, this.onAbortRequested);
+    document.removeEventListener('visibilitychange', this.onVisibilityChange);
 
     for (const orb of this.collectibles) orb.destroy();
     this.collectibles = [];

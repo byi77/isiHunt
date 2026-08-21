@@ -41,6 +41,14 @@ beforeEach(async () => {
   signedIn = false;
   submitProgressEvent.mockReset();
   claimDailyBonus.mockReset();
+
+  // Feste Zeit: Der Tagesbonus verfaellt jetzt, wenn sein Schluessel mehr als
+  // einen Tag vom heutigen abweicht (`DAILY_KEY_TOLERANCE_MS`). Ohne diese
+  // Fixierung wuerden die Tests mit den fest eingetragenen Datums-Strings am
+  // naechsten Tag von selbst rot - sie pruefen dann etwas anderes als gemeint.
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-08-17T12:00:00Z'));
+
   vi.resetModules();
   SaveSystem = await import('@/systems/SaveSystem');
   ProgressSyncSystem = await import('@/systems/ProgressSyncSystem');
@@ -204,6 +212,59 @@ describe('flushPending (ueber flush())', () => {
     const data = SaveSystem.load();
     expect(data.pendingDailyKey).toBe('2026-08-17');
     expect(data.pendingDailyCoins).toBe(50);
+  });
+
+  it('holt einen Tagesbonus vom Vortag noch ab', async () => {
+    // Ein Offline-Lauf von gestern, der erst heute hochgeladen wird, ist
+    // legitim - er darf nicht am Fenster scheitern.
+    signedIn = true;
+    SaveSystem.update((data) => {
+      data.pendingDailyKey = '2026-08-16';
+      data.pendingDailyEventId = 'event-1';
+      data.pendingDailyCoins = 50;
+      data.pendingDailyScore = 300;
+    });
+    claimDailyBonus.mockResolvedValue({ ok: true, value: { data: SaveSystem.load() } });
+
+    await ProgressSyncSystem.flush();
+
+    expect(claimDailyBonus).toHaveBeenCalledWith('2026-08-16', 300, 'event-1');
+  });
+
+  it('verwirft einen zu alten Tagesbonus, statt ihn ewig zu wiederholen', async () => {
+    // Der Server lehnt einen Schluessel ausserhalb des Fensters dauerhaft ab
+    // (`daily_key_is_plausible()`). Ohne lokalen Verfall bliebe er fuer immer
+    // in `pendingDailyKey` stehen und loeste bei jedem Abgleich einen
+    // aussichtslosen Aufruf aus.
+    signedIn = true;
+    SaveSystem.update((data) => {
+      data.pendingDailyKey = '2026-08-01';
+      data.pendingDailyEventId = 'event-1';
+      data.pendingDailyCoins = 50;
+      data.pendingDailyScore = 300;
+    });
+
+    await ProgressSyncSystem.flush();
+
+    expect(claimDailyBonus).not.toHaveBeenCalled();
+    const data = SaveSystem.load();
+    expect(data.pendingDailyKey).toBeNull();
+    expect(data.pendingDailyCoins).toBe(0);
+  });
+
+  it('verwirft einen unsinnigen Tagesschluessel', async () => {
+    signedIn = true;
+    SaveSystem.update((data) => {
+      data.pendingDailyKey = 'kein-datum';
+      data.pendingDailyEventId = 'event-1';
+      data.pendingDailyCoins = 50;
+      data.pendingDailyScore = 300;
+    });
+
+    await ProgressSyncSystem.flush();
+
+    expect(claimDailyBonus).not.toHaveBeenCalled();
+    expect(SaveSystem.load().pendingDailyKey).toBeNull();
   });
 });
 

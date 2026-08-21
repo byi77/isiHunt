@@ -339,6 +339,35 @@ auf die Absicht.
 
 Dieselbe Trennung gilt fuer `AbortRequested`.
 
+**Zwei Gruende, dieselbe Meldung.** `RunPaused` traegt seit v0.1.211 ein Feld
+`reason`:
+
+| `reason`      | Ausloeser                                       | Was das HUD zeigt |
+| ------------- | ----------------------------------------------- | ----------------- |
+| `manual`      | Pause-Knopf im HUD, Debug-Taste                 | `PAUSE`           |
+| `interrupted` | `visibilitychange` — Anruf, Sperre, App-Wechsel | `ANGEHALTEN`      |
+
+Der Unterschied ist keine Kosmetik. Phaser haelt die Update-Schleife an, sobald
+die Seite in den Hintergrund geht — ohne eigenes Zutun und ohne Anzeige. Wer
+aus einem Anruf zurueckkam, sah einen stehenden Bildschirm und hielt ihn fuer
+einen Absturz ("Bildschirm hing, nichts ging mehr"). Wer selbst auf Pause
+tippt, braucht diese Erklaerung nicht — deshalb zwei Texte statt einem.
+
+**`pauseForInterruption()` ist kein Umschalter.** `togglePause()` waere hier
+falsch: iOS sendet `visibilitychange` mehrfach kurz hintereinander
+(Kontrollzentrum ueber der Seite, dann echter Wechsel), und ein Umschalter
+startete den Run beim zweiten Ereignis wieder — bei ausgeschaltetem
+Bildschirm. Die Methode pausiert nur, sie setzt nie fort.
+
+**Fortgesetzt wird ausschliesslich von Hand.** Wer aus einem Anruf
+zurueckkommt, haelt den Finger nicht schon auf dem Glas; ein automatisch
+weiterlaufender Run kostete genau die Sekunden zum Ankommen.
+
+**Im Duell erscheint der Hinweis, die Simulation laeuft weiter.** Die
+Fairness-Regel aus `config/challenge.ts` bleibt unangetastet — ein Vorteil
+entstuende ohnehin nicht, weil Phaser die Schleife im Hintergrund von sich aus
+anhaelt.
+
 ## 7. Frameratenunabhaengigkeit
 
 Alles Bewegte rechnet mit `delta`:
@@ -531,14 +560,14 @@ Progression laeuft dadurch gegen die echte Persistenz statt gegen eine Attrappe
 — eine Attrappe haette den Modul-Cache in `SaveSystem` nicht mit abgebildet, und
 genau der ist die Stelle, an der Tests unbemerkt voneinander abhaengig werden.
 
-| Datei                            | Deckt ab                                                        |
-| -------------------------------- | --------------------------------------------------------------- |
-| `ScoreSystem.test.ts`            | Multiplikatorstufen, Combo-Zerfall, Rundung, Run-Statistik      |
-| `ProgressionSystem.test.ts`      | XP-Kurve, mehrfache Aufstiege, Maximalstufe, Welten, Erfolge    |
-| `ChallengeSystem.test.ts`        | Seed-Vergabe, Rundenwechsel, Sieger und Gleichstand             |
-| `SaveSystem.test.ts`             | Migration: Persistenz, Schreibfehler, fehlendes `version`-Feld  |
-| `ProgressSyncSystem.test.ts`     | Outbox: Guards, Tagesbonus, Retry, Teilfehlschlag mit mehreren  |
-| `CloudSystem.test.ts`            | reine Funktionen; "wirft nie" **ohne** eingerichtetes Backend   |
+| Datei                            | Deckt ab                                                          |
+| -------------------------------- | ----------------------------------------------------------------- |
+| `ScoreSystem.test.ts`            | Multiplikatorstufen, Combo-Zerfall, Rundung, Run-Statistik        |
+| `ProgressionSystem.test.ts`      | XP-Kurve, mehrfache Aufstiege, Maximalstufe, Welten, Erfolge      |
+| `ChallengeSystem.test.ts`        | Seed-Vergabe, Rundenwechsel, Sieger und Gleichstand               |
+| `SaveSystem.test.ts`             | Migration: Persistenz, Schreibfehler, fehlendes `version`-Feld    |
+| `ProgressSyncSystem.test.ts`     | Outbox: Guards, Tagesbonus, Retry, Teilfehlschlag mit mehreren    |
+| `CloudSystem.test.ts`            | reine Funktionen; "wirft nie" **ohne** eingerichtetes Backend     |
 | `CloudSystem.configured.test.ts` | "wirft nie" **mit** Backend: Anmelde-Guard und echter Netzausfall |
 
 **Warum `CloudSystem` zwei Dateien hat.** `vi.mock` gilt fuer das ganze Modul,
@@ -583,15 +612,15 @@ Kette, die Vitest nicht erreicht: Scene-Fluss, Navigation, Bedienelemente,
 Steuerung, Kollision, Punktevergabe, Layout und Persistenz. Rund 71 Schritte,
 etwa 25 Minuten.
 
-| Suite      | Deckt ab                                                            |
-| ---------- | ------------------------------------------------------------------- |
-| `screens`  | Profil, Talentbaum, Erfolge, Einstellungen, Rangliste, Wartung      |
-| `nav`      | Menuewege hin und zurueck, per echtem Klick auf den Knopf           |
-| `controls` | Ueberlappung, Lage, Groesse der Tippziele, Scrollen langer Menues   |
-| `layout`   | Canvas-Ueberstand und unterster Knopf ueber 19 Geraeteformate       |
-| `ios`      | Dieselben Pruefungen in echtem WebKit statt in Chromium             |
+| Suite      | Deckt ab                                                             |
+| ---------- | -------------------------------------------------------------------- |
+| `screens`  | Profil, Talentbaum, Erfolge, Einstellungen, Rangliste, Wartung       |
+| `nav`      | Menuewege hin und zurueck, per echtem Klick auf den Knopf            |
+| `controls` | Ueberlappung, Lage, Groesse der Tippziele, Scrollen langer Menues    |
+| `layout`   | Canvas-Ueberstand und unterster Knopf ueber 19 Geraeteformate        |
+| `ios`      | Dieselben Pruefungen in echtem WebKit statt in Chromium              |
 | `progress` | Levelaufstieg, Muenzen, Erfolge, Bestwert, Spielstand ueber Neuladen |
-| `modes`    | Solo in drei Welten, Tageslauf, Bot-Duell                           |
+| `modes`    | Solo in drei Welten, Tageslauf, Bot-Duell                            |
 
 Einzeln zu fahren ueber `--only=nav,controls` (kommagetrennt).
 `--watch` oeffnet ein sichtbares Fenster mit gebremster Eingabe.
@@ -625,13 +654,13 @@ spielt. Fuer eine Doku-Aenderung ist das Verschwendung, fuer einen Eingriff in
 `GameScene` das Mindeste. `npm run test:scope` liest die geaenderten Dateien
 und nennt die angemessene Stufe:
 
-| Stufe    | Dauer   | Suiten                                             | Wann                                          |
-| -------- | ------- | -------------------------------------------------- | --------------------------------------------- |
-| _keine_  | 0 Min   | —                                                  | Doku, Hooks, CI, Formatierung                 |
-| klein    | ~2 Min  | `screens`, `nav`                                   | sonstiger Quellcode, der Playtest selbst      |
-| mittel   | ~5 Min  | + `controls`, `layout`                             | `ui/`, einzelne Scenes, Eingabe               |
-| gross    | ~11 Min | + `progress`, `ios`                                | `index.html`, `main.ts`, `viewport.ts`, Persistenz |
-| voll     | ~20 Min | + `modes`                                          | `GameScene`, Balancing, Welten, Entities      |
+| Stufe   | Dauer   | Suiten                 | Wann                                               |
+| ------- | ------- | ---------------------- | -------------------------------------------------- |
+| _keine_ | 0 Min   | —                      | Doku, Hooks, CI, Formatierung                      |
+| klein   | ~2 Min  | `screens`, `nav`       | sonstiger Quellcode, der Playtest selbst           |
+| mittel  | ~5 Min  | + `controls`, `layout` | `ui/`, einzelne Scenes, Eingabe                    |
+| gross   | ~11 Min | + `progress`, `ios`    | `index.html`, `main.ts`, `viewport.ts`, Persistenz |
+| voll    | ~20 Min | + `modes`              | `GameScene`, Balancing, Welten, Entities           |
 
 ```bash
 npm run test:scope           # nennt die Stufe zum Arbeitsstand
@@ -658,12 +687,12 @@ Der Rueckweg laeuft ueber den Zurueck-Knopf der Zielseite, nicht per
 
 #### Was `controls` prueft, und was bewusst nicht
 
-| Pruefung                | Regel                                                      |
-| ----------------------- | ---------------------------------------------------------- |
-| Ueberlappung            | Nur **zwei echte Knoepfe**; alles andere ist kein Fehler   |
-| Lage                    | Trefferflaeche muss in der Spielflaeche liegen             |
-| Groesse                 | In **CSS-Pixeln** des echten Viewports, nicht in Spielpixeln |
-| Scrollen                | Echter Drag, gemessen am Versatz des Inhalts-Containers    |
+| Pruefung     | Regel                                                        |
+| ------------ | ------------------------------------------------------------ |
+| Ueberlappung | Nur **zwei echte Knoepfe**; alles andere ist kein Fehler     |
+| Lage         | Trefferflaeche muss in der Spielflaeche liegen               |
+| Groesse      | In **CSS-Pixeln** des echten Viewports, nicht in Spielpixeln |
+| Scrollen     | Echter Drag, gemessen am Versatz des Inhalts-Containers      |
 
 **Ueberlappung ist nicht automatisch ein Fehler.** Das Logo im Hauptmenue
 traegt eine 640x360-Trefferflaeche — die Groesse der Originaltextur, nicht der
@@ -694,11 +723,11 @@ faelschlich "scrollt nicht".
 Alle drei lagen am Test, nicht am Spiel — und alle drei haetten als Bug
 gemeldet werden koennen:
 
-| Meldung                          | Tatsaechliche Ursache                                  |
-| -------------------------------- | ------------------------------------------------------ |
-| "Steuerung bewegt nichts"        | Gemessen wurde waehrend des Countdowns                 |
-| "Spielstand ueberlebt Neuladen nicht" | `addInitScript` ueberschrieb ihn bei jedem Aufbau |
-| "Info-Knopf ist verdeckt"        | `hitTest()` von Hand; der echte Klick loeste ihn aus   |
+| Meldung                               | Tatsaechliche Ursache                                |
+| ------------------------------------- | ---------------------------------------------------- |
+| "Steuerung bewegt nichts"             | Gemessen wurde waehrend des Countdowns               |
+| "Spielstand ueberlebt Neuladen nicht" | `addInitScript` ueberschrieb ihn bei jedem Aufbau    |
+| "Info-Knopf ist verdeckt"             | `hitTest()` von Hand; der echte Klick loeste ihn aus |
 
 Daraus die Regel: **Der echte Klick ist der Massstab, nicht die Rechnung.**
 
@@ -739,9 +768,9 @@ die Eigenheiten, die dieses Projekt teuer bezahlt hat (`100dvh`,
 **Ab welchem iOS laeuft es?** `npm run ios:check` liest das **gebaute
 Bundle** und meldet die hoechste gefundene Anforderung:
 
-| | |
-| --- | --- |
-| Laedt ueberhaupt ab | **iOS 14.0** (Logical Assignment `??=`) |
+|                         |                                           |
+| ----------------------- | ----------------------------------------- |
+| Laedt ueberhaupt ab     | **iOS 14.0** (Logical Assignment `??=`)   |
 | Vollstaendig nutzbar ab | **iOS 15.4** (`structuredClone()`, `dvh`) |
 
 **Massgeblich ist iOS 15.4.** `structuredClone()` sitzt in
@@ -771,11 +800,11 @@ Einzeln zu fahren ueber `--only=layout` (mehrere kommagetrennt).
 
 Drei Bausteine machen das moeglich:
 
-| Baustein                          | Warum es geht                                                                                 |
-| --------------------------------- | --------------------------------------------------------------------------------------------- |
-| `window.isiHunt` (`main.ts` 282)  | Der Dev-Build haengt die Phaser-Instanz an `window`; darueber sind Scenes und Felder lesbar     |
-| Tastatur statt Klick-Koordinaten  | `InputController` nimmt WASD/Pfeile; das umgeht Phasers FIT-Skalierung samt Koordinatenumrechnung |
-| `.env.playtest`                   | Leere Backend-Zugangsdaten ⇒ `AuthSystem` wird nie ready ⇒ MenuScene loescht den vorgesetzten Stand nicht |
+| Baustein                         | Warum es geht                                                                                             |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `window.isiHunt` (`main.ts` 282) | Der Dev-Build haengt die Phaser-Instanz an `window`; darueber sind Scenes und Felder lesbar               |
+| Tastatur statt Klick-Koordinaten | `InputController` nimmt WASD/Pfeile; das umgeht Phasers FIT-Skalierung samt Koordinatenumrechnung         |
+| `.env.playtest`                  | Leere Backend-Zugangsdaten ⇒ `AuthSystem` wird nie ready ⇒ MenuScene loescht den vorgesetzten Stand nicht |
 
 **Der Login ist die eigentliche Huerde, nicht das Spielen.** `MenuScene.create()`
 schickt jeden Stand ohne `playerName` in die `AccountScene` (Zeile 76-82) und
@@ -826,12 +855,12 @@ es startet, und faellt dort um, wo es tatsaechlich laufen muss.
 
 Ehrlich benannt, damit sie nicht ueberrascht:
 
-| Grenze                                              | Ab wann relevant                                    | Loesung                                    |
-| --------------------------------------------------- | --------------------------------------------------- | ------------------------------------------ |
-| Kein Object Pooling — jedes Relikt wird neu erzeugt | > 100 gleichzeitige Objekte                         | Pool in `SpawnSystem`                      |
+| Grenze                                              | Ab wann relevant                                    | Loesung                                                                                                                                                                                                                                                                             |
+| --------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Kein Object Pooling — jedes Relikt wird neu erzeugt | > 100 gleichzeitige Objekte                         | Pool in `SpawnSystem`                                                                                                                                                                                                                                                               |
 | Vitest deckt nur `systems/`, nicht Scenes/Entities  | ab Regressionen in Darstellung oder Eingabe         | `npm run playtest` deckt Scene-Fluss, Navigation, Bedienelemente, Steuerung, Kollision, Layout und Persistenz ab (9.3). Offen bleiben: Touch-Eigenheiten echter Geraete, Game-Feel, Bildrate unter Last, Aussehen jenseits von "laeuft und liegt richtig", Online-Duell und Duell2G |
-| Kollisionstest ist O(n) ueber alle Objekte          | > ~200 Objekte                                      | Raeumliches Gitter                         |
-| Ton nur prozedural, keine Audiodateien              | Musik oder komplexe Klangkulisse                    | Dateien/Audio-Mixer in M4                  |
-| HUD-Layout nutzt 720×variable Portraithoehe         | nie (FIT skaliert)                                  | —                                          |
-| **Bestenliste ist manipulierbar**                   | sobald sie oeffentlich beworben wird                | Runs serverseitig nachrechnen (ADR-0011)   |
-| Sync ueberschreibt, statt zusammenzufuehren         | wenn auf beiden Geraeten regelmaessig gespielt wird | Feldweises Zusammenfuehren monotoner Werte |
+| Kollisionstest ist O(n) ueber alle Objekte          | > ~200 Objekte                                      | Raeumliches Gitter                                                                                                                                                                                                                                                                  |
+| Ton nur prozedural, keine Audiodateien              | Musik oder komplexe Klangkulisse                    | Dateien/Audio-Mixer in M4                                                                                                                                                                                                                                                           |
+| HUD-Layout nutzt 720×variable Portraithoehe         | nie (FIT skaliert)                                  | —                                                                                                                                                                                                                                                                                   |
+| **Bestenliste ist manipulierbar**                   | sobald sie oeffentlich beworben wird                | Runs serverseitig nachrechnen (ADR-0011)                                                                                                                                                                                                                                            |
+| Sync ueberschreibt, statt zusammenzufuehren         | wenn auf beiden Geraeten regelmaessig gespielt wird | Feldweises Zusammenfuehren monotoner Werte                                                                                                                                                                                                                                          |

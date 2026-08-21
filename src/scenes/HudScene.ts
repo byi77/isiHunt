@@ -179,7 +179,7 @@ export class HudScene extends Phaser.Scene {
    * dann, wenn die Simulation wirklich steht, und nicht schon, wenn sie darum
    * gebeten wurde.
    */
-  private showPauseOverlay(): void {
+  private showPauseOverlay(reason: 'manual' | 'interrupted' = 'manual'): void {
     const cx = GAME_WIDTH / 2;
     const cy = GAME_HEIGHT / 2;
 
@@ -197,23 +197,50 @@ export class HudScene extends Phaser.Scene {
     });
     panel.setDepth(Depth.Overlay);
 
+    // Wer selbst auf Pause getippt hat, weiss warum. Wer aus einem Anruf
+    // zurueckkommt, sieht sonst nur einen stehenden Bildschirm - genau das
+    // wirkte im Test wie ein Absturz.
     const title = this.add
-      .text(cx, cy - 190, 'PAUSE', textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }))
+      .text(
+        cx,
+        cy - 190,
+        reason === 'interrupted' ? 'ANGEHALTEN' : 'PAUSE',
+        textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
+      )
       .setOrigin(0.5)
       .setDepth(Depth.Overlay);
     title.setLetterSpacing(6);
 
     this.pauseOverlay.push(shade, panel, title);
 
+    if (reason === 'interrupted' && this.mode !== 'challenge') {
+      const why = this.add
+        .text(
+          cx,
+          cy - 130,
+          'Die App war kurz im Hintergrund.',
+          textStyle(FontSize.small, Palette.inkDim),
+        )
+        .setOrigin(0.5)
+        .setDepth(Depth.Overlay);
+      this.pauseOverlay.push(why);
+    }
+
     // Im Duell gibt es kein Fortsetzen: Wer pausiert, waehrend ein legendaeres
     // Relikt erscheint, koennte in Ruhe zielen - das bricht die Fairness
     // (config/challenge.ts). Aussteigen darf man trotzdem.
+    //
+    // Bei einer Unterbrechung ist der Text ein anderer: "laesst sich nicht
+    // pausieren" waere dort eine Antwort auf eine Frage, die der Spieler nie
+    // gestellt hat - er hat nicht getippt, sein Geraet hat entschieden.
     if (this.mode === 'challenge') {
       const note = this.add
         .text(
           cx,
           cy - 90,
-          'Im Duell lässt sich nicht pausieren.\nDer Durchgang läuft weiter.',
+          reason === 'interrupted'
+            ? 'Die App war kurz im Hintergrund.\nIm Duell läuft der Durchgang weiter.'
+            : 'Im Duell lässt sich nicht pausieren.\nDer Durchgang läuft weiter.',
           textStyle(FontSize.small, Palette.inkDim),
         )
         .setOrigin(0.5)
@@ -375,9 +402,9 @@ export class HudScene extends Phaser.Scene {
   // Schutz gegen doppeltes Aufbauen: Ein zweites `RunPaused` - etwa durch die
   // Debug-Taste bei bereits offenem Bildschirm - wuerde sonst einen zweiten
   // Satz Knoepfe uebereinanderlegen, und der untere bliebe fuer immer stehen.
-  private readonly onPaused = (): void => {
+  private readonly onPaused = (payload: { reason: 'manual' | 'interrupted' }): void => {
     if (this.pauseOverlay.length > 0) return;
-    this.showPauseOverlay();
+    this.showPauseOverlay(payload.reason);
   };
   private readonly onResumed = (): void => this.hidePauseOverlay();
   private readonly onOpponentDisconnected = (): void => {

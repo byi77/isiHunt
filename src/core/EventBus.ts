@@ -60,7 +60,13 @@ export interface GameEventPayloads {
   [GameEvent.Missed]: { rarityId: RarityId };
   [GameEvent.RunStarted]: { worldId: string; durationMs: number };
   [GameEvent.RunEnded]: { stats: RunStats; progression: ProgressionResult };
-  [GameEvent.RunPaused]: undefined;
+  /**
+   * `reason` unterscheidet den Knopfdruck vom Geraeteereignis (Anruf,
+   * Bildschirmsperre, App-Wechsel). Das HUD zeigt dafuer einen anderen Text:
+   * Wer selbst pausiert hat, weiss warum - wer aus einem Anruf zurueckkommt,
+   * nicht.
+   */
+  [GameEvent.RunPaused]: { reason: 'manual' | 'interrupted' };
   [GameEvent.RunResumed]: undefined;
   [GameEvent.PauseRequested]: undefined;
   [GameEvent.AbortRequested]: undefined;

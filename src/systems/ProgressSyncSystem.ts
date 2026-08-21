@@ -1,7 +1,8 @@
 /** Offline-Outbox für Fortschrittsereignisse eines angemeldeten Profils. */
 
-import { SYNC_RETRY_DELAYS_MS } from '@/config/backend';
+import { DAILY_KEY_TOLERANCE_MS, SYNC_RETRY_DELAYS_MS } from '@/config/backend';
 import * as AuthSystem from '@/systems/AuthSystem';
+import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import type { ProgressEvent, ProgressionResult, RunStats } from '@/types';
@@ -124,6 +125,17 @@ async function flushPending(): Promise<void> {
   const local = SaveSystem.load();
   if (!local.pendingDailyKey || !local.pendingDailyEventId || local.pendingDailyCoins <= 0) return;
 
+  // Ein Tageslauf, dessen Tag zu weit zurueckliegt, wird vom Server dauerhaft
+  // abgelehnt (`daily_key_is_plausible()`, Fenster von einem Tag). Ohne diese
+  // Pruefung bliebe er fuer immer in `pendingDailyKey` stehen und loeste bei
+  // jedem Abgleich einen aussichtslosen Aufruf aus. Er wird deshalb hier
+  // verworfen - der Lauf selbst ist laengst als ProgressEvent gezaehlt, nur
+  // der Bonus verfaellt.
+  if (!isDailyKeyStillClaimable(local.pendingDailyKey)) {
+    clearPendingDaily();
+    return;
+  }
+
   const daily = await CloudSystem.claimDailyBonus(
     local.pendingDailyKey,
     local.pendingDailyScore,
@@ -132,6 +144,31 @@ async function flushPending(): Promise<void> {
   if (!daily.ok || !daily.value) return;
 
   SaveSystem.adoptProfileProgress(daily.value.data);
+  clearPendingDaily();
+}
+
+/**
+ * Ist der gemerkte Tageslauf noch einloesbar?
+ *
+ * Spiegelt `daily_key_is_plausible()` aus der Datenbank
+ * (`supabase/phase_2_13_daily_key_window.sql`): erlaubt sind der heutige Tag
+ * sowie Vortag und Folgetag. **Der Server bleibt die verbindliche Instanz** -
+ * diese Pruefung erspart nur den aussichtslosen Aufruf und verhindert, dass
+ * ein alter Schluessel dauerhaft haengen bleibt.
+ *
+ * Ein Tag Toleranz deckt drei legitime Faelle ab: Zeitzone (der Server rechnet
+ * in UTC), Mitternacht waehrend eines Laufs, und einen Offline-Lauf, der erst
+ * am Folgetag hochgeladen wird.
+ */
+function isDailyKeyStillClaimable(dailyKey: string): boolean {
+  const parsed = Date.parse(`${dailyKey}T00:00:00Z`);
+  if (!Number.isFinite(parsed)) return false;
+
+  const today = Date.parse(`${ChallengeSystem.dailyKeyForToday()}T00:00:00Z`);
+  return Math.abs(today - parsed) <= DAILY_KEY_TOLERANCE_MS;
+}
+
+function clearPendingDaily(): void {
   SaveSystem.update((data) => {
     data.pendingDailyKey = null;
     data.pendingDailyEventId = null;

@@ -38,6 +38,68 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Der Tagesbonus liess sich durch Vorstellen der Geraeteuhr beliebig oft
+  abholen.** `claim_daily_bonus()` und `claim_daily_login_bonus()` bekommen den
+  Tag als Text vom Client - gebildet aus `new Date()`, also aus der
+  **Geraetezeit**. Geprueft wurde nur das Format (`^\d{4}-\d{2}-\d{2}$`);
+  `9999-12-31` bestand diese Pruefung. Gesperrt war nur ein _gleicher_
+  Schluessel, ein anderer galt als neuer Tag.
+
+  Neu ist `daily_key_is_plausible()`
+  (`supabase/phase_2_13_daily_key_window.sql`): Format, gueltiges Datum **und**
+  hoechstens ein Tag Abstand zum Servertag.
+
+  **Warum ein Fenster statt des exakten Servertags:** `now()` liefert UTC.
+  Zwischen 00:00 und 02:00 Uhr deutscher Sommerzeit ist lokal schon der
+  naechste Tag - ein strikter Vergleich haette genau die Kinder ausgesperrt,
+  die spaet spielen. Dazu kommen Laeufe ueber Mitternacht und Offline-Laeufe,
+  die erst am Folgetag hochgeladen werden.
+
+  **Ehrliche Grenze:** Wer das Geraetedatum taeglich um genau einen Tag
+  weiterstellt, kommt weiterhin durch - muesste das Datum dann aber dauerhaft
+  falsch stehen lassen. Ein vollstaendiger Schutz braeuchte einen
+  serverseitig erzeugten Tagesschluessel und einen groesseren Eingriff in den
+  Offline-Betrieb.
+
+  `ProgressSyncSystem` verwirft einen Tagesbonus jetzt lokal, sobald sein
+  Schluessel ausserhalb desselben Fensters liegt
+  (`DAILY_KEY_TOLERANCE_MS`). Ohne das waere er nach dieser Aenderung fuer
+  immer in `pendingDailyKey` stehen geblieben und haette bei jedem Abgleich
+  einen aussichtslosen Aufruf ausgeloest.
+
+  Die Migration ist am 2026-08-21 in Supabase ausgefuehrt; die Serverpruefung
+  ist aktiv.
+
+- **Ein Run im Hintergrund sah aus wie ein Absturz.** Phaser haelt die
+  Update-Schleife an, sobald die Seite in den Hintergrund geht - Anruf,
+  Bildschirmsperre, App-Wechsel. Das ist Standardverhalten, aber die App zeigte
+  dabei **nichts**: Wer zurueckkam, sah einen stehenden Bildschirm. Im
+  Netzwerk-Duell-Test wurde das als kompletter Absturz gemeldet ("Bildschirm
+  hing, nichts ging mehr").
+
+  Ein Pause-Bildschirm war vorhanden (`HudScene.showPauseOverlay()`), aber nur
+  am manuellen Knopf - es fehlte der `visibilitychange`-Handler.
+
+  Neu ist `GameScene.pauseForInterruption()`. **Bewusst kein Aufruf von
+  `togglePause()`:** Das waere ein Umschalter, und iOS sendet
+  `visibilitychange` mehrfach kurz hintereinander (Kontrollzentrum ueber der
+  Seite, dann echter Wechsel) - der Run waere beim zweiten Ereignis wieder
+  angelaufen, bei ausgeschaltetem Bildschirm. Die neue Methode pausiert nur.
+
+  Fortgesetzt wird ausschliesslich von Hand: Wer aus einem Anruf zurueckkommt,
+  haelt den Finger nicht schon auf dem Glas.
+
+  `RunPaused` traegt dafuer jetzt ein Feld `reason` (`manual` |
+  `interrupted`); der Bildschirm heisst entsprechend `PAUSE` oder
+  `ANGEHALTEN` und erklaert im zweiten Fall den Grund. **Im Duell laeuft die
+  Simulation weiter** - die Fairness-Regel aus `config/challenge.ts` bleibt
+  unangetastet, und ein Vorteil entstuende ohnehin nicht, weil Phaser die
+  Schleife im Hintergrund von sich aus anhaelt.
+
+  **Noch nicht auf einem Geraet geprueft.** `npm run verify` gruen (310 Tests),
+  aber der Fall selbst - Anruf oder Sperre waehrend eines laufenden Runs -
+  laesst sich nur am iPhone bestaetigen.
+
 - **Die Reset-Erkennung schlug nicht an - zwei Gruende, beide im Debug-Report
   sichtbar.**
 

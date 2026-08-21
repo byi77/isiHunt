@@ -67,3 +67,20 @@ export const BACKEND_TIMEOUT_MS = 5000;
  * beobachtet 2026-08-17 (TODO.md, Phase-2.6-Testbefund).
  */
 export const SYNC_RETRY_DELAYS_MS = [5000, 15000, 60000];
+
+/**
+ * Wie weit ein Tagesschluessel vom heutigen Tag abweichen darf, damit der
+ * Tagesbonus noch eingeloest werden kann.
+ *
+ * **Muss zu `daily_key_is_plausible()` passen**
+ * (`supabase/phase_2_13_daily_key_window.sql`, dort ein Tag in beide
+ * Richtungen). Der Server bleibt die verbindliche Instanz; dieser Wert
+ * erspart nur den aussichtslosen Aufruf und verhindert, dass ein alter
+ * Schluessel dauerhaft in der Outbox haengen bleibt.
+ *
+ * Ein Tag Toleranz deckt drei legitime Faelle ab: der Server rechnet in UTC
+ * und ist der lokalen Zeit bis zu zwei Stunden hinterher, ein Lauf kann ueber
+ * Mitternacht gehen, und ein Offline-Lauf wird unter Umstaenden erst am
+ * naechsten Tag hochgeladen.
+ */
+export const DAILY_KEY_TOLERANCE_MS = 24 * 60 * 60 * 1000;
