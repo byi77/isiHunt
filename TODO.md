@@ -1,7 +1,8 @@
 # TODO — Arbeitsplan und Produkt-Audit
 
 **Stand:** 2026-08-22
-**Repository-Version:** siehe `package.json`; zuletzt live geprüft: `0.1.227`
+**Repository-/Live-Version:** siehe `package.json` und `version.json`; der
+ausgelieferte Stand wird erst nach einem Deploy als live bestätigt.
 **Verbindliche Arbeitsreihenfolge:** die Phasen und Prioritäten in dieser Datei
 **Produkt:** spielbarer mobiler Browser-Prototyp für Emre, Simay und die Familie
 
@@ -68,7 +69,7 @@ Für eine Geräte- oder Backendaufgabe zusätzlich:
 | Browser-Spiel, 90-Sekunden-Run, Touch, Pause, Persistenz | gebaut und ausgeliefert | echte Geräteabnahme der aktuellen Spielinhalte |
 | Profil, Alias-Login, Offline-Outbox, Zusammenführung | implementiert | produktive SQL-Prüfung und iPhone-/iPad-End-to-End-Test |
 | Weltraum-Thema, Welten, Hindernisse, Tageslauf, Bot-Duell | implementiert | Balancing mit Emre und Simay |
-| Coins, XP, Punkte, Talente, Shop | implementiert; Balance-Kette seit v0.1.227 | Client/SQL-Synchronitäts-Gate und echte Economy-Messung |
+| Coins, XP, Punkte, Talente, Shop | implementiert; zentrale Balance-Kette aktiv | Client/SQL-Synchronitäts-Gate und echte Economy-Messung |
 | Shop | 100 Fluggestalten, Farben und Anprobe vorhanden | Figuren im laufenden Spiel auf Gerät sehen; weitere Kosmetik erst danach |
 | Netzwerk-Duell Phase 1 | Raum, Ready, Startzeit, Ergebnisvergleich vorhanden | dritter Zwei-Geräte-Test mit Report vom Slave |
 | Bestenliste | gemeinsame Casual-Liste und automatischer Eintrag vorhanden | Fairness bei Weltmodifikatoren; Ranked bleibt gesperrt |
@@ -76,17 +77,36 @@ Für eine Geräte- oder Backendaufgabe zusätzlich:
 | Supabase-Migrationsstand | im Repository vorhanden, produktiver Ausführungsstand nicht aus dem Code beweisbar | P0-01 ausführen und protokollieren |
 | Native App / Dynamic Island | bewusst noch nicht begonnen | erst nach stabiler Web-Basis und P3-Gate |
 
-### Die nächsten fünf Schritte
+### Neue verbindliche Ausführungsreihenfolge
 
-1. **P0-01:** Produktionsstand der Supabase-Migrationen klären und fehlende
-   Migrationen anwenden.
-2. **P0-02:** aktuellen Live-Stand `0.1.227` auf iPhone und iPad mit Offline-
-   Runs, Boost, Profil und Synchronisierung prüfen.
-3. **P0-03:** Netzwerk-Duell mit Debug-Report von **Master und Slave** erneut
-   durchführen.
-4. **P0-04:** einen echten Spielabend ohne `--sim` mit Emre und Simay machen;
-   Phase-5-Schwierigkeit, Serienfenster, XP und Coins messen.
-5. Erst danach P1-UX und weitere Features umsetzen.
+Die IDs bleiben stabil, damit Verweise und Git-Historie lesbar bleiben. Die
+folgende Reihenfolge ist die aktuelle Priorisierung; erledigte Punkte werden
+nicht erneut als Arbeit eingeplant:
+
+1. **P0-01:** Supabase-Migrationen ausführen, prüfen und mit SQL-/Dashboard-
+   Nachweis dokumentieren.
+2. **P0-02:** den tatsächlich ausgelieferten `version.json`-Stand auf iPhone
+   und iPad mit Profil, Offline-Runs, Boost und Zusammenführung prüfen.
+3. **P0-03:** Netzwerk-Duell mit vollständigem Master- und Slave-Report sowie
+   sauberem Abbruch testen.
+4. **P0-04:** echten Spielabend ohne `--sim` durchführen und Phase 5, Serien,
+   XP, Coins, Shop und Lesbarkeit messen.
+5. **P1-02:** Serien-/Kinderregel anhand der Beobachtungen verbindlich
+   entscheiden und zentral testen.
+6. **P1-03:** XP-Kurve und Bestandsmigration mit realen Profilen bestätigen.
+7. **P1-04:** Coin-Quellen, -Senken und Kaufgeschwindigkeit vermessen; erst
+   danach Zahlen ändern.
+8. **P1-06:** erste drei Minuten und Onboarding aus den Messdaten verbessern.
+9. **P5-08:** Begriffe, Texte und Content-Validierung zentralisieren.
+10. **P5-11:** Konto-, Lösch-, Export- und Diagnose-Lebenszyklus abschließen.
+11. **P5-12:** austauschbare Soundmodule und lizenzgeprüfte Audio-Assets
+    vorbereiten und erst danach zusätzliche Audio-Assets integrieren.
+12. **P4-01 ff.:** soziales Spiel erst nach stabilem Profil, Duell und
+    Datenschutz-Gate weiter ausbauen.
+
+P1-05 ist technisch umgesetzt und bleibt nur als Teil der manuellen
+Geräte-/Zielgruppenabnahme in P0-04 zu beobachten. P0-01 bis P0-04 haben trotz
+der späteren P1-/P5-Codearbeiten weiterhin Vorrang für den Produktbeleg.
 
 ## Phasenübersicht
 
@@ -193,9 +213,8 @@ Mehrgeräte-Sync oder Server-Balance.
 
 - [ ] **Mehrgeräte-Profil mit dem aktuellen Live-Stand vollständig prüfen.**
 
-**Voraussetzungen:** P0-01 erledigt, Live-Version im Browser/Home-Bildschirm
-ist `0.1.217` oder der tatsächlich getestete Commit, beide Geräte zeigen diese
-Version, Debug-Modus ist verfügbar.
+**Voraussetzungen:** P0-01 erledigt, beide Geräte zeigen denselben tatsächlich
+ausgelieferten `version.json`-Stand und der Debug-Modus ist verfügbar.
 
 **Testaufbau:**
 
@@ -376,8 +395,9 @@ wenn kein produktiver Nachweis vorliegt.
 **Abnahme:** Eine neue Person findet in TODO, Roadmap und ADR dieselbe
 Reihenfolge und keine aktive Aufgabe für den verworfenen Talentpunkte-Umbau.
 
-**Erledigt 2026-08-22:** Aktive Produktdokumente nennen jetzt den Live-Stand
-`v0.1.227`, die sieben unabhängigen Coin-Talente und die Migrationen bis
+**Erledigt 2026-08-22:** Aktive Produktdokumente nennen jetzt den
+Repository-/Live-Stand über `package.json`/`version.json`, die sieben
+unabhängigen Coin-Talente und die Migrationen bis
 `phase_2_15_cosmetic_sync.sql`. Historische ADR-, Audit- und Changelog-Stellen
 bleiben als Historie erhalten und sind entsprechend nicht als offene Planung
 zu lesen. Es wird ausdrücklich nicht behauptet, dass SQL produktiv ausgeführt
@@ -468,7 +488,7 @@ wird auf XP, Punkte, Coins, Kosten und Tagesbelohnungen durchgerechnet.
 
 ## P1-05 — Levelaufstieg als Belohnungsmoment sichtbar machen
 
-- [ ] **Levelaufstieg für Kinder verständlich und spürbar inszenieren.**
+- [x] **Levelaufstieg für Kinder verständlich und spürbar inszenieren.**
 
 `COINS_PER_LEVEL = 20` ist im Verhältnis zur Tagesökonomie klein. Bevor der
 Betrag erhöht wird, soll der vorhandene Sound, ein klares Level-Up-Overlay und
@@ -477,6 +497,13 @@ eine verständliche „Du hast bekommen“-Zusammenfassung getestet werden.
 **Abnahme:** Nach einem Levelaufstieg sieht der Spieler Level, XP-Restwert,
 Coins, mögliche neue Welt/Optik und das nächste Ziel in einem zusammenhängenden
 Moment. Eine Zahlenerhöhung wird nur nach P1-04 beschlossen.
+
+**Technischer Stand 2026-08-22:** `ResultScene` zeigt bei einem Aufstieg einen
+eigenen `LEVEL-UP!`-Moment mit erreichter Stufe, XP-Restwert, Level-Coins,
+aktuellem Coinstand, neuen Welten und erstmals kaufbaren Auren. Die reine
+Zusammenfassung liegt in `LevelUpPresentationSystem.ts` und ist separat
+getestet; die vorhandene Run-Ende-Aufwärtsfolge von `SoundSystem` bleibt aktiv.
+Die Abnahme auf echten Geräten und mit Kindern erfolgt gesammelt über P0-04.
 
 ## P1-06 — Ersten Run und erste drei Minuten als Lernkurve gestalten
 
@@ -500,26 +527,20 @@ Hinweise.
 
 - [x] **Entscheidung „Baum, Route oder ehrliche Liste“ abschließen.**
 
-Die sieben Talente sind aktuell fachlich eine unabhängige Liste ohne
-Voraussetzungen. Die Coin-Kosten sind durch ADR-0018 entschieden und werden
-nicht erneut auf Talentpunkte umgebaut.
-
-**Empfohlene Variante:** eine kindgerechte gezeichnete Route als reine
-Darstellung. Gekaufte Ränge leuchten auf; die Wirtschafts- und
-Freischaltregeln bleiben unverändert. Ein echter Baum mit Voraussetzungen ist
-ein separates Feature und braucht eine Migration für bereits gekaufte
-Kombinationen. Wenn keine Route gewünscht ist, heißt der Bildschirm ehrlich
-„Talente“ statt „Talentbaum“.
+Die sieben Talente sind fachlich eine unabhängige Liste ohne Voraussetzungen.
+Die Coin-Kosten sind durch ADR-0018 entschieden und werden nicht erneut auf
+Talentpunkte umgebaut. Die Darstellung bleibt deshalb bewusst eine ehrliche
+Liste unter „Talente“; eine Route oder ein Voraussetzungen-Baum würde eine
+Spielregel versprechen, die es nicht gibt.
 
 **Abnahme:** Entscheidung in ADR/TODO notiert, `TalentScene` spiegelt sie
 korrekt, keine versteckten Voraussetzungen und keine Änderung bestehender
 Coin-Käufe ohne eigene Entscheidung.
 
-**Umsetzung:** Die Darstellung ist eine unabhängige, gezeichnete Route ohne
-Kaufvoraussetzungen. `TalentScene` zeigt sieben verbundene Knoten; gekaufte
-Ränge erhalten Glow und alle Käufe bleiben bei den bestehenden Coin-/Server-
-Regeln. Die Oberfläche heißt bewusst `TALENTE`, damit kein echter
-Voraussetzungsbaum versprochen wird.
+**Umsetzung 2026-08-22:** Die frühere Route wurde auf die bewährte unabhängige
+Talentliste zurückgeführt. `TalentScene` zeigt sieben separat kaufbare Talente;
+gekaufte Ränge, Coin-Kosten sowie Kauf-/Reset-Regeln bleiben unverändert. Es
+gibt keine versteckten Voraussetzungen und keine Talentpunkte-Migration.
 
 ## P2-02 — Ein klares nächstes Ziel nach jedem Run
 
@@ -824,7 +845,7 @@ Entities und Systems.
   Werte prüfen.**
 
 Der Snapshot soll mindestens erwartete Punkte/XP/Coins je Run, Runs bis Level
-100, Runs bis maximalem Talentbaum, Kosten von Reset/Shop-Beispielen und die
+100, Runs bis zum maximalen Talentstand, Kosten von Reset/Shop-Beispielen und die
 Tageshöchstbelohnung zeigen. Änderungen an einem Rohwert sollen sichtbar
 machen, welche Systeme mitgezogen werden.
 
@@ -1145,6 +1166,45 @@ Debug- und Share-Reports dürfen keine Tokens, PINs oder unnötigen persönliche
 Daten enthalten. Für eine Veröffentlichung außerhalb der Familie werden diese
 Wege verpflichtend; im Familienbetrieb zunächst dokumentieren und testen.
 
+## P5-12 — Lizenzgeprüfte Audio-Assets und austauschbare Soundmodule
+
+- [ ] **Kostenlose, rechtssicher nutzbare Sounds recherchieren, integrieren und
+  die Audioarchitektur als austauschbaren Adapter aufbauen.**
+
+Der aktuelle `SoundSystem`-Stand erzeugt alle Rückmeldungen prozedural über
+WebAudio. Das bleibt der sichere Fallback. Für zusätzliche UI-, Fang-,
+Level-Up- und Weltklänge werden zunächst nur Assets verwendet, deren konkrete
+Datei-Lizenz und Herkunft dokumentiert sind. „Kostenlos“ reicht nicht aus:
+CC0 ist der bevorzugte Standard; CC-BY ist nur mit sauberer Attribution
+zulässig, CC-BY-NC wird ausgeschlossen. Geeignete Recherchequellen sind
+Kenney-CC0-Packs, einzelne CC0-Dateien auf OpenGameArt und einzelne
+Freesound-Dateien mit explizitem CC0-/CC-BY-Nachweis.
+
+**Architekturziel:** Spielereignisse kennen nur logische Audioereignisse wie
+`ui.click`, `collect.rare`, `combo.tier`, `run.end` und `level.up`. Ein
+`SoundModule`-Vertrag kapselt Laden, Abspielen, Stoppen, Lautstärke,
+Diagnose und `shutdown()`. `SoundSystem` bleibt die öffentliche Fassade und
+delegiert an ein aktives Modul. Das bestehende `ProceduralSoundModule` bleibt
+Fallback; ein späteres `SampledSoundModule` kann über eine Zuordnung/Manifest
+eingesetzt werden, ohne Scenes oder Gameplay-Systeme zu ändern.
+
+**Vorgehen:**
+
+1. `docs/SOUND_ASSETS.md` pro Datei mit Quelle, Autor, Lizenz, URL, Download-
+   datum, Hash und Attribution pflegen.
+2. Einen kleinen CC0-Pilot für UI, Reliktfang und Level-Up auswählen; keine
+   großen Musikdateien und keine unklaren „royalty free“-Archive übernehmen.
+3. Adapter/Fallback implementieren und Ladefehler lautlos auf prozedurale
+   Klänge zurückfallen lassen.
+4. TON-, HAPTIK-, Reduced-Motion- und iOS-Audio-Unlock-Regeln beibehalten.
+5. Event-Mapping, Lizenzinventar, Bundlegröße und fehlende Dateien testen.
+
+**Abnahme:** Ein Soundmodul kann per Konfiguration gewechselt werden; der
+Spielablauf importiert keine konkreten Audio-Dateien. Jeder verwendete Sound
+ist lizenzbelegt, der Pilot klingt im Ergebnisbildschirm/Run sinnvoll, ein
+fehlendes oder gesperrtes Asset bricht keinen Run ab, `npm run verify` bleibt
+grün und `docs/SOUND_ASSETS.md` enthält die vollständige Attribution.
+
 ---
 
 # Phase 6 — Native App und langfristiges Endgame (P3)
@@ -1222,7 +1282,7 @@ Priorität, Abhängigkeit und Abnahme.
 
 | Entscheidung | Stand | Konsequenz |
 | --- | --- | --- |
-| Talente mit Coins statt Talentpunkten | **entschieden, ADR-0018** | Kein Talentpunkte-Umbau, keine Migration dafür. Die Darstellung bleibt separat offen (P2-01). |
+| Talente mit Coins statt Talentpunkten | **entschieden, ADR-0018** | Kein Talentpunkte-Umbau und keine Migration dafür. Die Darstellung bleibt die ehrliche unabhängige Liste (P2-01). |
 | Welten unter dem eigenen Level sperren | **verworfen** | Gemeinsames Spielen und Duell bleiben möglich; höhere Welten motivieren über Belohnung. |
 | Duell-Link als erster Netzwerkweg | **übersprungen** | Raumcode/Realtime Phase 1 ist gebaut; Stabilität kommt vor weiteren Varianten. |
 | Öffentliche Bestenliste | **nicht freigegeben** | Familienkreis bleibt der aktuelle Scope; Datenschutz/Moderation ist ein Gate. |

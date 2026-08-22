@@ -1,6 +1,6 @@
 # Art Style Guide — isiHunt
 
-**Stand:** 2026-08-12
+**Stand:** 2026-08-22 · Produktstand siehe `package.json`/`version.json`
 
 ---
 
@@ -135,6 +135,13 @@ kurze WebAudio-Oszillator-Toene ohne Audiodateien:
 Die sechs Seltenheitsfarben bleiben visuell unantastbar; Ton ergaenzt sie nur.
 Der Ton ist in den Einstellungen abschaltbar und wird im Spielstand gespeichert.
 Auf iOS wird der AudioContext erst nach der ersten Nutzergeste entsperrt.
+
+Der Ergebnisbildschirm verstärkt einen Levelaufstieg nicht mit mehr Partikeln,
+sondern mit Hierarchie: `LEVEL-UP!`, erreichte Stufe, XP-Restwert,
+Level-Coins, aktuelle Coins und unmittelbare Freischaltungen stehen in einem
+gemeinsamen Belohnungspanel. Die Aufwärtsfolge im Ton bleibt kurz und endet
+innerhalb der 800-ms-Grenze; zusätzliche lizenzierte Audio-Assets sind erst
+nach dem P5-12-Lizenz- und Adapter-Gate erlaubt.
 
 ## 5. Schrift
 

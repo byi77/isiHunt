@@ -8,7 +8,7 @@
 
 import Phaser from 'phaser';
 
-import { COINS_PER_LEVEL, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { ACHIEVEMENT_BY_ID } from '@/config/achievements';
 import { RARITIES } from '@/config/rarities';
 import { getWorld } from '@/config/worlds';
@@ -19,6 +19,7 @@ import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import { accessibleRarityLabel } from '@/systems/AccessibilitySystem';
+import { getLevelUpRewardSummary } from '@/systems/LevelUpPresentationSystem';
 import { getNextGoal } from '@/systems/NextGoalSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { planetTextureForVariant, TextureKey } from '@/ui/textures';
@@ -67,9 +68,9 @@ export class ResultScene extends Phaser.Scene {
       .setAlpha(0.45);
 
     this.buildScoreHeader(stats, progression, world.accent);
-    this.buildProgression(stats, progression, world.accent);
-    this.buildNextGoal(world.accent);
-    this.buildBreakdown(stats, world.spaceVariant);
+    const progressionBottom = this.buildProgression(stats, progression, world.accent);
+    const nextGoalBottom = this.buildNextGoal(world.accent, progressionBottom + 18);
+    this.buildBreakdown(stats, world.spaceVariant, nextGoalBottom + 42);
     ProgressSyncSystem.enqueueRun(stats, progression);
     this.submitLeaderboardScore(stats);
     this.uploadSave();
@@ -116,9 +117,7 @@ export class ResultScene extends Phaser.Scene {
   }
 
   /** Wie viele Relikte je Seltenheit - optionale Details unter dem Ziel. */
-  private buildBreakdown(stats: RunStats, spaceVariant: number): void {
-    const y = 748;
-
+  private buildBreakdown(stats: RunStats, spaceVariant: number, y: number): void {
     this.add.text(60, y, 'AUSBEUTE', textStyle(FontSize.tiny, Palette.inkDim)).setLetterSpacing(6);
 
     RARITIES.forEach((rarity, index) => {
@@ -153,11 +152,16 @@ export class ResultScene extends Phaser.Scene {
   }
 
   /** Belohnung zuerst: XP, Coins und unmittelbare Freischaltungen. */
-  private buildProgression(stats: RunStats, progression: ProgressionResult, accent: number): void {
+  private buildProgression(
+    stats: RunStats,
+    progression: ProgressionResult,
+    accent: number,
+  ): number {
     const save = SaveSystem.load();
     const levelProgress = ProgressionSystem.getLevelProgress(save);
+    const levelUp = getLevelUpRewardSummary(save, progression);
     const panelTop = 300;
-    const panelHeight = 238;
+    const panelHeight = levelUp.isLevelUp ? 314 : 238;
     createPanel(
       this,
       GAME_WIDTH / 2,
@@ -171,11 +175,39 @@ export class ResultScene extends Phaser.Scene {
       },
     );
 
-    this.add
-      .text(60, panelTop + 27, 'BELOHNUNG', textStyle(FontSize.tiny, Palette.inkDim))
-      .setLetterSpacing(6);
+    if (levelUp.isLevelUp) {
+      const levelUpLabel = this.add
+        .text(
+          GAME_WIDTH / 2,
+          panelTop + 27,
+          'LEVEL-UP!',
+          textStyle(FontSize.small, Palette.gold, { fontStyle: 'bold' }),
+        )
+        .setOrigin(0.5)
+        .setLetterSpacing(5)
+        .setScale(0.8);
+      this.tweens.add({
+        targets: levelUpLabel,
+        scale: 1,
+        alpha: 1,
+        duration: 360,
+        ease: 'Back.Out',
+      });
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          panelTop + 58,
+          `Stufe ${levelUp.level} erreicht`,
+          textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }),
+        )
+        .setOrigin(0.5);
+    } else {
+      this.add
+        .text(60, panelTop + 27, 'BELOHNUNG', textStyle(FontSize.tiny, Palette.inkDim))
+        .setLetterSpacing(6);
+    }
 
-    const y = panelTop + 67;
+    const y = panelTop + (levelUp.isLevelUp ? 94 : 67);
 
     this.add
       .text(
@@ -217,26 +249,32 @@ export class ResultScene extends Phaser.Scene {
       )
       .setOrigin(0, 0.5);
 
-    const highlightY = y + 78;
+    const highlightY = y + (levelUp.isLevelUp ? 92 : 78);
 
     const highlights: { text: string; color: string }[] = [];
 
-    if (progression.coinsGained > 0) {
+    if (levelUp.isLevelUp) {
+      highlights.push({
+        text: `+${levelUp.levelCoins} Coins fuer den Levelaufstieg`,
+        color: Palette.gold,
+      });
+      highlights.push({
+        text: `Du hast jetzt ${levelUp.totalCoins.toLocaleString('de-DE')} Coins`,
+        color: Palette.ink,
+      });
+    } else if (progression.coinsGained > 0) {
       highlights.push({
         text: '+' + progression.coinsGained + ' Coins gesammelt',
         color: Palette.gold,
       });
     }
 
-    if (progression.levelsGained > 0) {
-      highlights.push({
-        text: 'Levelaufstieg! +' + progression.levelsGained * COINS_PER_LEVEL + ' Level-Coins',
-        color: Palette.gold,
-      });
+    for (const worldName of levelUp.unlockedWorldNames) {
+      highlights.push({ text: `Neue Welt: ${worldName}`, color: Palette.success });
     }
 
-    for (const worldId of progression.unlockedWorldIds) {
-      highlights.push({ text: `Neue Welt: ${getWorld(worldId).name}`, color: Palette.success });
+    for (const auraName of levelUp.availableAuraNames) {
+      highlights.push({ text: `Neue Optik im Shop: ${auraName}`, color: Palette.success });
     }
 
     for (const achievementId of progression.unlockedAchievementIds) {
@@ -249,7 +287,7 @@ export class ResultScene extends Phaser.Scene {
       }
     }
 
-    highlights.slice(0, 3).forEach((entry, index) => {
+    highlights.slice(0, levelUp.isLevelUp ? 4 : 3).forEach((entry, index) => {
       const label = this.add
         .text(
           GAME_WIDTH / 2,
@@ -267,12 +305,13 @@ export class ResultScene extends Phaser.Scene {
         delay: 500 + index * 180,
       });
     });
+
+    return panelTop + panelHeight;
   }
 
   /** Genau eine Handlungsempfehlung, zentral aus dem fertigen Spielstand. */
-  private buildNextGoal(accent: number): void {
+  private buildNextGoal(accent: number, panelTop: number): number {
     const goal = getNextGoal(SaveSystem.load());
-    const panelTop = 556;
     const panelHeight = 148;
     createPanel(
       this,
@@ -305,6 +344,8 @@ export class ResultScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setWordWrapWidth(GAME_WIDTH - 170)
       .setAlign('center');
+
+    return panelTop + panelHeight;
   }
 
   private buildButtons(worldId: string, accent: number): void {

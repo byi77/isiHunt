@@ -1,6 +1,6 @@
 # Architektur — isiHunt
 
-**Stand:** 2026-08-22 · gilt fuer v0.1.227
+**Stand:** 2026-08-22 · gilt fuer den Stand aus `package.json`/`version.json`
 
 Dieses Dokument beschreibt, **wie** der Code aufgebaut ist und **warum**.
 Entscheidungen mit Alternativen stehen in [DECISIONS.md](DECISIONS.md).
@@ -103,7 +103,7 @@ isiHunt/
 │   │   │                       ProfileScene weiter
 │   │   ├── SettingsScene.ts    Ton, Spielstand-Aktionen; Profil-Knopf zeigt
 │   │   │                       auf ProfileScene
-│   │   ├── TalentScene.ts      Talentbaum-Oberflaeche mit Rangkauf
+│   │   ├── TalentScene.ts      Ehrliche Talentliste mit Rangkauf
 │   │   ├── ShopScene.ts        Laden: Formen, Farben und Auren gegen Muenzen
 │   │   ├── AchievementsScene.ts Erfolgsliste
 │   │   ├── GameScene.ts        Die Simulation (Solo und Duell)
@@ -125,6 +125,8 @@ isiHunt/
 │   │   ├── SafeAreaSystem.test.ts
 │   │   ├── SoundSystem.ts      Prozedurales WebAudio-Feedback
 │   │   ├── SoundSystem.test.ts
+│   │   ├── LevelUpPresentationSystem.ts reine Level-Up-Belohnungszusammenfassung
+│   │   ├── LevelUpPresentationSystem.test.ts
 │   │   ├── AuthSystem.ts       Alias/PIN-Anmeldung, Sitzungspflege (Phase 2.6)
 │   │   ├── AuthSystem.test.ts
 │   │   ├── ProgressSyncSystem.ts Offline-Outbox fuer angemeldete Profile
@@ -241,8 +243,12 @@ Run-Ende ──▶ ScoreSystem.toRunStats() ──▶ ProgressionSystem.applyRun
 
 **Wichtig:** Der Spielstand wird **einmal pro Run** geschrieben, nicht bei
 jedem Fang. Das haelt `localStorage`-Zugriffe aus der Frame-Schleife heraus.
-Nach einem Solo-Run versucht `ResultScene` den aktuellen lokalen Stand
-asynchron hochzuladen; ein Fehler bleibt lokal und blockiert den Run nicht.
+Nach einem Solo-Run zeigt `ResultScene` zuerst Ergebnis und Belohnung. Bei
+einem Levelaufstieg bündelt `LevelUpPresentationSystem` Stufe, XP-Restwert,
+Level-Coins, aktuelles Guthaben sowie neue Welten und erstmals kaufbare Auren
+für diesen Moment. Danach folgt genau ein nächstes Ziel. Den aktuellen lokalen
+Stand versucht `ResultScene` asynchron hochzuladen; ein Fehler bleibt lokal
+und blockiert den Run nicht.
 
 Im Duell-Modus faellt dieser letzte Schritt komplett weg: `GameScene.endRun()`
 uebergibt an `ChallengeSystem` statt an `ProgressionSystem`, und der Spielstand
@@ -638,7 +644,7 @@ Farben (`config/challenge.ts`): Eine flackernde Figur neben einer ruhigen
 waere auf einen Blick zuzuordnen, und der Vergleich soll am Spiel haengen,
 nicht am Guthaben.
 
-**Nicht ueberall sichtbar.** Menue, Profil und Talentbaum zeigen die Figur als
+**Nicht ueberall sichtbar.** Menue, Profil und Talente zeigen die Figur als
 kleines Standbild neben dem Guthaben; dort laeuft die Aura bewusst nicht. Drei
 Nebenbildschirme mit eigener `update()`-Schleife nur fuer ein 40-Pixel-Symbol
 waere Aufwand ohne Gegenwert, und im Menue lenkt eine bewegte Figur vom
@@ -710,7 +716,7 @@ etwa 25 Minuten.
 
 | Suite      | Deckt ab                                                             |
 | ---------- | -------------------------------------------------------------------- |
-| `screens`  | Profil, Talentbaum, Erfolge, Einstellungen, Rangliste, Wartung       |
+| `screens`  | Profil, Talente, Erfolge, Einstellungen, Rangliste, Wartung            |
 | `nav`      | Menuewege hin und zurueck, per echtem Klick auf den Knopf            |
 | `controls` | Ueberlappung, Lage, Groesse der Tippziele, Scrollen langer Menues    |
 | `layout`   | Canvas-Ueberstand und unterster Knopf ueber 19 Geraeteformate        |
@@ -831,7 +837,7 @@ Daraus die Regel: **Der echte Klick ist der Massstab, nicht die Rechnung.**
 
 Ein scheinbarer Fund war der teuerste: Das DOM-Namensfeld aus
 `createTextInput()` schien den Szenenwechsel zu ueberleben und ueber dem
-Talentbaum zu schweben — inklusive Screenshot als Beleg.
+Talente zu schweben — inklusive Screenshot als Beleg.
 
 Die Ursache lag im Test. Er wechselte per `game.scene.start(x)` ueber den
 **globalen Manager**; das startet x, **beendet die alte Scene aber nicht**.

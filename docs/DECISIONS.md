@@ -906,7 +906,7 @@ wobei die entscheidende Rechnung nur an einer davon notiert war.
 
 |                 |      Anzahl | Kosten |
 | --------------- | ----------: | -----: |
-| Talentbaum voll |   32 Raenge | 15 650 |
+| Talente voll |   32 Raenge | 15 650 |
 | Shop voll       | 130 Artikel | 16 122 |
 | zusammen        |             | 31 772 |
 
@@ -920,7 +920,7 @@ wird verworfen, nicht vertagt.
 
 Zwei Gruende, der erste ist der ausschlaggebende:
 
-**1. Der Verzicht existiert bereits.** Shop und Talentbaum kosten fast exakt
+**1. Der Verzicht existiert bereits.** Shop und Talente kosten fast exakt
 dasselbe. Seit der Shop am 2026-08-20 ausgeliefert wurde, geht jede Muenze
 entweder in einen Talentrang oder in eine Fluggestalt — eine echte, taeglich
 wiederkehrende Abwaegung. Der Umbau wuerde sie **abschaffen** statt schaffen:
@@ -972,17 +972,25 @@ anheben, oder den Aufstieg als sichtbaren Moment inszenieren.
   aussieht, sind unabhaengige Fragen; der urspruengliche Wunsch aus der
   Planung lautete woertlich "darunter eine kindgerechte Schleife/Route als
   sichtbaren Fortschritt zeichnen" und haengt an keiner Kostenentscheidung.
-  Drei Wege stehen in `TODO.md` (P1.a) zur Wahl: echter Baum mit
+  Drei Wege standen damals in der historischen `TODO.md`-Notiz P1.a zur Wahl:
+  echter Baum mit
   Voraussetzungen, gezeichnete Route als reine Darstellung, oder ehrliches
   Umbenennen.
 - **Die Kopplung Shop/Talente wird damit zur tragenden Saeule der
   Wirtschaft.** Beide Seiten gehoeren ab jetzt gemeinsam betrachtet.
   **Nachtrag (2026-08-21, nach der Balance-Kette):** Der urspruengliche Satz
   hier lautete, eine Aenderung der Coin-Einnahmen verschiebe zwangslaeufig das
-  Tempo im Talentbaum. Das gilt seit `config/balance.ts` nicht mehr
+  Tempo im Talentfortschritt. Das gilt seit `config/balance.ts` nicht mehr
   uneingeschraenkt — Talent-, Reset- und Shop-Kosten werden ueber
   `balancedCoinCost()` mit der Einnahmenrate mitskaliert, sodass die Dauer in
   Runs erhalten bleibt (nachgemessen: `economy.globalMultiplier` verdoppelt,
   `runsToMaxTalents` bleibt bei 299,9). **Was bestehen bleibt:** Wer einzelne
   Shop-Preise oder einzelne Talentkosten von Hand verschiebt statt ueber die
   Kette, umgeht diese Kopplung — dann gilt der Satz wieder.
+
+**Nachtrag 2026-08-22:** Die offene Darstellungsfrage ist für den aktuellen
+Produktstand entschieden: `TalentScene` bleibt eine ehrliche, unabhängige
+Liste unter „Talente“. Es gibt keine gezeichnete Route und keinen Baum mit
+Voraussetzungen. Gekaufte Ränge dürfen visuell hervorgehoben werden, ändern
+aber weder Kaufregeln noch Freischaltungen. Die operative Aufgabe P2-01 ist
+damit abgeschlossen; weitere Politur ist kein Systemumbau.

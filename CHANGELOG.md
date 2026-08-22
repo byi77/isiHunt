@@ -11,6 +11,19 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Level-Up-Moment auf dem Ergebnisbildschirm.** Ein Aufstieg zeigt jetzt
+  Stufe, XP-Restwert, Level-Coins, aktuelles Guthaben und unmittelbare Welten-
+  bzw. Aura-Freischaltungen zusammen mit dem nächsten Ziel. Die reine
+  Zusammenfassung liegt in `LevelUpPresentationSystem.ts` und nutzt weiterhin
+  die vorhandene Run-Ende-Aufwärtsfolge des `SoundSystem`.
+
+- **Dokumentations- und Planungsstand synchronisiert.** TODO, Roadmap, Game
+  Design, Balance-Kette, Architektur, Stil- und Lizenzdokumentation beschreiben
+  jetzt denselben Coin-/Talent-/Release-Stand. Die geplante Erweiterung um
+  lizenzgeprüfte, austauschbare Soundmodule ist in P5-12 und
+  `docs/SOUND_ASSETS.md` festgehalten; externe Audio-Assets sind noch nicht
+  Bestandteil des Builds.
+
 - **Prismaflut: die ultimative Aura.** Eine neunte Aura, die sich bewusst von
   den acht anderen abhebt — sie ueberlagert drei Effekte statt einen:
 

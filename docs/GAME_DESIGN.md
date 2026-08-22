@@ -1,7 +1,7 @@
 # Game Design Document — isiHunt
 
 **Version:** 0.1
-**Stand:** 2026-08-22 · Produktstand v0.1.227
+**Stand:** 2026-08-22 · Produktstand siehe `package.json`/`version.json`
 **Status:** lebendes Dokument — jede Balancing- oder Regelaenderung wird hier
 zuerst beschrieben, dann implementiert.
 
@@ -274,13 +274,16 @@ Jeder Levelaufstieg gibt die zentral konfigurierte Levelbelohnung von
 atomar mit Coins gekauft; überschüssige alte `talentPoints` werden nur in der
 Save-/RPC-Migration kompatibel behandelt. So bleibt jeder Levelaufstieg eine
 Belohnung und Coins bleiben die gemeinsame Entscheidung zwischen Talent und
-Kosmetik.
+Kosmetik. Im Ergebnis bündelt ein eigener Level-Up-Moment Stufe, XP-Restwert,
+Level-Coins, aktuelles Guthaben und unmittelbare Freischaltungen; das nächste
+Ziel folgt direkt darunter.
 
 ### 7.2 Talente
 
 Dauerhafte Upgrades. Die sieben Talente sind unabhängige Coin-basierte Ränge
-ohne Voraussetzungen. Kauf, Reset und die Darstellung im Profil sind
-implementiert; die visuelle Politur bleibt ein eigener Produktpunkt.
+ohne Voraussetzungen. Kauf, Reset und die Darstellung als ehrliche Liste im
+Profil sind implementiert; die visuelle Politur bleibt ein eigener
+Produktpunkt.
 
 | Talent      | Max. Rang | Pro Rang              |
 | ----------- | --------- | --------------------- |

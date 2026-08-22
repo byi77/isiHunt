@@ -1,6 +1,6 @@
 # Balance-Kette
 
-**Stand:** 2026-08-22 · Client-Live-Stand v0.1.227
+**Stand:** 2026-08-22 · Client-/Live-Version siehe `package.json`/`version.json`
 
 Alle Zahlen, die Punkte, XP oder Coins erzeugen bzw. verbrauchen, beginnen in
 `src/config/balance-data.json`. Die Berechnung liegt in `src/config/balance.ts`.
@@ -29,7 +29,7 @@ npm test -- --run src/config/Balance.test.ts
 ```
 
 Der exportierte `BALANCE_SNAPSHOT` zeigt die erwarteten Werte pro Fang/Run und
-die ungefähre Run-Anzahl bis Level 100 bzw. zum vollständigen Talentbaum.
+die ungefähre Run-Anzahl bis Level 100 bzw. zum vollständigen Talentstand.
 
 Für ein konkretes Supabase-Projekt müssen die Migrationen in der Reihenfolge
 aus `TODO.md` ausgeführt und separat nachgewiesen werden. Der Repository-Stand

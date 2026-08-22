@@ -1,6 +1,6 @@
 # Roadmap — isiHunt
 
-**Stand:** 2026-08-22 · Produktstand v0.1.227 · Die detaillierte und verbindliche Aufgabenreihenfolge
+**Stand:** 2026-08-22 · Produktstand siehe `package.json`/`version.json` · Die detaillierte und verbindliche Aufgabenreihenfolge
 steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 
 ## Bereits spielbar
@@ -40,8 +40,8 @@ Raumschiff-Skins und schwierigere Welten freigeschaltet.
 
 ### M4 — Belohnung, Coins und Talente ✅
 
-Punkte-Popups, Kettenbonus, Coins, Erfolge und die erste Coin-basierte
-Talent-/Shop-Ansicht sind spielbar.
+Punkte-Popups, Kettenbonus, Coins, Erfolge, die Coin-basierte Talent-/Shop-
+Ansicht und der sichtbare Level-Up-Moment sind spielbar.
 
 > Die Coin-basierte Talent-/Shop-Wirtschaft ist die geltende Entscheidung
 > (ADR-0018). Als nächster Produkt-Schritt bleibt die Darstellung der sieben
@@ -61,7 +61,7 @@ Person oder einen Bot sowie Weltmodifikatoren und Hindernisse sind vorhanden.
 - Coin-basierte Talente beibehalten; kein Talentpunkte-Umbau und keine
   Talentpunkte-Bestandsmigration.
 - Die sieben unabhängigen Talent-Ränge als ehrliche, kindgerechte Liste
-  verständlich darstellen und visuell weiter polieren.
+  verständlich darstellen und visuell weiter polieren; kein Baumversprechen.
 - Bestehende Coin-, Talent- und Kosmetikstände erhalten und geräteübergreifend
   synchron halten.
 - Profil-Icons, getrennten sichtbaren Spielernamen und Skin-Inventar

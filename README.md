@@ -7,8 +7,8 @@ Lichtgestalt durch Fantasy-Welten und sammelst Relikte ein, bevor sie
 verblassen. Kurz spielbar fuer zwischendurch, mit Level-, Talent- und
 Achievement-System fuer alle, die dranbleiben.
 
-**Status:** v0.1.227 — spielbarer mobiler Browser-Stand. Siehe
-[docs/ROADMAP.md](docs/ROADMAP.md).
+**Status:** spielbarer mobiler Browser-Stand; aktuelle Version steht in
+`package.json`/`version.json`. Siehe [docs/ROADMAP.md](docs/ROADMAP.md).
 
 ---
 

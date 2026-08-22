@@ -1,6 +1,6 @@
 # Code Style — isiHunt
 
-**Stand:** 2026-08-12
+**Stand:** 2026-08-22 · Produktstand siehe `package.json`/`version.json`
 
 Werkzeuge erzwingen die Formatierung (Prettier) und einen Teil der Regeln
 (ESLint). Dieses Dokument beschreibt, was Werkzeuge **nicht** pruefen koennen.

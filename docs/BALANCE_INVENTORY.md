@@ -1,6 +1,7 @@
 # Balance-Inventur
 
-**Stand:** 2026-08-21 · Quelle: `src/config/balance-data.json`
+**Stand:** 2026-08-22 · Quelle: `src/config/balance-data.json`; Version siehe
+`package.json`/`version.json`
 
 Dieses Dokument beantwortet für jede laufende Einnahme und Ausgabe drei
 Fragen: Wo beginnt der Rohwert? Wo wird er im Client verrechnet? Welcher
