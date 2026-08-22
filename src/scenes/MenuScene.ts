@@ -7,7 +7,7 @@
 
 import Phaser from 'phaser';
 
-import { SYNC_MIN_INTERVAL_MS, SYNC_RETRY_DELAYS_MS } from '@/config/backend';
+import { SYNC_RETRY_DELAYS_MS } from '@/config/backend';
 import {
   DAILY_LOGIN_BONUS_COINS,
   DEBUG_ENABLED,
@@ -32,6 +32,7 @@ import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
+import { decideSyncGate } from '@/systems/SyncGateSystem';
 import * as SyncStatusSystem from '@/systems/SyncStatusSystem';
 import { shipTint } from '@/config/shop';
 import { playerTextureForShape, TextureKey } from '@/ui/textures';
@@ -187,40 +188,33 @@ export class MenuScene extends Phaser.Scene {
         forced: force,
       }),
     });
-    if (this.saveSyncBusy) return;
+    // Die Entscheidung "darf jetzt abgeglichen werden?" liegt in
+    // `SyncGateSystem` - dort ist sie ohne Phaser testbar. Hier bleibt nur
+    // die Ausfuehrung.
+    const jetzt = Date.now();
+    const tor = decideSyncGate({
+      busy: this.saveSyncBusy,
+      cloudAvailable: CloudSystem.isAvailable(),
+      testProfile: SaveSystem.isTestProfileActive(),
+      online: navigator.onLine,
+      force,
+      lastStartedAt: lastSyncStartedAt,
+      now: jetzt,
+    });
 
-    // Diese beiden Zweige bleiben ungedrosselt: Sie sprechen kein Backend an,
-    // setzen aber die sichtbare Statusanzeige. Wuerde die Sperre davor
-    // greifen, bliebe nach dem ersten Drosseln ein veralteter Status stehen.
-    if (!CloudSystem.isAvailable() || SaveSystem.isTestProfileActive()) {
-      SyncStatusSystem.setDataSyncStatus('local-only');
+    if (!tor.run) {
+      if (tor.status) SyncStatusSystem.setDataSyncStatus(tor.status);
+      if (tor.reason === 'throttled') {
+        DebugSystem.pushLogEntry({
+          timestamp: jetzt,
+          kind: 'event',
+          label: 'sync:throttled',
+          detail: JSON.stringify({ sinceLastSyncMs: jetzt - lastSyncStartedAt }),
+        });
+      }
       return;
     }
-
-    if (!navigator.onLine) {
-      SyncStatusSystem.setDataSyncStatus('offline');
-      return;
-    }
-
-    // Ab hier kostet jeder Durchlauf echte Netzaufrufe.
-    //
-    // `create()` laeuft bei jeder Rueckkehr ins Menue - nach jedem Run, nach
-    // jedem Zurueck-Knopf. Ohne Mindestabstand ergab das im Debug-Report vom
-    // 2026-08-21 rund 25 volle Durchlaeufe in zehn Sekunden (etwa 100
-    // Backend-Aufrufe), allein durchs Herumtippen. `saveSyncBusy` half
-    // dagegen nicht: Es sperrt nur *parallele* Laeufe und stand bei jedem
-    // Eintrag im Report auf `false`.
-    const sinceLastSync = Date.now() - lastSyncStartedAt;
-    if (!force && lastSyncStartedAt > 0 && sinceLastSync < SYNC_MIN_INTERVAL_MS) {
-      DebugSystem.pushLogEntry({
-        timestamp: Date.now(),
-        kind: 'event',
-        label: 'sync:throttled',
-        detail: JSON.stringify({ sinceLastSyncMs: sinceLastSync }),
-      });
-      return;
-    }
-    lastSyncStartedAt = Date.now();
+    lastSyncStartedAt = jetzt;
 
     this.showSyncPopup();
 
@@ -365,9 +359,14 @@ export class MenuScene extends Phaser.Scene {
             CloudSystem.clearPendingCosmeticSync();
           }
 
+          // `remoteReset` durchreichen statt SaveSystem erneut raten lassen:
+          // Dessen eigene Herleitung kennt den Ladenbesitz nicht und
+          // uebersieht den zweiten Reset eines Spielers, der schon auf
+          // Stufe 1 ohne Runs steht (Audit 2026-08-23).
           const uebernommen = SaveSystem.adoptRemote(
             remote.data,
             local.cloudId ?? AuthSystem.currentUserId()!,
+            remoteReset,
           );
           this.saveSyncBusy = false;
           this.cancelProfileRetry();

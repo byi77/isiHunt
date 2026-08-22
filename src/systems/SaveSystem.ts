@@ -28,10 +28,26 @@ import type { SaveData } from '@/types';
 const TEST_PROFILE_KEY = 'isihunt.admin-test-profile.v1';
 const TEST_PROFILE_BACKUP_KEY = 'isihunt.admin-test-profile-backup.v1';
 /**
- * PIN für den ausschließlich lokalen Wartungs-Teststand.
+ * PIN vor dem lokalen Wartungsbereich.
  *
- * Das ist keine Adminberechtigung: Der Stand bleibt offline, schaltet keine
- * Serverfunktion frei und wird nicht in Bestenliste oder Profil-Sync übertragen.
+ * **Das ist keine Zugriffskontrolle, sondern eine Verwechslungsbremse.** Die
+ * Zahl steht im ausgelieferten Bundle und ist dort von jedem lesbar, der die
+ * JS-Datei oeffnet - ein Geheimnis im Client-Code ist keins. Sie verhindert
+ * das versehentliche Hineinstolpern nach der Versions-Geste, nicht den
+ * absichtlichen Zugriff.
+ *
+ * Tragbar ist das, weil dahinter nichts Gefaehrliches liegt: Der Bereich
+ * zeigt Diagnose, prueft auf Updates und erzwingt ein Neuladen. Der
+ * Spielstand-Reset ist ueber `AdminScene.RESET_ENABLED` abgeschaltet, das
+ * lokale Testprofil aus dem Menue entfernt.
+ *
+ * Die echte Absicherung liegt serverseitig: `admin_reset_user()` und
+ * `admin_boost_user()` pruefen `is_admin` in der Datenbank (siehe
+ * `supabase/phase_2_7_admin_tools.sql`). Fremde Profile sind ueber diesen
+ * Weg nicht erreichbar.
+ *
+ * **Wer hier eine Aktion mit echter Wirkung ergaenzt, muss sie serverseitig
+ * absichern** - diese PIN traegt sie nicht (Audit 2026-08-23).
  */
 export const MAINTENANCE_PIN = '180870';
 
@@ -362,6 +378,7 @@ export function normalizeForComparison(raw: Partial<SaveData>): SaveData {
 }
 
 let cache: SaveData | null = null;
+let saveFailed = false;
 
 export function load(): SaveData {
   if (cache) return cache;
@@ -397,16 +414,49 @@ export function load(): SaveData {
   return cache;
 }
 
-export function save(data: SaveData): void {
+/**
+ * Schreibt den Spielstand und meldet, **ob** das gelungen ist.
+ *
+ * Der Rueckgabewert ist keine Formsache. Vorher verschluckte diese Funktion
+ * den Fehlschlag (volles Quota, privater Modus) still: Der Modul-Cache trug
+ * den neuen Stand, jeder Aufrufer sah einen Erfolg, im Speicher stand nichts.
+ * Der Spieler sammelte eine ganze Sitzung lang Muenzen und Level und fand
+ * beim naechsten Start alles davon geloescht - die einzige Spur war ein
+ * `console.warn`, das auf einem Handy niemand sieht (Audit 2026-08-23).
+ *
+ * Der Cache wird trotzdem gesetzt: Die laufende Sitzung soll weiterspielbar
+ * bleiben. Nur darf das niemand mehr mit "ist gespeichert" verwechseln.
+ */
+export function save(data: SaveData): boolean {
   cache = data;
   try {
     window.localStorage.setItem(SAVE_KEY, JSON.stringify(data));
+    saveFailed = false;
+    return true;
   } catch (error) {
     console.warn('[SaveSystem] Spielstand nicht speicherbar.', error);
+    saveFailed = true;
+    return false;
   }
 }
 
-/** Liest, veraendert und schreibt in einem Schritt. */
+/**
+ * Ob der letzte Schreibversuch fehlschlug.
+ *
+ * Bewusst im Speicher statt im Spielstand: Ein Stand, der sich nicht
+ * schreiben laesst, kann diese Information auch nicht mitschreiben.
+ */
+export function lastSaveFailed(): boolean {
+  return saveFailed;
+}
+
+/**
+ * Liest, veraendert und schreibt in einem Schritt.
+ *
+ * Ob der Schreibvorgang gelang, beantwortet `lastSaveFailed()` - der
+ * Rueckgabewert bleibt der neue Stand, damit die Aufrufer unveraendert
+ * weiterarbeiten koennen.
+ */
 export function update(mutator: (data: SaveData) => void): SaveData {
   const data = structuredClone(load());
   mutator(data);
@@ -464,8 +514,21 @@ export function isTestProfileActive(): boolean {
   }
 }
 
-/** Aktiviert einen lokalen Teststand, ohne den normalen Spielstand zu verlieren. */
-export function enableTestProfile(): SaveData {
+/**
+ * Aktiviert einen lokalen Teststand, ohne den normalen Spielstand zu verlieren.
+ *
+ * `null`, wenn das Backup nicht geschrieben werden konnte.
+ *
+ * **Warum das abbrechen muss.** Vorher lief die Funktion nach einem
+ * fehlgeschlagenen Backup weiter und ueberschrieb den echten Spielstand mit
+ * dem Testprofil. Das Backup fehlte dann aber - `disableTestProfile()` fand
+ * nichts zum Wiederherstellen und lieferte einen leeren Stand. Aus Stufe 30
+ * mit 5 000 Muenzen wurde Stufe 1, unwiederbringlich.
+ *
+ * Der verschluckte Fehler machte damit aus einer umkehrbaren Aktion eine
+ * unumkehrbare. Ohne Backup gibt es kein Testprofil (Audit 2026-08-23).
+ */
+export function enableTestProfile(): SaveData | null {
   if (isTestProfileActive()) return load();
 
   const original = structuredClone(load());
@@ -473,7 +536,19 @@ export function enableTestProfile(): SaveData {
     window.localStorage.setItem(TEST_PROFILE_BACKUP_KEY, JSON.stringify(original));
     window.localStorage.setItem(TEST_PROFILE_KEY, '1');
   } catch (error) {
-    console.warn('[SaveSystem] Testprofil nicht aktivierbar.', error);
+    console.warn(
+      '[SaveSystem] Testprofil nicht aktivierbar - Spielstand bleibt unberuehrt.',
+      error,
+    );
+    // Halbfertigen Zustand aufraeumen: Wenn nur der zweite Schluessel
+    // scheiterte, stuende sonst ein Backup ohne Marker im Speicher.
+    try {
+      window.localStorage.removeItem(TEST_PROFILE_BACKUP_KEY);
+      window.localStorage.removeItem(TEST_PROFILE_KEY);
+    } catch {
+      // Wenn schon das Aufraeumen scheitert, ist der Speicher ohnehin dicht.
+    }
+    return null;
   }
 
   const testProfile = {
@@ -493,20 +568,41 @@ export function enableTestProfile(): SaveData {
   return testProfile;
 }
 
-/** Deaktiviert den lokalen Teststand und stellt den vorherigen Stand wieder her. */
-export function disableTestProfile(): SaveData {
+/**
+ * Deaktiviert den lokalen Teststand und stellt den vorherigen Stand wieder her.
+ *
+ * `null`, wenn kein Backup gefunden wurde.
+ *
+ * **Warum das nicht auf den Standardstand zurueckfaellt.** Ein fehlendes
+ * Backup heisst nicht "der Spieler hatte nichts", sondern "wir wissen nicht
+ * mehr, was er hatte". Ein leerer Stand als Antwort darauf loescht genau das,
+ * was noch zu retten waere. Lieber im Testprofil stehen bleiben und das
+ * melden, als den echten Stand endgueltig ueberschreiben (Audit 2026-08-23).
+ */
+export function disableTestProfile(): SaveData | null {
   let backup: Partial<SaveData> | null = null;
   try {
     const raw = window.localStorage.getItem(TEST_PROFILE_BACKUP_KEY);
     backup = raw ? (JSON.parse(raw) as Partial<SaveData>) : null;
+  } catch (error) {
+    console.warn('[SaveSystem] Testprofil-Backup nicht lesbar.', error);
+    return null;
+  }
+
+  if (!backup) return null;
+
+  const restored = migrate(backup);
+  // Erst schreiben, dann die Marker entfernen: Scheitert das Schreiben,
+  // bleibt das Testprofil aktiv und das Backup erhalten - ein zweiter
+  // Versuch ist dann noch moeglich.
+  if (!save(restored)) return null;
+
+  try {
     window.localStorage.removeItem(TEST_PROFILE_KEY);
     window.localStorage.removeItem(TEST_PROFILE_BACKUP_KEY);
   } catch (error) {
-    console.warn('[SaveSystem] Testprofil nicht deaktivierbar.', error);
+    console.warn('[SaveSystem] Testprofil-Marker nicht entfernbar.', error);
   }
-
-  const restored = backup ? migrate(backup) : createDefaultSave();
-  save(restored);
   return restored;
 }
 
@@ -579,6 +675,7 @@ function vereinigeShopBesitz(
   lokal: SaveData,
   uebernommen: SaveData,
   remoteSelectionKnown = false,
+  resetErkannt = false,
 ): SaveData {
   // Ein zurueckgesetztes Profil raeumt auch den Laden aus.
   //
@@ -594,9 +691,15 @@ function vereinigeShopBesitz(
   // Das traf aber auch ein **frisch angelegtes** Profil - ein Neuling, der
   // vor seiner ersten Anmeldung im Laden kaufte, haette den Kauf verloren.
   // Der lokale Stand muss deshalb Spuren zeigen, die der ferne nicht hat.
+  // Die eigene Herleitung ist nur die Rueckfallebene fuer Aufrufer, die
+  // keine Antwort mitbringen. Sie ist bewusst schwaecher als
+  // `CloudSystem.isRemoteReset()`: Ihr fehlt der Ladenbesitz im Signal, und
+  // sie erkennt deshalb den zweiten Reset eines Spielers nicht, der bereits
+  // auf Stufe 1 ohne Runs steht. Wo die bessere Antwort vorliegt, gewinnt
+  // sie (Audit 2026-08-23).
   const fernLeer = uebernommen.level === 1 && uebernommen.xp === 0 && uebernommen.totalRuns === 0;
   const lokalBespielt = lokal.totalRuns > 0 || lokal.level > 1;
-  const zurueckgesetzt = fernLeer && lokalBespielt;
+  const zurueckgesetzt = resetErkannt || (fernLeer && lokalBespielt);
 
   if (zurueckgesetzt) {
     return {
@@ -657,11 +760,24 @@ function vereinigeShopBesitz(
   };
 }
 
-export function adoptRemote(remote: Partial<SaveData>, cloudId: string): SaveData {
+/**
+ * @param resetErkannt Hat der Aufrufer bereits einen serverseitigen Reset
+ *   festgestellt? `CloudSystem.isRemoteReset()` beantwortet dieselbe Frage
+ *   mit deutlich mehr Kriterien - unter anderem dem Ladenbesitz, den die
+ *   Notloesung hier unten nicht kennt. Wo diese Antwort vorliegt, muss sie
+ *   durchgereicht statt neu hergeleitet werden: Sonst raeumt der zweite
+ *   Reset eines Spielers, der bereits auf Stufe 1 ohne Runs steht, den Laden
+ *   nicht mehr aus (Audit 2026-08-23).
+ */
+export function adoptRemote(
+  remote: Partial<SaveData>,
+  cloudId: string,
+  resetErkannt = false,
+): SaveData {
   const lokal = load();
   const merged = preservePendingIdentity(
     lokal,
-    vereinigeShopBesitz(lokal, migrate(remote), hatExpliziteShopAuswahl(remote)),
+    vereinigeShopBesitz(lokal, migrate(remote), hatExpliziteShopAuswahl(remote), resetErkannt),
   );
   merged.cloudId = cloudId;
   save(merged);

@@ -139,6 +139,39 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Das lokale Testprofil konnte den Spielstand unwiderruflich zerstören.**
+  `enableTestProfile()` schrieb Backup und Marker in einem `try`, fing den
+  Fehler ab — und lief danach **weiter** bis zum Überschreiben des echten
+  Stands. Das Backup fehlte dann; `disableTestProfile()` fand nichts zum
+  Wiederherstellen und lieferte einen leeren Stand. Aus Stufe 30 mit 5 000
+  Münzen wurde Stufe 1. Der verschluckte Fehler machte aus einer umkehrbaren
+  Aktion eine unumkehrbare.
+
+  Beide Richtungen brechen jetzt ab, statt weiterzulaufen: ohne Backup kein
+  Testprofil, ohne Backup kein Zurückschalten. Der Pfad war über die
+  Oberfläche nicht erreichbar (der Block ist in `AdminScene` auskommentiert),
+  die Funktionen sind aber exportiert.
+
+- **Ein fehlgeschlagener Speichervorgang meldete einen Erfolg.** `save()` gab
+  nichts zurück: Bei vollem Speicher oder im privaten Modus trug der
+  Modul-Cache den neuen Stand, jeder Aufrufer sah einen Erfolg, im Speicher
+  stand nichts. Der Spieler sammelte eine ganze Sitzung lang Münzen und Level
+  und fand beim nächsten Start alles gelöscht — die einzige Spur war ein
+  `console.warn`, das auf einem Handy niemand sieht.
+
+  `save()` liefert jetzt `boolean`, `lastSaveFailed()` macht den Zustand
+  abfragbar. Die laufende Sitzung bleibt weiterhin spielbar; nur verwechselt
+  das niemand mehr mit „ist gespeichert".
+
+- **Der zweite Wartungs-Reset räumte den Laden nicht aus.** `MenuScene`
+  erkennt einen Reset über `CloudSystem.isRemoteReset()` (sechs Kriterien,
+  inklusive Ladenbesitz) — und `adoptRemote()` leitete dieselbe Frage
+  anschließend **erneut** her, mit schwächeren Kriterien
+  (`totalRuns > 0 || level > 1`). Wer bereits einmal zurückgesetzt wurde,
+  steht selbst auf Stufe 1 ohne Runs: Der zweite Reset ließ seine Käufe
+  stehen. Die getroffene Entscheidung wird jetzt durchgereicht statt neu
+  geraten; die eigene Herleitung bleibt Rückfallebene.
+
 - **Ein Wartungs-Reset blieb wirkungslos, wenn nur Auren gekauft waren.**
   `isRemoteReset()` prüfte den Besitz nur über Formen und Farben — die Auren
   kamen als dritte Kategorie dazu und fehlten in der Bedingung. Wer
@@ -169,6 +202,38 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   ein übersprungener Guard wäre damit als Erfolg durchgegangen. Sie folgt jetzt
   demselben Flag-Muster wie die Kauffunktionen. Die doppelte Guthabenprüfung
   (einmal vorab, einmal im Mutator) ist damit auf eine Stelle zusammengefasst.
+
+### Geaendert
+
+- **Die Torwächter-Logik des Datenabgleichs liegt in `SyncGateSystem`.**
+  „Darf jetzt abgeglichen werden?" war Teil der 1 500 Zeilen langen
+  `MenuScene` und dadurch durch keinen Test erreichbar — obwohl die
+  Entscheidung schon zweimal falsch war (ein Guard brach jeden Abgleich ab;
+  eine fehlende Drosselung erzeugte rund 100 Backend-Aufrufe in zehn
+  Sekunden). Sie ist jetzt eine reine Rechnung mit zehn Tests, nach dem
+  Muster des vorhandenen `SyncFlowSystem`.
+
+- **Spielzeit wird überall gleich geschrieben.** Profil und
+  Wartungsstatistik formatierten dieselbe Zahl unabhängig voneinander —
+  „2 Std. 30 Min." gegen „2 h 30 min", und nur eine der beiden Funktionen
+  fing negative Werte ab. Beide nutzen jetzt `ui/format.ts`.
+
+- **Die doppelte Levelaufstiegs-Schleife ist zusammengefasst.** Sie stand
+  zeichengleich in `applyRun()` und `applyDailyBonus()`, nur die
+  Nachbehandlung wich ab. Wirksam war der Unterschied nicht (die
+  Schleifenbedingung deckelt bereits), zwei Kopien derselben Rechnung laufen
+  aber irgendwann auseinander.
+
+- **Toter Code entfernt:** `allWorldIds()` (als „nur fuer Tests" angelegt, von
+  keinem Test genutzt) und der überflüssige Export von `getBalanceReport()`.
+
+- **Die Wartungs-PIN ist als das dokumentiert, was sie ist.** Sie steht im
+  ausgelieferten Bundle und ist dort lesbar — eine Verwechslungsbremse, keine
+  Zugriffskontrolle. Tragbar, weil dahinter nur Diagnose liegt: Der
+  Spielstand-Reset ist abgeschaltet, das Testprofil aus dem Menü entfernt, und
+  die Admin-Funktionen prüfen serverseitig `is_admin`. Der Kommentar hält
+  jetzt fest, dass jede neue Aktion dort ihre eigene serverseitige Absicherung
+  braucht.
 
 - **Im Tageslauf fehlte die gekaufte Schiffsform.** Wer eine Form, Farbe oder
   Aura besaß, spielte den Tageslauf trotzdem als neutrale Standardfigur.

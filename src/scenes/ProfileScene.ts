@@ -28,6 +28,7 @@ import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SyncStatusSystem from '@/systems/SyncStatusSystem';
 import { shipTint } from '@/config/shop';
+import { formatPlayTime } from '@/ui/format';
 import { playerTextureForShape, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
@@ -43,13 +44,6 @@ import {
 } from '@/ui/widgets';
 import type { ButtonHandle } from '@/ui/widgets';
 import { createTextInput } from '@/ui/textInput';
-
-function formatPlayTime(milliseconds: number): string {
-  const totalMinutes = Math.floor(Math.max(0, milliseconds) / 60_000);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return hours > 0 ? `${hours} Std. ${minutes} Min.` : `${minutes} Min.`;
-}
 
 export interface ProfileSceneData {
   firstStart?: boolean;

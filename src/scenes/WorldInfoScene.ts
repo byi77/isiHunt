@@ -14,7 +14,7 @@
 import Phaser from 'phaser';
 
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
-import { getWorld, WORLDS } from '@/config/worlds';
+import { getWorld } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
@@ -192,9 +192,4 @@ export class WorldInfoScene extends Phaser.Scene {
     ChallengeSystem.startDaily(worldId);
     this.scene.start(SceneKey.Challenge);
   }
-}
-
-/** Nur fuer Tests: liefert alle Welten, damit ein Snapshot nichts vergisst. */
-export function allWorldIds(): readonly string[] {
-  return WORLDS.map((world) => world.id);
 }

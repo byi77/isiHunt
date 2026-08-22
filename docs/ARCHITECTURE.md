@@ -134,6 +134,8 @@ isiHunt/
 │   │   ├── ProgressSyncSystem.ts Offline-Outbox fuer angemeldete Profile
 │   │   ├── ProgressSyncSystem.test.ts
 │   │   ├── SyncStatusSystem.ts Sichtbarer Sync-Status im Menue
+│   │   ├── SyncGateSystem.ts   Darf jetzt abgeglichen werden? (ohne Phaser)
+│   │   ├── SyncGateSystem.test.ts
 │   │   ├── ProgressionSystem.ts XP, Level, Coin-Talente, Erfolge
 │   │   ├── ProgressionSystem.test.ts
 │   │   ├── ScoreSystem.ts      Punkte + Combo eines Runs
@@ -153,6 +155,7 @@ isiHunt/
 │   │   └── index.ts            SaveData, RunStats, ChallengeState, ...
 │   ├── ui/
 │   │   ├── theme.ts            Farben, Schriftgroessen
+│   │   ├── format.ts           Gemeinsame Textformate (Spielzeit)
 │   │   ├── depth.ts            Zeichenreihenfolge aller Ebenen
 │   │   ├── textures.ts         Prozedurale Grafiken
 │   │   ├── shipShapes.ts       Die Zeichnungen aller Fluggestalten

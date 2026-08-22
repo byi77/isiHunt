@@ -9,6 +9,7 @@ import * as CloudSystem from '@/systems/CloudSystem';
 import type { AdminDashboard, AdminUserStats } from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
+import { formatPlayTime } from '@/ui/format';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   createBackButton,
@@ -22,17 +23,6 @@ import {
 } from '@/ui/widgets';
 
 const PAGE_SIZE = 3;
-
-function formatDuration(milliseconds: number): string {
-  const totalSeconds = Math.floor(milliseconds / 1000);
-  const totalMinutes = Math.floor(totalSeconds / 60);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  const seconds = totalSeconds % 60;
-  if (hours > 0) return `${hours} h ${minutes} min`;
-  if (minutes > 0) return `${minutes} min ${seconds} s`;
-  return `${seconds} s`;
-}
 
 export class AdminStatsScene extends Phaser.Scene {
   private dashboard: AdminDashboard | null = null;
@@ -123,7 +113,7 @@ export class AdminStatsScene extends Phaser.Scene {
       `PROFILE\n${dashboard.profileCount.toLocaleString('de-DE')}`,
       `GESPIELT\n${dashboard.playedProfileCount.toLocaleString('de-DE')}`,
       `RUNS\n${dashboard.totalRuns.toLocaleString('de-DE')}`,
-      `SPIELZEIT\n${formatDuration(dashboard.totalPlayTimeMs)}`,
+      `SPIELZEIT\n${formatPlayTime(dashboard.totalPlayTimeMs)}`,
       `COINS\n${dashboard.totalCoinsEarned.toLocaleString('de-DE')}`,
       `IN TASCHEN\n${dashboard.totalCoinsHeld.toLocaleString('de-DE')} C`,
       `DAILYS\n${dashboard.totalDailyRuns.toLocaleString('de-DE')}`,
@@ -230,7 +220,7 @@ export class AdminStatsScene extends Phaser.Scene {
         .text(
           74,
           y + 6,
-          `Level ${user.level} · ${user.totalRuns} Runs · ${formatDuration(user.totalPlayTimeMs)}`,
+          `Level ${user.level} · ${user.totalRuns} Runs · ${formatPlayTime(user.totalPlayTimeMs)}`,
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0, 0.5)

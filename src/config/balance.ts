@@ -238,7 +238,7 @@ export interface BalanceReport extends BalanceSnapshot {
  * Der Bericht liest keine zweite Konfiguration: Alle Werte kommen aus den
  * oben definierten Ableitungen und werden nur für CLI/CI zusammengefasst.
  */
-export function getBalanceReport(): BalanceReport {
+function getBalanceReport(): BalanceReport {
   const daily = BALANCE.economy.sources.daily;
   const dailyXp = BALANCE.progression.xp;
 

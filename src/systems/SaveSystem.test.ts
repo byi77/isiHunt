@@ -99,3 +99,163 @@ describe('SaveSystem.load Migration', () => {
     expect(adopted.pendingPlayerName).toBe('OfflineName');
   });
 });
+
+/**
+ * Audit 2026-08-23: Ein verschluckter Schreibfehler ist harmlos, solange
+ * danach nichts passiert, was seinen Erfolg voraussetzt. Genau das war hier
+ * aber der Fall - siehe die einzelnen Tests.
+ */
+describe('Fehlgeschlagenes Speichern', () => {
+  /** Laesst NUR die Schluessel scheitern, die `treffer` enthalten. */
+  function schreibfehlerFuer(treffer: string): void {
+    const echt = window.localStorage.setItem.bind(window.localStorage);
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(((k: string, v: string) => {
+      if (k.includes(treffer)) throw new DOMException('QuotaExceededError');
+      echt(k, v);
+    }) as never);
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+  }
+
+  it('meldet den Fehlschlag, statt still einen Erfolg vorzutaeuschen', () => {
+    // Vorher gab `save()` nichts zurueck: Der Cache trug den neuen Stand,
+    // jeder Aufrufer sah einen Erfolg, im Speicher stand nichts. Der Spieler
+    // sammelte eine ganze Sitzung lang und fand beim Neustart alles geloescht.
+    SaveSystem.load();
+    schreibfehlerFuer(SAVE_KEY);
+
+    const gelungen = SaveSystem.save({ ...SaveSystem.load(), coins: 9999 });
+    vi.restoreAllMocks();
+
+    expect(gelungen).toBe(false);
+    expect(SaveSystem.lastSaveFailed()).toBe(true);
+    // Die laufende Sitzung bleibt spielbar - nur gilt sie nicht als gesichert.
+    expect(SaveSystem.load().coins).toBe(9999);
+  });
+
+  it('meldet nach einem gelungenen Schreibvorgang wieder Erfolg', () => {
+    SaveSystem.load();
+    schreibfehlerFuer(SAVE_KEY);
+    SaveSystem.save({ ...SaveSystem.load(), coins: 1 });
+    vi.restoreAllMocks();
+
+    expect(SaveSystem.save({ ...SaveSystem.load(), coins: 2 })).toBe(true);
+    expect(SaveSystem.lastSaveFailed()).toBe(false);
+  });
+
+  it('legt KEIN Testprofil an, wenn das Backup nicht geschrieben werden kann', () => {
+    // Der schwerste Fund des Audits: Die Funktion lief nach dem `catch`
+    // weiter und ueberschrieb den echten Stand mit dem Testprofil - ohne
+    // Backup. `disableTestProfile()` fand nichts zum Wiederherstellen, aus
+    // Stufe 30 wurde Stufe 1. Der verschluckte Fehler machte damit aus einer
+    // umkehrbaren Aktion eine unumkehrbare.
+    SaveSystem.update((d) => {
+      d.level = 30;
+      d.coins = 5000;
+      d.totalRuns = 120;
+    });
+    schreibfehlerFuer('test-profile');
+
+    const ergebnis = SaveSystem.enableTestProfile();
+    vi.restoreAllMocks();
+
+    expect(ergebnis).toBeNull();
+    // Entscheidend: Der echte Spielstand steht unveraendert da.
+    const danach = SaveSystem.load();
+    expect(danach.level).toBe(30);
+    expect(danach.coins).toBe(5000);
+    expect(danach.totalRuns).toBe(120);
+    expect(SaveSystem.isTestProfileActive()).toBe(false);
+  });
+
+  it('ueberschreibt beim Abschalten nichts, wenn kein Backup vorliegt', () => {
+    // Ein fehlendes Backup heisst nicht "der Spieler hatte nichts", sondern
+    // "wir wissen nicht mehr, was er hatte". Ein leerer Stand als Antwort
+    // darauf loescht genau das, was noch zu retten waere.
+    SaveSystem.update((d) => {
+      d.level = 30;
+      d.coins = 5000;
+    });
+
+    expect(SaveSystem.disableTestProfile()).toBeNull();
+    expect(SaveSystem.load().level).toBe(30);
+    expect(SaveSystem.load().coins).toBe(5000);
+  });
+
+  it('stellt den Stand wieder her, wenn ein Backup vorliegt', () => {
+    // Gegenprobe: Der Normalfall darf durch die Haertung nicht leiden.
+    SaveSystem.update((d) => {
+      d.level = 30;
+      d.coins = 5000;
+    });
+
+    expect(SaveSystem.enableTestProfile()).not.toBeNull();
+    expect(SaveSystem.load().coins).toBe(99_999);
+
+    const wieder = SaveSystem.disableTestProfile();
+    expect(wieder?.level).toBe(30);
+    expect(wieder?.coins).toBe(5000);
+    expect(SaveSystem.isTestProfileActive()).toBe(false);
+  });
+});
+
+/**
+ * Audit 2026-08-23: `MenuScene` stellt den Reset ueber
+ * `CloudSystem.isRemoteReset()` fest (sechs Kriterien, inklusive
+ * Ladenbesitz) - und `adoptRemote()` leitete die Frage anschliessend erneut
+ * her, mit schwaecheren Kriterien. Die bereits getroffene Entscheidung wurde
+ * verworfen statt durchgereicht.
+ */
+describe('Reset-Entscheidung durchreichen', () => {
+  const leererCloudStand: Partial<SaveData> = {
+    level: 1,
+    xp: 0,
+    totalRuns: 0,
+    coins: 0,
+    bestScore: 0,
+  };
+
+  it('raeumt den Laden auch beim ZWEITEN Reset, wenn der Aufrufer ihn erkannt hat', () => {
+    // Wer bereits einmal zurueckgesetzt wurde, steht selbst auf Stufe 1 ohne
+    // Runs - die eigene Herleitung in `vereinigeShopBesitz` sieht darin
+    // keinen "bespielten" Stand und liess die Kaeufe stehen.
+    SaveSystem.update((d) => {
+      d.level = 1;
+      d.totalRuns = 0;
+      d.ownedShipShapes = [...d.ownedShipShapes, 'eagle'];
+      d.ownedShipAuras = [...d.ownedShipAuras, 'wingbeat'];
+    });
+
+    const nach = SaveSystem.adoptRemote(leererCloudStand, 'cloud-1', true);
+
+    expect(nach.ownedShipShapes).not.toContain('eagle');
+    expect(nach.ownedShipAuras).not.toContain('wingbeat');
+  });
+
+  it('behaelt ohne erkannten Reset das bisherige Verhalten', () => {
+    // Gegenprobe: Der Standardwert `false` darf nichts veraendern. Ein
+    // Neuling, der vor seiner ersten Anmeldung kauft, behaelt seinen Kauf.
+    SaveSystem.update((d) => {
+      d.level = 1;
+      d.totalRuns = 0;
+      d.ownedShipShapes = [...d.ownedShipShapes, 'eagle'];
+    });
+
+    const nach = SaveSystem.adoptRemote(leererCloudStand, 'cloud-1');
+
+    expect(nach.ownedShipShapes).toContain('eagle');
+  });
+
+  it('raeumt weiterhin ohne Zutun des Aufrufers, wenn lokal Spielzeit steht', () => {
+    // Die eigene Herleitung bleibt als Rueckfallebene erhalten - Aufrufer
+    // ohne bessere Antwort verlieren nichts.
+    SaveSystem.update((d) => {
+      d.level = 30;
+      d.totalRuns = 40;
+      d.ownedShipShapes = [...d.ownedShipShapes, 'eagle'];
+    });
+
+    const nach = SaveSystem.adoptRemote(leererCloudStand, 'cloud-1');
+
+    expect(nach.ownedShipShapes).not.toContain('eagle');
+  });
+});

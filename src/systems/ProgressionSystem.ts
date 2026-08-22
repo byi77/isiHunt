@@ -63,6 +63,37 @@ function grantLevelReward(data: SaveData): number {
   return COINS_PER_LEVEL;
 }
 
+/**
+ * Rechnet vorhandene XP in Levelaufstiege um und gibt die dabei verdienten
+ * Coins zurueck. Mehrere Aufstiege auf einmal sind moeglich.
+ *
+ * Stand zeichengleich in `applyRun()` und `applyDailyBonus()` - nur die
+ * Nachbehandlung wich ab (einmal mit, einmal ohne `level = MAX_LEVEL`).
+ * Wirksam war der Unterschied nicht, weil die Schleifenbedingung bereits
+ * deckelt; zwei Kopien derselben Rechnung laufen aber irgendwann
+ * auseinander (Audit 2026-08-23).
+ *
+ * Der `guard` begrenzt die Schleife auf `MAX_LEVEL` Durchlaeufe: Ein
+ * beschaedigter Stand mit unsinnig hoher XP soll das Spiel nicht einfrieren.
+ */
+function verrechneLevelaufstiege(data: SaveData): number {
+  let coinsGained = 0;
+  let guard = 0;
+  while (data.level < MAX_LEVEL && data.xp >= xpForLevel(data.level) && guard < MAX_LEVEL) {
+    data.xp -= xpForLevel(data.level);
+    data.level += 1;
+    coinsGained += grantLevelReward(data);
+    guard += 1;
+  }
+
+  // Auf Maximalstufe gibt es keinen unsichtbar anwachsenden XP-Vorrat.
+  if (data.level >= MAX_LEVEL) {
+    data.level = MAX_LEVEL;
+    data.xp = 0;
+  }
+  return coinsGained;
+}
+
 export function getLevelProgress(save: SaveData): LevelProgress {
   if (save.level >= MAX_LEVEL) {
     return { level: MAX_LEVEL, xpInLevel: 0, xpNeeded: 0, ratio: 1 };
@@ -128,19 +159,7 @@ export function applyRun(run: RunStats): ProgressionResult {
 
     // XP verrechnen; mehrere Levelaufstiege in einem Run sind moeglich.
     data.xp += safeXpGained;
-    let guard = 0;
-    while (data.level < MAX_LEVEL && data.xp >= xpForLevel(data.level) && guard < MAX_LEVEL) {
-      data.xp -= xpForLevel(data.level);
-      data.level += 1;
-      coinsGained += grantLevelReward(data);
-      guard += 1;
-    }
-
-    // Auf Maximalstufe gibt es keinen unsichtbar anwachsenden XP-Vorrat.
-    if (data.level >= MAX_LEVEL) {
-      data.level = MAX_LEVEL;
-      data.xp = 0;
-    }
+    coinsGained += verrechneLevelaufstiege(data);
   });
 
   const levelsGained = after.level - levelBefore;
@@ -198,14 +217,7 @@ export function applyDailyBonus(
   const after = SaveSystem.update((data) => {
     data.coins += safeCoins;
     data.xp += safeXp;
-    let guard = 0;
-    while (data.level < MAX_LEVEL && data.xp >= xpForLevel(data.level) && guard < MAX_LEVEL) {
-      data.xp -= xpForLevel(data.level);
-      data.level += 1;
-      totalCoinGain += grantLevelReward(data);
-      guard += 1;
-    }
-    if (data.level >= MAX_LEVEL) data.xp = 0;
+    totalCoinGain += verrechneLevelaufstiege(data);
     data.totalCoinsEarned += totalCoinGain;
   });
 
