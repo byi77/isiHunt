@@ -101,6 +101,37 @@ export const POINTER_THROTTLE_MIN = 0.15;
 /** Ab dieser Geschwindigkeit (px/s) zieht die Figur eine Lichtspur. */
 export const PLAYER_TRAIL_MIN_SPEED = 60;
 
+// --- Talent-Feedback -------------------------------------------------------
+
+/** Breite des sichtbaren Reichweitenrings fuer das Reichweite-Talent. */
+export const TALENT_REACH_RING_WIDTH = 5;
+/** Grundtransparenz des Reichweitenrings - bewusst deutlich sichtbar. */
+export const TALENT_REACH_RING_ALPHA = 0.72;
+/** Breite des Magnetfeldrings. */
+export const TALENT_MAGNET_FIELD_WIDTH = 4;
+/** Transparenz des Magnetfeldrings. */
+export const TALENT_MAGNET_FIELD_ALPHA = 0.46;
+/** Maximale Zahl gleichzeitig gezeichneter Soglinien. */
+export const TALENT_MAGNET_MAX_LINES = 7;
+/** Breite einer einzelnen Soglinie. */
+export const TALENT_MAGNET_LINE_WIDTH = 3;
+/** Transparenz einer Soglinie bei maximaler Naehe. */
+export const TALENT_MAGNET_LINE_ALPHA = 0.78;
+/** Kleinster Abstand zum Schiff, damit Linien nicht unter dem Rumpf starten. */
+export const TALENT_MAGNET_LINE_START_OFFSET = 28;
+/** Grundlaenge der Bewegungstreifen hinter dem Schiff. */
+export const TALENT_SPEED_STREAK_BASE_LENGTH = 34;
+/** Zusatzlaenge der Bewegungstreifen bei voller Geschwindigkeit. */
+export const TALENT_SPEED_STREAK_SPEED_LENGTH = 58;
+/** Zusatzlaenge fuer das maximal ausgebaute Flinkheit-Talent. */
+export const TALENT_SPEED_STREAK_TALENT_LENGTH = 26;
+/** Breite der Bewegungstreifen. */
+export const TALENT_SPEED_STREAK_WIDTH = 5;
+/** Transparenz der Bewegungstreifen ohne Flinkheit-Talent. */
+export const TALENT_SPEED_STREAK_BASE_ALPHA = 0.26;
+/** Zusatztransparenz der Bewegungstreifen durch Flinkheit. */
+export const TALENT_SPEED_STREAK_TALENT_ALPHA = 0.54;
+
 // --- Darstellungsschwellen --------------------------------------------------
 
 /**
@@ -310,7 +341,7 @@ export const SERIES_TRAIL_TIERS: readonly {
  * Staerke der Schleifenlinie am Schiff, in Pixeln. Nach hinten laeuft sie
  * linear auf 0 aus.
  */
-export const SERIES_TRAIL_LINE_WIDTH = 14;
+export const SERIES_TRAIL_LINE_WIDTH = 18;
 
 /**
  * Breite der weichen Aussenkontur relativ zur lesbaren Kernlinie.
@@ -321,10 +352,10 @@ export const SERIES_TRAIL_LINE_WIDTH = 14;
 export const SERIES_TRAIL_GLOW_WIDTH_MULTIPLIER = 2.4;
 
 /** Maximale Transparenz der weichen Aussenkontur relativ zur Kernlinie. */
-export const SERIES_TRAIL_GLOW_ALPHA = 0.22;
+export const SERIES_TRAIL_GLOW_ALPHA = 0.3;
 
 /** Mindesttransparenz der Kernlinie am hintersten Ende der Schleife. */
-export const SERIES_TRAIL_CORE_MIN_ALPHA = 0.38;
+export const SERIES_TRAIL_CORE_MIN_ALPHA = 0.5;
 
 /**
  * Abstand zwischen zwei Stuetzpunkten der Schleife.
@@ -354,10 +385,10 @@ export const SERIES_TRAIL_IDLE_TICKS_PER_DROP = 4;
  * Muss deutlich schwaecher sein als die erste Stufe, damit der Sprung bei
  * Serie 1 ueberhaupt auffaellt.
  */
-export const SERIES_TRAIL_BASE_LIFESPAN_MS = 380;
-export const SERIES_TRAIL_BASE_FREQUENCY_MS = 34;
-export const SERIES_TRAIL_BASE_SCALE = 0.42;
-export const SERIES_TRAIL_BASE_ALPHA = 0.5;
+export const SERIES_TRAIL_BASE_LIFESPAN_MS = 500;
+export const SERIES_TRAIL_BASE_FREQUENCY_MS = 26;
+export const SERIES_TRAIL_BASE_SCALE = 0.58;
+export const SERIES_TRAIL_BASE_ALPHA = 0.65;
 
 // --- Progression ------------------------------------------------------------
 

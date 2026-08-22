@@ -975,7 +975,10 @@ export function floatingScore(
       ),
     )
     .setOrigin(0.5)
-    .setScale(bonus ? 0.55 : 0.8)
+    // Punktwerte muessen im mobilen Spielfeld auf einen Blick lesbar sein.
+    // Der Wert startet schon gross genug, bevor die Aufwaertsanimation ihn
+    // weiter hervorhebt - sonst war der erste Eindruck oft nur ein Flackern.
+    .setScale(bonus ? 0.72 : 0.96)
     .setDepth(Depth.FloatingScore);
 
   const bonusLabel = bonus

@@ -714,7 +714,15 @@ Bedarf über eine dokumentierte Option verfügbar oder vollständig archiviert.
 
 ## P2-11 — Visuelles Polishing: Schweif, Glow und Effekte
 
-- [x] **Schweif und optisches Feedback als eigenes Feature-Paket optimieren.**
+- [ ] **Schweif und optisches Feedback als dominantes Feature-Paket neu
+  ausarbeiten.**
+
+**Neue verbindliche Sichtbarkeitsanforderung:** Die Effekte müssen im laufenden
+Spiel sofort auffallen und dürfen nicht nur bei genauer Betrachtung erkennbar
+sein. Ein Spieler muss ohne Debugmodus und ohne Vorwissen sehen können, welche
+Talentwirkung aktiv ist, wie schnell sich die Figur bewegt, ob Magnetismus
+Relikte zieht und welche Combo-/Fangstufe gerade wirkt. Dezente Effekte gelten
+für diesen Punkt als nicht abgenommen.
 
 Das ist mehr als „Schleifenfarben kaufbar machen“: Der Schweif ist während
 jedes Fangs sichtbar und bestimmt wesentlich, ob sich Bewegung, Combo und
@@ -732,6 +740,23 @@ sondern für die tatsächliche Größe und Bewegung auf iPhone/iPad gestaltet wi
   Variante dürfen sich nicht gegenseitig unlesbar machen.
 - **Glow und Aura:** Helligkeit, Weichheit, Kern-/Randkontrast und die
   Abstimmung mit Talent-Aura, Magnetlinien und Planetenglow.
+- **Talentwirkung sichtbar machen:** Jede spielrelevante Talentwirkung braucht
+  ein eigenes, deutliches visuelles Signal: Reichweite bekommt einen klar
+  erkennbaren Sammelradius bzw. Fangring, Flinkheit bekommt sichtbar mehr
+  Schub, Nachlauf und Geschwindigkeitsstreifen, Magnetismus bekommt starke
+  Soglinien/Partikel und eine klar sichtbare Beschleunigung der Relikte,
+  Ausdauer und Fokus bekommen erkennbare Dauer-/Combo-Indikatoren. Erkenntnis,
+  Gunst und andere rein rechnerische Werte brauchen mindestens eine sichtbare
+  Aktivierungs-/Belohnungsrückmeldung, ohne ihre Balancewirkung zu verändern.
+- **Dominanz und Kontrast:** Spielerfigur, Schweif, aktive Talentwirkung und
+  Fangfeedback müssen sich gegen jede Weltfarbe durchsetzen. Kern, Rand, Glow,
+  Partikel und Nachbild werden so skaliert, dass sie auch bei Bewegung auf
+  einem kleinen Display sofort lesbar sind; „technisch vorhanden, aber kaum
+  sichtbar“ gilt als Fehler.
+- **Geschwindigkeit und Bewegung:** Die aktuelle Bewegung muss visuell deutlich
+  schneller wirken, wenn Flinkheit aktiv ist. Dazu gehören Schiffsneigung,
+  Schweiflänge, Partikeldichte, Richtungswechsel und ein klarer Vortrieb; die
+  Darstellung darf nicht bei allen Talentstufen gleich aussehen.
 - **Partikel und Nachbilder:** Menge, Lebensdauer, Spawnrate und Cleanup über
   einen vollständigen 90-Sekunden-Run; kein wachsender Speicher- oder
   Performanceverlust.
@@ -760,16 +785,30 @@ abgestimmte Ereignisse.
 4. Performance und Lesbarkeit gegen `P5-04`/`P5-05` prüfen.
 5. Kaufbare Varianten erst nach dem Basisschweif freigeben.
 
-**Abnahme:** Jede Stufe ist im Standbild und in Bewegung unterscheidbar, kein
-Effekt verdeckt eine wichtige Information, ein 90-Sekunden-Run bleibt stabil,
-und die finale Regel ist in `docs/GAME_DESIGN.md`/`docs/ART_STYLE.md`
-dokumentiert. Neue Werte werden nicht als verstreute Scene-Konstanten angelegt.
+**Abnahme:** Jede Stufe und jede Talentwirkung ist im Standbild und in Bewegung
+sofort unterscheidbar; die aktive Wirkung ist auf einem normalen iPhone ohne
+Zoom oder Debugmodus klar sichtbar. Magnetismus, Flinkheit, Reichweite,
+Ausdauer und Fokus werden jeweils auf Rang 0, Rang 1 und Maximalrang verglichen.
+Kein Effekt verdeckt Score-Popup, Orb, Hindernis oder Zielanzeige, ein
+90-Sekunden-Run bleibt stabil, und die finale Regel ist in
+`docs/GAME_DESIGN.md`/`docs/ART_STYLE.md` dokumentiert. Neue Werte werden nicht
+als verstreute Scene-Konstanten angelegt.
 
-**Umsetzung 2026-08-21:** `Player` zeichnet die Serie jetzt als geglättete
-Quadratic-Bezier-Glow-/Kernspur und leert die Stützpunkte beim Serienende
-sofort. Die Abtastung (`SERIES_TRAIL_SMOOTHING_DIVISIONS`) und alle übrigen
-Schweifparameter bleiben in `GameConfig` zentral. Die Code-Umsetzung ist
-abgeschlossen; die echte iPhone-/iPad-Abnahme bleibt als Release-Gate offen.
+**Technischer Zwischenstand 2026-08-22:** `Player` zeichnet die Serie als
+geglättete Quadratic-Bezier-Glow-/Kernspur und leert die Stützpunkte beim
+Serienende sofort. Zusätzlich gibt es jetzt einen doppelten Reichweitenring,
+ein sichtbares Magnetfeld mit Soglinien/Pfeilspitzen, bewegungsabhängige
+Geschwindigkeitsstreifen und eine kompakte HUD-Zeile mit allen aktiven
+Talentverstärkungen (inklusive Ausdauer, Fokus, Erkenntnis und Gunst). Die
+Fang-Popups, Kernspur und Glow-Kontraste wurden verstärkt. Alle Parameter
+liegen in `GameConfig`; die automatischen Tests, Typprüfung, Lint und der
+Produktions-Build sind sauber.
+
+Das ist die technische Umsetzung, aber noch keine visuelle Abnahme: Der
+Browser-Smoke-Check konnte in dieser Sitzung wegen der fehlenden lokalen
+Browser-Sandbox nicht ausgeführt werden. Die echte iPhone-/iPad-Abnahme,
+Rang-0/Rang-1/Max-Vergleiche und ein vollständiger 90-Sekunden-Run bleiben
+offen. P2-11 bleibt deshalb bewusst als unerledigt markiert.
 
 ---
 

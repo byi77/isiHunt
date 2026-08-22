@@ -11,15 +11,19 @@ import Phaser from 'phaser';
 
 import { CHALLENGE_DURATION_MS } from '@/config/challenge';
 import {
+  COMBO_GRACE_MS,
   COUNTDOWN_STEP_MS,
   COUNTDOWN_STEPS,
   DEBUG_ENABLED,
   GAME_HEIGHT,
   GAME_WIDTH,
+  PLAYER_BASE_COLLECT_RADIUS,
+  PLAYER_BASE_SPEED,
   PLAYFIELD_PADDING_BOTTOM,
   PLAYFIELD_PADDING_TOP,
   PLAYFIELD_PADDING_X,
   RARITY_IMPACT_MIN_POINTS,
+  RUN_DURATION_MS,
   WORLD_BRAKE_DURATION_MS,
   WORLD_BRAKE_FACTOR,
   WORLD_INERTIA_FACTOR,
@@ -72,6 +76,27 @@ export interface GameSceneData {
 }
 
 type RunPhase = 'countdown' | 'running' | 'ended';
+
+/** Kompakte Live-Anzeige der tatsaechlich aktiven Talentverstaerkungen. */
+function activeTalentSummary(stats: PlayerStats): string {
+  const active: string[] = [];
+  const reach = stats.collectRadius - PLAYER_BASE_COLLECT_RADIUS;
+  const speed = Math.round((stats.moveSpeed / PLAYER_BASE_SPEED - 1) * 100);
+  const run = Math.round((stats.runDurationMs - RUN_DURATION_MS) / 1000);
+  const combo = Math.round(stats.comboGraceMs - COMBO_GRACE_MS);
+  const xp = Math.round((stats.xpMultiplier - 1) * 100);
+  const score = Math.round((stats.scoreMultiplier - 1) * 100);
+
+  if (reach > 0) active.push(`REICHWEITE +${reach}`);
+  if (speed > 0) active.push(`TEMPO +${speed}%`);
+  if (stats.magnetRadius > 0) active.push(`MAGNET +${stats.magnetRadius}`);
+  if (run > 0) active.push(`RUN +${run}s`);
+  if (combo > 0) active.push(`COMBO +${combo}ms`);
+  if (xp > 0) active.push(`XP +${xp}%`);
+  if (score > 0) active.push(`PUNKTE +${score}%`);
+
+  return active.length > 0 ? `AKTIV · ${active.join(' · ')}` : '';
+}
 
 export class GameScene extends Phaser.Scene {
   private world!: WorldDef;
@@ -191,6 +216,7 @@ export class GameScene extends Phaser.Scene {
       durationMs: this.totalMs,
       playerLabel: nonProgressionMode ? ChallengeSystem.playerLabel(this.playerIndex) : null,
       scoreToBeat: nonProgressionMode ? ChallengeSystem.scoreToBeat() : null,
+      talentSummary: nonProgressionMode ? '' : activeTalentSummary(this.stats),
     });
 
     if (DEBUG_ENABLED) this.installDebugKeys();
@@ -247,12 +273,14 @@ export class GameScene extends Phaser.Scene {
     // aktiv; Spawns, Timer und Wertung beginnen weiterhin erst mit `running`.
     if (this.phase === 'countdown') {
       this.updatePlayer(dtSec);
+      this.player.updateTalentVisuals(delta, []);
       return;
     }
 
     this.updatePlayer(dtSec);
     this.updateCombo(delta);
     this.updateCollectibles(dtSec, delta);
+    this.player.updateTalentVisuals(delta, this.collectibles);
     this.updateObstacles(delta);
     this.updateSpawning(delta);
     this.updateTimer(delta);

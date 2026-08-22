@@ -28,6 +28,8 @@ export interface HudSceneData {
   playerLabel?: string | null;
   /** Im Duell ab Durchgang zwei: die Vorlage des Gegners. Sonst null. */
   scoreToBeat?: number | null;
+  /** Kompakte Anzeige der aktiven Talentverstaerkungen im laufenden Run. */
+  talentSummary?: string;
 }
 
 export class HudScene extends Phaser.Scene {
@@ -92,6 +94,23 @@ export class HudScene extends Phaser.Scene {
         textStyle(FontSize.body, toCss(this.accent), { fontStyle: 'bold' }),
       )
       .setOrigin(0.5, 0);
+
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        168,
+        data.talentSummary ?? '',
+        textStyle(FontSize.tiny, Palette.gold, {
+          fontStyle: 'bold',
+          stroke: '#000000',
+          strokeThickness: 4,
+        }),
+      )
+      .setOrigin(0.5, 0)
+      .setAlign('center')
+      .setWordWrapWidth(GAME_WIDTH - 90)
+      .setLineSpacing(2)
+      .setAlpha(data.talentSummary ? 1 : 0);
 
     this.multiplierBurstText = this.add
       .text(

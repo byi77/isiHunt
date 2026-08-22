@@ -12,6 +12,8 @@ import Phaser from 'phaser';
 
 import {
   PLAYER_ACCEL_RESPONSE,
+  PLAYER_BASE_COLLECT_RADIUS,
+  PLAYER_BASE_SPEED,
   PLAYER_TRAIL_MIN_SPEED,
   SERIES_TRAIL_BASE_ALPHA,
   SERIES_TRAIL_BASE_FREQUENCY_MS,
@@ -24,6 +26,20 @@ import {
   SERIES_TRAIL_LINE_WIDTH,
   SERIES_TRAIL_SAMPLE_MS,
   SERIES_TRAIL_SMOOTHING_DIVISIONS,
+  TALENT_MAGNET_FIELD_ALPHA,
+  TALENT_MAGNET_FIELD_WIDTH,
+  TALENT_MAGNET_LINE_ALPHA,
+  TALENT_MAGNET_LINE_START_OFFSET,
+  TALENT_MAGNET_LINE_WIDTH,
+  TALENT_MAGNET_MAX_LINES,
+  TALENT_REACH_RING_ALPHA,
+  TALENT_REACH_RING_WIDTH,
+  TALENT_SPEED_STREAK_BASE_ALPHA,
+  TALENT_SPEED_STREAK_BASE_LENGTH,
+  TALENT_SPEED_STREAK_SPEED_LENGTH,
+  TALENT_SPEED_STREAK_TALENT_ALPHA,
+  TALENT_SPEED_STREAK_TALENT_LENGTH,
+  TALENT_SPEED_STREAK_WIDTH,
 } from '@/config/GameConfig';
 import type { PlayerStats } from '@/config/talents';
 import { Depth } from '@/ui/depth';
@@ -56,6 +72,15 @@ export interface SeriesTrailTier {
   readonly points: number;
 }
 
+/** Minimaler Datensatz fuer die Magnet-Visualisierung. */
+export interface TalentVisualTarget {
+  readonly x: number;
+  readonly y: number;
+  readonly radius: number;
+  readonly isCollected: boolean;
+  readonly isExpired: boolean;
+}
+
 export class Player extends Phaser.GameObjects.Container {
   private readonly core: Phaser.GameObjects.Image;
   private readonly halo: Phaser.GameObjects.Image;
@@ -74,6 +99,12 @@ export class Player extends Phaser.GameObjects.Container {
   private readonly trailGlowLine: Phaser.GameObjects.Graphics;
   /** Lesbare Kernspur mit klarer Kante. */
   private readonly trailLine: Phaser.GameObjects.Graphics;
+  /** Sichtbarer Ring fuer das Reichweite-Talent. */
+  private readonly reachRing: Phaser.GameObjects.Graphics;
+  /** Feld und Verbindungslinien fuer das Magnetismus-Talent. */
+  private readonly magnetField: Phaser.GameObjects.Graphics;
+  /** Richtungsstreifen, die Geschwindigkeit und Flinkheit lesbar machen. */
+  private readonly speedStreaks: Phaser.GameObjects.Graphics;
   /** Letzte Positionen, aelteste zuerst. Laenge steuert die Schleifenlaenge. */
   private trailPoints: { x: number; y: number }[] = [];
   private trailSampleMs = 0;
@@ -111,6 +142,8 @@ export class Player extends Phaser.GameObjects.Container {
    * im Spiel.
    */
   private pulseRestMs = 0;
+  /** Eigene Uhr fuer die sanfte Pulsation der Talent-Visuals. */
+  private talentVisualMs = 0;
   /**
    * Ob die Aura laeuft. Vor dem Startpfiff steht sie.
    *
@@ -202,6 +235,10 @@ export class Player extends Phaser.GameObjects.Container {
     this.trailLine = scene.add.graphics();
     this.trailLine.setDepth(Depth.Player - 1);
 
+    this.speedStreaks = scene.add.graphics().setDepth(Depth.Player - 3);
+    this.reachRing = scene.add.graphics().setDepth(Depth.Player - 1);
+    this.magnetField = scene.add.graphics().setDepth(Depth.Effects);
+
     this.syncHaloToRadius();
 
     // Sanftes Pulsieren - die Figur wirkt auch im Stillstand lebendig.
@@ -236,6 +273,88 @@ export class Player extends Phaser.GameObjects.Container {
   setStats(stats: PlayerStats): void {
     this.stats = stats;
     this.syncHaloToRadius();
+  }
+
+  /**
+   * Zeichnet die Talentwirkung direkt im Spielfeld.
+   *
+   * Die Anzeige bleibt an die aufgeloesten Stats gekoppelt: Aendert sich die
+   * Balance, aendert sich auch die Groesse und Staerke des Feedbacks ohne eine
+   * zweite Wertetabelle. `targets` kommt nach dem Orb-Tick, damit die Linien
+   * tatsaechlich dem aktuellen Sog folgen.
+   */
+  updateTalentVisuals(deltaMs: number, targets: readonly TalentVisualTarget[]): void {
+    this.talentVisualMs += Math.max(0, deltaMs);
+    const pulse = prefersReducedMotion() ? 0.5 : 0.5 + 0.5 * Math.sin(this.talentVisualMs / 180);
+
+    this.reachRing.clear();
+    const reachBoost = this.stats.collectRadius - PLAYER_BASE_COLLECT_RADIUS;
+    if (reachBoost > 0) {
+      const radius = this.stats.collectRadius + 5 + pulse * 3;
+      this.reachRing.lineStyle(TALENT_REACH_RING_WIDTH, this.accentColor, TALENT_REACH_RING_ALPHA);
+      this.reachRing.strokeCircle(this.x, this.y, radius);
+      this.reachRing.lineStyle(2, this.accentColor, TALENT_REACH_RING_ALPHA * 0.55);
+      this.reachRing.strokeCircle(this.x, this.y, radius - 8);
+    }
+
+    this.magnetField.clear();
+    if (this.stats.magnetRadius <= 0) return;
+
+    const fieldAlpha = TALENT_MAGNET_FIELD_ALPHA * (0.86 + pulse * 0.14);
+    this.magnetField.lineStyle(TALENT_MAGNET_FIELD_WIDTH, this.accentColor, fieldAlpha);
+    this.magnetField.strokeCircle(this.x, this.y, this.stats.magnetRadius);
+    this.magnetField.lineStyle(2, this.accentColor, fieldAlpha * 0.45);
+    this.magnetField.strokeCircle(this.x, this.y, this.stats.magnetRadius * 0.82);
+
+    const candidates = targets
+      .filter((target) => !target.isCollected && !target.isExpired)
+      .map((target) => ({
+        target,
+        distance: Phaser.Math.Distance.Between(this.x, this.y, target.x, target.y),
+      }))
+      .filter(({ distance }) => distance > 1 && distance < this.stats.magnetRadius)
+      .sort((left, right) => left.distance - right.distance)
+      .slice(0, TALENT_MAGNET_MAX_LINES);
+
+    for (const { target, distance } of candidates) {
+      const dx = target.x - this.x;
+      const dy = target.y - this.y;
+      const nx = dx / distance;
+      const ny = dy / distance;
+      const startOffset = Math.min(TALENT_MAGNET_LINE_START_OFFSET, distance * 0.25);
+      const endOffset = Math.min(Math.max(8, target.radius * 0.65), distance * 0.2);
+      const alpha = Phaser.Math.Clamp(
+        (1 - distance / this.stats.magnetRadius) * TALENT_MAGNET_LINE_ALPHA,
+        0.18,
+        TALENT_MAGNET_LINE_ALPHA,
+      );
+
+      this.magnetField.lineStyle(TALENT_MAGNET_LINE_WIDTH, this.accentColor, alpha);
+      this.magnetField.lineBetween(
+        this.x + nx * startOffset,
+        this.y + ny * startOffset,
+        target.x - nx * endOffset,
+        target.y - ny * endOffset,
+      );
+
+      // Kleiner Pfeilkopf am Schiff: die Richtung des Sogs ist sofort lesbar.
+      const arrowX = this.x + nx * (startOffset + 6);
+      const arrowY = this.y + ny * (startOffset + 6);
+      const sideX = -ny * 7;
+      const sideY = nx * 7;
+      this.magnetField.lineBetween(
+        arrowX,
+        arrowY,
+        arrowX + nx * 9 + sideX,
+        arrowY + ny * 9 + sideY,
+      );
+      this.magnetField.lineBetween(
+        arrowX,
+        arrowY,
+        arrowX + nx * 9 - sideX,
+        arrowY + ny * 9 - sideY,
+      );
+    }
   }
 
   setWorldInertia(factor: number): void {
@@ -280,6 +399,7 @@ export class Player extends Phaser.GameObjects.Container {
     const speed = this.velocity.length();
     this.trail.setPosition(this.x, this.y);
     this.trail.emitting = speed > PLAYER_TRAIL_MIN_SPEED;
+    this.drawSpeedStreaks(speed);
 
     this.trackTrail(dtSec * 1000, speed);
 
@@ -587,6 +707,9 @@ export class Player extends Phaser.GameObjects.Container {
     this.trail.destroy();
     this.trailGlowLine.destroy();
     this.trailLine.destroy();
+    this.reachRing.destroy();
+    this.magnetField.destroy();
+    this.speedStreaks.destroy();
     super.destroy(fromScene);
   }
 
@@ -596,6 +719,47 @@ export class Player extends Phaser.GameObjects.Container {
     this.trailIdleTicks = 0;
     this.trailGlowLine.clear();
     this.trailLine.clear();
+  }
+
+  /** Zeichnet drei klare Bewegungsstreifen statt nur eines diffusen Partikelschweifs. */
+  private drawSpeedStreaks(speed: number): void {
+    this.speedStreaks.clear();
+    if (speed <= PLAYER_TRAIL_MIN_SPEED || this.velocity.lengthSq() <= 1) return;
+
+    const direction = this.velocity.clone().normalize();
+    const perpendicular = new Phaser.Math.Vector2(-direction.y, direction.x);
+    const speedRatio = Phaser.Math.Clamp(speed / this.stats.moveSpeed, 0, 1);
+    const talentRatio = Phaser.Math.Clamp(
+      (this.stats.moveSpeed / PLAYER_BASE_SPEED - 1) / 0.25,
+      0,
+      1,
+    );
+    const length =
+      TALENT_SPEED_STREAK_BASE_LENGTH +
+      speedRatio * TALENT_SPEED_STREAK_SPEED_LENGTH +
+      talentRatio * TALENT_SPEED_STREAK_TALENT_LENGTH;
+    const alpha =
+      TALENT_SPEED_STREAK_BASE_ALPHA +
+      speedRatio * 0.12 +
+      talentRatio * TALENT_SPEED_STREAK_TALENT_ALPHA;
+    const offsets = talentRatio > 0 ? [-18, 0, 18] : [0];
+
+    for (const offset of offsets) {
+      const sideRatio = offset === 0 ? 1 : 0.7;
+      const start = 13 + Math.abs(offset) * 0.08;
+      const end = start + length * sideRatio;
+      this.speedStreaks.lineStyle(
+        TALENT_SPEED_STREAK_WIDTH * sideRatio,
+        this.accentColor,
+        alpha * sideRatio,
+      );
+      this.speedStreaks.lineBetween(
+        this.x - direction.x * start + perpendicular.x * offset,
+        this.y - direction.y * start + perpendicular.y * offset,
+        this.x - direction.x * end + perpendicular.x * offset * 1.35,
+        this.y - direction.y * end + perpendicular.y * offset * 1.35,
+      );
+    }
   }
 
   /** Der Ring zeigt exakt den Sammelradius - wichtig fuer faires Feedback. */
