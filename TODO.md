@@ -1219,12 +1219,13 @@ grün und `docs/SOUND_ASSETS.md` enthält die vollständige Attribution.
 - [x] **Lizenzgeprüfte Schiffsdesigns und Aura-Animationen recherchieren,
   integrieren und über austauschbare Asset-Module verwalten.**
 
-**Erledigt 2026-08-22:** Der Shop enthaelt 101 2D-Formen (100 prozedurale
-Silhouetten plus `cc0-scout`) und die Prismaflut nutzt sechs dokumentierte CC0-
+**Erledigt 2026-08-22:** Der Shop enthaelt 110 Formen: 100 prozedurale
+Silhouetten, `cc0-scout` und neun CC0-3D-Piloten aus dem dokumentierten
+OpenGameArt-Schiffspack. Die Prismaflut nutzt sechs dokumentierte CC0-
 Aura-Frames. `EgoAssetRegistry` liefert externe Provider ueber stabile IDs;
 Shopvorschau, Player und Fallback verwenden dieselbe Zuordnung. Die 3D-
-Recherche ist dokumentiert, aber wegen der bestehenden Phaser-2D-Runtime noch
-nicht als eigener Renderpfad in das Bundle aufgenommen.
+Modelle werden in `ThreeDShipPreview` lazy und nur in der Shopvorschau geladen;
+bei WebGL-, Lade- oder Formatfehlern bleibt die 2D-Fallback-Silhouette aktiv.
 
 Mit „Ego-Modul“ ist die sichtbare Schiffsidentität gemeint: Formen aus
 `src/ui/shipShapes.ts`, Farben und Besitz aus `src/config/shop.ts`, Aura-

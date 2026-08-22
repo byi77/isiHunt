@@ -33,6 +33,8 @@ export interface ShipShapeDef {
   readonly skinIndex: number;
   /** Optionaler Provider-Schluessel fuer ein externes 2D-Asset. */
   readonly assetId?: string;
+  /** Optionaler Provider-Schluessel fuer ein lazy geladenes 3D-Modell. */
+  readonly threeDAssetId?: string;
 }
 
 /**
@@ -758,6 +760,78 @@ const SHIP_SHAPES_REFERENCE: readonly ShipShapeDef[] = [
     cost: 2_200,
     skinIndex: 100,
     assetId: 'cc0-scout',
+  },
+  {
+    id: 'cc0-3d-ship-1',
+    name: 'Orbital-01',
+    description: 'Low-Poly-3D-Modell aus dem CC0-Schiffspack.',
+    cost: 2_400,
+    skinIndex: 101,
+    threeDAssetId: 'cc0-3d-ship-1',
+  },
+  {
+    id: 'cc0-3d-ship-2',
+    name: 'Orbital-02',
+    description: 'Low-Poly-3D-Modell aus dem CC0-Schiffspack.',
+    cost: 2_450,
+    skinIndex: 102,
+    threeDAssetId: 'cc0-3d-ship-2',
+  },
+  {
+    id: 'cc0-3d-ship-3',
+    name: 'Orbital-03',
+    description: 'Low-Poly-3D-Modell aus dem CC0-Schiffspack.',
+    cost: 2_500,
+    skinIndex: 103,
+    threeDAssetId: 'cc0-3d-ship-3',
+  },
+  {
+    id: 'cc0-3d-ship-4',
+    name: 'Orbital-04',
+    description: 'Low-Poly-3D-Modell aus dem CC0-Schiffspack.',
+    cost: 2_550,
+    skinIndex: 104,
+    threeDAssetId: 'cc0-3d-ship-4',
+  },
+  {
+    id: 'cc0-3d-ship-5',
+    name: 'Orbital-05',
+    description: 'Low-Poly-3D-Modell aus dem CC0-Schiffspack.',
+    cost: 2_600,
+    skinIndex: 105,
+    threeDAssetId: 'cc0-3d-ship-5',
+  },
+  {
+    id: 'cc0-3d-ship-6',
+    name: 'Orbital-06',
+    description: 'Low-Poly-3D-Modell aus dem CC0-Schiffspack.',
+    cost: 2_650,
+    skinIndex: 106,
+    threeDAssetId: 'cc0-3d-ship-6',
+  },
+  {
+    id: 'cc0-3d-ship-7',
+    name: 'Orbital-07',
+    description: 'Low-Poly-3D-Modell aus dem CC0-Schiffspack.',
+    cost: 2_700,
+    skinIndex: 107,
+    threeDAssetId: 'cc0-3d-ship-7',
+  },
+  {
+    id: 'cc0-3d-ship-8',
+    name: 'Orbital-08',
+    description: 'Low-Poly-3D-Modell aus dem CC0-Schiffspack.',
+    cost: 2_750,
+    skinIndex: 108,
+    threeDAssetId: 'cc0-3d-ship-8',
+  },
+  {
+    id: 'cc0-3d-ship-9',
+    name: 'Orbital-09',
+    description: 'Low-Poly-3D-Modell aus dem CC0-Schiffspack.',
+    cost: 2_800,
+    skinIndex: 109,
+    threeDAssetId: 'cc0-3d-ship-9',
   },
 ];
 

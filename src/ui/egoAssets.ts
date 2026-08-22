@@ -28,10 +28,17 @@ export interface EgoAuraAsset {
   readonly previewScaleMultiplier: number;
 }
 
+export interface Ego3DAsset {
+  readonly id: string;
+  readonly modelUrl: string;
+  readonly format: 'obj';
+}
+
 export interface EgoAssetProvider {
   readonly id: string;
   getShapeTextureKey(shapeId: string): string | undefined;
   getAuraAsset(assetId: string): EgoAuraAsset | undefined;
+  getThreeDAsset?(assetId: string): Ego3DAsset | undefined;
 }
 
 class EgoAssetRegistry {
@@ -65,6 +72,15 @@ class EgoAssetRegistry {
     return undefined;
   }
 
+  threeDAsset(assetId: string | undefined): Ego3DAsset | undefined {
+    if (assetId === undefined) return undefined;
+    for (const provider of this.providers) {
+      const asset = provider.getThreeDAsset?.(assetId);
+      if (asset !== undefined) return asset;
+    }
+    return undefined;
+  }
+
   providerIds(): readonly string[] {
     return this.providers.map((provider) => provider.id);
   }
@@ -92,12 +108,33 @@ egoAssetRegistry.register({
       : undefined,
 });
 
+const CC0_THREE_D_ASSETS: readonly Ego3DAsset[] = Array.from({ length: 9 }, (_, index) => {
+  const number = index + 1;
+  return {
+    id: `cc0-3d-ship-${number}`,
+    modelUrl: `./assets/ego3d/cc0-spaceships/ship${number}.obj`,
+    format: 'obj' as const,
+  };
+});
+
+/** Neun leichte OBJ-Piloten aus dem CC0-Low-Poly-Pack. */
+egoAssetRegistry.register({
+  id: 'cc0-3d-spaceships',
+  getShapeTextureKey: () => undefined,
+  getAuraAsset: () => undefined,
+  getThreeDAsset: (assetId) => CC0_THREE_D_ASSETS.find((asset) => asset.id === assetId),
+});
+
 export function textureKeyForEgoShape(shapeId: string): string | undefined {
   return egoAssetRegistry.shapeTextureKey(shapeId);
 }
 
 export function auraAssetForId(assetId: string | undefined): EgoAuraAsset | undefined {
   return egoAssetRegistry.auraAsset(assetId);
+}
+
+export function threeDAssetForId(assetId: string | undefined): Ego3DAsset | undefined {
+  return egoAssetRegistry.threeDAsset(assetId);
 }
 
 export function egoProviderIds(): readonly string[] {

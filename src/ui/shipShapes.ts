@@ -2193,4 +2193,129 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
     ]);
     duesen(g, C - 12, 62, C + 12, 91);
   },
+  /** 101-109 3D-Fallbacks: je eine lesbare Silhouette fuer Offline/2D. */
+  (g) => {
+    voll(g, [
+      [C, 8],
+      [86, 78],
+      [C, 68],
+      [10, 78],
+    ]);
+    akzent(g, [
+      [C, 20],
+      [C + 14, 62],
+      [C, 54],
+      [C - 14, 62],
+    ]);
+    duesen(g, C - 10, 58, C + 10, 90);
+  },
+  (g) => {
+    voll(g, [
+      [C, 8],
+      [76, 48],
+      [88, 82],
+      [C, 72],
+      [32, 82],
+      [44, 48],
+    ]);
+    g.fillStyle(0xffffff, 0.45);
+    g.fillCircle(C, 40, 12);
+    duesen(g, C - 12, 62, C + 12, 91);
+  },
+  (g) => {
+    voll(g, [
+      [C, 7],
+      [94, 62],
+      [70, 67],
+      [C, 90],
+      [26, 67],
+      [2, 62],
+    ]);
+    akzent(g, [
+      [C, 18],
+      [C + 9, 58],
+      [C, 72],
+      [C - 9, 58],
+    ]);
+    duesen(g, C - 8, 72, C + 8, 92);
+  },
+  (g) => {
+    g.lineStyle(10, 0xffffff, 1);
+    g.strokeCircle(C, C, 34);
+    voll(g, [
+      [C, 8],
+      [C + 14, 48],
+      [C, 76],
+      [C - 14, 48],
+    ]);
+    duesen(g, C - 8, 64, C + 8, 91);
+  },
+  (g) => {
+    voll(g, [
+      [C, 8],
+      [60, 32],
+      [86, 76],
+      [C, 66],
+      [42, 76],
+      [68, 32],
+    ]);
+    g.fillStyle(0xffffff, 0.4);
+    g.fillRect(C - 5, 24, 10, 42);
+    duesen(g, C - 12, 64, C + 12, 91);
+  },
+  (g) => {
+    stern(g, C, C, 42, 8, 4);
+    g.fillStyle(0xffffff, 0.35);
+    g.fillCircle(C, C, 17);
+    duesen(g, C - 9, 65, C + 9, 91);
+  },
+  (g) => {
+    voll(g, [
+      [C, 6],
+      [C + 16, 36],
+      [C + 40, 50],
+      [C + 16, 62],
+      [C, 90],
+      [C - 16, 62],
+      [C - 40, 50],
+      [C - 16, 36],
+    ]);
+    akzent(g, [
+      [C, 18],
+      [C + 8, 50],
+      [C, 72],
+      [C - 8, 50],
+    ]);
+    duesen(g, C - 8, 70, C + 8, 92);
+  },
+  (g) => {
+    voll(g, [
+      [C, 8],
+      [C + 28, 42],
+      [C + 20, 88],
+      [C, 72],
+      [C - 20, 88],
+      [C - 28, 42],
+    ]);
+    g.lineStyle(3, 0xffffff, 0.8);
+    g.strokeCircle(C, 46, 18);
+    duesen(g, C - 10, 68, C + 10, 92);
+  },
+  (g) => {
+    voll(g, [
+      [C, 10],
+      [C + 42, 70],
+      [C + 12, 64],
+      [C, 90],
+      [C - 12, 64],
+      [C - 42, 70],
+    ]);
+    akzent(g, [
+      [C, 20],
+      [C + 12, 56],
+      [C, 72],
+      [C - 12, 56],
+    ]);
+    duesen(g, C - 14, 68, C + 14, 92);
+  },
 ];

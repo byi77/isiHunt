@@ -46,7 +46,7 @@ import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
-import { auraAssetForId } from '@/ui/egoAssets';
+import { auraAssetForId, threeDAssetForId } from '@/ui/egoAssets';
 import {
   applyTintShift,
   AURA_FRAME_RUHE,
@@ -54,6 +54,7 @@ import {
   stehendesBild,
 } from '@/ui/shipAnimations';
 import { playerTextureForShape, TextureKey } from '@/ui/textures';
+import { ThreeDShipPreview } from '@/ui/threeDShipPreview';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import {
   attachVerticalScroll,
@@ -115,6 +116,7 @@ export class ShopScene extends Phaser.Scene {
   private vorschauBild!: Phaser.GameObjects.Image;
   private vorschauHalo!: Phaser.GameObjects.Image;
   private vorschauName!: Phaser.GameObjects.Text;
+  private vorschau3d!: ThreeDShipPreview;
   /**
    * Wie weit die Liste gerade gescrollt ist.
    *
@@ -190,6 +192,7 @@ export class ShopScene extends Phaser.Scene {
       // Neu-Markierungen gelten fuer einen Besuch, der aktuelle Kauf bleibt
       // separat als "zuletzt gekauft" sichtbar.
       SaveSystem.markCosmeticsSeen(this.tab);
+      this.vorschau3d.destroy();
     });
   }
 
@@ -228,6 +231,19 @@ export class ShopScene extends Phaser.Scene {
       .image(GAME_WIDTH / 2, y - 30, TextureKey.PlayerCore)
       .setScale(0.85)
       .setDepth(KOPF_DEPTH);
+
+    const vorschau3dDom = this.add
+      .dom(GAME_WIDTH / 2, y - 30, 'canvas', {
+        width: '260px',
+        height: '180px',
+      })
+      .setDepth(KOPF_DEPTH + 1);
+    this.vorschau3d = new ThreeDShipPreview(
+      vorschau3dDom.node as HTMLCanvasElement,
+      260,
+      180,
+      (available) => this.vorschauBild.setVisible(!available),
+    );
 
     this.vorschauName = this.add
       .text(GAME_WIDTH / 2, y + 32, '', textStyle(FontSize.small, Palette.ink))
@@ -270,9 +286,12 @@ export class ShopScene extends Phaser.Scene {
     const colorId = this.anprobeColor ?? save.shipColor;
     const auraId = this.anprobeAura ?? save.shipAura;
     const farbe = getShipColor(colorId).color ?? weltAkzent;
+    const shape = getShipShape(shapeId);
+    const threeDAsset = threeDAssetForId(shape.threeDAssetId);
 
     this.vorschauFarbe = farbe;
-    this.vorschauBild.setTexture(playerTextureForShape(shapeId)).setTint(farbe);
+    this.vorschauBild.setTexture(playerTextureForShape(shapeId)).setTint(farbe).setVisible(true);
+    this.vorschau3d.setModel(threeDAsset, farbe);
     this.vorschauHalo.setTint(farbe);
     // Beim Wechsel von vorn: Mitten im Sog einer Singularitaet einzusteigen
     // sieht aus wie ein Fehler, nicht wie eine Bewegung.
@@ -304,6 +323,7 @@ export class ShopScene extends Phaser.Scene {
     if (this.vorschauBild === undefined) return;
     this.vorschauAuraMs += delta;
     this.spieleVorschauAura(this.vorschauAuraMs);
+    this.vorschau3d.update(delta);
 
     for (const eintrag of this.auraSymbole) {
       // Unsichtbare Karten nicht rechnen: Bei neun Auren ist das wenig, aber
@@ -490,7 +510,7 @@ export class ShopScene extends Phaser.Scene {
       akzent: weltAkzent,
       titel: shape.name,
       status: cosmeticStatusText(save, 'shapes', shape.id, getragen),
-      untertitel: shape.description,
+      untertitel: shape.threeDAssetId ? `3D-Vorschau · ${shape.description}` : shape.description,
       knopf: this.knopfText(besitzt, getragen, shape.cost),
       knopfAktiv: !getragen && (besitzt || save.coins >= shape.cost),
       onClick: () => {

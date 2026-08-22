@@ -175,6 +175,11 @@ isiHunt/
 ```
 
 **Regel:** Ein Import darf nur nach _unten_ zeigen.
+
+Die Ego-Asset-Schicht liegt in `src/ui/egoAssets.ts`. Sie kapselt 2D- und
+Aura-Provider sowie die neun 3D-Modelle. `src/ui/threeDShipPreview.ts` ist
+eine lazy geladene Shopvorschau; sie schreibt nicht in Player-, Save- oder
+Gameplay-Code und faellt bei WebGL-/Ladefehlern auf die 2D-Zeichnung zurueck.
 `scenes → systems → config` ist erlaubt. `config → scenes` ist es nie.
 
 ## 3. Scene-Fluss
@@ -588,11 +593,14 @@ Tween liesse sich nur im Browser pruefen.
 
 Der aktuelle Runtime-Provider ist `SHIP_ANIMATIONS` mit prozeduralen
 TypeScript-Funktionen. `src/ui/egoAssets.ts` ergaenzt eine Registry-Schicht fuer
-externe Sprite- und Partikel-Provider: der CC0-Surveyor liefert eine externe
-2D-Form, die Prismaflut nutzt sechs CC0-Kenney-Flame-Frames als Overlay. Die
-Besitz-IDs, Shopdaten, Save-Sync und Progressionsregeln bleiben davon
-unabhaengig. Fehlt ein Asset, bleibt die prozedurale Zeichnung bzw. der
-prozedurale Aura-Pfad aktiv; bei Reduced Motion wird ein Standbild verwendet.
+externe Sprite-, Partikel- und 3D-Provider: der CC0-Surveyor liefert eine
+externe 2D-Form, die Prismaflut nutzt sechs CC0-Kenney-Flame-Frames als
+Overlay, und neun CC0-OBJ-Modelle stehen fuer die Shopvorschau bereit. Die
+3D-Modelle werden ueber `threeDAssetForId()` gefunden und von
+`ThreeDShipPreview` lazy geladen; Player, Profil und Ergebnis bleiben beim
+2D-Pfad. Besitz-IDs, Shopdaten, Save-Sync und Progressionsregeln bleiben
+davon unabhaengig. Fehlt ein Asset, WebGL oder die Ladeverbindung, bleibt die
+prozedurale Zeichnung aktiv; bei Reduced Motion wird ein Standbild verwendet.
 
 **Die Farbe wird verschoben, nicht ersetzt.** Eine Aura, die den Rumpf durch
 den Farbkreis schickt, macht die gekaufte Farbe unsichtbar — der Spieler
@@ -726,7 +734,7 @@ etwa 25 Minuten.
 
 | Suite      | Deckt ab                                                             |
 | ---------- | -------------------------------------------------------------------- |
-| `screens`  | Profil, Talente, Erfolge, Einstellungen, Rangliste, Wartung            |
+| `screens`  | Profil, Talente, Erfolge, Einstellungen, Rangliste, Wartung          |
 | `nav`      | Menuewege hin und zurueck, per echtem Klick auf den Knopf            |
 | `controls` | Ueberlappung, Lage, Groesse der Tippziele, Scrollen langer Menues    |
 | `layout`   | Canvas-Ueberstand und unterster Knopf ueber 19 Geraeteformate        |
