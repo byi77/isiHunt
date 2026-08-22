@@ -101,7 +101,9 @@ nicht erneut als Arbeit eingeplant:
 10. **P5-11:** Konto-, Lösch-, Export- und Diagnose-Lebenszyklus abschließen.
 11. **P5-12:** austauschbare Soundmodule und lizenzgeprüfte Audio-Assets
     vorbereiten und erst danach zusätzliche Audio-Assets integrieren.
-12. **P4-01 ff.:** soziales Spiel erst nach stabilem Profil, Duell und
+12. **P5-13:** Ego-Modul mit lizenzgeprüften Schiffsdesigns und Aura-
+    Animationen als austauschbare Asset-Module erweitern.
+13. **P4-01 ff.:** soziales Spiel erst nach stabilem Profil, Duell und
     Datenschutz-Gate weiter ausbauen.
 
 P1-05 ist technisch umgesetzt und bleibt nur als Teil der manuellen
@@ -1168,8 +1170,15 @@ Wege verpflichtend; im Familienbetrieb zunächst dokumentieren und testen.
 
 ## P5-12 — Lizenzgeprüfte Audio-Assets und austauschbare Soundmodule
 
-- [ ] **Kostenlose, rechtssicher nutzbare Sounds recherchieren, integrieren und
+- [x] **Kostenlose, rechtssicher nutzbare Sounds recherchieren, integrieren und
   die Audioarchitektur als austauschbaren Adapter aufbauen.**
+
+**Erledigt 2026-08-22:** Der CC0-UI-Klick ist integriert und in
+`docs/SOUND_ASSETS.md` mit Quelle, Lizenz und SHA-256 inventarisiert.
+`SoundModuleChain` und `SampledSoundModule` kapseln den Provider; ein noch
+nicht geladenes oder fehlendes Sample faellt sofort auf den prozeduralen
+WebAudio-Klick zurueck. Weitere Ereignisse bleiben bewusst prozedural, bis
+weitere konkrete Dateien separat abgenommen sind.
 
 Der aktuelle `SoundSystem`-Stand erzeugt alle Rückmeldungen prozedural über
 WebAudio. Das bleibt der sichere Fallback. Für zusätzliche UI-, Fang-,
@@ -1204,6 +1213,69 @@ Spielablauf importiert keine konkreten Audio-Dateien. Jeder verwendete Sound
 ist lizenzbelegt, der Pilot klingt im Ergebnisbildschirm/Run sinnvoll, ein
 fehlendes oder gesperrtes Asset bricht keinen Run ab, `npm run verify` bleibt
 grün und `docs/SOUND_ASSETS.md` enthält die vollständige Attribution.
+
+## P5-13 — Ego-Modul: freie Designs und Aura-Animationen
+
+- [x] **Lizenzgeprüfte Schiffsdesigns und Aura-Animationen recherchieren,
+  integrieren und über austauschbare Asset-Module verwalten.**
+
+**Erledigt 2026-08-22:** Der Shop enthaelt 101 2D-Formen (100 prozedurale
+Silhouetten plus `cc0-scout`) und die Prismaflut nutzt sechs dokumentierte CC0-
+Aura-Frames. `EgoAssetRegistry` liefert externe Provider ueber stabile IDs;
+Shopvorschau, Player und Fallback verwenden dieselbe Zuordnung. Die 3D-
+Recherche ist dokumentiert, aber wegen der bestehenden Phaser-2D-Runtime noch
+nicht als eigener Renderpfad in das Bundle aufgenommen.
+
+Mit „Ego-Modul“ ist die sichtbare Schiffsidentität gemeint: Formen aus
+`src/ui/shipShapes.ts`, Farben und Besitz aus `src/config/shop.ts`, Aura-
+Animationen aus `src/ui/shipAnimations.ts` sowie die Darstellung in
+`src/entities/Player.ts`, Shopvorschau und Ergebnis-/Profilansichten. Diese
+Assets bleiben rein kosmetisch; sie dürfen keine Reichweite, Geschwindigkeit,
+Score-, XP- oder Coin-Regel verändern.
+
+**Recherche-Kandidaten:**
+
+- [Kenney Particle Pack](https://www.kenney.nl/assets/particle-pack) für
+  Glow-, Schub- und Aura-Partikel; die Assetseite nennt CC0.
+- [Animated CC0 Space Ships](https://opengameart.org/content/animated-cc0-space-ships)
+  für Spritesheet-/Schiffanimationen; die konkrete Seite nennt CC0.
+- [Foozle Void – Main Ship](https://foozlecc.itch.io/void-main-ship) für ein
+  Raumschiff mit animierten Triebwerken, Schilden und Waffen; die Seite nennt
+  CC0 und erlaubt Bearbeitung auch für kommerzielle Projekte.
+- [Gishadev 2D Space Game Pack](https://gisha.itch.io/2d-space-game-pack) für
+  Schiffsvarianten und zwei Thruster-Animationen; die Seite nennt CC0.
+
+Die Kandidaten sind keine pauschale Freigabe aller Plattforminhalte. Vor dem
+Download muss der konkrete Asset-Eintrag geprüft und in
+`docs/COSMETIC_ASSETS.md` mit URL, Autor, Lizenz, Download-Datum, Hash,
+Attribution und geplanter Verwendung eingetragen werden. CC0 ist der
+bevorzugte Standard; CC-BY braucht Attribution, CC-BY-NC wird ausgeschlossen.
+
+**Architekturziel:** Die bestehenden stabilen Besitz- und Ausrüstungs-IDs
+bleiben erhalten. `SHIP_SHAPES`/`SHIP_AURAS` enthalten Metadaten und Kosten,
+aber keine untrennbaren Fremdasset-Pfade. Ein `EgoAssetModule` bzw. Provider-
+Vertrag liefert eine normalisierte Form, Farbe, Aura-Frame oder Partikel-
+Beschreibung. Eine prozedurale Fallback-Implementierung bleibt verfügbar;
+weitere Provider können Sprite-Sheets, Vektorzeichnungen, Partikel oder
+Shader-Animationen liefern. Ein Wechsel erfolgt über Manifest/Registry, ohne
+`Player`, `TalentScene`, `ShopScene`, Save-Sync oder Progressionsregeln umzubauen.
+
+**Vorgehen:**
+
+1. Kandidaten in einem kleinen Stil-/Lizenzboard vergleichen; keine komplette
+   fremde Bildsprache ungeprüft in die 100 Formen übernehmen.
+2. Ein Pilotdesign und eine Pilot-Aura in allen vier Darstellungen prüfen:
+   laufender Run, Shopvorschau, Profil und Ergebnisbildschirm.
+3. Asset-Provider mit stabilen IDs, Fallback, Reduced-Motion-Standbild,
+   Tint-/Glow-Kompatibilität und sauberem `shutdown()` integrieren.
+4. Besitz, Preise, Sync und Migration unabhängig vom Rendering testen.
+5. Nur nach iPhone-/iPad-Preview und Performancecheck weitere Assets einbauen.
+
+**Abnahme:** Ein Asset-Modul kann per Registry/Manifest gewechselt werden;
+kein Gameplay-Code importiert konkrete Assetdateien. Formen bleiben in
+Bewegung lesbar, Auren verdecken keine Seltenheit oder Fangrückmeldung,
+Reduced Motion liefert ein stabiles Standbild, externe Dateien sind
+lizenzbelegt und `npm run verify` bleibt grün.
 
 ---
 

@@ -123,8 +123,10 @@ isiHunt/
 │   │   ├── SaveSystem.test.ts
 │   │   ├── SafeAreaSystem.ts   Safe-Area-Laufband und Run-Restzeit
 │   │   ├── SafeAreaSystem.test.ts
-│   │   ├── SoundSystem.ts      Prozedurales WebAudio-Feedback
+│   │   ├── SoundSystem.ts      Audio-Fassade, Settings und Fallback
 │   │   ├── SoundSystem.test.ts
+│   │   ├── audio/SoundModule.ts Provider-Vertrag und Prioritaetskette
+│   │   ├── audio/SampledSoundModule.ts CC0-Sample mit Fallback
 │   │   ├── LevelUpPresentationSystem.ts reine Level-Up-Belohnungszusammenfassung
 │   │   ├── LevelUpPresentationSystem.test.ts
 │   │   ├── AuthSystem.ts       Alias/PIN-Anmeldung, Sitzungspflege (Phase 2.6)
@@ -583,6 +585,14 @@ Nebeneffekt: Die Datei importiert Phaser nicht einmal als Typ-Wert und laeuft
 damit in Node. Die Bewegungen sind in `Balance.test.ts` gegen ihre Grenzen
 geprueft (Sichtbarkeit, Maximalgroesse, Wertebereich, keine `NaN`) — ein
 Tween liesse sich nur im Browser pruefen.
+
+Der aktuelle Runtime-Provider ist `SHIP_ANIMATIONS` mit prozeduralen
+TypeScript-Funktionen. `src/ui/egoAssets.ts` ergaenzt eine Registry-Schicht fuer
+externe Sprite- und Partikel-Provider: der CC0-Surveyor liefert eine externe
+2D-Form, die Prismaflut nutzt sechs CC0-Kenney-Flame-Frames als Overlay. Die
+Besitz-IDs, Shopdaten, Save-Sync und Progressionsregeln bleiben davon
+unabhaengig. Fehlt ein Asset, bleibt die prozedurale Zeichnung bzw. der
+prozedurale Aura-Pfad aktiv; bei Reduced Motion wird ein Standbild verwendet.
 
 **Die Farbe wird verschoben, nicht ersetzt.** Eine Aura, die den Rumpf durch
 den Farbkreis schickt, macht die gekaufte Farbe unsichtbar — der Spieler

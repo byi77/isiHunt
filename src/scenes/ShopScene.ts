@@ -46,6 +46,7 @@ import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
+import { auraAssetForId } from '@/ui/egoAssets';
 import {
   applyTintShift,
   AURA_FRAME_RUHE,
@@ -326,7 +327,8 @@ export class ShopScene extends Phaser.Scene {
   /** Setzt einen Augenblick der angeprobten Aura auf das Vorschaubild. */
   private spieleVorschauAura(timeMs: number): void {
     const auraId = this.anprobeAura ?? SaveSystem.load().shipAura;
-    const index = getShipAura(auraId).animIndex;
+    const auraDefinition = getShipAura(auraId);
+    const index = auraDefinition.animIndex;
     const animation = index === null ? undefined : SHIP_ANIMATIONS[index];
     const frame =
       animation === undefined
@@ -335,7 +337,21 @@ export class ShopScene extends Phaser.Scene {
           ? stehendesBild(animation)
           : animation(timeMs);
 
-    // 0,85 ist die Grundgroesse der Vorschau, siehe `buildVorschau`.
+    const auraAsset = auraAssetForId(auraDefinition.assetId);
+    if (auraAsset !== undefined) {
+      const frameIndex =
+        Math.floor(timeMs / auraAsset.frameDurationMs) % auraAsset.frameTextureKeys.length;
+      const textureKey = auraAsset.frameTextureKeys[frameIndex] ?? auraAsset.frameTextureKeys[0];
+      if (textureKey !== undefined) this.vorschauHalo.setTexture(textureKey);
+      this.vorschauHalo.setScale(
+        auraAsset.previewScaleMultiplier,
+        auraAsset.previewScaleMultiplier,
+      );
+    } else {
+      this.vorschauHalo.setTexture(TextureKey.PlayerHalo).setScale(0.7);
+    }
+
+    // 0,85 ist die Grundgroesse der Schiffsvorschau, siehe `buildVorschau`.
     this.vorschauBild.setScale(0.85 * frame.scaleX, 0.85 * frame.scaleY);
     this.vorschauBild.rotation = frame.rotation;
     this.vorschauBild.setAlpha(frame.alpha);

@@ -10,6 +10,13 @@
 import { COMBO_TIERS } from '@/config/GameConfig';
 import { eventBus, GameEvent } from '@/core/EventBus';
 import type { RarityId } from '@/config/rarities';
+import { SampledSoundModule } from '@/audio/SampledSoundModule';
+import {
+  SoundModuleChain,
+  type SoundEvent,
+  type SoundEventPayload,
+  type SoundModule,
+} from '@/audio/SoundModule';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as HapticsSystem from '@/systems/HapticsSystem';
 import {
@@ -35,6 +42,8 @@ let audioContext: AudioContext | null = null;
 let initialized = false;
 let resumePromise: Promise<boolean> | null = null;
 let feedbackGate = createFeedbackGate();
+const soundModules = new SoundModuleChain();
+soundModules.register(new SampledSoundModule(), 100);
 
 // Auf iOS bleibt der allererste `resume()`-Aufruf nach einem Kaltstart
 // manchmal dauerhaft in der Warteschleife haengen - kein resolve, kein
@@ -196,7 +205,12 @@ const RARITY_FREQUENCIES: Readonly<Record<RarityId, number>> = {
 export function playUiClick(): void {
   if (!allowFeedback('ui')) return;
   HapticsSystem.playFeedback('ui');
+  if (playSoundModule('ui.click')) return;
   scheduleTone({ frequency: 520, duration: 0.045, type: 'triangle', volume: 0.035 });
+}
+
+function playSoundModule(event: SoundEvent, payload?: SoundEventPayload): boolean {
+  return soundModules.play(event, payload);
 }
 
 function playCollected(rarityId: RarityId): void {
@@ -382,6 +396,23 @@ function unregisterEventListeners(): void {
 }
 
 /**
+ * Registriert einen alternativen Provider. Ein Provider kann z.B. die
+ * gesampelten Klicks durch ein eigenes Pack ersetzen; EventBus und Gameplay
+ * bleiben unveraendert. Bei gleicher Id ersetzt der neue Provider den alten.
+ */
+export function registerSoundModule(module: SoundModule, priority = 0): void {
+  soundModules.register(module, priority);
+}
+
+export function unregisterSoundModule(id: string): void {
+  soundModules.unregister(id);
+}
+
+export function getSoundModuleIds(): readonly string[] {
+  return soundModules.ids();
+}
+
+/**
  * Meldet die EventBus-Listener ab und entfernt die globalen DOM-Listener.
  *
  * `SoundSystem` ist kein Scene-Objekt und hat deshalb keinen SHUTDOWN-Handler
@@ -395,6 +426,7 @@ export function shutdown(): void {
   initialized = false;
 
   unregisterEventListeners();
+  soundModules.shutdown();
   window.removeEventListener('pointerdown', unlock, true);
   window.removeEventListener('click', unlock, true);
   window.removeEventListener('touchstart', unlock, true);
@@ -410,6 +442,10 @@ export function initialize(): void {
   initialized = true;
 
   registerEventListeners();
+  soundModules.initialize({
+    isEnabled: soundEnabled,
+    getAudioContext,
+  });
   window.addEventListener('pointerdown', unlock, true);
   // `click` feuert erst nach einem vollstaendigen Tap-Zyklus und zaehlt auf
   // iOS Safari zuverlaessiger als `pointerdown` allein als echte

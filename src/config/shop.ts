@@ -31,6 +31,8 @@ export interface ShipShapeDef {
   readonly cost: number;
   /** Index der prozeduralen Zeichnung in `createPlayerCore`. */
   readonly skinIndex: number;
+  /** Optionaler Provider-Schluessel fuer ein externes 2D-Asset. */
+  readonly assetId?: string;
 }
 
 /**
@@ -749,6 +751,14 @@ const SHIP_SHAPES_REFERENCE: readonly ShipShapeDef[] = [
     skinIndex: 96,
   },
   { id: 'eye', name: 'Auge', description: 'Mandelform mit Pupille.', cost: 1_600, skinIndex: 97 },
+  {
+    id: 'cc0-scout',
+    name: 'CC0-Surveyor',
+    description: 'Ein kompakter Scout aus einem frei nutzbaren Sprite-Sheet.',
+    cost: 2_200,
+    skinIndex: 100,
+    assetId: 'cc0-scout',
+  },
 ];
 
 export const SHIP_SHAPES: readonly ShipShapeDef[] = SHIP_SHAPES_REFERENCE.map((shape) => ({
@@ -866,6 +876,8 @@ export interface ShipAuraDef {
    * zweite Waehrung, die niemand verlangt hat.
    */
   readonly minLevel: number;
+  /** Optionaler Provider-Schluessel fuer ein externes Aura-Overlay. */
+  readonly assetId?: string;
 }
 
 /** Wie bei `ShipShapeId` bewusst ein freier String, nicht eine Union. */
@@ -907,6 +919,7 @@ const SHIP_AURAS_REFERENCE: readonly ShipAuraDef[] = [
     cost: 25_000,
     animIndex: 8,
     minLevel: 50,
+    assetId: 'cc0-kenney-flame',
   },
   {
     id: 'wingbeat',
@@ -1015,6 +1028,15 @@ export function auraLevelReached(aura: ShipAuraDef, level: number): boolean {
 export function shipAuraIndex(save: { shipAura: string; ownedShipAuras: string[] }): number | null {
   if (!save.ownedShipAuras.includes(save.shipAura)) return null;
   return getShipAura(save.shipAura).animIndex;
+}
+
+/** Provider-Schluessel der getragenen Aura, falls sie ein Asset-Overlay nutzt. */
+export function shipAuraAssetId(save: {
+  shipAura: string;
+  ownedShipAuras: string[];
+}): string | undefined {
+  if (!save.ownedShipAuras.includes(save.shipAura)) return undefined;
+  return getShipAura(save.shipAura).assetId;
 }
 
 /**

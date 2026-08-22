@@ -1,72 +1,60 @@
 # Sound-Assets und Audio-Lizenzen
 
-**Stand:** 2026-08-22 · Im Repository sind aktuell noch keine externen
-Sounddateien integriert.
+**Stand:** 2026-08-22
 
-Dieses Dokument ist das Lizenzinventar für die geplante Audio-Erweiterung aus
-`TODO.md`/P5-12. Ein Sound darf erst in `public/audio/` landen, wenn der
-konkrete Download hier eingetragen und geprüft ist. „Kostenlos“, „royalty
-free“ oder eine Pack-Seite ohne Datei-Lizenz gelten nicht als Nachweis.
+Ein CC0-UI-Pilot ist integriert. Reliktfang, Combo, Level-Up, Run-Ende und
+Weltwechsel bleiben bewusst prozedural, bis weitere konkrete Dateien separat
+geprueft und auf iPhone/iPad abgehoert wurden.
 
-## Zulässige Recherchequellen
+## Lizenzregeln
 
-- [Kenney RPG Audio](https://kenney.nl/assets/rpg-audio) und weitere offizielle
-  Kenney-Assetseiten: CC0. [Kenney bestätigt in seinem Support-Artikel](https://kenney.nl/support),
-  dass die Assets auf den Assetseiten Public Domain/CC0 sind und keine
-  Attribution verlangen.
-- [Freesound FAQ](https://freesound.org/help/faq/): nur einzelne Dateien mit
-  explizitem CC0- oder CC-BY-Hinweis verwenden. CC-BY braucht Attribution;
-  CC-BY-NC wird für isiHunt ausgeschlossen. Der Nutzer, Autor und die
-  Lizenzseite werden pro Datei gespeichert.
-- [OpenGameArt-Lizenz-FAQ](https://opengameart.org/node/5571): die Lizenz wird
-  pro Asset geprüft. Für den ersten Pilot werden ausschließlich klar als CC0
-  markierte Dateien akzeptiert; andere Lizenzen benötigen eine eigene
-  Freigabe- und Attribution-Entscheidung.
+- [OpenGameArt-Lizenz-FAQ](https://opengameart.org/node/5571): Die konkrete
+  Datei und ihre Lizenz werden pro Asset geprueft.
+- [Kenney Support](https://kenney.nl/support): Offizielle Kenney-Assetseiten
+  sind Public Domain/CC0, Attribution ist nicht erforderlich.
+- [Freesound FAQ](https://freesound.org/help/faq/): CC0 ist bevorzugt; CC-BY
+  braucht Attribution, CC-BY-NC wird fuer isiHunt ausgeschlossen.
 
-Die Quellen sind Recherchequellen, keine pauschale Freigabe für jeden Upload.
-Bei widersprüchlichen Angaben wird die Datei nicht verwendet.
+Kostenlos, royalty-free oder eine Pack-Seite ohne konkrete Dateilizenz reicht
+nicht als Freigabe. Jeder Eintrag braucht URL, Autor, Lizenz, Download-Datum,
+Format und SHA-256.
 
 ## Inventar
 
-| Asset-ID | Ereignis | Datei | Quelle/Autor | Lizenz | Attribution | Hash | Status |
-| -------- | -------- | ---- | ------------ | ------- | ----------- | ---- | ------ |
-| — | — | Noch kein externer Sound integriert | — | — | — | — | offen |
+| Asset-ID | Ereignis | Datei | Quelle/Autor | Lizenz | Attribution | SHA-256 | Status |
+| -------- | -------- | ---- | ------------ | ------- | ----------- | ------- | ------ |
+| `ui.click` | UI-Klick | `public/assets/audio/cc0-ui-click.wav` | [OpenGameArt: Click](https://opengameart.org/content/click), qubodup | [CC0](https://creativecommons.org/public-domain/cc0/) | keine erforderlich | `9E8DBBD40836EAA3F8305403E869FBEE0752E85FCB86B3A536FB03844F40912E` | integriert |
 
-Beim Eintrag eines Sounds werden mindestens URL, Autor/Uploader, konkrete
-Lizenz-URL, Download-Datum, Dateiformat, Hash und die geplante Verwendung
-ergänzt. Bearbeitete Dateien erhalten zusätzlich den Hinweis, wie sie aus dem
-Original entstanden sind.
+Download: 2026-08-22. Der Hash der gelieferten Datei ist im Repository als
+Pruefanker dokumentiert; eine ersetzte Datei bekommt einen neuen Eintrag.
 
-## Zielarchitektur
-
-Das Spiel verwendet logische Ereignisse, keine Dateipfade:
+## Austauscharchitektur
 
 ```text
 GameEvent / UI-Aktion
-        ↓
-SoundSystem (öffentliche Fassade, Settings, Feedback-Gate)
-        ↓
-SoundModule-Vertrag
-   ┌────┴──────────────────┐
-   │                       │
-ProceduralSoundModule   SampledSoundModule
-   │                       │
-WebAudio-Fallback       lizenzierte OGG/WAV-Dateien
+        |
+SoundSystem (Settings, Feedback-Gate, iOS-Unlock)
+        |
+SoundModuleChain
+   |                 |
+SampledSoundModule  prozeduraler Fallback in SoundSystem
 ```
 
-`ProceduralSoundModule` bleibt immer verfügbar. Ein Asset-Ladefehler, ein
-gesperrter AudioContext oder eine fehlende Datei darf nur auf den prozeduralen
-Fallback wechseln und nie den Run blockieren. Scenes und Gameplay-Systeme
-importieren keine konkreten Sounds.
+`src/audio/SoundModule.ts` definiert die logischen Ereignisse und den Provider-
+Vertrag. `src/audio/SampledSoundModule.ts` laedt das Sample erst nach einem
+laufenden AudioContext. Solange es fehlt oder noch dekodiert wird, liefert der
+Provider `false`; der bestehende WebAudio-Pfad spielt sofort den Fallback.
 
-Das geplante Manifest ordnet logische Ereignisse den Asset-IDs zu. Dadurch
-kann ein komplettes Soundmodul über Konfiguration getauscht werden, ohne
-`GameScene`, `ResultScene`, HUD oder Progression anzupassen. TON-, HAPTIK-,
-Reduced-Motion- und iOS-Unlock-Regeln bleiben zentral im `SoundSystem`.
+Weitere Module koennen mit `registerSoundModule()` registriert und mit einer
+Prioritaet vor den Sample-Provider gesetzt werden. Scenes importieren keine
+Dateipfade. TON-, HAPTIK-, Reduced-Motion- und iOS-Unlock-Regeln bleiben im
+`SoundSystem`.
 
-## Pilotumfang
+## Abnahme
 
-Zuerst nur kurze Einzelklänge für Button, seltenen Reliktfang, Combo-Stufe,
-Level-Up und Run-Ende. Keine Musikschleife und keine großen Audioarchive,
-bevor Ladezeit, Bundlegröße und tatsächliche Wirkung auf iPhone/iPad geprüft
-sind.
+- fehlendes/gesperrtes Sample bricht keinen Run;
+- doppeltes `initialize()` registriert keine doppelten Listener;
+- `shutdown()` beendet Provider und EventBus-Listener;
+- `npm run verify` bleibt gruen;
+- weitere Packs werden erst nach Bundle-, Ladezeit- und Geraetepruefung
+  hinzugefuegt.

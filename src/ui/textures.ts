@@ -9,6 +9,7 @@
 import Phaser from 'phaser';
 
 import { getShipShape } from '@/config/shop';
+import { EGO_ASSET_KEY, textureKeyForEgoShape } from '@/ui/egoAssets';
 import { SHIP_DRAWINGS, SHIP_TEXTURE_SIZE } from '@/ui/shipShapes';
 
 export const TextureKey = {
@@ -29,6 +30,13 @@ export const TextureKey = {
   PlanetGlutnebel: 'asset-planet-glutnebel',
   PlanetNullsektor: 'asset-planet-nullsektor',
   PlanetSonnenkrone: 'asset-planet-sonnenkrone',
+  EgoCc0Scout: EGO_ASSET_KEY.cc0Scout,
+  EgoCc0AuraFlame01: EGO_ASSET_KEY.cc0Flame[0],
+  EgoCc0AuraFlame02: EGO_ASSET_KEY.cc0Flame[1],
+  EgoCc0AuraFlame03: EGO_ASSET_KEY.cc0Flame[2],
+  EgoCc0AuraFlame04: EGO_ASSET_KEY.cc0Flame[3],
+  EgoCc0AuraFlame05: EGO_ASSET_KEY.cc0Flame[4],
+  EgoCc0AuraFlame06: EGO_ASSET_KEY.cc0Flame[5],
 } as const;
 
 export type TextureKeyValue = (typeof TextureKey)[keyof typeof TextureKey];
@@ -76,7 +84,8 @@ function createShipTextures(scene: Phaser.Scene): void {
  * gehoert jetzt in den Laden - die Begruendung steht in `config/shop.ts`.
  */
 export function playerTextureForShape(shapeId: string): TextureKeyValue {
-  return shipTextureKey(getShipShape(shapeId).skinIndex) as TextureKeyValue;
+  return (textureKeyForEgoShape(shapeId) ??
+    shipTextureKey(getShipShape(shapeId).skinIndex)) as TextureKeyValue;
 }
 
 /** Liefert die echte Planetentextur fuer eine Raumzonen-Komposition. */

@@ -26,6 +26,18 @@ export class BootScene extends Phaser.Scene {
     this.load.image(TextureKey.PlanetGlutnebel, './assets/planet-glutnebel.png');
     this.load.image(TextureKey.PlanetNullsektor, './assets/planet-nullsektor.png');
     this.load.image(TextureKey.PlanetSonnenkrone, './assets/planet-sonnenkrone.png');
+    // CC0-Piloten: ein 2D-Sprite-Sheet fuer den Shop und sechs CC0-
+    // Partikel-Frames fuer die austauschbare Prismaflut-Aura.
+    this.load.spritesheet(TextureKey.EgoCc0Scout, './assets/ego/cc0-simpleanimatedship.png', {
+      frameWidth: 64,
+      frameHeight: 64,
+    });
+    this.load.image(TextureKey.EgoCc0AuraFlame01, './assets/ego/aura/cc0-flame_01.png');
+    this.load.image(TextureKey.EgoCc0AuraFlame02, './assets/ego/aura/cc0-flame_02.png');
+    this.load.image(TextureKey.EgoCc0AuraFlame03, './assets/ego/aura/cc0-flame_03.png');
+    this.load.image(TextureKey.EgoCc0AuraFlame04, './assets/ego/aura/cc0-flame_04.png');
+    this.load.image(TextureKey.EgoCc0AuraFlame05, './assets/ego/aura/cc0-flame_05.png');
+    this.load.image(TextureKey.EgoCc0AuraFlame06, './assets/ego/aura/cc0-flame_06.png');
   }
 
   create(): void {

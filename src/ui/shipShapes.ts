@@ -2166,4 +2166,31 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
     g.strokeCircle(C, C, 38);
     stern(g, C, C, 26, 11, 7);
   },
+  /**
+   * 100 CC0-Surveyor - Fallback-Silhouette fuer den externen Sprite-Provider.
+   *
+   * Der Provider ersetzt diese Zeichnung im Spiel durch die erste Frame des
+   * CC0-Sprite-Sheets. Die lokale Silhouette bleibt absichtlich vorhanden:
+   * Balance-Tests, Offline-Preview und ein fehlendes Asset behalten damit
+   * trotzdem eine gueltige Form.
+   */
+  (g) => {
+    voll(g, [
+      [C, 8],
+      [C + 26, 34],
+      [C + 20, 72],
+      [C + 8, 86],
+      [C, 72],
+      [C - 8, 86],
+      [C - 20, 72],
+      [C - 26, 34],
+    ]);
+    akzent(g, [
+      [C, 18],
+      [C + 10, 44],
+      [C, 64],
+      [C - 10, 44],
+    ]);
+    duesen(g, C - 12, 62, C + 12, 91);
+  },
 ];

@@ -27,6 +27,7 @@ import {
 } from '@/config/GameConfig';
 import type { PlayerStats } from '@/config/talents';
 import { Depth } from '@/ui/depth';
+import { auraAssetForId } from '@/ui/egoAssets';
 import {
   applyTintShift,
   SHIP_ANIMATIONS,
@@ -76,6 +77,8 @@ export class Player extends Phaser.GameObjects.Container {
   private trailIdleTicks = 0;
   /** Die getragene Aura-Bewegung, oder `null` fuer keine. */
   private auraAnimation: AuraAnimation | null = null;
+  /** Optionales externes Overlay-Asset der getragenen Aura. */
+  private auraAssetId: string | undefined;
   /**
    * Laufzeit der Aura.
    *
@@ -274,8 +277,9 @@ export class Player extends Phaser.GameObjects.Container {
    * Wechsel neu, damit eine Bewegung immer an ihrem Anfang einsetzt - mitten
    * im Sog einer Singularitaet zu starten sieht wie ein Fehler aus.
    */
-  setAura(animIndex: number | null): void {
+  setAura(animIndex: number | null, auraAssetId: string | undefined = undefined): void {
     this.auraAnimation = animIndex === null ? null : (SHIP_ANIMATIONS[animIndex] ?? null);
+    this.auraAssetId = auraAssetId;
     this.auraMs = 0;
     // Erst der erste `move()` startet sie - siehe `auraLaeuft`. Die Aura
     // gehoert zum Spiel, nicht zum Warten davor.
@@ -301,6 +305,7 @@ export class Player extends Phaser.GameObjects.Container {
           ? stehendesBild(this.auraAnimation)
           : this.auraAnimation(this.auraMs);
     if (frame === null) {
+      this.aura.setTexture(TextureKey.Glow).setScale(2.1 * this.ruheScale);
       this.core.setScale(this.ruheScale);
       this.core.rotation = this.neigung;
       this.core.setAlpha(1);
@@ -312,6 +317,20 @@ export class Player extends Phaser.GameObjects.Container {
     this.core.rotation = this.neigung + frame.rotation;
     this.core.setAlpha(frame.alpha);
     this.core.setTint(applyTintShift(this.hullColor, frame.tint));
+
+    const auraAsset = auraAssetForId(this.auraAssetId);
+    if (auraAsset !== undefined) {
+      const frameIndex =
+        Math.floor(this.auraMs / auraAsset.frameDurationMs) % auraAsset.frameTextureKeys.length;
+      const textureKey = auraAsset.frameTextureKeys[frameIndex] ?? auraAsset.frameTextureKeys[0];
+      if (textureKey !== undefined) this.aura.setTexture(textureKey);
+      this.aura.setScale(
+        this.ruheScale * frame.scaleX * auraAsset.scaleMultiplier,
+        this.ruheScale * frame.scaleY * auraAsset.scaleMultiplier,
+      );
+    } else {
+      this.aura.setTexture(TextureKey.Glow).setScale(2.1 * this.ruheScale);
+    }
 
     // Schein und Ring laufen mit, wenn die Aura den Farbton dreht.
     //
