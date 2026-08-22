@@ -54,6 +54,7 @@ export class ThreeDShipPreview {
   }
 
   setModel(asset: Ego3DAsset | undefined, tint: number): void {
+    const previousAssetId = this.requestedAsset?.id;
     this.requestedAsset = asset;
     this.requestedTint = tint;
 
@@ -77,7 +78,7 @@ export class ThreeDShipPreview {
       return;
     }
 
-    if (this.model !== null && this.requestedAsset?.id === asset.id) {
+    if (this.model !== null && previousAssetId === asset.id) {
       this.applyTint(this.model, tint);
       this.canvas.style.display = 'block';
       this.onAvailabilityChange(true);
@@ -171,6 +172,11 @@ export class ThreeDShipPreview {
     if (this.loader === null || this.scene === null || this.runtime === null) return;
 
     const generation = ++this.loadGeneration;
+    // Waehrend des Modellwechsels bleibt kein altes 3D-Bild als scheinbar
+    // ausgewaehlte Form stehen. Der 2D-Fallback darf diese kurze Ladephase
+    // uebernehmen, bis das neue Modell tatsaechlich gerendert werden kann.
+    this.canvas.style.display = 'none';
+    this.onAvailabilityChange(false);
     this.removeModel();
     this.loader.load(
       asset.modelUrl,
