@@ -78,9 +78,13 @@ type ShopTab = 'shapes' | 'colors' | 'auras';
 type ScrollElement = Phaser.GameObjects.GameObject & { y: number; ausgangsY?: number };
 
 /** Oberkante der Kartenliste, unterhalb der Reiter. */
-const LISTE_START = 470;
+const LISTE_START = 430;
 /** Alles ueber der Liste - Vorschau und Reiter. */
-const KOPF_HOEHE = 420;
+const KOPF_HOEHE = 380;
+/** Mittelpunkt des kompakten Vorschau-Panels. */
+const VORSCHAU_Y = 176;
+/** Y-Position der drei Reiter unterhalb der Vorschau. */
+const REITER_Y = 345;
 /** Ueber `Depth.UI`, damit die Liste beim Scrollen darunter verschwindet. */
 const KOPF_DEPTH = 160;
 const KARTE_HOEHE = 96;
@@ -118,6 +122,7 @@ export class ShopScene extends Phaser.Scene {
   private vorschauBild!: Phaser.GameObjects.Image;
   private vorschauHalo!: Phaser.GameObjects.Image;
   private vorschauName!: Phaser.GameObjects.Text;
+  private vorschau3dDom!: Phaser.GameObjects.DOMElement;
   private vorschau3d!: ThreeDShipPreview;
   /**
    * Wie weit die Liste gerade gescrollt ist.
@@ -207,6 +212,7 @@ export class ShopScene extends Phaser.Scene {
       // separat als "zuletzt gekauft" sichtbar.
       SaveSystem.markCosmeticsSeen(this.tab);
       this.vorschau3d.destroy();
+      this.vorschau3dDom.destroy();
     });
   }
 
@@ -218,9 +224,10 @@ export class ShopScene extends Phaser.Scene {
    */
   private buildVorschau(weltAkzent: number): void {
     const save = SaveSystem.load();
-    // Die Kopfzone sitzt oberhalb der Reiter; der alte Mittelpunkt 250 liess
-    // die Coins und Sammlungshinweise sichtbar nach unten wegkippen.
-    const y = 210;
+    // Die Kopfzone sitzt bewusst hoeher und kompakter. Die Panel-Oberkante
+    // liegt damit bei rund y=61 im Canvas (auf dem Geraet etwa bei Pixel 125),
+    // ohne den Safe-Area-Ticker zu beruehren.
+    const y = VORSCHAU_Y;
 
     // Voll deckende Flaeche unter dem Kopfbereich.
     //
@@ -248,21 +255,29 @@ export class ShopScene extends Phaser.Scene {
       .setScale(0.85)
       .setDepth(KOPF_DEPTH);
 
-    const vorschau3dDom = this.add
+    this.vorschau3dDom = this.add
       .dom(GAME_WIDTH / 2, y - 45, 'canvas', {
         width: `${VORSCHAU_3D_BREITE}px`,
         height: `${VORSCHAU_3D_HOEHE}px`,
       })
-      .setDepth(KOPF_DEPTH + 1);
+      .setDepth(KOPF_DEPTH + 1)
+      .setVisible(false);
     // Auch die Shop-Vorschau ist nur Darstellung. `ThreeDShipPreview` setzt
     // das Canvas selbst auf none, Phaser wuerde den DOMElement-Wert beim
     // Rendern aber sonst wieder auf `auto` setzen.
-    vorschau3dDom.pointerEvents = 'none';
+    this.vorschau3dDom.pointerEvents = 'none';
     this.vorschau3d = new ThreeDShipPreview(
-      vorschau3dDom.node as HTMLCanvasElement,
+      this.vorschau3dDom.node as HTMLCanvasElement,
       VORSCHAU_3D_BREITE,
       VORSCHAU_3D_HOEHE,
-      (available) => this.vorschauBild.setVisible(!available),
+      (available) => {
+        // Die CSS-Sichtbarkeit des Canvas reicht bei Phaser-DOMElementen
+        // nicht: Phaser schreibt die Anzeige des Wrappers beim Rendern
+        // erneut. Nur der Wrapper garantiert, dass beim Laden/Wechseln kein
+        // altes 3D-Bild neben dem 2D-Fallback stehen bleibt.
+        this.vorschau3dDom.setVisible(available);
+        this.vorschauBild.setVisible(!available);
+      },
     );
 
     this.vorschauName = this.add
@@ -399,7 +414,7 @@ export class ShopScene extends Phaser.Scene {
   }
 
   private buildReiter(): void {
-    const y = 385;
+    const y = REITER_Y;
     const luecke = 12;
     const save = SaveSystem.load();
     const reiter: readonly { readonly id: ShopTab; readonly label: string }[] = (
@@ -499,8 +514,15 @@ export class ShopScene extends Phaser.Scene {
   private blendeAusserhalbAus(): void {
     const oben = KOPF_HOEHE;
     const unten = GAME_HEIGHT - BACK_BUTTON_RESERVED_HEIGHT;
+    // Eine Karte ist eine Einheit. Wenn nur ihr Mittelpunkt knapp unter dem
+    // Kopf liegt, stehen Titel, Symbol oder Button sonst bereits im
+    // Vorschau-/Reiterbereich. Das ist besonders auffällig bei den vielen
+    // 2D-Formen, weil deren Symbole nicht vom DOM-Layer der 3D-Vorschau
+    // maskiert werden können.
+    const minKartenMitte = oben + KARTE_HOEHE / 2 + 1;
+    const maxKartenMitte = unten - KARTE_HOEHE / 2 - 1;
     for (const objekt of this.inhalt) {
-      const sichtbar = objekt.y > oben - KARTE_HOEHE && objekt.y < unten + KARTE_HOEHE / 2;
+      const sichtbar = objekt.y > minKartenMitte && objekt.y < maxKartenMitte;
       const ziel = objekt as ScrollElement & {
         setVisible?: (wert: boolean) => unknown;
         input?: { enabled: boolean } | null;

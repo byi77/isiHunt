@@ -59,6 +59,11 @@ export class ThreeDShipPreview {
     this.requestedTint = tint;
 
     if (asset === undefined) {
+      // Auch eine laufende OBJ-Anfrage muss ungültig werden. Nur die
+      // Asset-ID zu prüfen reicht nicht als Zustandsmodell: Beim Wechsel auf
+      // eine reine 2D-Form darf kein alter Renderer-Callback mehr sichtbar
+      // schalten.
+      this.loadGeneration += 1;
       this.canvas.style.display = 'none';
       this.onAvailabilityChange(false);
       this.removeModel();

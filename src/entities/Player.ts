@@ -13,7 +13,6 @@ import Phaser from 'phaser';
 import {
   PLAYER_ACCEL_RESPONSE,
   PLAYER_BASE_COLLECT_RADIUS,
-  PLAYER_BASE_SPEED,
   PLAYER_TRAIL_MIN_SPEED,
   SERIES_TRAIL_BASE_ALPHA,
   SERIES_TRAIL_BASE_FREQUENCY_MS,
@@ -32,6 +31,8 @@ import {
   TALENT_MAGNET_LINE_START_OFFSET,
   TALENT_MAGNET_LINE_WIDTH,
   TALENT_MAGNET_MAX_LINES,
+  TALENT_FOCUS_RING_ALPHA,
+  TALENT_FOCUS_RING_WIDTH,
   TALENT_REACH_RING_ALPHA,
   TALENT_REACH_RING_WIDTH,
   TALENT_SPEED_STREAK_BASE_ALPHA,
@@ -41,7 +42,7 @@ import {
   TALENT_SPEED_STREAK_TALENT_LENGTH,
   TALENT_SPEED_STREAK_WIDTH,
 } from '@/config/GameConfig';
-import type { PlayerStats } from '@/config/talents';
+import { talentMaxRank, type PlayerStats, type TalentId } from '@/config/talents';
 import { Depth } from '@/ui/depth';
 import { auraAssetForId, type Ego3DAsset } from '@/ui/egoAssets';
 import {
@@ -79,6 +80,11 @@ export interface TalentVisualTarget {
   readonly radius: number;
   readonly isCollected: boolean;
   readonly isExpired: boolean;
+}
+
+function talentRankRatio(stats: PlayerStats, id: TalentId): number {
+  const maxRank = talentMaxRank(id) || 1;
+  return Phaser.Math.Clamp(stats.talentRanks[id] / maxRank, 0, 1);
 }
 
 export class Player extends Phaser.GameObjects.Container {
@@ -208,7 +214,13 @@ export class Player extends Phaser.GameObjects.Container {
         dom.node as HTMLCanvasElement,
         132,
         132,
-        (available) => this.core.setVisible(!available),
+        (available) => {
+          // Das Canvas wird von Phaser als DOMElement verwaltet. Die
+          // CSS-Sichtbarkeit allein kann beim naechsten Render-Frame wieder
+          // ueberschrieben werden; deshalb muss auch der Wrapper wechseln.
+          dom.setVisible(available);
+          this.core.setVisible(!available);
+        },
       );
       this.threeDPreview.setModel(threeDAsset, hullColor);
     }
@@ -283,28 +295,67 @@ export class Player extends Phaser.GameObjects.Container {
    * zweite Wertetabelle. `targets` kommt nach dem Orb-Tick, damit die Linien
    * tatsaechlich dem aktuellen Sog folgen.
    */
-  updateTalentVisuals(deltaMs: number, targets: readonly TalentVisualTarget[]): void {
+  updateTalentVisuals(
+    deltaMs: number,
+    targets: readonly TalentVisualTarget[],
+    comboTimerRatio = 0,
+  ): void {
     this.talentVisualMs += Math.max(0, deltaMs);
     const pulse = prefersReducedMotion() ? 0.5 : 0.5 + 0.5 * Math.sin(this.talentVisualMs / 180);
 
     this.reachRing.clear();
     const reachBoost = this.stats.collectRadius - PLAYER_BASE_COLLECT_RADIUS;
+    const reachRatio = talentRankRatio(this.stats, 'reach');
     if (reachBoost > 0) {
-      const radius = this.stats.collectRadius + 5 + pulse * 3;
-      this.reachRing.lineStyle(TALENT_REACH_RING_WIDTH, this.accentColor, TALENT_REACH_RING_ALPHA);
+      const radius = this.stats.collectRadius + 5 + pulse * (3 + reachRatio * 4);
+      const ringWidth = TALENT_REACH_RING_WIDTH + reachRatio * 3;
+      const ringAlpha = TALENT_REACH_RING_ALPHA + reachRatio * 0.16;
+      this.reachRing.lineStyle(ringWidth, this.accentColor, ringAlpha);
       this.reachRing.strokeCircle(this.x, this.y, radius);
-      this.reachRing.lineStyle(2, this.accentColor, TALENT_REACH_RING_ALPHA * 0.55);
-      this.reachRing.strokeCircle(this.x, this.y, radius - 8);
+      this.reachRing.lineStyle(2 + reachRatio * 2, this.accentColor, ringAlpha * 0.55);
+      this.reachRing.strokeCircle(this.x, this.y, radius - 8 - reachRatio * 3);
+    }
+
+    const focusRatio = talentRankRatio(this.stats, 'focus');
+    if (focusRatio > 0 && comboTimerRatio > 0) {
+      const focusRadius = this.stats.collectRadius + 16 + focusRatio * 12;
+      this.reachRing.lineStyle(
+        TALENT_FOCUS_RING_WIDTH + focusRatio * 3,
+        0xffd479,
+        TALENT_FOCUS_RING_ALPHA,
+      );
+      this.reachRing.arc(
+        this.x,
+        this.y,
+        focusRadius,
+        -Math.PI / 2,
+        -Math.PI / 2 + Phaser.Math.Clamp(comboTimerRatio, 0, 1) * Math.PI * 2,
+        false,
+      );
     }
 
     this.magnetField.clear();
     if (this.stats.magnetRadius <= 0) return;
 
-    const fieldAlpha = TALENT_MAGNET_FIELD_ALPHA * (0.86 + pulse * 0.14);
-    this.magnetField.lineStyle(TALENT_MAGNET_FIELD_WIDTH, this.accentColor, fieldAlpha);
+    const magnetRatio = talentRankRatio(this.stats, 'magnetism');
+    const magnetRank = this.stats.talentRanks.magnetism;
+    const fieldAlpha = TALENT_MAGNET_FIELD_ALPHA * (0.86 + pulse * 0.14) + magnetRatio * 0.16;
+    this.magnetField.lineStyle(
+      TALENT_MAGNET_FIELD_WIDTH + magnetRatio * 2,
+      this.accentColor,
+      fieldAlpha,
+    );
     this.magnetField.strokeCircle(this.x, this.y, this.stats.magnetRadius);
-    this.magnetField.lineStyle(2, this.accentColor, fieldAlpha * 0.45);
-    this.magnetField.strokeCircle(this.x, this.y, this.stats.magnetRadius * 0.82);
+    const fieldRings = Math.max(1, magnetRank);
+    for (let ring = 1; ring <= fieldRings; ring += 1) {
+      const ringRatio = ring / (fieldRings + 1);
+      this.magnetField.lineStyle(2, this.accentColor, fieldAlpha * (0.3 + ringRatio * 0.22));
+      this.magnetField.strokeCircle(
+        this.x,
+        this.y,
+        this.stats.magnetRadius * (0.56 + ringRatio * 0.28),
+      );
+    }
 
     const candidates = targets
       .filter((target) => !target.isCollected && !target.isExpired)
@@ -314,7 +365,7 @@ export class Player extends Phaser.GameObjects.Container {
       }))
       .filter(({ distance }) => distance > 1 && distance < this.stats.magnetRadius)
       .sort((left, right) => left.distance - right.distance)
-      .slice(0, TALENT_MAGNET_MAX_LINES);
+      .slice(0, Math.min(TALENT_MAGNET_MAX_LINES, 2 + magnetRank));
 
     for (const { target, distance } of candidates) {
       const dx = target.x - this.x;
@@ -729,11 +780,8 @@ export class Player extends Phaser.GameObjects.Container {
     const direction = this.velocity.clone().normalize();
     const perpendicular = new Phaser.Math.Vector2(-direction.y, direction.x);
     const speedRatio = Phaser.Math.Clamp(speed / this.stats.moveSpeed, 0, 1);
-    const talentRatio = Phaser.Math.Clamp(
-      (this.stats.moveSpeed / PLAYER_BASE_SPEED - 1) / 0.25,
-      0,
-      1,
-    );
+    const swiftnessRank = this.stats.talentRanks.swiftness;
+    const talentRatio = talentRankRatio(this.stats, 'swiftness');
     const length =
       TALENT_SPEED_STREAK_BASE_LENGTH +
       speedRatio * TALENT_SPEED_STREAK_SPEED_LENGTH +
@@ -742,7 +790,10 @@ export class Player extends Phaser.GameObjects.Container {
       TALENT_SPEED_STREAK_BASE_ALPHA +
       speedRatio * 0.12 +
       talentRatio * TALENT_SPEED_STREAK_TALENT_ALPHA;
-    const offsets = talentRatio > 0 ? [-18, 0, 18] : [0];
+    const allOffsets = [-24, -12, 0, 12, 24];
+    const streakCount = Math.min(allOffsets.length, 1 + swiftnessRank);
+    const streakStart = Math.floor((allOffsets.length - streakCount) / 2);
+    const offsets = allOffsets.slice(streakStart, streakStart + streakCount);
 
     for (const offset of offsets) {
       const sideRatio = offset === 0 ? 1 : 0.7;

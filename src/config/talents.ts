@@ -82,9 +82,16 @@ export const TALENTS: readonly TalentDef[] = [
 
 export type TalentRanks = Partial<Record<TalentId, number>>;
 
+/** Aufgeloeste, begrenzte Raenge fuer Gameplay- und Visual-Feedback. */
+export type ResolvedTalentRanks = Readonly<Record<TalentId, number>>;
+
 /** Kosten des nächsten Rangs: steigend, damit der Talentbaum langfristig bleibt. */
 /** Ein brauchbarer Rang soll etwa vier bis sechs normale Runs erfordern. */
 export const TALENT_COSTS = BALANCED_TALENT_COSTS;
+
+export function talentMaxRank(id: TalentId): number {
+  return TALENTS.find((talent) => talent.id === id)?.maxRank ?? 0;
+}
 
 export function talentCost(currentRank: number): number {
   return balanceTalentCost(currentRank);
@@ -95,6 +102,7 @@ export function talentCost(currentRank: number): number {
  * hier gebuendelt - Scenes lesen nur noch diese Struktur, nie einzelne Talente.
  */
 export interface PlayerStats {
+  readonly talentRanks: ResolvedTalentRanks;
   readonly moveSpeed: number;
   readonly collectRadius: number;
   readonly magnetRadius: number;
@@ -112,13 +120,24 @@ function rank(ranks: TalentRanks, id: TalentId): number {
 
 /** Rechnet Talentraenge in konkrete Spielwerte um. Reine Funktion, testbar. */
 export function resolveStats(ranks: TalentRanks): PlayerStats {
+  const talentRanks: ResolvedTalentRanks = {
+    reach: rank(ranks, 'reach'),
+    swiftness: rank(ranks, 'swiftness'),
+    magnetism: rank(ranks, 'magnetism'),
+    endurance: rank(ranks, 'endurance'),
+    focus: rank(ranks, 'focus'),
+    insight: rank(ranks, 'insight'),
+    fortune: rank(ranks, 'fortune'),
+  };
+
   return {
-    collectRadius: PLAYER_BASE_COLLECT_RADIUS + rank(ranks, 'reach') * 6,
-    moveSpeed: PLAYER_BASE_SPEED * (1 + rank(ranks, 'swiftness') * 0.05),
-    magnetRadius: rank(ranks, 'magnetism') * 35,
-    runDurationMs: RUN_DURATION_MS + rank(ranks, 'endurance') * 3000,
-    comboGraceMs: COMBO_GRACE_MS + rank(ranks, 'focus') * 150,
-    xpMultiplier: 1 + rank(ranks, 'insight') * BALANCE.talents.insightXpPerRank,
-    scoreMultiplier: 1 + rank(ranks, 'fortune') * BALANCE.talents.fortuneScorePerRank,
+    talentRanks,
+    collectRadius: PLAYER_BASE_COLLECT_RADIUS + talentRanks.reach * 6,
+    moveSpeed: PLAYER_BASE_SPEED * (1 + talentRanks.swiftness * 0.05),
+    magnetRadius: talentRanks.magnetism * 35,
+    runDurationMs: RUN_DURATION_MS + talentRanks.endurance * 3000,
+    comboGraceMs: COMBO_GRACE_MS + talentRanks.focus * 150,
+    xpMultiplier: 1 + talentRanks.insight * BALANCE.talents.insightXpPerRank,
+    scoreMultiplier: 1 + talentRanks.fortune * BALANCE.talents.fortuneScorePerRank,
   };
 }

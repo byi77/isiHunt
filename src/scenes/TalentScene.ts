@@ -143,6 +143,15 @@ export class TalentScene extends Phaser.Scene {
     this.add
       .text(405, y + 12, talent.perRank, textStyle(FontSize.tiny, Palette.gold))
       .setOrigin(0.5);
+    // Rang-Pips machen den Ausbau sofort sichtbar: Jeder Kauf fuellt einen
+    // weiteren Abschnitt, statt nur die kleine Zahl im Rangtext zu veraendern.
+    const pipStartX = 466;
+    for (let pip = 0; pip < talent.maxRank; pip += 1) {
+      this.add
+        .rectangle(pipStartX + pip * 11, y + 13, 8, 16, pip < rank ? Palette.goldHex : 0x66708c)
+        .setAlpha(pip < rank ? 1 : 0.34)
+        .setStrokeStyle(1, accent, 0.55);
+    }
     const cost = talentCost(rank);
     const purchaseButton = createButton(
       this,

@@ -31,7 +31,7 @@ import {
 } from '@/config/GameConfig';
 import { XP_GLOBAL_MULTIPLIER } from '@/config/balance';
 import type { RarityDef } from '@/config/rarities';
-import { resolveStats } from '@/config/talents';
+import { resolveStats, talentMaxRank } from '@/config/talents';
 import type { PlayerStats } from '@/config/talents';
 import { getWorld } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
@@ -80,6 +80,7 @@ type RunPhase = 'countdown' | 'running' | 'ended';
 /** Kompakte Live-Anzeige der tatsaechlich aktiven Talentverstaerkungen. */
 function activeTalentSummary(stats: PlayerStats): string {
   const active: string[] = [];
+  const ranks = stats.talentRanks;
   const reach = stats.collectRadius - PLAYER_BASE_COLLECT_RADIUS;
   const speed = Math.round((stats.moveSpeed / PLAYER_BASE_SPEED - 1) * 100);
   const run = Math.round((stats.runDurationMs - RUN_DURATION_MS) / 1000);
@@ -87,13 +88,13 @@ function activeTalentSummary(stats: PlayerStats): string {
   const xp = Math.round((stats.xpMultiplier - 1) * 100);
   const score = Math.round((stats.scoreMultiplier - 1) * 100);
 
-  if (reach > 0) active.push(`REICHWEITE +${reach}`);
-  if (speed > 0) active.push(`TEMPO +${speed}%`);
-  if (stats.magnetRadius > 0) active.push(`MAGNET +${stats.magnetRadius}`);
-  if (run > 0) active.push(`RUN +${run}s`);
-  if (combo > 0) active.push(`COMBO +${combo}ms`);
-  if (xp > 0) active.push(`XP +${xp}%`);
-  if (score > 0) active.push(`PUNKTE +${score}%`);
+  if (reach > 0) active.push(`REICH R${ranks.reach} +${reach}`);
+  if (speed > 0) active.push(`TEMPO R${ranks.swiftness} +${speed}%`);
+  if (stats.magnetRadius > 0) active.push(`MAGNET R${ranks.magnetism} +${stats.magnetRadius}`);
+  if (run > 0) active.push(`AUSDAUER R${ranks.endurance} +${run}s`);
+  if (combo > 0) active.push(`FOKUS R${ranks.focus} +${combo}ms`);
+  if (xp > 0) active.push(`XP R${ranks.insight} +${xp}%`);
+  if (score > 0) active.push(`PUNKTE R${ranks.fortune} +${score}%`);
 
   return active.length > 0 ? `AKTIV · ${active.join(' · ')}` : '';
 }
@@ -273,14 +274,14 @@ export class GameScene extends Phaser.Scene {
     // aktiv; Spawns, Timer und Wertung beginnen weiterhin erst mit `running`.
     if (this.phase === 'countdown') {
       this.updatePlayer(dtSec);
-      this.player.updateTalentVisuals(delta, []);
+      this.player.updateTalentVisuals(delta, [], 0);
       return;
     }
 
     this.updatePlayer(dtSec);
     this.updateCombo(delta);
     this.updateCollectibles(dtSec, delta);
-    this.player.updateTalentVisuals(delta, this.collectibles);
+    this.player.updateTalentVisuals(delta, this.collectibles, this.scoring.comboTimerRatio);
     this.updateObstacles(delta);
     this.updateSpawning(delta);
     this.updateTimer(delta);
@@ -432,7 +433,14 @@ export class GameScene extends Phaser.Scene {
     shockwave(this, orb.x, orb.y, orb.rarity.color, isImpact ? 1.5 : 0.85);
     floatingScore(this, orb.x, orb.y, `+${outcome.awardedPoints}`, orb.rarity.color, {
       bonus: outcome.streakBonus,
+      intensity: this.stats.talentRanks.fortune / talentMaxRank('fortune'),
     });
+    if (this.stats.talentRanks.insight > 0) {
+      floatingScore(this, orb.x, orb.y + 30, `+${outcome.xpGained} XP`, 0x7ee787, {
+        kind: 'xp',
+        intensity: this.stats.talentRanks.insight / talentMaxRank('insight'),
+      });
+    }
     this.player.pulse(orb.rarity.color);
     this.player.setSeriesTrail(trailTierForSeries(outcome.combo));
 

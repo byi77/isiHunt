@@ -24,6 +24,7 @@ import {
   createMenuLayout,
   createVignette,
   createWorldBackdrop,
+  attachVerticalScroll,
   PAGE_CONTENT_TOP,
 } from '@/ui/widgets';
 
@@ -218,53 +219,13 @@ export class SettingsScene extends Phaser.Scene {
 
     const contentBottom = legalY + 350;
     const maxScroll = Math.max(0, contentBottom - layout.contentBottom);
-    let scrollOffset = 0;
-    let activePointerId: number | null = null;
-    let pointerStartY = 0;
-    let scrollStart = 0;
-
-    const setScrollOffset = (value: number): void => {
-      scrollOffset = Phaser.Math.Clamp(value, 0, maxScroll);
-      content.y = -scrollOffset;
-    };
-
-    const onPointerDown = (pointer: Phaser.Input.Pointer): void => {
-      if (maxScroll <= 0 || activePointerId !== null) return;
-      if (pointer.y < PAGE_CONTENT_TOP || pointer.y > layout.contentBottom) return;
-      activePointerId = pointer.id;
-      pointerStartY = pointer.y;
-      scrollStart = scrollOffset;
-    };
-
-    const onPointerMove = (pointer: Phaser.Input.Pointer): void => {
-      if (pointer.id !== activePointerId) return;
-      setScrollOffset(scrollStart - (pointer.y - pointerStartY));
-    };
-
-    const releasePointer = (pointer: Phaser.Input.Pointer): void => {
-      if (pointer.id === activePointerId) activePointerId = null;
-    };
-
-    const onWheel = (
-      _pointer: Phaser.Input.Pointer,
-      _gameObjects: Phaser.GameObjects.GameObject[],
-      _deltaX: number,
-      deltaY: number,
-    ): void => {
-      if (maxScroll > 0) setScrollOffset(scrollOffset + deltaY);
-    };
-
-    this.input.on('pointerdown', onPointerDown);
-    this.input.on('pointermove', onPointerMove);
-    this.input.on('pointerup', releasePointer);
-    this.input.on('pointerupoutside', releasePointer);
-    this.input.on('wheel', onWheel);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.input.off('pointerdown', onPointerDown);
-      this.input.off('pointermove', onPointerMove);
-      this.input.off('pointerup', releasePointer);
-      this.input.off('pointerupoutside', releasePointer);
-      this.input.off('wheel', onWheel);
+    attachVerticalScroll(this, {
+      maxScroll,
+      dragZoneTop: PAGE_CONTENT_TOP,
+      dragZoneBottom: layout.contentBottom,
+      onOffsetChange: (offset) => {
+        content.y = -offset;
+      },
     });
 
     this.add

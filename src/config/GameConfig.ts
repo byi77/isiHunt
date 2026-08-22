@@ -101,6 +101,9 @@ export const POINTER_THROTTLE_MIN = 0.15;
 /** Ab dieser Geschwindigkeit (px/s) zieht die Figur eine Lichtspur. */
 export const PLAYER_TRAIL_MIN_SPEED = 60;
 
+/** Grundgeschwindigkeit des Magnet-Sogs in Pixel/Sekunde. */
+export const MAGNET_PULL_SPEED = 420;
+
 // --- Talent-Feedback -------------------------------------------------------
 
 /** Breite des sichtbaren Reichweitenrings fuer das Reichweite-Talent. */
@@ -119,6 +122,16 @@ export const TALENT_MAGNET_LINE_WIDTH = 3;
 export const TALENT_MAGNET_LINE_ALPHA = 0.78;
 /** Kleinster Abstand zum Schiff, damit Linien nicht unter dem Rumpf starten. */
 export const TALENT_MAGNET_LINE_START_OFFSET = 28;
+/** Breite der sichtbaren Sogstreifen direkt am Relikt. */
+export const TALENT_MAGNET_ORB_STREAK_WIDTH = 4;
+/** Maximale Laenge der sichtbaren Sogstreifen direkt am Relikt. */
+export const TALENT_MAGNET_ORB_STREAK_LENGTH = 48;
+/** Transparenz der Magnetboegen und Relikt-Nachlaufstreifen. */
+export const TALENT_MAGNET_ORB_ALPHA = 0.86;
+/** Breite des sichtbaren Combo-/Fokus-Rings. */
+export const TALENT_FOCUS_RING_WIDTH = 5;
+/** Transparenz des sichtbaren Combo-/Fokus-Rings. */
+export const TALENT_FOCUS_RING_ALPHA = 0.9;
 /** Grundlaenge der Bewegungstreifen hinter dem Schiff. */
 export const TALENT_SPEED_STREAK_BASE_LENGTH = 34;
 /** Zusatzlaenge der Bewegungstreifen bei voller Geschwindigkeit. */
@@ -131,6 +144,17 @@ export const TALENT_SPEED_STREAK_WIDTH = 5;
 export const TALENT_SPEED_STREAK_BASE_ALPHA = 0.26;
 /** Zusatztransparenz der Bewegungstreifen durch Flinkheit. */
 export const TALENT_SPEED_STREAK_TALENT_ALPHA = 0.54;
+
+// --- Navigation ------------------------------------------------------------
+
+/** Daempfung des Scroll-Nachlaufs pro 60-Hz-Frame. */
+export const SCROLL_INERTIA_DECAY_PER_FRAME = 0.92;
+/** Unter diesem Tempo endet der Nachlauf. */
+export const SCROLL_INERTIA_MIN_SPEED = 8;
+/** Schutz gegen unkontrollierbare Spruenge bei schnellen Wischern. */
+export const SCROLL_INERTIA_MAX_SPEED = 1800;
+/** Glaettung der aus Pointerbewegungen abgeleiteten Geschwindigkeit. */
+export const SCROLL_POINTER_VELOCITY_SMOOTHING = 0.55;
 
 // --- Darstellungsschwellen --------------------------------------------------
 

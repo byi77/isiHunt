@@ -8,7 +8,15 @@
 
 import Phaser from 'phaser';
 
-import { DEBUG_ENABLED, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import {
+  DEBUG_ENABLED,
+  GAME_HEIGHT,
+  GAME_WIDTH,
+  SCROLL_INERTIA_DECAY_PER_FRAME,
+  SCROLL_INERTIA_MAX_SPEED,
+  SCROLL_INERTIA_MIN_SPEED,
+  SCROLL_POINTER_VELOCITY_SMOOTHING,
+} from '@/config/GameConfig';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
@@ -476,8 +484,9 @@ export function attachVerticalScroll(
 
   let scrollOffset = 0;
   let activePointerId: number | null = null;
-  let pointerStartY = 0;
-  let scrollStart = 0;
+  let lastPointerY = 0;
+  let lastPointerAt = 0;
+  let scrollVelocity = 0;
 
   const setScrollOffset = (value: number): void => {
     scrollOffset = Phaser.Math.Clamp(value, 0, maxScroll);
@@ -490,17 +499,42 @@ export function attachVerticalScroll(
     if (activePointerId !== null) return;
     if (pointer.y < dragZoneTop || pointer.y > dragZoneBottom) return;
     activePointerId = pointer.id;
-    pointerStartY = pointer.y;
-    scrollStart = scrollOffset;
+    lastPointerY = pointer.y;
+    lastPointerAt = scene.time.now;
+    // Ein neuer Fingergriff uebernimmt sofort die Kontrolle und stoppt den
+    // alten Nachlauf, damit die Liste nicht gegen den Finger arbeitet.
+    scrollVelocity = 0;
   };
 
   const onPointerMove = (pointer: Phaser.Input.Pointer): void => {
     if (pointer.id !== activePointerId) return;
-    setScrollOffset(scrollStart - (pointer.y - pointerStartY));
+    const now = scene.time.now;
+    const elapsedMs = Math.max(1, now - lastPointerAt || 16.667);
+    const deltaY = pointer.y - lastPointerY;
+    const instantaneousVelocity = Phaser.Math.Clamp(
+      (-deltaY / elapsedMs) * 1000,
+      -SCROLL_INERTIA_MAX_SPEED,
+      SCROLL_INERTIA_MAX_SPEED,
+    );
+
+    setScrollOffset(scrollOffset - deltaY);
+    scrollVelocity = Phaser.Math.Linear(
+      scrollVelocity,
+      instantaneousVelocity,
+      SCROLL_POINTER_VELOCITY_SMOOTHING,
+    );
+    lastPointerY = pointer.y;
+    lastPointerAt = now;
   };
 
   const releasePointer = (pointer: Phaser.Input.Pointer): void => {
-    if (pointer.id === activePointerId) activePointerId = null;
+    if (pointer.id !== activePointerId) return;
+    activePointerId = null;
+    scrollVelocity = Phaser.Math.Clamp(
+      scrollVelocity,
+      -SCROLL_INERTIA_MAX_SPEED,
+      SCROLL_INERTIA_MAX_SPEED,
+    );
   };
 
   const onWheel = (
@@ -509,7 +543,31 @@ export function attachVerticalScroll(
     _deltaX: number,
     deltaY: number,
   ): void => {
+    scrollVelocity = 0;
     setScrollOffset(scrollOffset + deltaY);
+  };
+
+  const onUpdate = (_time: number, deltaMs: number): void => {
+    if (activePointerId !== null || Math.abs(scrollVelocity) < SCROLL_INERTIA_MIN_SPEED) {
+      if (activePointerId === null) scrollVelocity = 0;
+      return;
+    }
+
+    const frameMs = Math.min(Math.max(0, deltaMs), 64);
+    const nextOffset = scrollOffset + (scrollVelocity * frameMs) / 1000;
+    const clampedOffset = Phaser.Math.Clamp(nextOffset, 0, maxScroll);
+    setScrollOffset(clampedOffset);
+
+    // An einer Kante gibt es keinen elastischen Overscroll. Der Nachlauf endet
+    // dort sauber, statt in jedem Frame gegen dieselbe Grenze zu druecken.
+    if (clampedOffset !== nextOffset) {
+      scrollVelocity = 0;
+      return;
+    }
+
+    const decay = Math.pow(SCROLL_INERTIA_DECAY_PER_FRAME, frameMs / (1000 / 60));
+    scrollVelocity *= decay;
+    if (Math.abs(scrollVelocity) < SCROLL_INERTIA_MIN_SPEED) scrollVelocity = 0;
   };
 
   scene.input.on('pointerdown', onPointerDown);
@@ -517,12 +575,14 @@ export function attachVerticalScroll(
   scene.input.on('pointerup', releasePointer);
   scene.input.on('pointerupoutside', releasePointer);
   scene.input.on('wheel', onWheel);
+  scene.events.on(Phaser.Scenes.Events.UPDATE, onUpdate);
   scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
     scene.input.off('pointerdown', onPointerDown);
     scene.input.off('pointermove', onPointerMove);
     scene.input.off('pointerup', releasePointer);
     scene.input.off('pointerupoutside', releasePointer);
     scene.input.off('wheel', onWheel);
+    scene.events.off(Phaser.Scenes.Events.UPDATE, onUpdate);
   });
 }
 
@@ -956,21 +1016,24 @@ export function floatingScore(
   y: number,
   label: string,
   color: number,
-  options: { bonus?: boolean } = {},
+  options: { bonus?: boolean; kind?: 'points' | 'xp'; intensity?: number } = {},
 ): void {
   const bonus = options.bonus ?? false;
+  const kind = options.kind ?? 'points';
+  const intensity = Phaser.Math.Clamp(options.intensity ?? 0, 0, 1);
+  const isXp = kind === 'xp';
   const text = scene.add
     .text(
       x,
       y,
       label,
       textStyle(
-        bonus ? FontSize.large : FontSize.body,
-        bonus ? '#ffd84d' : `#${color.toString(16).padStart(6, '0')}`,
+        bonus ? FontSize.large : isXp ? FontSize.small : FontSize.body,
+        bonus ? '#ffd84d' : isXp ? Palette.success : `#${color.toString(16).padStart(6, '0')}`,
         {
           fontStyle: 'bold',
           stroke: '#000000',
-          strokeThickness: bonus ? 7 : 5,
+          strokeThickness: bonus ? 7 : isXp ? 4 : 5,
         },
       ),
     )
@@ -978,7 +1041,9 @@ export function floatingScore(
     // Punktwerte muessen im mobilen Spielfeld auf einen Blick lesbar sein.
     // Der Wert startet schon gross genug, bevor die Aufwaertsanimation ihn
     // weiter hervorhebt - sonst war der erste Eindruck oft nur ein Flackern.
-    .setScale(bonus ? 0.72 : 0.96)
+    .setScale(
+      bonus ? 0.72 + intensity * 0.16 : isXp ? 0.72 + intensity * 0.1 : 0.96 + intensity * 0.14,
+    )
     .setDepth(Depth.FloatingScore);
 
   const bonusLabel = bonus
@@ -1008,7 +1073,7 @@ export function floatingScore(
 
   scene.tweens.add({
     targets: bonusLabel ? [text, bonusLabel] : text,
-    y: y - (bonus ? 105 : 90),
+    y: y - (bonus ? 105 : isXp ? 68 : 90),
     scale: 1,
     alpha: 0,
     duration: bonus ? 980 : 820,

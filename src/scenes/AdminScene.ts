@@ -47,6 +47,7 @@ import {
   createMenuLayout,
   createVignette,
   paintSafeAreaBackdrop,
+  attachVerticalScroll,
 } from '@/ui/widgets';
 
 export class AdminScene extends Phaser.Scene {
@@ -410,52 +411,13 @@ export class AdminScene extends Phaser.Scene {
     const camera = this.cameras.main;
     camera.setBounds(0, 0, GAME_WIDTH, GAME_HEIGHT + maxScroll);
     camera.setScroll(0, 0);
-
-    let activePointerId: number | null = null;
-    let pointerStartY = 0;
-    let scrollStart = 0;
-
-    const setScroll = (value: number): void => {
-      camera.setScroll(0, Phaser.Math.Clamp(value, 0, maxScroll));
-    };
-
-    const onPointerDown = (pointer: Phaser.Input.Pointer): void => {
-      if (activePointerId !== null) return;
-      if (pointer.y < PAGE_CONTENT_TOP || pointer.y > contentBottom) return;
-      activePointerId = pointer.id;
-      pointerStartY = pointer.y;
-      scrollStart = camera.scrollY;
-    };
-
-    const onPointerMove = (pointer: Phaser.Input.Pointer): void => {
-      if (pointer.id !== activePointerId) return;
-      setScroll(scrollStart - (pointer.y - pointerStartY));
-    };
-
-    const releasePointer = (pointer: Phaser.Input.Pointer): void => {
-      if (pointer.id === activePointerId) activePointerId = null;
-    };
-
-    const onWheel = (
-      _pointer: Phaser.Input.Pointer,
-      _gameObjects: Phaser.GameObjects.GameObject[],
-      _deltaX: number,
-      deltaY: number,
-    ): void => {
-      setScroll(camera.scrollY + deltaY);
-    };
-
-    this.input.on('pointerdown', onPointerDown);
-    this.input.on('pointermove', onPointerMove);
-    this.input.on('pointerup', releasePointer);
-    this.input.on('pointerupoutside', releasePointer);
-    this.input.on('wheel', onWheel);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.input.off('pointerdown', onPointerDown);
-      this.input.off('pointermove', onPointerMove);
-      this.input.off('pointerup', releasePointer);
-      this.input.off('pointerupoutside', releasePointer);
-      this.input.off('wheel', onWheel);
+    attachVerticalScroll(this, {
+      maxScroll,
+      dragZoneTop: PAGE_CONTENT_TOP,
+      dragZoneBottom: contentBottom,
+      onOffsetChange: (offset) => {
+        camera.setScroll(0, offset);
+      },
     });
   }
 
