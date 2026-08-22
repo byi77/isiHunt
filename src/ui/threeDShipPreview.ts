@@ -79,6 +79,8 @@ export class ThreeDShipPreview {
 
     if (this.model !== null && this.requestedAsset?.id === asset.id) {
       this.applyTint(this.model, tint);
+      this.canvas.style.display = 'block';
+      this.onAvailabilityChange(true);
       this.render();
       return;
     }
@@ -90,7 +92,7 @@ export class ThreeDShipPreview {
     if (!this.ready || this.model === null) return;
     this.rotation += deltaMs / 5000;
     this.model.rotation.y = this.rotation;
-    this.model.rotation.x = -0.18;
+    this.model.rotation.x = 0;
     this.render();
   }
 
@@ -133,8 +135,11 @@ export class ThreeDShipPreview {
       renderer.setClearColor(0x000000, 0);
 
       const scene = new THREE.Scene();
+      // Die OBJ-Modelle liegen flach in der X/Z-Ebene. Die Kamera blickt
+      // deshalb immer von oben entlang der Y-Achse herab (Birdseye-Ansicht).
       const camera = new THREE.PerspectiveCamera(28, this.width / this.height, 0.01, 100);
-      camera.position.set(0, 0.1, 3.4);
+      camera.position.set(0, 3.6, 0.01);
+      camera.up.set(0, 0, -1);
       camera.lookAt(0, 0, 0);
       scene.add(new THREE.AmbientLight(0xffffff, 1.5));
 
@@ -178,6 +183,7 @@ export class ThreeDShipPreview {
         this.model = model;
         this.fitModel(model);
         this.applyTint(model, this.requestedTint);
+        model.rotation.x = 0;
         this.scene?.add(model);
         this.canvas.style.display = 'block';
         this.onAvailabilityChange(true);

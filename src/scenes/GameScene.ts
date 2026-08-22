@@ -238,9 +238,17 @@ export class GameScene extends Phaser.Scene {
   };
 
   update(_time: number, delta: number): void {
-    if (this.phase !== 'running') return;
+    if (this.phase === 'ended') return;
 
     const dtSec = delta / 1000;
+
+    // Die Einblendung 3-2-1-LOS bleibt bestehen, darf aber nicht wie ein
+    // kaputter Touch-Start wirken. Bewegung ist bereits waehrend des Countdowns
+    // aktiv; Spawns, Timer und Wertung beginnen weiterhin erst mit `running`.
+    if (this.phase === 'countdown') {
+      this.updatePlayer(dtSec);
+      return;
+    }
 
     this.updatePlayer(dtSec);
     this.updateCombo(delta);

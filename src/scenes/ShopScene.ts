@@ -254,6 +254,10 @@ export class ShopScene extends Phaser.Scene {
         height: `${VORSCHAU_3D_HOEHE}px`,
       })
       .setDepth(KOPF_DEPTH + 1);
+    // Auch die Shop-Vorschau ist nur Darstellung. `ThreeDShipPreview` setzt
+    // das Canvas selbst auf none, Phaser wuerde den DOMElement-Wert beim
+    // Rendern aber sonst wieder auf `auto` setzen.
+    vorschau3dDom.pointerEvents = 'none';
     this.vorschau3d = new ThreeDShipPreview(
       vorschau3dDom.node as HTMLCanvasElement,
       VORSCHAU_3D_BREITE,

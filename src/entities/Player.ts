@@ -165,6 +165,11 @@ export class Player extends Phaser.GameObjects.Container {
       const dom = scene.add
         .dom(x, y, 'canvas', { width: '132px', height: '132px' })
         .setDepth(Depth.Player + 1);
+      // Phaser setzt DOMElement.pointerEvents standardmaessig auf `auto` und
+      // wuerde damit die Touchflaeche ueber dem Spielfeld abfangen. Das 3D-
+      // Overlay ist reine Darstellung und darf niemals die Jagdsteuerung
+      // blockieren.
+      dom.pointerEvents = 'none';
       this.threeDPreviewDom = dom;
       this.threeDPreview = new ThreeDShipPreview(
         dom.node as HTMLCanvasElement,
