@@ -87,6 +87,13 @@ ab statt Glueck.
 | **Gleiche Relikt-Abfolge** | Beide Spieler bekommen denselben Seed — dieselben Seltenheiten, an denselben Stellen, zur selben Sekunde. Sonst waere das Duell ein Wuerfelspiel darum, wer das legendaere Relikt geschenkt bekommt. |
 | **Keine Talente**          | Beide spielen mit den Grundwerten der Figur. Sonst haette der Geraetebesitzer einen Vorteil, den der Gast nicht ausgleichen kann.                                                                    |
 | **Keine Progression**      | Ein Duell vergibt weder XP noch Bestwerte noch Erfolge. Die Haelfte der Durchgaenge spielt jemand, dem der Spielstand nicht gehoert.                                                                 |
+| **Keine Kosmetik**         | Im Duell traegt niemand seine gekaufte Form, Farbe oder Aura. Sonst waere auf einen Blick zu sehen, wer gerade dran ist — der Vergleich soll am Spiel haengen, nicht am Guthaben.                    |
+
+**Die Kosmetik-Regel gilt nur dem Duell, nicht dem Tageslauf.** Sie steht hier,
+weil zwei Personen an _einem_ Geraet spielen. Der Tageslauf ist Einzelspiel:
+Verglichen wird ueber den gemeinsamen Seed, und eine Aura macht kein Relikt
+schneller. Wer eine Form gekauft hat, traegt sie dort. Talente und
+Rundenlaenge folgen weiterhin den Duell-Regeln.
 
 Die gleiche Abfolge ist technisch anspruchsvoller, als sie klingt: Der
 Zufallsgenerator muss **unabhaengig vom Spielverlauf** verbraucht werden, sonst

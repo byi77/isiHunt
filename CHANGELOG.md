@@ -139,11 +139,34 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Im Tageslauf fehlte die gekaufte Schiffsform.** Wer eine Form, Farbe oder
+  Aura besaß, spielte den Tageslauf trotzdem als neutrale Standardfigur.
+
+  Ursache war ein zu grob gefasstes `nonProgressionMode = mode !== 'solo'` in
+  `GameScene`: Es schaltete für jeden Nicht-Solo-Modus die gesamte Kosmetik ab.
+  Die Fairness-Regeln in `config/challenge.ts` begründen das aber ausdrücklich
+  für das **Duell** — zwei Personen an einem Gerät, wo die gekaufte Form nicht
+  verraten darf, wer gerade dran ist. Der Tageslauf ist Einzelspiel; verglichen
+  wird über den gemeinsamen Seed, nicht über das Aussehen.
+
+  Kosmetik hängt jetzt an einem eigenen `versteckeKosmetik`, das `daily`
+  ausnimmt. **Talente, Rundenlänge und Duell-Logik bleiben unverändert** — im
+  Bot-Duell trägt weiterhin niemand eine gekaufte Form.
+
+- **Der Shop-Kopf stand tiefer als jede andere Unterseite.** Zwischen der
+  Kopfzeile und der Panel-Oberkante blieb eine sichtbare Lücke: Das Panel begann
+  bei y=51, während `PAGE_CONTENT_TOP` (36) die gemeinsame Oberkante aller
+  Unterseiten ist. Der Shop hatte stattdessen ein frei gewähltes `VORSCHAU_Y`.
+
+  Die Position wird jetzt aus der Konstante abgeleitet statt gesetzt — damit
+  bleibt der Shop auch dann bündig, wenn sich die Kopfzeile einmal ändert.
+
 - **Die Sammlungs-Statistik ragte aus dem Shop-Panel heraus.** Die unterste
   Zeile ("NEU SEIT BESUCH … ZULETZT GEKAUFT …") sitzt bei y+110 und ist 17 px
-  hoch, reicht also bis 294,5. Die Panelkante lag bei 291 — die Zeile wurde von
-  der Rahmenlinie durchschnitten. Das Panel ist jetzt 250 statt 230 hoch; die
-  Zeile endet bei 296, das Panel bei 301, die Reiter beginnen bei 316.
+  hoch, reicht also 118,5 px unter die Panelmitte. Die 230er Panelkante endete
+  3,5 px darüber — die Zeile wurde von der Rahmenlinie durchschnitten. Das Panel
+  ist jetzt 250 hoch; die Zeile endet bei 281, das Panel bei 286, die Reiter
+  beginnen bei 316.
 
   **Die Playtest-Suiten sahen den Fehler nicht.** `screens` und `controls`
   liefen gruen: Sie pruefen Konsolenfehler, Knopfueberlappung und

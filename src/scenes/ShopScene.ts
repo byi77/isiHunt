@@ -65,6 +65,7 @@ import {
   createPanel,
   createVignette,
   createWorldBackdrop,
+  PAGE_CONTENT_TOP,
 } from '@/ui/widgets';
 
 type ShopTab = 'shapes' | 'colors' | 'auras';
@@ -81,8 +82,16 @@ type ScrollElement = Phaser.GameObjects.GameObject & { y: number; ausgangsY?: nu
 const LISTE_START = 430;
 /** Alles ueber der Liste - Vorschau und Reiter. */
 const KOPF_HOEHE = 380;
-/** Mittelpunkt des kompakten Vorschau-Panels. */
-const VORSCHAU_Y = 176;
+/** Hoehe des Vorschau-Panels. Siehe `buildVorschau` zur Herleitung. */
+const VORSCHAU_HOEHE = 250;
+/**
+ * Mittelpunkt des Vorschau-Panels.
+ *
+ * Abgeleitet aus `PAGE_CONTENT_TOP`, nicht frei gewaehlt: Alle Unterseiten
+ * setzen ihre erste Kartenkante dorthin. Der Shop stand mit einer festen 176
+ * um 15 px tiefer, was unter der Kopfzeile als sichtbare Luecke stehenblieb.
+ */
+const VORSCHAU_Y = PAGE_CONTENT_TOP + VORSCHAU_HOEHE / 2;
 /** Y-Position der drei Reiter unterhalb der Vorschau. */
 const REITER_Y = 345;
 /** Ueber `Depth.UI`, damit die Liste beim Scrollen darunter verschwindet. */
@@ -224,9 +233,8 @@ export class ShopScene extends Phaser.Scene {
    */
   private buildVorschau(weltAkzent: number): void {
     const save = SaveSystem.load();
-    // Die Kopfzone sitzt bewusst hoeher und kompakter. Die Panel-Oberkante
-    // liegt damit bei rund y=61 im Canvas (auf dem Geraet etwa bei Pixel 125),
-    // ohne den Safe-Area-Ticker zu beruehren.
+    // Die Panel-Oberkante liegt auf `PAGE_CONTENT_TOP` und damit auf derselben
+    // Linie wie das erste Modul jeder anderen Unterseite.
     const y = VORSCHAU_Y;
 
     // Voll deckende Flaeche unter dem Kopfbereich.
@@ -241,9 +249,10 @@ export class ShopScene extends Phaser.Scene {
       .setDepth(KOPF_DEPTH - 1);
 
     // Hoehe 250, nicht 230: Die unterste Statistikzeile sitzt bei y+110 und
-    // ist 17 px hoch, reicht also bis 294,5. Eine 230er Panelkante endete bei
-    // 291 - die Zeile lag mit ihrer Unterkante sichtbar darueber hinaus.
-    createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 100, 250, weltAkzent, {
+    // ist 17 px hoch, reicht also 118,5 px unter die Mitte. Eine 230er
+    // Panelkante endete 3,5 px darueber - die Zeile wurde vom Rahmen
+    // durchschnitten.
+    createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 100, VORSCHAU_HOEHE, weltAkzent, {
       alpha: 0.5,
     }).setDepth(KOPF_DEPTH);
 

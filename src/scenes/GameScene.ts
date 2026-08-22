@@ -138,6 +138,18 @@ export class GameScene extends Phaser.Scene {
     const nonProgressionMode = this.mode !== 'solo';
     this.stats = resolveStats(nonProgressionMode ? {} : save.talents);
 
+    // Kosmetik ist eine andere Frage als Spielvorteil.
+    //
+    // Die Fairness-Regeln in `config/challenge.ts` gelten dem Duell: zwei
+    // Personen an EINEM Geraet. Dort darf die gekaufte Form nicht verraten,
+    // wer gerade dran ist, und der Geraetebesitzer soll keinen Vorteil haben.
+    //
+    // Der Tageslauf ist Einzelspiel. Verglichen wird ueber den gemeinsamen
+    // Seed (Regel 1), nicht ueber das Aussehen - eine Aura macht kein Relikt
+    // schneller. Wer eine Form gekauft hat, soll sie deshalb auch hier tragen.
+    // Talente und Rundenlaenge bleiben davon unberuehrt.
+    const versteckeKosmetik = nonProgressionMode && this.mode !== 'daily';
+
     const challenge = nonProgressionMode ? ChallengeSystem.getState() : null;
     this.challenge = challenge;
     this.playerIndex = challenge ? ChallengeSystem.currentPlayerIndex() : 0;
@@ -176,17 +188,17 @@ export class GameScene extends Phaser.Scene {
       // Im Duell traegt jeder die Weltfarbe: Gekaufte Farben duerfen die
       // beiden Spieler nicht unterscheidbar machen, sonst wird aus dem
       // fairen Vergleich eine Frage des Guthabens (config/challenge.ts).
-      nonProgressionMode ? this.world.accent : shipTint(save, this.world.accent),
-      nonProgressionMode ? undefined : playerTextureForShape(save.shipShape),
-      nonProgressionMode ? 0xffffff : shipHullTint(save),
-      nonProgressionMode ? undefined : threeDAssetForId(save.shipShape),
+      versteckeKosmetik ? this.world.accent : shipTint(save, this.world.accent),
+      versteckeKosmetik ? undefined : playerTextureForShape(save.shipShape),
+      versteckeKosmetik ? 0xffffff : shipHullTint(save),
+      versteckeKosmetik ? undefined : threeDAssetForId(save.shipShape),
     );
     // Aus demselben Grund wie die Farbe: Im Duell traegt niemand eine Aura.
     // Eine flackernde Figur neben einer ruhigen waere auf einen Blick
     // zuzuordnen - der Vergleich soll am Spiel haengen, nicht am Guthaben.
     this.player.setAura(
-      nonProgressionMode ? null : shipAuraIndex(save),
-      nonProgressionMode ? undefined : shipAuraAssetId(save),
+      versteckeKosmetik ? null : shipAuraIndex(save),
+      versteckeKosmetik ? undefined : shipAuraAssetId(save),
     );
     this.player.setWorldInertia(this.world.modifier === 'inertia' ? WORLD_INERTIA_FACTOR : 1);
 
