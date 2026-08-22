@@ -63,8 +63,8 @@ dieselben Kauf-, Besitz-, Ausruestungs-, Sync- und Reset-Regeln wie die
 prozeduralen Formen.
 
 Die Reihenfolge und die vorhandenen IDs werden nicht neu nummeriert. Die neun
-3D-Modelle wurden am Ende angehaengt und belegen die Fallback-Indizes 101 bis
-109 in `shipShapes.ts`. Dadurch bleiben Shop, Run, Profil und Ergebnisansicht
+3D-Modelle stehen im Shop zuerst; ihre unveraenderten Fallback-Indizes 101 bis
+109 liegen weiterhin in `shipShapes.ts`. Dadurch bleiben Shop, Run, Profil und Ergebnisansicht
 auch ohne WebGL, bei Offline-Start oder bei einem fehlenden Modell benutzbar.
 
 ## Austauscharchitektur
@@ -94,15 +94,17 @@ Texturen, WebGL oder Modelle fallen auf die prozedurale Darstellung zurueck.
 Als Quelle ist der [OpenGameArt 3D Spaceships
 Pack](https://opengameart.org/content/3d-spaceships-pack) mit CC0-Angabe
 integriert. Der kleine Pack enthaelt neun OBJ-Modelle und passende MTL-Dateien.
-Die 3D-Dateien werden kontrolliert und lazy nur in der Shopvorschau geladen.
+Die 3D-Dateien werden kontrolliert und lazy fuer die Shopvorschau oder den
+laufenden Solo-Run geladen.
 `ThreeDShipPreview` nutzt eine kleine Three.js-Szene, setzt das Material mit
 der gewaehlten Farbe und dreht das Modell langsam.
-Der bestehende Phaser-2D-Pfad bleibt die produktive Darstellung fuer Player,
-Profil und Ergebnis. Fehlt WebGL, scheitert der OBJ-Download oder ist das
-Geraet zu alt, bleibt die jeweils passende 2D-Fallback-Silhouette sichtbar.
-Damit bleibt die 3D-Schicht austauschbar und beeinflusst weder Trefferlogik
-noch Gameplay-Performance. Ein anderes Modellpaket kann spaeter allein im
-3D-Provider und im Shopmanifest ersetzt werden.
+Der bestehende Phaser-2D-Pfad bleibt der sichere Fallback fuer Player, Profil
+und Ergebnis. Im Solo-Run wird das 3D-Modell als transparente DOM-Canvas-
+Schicht auf der Spielerposition gefuehrt; Hitbox, Bewegung, Aura und
+Trefferlogik bleiben Phaser-seitig. Fehlt WebGL, scheitert der OBJ-Download
+oder ist das Geraet zu alt, bleibt die jeweils passende 2D-Fallback-Silhouette
+sichtbar. Ein anderes Modellpaket kann spaeter allein im 3D-Provider und im
+Shopmanifest ersetzt werden.
 
 ## Abnahme
 

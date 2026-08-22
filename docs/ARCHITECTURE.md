@@ -597,10 +597,12 @@ externe Sprite-, Partikel- und 3D-Provider: der CC0-Surveyor liefert eine
 externe 2D-Form, die Prismaflut nutzt sechs CC0-Kenney-Flame-Frames als
 Overlay, und neun CC0-OBJ-Modelle stehen fuer die Shopvorschau bereit. Die
 3D-Modelle werden ueber `threeDAssetForId()` gefunden und von
-`ThreeDShipPreview` lazy geladen; Player, Profil und Ergebnis bleiben beim
-2D-Pfad. Besitz-IDs, Shopdaten, Save-Sync und Progressionsregeln bleiben
-davon unabhaengig. Fehlt ein Asset, WebGL oder die Ladeverbindung, bleibt die
-prozedurale Zeichnung aktiv; bei Reduced Motion wird ein Standbild verwendet.
+`ThreeDShipPreview` lazy geladen. Im Solo-Run liegt die Vorschau als
+transparente DOM-Canvas-Schicht auf der Phaser-Spielerposition; Profil und
+Ergebnis bleiben beim 2D-Pfad. Besitz-IDs, Shopdaten, Save-Sync,
+Trefferlogik und Progressionsregeln bleiben davon unabhaengig. Fehlt ein
+Asset, WebGL oder die Ladeverbindung, bleibt die prozedurale Zeichnung aktiv;
+bei Reduced Motion wird ein Standbild verwendet.
 
 **Die Farbe wird verschoben, nicht ersetzt.** Eine Aura, die den Rumpf durch
 den Farbkreis schickt, macht die gekaufte Farbe unsichtbar — der Spieler

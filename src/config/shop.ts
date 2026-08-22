@@ -835,7 +835,14 @@ const SHIP_SHAPES_REFERENCE: readonly ShipShapeDef[] = [
   },
 ];
 
-export const SHIP_SHAPES: readonly ShipShapeDef[] = SHIP_SHAPES_REFERENCE.map((shape) => ({
+// Die 3D-Piloten stehen im Shop bewusst ganz oben: Sie sind die aktuelle
+// visuelle Erweiterung und sollen nicht erst nach 100 2D-Eintraegen gefunden
+// werden. `skinIndex` und IDs bleiben unveraendert; nur die Shop-Reihenfolge
+// wird sortiert.
+export const SHIP_SHAPES: readonly ShipShapeDef[] = [
+  ...SHIP_SHAPES_REFERENCE.filter((shape) => shape.threeDAssetId !== undefined),
+  ...SHIP_SHAPES_REFERENCE.filter((shape) => shape.threeDAssetId === undefined),
+].map((shape) => ({
   ...shape,
   cost: balancedCoinCost(shape.cost),
 }));
@@ -1071,7 +1078,11 @@ export const DEFAULT_SHIP_COLOR: ShipColorId = 'world';
 export const DEFAULT_SHIP_AURA: ShipAuraId = 'none';
 
 export function getShipShape(id: string): ShipShapeDef {
-  return SHIP_SHAPES.find((shape) => shape.id === id) ?? SHIP_SHAPES[0]!;
+  return (
+    SHIP_SHAPES.find((shape) => shape.id === id) ??
+    SHIP_SHAPES.find((shape) => shape.id === DEFAULT_SHIP_SHAPE) ??
+    SHIP_SHAPES[0]!
+  );
 }
 
 export function getShipColor(id: string): ShipColorDef {

@@ -177,6 +177,7 @@ reproduzierbares Prüfergebnis vorliegt.
 9. `supabase/phase_2_13_daily_key_window.sql`
 10. `supabase/phase_2_14_balance_chain.sql`
 11. `supabase/phase_2_15_cosmetic_sync.sql`
+12. `supabase/phase_2_16_admin_boost_balance_anchor.sql`
 
 Die Dateien sind wiederholbar angelegt, trotzdem vor jedem Lauf prüfen, ob
 eine Migration bereits ausgeführt wurde. `cleanup_leaderboard.sql`,
@@ -1224,8 +1225,9 @@ Silhouetten, `cc0-scout` und neun CC0-3D-Piloten aus dem dokumentierten
 OpenGameArt-Schiffspack. Die Prismaflut nutzt sechs dokumentierte CC0-
 Aura-Frames. `EgoAssetRegistry` liefert externe Provider ueber stabile IDs;
 Shopvorschau, Player und Fallback verwenden dieselbe Zuordnung. Die 3D-
-Modelle werden in `ThreeDShipPreview` lazy und nur in der Shopvorschau geladen;
-bei WebGL-, Lade- oder Formatfehlern bleibt die 2D-Fallback-Silhouette aktiv.
+Modelle werden in `ThreeDShipPreview` lazy fuer Shopvorschau und Solo-Run
+geladen; bei WebGL-, Lade- oder Formatfehlern bleibt die 2D-Fallback-
+Silhouette aktiv. Hitbox und Gameplay bleiben unabhaengig vom Renderer.
 
 Mit „Ego-Modul“ ist die sichtbare Schiffsidentität gemeint: Formen aus
 `src/ui/shipShapes.ts`, Farben und Besitz aus `src/config/shop.ts`, Aura-

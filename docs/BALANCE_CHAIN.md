@@ -42,6 +42,11 @@ Kosmetikbesitz und Ausrüstung sowie den vollständigen Admin-Reset.
 Wenn `balance-data.json` geändert wurde, aktualisiert `npm run balance:sync`
 den JSON-Block der Migration automatisch.
 
+`supabase/phase_2_16_admin_boost_balance_anchor.sql` ersetzt den alten
+Admin-Boost-XP-Anker durch die aktuelle `balance_xp_for_level()`-Kette. Dadurch
+landet ein Boost auf dem angeforderten Ziellevel, auch wenn Balancewerte
+zwischenzeitlich geaendert wurden.
+
 ## Eingefrorene Baselines
 
 `src/config/balance.ts` enthält drei bewusst eingefrorene Bezugsgrößen:

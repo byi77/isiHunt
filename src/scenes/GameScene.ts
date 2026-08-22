@@ -51,6 +51,7 @@ import { ScoreSystem, trailTierForSeries } from '@/systems/ScoreSystem';
 import { SpawnSystem } from '@/systems/SpawnSystem';
 import { Depth } from '@/ui/depth';
 import { shipAuraAssetId, shipAuraIndex, shipHullTint, shipTint } from '@/config/shop';
+import { threeDAssetForId } from '@/ui/egoAssets';
 import { planetTextureForVariant, playerTextureForShape } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import {
@@ -152,6 +153,7 @@ export class GameScene extends Phaser.Scene {
       nonProgressionMode ? this.world.accent : shipTint(save, this.world.accent),
       nonProgressionMode ? undefined : playerTextureForShape(save.shipShape),
       nonProgressionMode ? 0xffffff : shipHullTint(save),
+      nonProgressionMode ? undefined : threeDAssetForId(save.shipShape),
     );
     // Aus demselben Grund wie die Farbe: Im Duell traegt niemand eine Aura.
     // Eine flackernde Figur neben einer ruhigen waere auf einen Blick
@@ -259,6 +261,7 @@ export class GameScene extends Phaser.Scene {
     const direction = this.input_.getDirection(this.player.x, this.player.y);
     this.player.move(dtSec, direction, this.playfield);
     this.playerPosition.set(this.player.x, this.player.y);
+    this.player.updateThreeD(dtSec * 1000);
   }
 
   private updateCombo(deltaMs: number): void {

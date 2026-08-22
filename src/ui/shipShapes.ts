@@ -488,10 +488,11 @@ function stab(g: G, kopfArt: 'stern' | 'kugel' | 'zacken'): void {
 }
 
 /**
- * Alle Zeichnungen, in derselben Reihenfolge wie `SHIP_SHAPES`.
+ * Alle Zeichnungen, ueber den stabilen `skinIndex` aus `SHIP_SHAPES` adressiert.
  *
- * Der Index ist der Vertrag zwischen Konfiguration und Zeichnung. Neue Formen
- * werden **hinten** angehaengt, damit gekaufte Formen ihre Zuordnung behalten.
+ * Der Index ist der Vertrag zwischen Konfiguration und Zeichnung. Die
+ * Anzeigereihenfolge im Shop darf sich aendern; neue Zeichnungen werden
+ * **hinten** angehaengt, damit gekaufte Formen ihre Zuordnung behalten.
  */
 export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
   // ---- Raumjäger --------------------------------------------------------

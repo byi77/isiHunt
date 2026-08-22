@@ -17,6 +17,8 @@ import {
   EXPECTED_POINTS_PER_CATCH,
   EXPECTED_XP_PER_CATCH,
   TALENT_COSTS,
+  totalXpForLevel,
+  xpForLevel,
 } from '@/config/balance';
 import { RARITIES } from '@/config/rarities';
 import {
@@ -61,6 +63,12 @@ describe('Phase-5-Balance', () => {
     expect(BALANCE_SNAPSHOT.runsToMaxLevel).toBeLessThan(600);
     expect(BALANCE_SNAPSHOT.runsToMaxTalents).toBeGreaterThan(200);
     expect(TALENT_COSTS).toEqual([250, 350, 500, 650, 850]);
+  });
+
+  it('verwendet fuer Levelanker dieselbe aktuelle XP-Kurve', () => {
+    expect(totalXpForLevel(1)).toBe(0);
+    expect(totalXpForLevel(4)).toBe(xpForLevel(1) + xpForLevel(2) + xpForLevel(3));
+    expect(totalXpForLevel(MAX_LEVEL)).toBe(BALANCE_SNAPSHOT.xpToMaxLevel);
   });
 
   it('laesst die ersten drei Welten ohne Zeitverlust-Hindernisse', () => {

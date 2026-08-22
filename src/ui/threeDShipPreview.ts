@@ -9,8 +9,10 @@ import type { Ego3DAsset } from '@/ui/egoAssets';
  *
  * Three.js und die OBJ-Datei werden erst geladen, wenn wirklich eine 3D-Form
  * angeprobt wird. Der Game-Run bleibt damit beim bestehenden Phaser-2D-Pfad;
- * ein fehlendes WebGL, ein langsames Netz oder ein kaputtes Modell blendet nur
- * die Preview aus und laesst die 2D-Fallback-Silhouette sichtbar.
+ * Im Solo-Run wird dieselbe Schicht als optionale Spielerdarstellung genutzt;
+ * Hitbox, Bewegung und Gameplay bleiben in Phaser. Ein fehlendes WebGL, ein
+ * langsames Netz oder ein kaputtes Modell blendet nur die 3D-Schicht aus und
+ * laesst die 2D-Fallback-Silhouette sichtbar.
  */
 export class ThreeDShipPreview {
   private readonly canvas: HTMLCanvasElement;

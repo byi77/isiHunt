@@ -27,7 +27,7 @@ import {
 } from '@/config/GameConfig';
 import type { PlayerStats } from '@/config/talents';
 import { Depth } from '@/ui/depth';
-import { auraAssetForId } from '@/ui/egoAssets';
+import { auraAssetForId, type Ego3DAsset } from '@/ui/egoAssets';
 import {
   applyTintShift,
   SHIP_ANIMATIONS,
@@ -37,6 +37,7 @@ import {
 import { TextureKey } from '@/ui/textures';
 import type { TextureKeyValue } from '@/ui/textures';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
+import { ThreeDShipPreview } from '@/ui/threeDShipPreview';
 
 /**
  * Wie lange der Fangimpuls den Schein behaelt, bevor die Aura ihn
@@ -59,6 +60,8 @@ export class Player extends Phaser.GameObjects.Container {
   private readonly core: Phaser.GameObjects.Image;
   private readonly halo: Phaser.GameObjects.Image;
   private readonly aura: Phaser.GameObjects.Image;
+  private readonly threeDPreview: ThreeDShipPreview | null = null;
+  private readonly threeDPreviewDom: Phaser.GameObjects.DOMElement | null = null;
   private readonly trail: Phaser.GameObjects.Particles.ParticleEmitter;
   private readonly velocity = new Phaser.Math.Vector2();
   private slowRemainingMs = 0;
@@ -131,6 +134,8 @@ export class Player extends Phaser.GameObjects.Container {
     textureKey: TextureKeyValue = TextureKey.PlayerCore,
     /** Rumpffarbe. Standard weiss - siehe `shipHullTint()`. */
     hullColor: number = 0xffffff,
+    /** Optionales 3D-Modell fuer die echte Jagd; 2D bleibt der Fallback. */
+    threeDAsset: Ego3DAsset | undefined = undefined,
   ) {
     super(scene, x, y);
     this.accentColor = accentColor;
@@ -155,6 +160,20 @@ export class Player extends Phaser.GameObjects.Container {
     this.add([this.aura, this.halo, this.core]);
     this.setDepth(Depth.Player);
     scene.add.existing(this);
+
+    if (threeDAsset !== undefined) {
+      const dom = scene.add
+        .dom(x, y, 'canvas', { width: '132px', height: '132px' })
+        .setDepth(Depth.Player + 1);
+      this.threeDPreviewDom = dom;
+      this.threeDPreview = new ThreeDShipPreview(
+        dom.node as HTMLCanvasElement,
+        132,
+        132,
+        (available) => this.core.setVisible(!available),
+      );
+      this.threeDPreview.setModel(threeDAsset, hullColor);
+    }
 
     // Spur: eigener Emitter im Weltkoordinatensystem, NICHT im Container.
     // Partikel im Container wuerden mit der Figur mitwandern - eine Spur muss
@@ -216,6 +235,13 @@ export class Player extends Phaser.GameObjects.Container {
 
   setWorldInertia(factor: number): void {
     this.inertiaFactor = Phaser.Math.Clamp(factor, 0.35, 1);
+  }
+
+  /** Haelt die optionale 3D-Darstellung auf der Phaser-Spielerposition. */
+  updateThreeD(deltaMs: number): void {
+    if (this.threeDPreview === null) return;
+    this.threeDPreviewDom?.setPosition(this.x, this.y);
+    this.threeDPreview.update(deltaMs);
   }
 
   applySlow(durationMs: number, factor = 0.55): void {
@@ -551,6 +577,8 @@ export class Player extends Phaser.GameObjects.Container {
    * mit zerstoert - ohne dieses Override ueberlebt die Spur den Run.
    */
   override destroy(fromScene?: boolean): void {
+    this.threeDPreview?.destroy();
+    this.threeDPreviewDom?.destroy();
     this.trail.destroy();
     this.trailGlowLine.destroy();
     this.trailLine.destroy();

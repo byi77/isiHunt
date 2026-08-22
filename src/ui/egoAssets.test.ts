@@ -32,6 +32,7 @@ describe('Ego-Asset-Registry', () => {
   });
 
   it('registriert alle neun CC0-3D-Modelle mit einem sicheren OBJ-Fallback', () => {
+    expect(SHIP_SHAPES.slice(0, 9).every((shape) => shape.threeDAssetId !== undefined)).toBe(true);
     for (let number = 1; number <= 9; number++) {
       const asset = threeDAssetForId(`cc0-3d-ship-${number}`);
       expect(asset?.format).toBe('obj');

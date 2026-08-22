@@ -112,6 +112,21 @@ export function xpForLevel(level: number): number {
   return xpForRuns(runs);
 }
 
+/**
+ * Gesamt-XP, die fuer den Beginn eines Levels erforderlich sind.
+ *
+ * Der Admin-Boost im Backend verwendet denselben Anker in SQL. Dadurch bleibt
+ * der lokale Vergleich von Spielstaenden auch nach einer Balance-Aenderung
+ * konsistent mit dem serverseitig gesetzten Ziellevel.
+ */
+export function totalXpForLevel(level: number): number {
+  const targetLevel = Math.max(1, Math.min(BALANCE.progression.maxLevel, Math.floor(level)));
+  return Array.from({ length: targetLevel - 1 }, (_, index) => xpForLevel(index + 1)).reduce(
+    (sum, xp) => sum + xp,
+    0,
+  );
+}
+
 export const MAX_LEVEL = BALANCE.progression.maxLevel;
 export const XP_PER_RUN_REFERENCE = xpForRuns(1);
 export const XP_GLOBAL_MULTIPLIER = BALANCE.progression.xp.globalMultiplier;
@@ -179,9 +194,7 @@ export interface BalanceSnapshot {
 }
 
 export function getBalanceSnapshot(): BalanceSnapshot {
-  const xpToMaxLevel = Array.from({ length: MAX_LEVEL - 1 }, (_, index) =>
-    xpForLevel(index + 1),
-  ).reduce((sum, xp) => sum + xp, 0);
+  const xpToMaxLevel = totalXpForLevel(MAX_LEVEL);
   const totalTalentCost = Object.values(BALANCE.talents.maxRanks).reduce(
     (sum, maxRank) => sum + TALENT_COSTS.slice(0, maxRank).reduce((costs, cost) => costs + cost, 0),
     0,

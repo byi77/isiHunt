@@ -31,7 +31,7 @@ import {
   SYNC_CODE_ALPHABET,
   SYNC_CODE_LENGTH,
 } from '@/config/backend';
-import { xpForLevel } from '@/config/GameConfig';
+import { totalXpForLevel } from '@/config/balance';
 import * as DebugSystem from '@/systems/DebugSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import type { ProgressEvent, SaveData } from '@/types';
@@ -474,9 +474,7 @@ export function isLocalAhead(local: SaveData, remote: RemoteSave): boolean {
 }
 
 function totalXpForSave(save: SaveData): number {
-  let total = save.xp;
-  for (let level = 1; level < save.level; level++) total += xpForLevel(level);
-  return total;
+  return totalXpForLevel(save.level) + save.xp;
 }
 
 // --- Client ------------------------------------------------------------------

@@ -87,6 +87,8 @@ const KARTE_HOEHE = 96;
 const KARTE_ABSTAND = 12;
 /** Breite des Kauf-/Anziehen-Knopfs am rechten Kartenrand. */
 const KNOPF_BREITE = 150;
+const VORSCHAU_3D_BREITE = 260;
+const VORSCHAU_3D_HOEHE = 140;
 
 export class ShopScene extends Phaser.Scene {
   private tab: ShopTab = 'shapes';
@@ -156,6 +158,18 @@ export class ShopScene extends Phaser.Scene {
     const save = SaveSystem.load();
     const world = getWorld(save.lastWorldId);
 
+    // 3D-Piloten sind im Formen-Reiter sofort sichtbar: Wer den Shop oeffnet,
+    // soll die neue Vorschau vor dem Kauf sehen koennen. Ist bereits ein
+    // 3D-Pilot ausgeruestet, bleibt natuerlich dieser die Vorschau.
+    const erster3DShape = SHIP_SHAPES.find((shape) => shape.threeDAssetId !== undefined);
+    if (
+      this.tab === 'shapes' &&
+      this.anprobeShape === null &&
+      getShipShape(save.shipShape).threeDAssetId === undefined
+    ) {
+      this.anprobeShape = erster3DShape?.id ?? null;
+    }
+
     createWorldBackdrop(
       this,
       GAME_WIDTH,
@@ -204,7 +218,9 @@ export class ShopScene extends Phaser.Scene {
    */
   private buildVorschau(weltAkzent: number): void {
     const save = SaveSystem.load();
-    const y = 250;
+    // Die Kopfzone sitzt oberhalb der Reiter; der alte Mittelpunkt 250 liess
+    // die Coins und Sammlungshinweise sichtbar nach unten wegkippen.
+    const y = 210;
 
     // Voll deckende Flaeche unter dem Kopfbereich.
     //
@@ -233,15 +249,15 @@ export class ShopScene extends Phaser.Scene {
       .setDepth(KOPF_DEPTH);
 
     const vorschau3dDom = this.add
-      .dom(GAME_WIDTH / 2, y - 30, 'canvas', {
-        width: '260px',
-        height: '180px',
+      .dom(GAME_WIDTH / 2, y - 45, 'canvas', {
+        width: `${VORSCHAU_3D_BREITE}px`,
+        height: `${VORSCHAU_3D_HOEHE}px`,
       })
       .setDepth(KOPF_DEPTH + 1);
     this.vorschau3d = new ThreeDShipPreview(
       vorschau3dDom.node as HTMLCanvasElement,
-      260,
-      180,
+      VORSCHAU_3D_BREITE,
+      VORSCHAU_3D_HOEHE,
       (available) => this.vorschauBild.setVisible(!available),
     );
 
@@ -523,6 +539,7 @@ export class ShopScene extends Phaser.Scene {
         // an den Anfang, und wer weit unten kauft, verliert seine Stelle.
         this.scene.restart({
           tab: this.tab,
+          anprobeShape: this.anprobeShape,
           anprobeColor: this.anprobeColor,
           anprobeAura: this.anprobeAura,
           scrollOffset: this.scrollOffset,
