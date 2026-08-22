@@ -202,7 +202,7 @@ export class Player extends Phaser.GameObjects.Container {
 
     if (threeDAsset !== undefined) {
       const dom = scene.add
-        .dom(x, y, 'canvas', { width: '132px', height: '132px' })
+        .dom(x, y, 'div', { width: '132px', height: '132px' })
         .setDepth(Depth.Player + 1);
       // Phaser setzt DOMElement.pointerEvents standardmaessig auf `auto` und
       // wuerde damit die Touchflaeche ueber dem Spielfeld abfangen. Das 3D-
@@ -210,18 +210,13 @@ export class Player extends Phaser.GameObjects.Container {
       // blockieren.
       dom.pointerEvents = 'none';
       this.threeDPreviewDom = dom;
-      this.threeDPreview = new ThreeDShipPreview(
-        dom.node as HTMLCanvasElement,
-        132,
-        132,
-        (available) => {
-          // Das Canvas wird von Phaser als DOMElement verwaltet. Die
-          // CSS-Sichtbarkeit allein kann beim naechsten Render-Frame wieder
-          // ueberschrieben werden; deshalb muss auch der Wrapper wechseln.
-          dom.setVisible(available);
-          this.core.setVisible(!available);
-        },
-      );
+      this.threeDPreview = new ThreeDShipPreview(dom.node as HTMLElement, 132, 132, (available) => {
+        // Das Canvas wird von Phaser als DOMElement verwaltet. Die
+        // CSS-Sichtbarkeit allein kann beim naechsten Render-Frame wieder
+        // ueberschrieben werden; deshalb muss auch der Wrapper wechseln.
+        dom.setVisible(available);
+        this.core.setVisible(!available);
+      });
       this.threeDPreview.setModel(threeDAsset, hullColor);
     }
 
@@ -339,7 +334,7 @@ export class Player extends Phaser.GameObjects.Container {
 
     const magnetRatio = talentRankRatio(this.stats, 'magnetism');
     const magnetRank = this.stats.talentRanks.magnetism;
-    const fieldAlpha = TALENT_MAGNET_FIELD_ALPHA * (0.86 + pulse * 0.14) + magnetRatio * 0.16;
+    const fieldAlpha = TALENT_MAGNET_FIELD_ALPHA * (0.92 + pulse * 0.08) + magnetRatio * 0.2;
     this.magnetField.lineStyle(
       TALENT_MAGNET_FIELD_WIDTH + magnetRatio * 2,
       this.accentColor,
@@ -349,7 +344,11 @@ export class Player extends Phaser.GameObjects.Container {
     const fieldRings = Math.max(1, magnetRank);
     for (let ring = 1; ring <= fieldRings; ring += 1) {
       const ringRatio = ring / (fieldRings + 1);
-      this.magnetField.lineStyle(2, this.accentColor, fieldAlpha * (0.3 + ringRatio * 0.22));
+      this.magnetField.lineStyle(
+        2.5 + magnetRatio * 1.5,
+        this.accentColor,
+        fieldAlpha * (0.4 + ringRatio * 0.24),
+      );
       this.magnetField.strokeCircle(
         this.x,
         this.y,
@@ -365,7 +364,7 @@ export class Player extends Phaser.GameObjects.Container {
       }))
       .filter(({ distance }) => distance > 1 && distance < this.stats.magnetRadius)
       .sort((left, right) => left.distance - right.distance)
-      .slice(0, Math.min(TALENT_MAGNET_MAX_LINES, 2 + magnetRank));
+      .slice(0, Math.min(TALENT_MAGNET_MAX_LINES, 3 + magnetRank * 2));
 
     for (const { target, distance } of candidates) {
       const dx = target.x - this.x;
@@ -380,7 +379,11 @@ export class Player extends Phaser.GameObjects.Container {
         TALENT_MAGNET_LINE_ALPHA,
       );
 
-      this.magnetField.lineStyle(TALENT_MAGNET_LINE_WIDTH, this.accentColor, alpha);
+      this.magnetField.lineStyle(
+        TALENT_MAGNET_LINE_WIDTH + magnetRatio * 2,
+        this.accentColor,
+        Math.min(1, alpha + magnetRatio * 0.18),
+      );
       this.magnetField.lineBetween(
         this.x + nx * startOffset,
         this.y + ny * startOffset,

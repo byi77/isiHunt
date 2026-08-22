@@ -6,6 +6,7 @@
 
 import {
   COMBO_GRACE_MS,
+  MAGNET_PULL_SPEED,
   PLAYER_BASE_COLLECT_RADIUS,
   PLAYER_BASE_SPEED,
   RUN_DURATION_MS,
@@ -34,49 +35,49 @@ export const TALENTS: readonly TalentDef[] = [
     name: 'Reichweite',
     description: 'Vergrößert den Radius, in dem du Relikte einsammelst.',
     maxRank: 5,
-    perRank: '+6 Radius',
+    perRank: '+12 Radius',
   },
   {
     id: 'swiftness',
     name: 'Flinkheit',
     description: 'Deine Figur bewegt sich schneller.',
     maxRank: 5,
-    perRank: '+5% Tempo',
+    perRank: '+8% Tempo',
   },
   {
     id: 'magnetism',
     name: 'Magnetismus',
     description: 'Relikte in der Nähe werden zu dir gezogen.',
     maxRank: 4,
-    perRank: '+35 Sogreichweite',
+    perRank: '+75 Sogreichweite',
   },
   {
     id: 'endurance',
     name: 'Ausdauer',
     description: 'Verlängert die Dauer eines Runs.',
     maxRank: 4,
-    perRank: '+3 Sekunden',
+    perRank: '+6 Sekunden',
   },
   {
     id: 'focus',
     name: 'Fokus',
     description: 'Deine Combo hält länger, bevor sie zerfällt.',
     maxRank: 4,
-    perRank: '+150 ms Combo-Fenster',
+    perRank: '+300 ms Combo-Fenster',
   },
   {
     id: 'insight',
     name: 'Erkenntnis',
     description: 'Du erhältst mehr Erfahrung pro Relikt.',
     maxRank: 5,
-    perRank: '+5% XP',
+    perRank: '+10% XP',
   },
   {
     id: 'fortune',
     name: 'Gunst',
     description: 'Du erhältst mehr Punkte pro Relikt.',
     maxRank: 5,
-    perRank: '+5% Punkte',
+    perRank: '+10% Punkte',
   },
 ];
 
@@ -106,6 +107,7 @@ export interface PlayerStats {
   readonly moveSpeed: number;
   readonly collectRadius: number;
   readonly magnetRadius: number;
+  readonly magnetPullSpeed: number;
   readonly runDurationMs: number;
   readonly comboGraceMs: number;
   readonly xpMultiplier: number;
@@ -132,11 +134,18 @@ export function resolveStats(ranks: TalentRanks): PlayerStats {
 
   return {
     talentRanks,
-    collectRadius: PLAYER_BASE_COLLECT_RADIUS + talentRanks.reach * 6,
-    moveSpeed: PLAYER_BASE_SPEED * (1 + talentRanks.swiftness * 0.05),
-    magnetRadius: talentRanks.magnetism * 35,
-    runDurationMs: RUN_DURATION_MS + talentRanks.endurance * 3000,
-    comboGraceMs: COMBO_GRACE_MS + talentRanks.focus * 150,
+    collectRadius:
+      PLAYER_BASE_COLLECT_RADIUS + talentRanks.reach * BALANCE.talents.reachRadiusPerRank,
+    moveSpeed:
+      PLAYER_BASE_SPEED * (1 + talentRanks.swiftness * BALANCE.talents.swiftnessSpeedPerRank),
+    magnetRadius: talentRanks.magnetism * BALANCE.talents.magnetRadiusPerRank,
+    magnetPullSpeed:
+      talentRanks.magnetism > 0
+        ? MAGNET_PULL_SPEED * (1 + talentRanks.magnetism * BALANCE.talents.magnetPullSpeedPerRank)
+        : 0,
+    runDurationMs:
+      RUN_DURATION_MS + talentRanks.endurance * BALANCE.talents.enduranceSecondsPerRank * 1000,
+    comboGraceMs: COMBO_GRACE_MS + talentRanks.focus * BALANCE.talents.focusComboMsPerRank,
     xpMultiplier: 1 + talentRanks.insight * BALANCE.talents.insightXpPerRank,
     scoreMultiplier: 1 + talentRanks.fortune * BALANCE.talents.fortuneScorePerRank,
   };

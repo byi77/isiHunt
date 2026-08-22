@@ -1,4 +1,4 @@
-import type { Group, Mesh, Object3D, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
+import type { Group, Mesh, Object3D, OrthographicCamera, Scene, WebGLRenderer } from 'three';
 import type { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import type * as ThreeRuntime from 'three';
 
@@ -15,6 +15,7 @@ import type { Ego3DAsset } from '@/ui/egoAssets';
  * laesst die 2D-Fallback-Silhouette sichtbar.
  */
 export class ThreeDShipPreview {
+  private readonly host: HTMLElement;
   private readonly canvas: HTMLCanvasElement;
   private readonly width: number;
   private readonly height: number;
@@ -22,7 +23,7 @@ export class ThreeDShipPreview {
   private runtime: typeof ThreeRuntime | null = null;
   private renderer: WebGLRenderer | null = null;
   private scene: Scene | null = null;
-  private camera: PerspectiveCamera | null = null;
+  private camera: OrthographicCamera | null = null;
   private loader: OBJLoader | null = null;
   private model: Group | null = null;
   private requestedAsset: Ego3DAsset | undefined;
@@ -35,15 +36,22 @@ export class ThreeDShipPreview {
   private initialization: Promise<void> | null = null;
 
   constructor(
-    canvas: HTMLCanvasElement,
+    host: HTMLElement,
     width = 260,
     height = 180,
     onAvailabilityChange: (available: boolean) => void = () => undefined,
   ) {
-    this.canvas = canvas;
+    this.host = host;
+    this.canvas = document.createElement('canvas');
+    this.host.replaceChildren(this.canvas);
     this.width = width;
     this.height = height;
     this.onAvailabilityChange = onAvailabilityChange;
+    this.host.style.width = `${width}px`;
+    this.host.style.height = `${height}px`;
+    this.host.style.overflow = 'hidden';
+    this.host.style.background = 'transparent';
+    this.host.style.pointerEvents = 'none';
     this.canvas.width = width;
     this.canvas.height = height;
     this.canvas.style.width = `${width}px`;
@@ -114,6 +122,7 @@ export class ThreeDShipPreview {
     this.runtime = null;
     this.ready = false;
     this.initialization = null;
+    this.canvas.remove();
     this.canvas.style.display = 'none';
     this.onAvailabilityChange(false);
   }
@@ -136,6 +145,10 @@ export class ThreeDShipPreview {
         antialias: true,
         powerPreference: 'low-power',
       });
+      renderer.domElement.style.width = `${this.width}px`;
+      renderer.domElement.style.height = `${this.height}px`;
+      renderer.domElement.style.display = 'block';
+      renderer.domElement.style.pointerEvents = 'none';
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
       renderer.setSize(this.width, this.height, false);
       renderer.setClearColor(0x000000, 0);
@@ -143,8 +156,21 @@ export class ThreeDShipPreview {
       const scene = new THREE.Scene();
       // Die OBJ-Modelle liegen flach in der X/Z-Ebene. Die Kamera blickt
       // deshalb immer von oben entlang der Y-Achse herab (Birdseye-Ansicht).
-      const camera = new THREE.PerspectiveCamera(28, this.width / this.height, 0.01, 100);
-      camera.position.set(0, 3.6, 0.01);
+      // Orthografisch statt perspektivisch: Die Schiffe sollen wie im Spiel
+      // als klare Draufsicht gelesen werden. Damit bleibt die Silhouette bei
+      // jedem Modellwechsel gleich gross und die langen Orbital-01-bis-03-
+      // Rumpfflaechen verschwinden nicht durch eine schräge Perspektive.
+      const viewHeight = 2.2;
+      const viewWidth = viewHeight * (this.width / this.height);
+      const camera = new THREE.OrthographicCamera(
+        -viewWidth / 2,
+        viewWidth / 2,
+        viewHeight / 2,
+        -viewHeight / 2,
+        0.01,
+        100,
+      );
+      camera.position.set(0, 4, 0);
       camera.up.set(0, 0, -1);
       camera.lookAt(0, 0, 0);
       scene.add(new THREE.AmbientLight(0xffffff, 1.5));
@@ -212,12 +238,14 @@ export class ThreeDShipPreview {
 
   private fitModel(model: Group): void {
     if (this.runtime === null) return;
+    model.updateMatrixWorld(true);
     const box = new this.runtime.Box3().setFromObject(model);
     const size = box.getSize(new this.runtime.Vector3());
     const largest = Math.max(size.x, size.y, size.z);
     if (largest <= 0) return;
 
-    model.scale.setScalar(1.55 / largest);
+    model.scale.setScalar(1.5 / largest);
+    model.updateMatrixWorld(true);
     const centered = new this.runtime.Box3()
       .setFromObject(model)
       .getCenter(new this.runtime.Vector3());
@@ -229,16 +257,29 @@ export class ThreeDShipPreview {
     model.traverse((object) => {
       const mesh = object as Mesh;
       if (!mesh.isMesh) return;
-      const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
-      mesh.material = materials.map((material) => {
+      const originalMaterial = mesh.material;
+      const materials = Array.isArray(originalMaterial) ? originalMaterial : [originalMaterial];
+      const tintedMaterials = materials.map((material) => {
         material.dispose();
         return new this.runtime!.MeshStandardMaterial({
           color: tint,
+          emissive: tint,
+          emissiveIntensity: 0.12,
           roughness: 0.46,
           metalness: 0.28,
           flatShading: true,
+          side: this.runtime!.DoubleSide,
         });
       });
+      // Die OBJ-Schiffe bestehen jeweils aus einer Geometrie ohne Gruppen.
+      // Ein Einzelelement muss deshalb ein einzelnes Material behalten:
+      // Three.js wuerde ein Material-Array nur an Geometrie-Gruppen binden
+      // und die Orbital-01-bis-03-Meshes dann komplett ueberspringen.
+      if (Array.isArray(originalMaterial)) {
+        mesh.material = tintedMaterials;
+      } else if (tintedMaterials[0] !== undefined) {
+        mesh.material = tintedMaterials[0];
+      }
     });
   }
 

@@ -145,6 +145,7 @@ export class Collectible extends Phaser.GameObjects.Container {
     bounds: Phaser.Geom.Rectangle,
     magnetSource: Phaser.Math.Vector2 | null,
     magnetRadius: number,
+    magnetPullSpeed = MAGNET_PULL_SPEED,
   ): void {
     if (this.collected) return;
 
@@ -158,9 +159,10 @@ export class Collectible extends Phaser.GameObjects.Container {
       const distance = Math.hypot(dx, dy);
 
       if (distance > 1 && distance < magnetRadius) {
-        // Sog waechst je naeher die Figur ist.
-        magnetInfluence = 1 - distance / magnetRadius;
-        const pull = magnetInfluence * MAGNET_PULL_SPEED;
+        // Der Sog soll schon am aeusseren Rand spuerbar einsetzen. Die
+        // Kurve wird zur Figur hin staerker, ohne am Rand abrupt zu springen.
+        magnetInfluence = Math.pow(1 - distance / magnetRadius, 0.7);
+        const pull = magnetInfluence * magnetPullSpeed;
         this.x += (dx / distance) * pull * dtSec;
         this.y += (dy / distance) * pull * dtSec;
         this.drawMagnetVisual(dx / distance, dy / distance, distance, magnetInfluence);

@@ -73,8 +73,14 @@
     }
   },
   "talents": {
-    "insightXpPerRank": 0.05,
-    "fortuneScorePerRank": 0.05,
+    "reachRadiusPerRank": 12,
+    "swiftnessSpeedPerRank": 0.08,
+    "magnetRadiusPerRank": 75,
+    "magnetPullSpeedPerRank": 0.35,
+    "enduranceSecondsPerRank": 6,
+    "focusComboMsPerRank": 300,
+    "insightXpPerRank": 0.1,
+    "fortuneScorePerRank": 0.1,
     "maxRanks": {
       "reach": 5,
       "swiftness": 5,

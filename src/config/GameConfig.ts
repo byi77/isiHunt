@@ -113,13 +113,13 @@ export const TALENT_REACH_RING_ALPHA = 0.72;
 /** Breite des Magnetfeldrings. */
 export const TALENT_MAGNET_FIELD_WIDTH = 4;
 /** Transparenz des Magnetfeldrings. */
-export const TALENT_MAGNET_FIELD_ALPHA = 0.46;
+export const TALENT_MAGNET_FIELD_ALPHA = 0.58;
 /** Maximale Zahl gleichzeitig gezeichneter Soglinien. */
-export const TALENT_MAGNET_MAX_LINES = 7;
+export const TALENT_MAGNET_MAX_LINES = 12;
 /** Breite einer einzelnen Soglinie. */
-export const TALENT_MAGNET_LINE_WIDTH = 3;
+export const TALENT_MAGNET_LINE_WIDTH = 4;
 /** Transparenz einer Soglinie bei maximaler Naehe. */
-export const TALENT_MAGNET_LINE_ALPHA = 0.78;
+export const TALENT_MAGNET_LINE_ALPHA = 0.9;
 /** Kleinster Abstand zum Schiff, damit Linien nicht unter dem Rumpf starten. */
 export const TALENT_MAGNET_LINE_START_OFFSET = 28;
 /** Breite der sichtbaren Sogstreifen direkt am Relikt. */

@@ -319,7 +319,14 @@ export class GameScene extends Phaser.Scene {
 
       if (orb.isCollected) continue;
 
-      orb.tick(dtSec, deltaMs, this.playfield, magnetSource, this.stats.magnetRadius);
+      orb.tick(
+        dtSec,
+        deltaMs,
+        this.playfield,
+        magnetSource,
+        this.stats.magnetRadius,
+        this.stats.magnetPullSpeed,
+      );
 
       if (this.isTouching(orb)) {
         this.collect(orb, i);

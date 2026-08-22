@@ -256,18 +256,18 @@ export class ShopScene extends Phaser.Scene {
       .setDepth(KOPF_DEPTH);
 
     this.vorschau3dDom = this.add
-      .dom(GAME_WIDTH / 2, y - 45, 'canvas', {
+      .dom(GAME_WIDTH / 2, y - 45, 'div', {
         width: `${VORSCHAU_3D_BREITE}px`,
         height: `${VORSCHAU_3D_HOEHE}px`,
       })
       .setDepth(KOPF_DEPTH + 1)
       .setVisible(false);
-    // Auch die Shop-Vorschau ist nur Darstellung. `ThreeDShipPreview` setzt
-    // das Canvas selbst auf none, Phaser wuerde den DOMElement-Wert beim
-    // Rendern aber sonst wieder auf `auto` setzen.
+    // Ein eigener Div-Host verhindert, dass Phaser und Three.js denselben
+    // Canvas-Kontext verwalten. ThreeDShipPreview haengt sein WebGL-Canvas
+    // selbst in diesen Host; Phaser positioniert nur den Host.
     this.vorschau3dDom.pointerEvents = 'none';
     this.vorschau3d = new ThreeDShipPreview(
-      this.vorschau3dDom.node as HTMLCanvasElement,
+      this.vorschau3dDom.node as HTMLElement,
       VORSCHAU_3D_BREITE,
       VORSCHAU_3D_HOEHE,
       (available) => {
