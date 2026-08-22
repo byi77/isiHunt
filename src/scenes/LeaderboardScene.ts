@@ -115,25 +115,24 @@ export class LeaderboardScene extends Phaser.Scene {
 
       const marker = this.add
         .image(x, y, planetTextureForVariant(world.spaceVariant))
-        .setScale(isActive ? 0.06 : 0.04)
+        .setDisplaySize(isActive ? 31 : 20, isActive ? 31 : 20)
         .setAlpha(isUnlocked ? (isActive ? 1 : 0.5) : 0.18);
 
       if (!isUnlocked) return;
 
       // Trefferflaeche deutlich groesser als der Punkt.
       //
-      // Die Marker sind auf 34 % skaliert - das sind rund 12 CSS-Pixel auf dem
-      // Handy, ein Viertel des Mindestmasses aus ART_STYLE.md 8. Ein Objekt
-      // selbst interaktiv zu machen bedeutet, dass seine Skalierung auch die
-      // Trefferflaeche schrumpft; hier war der Punkt praktisch nicht zu treffen.
+      // Die Marker sind 20 bis 31 Bildschirmpixel gross und bleiben damit
+      // unter dem Mindestmass aus ART_STYLE.md 8. Ein Objekt selbst interaktiv
+      // zu machen bedeutet, dass seine Skalierung auch die Trefferflaeche
+      // schrumpft; hier war der Punkt praktisch nicht zu treffen.
       //
       // Die Flaeche wird deshalb ueber die Textur hinaus aufgezogen. `spacing`
       // ist der Abstand zum naechsten Marker - die Haelfte davon fuellt die
       // Luecke, ohne den Nachbarn zu erreichen.
-      // Die Flaeche wird in Texturkoordinaten angegeben (Orb ist 64x64, der
-      // Mittelpunkt liegt bei 32/32) und von Phaser mit `scale` verrechnet -
-      // deshalb muss hier durch die Skalierung geteilt werden, damit am Ende
-      // `hitSize` Bildschirmpixel herauskommen.
+      // Die Flaeche wird in Texturkoordinaten angegeben und von Phaser mit
+      // `scale` verrechnet - deshalb muss hier durch die Skalierung geteilt
+      // werden, damit am Ende `hitSize` Bildschirmpixel herauskommen.
       const hitSize = Math.min(spacing - 8, 92);
       const halfX = hitSize / 2 / marker.scaleX;
       const halfY = hitSize / 2 / marker.scaleY;
@@ -260,7 +259,7 @@ export class LeaderboardScene extends Phaser.Scene {
       this.listItems.push(
         this.add
           .image(112, y, planetTextureForVariant(world.spaceVariant))
-          .setScale(0.035)
+          .setDisplaySize(18, 18)
           .setAlpha(0.95),
         this.add
           .text(76, y, `${index + 1}`, textStyle(FontSize.small, rankColor, { fontStyle: 'bold' }))

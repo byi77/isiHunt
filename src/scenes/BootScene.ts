@@ -21,11 +21,11 @@ export class BootScene extends Phaser.Scene {
     // Neue Dateiversion, damit installierte iOS-Web-Apps nicht die alte
     // zwischengespeicherte Logo-PNG mit Hintergrund wiederverwenden.
     this.load.image(TextureKey.Logo, './assets/isihunt-logo-v2.png');
-    this.load.image(TextureKey.PlanetSternenweide, './assets/planet-sternenweide.png');
-    this.load.image(TextureKey.PlanetEisring, './assets/planet-eisring.png');
-    this.load.image(TextureKey.PlanetGlutnebel, './assets/planet-glutnebel.png');
-    this.load.image(TextureKey.PlanetNullsektor, './assets/planet-nullsektor.png');
-    this.load.image(TextureKey.PlanetSonnenkrone, './assets/planet-sonnenkrone.png');
+    this.load.image(TextureKey.PlanetSternenweide, './assets/planet-sternenweide.webp');
+    this.load.image(TextureKey.PlanetEisring, './assets/planet-eisring.webp');
+    this.load.image(TextureKey.PlanetGlutnebel, './assets/planet-glutnebel.webp');
+    this.load.image(TextureKey.PlanetNullsektor, './assets/planet-nullsektor.webp');
+    this.load.image(TextureKey.PlanetSonnenkrone, './assets/planet-sonnenkrone.webp');
     // CC0-Piloten: ein 2D-Sprite-Sheet fuer den Shop und sechs CC0-
     // Partikel-Frames fuer die austauschbare Prismaflut-Aura.
     this.load.spritesheet(TextureKey.EgoCc0Scout, './assets/ego/cc0-simpleanimatedship.png', {

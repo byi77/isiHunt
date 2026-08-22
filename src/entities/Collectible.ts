@@ -63,11 +63,8 @@ export class Collectible extends Phaser.GameObjects.Container {
     this.blinking = options.blinking ?? false;
     const driftMultiplier = options.driftMultiplier ?? 1;
 
-    // Die PNG-Planeten sind 512x512 und haben damit einen Radius von 256.
     // Glow und Strahlen bleiben auf der alten Reliktgroesse, damit die
     // Seltenheitsfarbe auch bei den echten Oberflaechen klar lesbar bleibt.
-    const planetTextureRadius = 256;
-    const planetScale = rarity.radius / planetTextureRadius;
     const effectScale = rarity.radius / 30;
 
     this.glow = scene.add
@@ -89,7 +86,12 @@ export class Collectible extends Phaser.GameObjects.Container {
             .setBlendMode(Phaser.BlendModes.ADD)
         : null;
 
-    this.orb = scene.add.image(0, 0, planetTexture).setScale(planetScale);
+    // Zielgroesse statt Skalierungsfaktor: der Durchmesser folgt damit dem
+    // Sammelradius und nicht der Aufloesung der Texturdatei. Ein Wechsel der
+    // Bildgroesse (512 -> 256) veraendert das Spielgefuehl dadurch nicht.
+    this.orb = scene.add
+      .image(0, 0, planetTexture)
+      .setDisplaySize(rarity.radius * 2, rarity.radius * 2);
     this.magnetVisual = scene.add.graphics().setDepth(Depth.Effects);
     this.magnetVisual.setVisible(false);
 

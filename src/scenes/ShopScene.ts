@@ -240,7 +240,10 @@ export class ShopScene extends Phaser.Scene {
       .rectangle(GAME_WIDTH / 2, KOPF_HOEHE / 2, GAME_WIDTH, KOPF_HOEHE, Palette.backdrop, 1)
       .setDepth(KOPF_DEPTH - 1);
 
-    createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 100, 230, weltAkzent, {
+    // Hoehe 250, nicht 230: Die unterste Statistikzeile sitzt bei y+110 und
+    // ist 17 px hoch, reicht also bis 294,5. Eine 230er Panelkante endete bei
+    // 291 - die Zeile lag mit ihrer Unterkante sichtbar darueber hinaus.
+    createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 100, 250, weltAkzent, {
       alpha: 0.5,
     }).setDepth(KOPF_DEPTH);
 

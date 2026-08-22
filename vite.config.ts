@@ -57,7 +57,11 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    // Keine Sourcemaps im Deploy: sie machten 15 der 21 MB in `dist` aus.
+    // Der Browser laedt sie zwar erst beim Oeffnen der DevTools, aber sie
+    // belasten Deploy-Dauer und das Pages-Kontingent ohne Gegenwert.
+    // Zum Nachstellen eines Fehlers genuegt ein lokaler Build mit `true`.
+    sourcemap: false,
     target: 'es2022',
     rollupOptions: {
       output: {

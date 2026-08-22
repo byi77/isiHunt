@@ -164,7 +164,7 @@ Labels in Grossbuchstaben mit **6–8 px Laufweite** — das ist der
 
 Spielrelevante Relikte, Raumschiffe und UI-Grundformen entstehen weiterhin
 beim Start in `src/ui/textures.ts`. Die grossen Hintergrundplaneten und das
-Logo sind dagegen echte PNG-Assets in `public/assets/`, weil Oberflaechen-
+Logo sind dagegen echte Bilddateien in `public/assets/`, weil Oberflaechen-
 details und die Markenform davon profitieren.
 
 Weitere Rasterassets sind die **App-Icons** fuer Manifest und iOS-Home-Bildschirm:
@@ -180,6 +180,16 @@ Flaeche.
 Die weiteren Rasterassets liegen unter `public/assets/`: `isihunt-logo-v2.png`
 und je eine Planetentextur fuer Sternenweide, Eisring, Glutnebel, Nullsektor
 und Sonnenkrone. Sie werden im `BootScene` vor dem Menue geladen.
+
+Die Planeten sind **256×256 WebP** (zusammen rund 119 KB). Sie lagen zuvor als
+512×512 PNG bei 2,0 MB vor — bei einer groessten Darstellung von 300 px und
+einer Deckkraft von 7 bis 10 % im Hintergrund war das ohne sichtbaren Gegenwert
+der groesste Einzelposten des Kaltstarts.
+
+Wer die Groesse erneut aendert, muss **nichts** im Code nachziehen: alle
+Zeichenstellen setzen `setDisplaySize()` in Bildschirmpixeln, nicht
+`setScale()`. Ein frueher hartkodiertes `planetTextureRadius = 256` in
+`Collectible` war genau die Kopplung, die das verhindert hat.
 
 Die einsammelbaren Relikte verwenden diese echten Planetensprites passend zur
 Welt. Die Seltenheitsfarbe kommt ueber Glow, Strahlenkranz und Fang-Effekte

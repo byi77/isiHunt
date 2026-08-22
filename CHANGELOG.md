@@ -111,7 +111,47 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   Kreis mit Kopf, und das Auge eine blosse Raute. Was bei dieser Groesse
   zaehlt, ist allein die Silhouette.
 
+### Geaendert
+
+- **Planetentexturen: 2,01 MB -> 119 KB.** Die fuenf Planeten lagen als
+  512x512-PNG vor und waren zusammen der groesste Einzelposten des Kaltstarts.
+  Sie sind jetzt 256x256-WebP — 94 % kleiner. Im Hintergrund werden sie
+  hoechstens 300 px gross und mit 7 bis 10 % Deckkraft gezeichnet; als
+  Sammelobjekt und als Listenmarker sind sie 18 bis 88 px gross. Fuer keine
+  dieser Groessen trug die alte Aufloesung etwas bei.
+
+  **Die Skalierung haengt nicht mehr an der Dateigroesse.** `Collectible` hatte
+  ein hartkodiertes `planetTextureRadius = 256` — die halbe PNG-Breite. Ein
+  reiner Dateitausch haette alle Relikte doppelt so gross gemacht. Dieselbe
+  Kopplung steckte in drei `setScale()`-Aufrufen in `LeaderboardScene` und
+  `ResultScene`. Alle fuenf Stellen setzen jetzt `setDisplaySize()` in
+  Bildschirmpixeln; die Darstellung bleibt unveraendert, aber eine kuenftige
+  Groessenaenderung braucht keine Code-Anpassung mehr.
+
+- **Keine Sourcemaps mehr im Production-Build.** Sie machten 15 der 21 MB in
+  `dist` aus. Der Browser laedt sie erst beim Oeffnen der DevTools, sie
+  belasten also nicht den Kaltstart — wohl aber Deploy-Dauer und
+  Pages-Kontingent. `dist` liegt jetzt bei 3,5 MB.
+
+- **`isihunt-logo.png` entfernt.** Byte-identisches Duplikat von
+  `isihunt-logo-v2.png` (beide 220 902 Bytes), das nirgends geladen, aber
+  mitausgeliefert wurde.
+
 ### Behoben
+
+- **Die Sammlungs-Statistik ragte aus dem Shop-Panel heraus.** Die unterste
+  Zeile ("NEU SEIT BESUCH … ZULETZT GEKAUFT …") sitzt bei y+110 und ist 17 px
+  hoch, reicht also bis 294,5. Die Panelkante lag bei 291 — die Zeile wurde von
+  der Rahmenlinie durchschnitten. Das Panel ist jetzt 250 statt 230 hoch; die
+  Zeile endet bei 296, das Panel bei 301, die Reiter beginnen bei 316.
+
+  **Die Playtest-Suiten sahen den Fehler nicht.** `screens` und `controls`
+  liefen gruen: Sie pruefen Konsolenfehler, Knopfueberlappung und
+  Tippzielgroesse, aber nicht, ob ein Text innerhalb seines Containers bleibt.
+
+- **README behauptete "keine Bilddateien im Spiel".** Tatsaechlich liegen rund
+  538 KB Bilddateien unter `public/assets/`. `docs/ART_STYLE.md` beschrieb den
+  Stand bereits korrekt.
 
 - **Die Duell-Lobby fragte weiter, nachdem sie aufgegeben hatte.** Der
   Gastgeber wartet hoechstens `ONLINE_DUEL_READY_TIMEOUT_MS` (10 Sekunden) auf

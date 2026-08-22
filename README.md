@@ -139,14 +139,14 @@ ein Duell unter Bekannten unerheblich, fuer eine oeffentliche Rangliste nicht
 
 ## Technik
 
-|          |                                                            |
-| -------- | ---------------------------------------------------------- |
-| Sprache  | TypeScript (strict)                                        |
-| Engine   | [Phaser 3](https://phaser.io/)                             |
-| Build    | [Vite](https://vite.dev/)                                  |
-| Backend  | [Supabase](https://supabase.com/) — optional               |
-| Ziel     | Mobile Browser (Hochformat), spaeter per Capacitor als App |
-| Grafiken | Komplett prozedural erzeugt — keine Bilddateien im Spiel   |
+|          |                                                                   |
+| -------- | ----------------------------------------------------------------- |
+| Sprache  | TypeScript (strict)                                               |
+| Engine   | [Phaser 3](https://phaser.io/)                                    |
+| Build    | [Vite](https://vite.dev/)                                         |
+| Backend  | [Supabase](https://supabase.com/) — optional                      |
+| Ziel     | Mobile Browser (Hochformat), spaeter per Capacitor als App        |
+| Grafiken | Ueberwiegend prozedural; Planeten, Logo und CC0-Sprites als Datei |
 
 Warum dieser Stack: [docs/DECISIONS.md](docs/DECISIONS.md)
 Wie der Code aufgebaut ist: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)

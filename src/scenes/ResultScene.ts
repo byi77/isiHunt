@@ -126,7 +126,7 @@ export class ResultScene extends Phaser.Scene {
 
       this.add
         .image(72, rowY, planetTextureForVariant(spaceVariant))
-        .setScale(0.045)
+        .setDisplaySize(23, 23)
         .setAlpha(count > 0 ? 1 : 0.28);
 
       this.add
