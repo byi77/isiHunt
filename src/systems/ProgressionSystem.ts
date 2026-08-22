@@ -343,15 +343,29 @@ export function equipShip(shapeId?: string, colorId?: string, auraId?: string): 
   return result;
 }
 
-/** Setzt alle Talentränge gegen die konfigurierte Reset-Gebühr zurück. */
+/**
+ * Setzt alle Talentränge gegen die konfigurierte Reset-Gebühr zurück.
+ *
+ * Das `zurueckgesetzt`-Flag folgt demselben Muster wie die Kauffunktionen:
+ * Der Rueckgabewert von `SaveSystem.update()` sagt nichts darueber aus, ob
+ * der Mutator tatsaechlich etwas geaendert hat - ohne das Flag meldete ein
+ * uebersprungener Guard einen Erfolg.
+ *
+ * Vorher stand die Guthabenpruefung doppelt da: einmal als Vorpruefung ueber
+ * `load()`, einmal im Mutator. Die Vorpruefung faengt denselben Fall ab und
+ * ist mit dem Flag ueberfluessig - zwei Stellen mit derselben Bedingung
+ * laufen sonst irgendwann auseinander (Audit 2026-08-23).
+ */
 export function resetTalents(): SaveData | null {
-  if (SaveSystem.load().coins < TALENT_RESET_COST) return null;
-  return SaveSystem.update((data) => {
+  let zurueckgesetzt = false;
+  const result = SaveSystem.update((data) => {
     if (data.coins < TALENT_RESET_COST) return;
     data.coins -= TALENT_RESET_COST;
     data.coinsSpent += TALENT_RESET_COST;
     data.talents = {};
+    zurueckgesetzt = true;
   });
+  return zurueckgesetzt ? result : null;
 }
 
 /** Prueft alle noch nicht freigeschalteten Achievements und speichert Treffer. */

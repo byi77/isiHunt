@@ -13,6 +13,7 @@ import {
   MAX_LEVEL,
   SAVE_KEY,
   SAVE_VERSION,
+  TALENT_RESET_COST,
   xpForLevel,
 } from '@/config/GameConfig';
 import { ACHIEVEMENT_BY_ID } from '@/config/achievements';
@@ -401,6 +402,24 @@ describe('Talentkäufe', () => {
   it('verweigert Käufe ohne ausreichende Coins', () => {
     expect(Progression.purchaseTalent('reach')).toBeNull();
     expect(Progression.resetTalents()).toBeNull();
+  });
+
+  it('laesst Talente und Coins unberuehrt, wenn die Reset-Gebuehr nicht reicht', () => {
+    // Audit 2026-08-23: `resetTalents()` gab den Rueckgabewert von
+    // `SaveSystem.update()` bedingungslos zurueck - ein uebersprungener Guard
+    // meldete damit einen Erfolg. Geprueft wird deshalb beides: die Absage
+    // UND dass der Stand danach unveraendert dasteht.
+    SaveSystem.update((data) => {
+      data.coins = TALENT_RESET_COST - 1;
+      data.talents = { reach: 2 };
+    });
+
+    expect(Progression.resetTalents()).toBeNull();
+
+    const danach = SaveSystem.load();
+    expect(danach.talents.reach).toBe(2);
+    expect(danach.coins).toBe(TALENT_RESET_COST - 1);
+    expect(danach.coinsSpent).toBe(0);
   });
 
   it('verweigert einen Kauf ueber den Maximalrang hinaus', () => {

@@ -139,6 +139,37 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Ein Wartungs-Reset blieb wirkungslos, wenn nur Auren gekauft waren.**
+  `isRemoteReset()` prüfte den Besitz nur über Formen und Farben — die Auren
+  kamen als dritte Kategorie dazu und fehlten in der Bedingung. Wer
+  ausschließlich eine Aura gekauft hatte (neun der zehn stehen ohne
+  Mindestlevel im Laden, der Fall ist also schon auf Stufe 1 erreichbar), löste
+  kein Reset-Signal aus: Der leere Cloud-Stand galt als Rückschritt, der lokale
+  blieb stehen und wurde beim nächsten Lauf wieder hochgeladen.
+
+  Gefunden über eine Paritätsprüfung zwischen den drei Besitzkategorien: Zeile
+  440 war die einzige Vergleichsstelle mit nur zwei von drei. Ein Regressionstest
+  hält den Fall fest.
+
+- **`NaN` konnte in die Vergleichsanzeige der Geräteübertragung gelangen.**
+  `redeemSyncCode()` wandelte Level, Bestwert und Rundenzahl mit blossem
+  `Number()` um, statt über `finiteNonNegative()` — obwohl der Kommentar
+  derselben Datei ausdrücklich festhält, dass `NaN` nie in Spielstand oder UI
+  gelangen darf. Ein `null` oder ein String aus einer geänderten SQL-Funktion
+  stand damit wörtlich als "Level NaN" auf dem Bildschirm, und `null` wurde
+  stillschweigend zu `0` — und genau nach diesen Zahlen entscheidet der Nutzer,
+  welchen Spielstand er behält.
+
+  Der Spielstand selbst war nie betroffen: `adopt()` reicht die Daten durch
+  `migrate()`, das bereinigt. Dieselbe Härtung gilt jetzt auch für die
+  Bestenlisten-Zeilen.
+
+- **`resetTalents()` konnte einen Erfolg melden, ohne etwas zu tun.** Die
+  Funktion gab den Rückgabewert von `SaveSystem.update()` bedingungslos zurück;
+  ein übersprungener Guard wäre damit als Erfolg durchgegangen. Sie folgt jetzt
+  demselben Flag-Muster wie die Kauffunktionen. Die doppelte Guthabenprüfung
+  (einmal vorab, einmal im Mutator) ist damit auf eine Stelle zusammengefasst.
+
 - **Im Tageslauf fehlte die gekaufte Schiffsform.** Wer eine Form, Farbe oder
   Aura besaß, spielte den Tageslauf trotzdem als neutrale Standardfigur.
 

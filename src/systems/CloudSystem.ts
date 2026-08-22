@@ -432,13 +432,21 @@ export function isRemoteReset(local: SaveData, remote: RemoteSave): boolean {
   // war zu eng: Wer bereits einmal zurueckgesetzt wurde, steht selbst auf
   // Stufe 1 ohne Runs - und trotzdem koennen Ladenkaeufe offen sein, weil die
   // ueber ein anderes Feld laufen. Der Besitz gehoert deshalb mit ins Signal.
+  //
+  // ALLE DREI Besitzkategorien pruefen, nicht nur zwei. Die Auren kamen als
+  // dritte Kategorie dazu und fehlten hier: Wer ausschliesslich eine Aura
+  // gekauft hatte (neun der zehn stehen ohne Mindestlevel im Laden, also
+  // schon auf Stufe 1 erreichbar), loeste kein Reset-Signal aus. Der leere
+  // Cloud-Stand galt als Rueckschritt, der lokale blieb stehen und wurde
+  // wieder hochgeladen - der Reset war wirkungslos (Audit 2026-08-23).
   const lokalHatMehr =
     lokal.totalRuns > 0 ||
     lokal.level > 1 ||
     lokal.bestScore > 0 ||
     lokal.unlockedAchievements.length > 0 ||
     lokal.ownedShipShapes.length > fern.ownedShipShapes.length ||
-    lokal.ownedShipColors.length > fern.ownedShipColors.length;
+    lokal.ownedShipColors.length > fern.ownedShipColors.length ||
+    lokal.ownedShipAuras.length > fern.ownedShipAuras.length;
 
   return fernLeer && lokalHatMehr;
 }
@@ -598,9 +606,12 @@ export async function fetchLeaderboard(worldId?: string): Promise<CloudResult<Le
     value: rows.map((row) => ({
       playerId: String(row.player_id),
       playerName: String(row.player_name),
-      level: Math.max(1, Number(row.player_level ?? 1)),
-      score: Number(row.score),
-      bestCombo: Number(row.best_combo),
+      // Wie beim Sync-Vergleich: Diese Zahlen werden direkt angezeigt, hier
+      // in der Bestenliste. `Number(null)` ergaebe stillschweigend 0, ein
+      // String ergaebe NaN - beides stuende so in der Liste.
+      level: Math.max(1, finiteNonNegative(row.player_level, 1)),
+      score: finiteNonNegative(row.score),
+      bestCombo: finiteNonNegative(row.best_combo),
       createdAt: String(row.created_at),
       worldId: String(row.world_id),
     })),
@@ -1269,9 +1280,15 @@ export async function redeemSyncCode(
       cloudId: String(row.save_id),
       save: {
         data: row.data as SaveData,
-        level: Number(row.level),
-        bestScore: Number(row.best_score),
-        totalRuns: Number(row.total_runs),
+        // Ueber `finiteNonNegative` statt blossem `Number()`: Diese Werte
+        // gehen ungefiltert in die Vergleichsanzeige der Geraeteuebertragung
+        // ("Welchen Stand willst du behalten?"). Ein `null` oder ein String
+        // aus einer geaenderten SQL-Funktion stand dort woertlich als
+        // "Level NaN" - und genau nach diesen Zahlen entscheidet der Nutzer,
+        // welchen Spielstand er behaelt (Audit 2026-08-23).
+        level: Math.max(1, finiteNonNegative(row.level, 1)),
+        bestScore: finiteNonNegative(row.best_score),
+        totalRuns: finiteNonNegative(row.total_runs),
         updatedAt: String(row.updated_at),
       },
     },

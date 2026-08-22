@@ -368,6 +368,21 @@ describe('"wirft nie" - Netzfunktionen ohne konfiguriertes Backend', () => {
     });
   });
 
+  it('normalizeRemoteSave uebernimmt gueltige Werte unveraendert', async () => {
+    // Gegenprobe zur NaN-Haertung (Audit 2026-08-23): Die Absicherung darf
+    // gute Werte nicht verbiegen - sonst faellt der Regelfall der Reparatur
+    // zum Opfer.
+    const gut = CloudSystem.normalizeRemoteSave({
+      data: { level: 30 },
+      level: 30,
+      best_score: 5000,
+      total_runs: 42,
+      updated_at: '2026-08-23T00:00:00.000Z',
+    });
+
+    expect(gut).toMatchObject({ level: 30, bestScore: 5000, totalRuns: 42 });
+  });
+
   it('isPlayerNameAvailable faellt ohne Backend auf "verfuegbar" zurueck statt zu werfen', async () => {
     // Bewusst anders als die uebrigen Funktionen: ohne Server-Pruefmoeglichkeit
     // blockiert diese Funktion das lokale Formular nicht (CloudSystem.ts:482).
@@ -520,6 +535,23 @@ describe('Wartungs-Reset erkennen', () => {
       bestScore: 0,
       ownedShipShapes: ['arrow', 'star', 'eagle'],
       ownedShipColors: ['world', 'gold'],
+    });
+    const leer = createSave({ level: 1, totalRuns: 0, bestScore: 0 });
+
+    expect(CloudSystem.isRemoteReset(lokal, alsRemote(leer))).toBe(true);
+  });
+
+  it('erkennt den Reset auch bei ausschliesslich gekauften Auren', () => {
+    // Audit 2026-08-23: Die Auren kamen als dritte Besitzkategorie dazu und
+    // fehlten im Reset-Signal - geprueft wurden nur Formen und Farben. Wer
+    // ausschliesslich eine Aura gekauft hatte, loeste deshalb kein Signal
+    // aus, und der Reset blieb wirkungslos. Neun der zehn Auren stehen ohne
+    // Mindestlevel im Laden, der Fall ist also schon auf Stufe 1 erreichbar.
+    const lokal = createSave({
+      level: 1,
+      totalRuns: 0,
+      bestScore: 0,
+      ownedShipAuras: [DEFAULT_SHIP_AURA, 'wingbeat'],
     });
     const leer = createSave({ level: 1, totalRuns: 0, bestScore: 0 });
 

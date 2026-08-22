@@ -224,6 +224,48 @@ describe('ohne Anmeldepflicht: Netzfehler bleibt ein Ergebnisobjekt', () => {
     await expect(CloudSystem.redeemSyncCode('ABC123')).resolves.toMatchObject({ ok: false });
   });
 
+  it('redeemSyncCode laesst kein NaN in die Vergleichsanzeige', async () => {
+    // Audit 2026-08-23: Diese Zahlen gehen ungefiltert in die
+    // Geraeteuebertragung ("Welchen Stand willst du behalten?"). Eine
+    // geaenderte SQL-Funktion kann `null` oder Strings liefern; ein blosses
+    // `Number()` machte daraus woertlich "Level NaN" auf dem Bildschirm -
+    // und der Nutzer entscheidet anhand genau dieser Zahlen, welchen
+    // Spielstand er behaelt.
+    //
+    // Die RPC wird hier direkt gefaelscht statt ueber `fetch`: Nur so wird
+    // die Zeilenumwandlung ueberhaupt erreicht: mit dem Netzfehler-Stub aus
+    // `beforeEach` bricht der Aufruf vorher ab.
+    signIn();
+    const client = CloudSystem.getSupabaseClient()!;
+    vi.spyOn(client, 'rpc').mockResolvedValue({
+      data: [
+        {
+          save_id: 'cloud-id',
+          data: { level: 3 },
+          level: 'zwoelf',
+          best_score: null,
+          total_runs: undefined,
+          updated_at: '2026-08-23T00:00:00.000Z',
+        },
+      ],
+      error: null,
+    } as never);
+
+    const result = await CloudSystem.redeemSyncCode('ABC123');
+
+    expect(result.ok).toBe(true);
+    const save = (result as { ok: true; value: { save: { level: number } } }).value.save as {
+      level: number;
+      bestScore: number;
+      totalRuns: number;
+    };
+    expect(Number.isFinite(save.level)).toBe(true);
+    expect(Number.isFinite(save.bestScore)).toBe(true);
+    expect(Number.isFinite(save.totalRuns)).toBe(true);
+    // Stufe 1 ist der Boden - eine Stufe 0 gibt es im Spiel nicht.
+    expect(save.level).toBe(1);
+  });
+
   it('pushSave', async () => {
     await expect(CloudSystem.pushSave()).resolves.toMatchObject({ ok: false });
   });
