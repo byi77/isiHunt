@@ -226,6 +226,29 @@ sie unabhaengig voneinander eintreffen (Ankunftsreihenfolge ≠ Spielerreihenfol
 anders als beim lokalen Duell). Phase 1: kein Live-Score waehrend des Laufs,
 nur synchroner Start und Ergebnisvergleich am Ende.
 
+**Welcher Zustand ueber welchen Weg laeuft.** Die Regel steht in
+`supabase/phase_2_11_duel_rooms.sql` (Abschnitt 3): seltene, dauerhafte
+Zustandsaenderungen laufen ueber die Tabelle, haeufige und kurzlebige ueber
+Broadcast. Ready-Flags, Startzeit und Rundenergebnis sind dauerhaft und
+gehoeren damit in `duel_rooms`; der Zwischenstand waehrend des Laufs bleibt
+Broadcast. Beim Rundenergebnis kommt ein zweiter Grund hinzu: es gibt keinen
+Zeitpunkt, zu dem beide Geraete gleichzeitig empfangsbereit sind — wer zuerst
+fertig ist, sendet, waehrend der andere noch spielt. Ein Broadcast hat dort
+prinzipiell keinen Empfaenger, unabhaengig von der Verbindungsqualitaet.
+`submit_duel_result` schreibt deshalb in die Tabelle
+(`NetworkDuelSystem.submitRoundResult`), und der Ergebnisbildschirm fragt sie
+im Takt von `ONLINE_DUEL_RESULT_POLL_INTERVAL_MS` ab. Der Broadcast bleibt als
+Abkuerzung fuer den Fall, dass beide fast gleichzeitig fertig werden.
+
+**Handler auf einem Kanal, der laenger lebt als die Scenes.** `activeHandlers`
+in `NetworkDuelSystem` ist ein Modul-Singleton und ueberlebt den Wechsel Lobby
+→ GameScene → Ergebnis. `updateHandlers()` **ergaenzt** deshalb, statt zu
+ersetzen: ein Aufruf mit nur einem Feld wuerde sonst still alles abmelden, was
+die vorherige Scene registriert hatte — und weil ein fehlender optionaler
+Handler kein Typfehler ist, faellt das weder beim Uebersetzen noch in den
+Gates auf. Wer einen geerbten Handler gezielt loswerden will, uebergibt ihn
+ausdruecklich als `undefined`.
+
 ## 4. Datenfluss im Run
 
 ```

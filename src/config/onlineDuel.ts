@@ -74,3 +74,28 @@ export const ONLINE_DUEL_READY_TIMEOUT_MS = 10_000;
  * Broadcast-Luecke fuer den empfangenden Client.
  */
 export const ONLINE_DUEL_START_POLL_INTERVAL_MS = 1_500;
+
+/**
+ * Polling-Takt fuer das Rundenergebnis des Gegners im Ergebnisbildschirm.
+ *
+ * Groesser als `ONLINE_DUEL_START_POLL_INTERVAL_MS`, weil die Wartezeit hier
+ * eine voellig andere Groessenordnung hat: auf die Startzeit wartet man
+ * Sekunden, auf das Ergebnis des Gegners bis zu einer vollen Rundenlaenge
+ * (`CHALLENGE_DURATION_MS`), falls er spaeter gestartet ist oder pausiert
+ * hat. Ein 1,5-Sekunden-Takt wuerde ueber diese Dauer Dutzende ueberfluessiger
+ * Anfragen erzeugen; drei Sekunden sind fuer einen Ergebnisbildschirm immer
+ * noch unmittelbar genug.
+ */
+export const ONLINE_DUEL_RESULT_POLL_INTERVAL_MS = 3_000;
+
+/**
+ * Obergrenze fuer das Ergebnis-Polling.
+ *
+ * Ohne Grenze fragte ein Geraet endlos weiter, wenn der Gegner die App
+ * geschlossen hat - genau die Luecke, die beim Ready-Timeout schon einmal
+ * auftrat (siehe `cleanupLobby`-Kommentar in `OnlineDuelScene`). Bemessen
+ * auf eine volle Rundenlaenge plus Puffer: laenger als das kann ein noch
+ * laufender Gegner nicht brauchen, also ist danach die Aussage "er ist weg"
+ * richtiger als weiteres Warten.
+ */
+export const ONLINE_DUEL_RESULT_TIMEOUT_MS = 120_000;

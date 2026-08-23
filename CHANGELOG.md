@@ -9,6 +9,36 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Behoben
+
+- **Netzwerk-Duell: beide Geraete blieben auf "WARTE AUF ERGEBNIS" stehen.**
+  Belegt durch einen Zwei-Geraete-Testbericht (v0.1.236, 2026-08-22): beide
+  Spieler beendeten ihre Runde, keiner sah je ein Ergebnis. Drei Ursachen, die
+  zusammen einen symmetrischen Stillstand ergaben:
+
+  - `onOpponentRoundResult` war deklariert und wurde beim Eintreffen auch
+    aufgerufen, aber **keine Scene hat den Handler je gesetzt** — das `?.`
+    schluckte jedes ankommende Ergebnis lautlos. `OnlineDuelScene` registriert
+    ihn jetzt beim Betreten des Ergebnisbildschirms.
+  - `NetworkDuelSystem.updateHandlers()` ersetzte die Handler vollstaendig.
+    `GameScene` legte damit nur `onOpponentDisconnected` nach und meldete alles
+    ab, was die Lobby registriert hatte. Es wird jetzt ergaenzt statt ersetzt.
+  - Das Rundenergebnis lief ausschliesslich ueber einen einmaligen Broadcast.
+    Da beide Geraete nie gleichzeitig empfangsbereit sind — wer zuerst fertig
+    ist, sendet, waehrend der andere noch spielt — liegt es jetzt zusaetzlich
+    dauerhaft im Raum (`submit_duel_result`, neu in
+    `supabase/phase_2_17_duel_round_results.sql`) und wird vom
+    Ergebnisbildschirm abgefragt. Der Broadcast bleibt die Abkuerzung fuer den
+    Gleichzeitigkeitsfall.
+
+  Das Ergebnis-Polling hat eine Obergrenze
+  (`ONLINE_DUEL_RESULT_TIMEOUT_MS`) und raeumt sich beim Aufgeben selbst auf —
+  dieselbe Luecke, die zuvor schon beim Ready-Timeout in der Lobby auftrat.
+
+  **Erfordert einen Datenbankschritt:** `phase_2_17_duel_round_results.sql`
+  muss im Supabase SQL Editor ausgefuehrt werden, sonst schlaegt das Abgeben
+  des Ergebnisses fehl.
+
 ### Hinzugefuegt
 
 - **Level-Up-Moment auf dem Ergebnisbildschirm.** Ein Aufstieg zeigt jetzt

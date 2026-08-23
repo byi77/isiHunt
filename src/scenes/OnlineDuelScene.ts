@@ -15,6 +15,8 @@ import Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import {
   ONLINE_DUEL_READY_TIMEOUT_MS,
+  ONLINE_DUEL_RESULT_POLL_INTERVAL_MS,
+  ONLINE_DUEL_RESULT_TIMEOUT_MS,
   ONLINE_DUEL_START_POLL_INTERVAL_MS,
 } from '@/config/onlineDuel';
 import { getWorld, DEFAULT_WORLD_ID } from '@/config/worlds';
@@ -66,6 +68,9 @@ export class OnlineDuelScene extends Phaser.Scene {
   private readyTimeout: Phaser.Time.TimerEvent | null = null;
   /** Fallback, falls der `start`-Broadcast den anderen Client nicht erreicht. */
   private startPollTimer: Phaser.Time.TimerEvent | null = null;
+  /** Dasselbe fuer das Rundenergebnis des Gegners im Ergebnisbildschirm. */
+  private resultPollTimer: Phaser.Time.TimerEvent | null = null;
+  private resultPollStartedAt = 0;
 
   constructor() {
     super(SceneKey.OnlineDuel);
@@ -80,6 +85,8 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.codeInput = null;
     this.readyTimeout = null;
     this.startPollTimer = null;
+    this.resultPollTimer = null;
+    this.resultPollStartedAt = 0;
 
     const state = ChallengeSystem.getState();
     this.world = getWorld(state?.worldId ?? SaveSystem.load().lastWorldId ?? DEFAULT_WORLD_ID);
@@ -501,6 +508,14 @@ export class OnlineDuelScene extends Phaser.Scene {
       this.readyTimeout.remove();
       this.readyTimeout = null;
     }
+    this.stopResultPolling();
+  }
+
+  private stopResultPolling(): void {
+    if (this.resultPollTimer) {
+      this.resultPollTimer.remove();
+      this.resultPollTimer = null;
+    }
   }
 
   // --- Phase: Ergebnis -----------------------------------------------------------
@@ -512,6 +527,15 @@ export class OnlineDuelScene extends Phaser.Scene {
     const winner = ChallengeSystem.winnerIndex();
     const state = ChallengeSystem.getState();
     const complete = ChallengeSystem.isComplete();
+
+    // Raum-Code aus dem Zustand zurueckholen: nach der Rueckkehr aus
+    // GameScene ist `create()` neu gelaufen und hat die Felder geleert, der
+    // Duell-Zustand ueberlebt den Scene-Wechsel aber im ChallengeSystem.
+    if (!complete && state?.online) {
+      this.roomCode = state.online.roomCode;
+      this.isHost = state.online.localPlayerIndex === 0;
+      this.awaitOpponentResult();
+    }
 
     this.buildHeading(
       !complete
@@ -532,7 +556,85 @@ export class OnlineDuelScene extends Phaser.Scene {
       });
     }
 
-    this.buildBackToMenu('ZUM MENÜ', () => NetworkDuelSystem.unsubscribeFromRoom());
+    this.buildBackToMenu('ZUM MENÜ', () => {
+      this.stopResultPolling();
+      NetworkDuelSystem.unsubscribeFromRoom();
+    });
+  }
+
+  /**
+   * Wartet auf das Rundenergebnis des Gegners - ueber beide Wege gleichzeitig.
+   *
+   * Der Broadcast-Handler wird hier ZUM ERSTEN MAL ueberhaupt registriert:
+   * `onOpponentRoundResult` war deklariert und wurde beim Eintreffen auch
+   * aufgerufen, aber keine Scene hatte ihn je gesetzt - das `?.` schluckte
+   * jedes Ergebnis lautlos, und beide Geraete blieben auf "WARTE AUF
+   * ERGEBNIS" stehen (Testbericht v0.1.236, 2026-08-22).
+   *
+   * Der Handler allein genuegt aber nicht: wer zuerst fertig ist, sendet
+   * seinen Broadcast, waehrend der andere noch spielt und gar nicht zuhoert.
+   * Es gibt also keinen Zeitpunkt, zu dem beide gleichzeitig empfangsbereit
+   * sind. Deshalb ist das Polling ueber `getRoomStatus()` hier der tragende
+   * Weg und der Broadcast nur die Abkuerzung - dieselbe Aufteilung, mit der
+   * die Lobby schon die Startzeit absichert.
+   */
+  private awaitOpponentResult(): void {
+    NetworkDuelSystem.updateHandlers({
+      onOpponentRoundResult: (playerIndex, result) => {
+        this.applyOpponentResult(playerIndex, result);
+      },
+    });
+
+    this.resultPollStartedAt = Date.now();
+    this.resultPollTimer = this.time.addEvent({
+      delay: ONLINE_DUEL_RESULT_POLL_INTERVAL_MS,
+      loop: true,
+      callback: () => {
+        void this.pollOpponentResult();
+      },
+    });
+  }
+
+  private async pollOpponentResult(): Promise<void> {
+    if (!this.scene.isActive() || !this.resultPollTimer) return;
+
+    if (Date.now() - this.resultPollStartedAt > ONLINE_DUEL_RESULT_TIMEOUT_MS) {
+      // Aufgeben heisst auch aufraeumen - sonst liefe das Polling hinter
+      // einer stehenden Meldung weiter, dieselbe Luecke wie beim
+      // Ready-Timeout in der Lobby.
+      this.stopResultPolling();
+      this.statusPage.setStatus('Kein Ergebnis vom Geschwister erhalten.', Palette.danger);
+      return;
+    }
+
+    const statusResult = await NetworkDuelSystem.getRoomStatus(this.roomCode);
+    if (!this.scene.isActive() || !this.resultPollTimer) return;
+    if (!statusResult.ok || !statusResult.value) return;
+
+    const opponentResult = this.isHost
+      ? statusResult.value.guestResult
+      : statusResult.value.hostResult;
+    if (!opponentResult) return;
+
+    this.applyOpponentResult(this.isHost ? 1 : 0, opponentResult);
+  }
+
+  /**
+   * Traegt ein eingetroffenes Gegner-Ergebnis ein und baut den Bildschirm neu.
+   *
+   * Beide Wege (Broadcast und Polling) landen hier, koennen also dasselbe
+   * Ergebnis doppelt liefern. Das ist unkritisch: `submitOnlineRound()`
+   * schreibt an eine feste Position statt anzuhaengen, und der
+   * `isComplete()`-Torwaechter verhindert einen zweiten Neuaufbau.
+   */
+  private applyOpponentResult(playerIndex: 0 | 1, result: NetworkDuelSystem.DuelRoundResult): void {
+    if (ChallengeSystem.isComplete()) return;
+
+    ChallengeSystem.submitOnlineRound(playerIndex, result);
+    if (!ChallengeSystem.isComplete()) return;
+
+    this.stopResultPolling();
+    this.buildResult();
   }
 
   private buildResultCard(

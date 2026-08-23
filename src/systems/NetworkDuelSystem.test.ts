@@ -13,7 +13,7 @@
  * braucht einen echten Zwei-Geraete-Test (siehe TODO.md-Planungsnotiz).
  */
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as NetworkDuelSystem from '@/systems/NetworkDuelSystem';
 
@@ -96,5 +96,172 @@ describe('broadcastReady/broadcastStartTime ohne aktiven Kanal', () => {
   it('werfen nicht, wenn noch kein Kanal abonniert wurde', () => {
     expect(() => NetworkDuelSystem.broadcastReady()).not.toThrow();
     expect(() => NetworkDuelSystem.broadcastStartTime(Date.now())).not.toThrow();
+  });
+});
+
+/**
+ * Minimaler Kanal-Doppelgaenger.
+ *
+ * `subscribeToRoom()` nimmt den Supabase-Client als Parameter (statt ihn
+ * selbst zu holen), genau deshalb laesst sich die Handler-Verwaltung ohne
+ * echtes Realtime pruefen: der Doppelgaenger merkt sich die registrierten
+ * `.on(...)`-Rueckrufe und ruft sie auf Kommando auf.
+ */
+function createFakeSupabase(): {
+  client: unknown;
+  fire: (event: string, payload: unknown) => void;
+} {
+  const broadcastHandlers = new Map<string, (message: unknown) => void>();
+
+  // Explizit typisiert, weil `on`/`subscribe` den Kanal selbst
+  // zurueckgeben - ohne Annotation kann TypeScript den Typ nicht aus seiner
+  // eigenen Initialisierung ableiten (TS7022).
+  interface FakeChannel {
+    on(type: string, filter: { event: string }, handler: (message: unknown) => void): FakeChannel;
+    subscribe(): FakeChannel;
+    track(): Promise<string>;
+    send(): Promise<string>;
+    unsubscribe(): Promise<string>;
+  }
+
+  const channel: FakeChannel = {
+    on(type, filter, handler) {
+      if (type === 'broadcast') broadcastHandlers.set(filter.event, handler);
+      return channel;
+    },
+    subscribe() {
+      return channel;
+    },
+    track: () => Promise.resolve('ok'),
+    send: () => Promise.resolve('ok'),
+    unsubscribe: () => Promise.resolve('ok'),
+  };
+
+  return {
+    client: { channel: () => channel },
+    fire: (event, payload) => broadcastHandlers.get(event)?.({ payload }),
+  };
+}
+
+describe('updateHandlers', () => {
+  beforeEach(() => {
+    NetworkDuelSystem.unsubscribeFromRoom();
+  });
+
+  /**
+   * Der Kern des Fehlers aus Testbericht v0.1.236: `GameScene` legte per
+   * `updateHandlers()` nur `onOpponentDisconnected` nach und meldete damit
+   * still alles ab, was die Lobby registriert hatte. Weil ein fehlender
+   * optionaler Handler kein Typfehler ist, verschwand das lautlos.
+   */
+  it('behaelt Handler, die der neue Aufruf nicht nennt', () => {
+    const fake = createFakeSupabase();
+    const onOpponentReady = vi.fn();
+
+    NetworkDuelSystem.subscribeToRoom(
+      fake.client as Parameters<typeof NetworkDuelSystem.subscribeToRoom>[0],
+      'ABC123',
+      0,
+      { onOpponentReady },
+    );
+
+    NetworkDuelSystem.updateHandlers({ onOpponentDisconnected: vi.fn() });
+    fake.fire('ready', {});
+
+    expect(onOpponentReady).toHaveBeenCalledTimes(1);
+  });
+
+  it('ersetzt einen Handler, den der neue Aufruf ausdruecklich nennt', () => {
+    const fake = createFakeSupabase();
+    const first = vi.fn();
+    const second = vi.fn();
+
+    NetworkDuelSystem.subscribeToRoom(
+      fake.client as Parameters<typeof NetworkDuelSystem.subscribeToRoom>[0],
+      'ABC123',
+      0,
+      { onOpponentReady: first },
+    );
+
+    NetworkDuelSystem.updateHandlers({ onOpponentReady: second });
+    fake.fire('ready', {});
+
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * Der zweite Teil desselben Fehlers: dieser Handler war deklariert und
+   * wurde beim Eintreffen auch aufgerufen - nur hatte ihn nie jemand
+   * gesetzt, sodass `?.` jedes Ergebnis schluckte.
+   */
+  it('reicht ein eingetroffenes Rundenergebnis an den Handler weiter', () => {
+    const fake = createFakeSupabase();
+    const onOpponentRoundResult = vi.fn();
+
+    NetworkDuelSystem.subscribeToRoom(
+      fake.client as Parameters<typeof NetworkDuelSystem.subscribeToRoom>[0],
+      'ABC123',
+      0,
+      {},
+    );
+
+    NetworkDuelSystem.updateHandlers({ onOpponentRoundResult });
+    fake.fire('round-result', {
+      playerIndex: 1,
+      score: 1485,
+      bestCombo: 5,
+      totalCollected: 120,
+    });
+
+    expect(onOpponentRoundResult).toHaveBeenCalledWith(1, {
+      score: 1485,
+      bestCombo: 5,
+      totalCollected: 120,
+    });
+  });
+
+  it('ignoriert ein Ergebnis mit unbrauchbarem Spielerindex', () => {
+    const fake = createFakeSupabase();
+    const onOpponentRoundResult = vi.fn();
+
+    NetworkDuelSystem.subscribeToRoom(
+      fake.client as Parameters<typeof NetworkDuelSystem.subscribeToRoom>[0],
+      'ABC123',
+      0,
+      { onOpponentRoundResult },
+    );
+
+    fake.fire('round-result', { playerIndex: 7, score: 10 });
+
+    expect(onOpponentRoundResult).not.toHaveBeenCalled();
+  });
+
+  it('meldet nach unsubscribeFromRoom alle Handler ab', () => {
+    const fake = createFakeSupabase();
+    const onOpponentReady = vi.fn();
+
+    NetworkDuelSystem.subscribeToRoom(
+      fake.client as Parameters<typeof NetworkDuelSystem.subscribeToRoom>[0],
+      'ABC123',
+      0,
+      { onOpponentReady },
+    );
+
+    NetworkDuelSystem.unsubscribeFromRoom();
+    fake.fire('ready', {});
+
+    expect(onOpponentReady).not.toHaveBeenCalled();
+  });
+});
+
+describe('submitRoundResult ohne konfigurierten Online-Dienst', () => {
+  it('scheitert freundlich statt zu werfen', async () => {
+    const result = await NetworkDuelSystem.submitRoundResult('ABC123', true, {
+      score: 100,
+      bestCombo: 3,
+      totalCollected: 20,
+    });
+    expect(result.ok).toBe(false);
   });
 });

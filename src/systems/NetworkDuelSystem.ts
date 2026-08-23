@@ -49,6 +49,9 @@ export interface DuelRoomStatus {
   guestJoined: boolean;
   /** Serverzeit (ms seit Epoch), zu der beide gleichzeitig starten sollen. */
   startAtMs: number | null;
+  /** `null`, solange der jeweilige Spieler seine Runde nicht abgegeben hat. */
+  hostResult: DuelRoundResult | null;
+  guestResult: DuelRoundResult | null;
 }
 
 // --- Code-Erzeugung -----------------------------------------------------------
@@ -210,8 +213,64 @@ export async function getRoomStatus(code: string): Promise<CloudResult<DuelRoomS
       guestReady: Boolean(row.guest_ready),
       guestJoined: Boolean(row.guest_joined),
       startAtMs: row.start_at ? Date.parse(String(row.start_at)) : null,
+      hostResult: parseRoundResult(row.host_result),
+      guestResult: parseRoundResult(row.guest_result),
     },
   };
+}
+
+/**
+ * Liest ein Rundenergebnis aus der `jsonb`-Spalte.
+ *
+ * Gibt `null` zurueck, sobald irgendetwas nicht stimmt - und zwar bewusst
+ * dasselbe `null` wie bei "noch nicht abgegeben". Ein halb gelesenes Ergebnis
+ * waere schlimmer als gar keines: es wuerde das Duell mit erfundenen Zahlen
+ * als entschieden ausweisen. Solange `null` steht, wartet der Bildschirm
+ * weiter und der naechste Abruf kann es korrigieren.
+ */
+function parseRoundResult(raw: unknown): DuelRoundResult | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const record = raw as Record<string, unknown>;
+
+  const score = Number(record.score);
+  const bestCombo = Number(record.bestCombo);
+  const totalCollected = Number(record.totalCollected);
+  if (!Number.isFinite(score) || !Number.isFinite(bestCombo) || !Number.isFinite(totalCollected)) {
+    return null;
+  }
+
+  return { score, bestCombo, totalCollected };
+}
+
+/**
+ * Legt das eigene Rundenergebnis dauerhaft im Raum ab.
+ *
+ * Der Gegenpart zu `broadcastRoundResult()`, und der eigentlich tragende Weg:
+ * ein Broadcast erreicht nur, wer in genau diesem Moment zuhoert - beim
+ * Rundenende ist der Gegner aber typischerweise noch mitten im eigenen Lauf
+ * und hat gar keinen Empfaenger registriert. Der Broadcast bleibt als
+ * Beschleuniger fuer den Fall, dass beide fast gleichzeitig fertig werden;
+ * die Tabelle ist die Quelle, auf die man sich verlassen kann.
+ */
+export async function submitRoundResult(
+  code: string,
+  isHost: boolean,
+  result: DuelRoundResult,
+): Promise<CloudResult<true>> {
+  const supabase = CloudSystem.getSupabaseClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+
+  const response = await withTimeout(
+    supabase.rpc('submit_duel_result', {
+      p_code: code,
+      p_is_host: isHost,
+      p_result: result,
+    }),
+    'Ergebnis abgeben',
+  );
+  if (!response.ok) return response;
+  if (response.value.error) return { ok: false, error: response.value.error.message };
+  return { ok: true, value: true };
 }
 
 // --- Uhr-Synchronisation --------------------------------------------------------
@@ -288,9 +347,22 @@ let activeLocalPlayerIndex: 0 | 1 = 0;
  */
 let activeHandlers: DuelChannelHandlers = {};
 
-/** Ersetzt die Handler auf dem bereits verbundenen Kanal, ohne neu zu verbinden. */
+/**
+ * Legt Handler auf dem bereits verbundenen Kanal nach, ohne neu zu verbinden.
+ *
+ * Ergaenzt statt zu ersetzen - belegt durch den Zwei-Geraete-Testbericht
+ * v0.1.236 (2026-08-22). Vorher setzte diese Funktion `activeHandlers`
+ * komplett neu; `GameScene` uebergab dabei nur `onOpponentDisconnected` und
+ * meldete damit still alles ab, was die Lobby registriert hatte. Das fiel
+ * nicht auf, weil ein fehlender optionaler Handler kein Fehler ist: das
+ * Ereignis kam an, `?.` schluckte es, niemand reagierte.
+ *
+ * Wer einen geerbten Handler gezielt loswerden will, uebergibt ihn explizit
+ * als `undefined` - das bleibt moeglich, ist dann aber eine sichtbare
+ * Entscheidung statt eines Nebeneffekts.
+ */
 export function updateHandlers(handlers: DuelChannelHandlers): void {
-  activeHandlers = handlers;
+  activeHandlers = { ...activeHandlers, ...handlers };
 }
 
 /**

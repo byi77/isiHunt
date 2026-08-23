@@ -646,8 +646,19 @@ export class GameScene extends Phaser.Scene {
         bestCombo: stats.bestCombo,
         totalCollected: stats.totalCollected,
       };
-      ChallengeSystem.submitOnlineRound(this.playerIndex as 0 | 1, round);
-      NetworkDuelSystem.broadcastRoundResult(this.playerIndex as 0 | 1, round);
+      const playerIndex = this.playerIndex as 0 | 1;
+      ChallengeSystem.submitOnlineRound(playerIndex, round);
+
+      // Zwei Wege, absichtlich: der Broadcast ist der schnelle Fall (Gegner
+      // ist schon im Ergebnisbildschirm und hoert zu), die RPC der sichere
+      // (Gegner spielt noch und hat gar keinen Empfaenger). Ohne den zweiten
+      // Weg blieben beide Geraete auf "WARTE AUF ERGEBNIS" stehen -
+      // Testbericht v0.1.236, 2026-08-22.
+      NetworkDuelSystem.broadcastRoundResult(playerIndex, round);
+      const roomCode = this.challenge.online?.roomCode ?? '';
+      if (roomCode) {
+        void NetworkDuelSystem.submitRoundResult(roomCode, playerIndex === 0, round);
+      }
 
       this.time.delayedCall(450, () => {
         this.scene.stop(SceneKey.Hud);
