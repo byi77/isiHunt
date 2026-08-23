@@ -29,6 +29,8 @@ import {
   DEBUG_LOG_BUFFER_SIZE,
   DEBUG_LOG_STORAGE_KEY,
   DEBUG_MODE_STORAGE_KEY,
+  DEBUG_PROTECTED_BUFFER_SIZE,
+  DEBUG_PROTECTED_STORAGE_KEY,
   DEBUG_TOGGLE_TAP_COUNT,
   DEBUG_TOGGLE_TAP_WINDOW_MS,
 } from '@/config/DebugConfig';
@@ -45,7 +47,8 @@ export interface LogEntry {
   readonly detail: string;
 }
 
-const logBuffer: LogEntry[] = loadPersistedLogBuffer();
+const logBuffer: LogEntry[] = loadPersistedBuffer(DEBUG_LOG_STORAGE_KEY);
+const protectedBuffer: LogEntry[] = loadPersistedBuffer(DEBUG_PROTECTED_STORAGE_KEY);
 let tapTimestamps: number[] = [];
 let debugModeCache: boolean | null = null;
 let consoleCaptureInstalled = false;
@@ -56,10 +59,13 @@ let persistTimer: ReturnType<typeof setTimeout> | null = null;
  * Fehlerbericht einen App-Neustart ueberlebt - siehe `DEBUG_LOG_STORAGE_KEY`.
  * Ungueltige oder fehlende Daten ergeben einen leeren Start statt eines
  * Fehlers; ein kaputter Debug-Log darf das eigentliche Spiel nie stoeren.
+ *
+ * Nimmt den Schluessel als Parameter, weil Haupt- und geschuetzter Puffer
+ * dieselbe Ladelogik brauchen, aber getrennt liegen muessen.
  */
-function loadPersistedLogBuffer(): LogEntry[] {
+function loadPersistedBuffer(storageKey: string): LogEntry[] {
   try {
-    const raw = window.localStorage.getItem(DEBUG_LOG_STORAGE_KEY);
+    const raw = window.localStorage.getItem(storageKey);
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     return Array.isArray(parsed) ? (parsed as LogEntry[]) : [];
@@ -84,10 +90,11 @@ function schedulePersist(): void {
   }, 500);
 }
 
-/** Schreibt den Puffer sofort - fuer den Drossel-Timer und beim Seitenverlassen. */
+/** Schreibt beide Puffer sofort - fuer den Drossel-Timer und beim Seitenverlassen. */
 function flushPersistedLogBuffer(): void {
   try {
     window.localStorage.setItem(DEBUG_LOG_STORAGE_KEY, JSON.stringify(logBuffer));
+    window.localStorage.setItem(DEBUG_PROTECTED_STORAGE_KEY, JSON.stringify(protectedBuffer));
   } catch {
     // Privater Browsermodus oder voller Speicher duerfen das Spiel nicht
     // stoeren - der Puffer bleibt dann nur In-Memory gueltig.
@@ -111,15 +118,49 @@ export function pushLogEntry(entry: LogEntry): void {
   schedulePersist();
 }
 
+/**
+ * Nimmt einen Eintrag in den GESCHUETZTEN Puffer auf - fuer seltene
+ * Ereignisse, die eine Runde ueberleben muessen.
+ *
+ * **Warum ein zweiter Puffer noetig wurde.** Der Hauptpuffer fasst 400
+ * Eintraege, ein Fang erzeugt drei (`run:collected`, `score:changed`,
+ * `combo:changed`). Der Geraetebericht vom 2026-08-23 zaehlte 148 Relikte in
+ * einer Runde: 444 Eintraege, mehr als der ganze Puffer. Alles, was beim
+ * Rundenstart passierte - Kanalstatus, Sendeversuche, verworfene Meldungen -
+ * war am Rundenende restlos ueberschrieben. Die Diagnose, die eigens dafuer
+ * eingebaut worden war, erreichte den Bericht nie.
+ *
+ * Den Hauptpuffer einfach zu vergroessern waere der falsche Weg: er wird bei
+ * jeder Aenderung vollstaendig nach `localStorage` serialisiert
+ * (`flushPersistedLogBuffer`), die Kosten waechsen also mit jeder Zeile. Ein
+ * eigener, kleiner Puffer loest das Problem an der Ursache: seltene
+ * Ereignisse konkurrieren gar nicht erst mit haeufigen.
+ *
+ * Die Trennung folgt der Ereignisrate, nicht der Wichtigkeit: hier gehoert
+ * hinein, was pro Runde einstellig auftritt (Kanalwechsel, Fehlschlaege,
+ * einmalige Verwurfsgruende) - nichts, was im Takt feuert.
+ */
+export function pushProtectedLogEntry(entry: LogEntry): void {
+  protectedBuffer.push(entry);
+  if (protectedBuffer.length > DEBUG_PROTECTED_BUFFER_SIZE) protectedBuffer.shift();
+  schedulePersist();
+}
+
 export function getLogBuffer(): readonly LogEntry[] {
   return logBuffer;
 }
 
-/** Loescht den Puffer auch aus dem localStorage - fuer Tests und einen moeglichen "Log leeren"-Knopf. */
+export function getProtectedLogBuffer(): readonly LogEntry[] {
+  return protectedBuffer;
+}
+
+/** Loescht beide Puffer auch aus dem localStorage - fuer Tests und einen moeglichen "Log leeren"-Knopf. */
 export function clearLogBuffer(): void {
   logBuffer.length = 0;
+  protectedBuffer.length = 0;
   try {
     window.localStorage.removeItem(DEBUG_LOG_STORAGE_KEY);
+    window.localStorage.removeItem(DEBUG_PROTECTED_STORAGE_KEY);
   } catch {
     // Siehe flushPersistedLogBuffer.
   }
@@ -176,10 +217,10 @@ export function installConsoleCapture(): void {
   };
 }
 
-function formatLogBuffer(): string {
-  if (logBuffer.length === 0) return '(keine Eintraege)';
+function formatBuffer(entries: readonly LogEntry[]): string {
+  if (entries.length === 0) return '(keine Eintraege)';
 
-  return logBuffer
+  return entries
     .map((entry) => {
       const time = new Date(entry.timestamp).toISOString().slice(11, 23);
       return `${time}  [${entry.kind}]  ${entry.label}  ${entry.detail}`;
@@ -326,8 +367,14 @@ export async function buildReport(
     'TON-DIAGNOSE',
     SoundSystem.formatDiagnostics(SoundSystem.getDiagnostics()),
     '',
+    // Zuerst der geschuetzte Puffer: er traegt die seltenen Ereignisse, die
+    // eine Diagnose ueberhaupt erst moeglich machen, und wuerde am Ende eines
+    // langen Verlaufs leicht uebersehen.
+    'WICHTIGE EREIGNISSE (ueberdauern eine ganze Runde)',
+    formatBuffer(protectedBuffer),
+    '',
     'VERLAUF (letzte Ereignisse und Fehler)',
-    formatLogBuffer(),
+    formatBuffer(logBuffer),
   ].join('\n');
 }
 

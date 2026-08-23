@@ -810,6 +810,19 @@ ohne eine Huerde wie eine PIN aufzubauen.
 - Die Puffergroesse wuchs von urspruenglich 50 auf 200 Eintraege, weil der
   Puffer seit dem Konsolen-Abgriff und der App-weiten Laufzeit (statt nur
   eines Runs) deutlich schneller befuellt wird.
+- **Ein zweiter, geschuetzter Puffer fuer seltene Ereignisse (seit
+  v0.1.251).** Die Groesse allein loest das Verdraengungsproblem nicht: ein
+  Fang erzeugt drei Eintraege, und der Geraetebericht vom 2026-08-23 zaehlte
+  148 Relikte in einer Runde - 444 Eintraege gegen 400 Plaetze. Alles vom
+  Rundenstart war am Rundenende weg, einschliesslich der eigens fuer die
+  Fehlersuche eingebauten Kanal- und Sendeprotokollierung. Den Hauptpuffer
+  weiter zu vergroessern waere der falsche Hebel, weil er bei jeder Aenderung
+  vollstaendig nach `localStorage` serialisiert wird. Stattdessen nimmt
+  `pushProtectedLogEntry()` seltene Ereignisse in einen eigenen kleinen
+  Puffer (`DEBUG_PROTECTED_BUFFER_SIZE`), der im Bericht getrennt ausgegeben
+  wird. **Die Trennlinie ist die Ereignisrate, nicht die Wichtigkeit** -
+  sonst wandert nach und nach alles in den geschuetzten Puffer und das
+  Problem beginnt von vorn.
 - Ob WhatsApp beim Teilen von zwei Dateien (PNG + TXT) beide uebernimmt oder
   nur eine, ist am Schreibtisch nicht pruefbar und bleibt bis zum ersten
   echten Geraetetest ungeprueft (No-Guess-Vertrag).
@@ -921,11 +934,11 @@ wobei die entscheidende Rechnung nur an einer davon notiert war.
 
 **Nachgerechnet am 2026-08-21 (aus `config/talents.ts` und `config/shop.ts`):**
 
-|                 |      Anzahl | Kosten |
-| --------------- | ----------: | -----: |
+|              |      Anzahl | Kosten |
+| ------------ | ----------: | -----: |
 | Talente voll |   32 Raenge | 15 650 |
-| Shop voll       | 130 Artikel | 16 122 |
-| zusammen        |             | 31 772 |
+| Shop voll    | 130 Artikel | 16 122 |
+| zusammen     |             | 31 772 |
 
 Bei rund 475 Muenzen am Tag (zehn Runs mittlerer Guete, Login-Bonus und
 Tageslauf eingerechnet) sind das 33 Tage fuer die Talente, 34 fuer den Shop.

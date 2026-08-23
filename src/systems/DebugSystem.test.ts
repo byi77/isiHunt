@@ -17,6 +17,7 @@ import {
   DEBUG_LOG_BUFFER_SIZE,
   DEBUG_LOG_STORAGE_KEY,
   DEBUG_MODE_STORAGE_KEY,
+  DEBUG_PROTECTED_BUFFER_SIZE,
   DEBUG_TOGGLE_TAP_COUNT,
 } from '@/config/DebugConfig';
 import type * as DebugSystemModule from '@/systems/DebugSystem';
@@ -293,5 +294,76 @@ describe('DebugSystem.buildReport', () => {
     // Gezielt gegen die Warnzeile pruefen, nicht gegen das blosse Wort:
     // "NEIN" steht auch in anderen Abschnitten des Berichts.
     expect(report).not.toContain('Screenshot bleibt schwarz');
+  });
+});
+
+/**
+ * Der geschuetzte Puffer existiert aus genau einem Grund: seltene, fuer die
+ * Diagnose tragende Ereignisse duerfen nicht von haeufigen verdraengt werden.
+ * Der Geraetebericht vom 2026-08-23 zeigte den Fehlerfall - 148 Relikte in
+ * einer Runde erzeugen 444 Eintraege gegen 400 Pufferplaetze, und die eigens
+ * eingebaute Kanaldiagnose war am Rundenende restlos ueberschrieben.
+ */
+describe('DebugSystem geschuetzter Puffer', () => {
+  beforeEach(() => {
+    DebugSystem.clearLogBuffer();
+  });
+
+  it('ueberlebt eine ganze Runde voller Sammelereignisse', () => {
+    DebugSystem.pushProtectedLogEntry({
+      timestamp: Date.now(),
+      kind: 'event',
+      label: 'duel:kanalstatus',
+      detail: 'SUBSCRIBED',
+    });
+
+    // Eine Runde mit 148 Relikten erzeugt drei Eintraege pro Fang - mehr als
+    // der Hauptpuffer fasst. Genau die Menge aus dem Geraetebericht.
+    for (let i = 0; i < 148 * 3; i++) {
+      DebugSystem.pushLogEntry({
+        timestamp: Date.now(),
+        kind: 'event',
+        label: 'run:collected',
+        detail: '',
+      });
+    }
+
+    // Der Hauptpuffer hat den Anfang laengst verloren ...
+    expect(DebugSystem.getLogBuffer().length).toBeLessThan(148 * 3);
+    // ... der geschuetzte traegt den Kanalstatus weiterhin.
+    const entry = DebugSystem.getProtectedLogBuffer().find(
+      (item) => item.label === 'duel:kanalstatus',
+    );
+    expect(entry?.detail).toBe('SUBSCRIBED');
+  });
+
+  it('haelt auch selbst die Ringpuffer-Grenze ein', () => {
+    for (let i = 0; i < DEBUG_PROTECTED_BUFFER_SIZE + 20; i++) {
+      DebugSystem.pushProtectedLogEntry({
+        timestamp: Date.now(),
+        kind: 'event',
+        label: `eintrag-${i}`,
+        detail: '',
+      });
+    }
+
+    // Der Schutz ist kein unbegrenztes Wachstum: auch dieser Puffer wird
+    // vollstaendig nach localStorage serialisiert.
+    expect(DebugSystem.getProtectedLogBuffer()).toHaveLength(DEBUG_PROTECTED_BUFFER_SIZE);
+  });
+
+  it('nennt beide Puffer getrennt im Bericht', async () => {
+    DebugSystem.pushProtectedLogEntry({
+      timestamp: Date.now(),
+      kind: 'error',
+      label: 'duel:send/live',
+      detail: 'kein aktiver Kanal',
+    });
+
+    const report = await DebugSystem.buildReport(document.createElement('canvas'), []);
+
+    expect(report).toContain('WICHTIGE EREIGNISSE');
+    expect(report).toContain('duel:send/live');
+    expect(report).toContain('VERLAUF');
   });
 });

@@ -43,3 +43,30 @@ export const DEBUG_MODE_STORAGE_KEY = 'isihunt.debug-mode.v1';
  * oeffnet - genau der Moment, in dem ein Fehler dokumentiert werden soll.
  */
 export const DEBUG_LOG_STORAGE_KEY = 'isihunt.debug-log.v1';
+
+/**
+ * Groesse des geschuetzten Puffers fuer seltene, diagnostisch tragende
+ * Ereignisse (`DebugSystem.pushProtectedLogEntry`).
+ *
+ * **Warum es ihn ueberhaupt gibt.** Der Hauptpuffer oben ist nach
+ * Ereignisrate bemessen und wird von haeufigen Ereignissen dominiert: ein
+ * Fang erzeugt drei Eintraege (`run:collected`, `score:changed`,
+ * `combo:changed`), und der Geraetebericht vom 2026-08-23 zaehlte 148
+ * Relikte in einer einzigen Runde - 444 Eintraege gegen 400 Pufferplaetze.
+ * Alles vom Rundenstart war am Rundenende weg, einschliesslich der eigens
+ * fuer die Fehlersuche eingebauten Kanal- und Sendeprotokollierung.
+ *
+ * **Warum klein.** Was hier hineingehoert, tritt pro Runde einstellig auf:
+ * Kanalwechsel, Sendefehlschlaege, einmalige Verwurfsgruende. 60 Plaetze
+ * decken mehrere komplette Duelle ab. Groesser waere teuer ohne Nutzen - der
+ * Puffer wird wie der Hauptpuffer vollstaendig nach `localStorage`
+ * serialisiert.
+ *
+ * **Was hier NICHT hineingehoert:** alles, was im Takt feuert. Die Trennung
+ * verlaeuft entlang der Ereignisrate, nicht entlang der Wichtigkeit - sonst
+ * wandert nach und nach alles hierher und das Problem beginnt von vorn.
+ */
+export const DEBUG_PROTECTED_BUFFER_SIZE = 60;
+
+/** Eigener Speicherschluessel, damit beide Puffer getrennt ueberleben. */
+export const DEBUG_PROTECTED_STORAGE_KEY = 'isihunt.debug-log-protected.v1';

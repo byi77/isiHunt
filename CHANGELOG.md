@@ -40,6 +40,34 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Netzwerk-Duell: die Gegneranzeige lag im eigenen Punktestand.** Sie
+  funktionierte die ganze Zeit — sie war nur unlesbar. Beide Duell-Zeilen
+  standen auf y=76 und y=100, mitten im eigenen Punktestand, der bei y=62
+  beginnt und in Titelgroesse (68 px) bis y=130 reicht. Auf dem Geraet
+  standen dadurch drei Texte sichtbar uebereinander. Beide Zeilen liegen
+  jetzt unterhalb der Kette, wo im Duell ohnehin Platz frei ist (die
+  Talentanzeige bleibt dort leer, weil im Duell ohne Talente gespielt wird).
+
+  Gefunden hat das der reparierte Screenshot im Fehlerbericht — kein
+  Protokoll haette es je gezeigt. Die Layoutpruefung im Playtest greift hier
+  nicht: sie prueft Ueberlappung von Knoepfen, nicht von Textobjekten, und
+  beide Zeilen erscheinen nur, wenn ein Netzwerk-Duell laeuft **und** eine
+  Trennung gemeldet wird.
+
+- **Die Duell-Diagnose ueberlebte die Runde nicht, die sie protokollieren
+  sollte.** Der Ringpuffer fasst 400 Eintraege, ein Fang erzeugt drei
+  (`run:collected`, `score:changed`, `combo:changed`). Der Bericht vom
+  2026-08-23 zaehlte 148 Relikte in einer Runde: 444 Eintraege, mehr als der
+  ganze Puffer. Kanalstatus, Sendeversuche und verworfene Meldungen vom
+  Rundenstart waren am Rundenende restlos ueberschrieben — die Diagnose aus
+  v0.1.250 erreichte den Bericht nie.
+
+  Seltene Ereignisse laufen jetzt in einen eigenen, geschuetzten Puffer und
+  erscheinen im Bericht unter **WICHTIGE EREIGNISSE** vor dem normalen
+  Verlauf. Den Hauptpuffer stattdessen zu vergroessern waere der falsche
+  Hebel: er wird bei jeder Aenderung vollstaendig nach `localStorage`
+  geschrieben, die Kosten waechsen also mit jeder Zeile.
+
 - **Der Screenshot im Fehlerbericht war auf dem Handy immer schwarz.**
   `canvas.toBlob()` liest ein leeres Bild, wenn WebGL seinen Zeichenpuffer
   nach dem Frame freigibt. Die Bedingung dafuer lautete `import.meta.env.DEV`

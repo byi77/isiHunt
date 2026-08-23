@@ -366,7 +366,9 @@ describe('Sendepfad hinterlaesst eine Spur', () => {
   it('meldet einen fehlenden Kanal, statt still nichts zu tun', () => {
     NetworkDuelSystem.broadcastLiveState(0, { score: 10, activity: 'playing' });
 
-    const entry = DebugSystem.getLogBuffer().find((item) => item.label === 'duel:send/live');
+    const entry = DebugSystem.getProtectedLogBuffer().find(
+      (item) => item.label === 'duel:send/live',
+    );
     expect(entry?.detail).toContain('kein aktiver Kanal');
   });
 
@@ -379,9 +381,9 @@ describe('Sendepfad hinterlaesst eine Spur', () => {
 
     // Kein Eintrag im Erfolgsfall: der `live`-Takt feuert alle 400ms und
     // wuerde den Ringpuffer sonst in gut zwei Minuten ueberschreiben.
-    expect(DebugSystem.getLogBuffer().filter((item) => item.label === 'duel:send/live')).toEqual(
-      [],
-    );
+    expect(
+      DebugSystem.getProtectedLogBuffer().filter((item) => item.label === 'duel:send/live'),
+    ).toEqual([]);
   });
 
   it('meldet einen angekommenen Stand ohne registrierten Empfaenger', () => {
@@ -393,7 +395,9 @@ describe('Sendepfad hinterlaesst eine Spur', () => {
 
     fake.fire('live', { playerIndex: 1, score: 42, activity: 'playing' });
 
-    const entry = DebugSystem.getLogBuffer().find((item) => item.label === 'duel:live-verworfen');
+    const entry = DebugSystem.getProtectedLogBuffer().find(
+      (item) => item.label === 'duel:live-verworfen',
+    );
     expect(entry?.detail).toContain('kein Empfaenger registriert');
   });
 
@@ -405,7 +409,7 @@ describe('Sendepfad hinterlaesst eine Spur', () => {
       fake.fire('live', { playerIndex: 1, score: 42, activity: 'playing' });
     }
 
-    const entries = DebugSystem.getLogBuffer().filter(
+    const entries = DebugSystem.getProtectedLogBuffer().filter(
       (item) => item.label === 'duel:live-verworfen',
     );
     expect(entries).toHaveLength(1);

@@ -20,6 +20,35 @@ import type { BarHandle } from '@/ui/widgets';
 import { burst, createBar, createButton, createPanel } from '@/ui/widgets';
 import type { RunMode } from '@/types';
 
+/**
+ * Oberkante der beiden Netzwerk-Duell-Zeilen.
+ *
+ * Keine Balancing-Zahl, sondern eine Layout-Koordinate wie die uebrigen
+ * Y-Werte dieser Datei - sie steht deshalb hier und nicht in `config/`
+ * (Regel 1 zielt auf Balancing-Werte, siehe `CODE_STYLE.md`). Als Konstante
+ * statt als Literal, weil zwei Zeilen sich aufeinander beziehen muessen:
+ * genau dieser Bezug fehlte, als beide auf festen Zahlen im Punktestand
+ * lagen.
+ *
+ * Der Wert liegt unterhalb von `comboText` (y=138, Hoehe 26, endet also bei
+ * 164) auf der Hoehe der Talentanzeige, die im Duell leer bleibt - dort ist
+ * Platz, den sonst niemand beansprucht. Die 18px Abstand sind kein
+ * Schoenheitswert: die Kette wird bei jedem Fang kurz auf 1.2 skaliert
+ * (`onCombo`), waechst dabei nach unten und liefe bei knapperem Abstand in
+ * die Zeile darunter.
+ */
+const DUEL_LINE_Y = 182;
+
+/**
+ * Abstand zwischen Gegnerstand und Trennmeldung.
+ *
+ * Eine volle Zeilenhoehe fuer `FontSize.tiny` (17px) plus Luft: beide Zeilen
+ * koennen gleichzeitig sichtbar sein - "Freund 0 · Verbindung weg" und
+ * "Verbindung zum Freund unterbrochen" traten am Geraet genau so zusammen
+ * auf (2026-08-23), damals uebereinander gedruckt.
+ */
+const DUEL_LINE_HEIGHT = 26;
+
 export interface HudSceneData {
   worldId: string;
   durationMs: number;
@@ -164,25 +193,47 @@ export class HudScene extends Phaser.Scene {
         .setOrigin(0, 0);
     }
 
-    // Nur beim Netzwerk-Duell relevant, deshalb erst bei Bedarf eingeblendet
-    // statt fest reserviertem Platz - ein Verbindungsabbruch soll auffallen,
-    // aber im Normalfall (keine Trennung) nicht staendig Raum beanspruchen.
-    this.opponentDisconnectedText = this.add
-      .text(GAME_WIDTH / 2, 100, '', textStyle(FontSize.tiny, Palette.danger))
-      .setOrigin(0.5, 0)
-      .setAlpha(0);
-
     // Netzwerk-Duell: eine Zeile unter dem eigenen Stand, mittig - der Blick
     // liegt beim Spielen auf dem Feld, nicht am Rand. Erst sichtbar, wenn der
     // erste Stand eintrifft: eine Zeile mit "0" vor der ersten Meldung waere
     // nicht von einem tatsaechlich bei null stehenden Gegner zu
     // unterscheiden.
+    //
+    // **Warum hier unten und nicht knapp unter dem Punktestand.** Beide
+    // Duell-Zeilen lagen bis v0.1.250 auf y=76 und y=100 - mitten IM eigenen
+    // Punktestand, der bei y=62 beginnt und in Titelgroesse (68px) bis y=130
+    // reicht. Auf dem Geraet standen dadurch drei Texte sichtbar
+    // uebereinander (Screenshot 2026-08-23): die Gegneranzeige war zwar da,
+    // aber unlesbar - was zunaechst wie eine fehlende Anzeige aussah.
+    //
+    // Kein Layoutgate hat das gefunden: `controls` prueft Ueberlappung von
+    // Knoepfen, nicht von Textobjekten, und beide Zeilen erscheinen nur, wenn
+    // ein Netzwerk-Duell laeuft UND eine Trennung gemeldet wird.
+    //
+    // Der Bereich ab `DUEL_LINE_Y` ist im Duell frei: `talentSummary` (y=168)
+    // bleibt dort leer, weil im Duell ohne Talente gespielt wird
+    // (`GameScene`: `nonProgressionMode ? '' : ...`). Die zweite Zeile liegt
+    // eine volle Zeilenhoehe darunter, damit auch beide gleichzeitig lesbar
+    // bleiben.
     if (data.showOpponentLive) {
       this.opponentLiveText = this.add
-        .text(GAME_WIDTH / 2, 76, '', textStyle(FontSize.tiny, Palette.inkDim))
+        .text(GAME_WIDTH / 2, DUEL_LINE_Y, '', textStyle(FontSize.tiny, Palette.inkDim))
         .setOrigin(0.5, 0)
         .setAlpha(0);
     }
+
+    // Nur beim Netzwerk-Duell relevant, deshalb erst bei Bedarf eingeblendet
+    // statt fest reserviertem Platz - ein Verbindungsabbruch soll auffallen,
+    // aber im Normalfall (keine Trennung) nicht staendig Raum beanspruchen.
+    this.opponentDisconnectedText = this.add
+      .text(
+        GAME_WIDTH / 2,
+        DUEL_LINE_Y + DUEL_LINE_HEIGHT,
+        '',
+        textStyle(FontSize.tiny, Palette.danger),
+      )
+      .setOrigin(0.5, 0)
+      .setAlpha(0);
 
     this.buildPauseButton();
 

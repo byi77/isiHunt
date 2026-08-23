@@ -499,7 +499,7 @@ export function subscribeToRoom(
       // ganzen Runs kein Zwischenstand ankam (2026-08-23). Der Statuswechsel
       // ist selten (eine Handvoll pro Duell) und belastet den Ringpuffer
       // nicht.
-      DebugSystem.pushLogEntry({
+      DebugSystem.pushProtectedLogEntry({
         timestamp: Date.now(),
         kind: status === 'SUBSCRIBED' ? 'event' : 'error',
         label: 'duel:kanalstatus',
@@ -546,7 +546,7 @@ export function subscribeToRoom(
  */
 function sendBroadcast(event: string, payload: Record<string, unknown>): void {
   if (!activeChannel) {
-    DebugSystem.pushLogEntry({
+    DebugSystem.pushProtectedLogEntry({
       timestamp: Date.now(),
       kind: 'error',
       label: `duel:send/${event}`,
@@ -559,12 +559,12 @@ function sendBroadcast(event: string, payload: Record<string, unknown>): void {
     .send({ type: 'broadcast', event, payload })
     .then((status) => {
       // Nur der Fehlerfall wird protokolliert: `live` feuert im 400ms-Takt
-      // und wuerde den Ringpuffer (DEBUG_LOG_BUFFER_SIZE) sonst in gut zwei
-      // Minuten vollstaendig ueberschreiben - genau der Fehler, der bei
-      // `TimerChanged` schon einmal die Reichweite des Puffers auf 6,7
-      // Sekunden gedrueckt hat.
+      // und wuerde selbst den geschuetzten Puffer
+      // (`DEBUG_PROTECTED_BUFFER_SIZE`, 60 Plaetze) in 24 Sekunden fuellen.
+      // Der Schutz erlaubt seltene Eintraege, er hebt die Ereignisrate nicht
+      // auf - deshalb bleibt der Erfolgsfall stumm.
       if (status === 'ok') return;
-      DebugSystem.pushLogEntry({
+      DebugSystem.pushProtectedLogEntry({
         timestamp: Date.now(),
         kind: 'error',
         label: `duel:send/${event}`,
@@ -572,7 +572,7 @@ function sendBroadcast(event: string, payload: Record<string, unknown>): void {
       });
     })
     .catch((error: unknown) => {
-      DebugSystem.pushLogEntry({
+      DebugSystem.pushProtectedLogEntry({
         timestamp: Date.now(),
         kind: 'error',
         label: `duel:send/${event}`,
@@ -637,7 +637,7 @@ function logLiveDropOnce(reason: string, detail: string): void {
   if (reportedLiveDrops.has(reason)) return;
   reportedLiveDrops.add(reason);
 
-  DebugSystem.pushLogEntry({
+  DebugSystem.pushProtectedLogEntry({
     timestamp: Date.now(),
     kind: 'error',
     label: 'duel:live-verworfen',
