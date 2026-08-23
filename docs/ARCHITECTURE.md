@@ -167,7 +167,9 @@ isiHunt/
 │   ├── env.d.ts                Typen der Umgebungsvariablen
 │   └── main.ts                 Phaser-Konfiguration
 ├── supabase/
-│   └── schema.sql              Tabellen, Rechte und Zugriffsregeln
+│   ├── README.md               Reihenfolge und Zweck aller Migrationen
+│   ├── schema.sql              Tabellen, Rechte und Zugriffsregeln
+│   └── phase_2_*.sql           Aufeinander aufbauende Migrationen (siehe README)
 ├── ios/                        Natives Xcode-Projekt, generiert von Capacitor
 │                                (M8, geplant — siehe ADR-0015 in DECISIONS.md)
 ├── index.html                  Mobile-Meta-Tags, Scroll-Sperre, PWA-Verweise
@@ -761,6 +763,7 @@ Manche Fehlerklassen liegen in `scenes/` und sind mit Vitest nicht erreichbar
 | `npm run balance:inventory` | Keine Inline-Coin/XP-Werte ausserhalb von `config/` |
 | `npm run scene:guards`      | Kein Oberflaechenzugriff nach `await` ohne Guard    |
 | `npm run save:version`      | `SAVE_VERSION` (TS) == `save_version()` (Postgres)  |
+| `npm run balance:check`     | `balance-data.json` == JSON-Block in `phase_2_14`   |
 
 Beide Workflows (`ci.yml`, `deploy.yml`) rufen `npm run verify` als Ganzes
 auf, statt die Schritte einzeln aufzuzaehlen. Die CI tat Letzteres bis zum

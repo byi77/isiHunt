@@ -117,7 +117,7 @@ npm run dev
 npm run verify
 ```
 
-Typecheck, Lint, **Formatierung**, drei statische Gates, **Tests** und Build in
+Typecheck, Lint, **Formatierung**, vier statische Gates, **Tests** und Build in
 der Reihenfolge, die auch die CI faehrt. Vor jedem Commit muss das gruen sein —
 `format:check` gehoert dazu, sein Fehlen hat schon eine rote CI erzeugt, obwohl
 lokal alles durchlief.
@@ -128,7 +128,10 @@ Die drei Gates decken ab, was Vitest nicht erreicht:
 `this.scene.isActive()` (Scenes sind mangels Canvas nicht unit-testbar),
 `save:version` haelt `SAVE_VERSION` und die Postgres-Funktion
 `save_version()` auf derselben Zahl - eine Divergenz dort loest
-Client-Migrationen erneut aus und senkt dabei Level.
+Client-Migrationen erneut aus und senkt dabei Level -, und
+`balance:check` prueft, ob `balance-data.json` und der JSON-Block in der
+Supabase-Migration dieselben Zahlen nennen. Nach einer Balance-Aenderung
+`npm run balance:sync` fahren und die SQL-Datei mit committen.
 
 ```bash
 npm run test          # einmalig

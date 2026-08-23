@@ -324,6 +324,31 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- **Neues Gate `npm run balance:check`.** `balance-data.json` und der
+  JSON-Block in der Supabase-Migration mussten synchron gehalten werden — das
+  Skript dafür schrieb aber nur und lief nirgends verpflichtend. Die
+  Absicherung war Gewohnheit statt Mechanismus, und eine Drift hätte den Laden
+  einen Preis zeigen und den Server einen anderen abbuchen lassen: `purchase_talent`
+  rechnet aus `balance_config()`, der Client aus der JSON. `--check` meldet die
+  Drift jetzt in `verify`, statt sie stillschweigend zu reparieren.
+
+- **Maximalränge kommen aus der Balance-Kette.** Sie standen dreifach:
+  in `talents.ts`, in `balance-data.json` (`talents.maxRanks`) und als
+  abgetippte `case`-Liste in `purchase_talent`. Alle drei stimmten überein —
+  aber genau diese Form hat in diesem Projekt schon zweimal zugeschlagen.
+  `phase_2_19` liest die Ränge aus `cfg`, `talents.ts` aus `BALANCE`.
+
+- **`deploy:wait` findet die Version über einen stabilen Anker.** Vorher nahm
+  es die erste `x.y.z`-Zeichenkette im Bundle — von neun. Dass die App-Version
+  zufällig an erster Stelle stand, war Glück; eine neue Abhängigkeit im selben
+  Chunk hätte den Check gegen eine Fremdversion vergleichen lassen. Jetzt
+  läuft er über die Ausgabezeile `isiHunt v${…}`, die die Minifizierung
+  überlebt, mit lauter Warnung beim Rückfall.
+
+- **`supabase/README.md`.** Neunzehn Migrationen bauen aufeinander auf, die
+  Architekturdoku nannte eine. Die README hält Reihenfolge und Zweck fest —
+  und warum alte Dateien nicht rückwirkend geändert werden.
+
 - **Neues Gate `npm run save:version`.** Hält `SAVE_VERSION` (TypeScript) und
   `save_version()` (Postgres) auf derselben Zahl und verbietet neuen
   Migrationen, die Version von Hand hinzuschreiben. Gegen den Stand vor der

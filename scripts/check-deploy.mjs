@@ -62,7 +62,43 @@ async function liveVersion() {
   const js = await hole(new URL(`assets/${treffer[1]}`, SEITE).href);
 
   // Die Version steht als Zeichenkette im Bundle (vite `define`).
-  const version = js.match(/\b\d+\.\d+\.\d+\b/g)?.find((v) => v.split('.').length === 3);
+  //
+  // **Warum nicht einfach der erste Treffer.** Genau das stand hier bis zum
+  // Audit 2026-08-23: `match(/\d+\.\d+\.\d+/g)` und davon der erste. Im
+  // Bundle stehen aber neun solcher Zeichenketten - Supabase-Version,
+  // Browser-Kennungen, interne Zaehler. Dass die App-Version zufaellig an
+  // erster Stelle stand, war Glueck: Eine neue Abhaengigkeit im selben Chunk
+  // haette den Deploy-Check gegen eine Fremdversion vergleichen lassen. Er
+  // haette dann entweder falsch gemeldet oder vierzig Versuche lang
+  // gewartet - und das an der Stelle, die genau diese Art Fehler
+  // ausschliessen soll.
+  //
+  // `Et` ist der minifizierte Name der Konstante; er wechselt bei jedem
+  // Build, das Muster drumherum nicht. `main.ts` bzw. `BootScene` geben die
+  // Version so aus, und Vite ersetzt `__APP_VERSION__` vorher durch ein
+  // String-Literal - der Anker ueberlebt die Minifizierung.
+  const anker = js.match(/isiHunt v\$\{(\w+)\}/);
+  let version = null;
+
+  if (anker) {
+    // Die Zuweisung derselben Variablen: `Et="0.1.247"`.
+    //
+    // Anfuehrungszeichen bewusst als `.` statt als Zeichenklasse: Ein
+    // `["']` im Muster kostete beim Bauen eine Viertelstunde Fehlersuche,
+    // weil das einfache Anfuehrungszeichen im Template-Literal kollidierte -
+    // der Ausdruck uebersetzte sich still falsch und fand nichts.
+    const zuweisung = new RegExp(`\\b${anker[1]}\\s*=\\s*.(\\d+\\.\\d+\\.\\d+).`);
+    version = js.match(zuweisung)?.[1] ?? null;
+  }
+
+  if (!version) {
+    // Rueckfall auf den alten Weg, falls sich die Ausgabezeile aendert.
+    // Bewusst mit Hinweis: Ein stiller Rueckfall auf ein bekannt
+    // unzuverlaessiges Muster waere schlimmer als eine laute Warnung.
+    console.warn('[check-deploy] Versionsanker im Bundle nicht gefunden - nutze ersten Treffer.');
+    version = js.match(/\b\d+\.\d+\.\d+\b/g)?.[0] ?? null;
+  }
+
   if (!version) throw new Error('Keine Versionsnummer im Bundle gefunden.');
 
   return { version, bundle: treffer[1] };
