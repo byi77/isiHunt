@@ -35,6 +35,15 @@
  *   nicht.
  * - **Kein Anspruch auf Vollstaendigkeit bei Callbacks.** `.then(...)`-Ketten
  *   werden nicht verfolgt, nur `await`.
+ * - **Guards ohne `return` gelten trotzdem als Entwarnung.** Die Pruefung
+ *   sieht `this.scene.isActive()` und nimmt an, dass der Zweig die Methode
+ *   verlaesst. Ein Guard, der nur protokolliert und weiterlaeuft, wuerde
+ *   faelschlich entwarnen - im Bestand kommt das nicht vor (alle acht
+ *   verschachtelten Guards enden mit `return`), geprueft am 2026-08-23.
+ *
+ * Die Blockgrenze selbst wird dagegen beachtet: Ein Guard innerhalb eines
+ * `if`-Zweiges entwarnt nur dort und nicht fuer den Code dahinter. Dieser
+ * blinde Fleck bestand im ersten Entwurf und ist geschlossen.
  *
  * Diese Grenzen sind Absicht: Ein Gate, das die haeufige Form zuverlaessig
  * findet, ist mehr wert als eines, das mit Fehlalarmen abgeschaltet wird.
@@ -68,6 +77,11 @@ for (const datei of dateien) {
   let nachAwait = false;
   let methodenTiefe = null;
   let tiefe = 0;
+  // Klammertiefe, auf der die letzte Entwarnung galt. `null` = keine.
+  let guardTiefe = null;
+  // Ob seit dem letzten `await` ueberhaupt noch etwas ungewiss ist - noetig,
+  // um beim Verlassen des Guard-Blocks wieder auf "ungewiss" zu schalten.
+  let awaitOffen = false;
 
   for (let i = 0; i < zeilen.length; i++) {
     const zeile = zeilen[i];
@@ -78,10 +92,22 @@ for (const datei of dateien) {
     // Methode nachwirkt.
     if (/\basync\s+[a-zA-Z_]/.test(ohneKommentar) || /=\s*async\s*\(/.test(ohneKommentar)) {
       nachAwait = false;
+      awaitOffen = false;
+      guardTiefe = null;
       methodenTiefe = tiefe;
     }
 
-    if (GUARD.test(ohneKommentar)) nachAwait = false;
+    // Ein Guard entwarnt nur fuer den Block, in dem er steht.
+    //
+    // Vorher galt die Entwarnung global. Ein `if (!this.scene.isActive())
+    // return;` innerhalb eines `if`-Zweiges liess damit auch den Code
+    // DANACH als geprueft gelten - obwohl der Zweig gar nicht durchlaufen
+    // worden sein muss. Die Entwarnung merkt sich deshalb ihre Klammertiefe
+    // und verfaellt, sobald der Block verlassen wird (Audit 2026-08-23).
+    if (GUARD.test(ohneKommentar)) {
+      nachAwait = false;
+      guardTiefe = tiefe;
+    }
 
     if (nachAwait && UI_ZUGRIFF.test(ohneKommentar)) {
       verstoesse.push({
@@ -94,14 +120,25 @@ for (const datei of dateien) {
       nachAwait = false;
     }
 
-    if (/\bawait\s/.test(ohneKommentar)) nachAwait = true;
+    if (/\bawait\s/.test(ohneKommentar)) {
+      nachAwait = true;
+      awaitOffen = true;
+      guardTiefe = null;
+    }
 
     for (const zeichen of ohneKommentar) {
       if (zeichen === '{') tiefe++;
       else if (zeichen === '}') {
         tiefe--;
+        // Guard-Block verlassen: Die Entwarnung galt nur dort drin.
+        if (guardTiefe !== null && tiefe < guardTiefe) {
+          guardTiefe = null;
+          if (awaitOffen) nachAwait = true;
+        }
         if (methodenTiefe !== null && tiefe <= methodenTiefe) {
           nachAwait = false;
+          awaitOffen = false;
+          guardTiefe = null;
           methodenTiefe = null;
         }
       }

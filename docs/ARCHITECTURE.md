@@ -38,7 +38,7 @@ Engine samt Canvas-Erkennung in eine reine Rechendatei zog.
 isiHunt/
 ├── .github/
 │   ├── workflows/
-│   │   ├── ci.yml              Typecheck + Lint + Tests + Build bei jedem Push
+│   │   ├── ci.yml              `npm run verify` bei jedem Push
 │   │   └── deploy.yml          Build → GitHub Pages bei Push auf main
 │   └── PULL_REQUEST_TEMPLATE.md
 ├── docs/
@@ -704,6 +704,12 @@ Manche Fehlerklassen liegen in `scenes/` und sind mit Vitest nicht erreichbar
 | --------------------------- | --------------------------------------------------- |
 | `npm run balance:inventory` | Keine Inline-Coin/XP-Werte ausserhalb von `config/` |
 | `npm run scene:guards`      | Kein Oberflaechenzugriff nach `await` ohne Guard    |
+
+Beide Workflows (`ci.yml`, `deploy.yml`) rufen `npm run verify` als Ganzes
+auf, statt die Schritte einzeln aufzuzaehlen. Die CI tat Letzteres bis zum
+2026-08-23 und war dadurch schwaecher als der lokale `pre-push`-Hook: Die
+beiden Gates kamen spaeter zur Kette dazu und fehlten in der Liste. Wer
+`verify` erweitert, erweitert damit jetzt automatisch auch die CI.
 
 **`scene:guards`** schliesst eine Luecke aus dem Audit vom 2026-08-23: Waehrend
 eines Netzaufrufs bleibt der Zurueck-Knopf bedienbar. Verlaesst der Spieler die

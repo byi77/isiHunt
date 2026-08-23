@@ -1078,7 +1078,11 @@ async function suiteNavigation() {
     // Knopf, folgt der Test mit, statt falsch rot zu werden.
     const WEGE = [
       ['PROFIL', 'Profile'],
-      ['TALENTBAUM', 'Talents'],
+      // 'TALENTE', nicht 'TALENTBAUM': Der Knopf wurde am 2026-08-21
+      // umbenannt (8de7e6b), das Label hier blieb stehen. Der Schritt war
+      // seitdem dauerhaft rot und pruefte den echten Weg nicht mehr - er
+      // fiel in zwei Audits als "vorbestehend" durch (Audit 2026-08-23).
+      ['TALENTE', 'Talents'],
       ['ERFOLGE', 'Achievements'],
       ['EINSTELLUNGEN', 'Settings'],
     ];
@@ -1090,7 +1094,11 @@ async function suiteNavigation() {
       const buttons = await collectInteractive(page, 'Menu');
       const treffer = buttons.find((b) => b.label.toUpperCase().startsWith(label));
       if (!treffer) {
-        record(`Menue -> ${label}`, false, 'Knopf nicht gefunden');
+        // Die vorhandenen Beschriftungen mitgeben: Bei einer Umbenennung
+        // steht die Ursache dann direkt im Fehlschlag, statt eine
+        // Untersuchung zu erfordern.
+        const vorhanden = buttons.map((b) => b.label).join(', ');
+        record(`Menue -> ${label}`, false, `Knopf nicht gefunden; im Menue: ${vorhanden}`);
         continue;
       }
 

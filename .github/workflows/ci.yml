@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   verify:
-    name: Typecheck, Lint, Tests, Build
+    name: verify (Typecheck, Lint, Format, Gates, Tests, Build)
     runs-on: ubuntu-latest
 
     steps:
@@ -60,17 +60,17 @@ jobs:
       - name: Abhaengigkeiten installieren
         run: npm ci
 
-      - name: Typen pruefen
-        run: npm run typecheck
-
-      - name: Lint
-        run: npm run lint
-
-      - name: Formatierung pruefen
-        run: npm run format:check
-
-      - name: Tests
-        run: npm run test
-
-      - name: Build
-        run: npm run build
+      # `npm run verify` als Ganzes, NICHT die Einzelschritte abgetippt.
+      #
+      # Vorher standen typecheck, lint, format:check, test und build hier
+      # einzeln. Die Liste veraltete still: `balance:inventory` und
+      # `scene:guards` kamen spaeter zur verify-Kette dazu und fehlten hier
+      # weiterhin - ein Commit mit Inline-Balancewerten oder einem
+      # ungeschuetzten Scene-Zugriff bekam eine gruene CI, waehrend derselbe
+      # Stand lokal am pre-push-Hook scheiterte (Audit 2026-08-23).
+      #
+      # Der Deploy-Workflow hat es von Anfang an richtig gemacht. Eine
+      # aufgezaehlte Liste veraltet, ein Aufruf der Gesamtkette nicht: Wer
+      # `verify` erweitert, erweitert damit automatisch auch die CI.
+      - name: Pruefen (dieselbe Kette wie pre-push und Deploy)
+        run: npm run verify

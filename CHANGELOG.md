@@ -139,6 +139,36 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Die CI war schwächer als der lokale `pre-push`-Hook.** `ci.yml` zählte
+  seine Schritte einzeln auf (typecheck, lint, format:check, test, build) und
+  veraltete dabei still: `balance:inventory` und `scene:guards` kamen später
+  zur `verify`-Kette dazu und fehlten in der Liste. Ein Commit mit
+  Inline-Balancewerten oder einem ungeschützten Scene-Zugriff bekam damit eine
+  **grüne CI**, während derselbe Stand lokal am Hook scheiterte.
+
+  Die Auslieferung war nie betroffen — `deploy.yml` ruft `npm run verify` als
+  Ganzes auf und hat es damit von Anfang an richtig gemacht. Die CI tut das
+  jetzt auch: Eine aufgezählte Liste veraltet, ein Aufruf der Gesamtkette
+  nicht.
+
+- **Der Playtest suchte einen Knopf, den es seit zwei Tagen nicht mehr gibt.**
+  Der Menüknopf wurde am 2026-08-21 von „TALENTBAUM" zu „TALENTE" umbenannt
+  (`8de7e6b`), das Label im Test blieb stehen. Der Schritt war seitdem
+  dauerhaft rot und prüfte den echten Navigationsweg zum Talentbaum nicht
+  mehr — ein Test, dessen Rot keine Information mehr trägt.
+
+  Die Fehlermeldung nennt jetzt zusätzlich die tatsächlich vorhandenen
+  Beschriftungen, damit die nächste Umbenennung sofort erkennbar ist statt
+  eine Untersuchung zu erfordern. Der Navigationslauf ist wieder grün (8/8).
+
+- **Blinder Fleck im `scene:guards`-Gate.** Ein
+  `if (!this.scene.isActive()) return;` innerhalb eines `if`-Zweiges
+  entwarnte fälschlich auch für den Code **danach**, obwohl der Zweig gar
+  nicht durchlaufen worden sein muss. Die Entwarnung merkt sich jetzt ihre
+  Klammertiefe und verfällt beim Verlassen des Blocks. Im Bestand traf das
+  Muster nicht zu (alle acht verschachtelten Guards enden mit `return`) — die
+  Lücke bestand also in der Prüfung, nicht im Code.
+
 - **Oberflächenzugriff nach einem Netzaufruf auf verlassener Scene.** Während
   eines `await` bleibt der Zurück-Knopf bedienbar — das `busy`-Flag sperrt nur
   weitere Netzaufrufe, nicht die Navigation. Verließ der Spieler die Scene,
