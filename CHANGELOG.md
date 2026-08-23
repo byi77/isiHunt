@@ -139,6 +139,25 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Oberflächenzugriff nach einem Netzaufruf auf verlassener Scene.** Während
+  eines `await` bleibt der Zurück-Knopf bedienbar — das `busy`-Flag sperrt nur
+  weitere Netzaufrufe, nicht die Navigation. Verließ der Spieler die Scene,
+  lief der Code danach trotzdem weiter und schrieb auf Phaser-Objekte, die
+  bereits abgeräumt waren. Bei einem `Text` gibt `preDestroy()` das Canvas an
+  den `CanvasPool` zurück, während `setText()` über `updateText()` weiter
+  darauf zugreift; ein `scene.restart()` holte den Spieler ungefragt zurück in
+  den Talentbaum.
+
+  Betroffen waren 15 Stellen in fünf Scenes (`ProfileScene`, `TalentScene`,
+  `AdminUsersScene`, `AccountScene`, `MenuScene`). `MenuScene`,
+  `OnlineDuelScene` und `SyncScene` machten es an den übrigen Stellen von
+  Anfang an richtig — das Muster war da, nur nicht überall angewandt.
+
+  Datenlogik läuft bewusst weiter zu Ende: Ein bezahlter Talentrang, eine
+  übernommene Cloud-Übernahme oder eine serverseitige Abmeldung dürfen nicht
+  verloren gehen, nur weil der Bildschirm gewechselt wurde. Nur die
+  Rückmeldung ist an eine lebende Scene gebunden.
+
 - **Das lokale Testprofil konnte den Spielstand unwiderruflich zerstören.**
   `enableTestProfile()` schrieb Backup und Marker in einem `try`, fing den
   Fehler ab — und lief danach **weiter** bis zum Überschreiben des echten
@@ -204,6 +223,13 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   (einmal vorab, einmal im Mutator) ist damit auf eine Stelle zusammengefasst.
 
 ### Geaendert
+
+- **Neues Gate `npm run scene:guards`.** Die Fehlerklasse oben liegt in
+  `scenes/` und ist mit Vitest nicht erreichbar (Phaser braucht ein Canvas).
+  Ein Skript-Gate in `verify` prüft sie stattdessen statisch — nach dem Muster
+  von `balance:inventory`. Gegen den Stand vor der Reparatur meldet es alle 15
+  Stellen, danach null. Was es bewusst **nicht** sieht, steht im Kopf von
+  `scripts/check-scene-await-guards.mjs`.
 
 - **Die Torwächter-Logik des Datenabgleichs liegt in `SyncGateSystem`.**
   „Darf jetzt abgeglichen werden?" war Teil der 1 500 Zeilen langen

@@ -117,10 +117,15 @@ npm run dev
 npm run verify
 ```
 
-Typecheck, Lint, **Formatierung**, **Tests** und Build in der Reihenfolge, die
-auch die CI faehrt. Vor jedem Commit muss das gruen sein — `format:check`
-gehoert dazu, sein Fehlen hat schon eine rote CI erzeugt, obwohl lokal alles
-durchlief.
+Typecheck, Lint, **Formatierung**, zwei statische Gates, **Tests** und Build in
+der Reihenfolge, die auch die CI faehrt. Vor jedem Commit muss das gruen sein —
+`format:check` gehoert dazu, sein Fehlen hat schon eine rote CI erzeugt, obwohl
+lokal alles durchlief.
+
+Die beiden Gates decken ab, was Vitest nicht erreicht:
+`balance:inventory` haelt Balance-Zahlen aus dem produktiven Code heraus,
+`scene:guards` verhindert Oberflaechenzugriffe nach einem `await` ohne
+`this.scene.isActive()` (Scenes sind mangels Canvas nicht unit-testbar).
 
 ```bash
 npm run test          # einmalig

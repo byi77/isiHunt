@@ -395,6 +395,9 @@ export class MenuScene extends Phaser.Scene {
             return true;
           }
 
+          // Zwischen dem Profilabruf oben und hier kann der Spieler das
+          // Menue verlassen haben - ein `restart()` holte ihn zurueck.
+          if (!this.scene.isActive()) return true;
           this.scene.restart();
           return false;
         }

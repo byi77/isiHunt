@@ -205,6 +205,10 @@ export class ProfileScene extends Phaser.Scene {
         saving = true;
         saveButton?.setEnabled(false);
         const availability = await CloudSystem.isPlayerNameAvailable(name, currentPlayerId);
+        // Waehrend des Netzaufrufs bleibt der Zurueck-Knopf bedienbar. Auf
+        // einer verlassenen Scene liefe `setText` auf ein Text-Objekt, dessen
+        // Canvas bereits an den Pool zurueckging (Audit 2026-08-23).
+        if (!this.scene.isActive()) return;
         if (!availability.ok) {
           saving = false;
           saveButton?.setEnabled(true);
@@ -219,6 +223,7 @@ export class ProfileScene extends Phaser.Scene {
         }
         if (AuthSystem.isSignedIn()) {
           const result = await CloudSystem.updateProfileIdentity(name);
+          if (!this.scene.isActive()) return;
           if (!result.ok) {
             saving = false;
             saveButton?.setEnabled(true);
@@ -229,6 +234,7 @@ export class ProfileScene extends Phaser.Scene {
         } else {
           const playerId = SaveSystem.ensureCloudId();
           const result = await CloudSystem.updateLeaderboardName(playerId, name);
+          if (!this.scene.isActive()) return;
           if (!result.ok) {
             saving = false;
             saveButton?.setEnabled(true);
@@ -244,7 +250,11 @@ export class ProfileScene extends Phaser.Scene {
       // Offline darf der Spieler den sichtbaren Namen trotzdem sofort nutzen;
       // der Menue-Sync versucht die Identitaet spaeter erneut zu vereinheitlichen.
       if (!canWriteOnline && CloudSystem.isAvailable() && !navigator.onLine) {
+        // Der Name wird auch dann uebernommen, wenn die Scene inzwischen weg
+        // ist - er ist bezahlt durch die Eingabe des Spielers. Nur die
+        // Rueckmeldung braucht eine lebende Oberflaeche.
         SaveSystem.setOfflinePlayerName(name);
+        if (!this.scene.isActive()) return;
         status
           .setText('Offline gespeichert. Beim naechsten Online-Abgleich wird der Name geprueft.')
           .setColor(Palette.gold);
@@ -253,6 +263,7 @@ export class ProfileScene extends Phaser.Scene {
         return;
       }
       SaveSystem.setPlayerName(name);
+      if (!this.scene.isActive()) return;
       this.scene.start(SceneKey.Menu);
     };
 
@@ -486,6 +497,7 @@ export class ProfileScene extends Phaser.Scene {
 
     const local = SaveSystem.load();
     let remote = await CloudSystem.fetchProfileProgress();
+    if (!this.scene.isActive()) return;
     if (!remote.ok) {
       this.busy = false;
       this.accountStatus.setText(remote.error).setColor(Palette.gold);
@@ -494,6 +506,7 @@ export class ProfileScene extends Phaser.Scene {
 
     if (local.cloudId) {
       remote = await CloudSystem.claimCloudProfile(local.cloudId);
+      if (!this.scene.isActive()) return;
       if (!remote.ok) {
         this.busy = false;
         this.accountStatus.setText(remote.error).setColor(Palette.gold);
@@ -516,6 +529,9 @@ export class ProfileScene extends Phaser.Scene {
 
     await ProgressSyncSystem.flush();
     this.busy = false;
+    // Die Uebernahme oben ist bereits geschrieben; nur der Neustart der
+    // Ansicht setzt eine lebende Scene voraus.
+    if (!this.scene.isActive()) return;
     this.scene.restart();
   }
 
@@ -532,6 +548,7 @@ export class ProfileScene extends Phaser.Scene {
       .setText('Ausstehende Änderungen werden gesichert ...')
       .setColor(Palette.inkDim);
     await ProgressSyncSystem.flush();
+    if (!this.scene.isActive()) return;
     if (ProgressSyncSystem.hasPendingData()) {
       this.busy = false;
       this.accountStatus
@@ -543,11 +560,16 @@ export class ProfileScene extends Phaser.Scene {
     const result = await AuthSystem.signOut();
     if (!result.ok) {
       this.busy = false;
+      if (!this.scene.isActive()) return;
       this.accountStatus.setText(result.error).setColor(Palette.gold);
       return;
     }
+    // Die Abmeldung ist serverseitig bereits passiert - der lokale Stand muss
+    // ihr folgen, auch wenn der Bildschirm inzwischen gewechselt hat. Sonst
+    // wirkt das Profil weiter wie angemeldet.
     SaveSystem.clearLocalProfile();
     this.busy = false;
+    if (!this.scene.isActive()) return;
     this.scene.start(SceneKey.Menu);
   }
 }

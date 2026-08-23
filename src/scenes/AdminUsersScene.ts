@@ -115,6 +115,9 @@ export class AdminUsersScene extends Phaser.Scene {
     this.statusText.setText('Profil wird gesetzt …').setColor(Palette.inkDim);
     const result = await CloudSystem.adminBoostUser(safeAlias);
     this.busy = false;
+    // Serverseitig ist die Aenderung durch; ab hier folgt nur noch die
+    // Rueckmeldung, und die braucht eine lebende Scene (Audit 2026-08-23).
+    if (!this.scene.isActive()) return;
     if (!result.ok) {
       this.statusText.setText(result.error).setColor(Palette.danger);
       return;
@@ -148,6 +151,7 @@ export class AdminUsersScene extends Phaser.Scene {
     const result = await CloudSystem.adminResetUser(safeAlias);
     this.busy = false;
     this.resetArmed = false;
+    if (!this.scene.isActive()) return;
     button.setLabel('USER RESETTEN');
     if (!result.ok) {
       this.statusText.setText(result.error).setColor(Palette.danger);

@@ -196,6 +196,19 @@ export class TalentScene extends Phaser.Scene {
       if (!ProgressionSystem.purchaseTalent(id)) error = 'Nicht genug Coins für diesen Rang.';
     }
     this.busy = false;
+
+    // Erst ab hier wird die Oberflaeche angefasst. Waehrend der Netzaufrufe
+    // oben bleibt der Zurueck-Knopf bedienbar (`busy` sperrt nur weitere
+    // Kaeufe, nicht die Navigation) - wer in dieser Zeit das Menue waehlt,
+    // hat eine zerstoerte Scene hinter sich. `setText` liefe dann auf ein
+    // Text-Objekt, dessen Canvas bereits an den Pool zurueckgegeben wurde,
+    // und `restart()` holte ihn ungefragt in den Talentbaum zurueck.
+    //
+    // Die Buchung oben laeuft bewusst trotzdem zu Ende: Ein bezahlter Rang
+    // darf nicht verloren gehen, nur weil der Bildschirm gewechselt wurde
+    // (Audit 2026-08-23).
+    if (!this.scene.isActive()) return;
+
     if (error) {
       this.feedbackText.setText(error).setColor(Palette.gold);
       return;
@@ -289,12 +302,18 @@ export class TalentScene extends Phaser.Scene {
       }
     }
     this.busy = false;
+
+    // Wie bei `purchase()`: Die Buchung oben laeuft zu Ende, die Oberflaeche
+    // wird nur angefasst, wenn es sie noch gibt. Phaser raeumt die
+    // Dialogobjekte beim Szenenwechsel selbst ab - `closeResetConfirmation()`
+    // liefe hier sonst ueber bereits zerstoerte Objekte.
+    if (!this.scene.isActive()) return;
+
+    this.closeResetConfirmation();
     if (error) {
-      this.closeResetConfirmation();
       this.feedbackText.setText(error).setColor(Palette.gold);
       return;
     }
-    this.closeResetConfirmation();
     this.scene.restart({ returnTo: this.returnTo });
   }
 }

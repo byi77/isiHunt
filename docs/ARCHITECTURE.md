@@ -695,6 +695,32 @@ genau der ist die Stelle, an der Tests unbemerkt voneinander abhaengig werden.
 | `CloudSystem.test.ts`            | reine Funktionen; "wirft nie" **ohne** eingerichtetes Backend     |
 | `CloudSystem.configured.test.ts` | "wirft nie" **mit** Backend: Anmelde-Guard und echter Netzausfall |
 
+### Statische Gates neben den Tests
+
+Manche Fehlerklassen liegen in `scenes/` und sind mit Vitest nicht erreichbar
+(Phaser braucht ein Canvas). Dafuer laufen Skript-Gates in `verify`:
+
+| Gate                        | Prueft                                              |
+| --------------------------- | --------------------------------------------------- |
+| `npm run balance:inventory` | Keine Inline-Coin/XP-Werte ausserhalb von `config/` |
+| `npm run scene:guards`      | Kein Oberflaechenzugriff nach `await` ohne Guard    |
+
+**`scene:guards`** schliesst eine Luecke aus dem Audit vom 2026-08-23: Waehrend
+eines Netzaufrufs bleibt der Zurueck-Knopf bedienbar. Verlaesst der Spieler die
+Scene, laeuft der Code nach dem `await` auf abgeraeumten Objekten weiter — bei
+einem `Text` gibt `preDestroy()` das Canvas an den `CanvasPool` zurueck,
+waehrend `setText()` weiter darauf zugreift. Vor jedem Oberflaechenzugriff nach
+einem `await` gehoert deshalb:
+
+```ts
+if (!this.scene.isActive()) return;
+```
+
+Datenlogik (Spielstand schreiben, Uebernahme eines Cloud-Stands) laeuft
+bewusst **vor** dem Guard zu Ende: Ein bezahlter Talentrang darf nicht
+verloren gehen, nur weil der Bildschirm gewechselt wurde. Die deklarierten
+Grenzen der Pruefung stehen im Kopf von `scripts/check-scene-await-guards.mjs`.
+
 **Warum `CloudSystem` zwei Dateien hat.** `vi.mock` gilt fuer das ganze Modul,
 und die beiden Suiten brauchen entgegengesetzte Zustaende von
 `isBackendConfigured`. Der Grund dafuer ist die Lehre aus dem Audit vom

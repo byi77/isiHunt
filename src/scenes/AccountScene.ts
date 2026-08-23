@@ -363,6 +363,9 @@ export class AccountScene extends Phaser.Scene {
 
     await ProgressSyncSystem.flush();
     this.busy = false;
+    // Die Uebernahme oben ist geschrieben; nur der Szenenwechsel setzt eine
+    // lebende Scene voraus (Audit 2026-08-23).
+    if (!this.scene.isActive()) return;
     this.scene.start(SceneKey.Menu);
   }
 
