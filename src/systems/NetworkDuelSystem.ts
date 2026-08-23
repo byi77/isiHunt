@@ -413,6 +413,9 @@ export function subscribeToRoom(
   unsubscribeFromRoom();
   activeHandlers = handlers;
   activeLocalPlayerIndex = localPlayerIndex;
+  // Ein neuer Kanal ist ein neuer Diagnosefall - sonst bliebe ein Grund, der
+  // im ersten Duell einmal gemeldet wurde, im zweiten fuer immer stumm.
+  reportedLiveDrops.clear();
 
   const channel = supabase.channel(code, {
     config: { private: true, presence: { key: String(localPlayerIndex) } },
@@ -456,14 +459,31 @@ export function subscribeToRoom(
       }) => {
         // Der eigene Broadcast kommt auf demselben Kanal zurueck - ohne diese
         // Pruefung wuerde das Geraet den eigenen Stand als den des Gegners
-        // anzeigen.
+        // anzeigen. Das ist der einzige stille Fall: er tritt bei JEDEM
+        // eigenen Takt ein und ist voellig normal.
         if (payload.playerIndex === activeLocalPlayerIndex) return;
 
         const score = Number(payload.score);
-        if (!Number.isFinite(score)) return;
-        if (!isOpponentActivity(payload.activity)) return;
 
-        activeHandlers.onOpponentLiveState?.({ score, activity: payload.activity });
+        // Ein angekommener, aber verworfener Stand sah bisher genauso aus wie
+        // ein nie angekommener: beides hinterliess keine Spur. Diese
+        // Unterscheidung war der fehlende Befund am 2026-08-23 - deshalb wird
+        // jedes Verwerfen protokolliert. Nur EINMAL pro Ursache, damit der
+        // 400ms-Takt den Ringpuffer nicht flutet.
+        if (!Number.isFinite(score) || !isOpponentActivity(payload.activity)) {
+          logLiveDropOnce('unbrauchbare Nutzlast', JSON.stringify(payload));
+          return;
+        }
+
+        if (!activeHandlers.onOpponentLiveState) {
+          // Genau die Falle, die beim Rundenergebnis schon einmal zuschlug
+          // (v0.1.236): der Handler war deklariert, aber keine Scene hatte
+          // ihn gesetzt - `?.` schluckte jede Meldung lautlos.
+          logLiveDropOnce('kein Empfaenger registriert', '');
+          return;
+        }
+
+        activeHandlers.onOpponentLiveState({ score, activity: payload.activity });
       },
     )
     .on('presence', { event: 'leave' }, ({ key }: { key: string }) => {
@@ -473,6 +493,19 @@ export function subscribeToRoom(
       if (key !== String(activeLocalPlayerIndex)) activeHandlers.onOpponentDisconnected?.();
     })
     .subscribe((status, error) => {
+      // JEDEN Statuswechsel mitschreiben, nicht nur den Fehlerfall. Ein
+      // `CLOSED` beim Szenenwechsel ist kein Fehler und wuerde deshalb still
+      // bleiben - genau die Beobachtung, die fehlte, als waehrend eines
+      // ganzen Runs kein Zwischenstand ankam (2026-08-23). Der Statuswechsel
+      // ist selten (eine Handvoll pro Duell) und belastet den Ringpuffer
+      // nicht.
+      DebugSystem.pushLogEntry({
+        timestamp: Date.now(),
+        kind: status === 'SUBSCRIBED' ? 'event' : 'error',
+        label: 'duel:kanalstatus',
+        detail: error ? `${status}: ${error.message}` : status,
+      });
+
       if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
         const reason = error?.message ?? `Kanalstatus: ${status}`;
         // Landet im Debug-Ringpuffer (DebugSystem.installConsoleCapture) -
@@ -492,14 +525,70 @@ export function subscribeToRoom(
   activeChannel = channel;
 }
 
+/**
+ * Sendet ein Broadcast-Ereignis und protokolliert, was dabei herauskam.
+ *
+ * **Warum das Protokoll noetig wurde.** Bis v0.1.249 lautete jede Sendestelle
+ * `void activeChannel?.send(...)`. Beide Teile dieser Zeile schlucken
+ * Information: `?.` macht einen fehlenden Kanal zu einem stillen Nichtstun,
+ * und `void` verwirft die Antwort des Kanals. Als im Zwei-Geraete-Test
+ * (2026-08-23) waehrend des gesamten Runs kein einziger Zwischenstand beim
+ * Gegner ankam, liess sich deshalb nicht entscheiden, ob gar nicht gesendet
+ * oder nur nicht empfangen wurde - der Sendepfad war vollstaendig blind.
+ * Dieselbe Luecke hatte `withTimeout()` fuer die RPC-Seite schon einmal
+ * (Kommentar dort); hier war sie noch offen.
+ *
+ * `send()` loest ohne `broadcast.ack`-Option bereits mit "ok" auf, sobald die
+ * Nachricht lokal in der Warteschlange liegt - das Protokoll belegt also den
+ * Absendeversuch, nicht die Zustellung. Genau diese Unterscheidung ist der
+ * gesuchte Befund: "ok" bei ausbleibendem Empfang zeigt auf die Strecke,
+ * "kein Kanal" auf den eigenen Client.
+ */
+function sendBroadcast(event: string, payload: Record<string, unknown>): void {
+  if (!activeChannel) {
+    DebugSystem.pushLogEntry({
+      timestamp: Date.now(),
+      kind: 'error',
+      label: `duel:send/${event}`,
+      detail: 'kein aktiver Kanal - Nachricht verworfen',
+    });
+    return;
+  }
+
+  void activeChannel
+    .send({ type: 'broadcast', event, payload })
+    .then((status) => {
+      // Nur der Fehlerfall wird protokolliert: `live` feuert im 400ms-Takt
+      // und wuerde den Ringpuffer (DEBUG_LOG_BUFFER_SIZE) sonst in gut zwei
+      // Minuten vollstaendig ueberschreiben - genau der Fehler, der bei
+      // `TimerChanged` schon einmal die Reichweite des Puffers auf 6,7
+      // Sekunden gedrueckt hat.
+      if (status === 'ok') return;
+      DebugSystem.pushLogEntry({
+        timestamp: Date.now(),
+        kind: 'error',
+        label: `duel:send/${event}`,
+        detail: String(status),
+      });
+    })
+    .catch((error: unknown) => {
+      DebugSystem.pushLogEntry({
+        timestamp: Date.now(),
+        kind: 'error',
+        label: `duel:send/${event}`,
+        detail: error instanceof Error ? error.message : 'Unbekannter Fehler',
+      });
+    });
+}
+
 /** Sendet ein "ich bin bereit"-Signal an den Kanal. */
 export function broadcastReady(): void {
-  void activeChannel?.send({ type: 'broadcast', event: 'ready', payload: {} });
+  sendBroadcast('ready', {});
 }
 
 /** Verteilt die vom Gastgeber gesetzte Startzeit an den Kanal. */
 export function broadcastStartTime(startAtMs: number): void {
-  void activeChannel?.send({ type: 'broadcast', event: 'start', payload: { startAtMs } });
+  sendBroadcast('start', { startAtMs });
 }
 
 /**
@@ -512,11 +601,7 @@ export function broadcastStartTime(startAtMs: number): void {
  * Zwischenstand waehrend des Laufs.
  */
 export function broadcastRoundResult(playerIndex: 0 | 1, result: DuelRoundResult): void {
-  void activeChannel?.send({
-    type: 'broadcast',
-    event: 'round-result',
-    payload: { playerIndex, ...result },
-  });
+  sendBroadcast('round-result', { playerIndex, ...result });
 }
 
 /**
@@ -530,15 +615,34 @@ export function broadcastRoundResult(playerIndex: 0 | 1, result: DuelRoundResult
  * (`submitRoundResult`).
  */
 export function broadcastLiveState(playerIndex: 0 | 1, state: DuelLiveState): void {
-  void activeChannel?.send({
-    type: 'broadcast',
-    event: 'live',
-    payload: { playerIndex, ...state },
-  });
+  sendBroadcast('live', { playerIndex, ...state });
 }
 
 function isOpponentActivity(raw: unknown): raw is DuelOpponentActivity {
   return raw === 'playing' || raw === 'away' || raw === 'left' || raw === 'finished';
+}
+
+/**
+ * Bereits gemeldete Verwurfsgruende - der `live`-Takt feuert alle 400ms, eine
+ * Meldung pro Nachricht wuerde den Ringpuffer (`DEBUG_LOG_BUFFER_SIZE`) in gut
+ * zwei Minuten vollstaendig ueberschreiben und damit genau den Verlauf
+ * loeschen, den der Bericht zeigen soll.
+ *
+ * Fuer die Diagnose genuegt die erste Meldung: die Frage lautet "kommt etwas
+ * an und wird verworfen?", nicht "wie oft".
+ */
+const reportedLiveDrops = new Set<string>();
+
+function logLiveDropOnce(reason: string, detail: string): void {
+  if (reportedLiveDrops.has(reason)) return;
+  reportedLiveDrops.add(reason);
+
+  DebugSystem.pushLogEntry({
+    timestamp: Date.now(),
+    kind: 'error',
+    label: 'duel:live-verworfen',
+    detail: detail ? `${reason}: ${detail}` : reason,
+  });
 }
 
 /** Verlaesst den aktuellen Kanal, falls einer aktiv ist - wirft nie. */

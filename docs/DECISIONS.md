@@ -813,6 +813,23 @@ ohne eine Huerde wie eine PIN aufzubauen.
 - Ob WhatsApp beim Teilen von zwei Dateien (PNG + TXT) beide uebernimmt oder
   nur eine, ist am Schreibtisch nicht pruefbar und bleibt bis zum ersten
   echten Geraetetest ungeprueft (No-Guess-Vertrag).
+- **Der Screenshot haengt am WebGL-Zeichenpuffer, und der haengt am
+  Debug-Modus — nicht am Build.** `canvas.toBlob()` liest ein schwarzes Bild,
+  wenn WebGL seinen Puffer nach dem Frame freigibt; `preserveDrawingBuffer`
+  muss beim Erzeugen des Kontexts gesetzt sein und ist zur Laufzeit nicht
+  umschaltbar. Bis v0.1.249 war die Bedingung dafuer `import.meta.env.DEV` —
+  also genau falsch herum: der Debug-Modus wird per Zehnfach-Tipp auf dem
+  Geraet eingeschaltet, im Production-Build. Jeder Fehlerbericht vom Handy
+  trug deshalb ein schwarzes Bild (belegt 2026-08-23), waehrend es im
+  Dev-Build funktionierte und deshalb nie auffiel. Seit v0.1.250 entscheidet
+  der gespeicherte Debug-Modus (`DEBUG_MODE_STORAGE_KEY`, beim Start
+  gelesen); der Bericht nennt im Abschnitt SCREENSHOT ausserdem, ob ein Bild
+  ueberhaupt moeglich ist, und verlangt sonst einen Neustart. Die Kosten
+  (gehaltener Puffer) fallen damit nur dort an, wo Berichte entstehen.
+
+  Die allgemeine Lehre: **eine Diagnose-Funktion darf nicht an einem Flag
+  haengen, das im Diagnosefall falsch steht.** Debug-Werkzeuge werden
+  definitionsgemaess dort gebraucht, wo der Dev-Build nicht laeuft.
 
 ---
 

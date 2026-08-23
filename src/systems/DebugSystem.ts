@@ -249,6 +249,36 @@ export function logAppStart(context: { standalone: boolean; ios: boolean }): voi
   });
 }
 
+/**
+ * Beschreibt, ob der Screenshot ueberhaupt Inhalt tragen kann.
+ *
+ * Fragt den echten WebGL-Kontext statt die Build-Flags: `preserveDrawingBuffer`
+ * wird beim Erzeugen des Kontexts festgelegt, und nur der Kontext weiss, was
+ * daraus tatsaechlich geworden ist. Ein Bericht, der die Absicht wiederholt
+ * statt den Zustand zu messen, haette den Fehler von 2026-08-23 nicht
+ * aufgedeckt - dort war die Absicht "Screenshots im Debug-Modus" richtig, nur
+ * die Bedingung im Code falsch.
+ *
+ * Steht hier "nein", ist ein schwarzes Bild erklaerbar statt raetselhaft: der
+ * Debug-Modus wurde erst nach dem Start eingeschaltet, ein Neustart der App
+ * behebt es.
+ */
+function screenshotDiagnosticsLine(canvas: HTMLCanvasElement): string {
+  const context = (canvas.getContext('webgl2') ??
+    canvas.getContext('webgl')) as WebGLRenderingContext | null;
+
+  if (!context) {
+    // Kein WebGL heisst Canvas-2D-Renderer - der haelt seinen Inhalt ohnehin,
+    // `toBlob()` liefert dort immer ein Bild.
+    return 'Bild moeglich    ja (Canvas-2D, kein WebGL)';
+  }
+
+  const preserved = context.getContextAttributes()?.preserveDrawingBuffer === true;
+  return preserved
+    ? 'Bild moeglich    ja'
+    : 'Bild moeglich    NEIN - Screenshot bleibt schwarz. App neu starten, dann erneut berichten.';
+}
+
 /** Wandelt einen Canvas-Inhalt in eine PNG-Datei fuer das Share-Sheet um. */
 export function captureScreenshot(canvas: HTMLCanvasElement): Promise<File> {
   return new Promise((resolve, reject) => {
@@ -289,6 +319,9 @@ export async function buildReport(
     '',
     'LAYOUT',
     formatLayout(measureLayout(canvas)),
+    '',
+    'SCREENSHOT',
+    screenshotDiagnosticsLine(canvas),
     '',
     'TON-DIAGNOSE',
     SoundSystem.formatDiagnostics(SoundSystem.getDiagnostics()),

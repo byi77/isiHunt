@@ -253,4 +253,45 @@ describe('DebugSystem.buildReport', () => {
     const report = await DebugSystem.buildReport(canvas, []);
     expect(report).toContain('(keine Eintraege)');
   });
+
+  /**
+   * Der Screenshot-Abschnitt ist selbst ein Diagnosewerkzeug: er beantwortet
+   * die Frage "warum ist das Bild schwarz?" im Bericht statt in einer
+   * Fehlersuche. Diese Tests halten fest, dass er den Kanal ueberhaupt
+   * befragt - und dass er dabei nicht wirft, wenn WebGL fehlt.
+   */
+  it('meldet, ob der Screenshot Inhalt tragen kann', async () => {
+    const canvas = document.createElement('canvas');
+    const report = await DebugSystem.buildReport(canvas, []);
+    expect(report).toContain('SCREENSHOT');
+    expect(report).toContain('Bild moeglich');
+  });
+
+  it('nennt einen freigegebenen Zeichenpuffer als Grund fuer ein schwarzes Bild', async () => {
+    const canvas = document.createElement('canvas');
+    // Ein WebGL-Kontext, der `preserveDrawingBuffer: false` meldet - genau die
+    // Lage auf dem Geraet vor v0.1.250.
+    vi.spyOn(canvas, 'getContext').mockReturnValue({
+      getContextAttributes: () => ({ preserveDrawingBuffer: false }),
+    } as unknown as RenderingContext);
+
+    const report = await DebugSystem.buildReport(canvas, []);
+
+    expect(report).toContain('NEIN');
+    expect(report).toContain('App neu starten');
+  });
+
+  it('meldet einen erhaltenen Zeichenpuffer als brauchbar', async () => {
+    const canvas = document.createElement('canvas');
+    vi.spyOn(canvas, 'getContext').mockReturnValue({
+      getContextAttributes: () => ({ preserveDrawingBuffer: true }),
+    } as unknown as RenderingContext);
+
+    const report = await DebugSystem.buildReport(canvas, []);
+
+    expect(report).toContain('Bild moeglich    ja');
+    // Gezielt gegen die Warnzeile pruefen, nicht gegen das blosse Wort:
+    // "NEIN" steht auch in anderen Abschnitten des Berichts.
+    expect(report).not.toContain('Screenshot bleibt schwarz');
+  });
 });

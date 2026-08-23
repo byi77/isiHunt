@@ -78,10 +78,32 @@ function createGameConfig(): Phaser.Types.Core.GameConfig {
       // Runde Pixel: verhindert flimmernde Kanten bei nicht-ganzzahliger Skalierung.
       roundPixels: true,
       powerPreference: 'high-performance',
-      // Screenshots brauchen den Backbuffer nur im DEV-Build. Im Production-
-      // Pfad darf WebGL ihn freigeben, damit Speicherbandbreite und Akku nicht
-      // fuer Debug-Aufnahmen gebunden bleiben.
-      preserveDrawingBuffer: DEBUG_ENABLED && !PERFORMANCE_MODE,
+      // Der Screenshot im Fehlerbericht (`DebugSystem.captureScreenshot`)
+      // liest den Canvas per `toBlob()` aus. WebGL gibt seinen Zeichenpuffer
+      // ohne dieses Flag nach jedem Frame frei - `toBlob()` bekommt dann ein
+      // schwarzes Bild statt des Bildschirminhalts.
+      //
+      // **Nicht an den DEV-Build koppeln.** Genau das war der Fehler bis
+      // v0.1.249: die Bedingung lautete `DEBUG_ENABLED`, also
+      // `import.meta.env.DEV`. Der Debug-Modus wird aber per Zehnfach-Tipp
+      // aufs Logo eingeschaltet, und das geschieht auf dem Geraet - im
+      // Production-Build, wo `DEBUG_ENABLED` false ist. Jeder Fehlerbericht
+      // vom Handy trug deshalb ein schwarzes Bild (belegt 2026-08-23). Im
+      // Dev-Build fiel es nie auf, weil dort beide Bedingungen zufaellig
+      // zusammenfielen.
+      //
+      // Massgeblich ist deshalb der Debug-Modus, nicht der Build. Der Preis
+      // (gehaltener Puffer kostet Speicherbandbreite und Akku) faellt damit
+      // nur an, wo jemand Fehlerberichte erzeugt - fuer normale Spieler
+      // bleibt der Puffer frei. `PERFORMANCE_MODE` sticht weiterhin alles:
+      // eine Messung darf sich diesen Aufschlag nicht einhandeln.
+      //
+      // Zur Laufzeit ist das Flag nicht umschaltbar - WebGL legt es beim
+      // Erzeugen des Kontexts fest. Wer den Debug-Modus gerade erst
+      // eingeschaltet hat, braucht deshalb einen App-Neustart, bis
+      // Screenshots Inhalt zeigen; `DebugSystem` sagt das im Bericht an.
+      preserveDrawingBuffer:
+        (DEBUG_ENABLED || DebugSystem.isDebugModeActive()) && !PERFORMANCE_MODE,
     },
     input: {
       activePointers: 3,

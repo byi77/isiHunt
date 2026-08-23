@@ -40,6 +40,41 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Der Screenshot im Fehlerbericht war auf dem Handy immer schwarz.**
+  `canvas.toBlob()` liest ein leeres Bild, wenn WebGL seinen Zeichenpuffer
+  nach dem Frame freigibt. Die Bedingung dafuer lautete `import.meta.env.DEV`
+  — also genau falsch herum: der Debug-Modus wird per Zehnfach-Tipp aufs Logo
+  eingeschaltet, und das geschieht auf dem Geraet, im Production-Build. Im
+  Dev-Build funktionierte es, deshalb fiel es nie auf.
+
+  Massgeblich ist jetzt der gespeicherte Debug-Modus, nicht der Build. Die
+  Kosten des gehaltenen Puffers fallen damit nur dort an, wo jemand
+  Fehlerberichte erzeugt. Weil WebGL das Flag beim Erzeugen des Kontexts
+  festlegt und es zur Laufzeit nicht umschaltbar ist, braucht es nach dem
+  Einschalten des Debug-Modus **einen App-Neustart**, bis Screenshots Inhalt
+  zeigen — der Bericht sagt das im neuen Abschnitt SCREENSHOT ausdruecklich
+  an, statt es den Leser raten zu lassen.
+
+- **Netzwerk-Duell: der Sendepfad war blind.** `void activeChannel?.send(...)`
+  verwarf beides — den fehlenden Kanal (`?.`) und die Antwort (`void`). Als im
+  Zwei-Geraete-Test kein einziger Zwischenstand beim Gegner ankam, liess sich
+  deshalb nicht entscheiden, ob gesendet oder nur nicht empfangen wurde.
+
+  Jeder Broadcast laeuft jetzt durch eine gemeinsame Sendefunktion und
+  protokolliert fehlenden Kanal, abweichenden Status und Ausnahmen. Der
+  Kanalstatus wird bei **jedem** Wechsel mitgeschrieben, nicht nur im
+  Fehlerfall: ein `CLOSED` beim Szenenwechsel ist kein Fehler und blieb sonst
+  unsichtbar. Und auf der Empfangsseite wird gemeldet, wenn ein Stand ankommt,
+  aber verworfen wird — etwa weil keine Scene den Handler gesetzt hat.
+
+  Der Erfolgsfall bleibt bewusst stumm: der Takt von 400ms wuerde den
+  Ringpuffer sonst in gut zwei Minuten ueberschreiben und genau den Verlauf
+  loeschen, den der Bericht zeigen soll.
+
+  **Das ist noch keine Reparatur der fehlenden Live-Anzeige**, sondern die
+  Messung, die sie moeglich macht: der naechste Zwei-Geraete-Lauf zeigt, ob
+  gesendet, ob empfangen und ob verworfen wird.
+
 - **Netzwerk-Duell: das Duell kam gar nicht erst zustande.** Belegt durch
   einen Zwei-Geraete-Testbericht (v0.1.246, 2026-08-23): der Gastgeber gab bei
   t+10,07s auf, das zweite Geraet trat bei t+56s bei und fand einen Raum vor,

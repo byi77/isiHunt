@@ -15,6 +15,7 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import * as DebugSystem from '@/systems/DebugSystem';
 import * as NetworkDuelSystem from '@/systems/NetworkDuelSystem';
 
 vi.mock('@/config/backend', () => ({
@@ -345,5 +346,68 @@ describe('Live-Stand ueber den Kanal', () => {
     expect(() =>
       NetworkDuelSystem.broadcastLiveState(0, { score: 10, activity: 'playing' }),
     ).not.toThrow();
+  });
+});
+
+/**
+ * Der Sendepfad war bis v0.1.249 vollstaendig blind: `void
+ * activeChannel?.send(...)` verwarf sowohl den fehlenden Kanal (`?.`) als auch
+ * die Antwort (`void`). Als im Zwei-Geraete-Test kein einziger Zwischenstand
+ * ankam, liess sich deshalb nicht entscheiden, ob gesendet oder nur nicht
+ * empfangen wurde. Diese Tests halten fest, dass beide Faelle jetzt eine Spur
+ * im Ringpuffer hinterlassen - die Grundlage jeder weiteren Ferndiagnose.
+ */
+describe('Sendepfad hinterlaesst eine Spur', () => {
+  beforeEach(() => {
+    NetworkDuelSystem.unsubscribeFromRoom();
+    DebugSystem.clearLogBuffer();
+  });
+
+  it('meldet einen fehlenden Kanal, statt still nichts zu tun', () => {
+    NetworkDuelSystem.broadcastLiveState(0, { score: 10, activity: 'playing' });
+
+    const entry = DebugSystem.getLogBuffer().find((item) => item.label === 'duel:send/live');
+    expect(entry?.detail).toContain('kein aktiver Kanal');
+  });
+
+  it('schweigt, solange der Kanal die Nachricht annimmt', () => {
+    const fake = createFakeSupabase();
+    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {});
+    DebugSystem.clearLogBuffer();
+
+    NetworkDuelSystem.broadcastLiveState(0, { score: 10, activity: 'playing' });
+
+    // Kein Eintrag im Erfolgsfall: der `live`-Takt feuert alle 400ms und
+    // wuerde den Ringpuffer sonst in gut zwei Minuten ueberschreiben.
+    expect(DebugSystem.getLogBuffer().filter((item) => item.label === 'duel:send/live')).toEqual(
+      [],
+    );
+  });
+
+  it('meldet einen angekommenen Stand ohne registrierten Empfaenger', () => {
+    // Genau die Falle, die beim Rundenergebnis schon einmal zuschlug
+    // (v0.1.236): der Handler war deklariert, aber keine Scene hatte ihn
+    // gesetzt - `?.` schluckte jede Meldung lautlos.
+    const fake = createFakeSupabase();
+    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {});
+
+    fake.fire('live', { playerIndex: 1, score: 42, activity: 'playing' });
+
+    const entry = DebugSystem.getLogBuffer().find((item) => item.label === 'duel:live-verworfen');
+    expect(entry?.detail).toContain('kein Empfaenger registriert');
+  });
+
+  it('meldet jeden Verwurfsgrund nur einmal', () => {
+    const fake = createFakeSupabase();
+    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {});
+
+    for (let i = 0; i < 5; i++) {
+      fake.fire('live', { playerIndex: 1, score: 42, activity: 'playing' });
+    }
+
+    const entries = DebugSystem.getLogBuffer().filter(
+      (item) => item.label === 'duel:live-verworfen',
+    );
+    expect(entries).toHaveLength(1);
   });
 });
