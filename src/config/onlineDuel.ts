@@ -43,6 +43,22 @@ export const ONLINE_DUEL_START_LEAD_MS = 5000;
 export const ONLINE_DUEL_SCORE_BROADCAST_INTERVAL_MS = 400;
 
 /**
+ * Ab wann ein ausgebliebener Live-Stand als "Verbindung weg" gilt.
+ *
+ * Der Gegner sendet alle `ONLINE_DUEL_SCORE_BROADCAST_INTERVAL_MS` - bleibt
+ * das mehrfach hintereinander aus, ist die Verbindung gestoert. Grosszuegig
+ * gegenueber dem Sendetakt bemessen (das Vielfache, nicht das Doppelte):
+ * Mobilfunk laesst einzelne Nachrichten ausfallen, ohne dass die Verbindung
+ * wirklich weg ist. Eine Anzeige, die bei jedem Funkloch "Verbindung weg"
+ * blinkt, ist schlechter als eine, die zwei Sekunden spaeter recht hat.
+ *
+ * Ergaenzt die Presence-Meldung, ersetzt sie nicht: Presence erkennt ein
+ * sauberes Verlassen des Kanals, dieser Wert auch ein stilles Verstummen
+ * (Funkloch, eingefrorene App, leerer Akku) - dort kommt nie ein `leave`.
+ */
+export const ONLINE_DUEL_LIVE_STALE_MS = 3_000;
+
+/**
  * Anzahl Messungen zur Bestimmung des Uhr-Offsets gegenueber der
  * Supabase-Serverzeit.
  *

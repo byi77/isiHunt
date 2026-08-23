@@ -249,6 +249,39 @@ Handler kein Typfehler ist, faellt das weder beim Uebersetzen noch in den
 Gates auf. Wer einen geerbten Handler gezielt loswerden will, uebergibt ihn
 ausdruecklich als `undefined`.
 
+**Live-Stand waehrend des Runs (Phase 2).** Der Gegnerstand laeuft ueber
+Broadcast (`live`-Event, Takt `ONLINE_DUEL_SCORE_BROADCAST_INTERVAL_MS`) —
+die andere Seite derselben Regel: haeufig und kurzlebig gehoert auf den Kanal,
+ein verlorener Zwischenstand wird vom naechsten Takt nachgeliefert.
+
+Der Weg zum Bildschirm geht ueber den EventBus, nicht direkt:
+
+```
+GameScene ──400ms──▶ Kanal ──▶ GameScene ──OpponentLiveState──▶ HudScene
+ (Sender)                       (Empfaenger, uebersetzt)          (zeigt)
+```
+
+`systems/` kennt Phaser nicht (Regel 6) und das HUD soll keine
+Netzwerkverbindung kennen (ADR-0003) — `GameScene` sitzt als einzige zwischen
+beiden und uebersetzt. Ob die Zeile ueberhaupt erscheint, entscheidet der
+Aufrufer per `HudSceneData.showOpponentLive`, nicht das HUD selbst.
+
+**Vier gemeldete Zustaende und ein fuenfter, der nur lokal entsteht.**
+`playing` · `away` · `left` · `finished` kommen ueber den Kanal; `gone`
+entsteht im Empfaenger, wenn laenger als `ONLINE_DUEL_LIVE_STALE_MS` nichts
+eintrifft. Der Grund fuer die Trennung: Presence meldet nur ein sauberes
+Verlassen des Kanals — ein Funkloch, eine eingefrorene App oder ein leerer
+Akku erzeugen kein `leave`. Wer weg ist, kann das nicht mehr selbst melden,
+also muss der Empfaenger es aus dem Verstummen schliessen. Genau deshalb
+laeuft der Sendetakt auch dann weiter, wenn nichts passiert: er traegt die
+Information "ich bin noch da".
+
+**`away` heisst nicht "pausiert".** Im Duell laeuft die Simulation beim
+Pausieren weiter (Fairness-Regel in `GameScene.togglePause`) — der Gegner
+sammelt also weiter, er sieht es nur nicht. Die Anzeige sagt deshalb "schaut
+gerade nicht hin"; "pausiert" wuerde der danebenstehenden, sichtbar weiter
+steigenden Punktzahl widersprechen.
+
 ## 4. Datenfluss im Run
 
 ```

@@ -9,6 +9,10 @@
 
 import Phaser from 'phaser';
 
+import {
+  ONLINE_DUEL_LIVE_STALE_MS,
+  ONLINE_DUEL_SCORE_BROADCAST_INTERVAL_MS,
+} from '@/config/onlineDuel';
 import { CHALLENGE_DURATION_MS } from '@/config/challenge';
 import {
   COMBO_GRACE_MS,
@@ -117,6 +121,18 @@ export class GameScene extends Phaser.Scene {
   private totalMs = 0;
   private mode: RunMode = 'solo';
   private playerIndex = 0;
+  /** Nur im Netzwerk-Duell gesetzt - Taktgeber fuer den eigenen Live-Stand. */
+  private liveBroadcastTimer: Phaser.Time.TimerEvent | null = null;
+  /** Was der Gegner zuletzt gemeldet hat - fuer den Verstummt-Test. */
+  private opponentLastSeenAt = 0;
+  private opponentGone = false;
+  /**
+   * Wird auf `away` gesetzt, sobald dieses Geraet den Pause-Bildschirm zeigt
+   * oder in den Hintergrund geht. Der Run laeuft dabei weiter (Fairness-Regel
+   * in `togglePause`), deshalb ist das ausdruecklich kein Pausenzustand,
+   * sondern nur "sieht gerade nicht hin".
+   */
+  private localActivity: NetworkDuelSystem.DuelOpponentActivity = 'playing';
   private challenge: ChallengeState | null = null;
   private readonly performanceMonitor: PerformanceMonitor | null = DEBUG_ENABLED
     ? new PerformanceMonitor()
@@ -230,12 +246,14 @@ export class GameScene extends Phaser.Scene {
       playerLabel: nonProgressionMode ? ChallengeSystem.playerLabel(this.playerIndex) : null,
       scoreToBeat: nonProgressionMode ? ChallengeSystem.scoreToBeat() : null,
       talentSummary: nonProgressionMode ? '' : activeTalentSummary(this.stats),
+      showOpponentLive: challenge?.kind === 'duel-online',
     });
 
     if (DEBUG_ENABLED) this.installDebugKeys();
 
     eventBus.onEvent(GameEvent.PauseRequested, this.onPauseRequested);
     eventBus.onEvent(GameEvent.AbortRequested, this.onAbortRequested);
+    eventBus.onEvent(GameEvent.RunResumed, this.onRunResumed);
     document.addEventListener('visibilitychange', this.onVisibilityChange);
 
     // Waehrend eines Netzwerk-Duells soll ein Verbindungsabbruch des Gegners
@@ -249,7 +267,17 @@ export class GameScene extends Phaser.Scene {
         onOpponentDisconnected: () => {
           eventBus.emitEvent(GameEvent.OpponentDisconnected, undefined);
         },
+        // Uebersetzt vom Kanal auf den EventBus: `systems/` kennt Phaser
+        // nicht (Regel 6) und das HUD soll keine Netzwerkverbindung kennen
+        // (ADR-0003) - diese Scene sitzt als einzige zwischen beiden.
+        onOpponentLiveState: ({ score, activity }) => {
+          this.opponentLastSeenAt = this.time.now;
+          this.opponentGone = false;
+          eventBus.emitEvent(GameEvent.OpponentLiveState, { score, activity });
+        },
       });
+
+      this.startLiveBroadcast();
     }
 
     // Der Messpunkt beginnt nach dem Scene-Aufbau. So misst startupMs den
@@ -268,6 +296,11 @@ export class GameScene extends Phaser.Scene {
   // `onEvent` - sonst wird nicht abgemeldet (CODE_STYLE.md 1.4).
   private readonly onPauseRequested = (): void => this.togglePause();
   private readonly onAbortRequested = (): void => this.abortRun();
+
+  // Im Duell meldet das HUD damit, dass der Pausenbildschirm wieder zu ist -
+  // angehalten war nichts (Fairness-Regel), aber der Gegner soll sehen, dass
+  // hier wieder hingeschaut wird.
+  private readonly onRunResumed = (): void => this.setLocalActivity('playing');
 
   // Kein EventBus-Handler, sondern ein DOM-Listener: Die Unterbrechung kommt
   // vom Geraet, nicht aus dem Spiel. Als Klassenfeld, damit
@@ -297,6 +330,7 @@ export class GameScene extends Phaser.Scene {
     this.updateObstacles(delta);
     this.updateSpawning(delta);
     this.updateTimer(delta);
+    this.checkOpponentAlive();
     this.performanceMonitor?.recordFrame(
       delta,
       this.collectibles.length + this.obstacles.length,
@@ -647,6 +681,16 @@ export class GameScene extends Phaser.Scene {
         totalCollected: stats.totalCollected,
       };
       const playerIndex = this.playerIndex as 0 | 1;
+
+      // Vor dem Ergebnis: der Gegner spielt womoeglich noch und soll sofort
+      // sehen, dass hier fertig gespielt ist - nicht erst, wenn er selbst
+      // ankommt.
+      this.localActivity = 'finished';
+      NetworkDuelSystem.broadcastLiveState(playerIndex, {
+        score: stats.score,
+        activity: 'finished',
+      });
+
       ChallengeSystem.submitOnlineRound(playerIndex, round);
 
       // Zwei Wege, absichtlich: der Broadcast ist der schnelle Fall (Gegner
@@ -702,6 +746,9 @@ export class GameScene extends Phaser.Scene {
     // in Ruhe zielen - das bricht die Fairness gegenueber dem ersten Spieler
     // (config/challenge.ts). Aussteigen bleibt moeglich.
     if (this.mode !== 'solo') {
+      // Der Gegner soll sehen, dass hier gerade niemand hinschaut - seine
+      // Punktzahl steigt derweil weiter, denn die Simulation laeuft.
+      this.setLocalActivity('away');
       eventBus.emitEvent(GameEvent.RunPaused, { reason: 'manual' });
       return;
     }
@@ -741,6 +788,7 @@ export class GameScene extends Phaser.Scene {
     // nichts ging mehr"). Phaser haelt die Update-Schleife im Hintergrund
     // ohnehin an; ein Vorteil entsteht durch den Hinweis also nicht.
     if (this.mode !== 'solo') {
+      this.setLocalActivity('away');
       eventBus.emitEvent(GameEvent.RunPaused, { reason: 'interrupted' });
       return;
     }
@@ -760,6 +808,13 @@ export class GameScene extends Phaser.Scene {
    */
   abortRun(): void {
     if (this.phase === 'ended') return;
+
+    // Vor dem Setzen von `ended` und vor `ChallengeSystem.clear()`: der
+    // Sender prueft die Phase, und `clear()` nimmt ihm die Zuordnung. Danach
+    // waere die Meldung still verschwunden, und der Gegner saehe den
+    // Aussteiger bis zum Rundenende als "spielt".
+    this.setLocalActivity('left');
+
     this.phase = 'ended';
 
     // Die Scene laeuft moeglicherweise pausiert - sonst bleibt sie es auch
@@ -776,9 +831,75 @@ export class GameScene extends Phaser.Scene {
     this.scene.start(SceneKey.Menu);
   }
 
+  // --- Netzwerk-Duell: Live-Stand -------------------------------------------
+
+  /**
+   * Startet den Taktgeber fuer den eigenen Zwischenstand.
+   *
+   * Fester Takt statt "bei jeder Punktaenderung": `ScoreChanged` feuert bei
+   * jedem einzelnen Fang, in einer Kette mehrmals pro Sekunde. Wichtiger ist
+   * aber, dass der Takt auch dann laeuft, wenn gerade NICHTS passiert - genau
+   * dann traegt er die Information "ich bin noch da". Ein ereignisgesteuerter
+   * Sender waere beim Zuschauen still und vom Verbindungsabbruch nicht zu
+   * unterscheiden.
+   */
+  private startLiveBroadcast(): void {
+    this.opponentLastSeenAt = this.time.now;
+    this.liveBroadcastTimer = this.time.addEvent({
+      delay: ONLINE_DUEL_SCORE_BROADCAST_INTERVAL_MS,
+      loop: true,
+      callback: () => this.sendLiveState(),
+    });
+  }
+
+  private sendLiveState(): void {
+    if (this.phase === 'ended') return;
+    NetworkDuelSystem.broadcastLiveState(this.playerIndex as 0 | 1, {
+      score: this.scoring.currentScore,
+      activity: this.localActivity,
+    });
+  }
+
+  /**
+   * Meldet einen Zustandswechsel sofort, statt auf den naechsten Takt zu
+   * warten.
+   *
+   * Bei einem Wechsel zaehlt die Unmittelbarkeit: "steigt aus" oder "schaut
+   * weg" ist die Information, auf die der andere reagiert. 400ms Verzoegerung
+   * waeren bei einer laufenden Punktzahl belanglos, bei einem Ausstieg aber
+   * spuerbar.
+   */
+  private setLocalActivity(activity: NetworkDuelSystem.DuelOpponentActivity): void {
+    if (this.challenge?.kind !== 'duel-online') return;
+    if (this.localActivity === activity) return;
+    this.localActivity = activity;
+    this.sendLiveState();
+  }
+
+  /**
+   * Erkennt einen Gegner, der verstummt ist.
+   *
+   * Presence meldet nur ein sauberes Verlassen des Kanals. Ein Funkloch, eine
+   * eingefrorene App oder ein leerer Akku erzeugen kein `leave` - dort bleibt
+   * es einfach still, und ohne diesen Test staende der letzte Punktestand bis
+   * zum Rundenende unveraendert da, als spiele der Gegner weiter.
+   */
+  private checkOpponentAlive(): void {
+    if (this.opponentGone || !this.liveBroadcastTimer) return;
+    if (this.time.now - this.opponentLastSeenAt <= ONLINE_DUEL_LIVE_STALE_MS) return;
+
+    this.opponentGone = true;
+    eventBus.emitEvent(GameEvent.OpponentDisconnected, undefined);
+  }
+
   private cleanup(): void {
+    if (this.liveBroadcastTimer) {
+      this.liveBroadcastTimer.remove();
+      this.liveBroadcastTimer = null;
+    }
     eventBus.offEvent(GameEvent.PauseRequested, this.onPauseRequested);
     eventBus.offEvent(GameEvent.AbortRequested, this.onAbortRequested);
+    eventBus.offEvent(GameEvent.RunResumed, this.onRunResumed);
     document.removeEventListener('visibilitychange', this.onVisibilityChange);
 
     for (const orb of this.collectibles) orb.destroy();

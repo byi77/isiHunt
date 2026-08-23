@@ -9,6 +9,28 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Hinzugefuegt
+
+- **Netzwerk-Duell: der Gegnerstand ist waehrend des Runs sichtbar.** Eine
+  kompakte Zeile im HUD zeigt Punktzahl, Abstand und was der andere gerade
+  tut — spielt, schaut nicht hin, ausgestiegen, fertig oder Verbindung weg.
+
+  "Schaut gerade nicht hin" statt "pausiert": im Duell laeuft die Simulation
+  beim Pausieren weiter (Fairness-Regel), der Gegner sammelt also weiter und
+  sieht es nur nicht. "Pausiert" wuerde der danebenstehenden, sichtbar weiter
+  steigenden Punktzahl widersprechen.
+
+  Der Stand laeuft ueber Broadcast im 400ms-Takt — passend zur Regel aus
+  `phase_2_11_duel_rooms.sql`: haeufig und kurzlebig gehoert auf den Kanal,
+  ein verlorener Zwischenstand wird vom naechsten Takt nachgeliefert. Kein
+  Datenbankschritt noetig.
+
+  "Verbindung weg" entsteht im Empfaenger aus dem Verstummen
+  (`ONLINE_DUEL_LIVE_STALE_MS`), nicht aus einer Meldung: Presence erkennt nur
+  ein sauberes Verlassen des Kanals — ein Funkloch, eine eingefrorene App oder
+  ein leerer Akku erzeugen kein `leave`. Deshalb sendet der Takt auch dann
+  weiter, wenn nichts passiert; er traegt die Information "ich bin noch da".
+
 ### Behoben
 
 - **Netzwerk-Duell: beide Geraete blieben auf "WARTE AUF ERGEBNIS" stehen.**

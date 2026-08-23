@@ -265,3 +265,85 @@ describe('submitRoundResult ohne konfigurierten Online-Dienst', () => {
     expect(result.ok).toBe(false);
   });
 });
+
+describe('Live-Stand ueber den Kanal', () => {
+  beforeEach(() => {
+    NetworkDuelSystem.unsubscribeFromRoom();
+  });
+
+  function subscribeAs(
+    localIndex: 0 | 1,
+    handlers: Parameters<typeof NetworkDuelSystem.subscribeToRoom>[3],
+  ) {
+    const fake = createFakeSupabase();
+    NetworkDuelSystem.subscribeToRoom(
+      fake.client as Parameters<typeof NetworkDuelSystem.subscribeToRoom>[0],
+      'ABC123',
+      localIndex,
+      handlers,
+    );
+    return fake;
+  }
+
+  it('reicht den Stand des Gegners weiter', () => {
+    const onOpponentLiveState = vi.fn();
+    const fake = subscribeAs(0, { onOpponentLiveState });
+
+    fake.fire('live', { playerIndex: 1, score: 1402, activity: 'playing' });
+
+    expect(onOpponentLiveState).toHaveBeenCalledWith({ score: 1402, activity: 'playing' });
+  });
+
+  /**
+   * Der eigene Broadcast kommt auf demselben Kanal zurueck. Ohne die
+   * Index-Pruefung wuerde das Geraet den eigenen Stand als den des Gegners
+   * anzeigen - beide saehen dann immer ein Unentschieden.
+   */
+  it('ignoriert den eigenen zurueckkommenden Stand', () => {
+    const onOpponentLiveState = vi.fn();
+    const fake = subscribeAs(0, { onOpponentLiveState });
+
+    fake.fire('live', { playerIndex: 0, score: 999, activity: 'playing' });
+
+    expect(onOpponentLiveState).not.toHaveBeenCalled();
+  });
+
+  it('nimmt alle vier gemeldeten Zustaende an', () => {
+    const onOpponentLiveState = vi.fn();
+    const fake = subscribeAs(1, { onOpponentLiveState });
+
+    for (const activity of ['playing', 'away', 'left', 'finished']) {
+      fake.fire('live', { playerIndex: 0, score: 10, activity });
+    }
+
+    expect(onOpponentLiveState).toHaveBeenCalledTimes(4);
+  });
+
+  it('verwirft eine Meldung mit unbekanntem Zustand', () => {
+    const onOpponentLiveState = vi.fn();
+    const fake = subscribeAs(0, { onOpponentLiveState });
+
+    // 'gone' entsteht nur lokal aus dem Verstummen und darf nicht ueber den
+    // Kanal kommen - wer weg ist, kann das nicht selbst melden.
+    fake.fire('live', { playerIndex: 1, score: 10, activity: 'gone' });
+    fake.fire('live', { playerIndex: 1, score: 10, activity: 'irgendwas' });
+
+    expect(onOpponentLiveState).not.toHaveBeenCalled();
+  });
+
+  it('verwirft eine Meldung ohne brauchbare Punktzahl', () => {
+    const onOpponentLiveState = vi.fn();
+    const fake = subscribeAs(0, { onOpponentLiveState });
+
+    fake.fire('live', { playerIndex: 1, score: 'viele', activity: 'playing' });
+
+    expect(onOpponentLiveState).not.toHaveBeenCalled();
+  });
+
+  it('broadcastLiveState wirft ohne aktiven Kanal nicht', () => {
+    NetworkDuelSystem.unsubscribeFromRoom();
+    expect(() =>
+      NetworkDuelSystem.broadcastLiveState(0, { score: 10, activity: 'playing' }),
+    ).not.toThrow();
+  });
+});

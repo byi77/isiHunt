@@ -325,6 +325,23 @@ export interface DuelRoundResult {
   totalCollected: number;
 }
 
+/**
+ * Zustand des Gegners waehrend des laufenden Runs.
+ *
+ * `away` heisst ausdruecklich NICHT "angehalten": im Duell laeuft die
+ * Simulation beim Pausieren weiter (Fairness-Regel, siehe
+ * `GameScene.togglePause`). Der Gegner sammelt also weiter, er sieht es nur
+ * gerade nicht - Anruf, App-Wechsel oder Pause-Knopf. Die Anzeige muss das so
+ * benennen, sonst entsteht der falsche Eindruck eines eingefrorenen Runs,
+ * waehrend die Punktzahl daneben sichtbar weitersteigt.
+ */
+export type DuelOpponentActivity = 'playing' | 'away' | 'left' | 'finished';
+
+export interface DuelLiveState {
+  score: number;
+  activity: DuelOpponentActivity;
+}
+
 export interface DuelChannelHandlers {
   onOpponentReady?: () => void;
   onStartTimeSet?: (startAtMs: number) => void;
@@ -332,6 +349,8 @@ export interface DuelChannelHandlers {
   onOpponentDisconnected?: () => void;
   onChannelError?: (reason: string) => void;
   onOpponentRoundResult?: (playerIndex: 0 | 1, result: DuelRoundResult) => void;
+  /** Laufender Zwischenstand des Gegners waehrend des Runs. */
+  onOpponentLiveState?: (state: DuelLiveState) => void;
 }
 
 let activeChannel: RealtimeChannel | null = null;
@@ -427,6 +446,26 @@ export function subscribeToRoom(
         });
       },
     )
+    .on(
+      'broadcast',
+      { event: 'live' },
+      ({
+        payload,
+      }: {
+        payload: { playerIndex?: unknown; score?: unknown; activity?: unknown };
+      }) => {
+        // Der eigene Broadcast kommt auf demselben Kanal zurueck - ohne diese
+        // Pruefung wuerde das Geraet den eigenen Stand als den des Gegners
+        // anzeigen.
+        if (payload.playerIndex === activeLocalPlayerIndex) return;
+
+        const score = Number(payload.score);
+        if (!Number.isFinite(score)) return;
+        if (!isOpponentActivity(payload.activity)) return;
+
+        activeHandlers.onOpponentLiveState?.({ score, activity: payload.activity });
+      },
+    )
     .on('presence', { event: 'leave' }, ({ key }: { key: string }) => {
       // Nur reagieren, wenn der ANDERE Spieler gegangen ist - Presence
       // meldet grundsaetzlich jeden Abgang im Kanal, auch den eigenen beim
@@ -478,6 +517,28 @@ export function broadcastRoundResult(playerIndex: 0 | 1, result: DuelRoundResult
     event: 'round-result',
     payload: { playerIndex, ...result },
   });
+}
+
+/**
+ * Sendet den eigenen Zwischenstand an den Gegner.
+ *
+ * Bewusst Broadcast und NICHT die Tabelle - das ist die andere Seite der
+ * Regel aus `supabase/phase_2_11_duel_rooms.sql` Abschnitt 3: haeufig und
+ * kurzlebig gehoert auf den Kanal. Ein verlorener Zwischenstand ist
+ * unkritisch, der naechste Takt liefert ihn nach; das Rundenergebnis
+ * dagegen liegt aus genau diesem Grund persistent im Raum
+ * (`submitRoundResult`).
+ */
+export function broadcastLiveState(playerIndex: 0 | 1, state: DuelLiveState): void {
+  void activeChannel?.send({
+    type: 'broadcast',
+    event: 'live',
+    payload: { playerIndex, ...state },
+  });
+}
+
+function isOpponentActivity(raw: unknown): raw is DuelOpponentActivity {
+  return raw === 'playing' || raw === 'away' || raw === 'left' || raw === 'finished';
 }
 
 /** Verlaesst den aktuellen Kanal, falls einer aktiv ist - wirft nie. */

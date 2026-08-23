@@ -41,6 +41,15 @@ export const GameEvent = {
    * regulaer weiter (Planungsnotiz: "Solo-Fortsetzung statt Abbruch").
    */
   OpponentDisconnected: 'duel:opponent-disconnected',
+  /**
+   * Zwischenstand des Netzwerk-Duell-Gegners waehrend des laufenden Runs.
+   *
+   * Geht ueber den EventBus statt direkt vom Kanal ins HUD, weil `systems/`
+   * Phaser nicht kennt (Regel 6) und das HUD keine Netzwerkverbindung kennen
+   * soll (ADR-0003, dieselbe Trennung wie beim Pause-Knopf). `GameScene`
+   * uebersetzt: sie hoert am Kanal und sendet hier weiter.
+   */
+  OpponentLiveState: 'duel:opponent-live',
 } as const;
 
 export interface GameEventPayloads {
@@ -73,6 +82,17 @@ export interface GameEventPayloads {
   [GameEvent.PauseRequested]: undefined;
   [GameEvent.AbortRequested]: undefined;
   [GameEvent.OpponentDisconnected]: undefined;
+  /**
+   * `activity` beschreibt, was der Gegner gerade tut - `away` heisst
+   * "schaut nicht hin", nicht "angehalten": im Duell laeuft die Simulation
+   * beim Pausieren weiter. `gone` entsteht lokal, wenn der Stand ausbleibt
+   * (`ONLINE_DUEL_LIVE_STALE_MS`), und kommt nie ueber den Kanal - wer weg
+   * ist, kann das nicht mehr selbst melden.
+   */
+  [GameEvent.OpponentLiveState]: {
+    score: number;
+    activity: 'playing' | 'away' | 'left' | 'finished' | 'gone';
+  };
 }
 
 type EventName = keyof GameEventPayloads;

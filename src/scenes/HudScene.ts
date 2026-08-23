@@ -30,6 +30,13 @@ export interface HudSceneData {
   scoreToBeat?: number | null;
   /** Kompakte Anzeige der aktiven Talentverstaerkungen im laufenden Run. */
   talentSummary?: string;
+  /**
+   * Nur im Netzwerk-Duell: dann zeigt das HUD den laufenden Stand des
+   * Gegners. Als Flag vom Aufrufer statt per `ChallengeSystem`-Abfrage -
+   * dieselbe Linie wie `playerLabel`/`scoreToBeat`: das HUD stellt dar, es
+   * entscheidet nicht, welche Duell-Art laeuft (ADR-0003).
+   */
+  showOpponentLive?: boolean;
 }
 
 export class HudScene extends Phaser.Scene {
@@ -40,6 +47,12 @@ export class HudScene extends Phaser.Scene {
   private worldText!: Phaser.GameObjects.Text;
   private targetText: Phaser.GameObjects.Text | null = null;
   private opponentDisconnectedText!: Phaser.GameObjects.Text;
+  /** Nur im Netzwerk-Duell: laufender Stand des Gegners. */
+  private opponentLiveText: Phaser.GameObjects.Text | null = null;
+  private opponentScore = 0;
+  /** Eigener Stand, gespiegelt fuer den Abstandsvergleich in der Gegnerzeile. */
+  private lastOwnScore = 0;
+  private lastOpponentActivity: 'playing' | 'away' | 'left' | 'finished' | 'gone' = 'playing';
   private timerBar!: BarHandle;
   private accent = 0xffffff;
   private scoreToBeat: number | null = null;
@@ -159,6 +172,18 @@ export class HudScene extends Phaser.Scene {
       .setOrigin(0.5, 0)
       .setAlpha(0);
 
+    // Netzwerk-Duell: eine Zeile unter dem eigenen Stand, mittig - der Blick
+    // liegt beim Spielen auf dem Feld, nicht am Rand. Erst sichtbar, wenn der
+    // erste Stand eintrifft: eine Zeile mit "0" vor der ersten Meldung waere
+    // nicht von einem tatsaechlich bei null stehenden Gegner zu
+    // unterscheiden.
+    if (data.showOpponentLive) {
+      this.opponentLiveText = this.add
+        .text(GAME_WIDTH / 2, 76, '', textStyle(FontSize.tiny, Palette.inkDim))
+        .setOrigin(0.5, 0)
+        .setAlpha(0);
+    }
+
     this.buildPauseButton();
 
     this.registerEvents();
@@ -277,7 +302,7 @@ export class HudScene extends Phaser.Scene {
       cx,
       cy + 10,
       this.mode === 'challenge' ? 'ZURÜCK INS SPIEL' : 'WEITER',
-      () => (this.mode === 'challenge' ? this.hidePauseOverlay() : this.requestPause()),
+      () => (this.mode === 'challenge' ? this.closeDuelPause() : this.requestPause()),
       {
         width: 400,
         height: 88,
@@ -311,6 +336,20 @@ export class HudScene extends Phaser.Scene {
     this.pauseOverlay.push(warning);
   }
 
+  /**
+   * Klappt den Duell-Pausenbildschirm zu und meldet das weiter.
+   *
+   * `RunResumed` obwohl nie etwas angehalten war: das Ereignis bedeutet hier
+   * "der Bildschirm ist wieder frei, es wird wieder hingeschaut". Die
+   * `GameScene` braucht diese Meldung, um dem Gegner den Wechsel von
+   * "schaut nicht hin" zurueck auf "spielt" zu senden - ohne sie bliebe die
+   * Anzeige beim anderen bis zum Rundenende auf `away` stehen.
+   */
+  private closeDuelPause(): void {
+    this.hidePauseOverlay();
+    eventBus.emitEvent(GameEvent.RunResumed, undefined);
+  }
+
   private hidePauseOverlay(): void {
     for (const part of this.pauseOverlay) part.destroy();
     this.pauseOverlay = [];
@@ -319,6 +358,12 @@ export class HudScene extends Phaser.Scene {
   // --- Event-Anbindung ------------------------------------------------------
 
   private readonly onScore = ({ score }: { score: number }): void => {
+    this.lastOwnScore = score;
+    // Der Abstand in der Gegnerzeile haengt an BEIDEN Staenden - ohne dieses
+    // Nachziehen bliebe er stehen, bis der Gegner das naechste Mal sendet.
+    if (this.opponentLiveText && this.opponentLiveText.alpha > 0) {
+      this.renderOpponentLive(this.lastOpponentActivity);
+    }
     this.scoreText.setText(score.toLocaleString('de-DE'));
     // Kurzer Pop bei jeder Aenderung - macht Punktzuwachs spuerbar.
     this.scoreText.setScale(1.12);
@@ -428,7 +473,61 @@ export class HudScene extends Phaser.Scene {
   private readonly onResumed = (): void => this.hidePauseOverlay();
   private readonly onOpponentDisconnected = (): void => {
     this.opponentDisconnectedText.setText('Verbindung zum Geschwister unterbrochen').setAlpha(1);
+    // Der Punktestand bleibt stehen, aber als letzter bekannter - sonst
+    // wirkte er wie ein aktueller.
+    this.renderOpponentLive('gone');
   };
+
+  private readonly onOpponentLive = ({
+    score,
+    activity,
+  }: {
+    score: number;
+    activity: 'playing' | 'away' | 'left' | 'finished' | 'gone';
+  }): void => {
+    this.opponentScore = score;
+
+    // Eine wieder eintreffende Meldung hebt den Trennungshinweis auf: ein
+    // kurzes Funkloch soll nicht bis zum Rundenende als Abbruch stehen
+    // bleiben.
+    if (activity !== 'gone') this.opponentDisconnectedText.setAlpha(0);
+
+    this.renderOpponentLive(activity);
+  };
+
+  /**
+   * Schreibt die Gegner-Zeile.
+   *
+   * `away` wird bewusst NICHT "pausiert" genannt: im Duell laeuft die
+   * Simulation weiter (Fairness-Regel in `GameScene.togglePause`), die
+   * Punktzahl daneben steigt also sichtbar weiter. "Pausiert" wuerde dem
+   * widersprechen und wie ein Anzeigefehler wirken.
+   */
+  private renderOpponentLive(activity: 'playing' | 'away' | 'left' | 'finished' | 'gone'): void {
+    if (!this.opponentLiveText) return;
+    this.lastOpponentActivity = activity;
+
+    const points = this.opponentScore.toLocaleString('de-DE');
+    const diff = this.opponentScore - this.lastOwnScore;
+
+    const label =
+      activity === 'left'
+        ? 'Geschwister ausgestiegen'
+        : activity === 'gone'
+          ? `Geschwister ${points} · Verbindung weg`
+          : activity === 'finished'
+            ? `Geschwister ${points} · fertig`
+            : activity === 'away'
+              ? `Geschwister ${points} · schaut gerade nicht hin`
+              : `Geschwister ${points}${diff === 0 ? '' : diff > 0 ? ` · ${diff} vorn` : ` · ${-diff} zurueck`}`;
+
+    // Aussteiger und Verbindungsverlust in Warnfarbe, alles andere gedaempft:
+    // die Zeile soll beim Spielen nicht um Aufmerksamkeit konkurrieren,
+    // ausser wenn sich etwas Endgueltiges geaendert hat.
+    const color = activity === 'left' || activity === 'gone' ? Palette.danger : Palette.inkDim;
+
+    this.opponentLiveText.setText(label).setColor(color).setAlpha(1);
+  }
 
   private registerEvents(): void {
     eventBus.onEvent(GameEvent.ScoreChanged, this.onScore);
@@ -437,6 +536,7 @@ export class HudScene extends Phaser.Scene {
     eventBus.onEvent(GameEvent.RunPaused, this.onPaused);
     eventBus.onEvent(GameEvent.RunResumed, this.onResumed);
     eventBus.onEvent(GameEvent.OpponentDisconnected, this.onOpponentDisconnected);
+    eventBus.onEvent(GameEvent.OpponentLiveState, this.onOpponentLive);
   }
 
   /**
@@ -450,5 +550,6 @@ export class HudScene extends Phaser.Scene {
     eventBus.offEvent(GameEvent.RunPaused, this.onPaused);
     eventBus.offEvent(GameEvent.RunResumed, this.onResumed);
     eventBus.offEvent(GameEvent.OpponentDisconnected, this.onOpponentDisconnected);
+    eventBus.offEvent(GameEvent.OpponentLiveState, this.onOpponentLive);
   }
 }
