@@ -172,6 +172,16 @@ describe('DebugSystem Debug-Modus-Persistenz', () => {
 describe('Persistenz ueber einen App-Neustart', () => {
   // Beobachtet 2026-08-18: ein Fehlerbericht ging verloren, weil der
   // Ringpuffer rein In-Memory war - App beenden vor dem Teilen loeschte ihn.
+
+  // Pflicht, obwohl diese Tests nur einen Eintrag pruefen: der Puffer ist ein
+  // Modul-Singleton und traegt Eintraege aus frueheren Tests mit. Das fiel
+  // erst auf, als der Puffer von 400 auf 1000 wuchs - vorher verdraengte der
+  // Ueberlauf die Altlasten zufaellig gerade noch. Ein Test, dessen Erfolg an
+  // der Puffergroesse haengt, prueft nicht das, was er zu pruefen vorgibt.
+  beforeEach(() => {
+    DebugSystem.clearLogBuffer();
+  });
+
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -309,7 +319,7 @@ describe('DebugSystem geschuetzter Puffer', () => {
     DebugSystem.clearLogBuffer();
   });
 
-  it('ueberlebt eine ganze Runde voller Sammelereignisse', () => {
+  it('ueberlebt einen vollstaendigen Ueberlauf des Hauptpuffers', () => {
     DebugSystem.pushProtectedLogEntry({
       timestamp: Date.now(),
       kind: 'event',
@@ -317,9 +327,12 @@ describe('DebugSystem geschuetzter Puffer', () => {
       detail: 'SUBSCRIBED',
     });
 
-    // Eine Runde mit 148 Relikten erzeugt drei Eintraege pro Fang - mehr als
-    // der Hauptpuffer fasst. Genau die Menge aus dem Geraetebericht.
-    for (let i = 0; i < 148 * 3; i++) {
+    // Genug Ereignisse, um den Hauptpuffer sicher zu ueberlaufen - seit
+    // v0.1.252 fasst er einen ganzen Run, also braucht dieser Test mehr als
+    // eine Runde. Bewusst aus der Konstante gerechnet statt mit einer festen
+    // Zahl: sonst haette die naechste Puffervergroesserung denselben stillen
+    // Effekt wie diesmal, als 148*3 ploetzlich hineinpasste.
+    for (let i = 0; i < DEBUG_LOG_BUFFER_SIZE + 50; i++) {
       DebugSystem.pushLogEntry({
         timestamp: Date.now(),
         kind: 'event',
@@ -328,8 +341,11 @@ describe('DebugSystem geschuetzter Puffer', () => {
       });
     }
 
-    // Der Hauptpuffer hat den Anfang laengst verloren ...
-    expect(DebugSystem.getLogBuffer().length).toBeLessThan(148 * 3);
+    // Der Hauptpuffer hat den Anfang verloren ...
+    expect(DebugSystem.getLogBuffer()).toHaveLength(DEBUG_LOG_BUFFER_SIZE);
+    expect(
+      DebugSystem.getLogBuffer().find((item) => item.label === 'duel:kanalstatus'),
+    ).toBeUndefined();
     // ... der geschuetzte traegt den Kanalstatus weiterhin.
     const entry = DebugSystem.getProtectedLogBuffer().find(
       (item) => item.label === 'duel:kanalstatus',
@@ -365,5 +381,59 @@ describe('DebugSystem geschuetzter Puffer', () => {
     expect(report).toContain('WICHTIGE EREIGNISSE');
     expect(report).toContain('duel:send/live');
     expect(report).toContain('VERLAUF');
+  });
+});
+
+/**
+ * Der Hauptpuffer hat seit v0.1.252 eine ausdrueckliche Zusage: ein
+ * vollstaendiger 90-Sekunden-Run passt samt Vor- und Nachlauf hinein. Der
+ * Test haelt die Rechnung fest, aus der sich die Zahl begruendet - nicht die
+ * Zahl selbst, die waere nur eine zweite Kopie.
+ */
+describe('DEBUG_LOG_BUFFER_SIZE traegt einen ganzen Run', () => {
+  /** Aus dem Geraetebericht 2026-08-23: 148 Relikte in einer 90s-Runde. */
+  const RELIKTE_PRO_RUN = 148;
+  /** `run:collected` + `score:changed` + `combo:changed`. */
+  const EREIGNISSE_PRO_FANG = 3;
+  /** Verpasste Relikte und Combo-Zerfall, grob aus demselben Bericht. */
+  const SONSTIGE_RUN_EREIGNISSE = 100;
+  /** App-Start, Sync, Login, Lobby-Polling vor dem Run. */
+  const VORLAUF = 40;
+  /** Ergebnis abgeben, Raumstatus-Polling, Sync nach dem Run. */
+  const NACHLAUF = 30;
+
+  it('fasst Vorlauf, Run und Nachlauf gemeinsam', () => {
+    const bedarf =
+      VORLAUF + RELIKTE_PRO_RUN * EREIGNISSE_PRO_FANG + SONSTIGE_RUN_EREIGNISSE + NACHLAUF;
+
+    expect(DEBUG_LOG_BUFFER_SIZE).toBeGreaterThanOrEqual(bedarf);
+  });
+
+  it('behaelt den Rundenbeginn, nachdem eine volle Runde durchgelaufen ist', () => {
+    DebugSystem.clearLogBuffer();
+
+    DebugSystem.pushLogEntry({
+      timestamp: Date.now(),
+      kind: 'event',
+      label: 'app:start',
+      detail: 'v0.0.0-test',
+    });
+
+    const runEreignisse =
+      RELIKTE_PRO_RUN * EREIGNISSE_PRO_FANG + SONSTIGE_RUN_EREIGNISSE + NACHLAUF;
+    for (let i = 0; i < runEreignisse; i++) {
+      DebugSystem.pushLogEntry({
+        timestamp: Date.now(),
+        kind: 'event',
+        label: 'run:collected',
+        detail: '',
+      });
+    }
+
+    // Der allererste Eintrag muss noch da sein - genau das war vor v0.1.252
+    // nicht der Fall und machte jeden Bericht waehrend eines Runs blind fuer
+    // alles, was vor dem Run geschah.
+    const start = DebugSystem.getLogBuffer().find((entry) => entry.label === 'app:start');
+    expect(start).toBeDefined();
   });
 });

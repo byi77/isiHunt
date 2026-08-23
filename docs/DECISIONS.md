@@ -809,7 +809,14 @@ ohne eine Huerde wie eine PIN aufzubauen.
   `SaveSystem.TEST_PROFILE_KEY`.
 - Die Puffergroesse wuchs von urspruenglich 50 auf 200 Eintraege, weil der
   Puffer seit dem Konsolen-Abgriff und der App-weiten Laufzeit (statt nur
-  eines Runs) deutlich schneller befuellt wird.
+  eines Runs) deutlich schneller befuellt wird. Seit v0.1.252 steht sie auf
+  **1000** mit einer ausdruecklichen Zusage: ein vollstaendiger
+  90-Sekunden-Run passt samt Vor- und Nachlauf hinein (Rechnung in
+  `DebugConfig.ts`, nachgerechnet am Geraetebericht vom 2026-08-23). Die
+  Kosten wurden gemessen statt geschaetzt: ~250 KB Nutzdaten (rund 5% der
+  iOS-Grenze von 5 MB pro Origin), ~0,5 ms je `JSON.stringify`, und durch die
+  500-ms-Drosselung in `schedulePersist()` hoechstens zwei Schreibvorgaenge
+  pro Sekunde - unabhaengig von der Puffergroesse.
 - **Ein zweiter, geschuetzter Puffer fuer seltene Ereignisse (seit
   v0.1.251).** Die Groesse allein loest das Verdraengungsproblem nicht: ein
   Fang erzeugt drei Eintraege, und der Geraetebericht vom 2026-08-23 zaehlte

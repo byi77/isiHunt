@@ -38,6 +38,23 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   innerhalb der Familie gespielt; die alte Bezeichnung schloss genau die
   Mitspieler aus, fuer die das Netzwerk-Duell ueberhaupt erst gebaut wurde.
 
+### Geaendert
+
+- **Der Ereignispuffer fasst jetzt einen ganzen Run — mit Vor- und
+  Nachlauf.** `DEBUG_LOG_BUFFER_SIZE` steigt von 400 auf **1000**. Bisher
+  zeigte ein Fehlerbericht, der waehrend oder nach einem Run erstellt wurde,
+  nur dessen Ende: eine Runde mit 148 Relikten erzeugt allein 444 Eintraege.
+  App-Start, Anmeldung, Lobby und Rundenbeginn waren daraus verdraengt.
+
+  Die Kosten sind gemessen, nicht geschaetzt: rund 250 KB Nutzdaten (etwa 5%
+  der iOS-Grenze von 5 MB pro Origin — der Bericht meldet aktuell 0 KB),
+  ~0,5 ms je `JSON.stringify`, und durch die bestehende 500-ms-Drosselung
+  hoechstens zwei Schreibvorgaenge pro Sekunde, unabhaengig von der
+  Puffergroesse. Der Textbericht waechst auf etwa 90 KB.
+
+  Der geschuetzte Puffer bleibt trotzdem noetig: der groessere Hauptpuffer
+  verschiebt die Grenze, er hebt sie nicht auf.
+
 ### Behoben
 
 - **Netzwerk-Duell: die Gegneranzeige lag im eigenen Punktestand.** Sie
