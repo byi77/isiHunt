@@ -472,7 +472,7 @@ export class HudScene extends Phaser.Scene {
   };
   private readonly onResumed = (): void => this.hidePauseOverlay();
   private readonly onOpponentDisconnected = (): void => {
-    this.opponentDisconnectedText.setText('Verbindung zum Geschwister unterbrochen').setAlpha(1);
+    this.opponentDisconnectedText.setText('Verbindung zum Freund unterbrochen').setAlpha(1);
     // Der Punktestand bleibt stehen, aber als letzter bekannter - sonst
     // wirkte er wie ein aktueller.
     this.renderOpponentLive('gone');
@@ -512,14 +512,14 @@ export class HudScene extends Phaser.Scene {
 
     const label =
       activity === 'left'
-        ? 'Geschwister ausgestiegen'
+        ? 'Freund ausgestiegen'
         : activity === 'gone'
-          ? `Geschwister ${points} · Verbindung weg`
+          ? `Freund ${points} · Verbindung weg`
           : activity === 'finished'
-            ? `Geschwister ${points} · fertig`
+            ? `Freund ${points} · fertig`
             : activity === 'away'
-              ? `Geschwister ${points} · schaut gerade nicht hin`
-              : `Geschwister ${points}${diff === 0 ? '' : diff > 0 ? ` · ${diff} vorn` : ` · ${-diff} zurueck`}`;
+              ? `Freund ${points} · schaut gerade nicht hin`
+              : `Freund ${points}${diff === 0 ? '' : diff > 0 ? ` · ${diff} vorn` : ` · ${-diff} zurueck`}`;
 
     // Aussteiger und Verbindungsverlust in Warnfarbe, alles andere gedaempft:
     // die Zeile soll beim Spielen nicht um Aufmerksamkeit konkurrieren,

@@ -14,6 +14,7 @@ import Phaser from 'phaser';
 
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import {
+  ONLINE_DUEL_GUEST_START_TIMEOUT_MS,
   ONLINE_DUEL_READY_TIMEOUT_MS,
   ONLINE_DUEL_RESULT_POLL_INTERVAL_MS,
   ONLINE_DUEL_RESULT_TIMEOUT_MS,
@@ -41,7 +42,7 @@ import {
   createVignette,
   createWorldBackdrop,
 } from '@/ui/widgets';
-import type { StatusPageHandle } from '@/ui/widgets';
+import type { ButtonHandle, StatusPageHandle } from '@/ui/widgets';
 
 /** "1 Relikt" statt "1 Relikte" - deckungsgleich mit ChallengeScene. */
 function relics(count: number): string {
@@ -71,6 +72,15 @@ export class OnlineDuelScene extends Phaser.Scene {
   /** Dasselbe fuer das Rundenergebnis des Gegners im Ergebnisbildschirm. */
   private resultPollTimer: Phaser.Time.TimerEvent | null = null;
   private resultPollStartedAt = 0;
+  /**
+   * Feld statt lokaler Variable in `runLobbyFlow`, weil das Zeitlimit nach
+   * einem WEITER WARTEN erneut startet und dieselbe Antwort auf "laeuft der
+   * Run schon?" braucht - eine Closure-Variable waere beim zweiten Anlauf
+   * nicht mehr erreichbar.
+   */
+  private runStarted = false;
+  private opponentReady = false;
+  private keepWaitingButton: ButtonHandle | null = null;
 
   constructor() {
     super(SceneKey.OnlineDuel);
@@ -87,6 +97,9 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.startPollTimer = null;
     this.resultPollTimer = null;
     this.resultPollStartedAt = 0;
+    this.runStarted = false;
+    this.opponentReady = false;
+    this.keepWaitingButton = null;
 
     const state = ChallengeSystem.getState();
     this.world = getWorld(state?.worldId ?? SaveSystem.load().lastWorldId ?? DEFAULT_WORLD_ID);
@@ -178,7 +191,7 @@ export class OnlineDuelScene extends Phaser.Scene {
         .text(
           GAME_WIDTH / 2,
           this.statusPage.contentY(464),
-          'Du bekommst einen Code fuer dein Geschwister',
+          'Du bekommst einen Code fuer deinen Freund',
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0.5),
@@ -344,7 +357,19 @@ export class OnlineDuelScene extends Phaser.Scene {
 
   /**
    * Verbindet den Realtime-Kanal, misst den Uhr-Offset, meldet Bereitschaft
-   * und wartet auf die vom Gastgeber gesetzte Startzeit.
+   * und wartet auf die gemeinsame Startzeit.
+   *
+   * **Beide Rollen koennen die Startzeit setzen.** Frueher tat das nur der
+   * Gastgeber; der Gast pollte ausschliesslich auf ein fertiges `startAtMs`
+   * und war damit auf einen Ausloeser angewiesen, den nur das andere Geraet
+   * betaetigen konnte. Gab der Gastgeber vorher auf (Ready-Timeout), wartete
+   * der Gast unbegrenzt auf etwas, das nie mehr kommen konnte - belegt durch
+   * den Zwei-Geraete-Bericht v0.1.246 (2026-08-23). `set_duel_start_time`
+   * prueft serverseitig nur `host_ready and guest_ready`, nicht *wer* ruft
+   * (siehe `supabase/phase_2_11_duel_rooms.sql`), und `update ... set
+   * start_at` ist fuer denselben berechneten Wert unkritisch, wenn beide es
+   * tun. Die Beschraenkung auf den Gastgeber war reine Client-Konvention -
+   * und genau die wurde in diesem Fall zur Falle.
    */
   private async runLobbyFlow(statusText: Phaser.GameObjects.Text): Promise<void> {
     const supabase = CloudSystem.getSupabaseClient();
@@ -353,29 +378,27 @@ export class OnlineDuelScene extends Phaser.Scene {
       return;
     }
 
-    let opponentReady = false;
-    let started = false;
     const localPlayerIndex: 0 | 1 = this.isHost ? 0 : 1;
 
     NetworkDuelSystem.subscribeToRoom(supabase, this.roomCode, localPlayerIndex, {
       onOpponentReady: () => {
-        opponentReady = true;
-        if (!started) statusText.setText('Geschwister bereit - Start wird vorbereitet ...');
+        this.opponentReady = true;
+        if (!this.runStarted) statusText.setText('Freund bereit - Start wird vorbereitet ...');
       },
       onStartTimeSet: (startAtMs) => {
-        if (started) return;
-        started = true;
+        if (this.runStarted) return;
+        this.runStarted = true;
         this.beginRun(startAtMs);
       },
       onOpponentDisconnected: () => {
         // Nur waehrend der Lobby relevant fuer diese Scene - ein Abbruch
         // WAEHREND des Runs betrifft GameScene, die den Kanal separat
         // beobachtet (siehe GameScene.subscribeOpponentDisconnect()).
-        if (started) return;
-        statusText.setText('Verbindung zum Geschwister verloren.').setColor(Palette.danger);
+        if (this.runStarted) return;
+        statusText.setText('Verbindung zum Freund verloren.').setColor(Palette.danger);
       },
       onChannelError: (reason) => {
-        if (started) return;
+        if (this.runStarted) return;
         // Bei einem Kanalfehler ist das Polling der einzige verbliebene Weg
         // zur Startzeit - es laeuft deshalb bewusst WEITER. Nur die Meldung
         // sagt dem Spieler, dass die Verbindung stockt.
@@ -386,7 +409,7 @@ export class OnlineDuelScene extends Phaser.Scene {
     });
 
     const offsetResult = await NetworkDuelSystem.measureClockOffset();
-    if (!this.scene.isActive() || started) return;
+    if (!this.scene.isActive() || this.runStarted) return;
     if (!offsetResult.ok) {
       statusText.setText(offsetResult.error).setColor(Palette.danger);
       return;
@@ -394,106 +417,163 @@ export class OnlineDuelScene extends Phaser.Scene {
     ChallengeSystem.updateOnlineSync(offsetResult.value, null);
 
     const readyResult = await NetworkDuelSystem.markReady(this.roomCode, this.isHost);
-    if (!this.scene.isActive() || started) return;
+    if (!this.scene.isActive() || this.runStarted) return;
     if (!readyResult.ok) {
       statusText.setText(readyResult.error).setColor(Palette.danger);
       return;
     }
     NetworkDuelSystem.broadcastReady();
     statusText.setText(
-      opponentReady ? 'Beide bereit - Start wird vorbereitet ...' : 'Warte auf Geschwister ...',
+      this.opponentReady ? 'Beide bereit - Start wird vorbereitet ...' : 'Warte auf Freund ...',
     );
 
-    // Nur der Gastgeber setzt die Startzeit - verhindert, dass beide
-    // gleichzeitig versuchen und einer einen bereits gesetzten Wert
-    // ueberschreibt (die RPC selbst ist idempotent genug fuer diesen Fall,
-    // aber ein einzelner Ausloeser haelt den Ablauf einfacher).
-    if (this.isHost) {
-      this.readyTimeout = this.time.delayedCall(ONLINE_DUEL_READY_TIMEOUT_MS, () => {
-        void (async () => {
-          if (started || !this.scene.isActive()) return;
-          const statusResult = await NetworkDuelSystem.getRoomStatus(this.roomCode);
-          if (!this.scene.isActive() || started) return;
-          if (!statusResult.ok || !statusResult.value?.guestReady) {
-            // BUG belegt (Debug-Report v0.1.205, 2026-08-21): Hier wurde die
-            // Meldung gesetzt, der Poll-Timer lief aber weiter - im Report
-            // sind nach dem Timeout bei t+10s noch 17 weitere
-            // `getRoomStatus`-Aufrufe zu sehen, bis der Test abgebrochen
-            // wurde. Das Warten war also aufgegeben, das Geraet fragte aber
-            // im 1,5-Sekunden-Takt weiter, und der Bildschirm bot ausser
-            // ABBRECHEN nichts an. `cleanupLobby()` raeumt genau das auf -
-            // es wurde bisher nur bei `beginRun()` und beim SHUTDOWN
-            // gerufen, nicht beim Aufgeben.
-            this.cleanupLobby();
-            statusText
-              .setText('Geschwister ist nicht beigetreten.\nCode prüfen und erneut versuchen.')
-              .setColor(Palette.danger);
-            return;
-          }
-          await this.trySetStartTime(statusText);
-        })();
-      });
+    this.startWaitTimers(statusText);
 
-      // Zusaetzlich sofort versuchen, falls beide schon vor dem Timeout
-      // bereit sind (der haeufigere Fall).
-      void this.pollAndSetStartTime(statusText);
-    }
+    // Sofort einmal versuchen, falls der andere schon bereit ist (der
+    // haeufigere Fall) - der Poll-Takt darunter faengt alles spaetere ab.
+    void this.pollAndSetStartTime(statusText);
+  }
+
+  /**
+   * Startet Wartetakt und Zeitlimit der Lobby - als eigene Methode, weil der
+   * WEITER-WARTEN-Knopf sie ein zweites Mal braucht.
+   */
+  private startWaitTimers(statusText: Phaser.GameObjects.Text): void {
+    // Das Zeitlimit gilt jetzt fuer BEIDE Rollen. Der Gast hatte vorher gar
+    // keins und wartete im Fehlerfall stumm bis zum Schliessen der App.
+    this.readyTimeout = this.time.delayedCall(
+      this.isHost ? ONLINE_DUEL_READY_TIMEOUT_MS : ONLINE_DUEL_GUEST_START_TIMEOUT_MS,
+      () => this.giveUpWaiting(statusText),
+    );
 
     // Fallback fuer BEIDE Rollen: `channel.send()` von Supabase Realtime
     // besitzt ohne `broadcast.ack` keine Zustellbestaetigung und loest
     // trotzdem mit "ok" auf (siehe ONLINE_DUEL_START_POLL_INTERVAL_MS-
-    // Kommentar in config/onlineDuel.ts). Der Gastgeber hat `set_duel_
-    // start_time` zu diesem Zeitpunkt bereits erfolgreich in die Datenbank
-    // geschrieben - dieses Polling findet die Startzeit unabhaengig davon,
-    // ob das begleitende `start`-Broadcast-Event ankam.
+    // Kommentar in config/onlineDuel.ts). Dieses Polling findet die
+    // Startzeit unabhaengig davon, ob das begleitende `start`-Broadcast-
+    // Event ankam - und setzt sie selbst, sobald beide bereit sind.
     this.startPollTimer = this.time.addEvent({
       delay: ONLINE_DUEL_START_POLL_INTERVAL_MS,
       loop: true,
       callback: () => {
-        void (async () => {
-          if (started || !this.scene.isActive()) return;
-          const statusResult = await NetworkDuelSystem.getRoomStatus(this.roomCode);
-          if (started || !this.scene.isActive()) return;
-          const startAtMs = statusResult.ok ? (statusResult.value?.startAtMs ?? null) : null;
-          if (startAtMs === null) return;
-          started = true;
-          this.beginRun(startAtMs);
-        })();
+        void this.pollAndSetStartTime(statusText);
       },
     });
   }
 
+  /**
+   * Ein Poll-Durchlauf: Startzeit uebernehmen, wenn sie schon steht - sonst
+   * selbst setzen, sobald beide bereit sind.
+   *
+   * Beide Schritte in einem Abruf, weil sie auf derselben Antwort beruhen:
+   * ein zweiter `getRoomStatus()` fuer die zweite Frage waere eine
+   * ueberfluessige Anfrage im 1,5-Sekunden-Takt.
+   */
   private async pollAndSetStartTime(statusText: Phaser.GameObjects.Text): Promise<void> {
+    if (this.runStarted || !this.scene.isActive()) return;
+
     const statusResult = await NetworkDuelSystem.getRoomStatus(this.roomCode);
-    if (!this.scene.isActive()) return;
-    if (statusResult.ok && statusResult.value?.hostReady && statusResult.value.guestReady) {
+    if (this.runStarted || !this.scene.isActive()) return;
+    if (!statusResult.ok || !statusResult.value) return;
+
+    const room = statusResult.value;
+
+    if (room.startAtMs !== null) {
+      this.runStarted = true;
+      this.beginRun(room.startAtMs);
+      return;
+    }
+
+    if (room.hostReady && room.guestReady) {
       await this.trySetStartTime(statusText);
     }
   }
 
   private async trySetStartTime(statusText: Phaser.GameObjects.Text): Promise<void> {
     const startResult = await NetworkDuelSystem.setStartTime(this.roomCode);
-    if (!this.scene.isActive()) return;
+    if (!this.scene.isActive() || this.runStarted) return;
     if (!startResult.ok) {
-      // Dieselbe Luecke wie beim Ready-Timeout: Ohne Aufraeumen liefe das
-      // Polling hinter einer stehenden Fehlermeldung weiter.
-      this.cleanupLobby();
-      statusText.setText(startResult.error).setColor(Palette.danger);
+      // Kein Aufraeumen mehr: seit beide Rollen die Startzeit setzen duerfen,
+      // ist ein Fehlschlag hier meistens ein Rennen (der andere war eine
+      // Zehntelsekunde schneller, der Raum steht bereits auf "gestartet") und
+      // kein Grund aufzugeben. Der naechste Poll-Durchlauf findet dann die
+      // gesetzte `startAtMs` und startet den Run. Das Zeitlimit bleibt der
+      // Waechter fuer den Fall, dass es doch ein echter Fehler war.
+      statusText
+        .setText(`${startResult.error}\nEs wird weiter versucht ...`)
+        .setColor(Palette.danger);
       return;
     }
+    this.runStarted = true;
     NetworkDuelSystem.broadcastStartTime(startResult.value);
     this.beginRun(startResult.value);
   }
 
+  /**
+   * Das Zeitlimit ist abgelaufen - Warten einstellen, aber nicht in eine
+   * Sackgasse fuehren.
+   *
+   * **Warum ein WEITER-WARTEN-Knopf und kein blosser Abbruch.** Frueher
+   * setzte diese Stelle nur eine Meldung und raeumte auf; der Bildschirm bot
+   * danach ausser ABBRECHEN nichts mehr an. Trat der Freund eine
+   * Sekunde spaeter bei, erfuhr das Geraet davon nichts mehr - es fragte
+   * nicht mehr nach, und niemand rief `set_duel_start_time`. Der Raum lebt
+   * laut `DUEL_ROOM_CODE_TTL_MINUTES` aber noch Minuten weiter: aufgeben ist
+   * hier eine Frage an den Spieler, keine Tatsache.
+   */
+  private giveUpWaiting(statusText: Phaser.GameObjects.Text): void {
+    if (this.runStarted || !this.scene.isActive()) return;
+
+    // Das Polling wird eingestellt, solange die Frage offen steht - sonst
+    // liefe es hinter einer stehenden Meldung weiter (Debug-Report v0.1.205,
+    // 2026-08-21: 17 weitere Abrufe nach dem aufgegebenen Warten).
+    this.cleanupLobby();
+
+    statusText
+      .setText(
+        this.isHost
+          ? 'Freund ist noch nicht beigetreten.\nCode prüfen - oder weiter warten.'
+          : 'Der Start laesst auf sich warten.\nGeraet des Freundes pruefen - oder weiter warten.',
+      )
+      .setColor(Palette.danger);
+
+    const button = createButton(
+      this,
+      GAME_WIDTH / 2,
+      GAME_HEIGHT - 240,
+      'WEITER WARTEN',
+      () => {
+        this.discardKeepWaitingButton();
+        statusText.setText('Warte auf Freund ...').setColor(Palette.ink);
+        this.startWaitTimers(statusText);
+      },
+      { width: 300, height: 72, accent: Palette.goldHex, fontSize: FontSize.small },
+    );
+    this.keepWaitingButton = button;
+    this.keep(button.container);
+  }
+
+  /**
+   * Entfernt den WEITER-WARTEN-Knopf restlos - auch aus `transient`.
+   *
+   * Ohne das Herausnehmen bliebe bei jedem Warte-Zyklus eine tote Referenz in
+   * der Liste zurueck; `clearTransient()` riefe `destroy()` ein zweites Mal
+   * auf (unschaedlich, aber falsch) und die Liste wuechse bei jedem
+   * Durchlauf weiter.
+   */
+  private discardKeepWaitingButton(): void {
+    if (!this.keepWaitingButton) return;
+    const { container } = this.keepWaitingButton;
+    this.transient = this.transient.filter((object) => object !== container);
+    container.destroy();
+    this.keepWaitingButton = null;
+  }
+
   private beginRun(startAtServerMs: number): void {
-    if (this.readyTimeout) {
-      this.readyTimeout.remove();
-      this.readyTimeout = null;
-    }
-    if (this.startPollTimer) {
-      this.startPollTimer.remove();
-      this.startPollTimer = null;
-    }
+    // `runStarted` hier statt nur an den Aufrufstellen: `beginRun` ist der
+    // einzige Weg in den Run, und alle Wartepfade fragen dieses Feld ab.
+    this.runStarted = true;
+    this.cleanupLobby();
     const state = ChallengeSystem.getState();
     ChallengeSystem.updateOnlineSync(state?.online?.clockOffsetMs ?? 0, startAtServerMs);
     this.scene.start(SceneKey.Game, { worldId: this.world.id, mode: 'challenge' });
@@ -544,7 +624,7 @@ export class OnlineDuelScene extends Phaser.Scene {
           ? 'UNENTSCHIEDEN'
           : `${ChallengeSystem.playerLabel(winner).toUpperCase()} GEWINNT`,
       !complete
-        ? 'Dein Geschwister spielt noch seine Runde.'
+        ? 'Dein Freund spielt noch seine Runde.'
         : winner === null
           ? 'Punktgleich - das muss wiederholt werden.'
           : 'Gut gejagt.',
@@ -603,7 +683,7 @@ export class OnlineDuelScene extends Phaser.Scene {
       // einer stehenden Meldung weiter, dieselbe Luecke wie beim
       // Ready-Timeout in der Lobby.
       this.stopResultPolling();
-      this.statusPage.setStatus('Kein Ergebnis vom Geschwister erhalten.', Palette.danger);
+      this.statusPage.setStatus('Kein Ergebnis vom Freund erhalten.', Palette.danger);
       return;
     }
 

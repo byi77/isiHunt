@@ -13,7 +13,7 @@
  *
  * Kuerzer als der Sync-Code (15 Minuten, `SYNC_CODE_LENGTH` in
  * `config/backend.ts`): ein Duell-Beitritt ist ein aktiver, unmittelbarer
- * Vorgang ("ich rufe mein Geschwister gerade an"), kein "vielleicht spaeter
+ * Vorgang ("ich rufe meinen Freund gerade an"), kein "vielleicht spaeter
  * einloesen"-Fall wie ein Spielstand-Sync.
  */
 export const DUEL_ROOM_CODE_TTL_MINUTES = 10;
@@ -68,10 +68,43 @@ export const ONLINE_DUEL_LIVE_STALE_MS = 3_000;
 export const ONLINE_DUEL_CLOCK_SYNC_SAMPLES = 3;
 
 /**
- * Wie lange in der Lobby auf "beide Spieler bereit" gewartet wird, bevor
- * zurueck zur Anzeige gewechselt wird, statt endlos zu warten.
+ * Wie lange in der Lobby auf "beide Spieler bereit" gewartet wird, bevor der
+ * Bildschirm das Warten als aussichtslos meldet.
+ *
+ * **Bemessen gegen eine menschliche Handlungsdauer, nicht gegen Netzlatenz.**
+ * Zwischen "Raum erstellt" und "Gast ist bereit" liegt kein Roundtrip, sondern
+ * ein Vorgang aus Fleisch und Blut: Code ablesen, ihn dem Freund
+ * vorlesen oder zeigen, sechs Zeichen auf einer Handytastatur tippen,
+ * BEITRETEN treffen. Der fruehere Wert von 10 Sekunden war die
+ * Groessenordnung eines Netzwerk-Roundtrips und hat das Duell in genau diesem
+ * Zeitfenster zuverlaessig zerrissen - belegt durch den Zwei-Geraete-Bericht
+ * v0.1.246 (2026-08-23): der Gastgeber gab bei t+10,07s auf, der Gast trat bei
+ * t+56s bei und fand einen Raum vor, um den sich niemand mehr kuemmerte.
+ *
+ * Die Obergrenze bleibt `DUEL_ROOM_CODE_TTL_MINUTES` - laenger warten als der
+ * Code gilt waere sinnlos. Innerhalb dieser Grenze ist grosszuegig richtig:
+ * seit dem WEITER-WARTEN-Knopf (`OnlineDuelScene`) ist ein zu frueher Timeout
+ * kein Abbruch mehr, sondern nur eine Frage - und eine Frage nach zwei
+ * Minuten stoert weniger, als eine nach zehn Sekunden das Duell zerstoert.
  */
-export const ONLINE_DUEL_READY_TIMEOUT_MS = 10_000;
+export const ONLINE_DUEL_READY_TIMEOUT_MS = 120_000;
+
+/**
+ * Wie lange der Gast auf die Startzeit wartet, bevor er sie als ausgeblieben
+ * meldet.
+ *
+ * Der Gast hatte bis v0.1.246 ueberhaupt kein Zeitlimit: er pollte
+ * `getRoomStatus()` unbegrenzt auf eine `startAtMs`, die nach dem Aufgeben des
+ * Gastgebers nie mehr kam (Bericht 2026-08-23). Unbegrenztes stilles Warten
+ * ist der schlechteste der moeglichen Zustaende - schlechter noch als ein zu
+ * frueher Abbruch, weil es dem Spieler nicht einmal sagt, dass etwas nicht
+ * stimmt.
+ *
+ * Derselbe Wert wie beim Gastgeber, weil beide auf dasselbe warten: darauf,
+ * dass der andere seine Lobby erreicht. Ein eigener Wert waere eine zweite
+ * Zahl ohne zweite Begruendung.
+ */
+export const ONLINE_DUEL_GUEST_START_TIMEOUT_MS = ONLINE_DUEL_READY_TIMEOUT_MS;
 
 /**
  * Polling-Takt fuer die serverseitig gesetzte Startzeit, solange kein
@@ -84,7 +117,7 @@ export const ONLINE_DUEL_READY_TIMEOUT_MS = 10_000;
  * nicht sendenden Client bisher unbegrenzt in der Lobby haengen, obwohl
  * `set_duel_start_time` die Zeit bereits erfolgreich in der Datenbank
  * abgelegt hatte (belegt durch einen Geraetetest 2026-08-18: Gastgeber lief
- * durch, Gast blieb bei "Warte auf Geschwister" haengen). `getRoomStatus()`
+ * durch, Gast blieb bei "Warte auf Freund" haengen). `getRoomStatus()`
  * dient bereits als Fallback fuer den Gastgeber selbst (siehe
  * `pollAndSetStartTime`); derselbe Weg schliesst jetzt auch die
  * Broadcast-Luecke fuer den empfangenden Client.

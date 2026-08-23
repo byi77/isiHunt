@@ -242,6 +242,29 @@ prinzipiell keinen Empfaenger, unabhaengig von der Verbindungsqualitaet.
 im Takt von `ONLINE_DUEL_RESULT_POLL_INTERVAL_MS` ab. Der Broadcast bleibt als
 Abkuerzung fuer den Fall, dass beide fast gleichzeitig fertig werden.
 
+**Die Lobby wartet symmetrisch — beide Rollen duerfen starten.** Bis v0.1.246
+setzte nur der Gastgeber die Startzeit; der Gast pollte ausschliesslich auf ein
+fertiges `startAtMs`. Damit hing er an einem Ausloeser, den allein das andere
+Geraet betaetigen konnte: gab der Gastgeber vorher auf, wartete der Gast
+unbegrenzt auf etwas, das nie mehr kommen konnte. `set_duel_start_time` prueft
+serverseitig ohnehin nur `host_ready and guest_ready` und nicht, _wer_ ruft
+(`supabase/phase_2_11_duel_rooms.sql`) — die Beschraenkung auf den Gastgeber war
+reine Client-Konvention. Jetzt setzt die Zeit, wer zuerst beide Seiten bereit
+sieht; ein Fehlschlag gilt als Rennen und nicht als Abbruchgrund, weil der
+naechste Poll-Durchlauf die inzwischen gesetzte Zeit findet.
+
+**Zeitlimits in der Lobby warten auf Menschen, nicht auf Pakete.** Zwischen
+"Raum erstellt" und "Gast ist bereit" liegt kein Roundtrip, sondern eine
+menschliche Handlung: Code ablesen, weitergeben, abtippen. Ein Timeout, der wie
+eine Netzwerkgrenze bemessen ist, zerreisst genau die Duelle, die
+funktionieren wuerden — belegt am Geraet (2026-08-23, 10s-Limit gegen 56s
+Beitrittsdauer). `ONLINE_DUEL_READY_TIMEOUT_MS` ist deshalb gegen die
+Handlungsdauer bemessen und nach oben durch `DUEL_ROOM_CODE_TTL_MINUTES`
+begrenzt; `src/config/onlineDuel.test.ts` haelt diese Verhaeltnisse als
+Invarianten fest, statt die Zahlen selbst zu wiederholen. Und weil der Raum das
+Zeitlimit ueberlebt, endet das Aufgeben nicht in einer Sackgasse, sondern in
+einer Rueckfrage (**WEITER WARTEN**), die Takt und Limit neu startet.
+
 **Handler auf einem Kanal, der laenger lebt als die Scenes.** `activeHandlers`
 in `NetworkDuelSystem` ist ein Modul-Singleton und ueberlebt den Wechsel Lobby
 → GameScene → Ergebnis. `updateHandlers()` **ergaenzt** deshalb, statt zu

@@ -31,7 +31,45 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   ein leerer Akku erzeugen kein `leave`. Deshalb sendet der Takt auch dann
   weiter, wenn nichts passiert; er traegt die Information "ich bin noch da".
 
+### Geaendert
+
+- **"Geschwister" heisst jetzt "Freund".** Betrifft alle Bildschirmtexte des
+  Netzwerk-Duells und die Gegneranzeige im HUD. Das Duell wird nicht nur
+  innerhalb der Familie gespielt; die alte Bezeichnung schloss genau die
+  Mitspieler aus, fuer die das Netzwerk-Duell ueberhaupt erst gebaut wurde.
+
 ### Behoben
+
+- **Netzwerk-Duell: das Duell kam gar nicht erst zustande.** Belegt durch
+  einen Zwei-Geraete-Testbericht (v0.1.246, 2026-08-23): der Gastgeber gab bei
+  t+10,07s auf, das zweite Geraet trat bei t+56s bei und fand einen Raum vor,
+  um den sich niemand mehr kuemmerte. Vier Ursachen, die sich gegenseitig
+  verstaerkten:
+
+  - **Das Zeitlimit war gegen Netzlatenz bemessen, nicht gegen einen
+    Menschen.** `ONLINE_DUEL_READY_TIMEOUT_MS` stand auf 10 Sekunden —
+    dazwischen liegt aber kein Roundtrip, sondern Code ablesen, vorlesen,
+    sechs Zeichen abtippen, beitreten. Der Wert steht jetzt auf zwei Minuten,
+    begrenzt durch die Gueltigkeit des Raum-Codes.
+  - **Aufgeben fuehrte in eine Sackgasse.** Nach dem Zeitlimit bot der
+    Bildschirm ausser ABBRECHEN nichts an, und das Polling war eingestellt —
+    trat der Freund eine Sekunde spaeter bei, erfuhr das Geraet davon nichts
+    mehr. Es gibt jetzt einen **WEITER WARTEN**-Knopf, der Takt und Zeitlimit
+    neu startet; der Raum lebt laut `DUEL_ROOM_CODE_TTL_MINUTES` noch Minuten
+    weiter.
+  - **Nur der Gastgeber durfte die Startzeit setzen.** Der Gast pollte
+    ausschliesslich auf ein fertiges `startAtMs` und war damit auf einen
+    Ausloeser angewiesen, den nur das andere Geraet betaetigen konnte. Da
+    `set_duel_start_time` serverseitig ohnehin nur `host_ready and
+guest_ready` prueft und nicht _wer_ ruft, setzt jetzt **wer zuerst beide
+    bereit sieht** die Zeit. Ein Fehlschlag gilt dabei als Rennen und nicht
+    mehr als Abbruchgrund — der naechste Takt findet die gesetzte Zeit.
+  - **Der Gast hatte ueberhaupt kein Zeitlimit** und wartete im Fehlerfall
+    stumm, bis die App geschlossen wurde. Er bekommt jetzt dasselbe Limit wie
+    der Gastgeber (`ONLINE_DUEL_GUEST_START_TIMEOUT_MS`) samt derselben
+    Rueckfrage.
+
+  Kein Datenbankschritt noetig — die SQL-Funktionen bleiben unveraendert.
 
 - **Netzwerk-Duell: beide Geraete blieben auf "WARTE AUF ERGEBNIS" stehen.**
   Belegt durch einen Zwei-Geraete-Testbericht (v0.1.236, 2026-08-22): beide
