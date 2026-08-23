@@ -276,7 +276,7 @@ function xpForLevelV6(level: number): number {
  * neuen. Aus Level und Rest-XP wird die Gesamtsumme rekonstruiert und von
  * Stufe 1 an neu verteilt.
  */
-function verteileXpNeu(
+function redistributeXp(
   save: SaveData,
   alteKurve: (level: number) => number,
   neueKurve: (level: number) => number,
@@ -323,7 +323,7 @@ function migrate(raw: Partial<SaveData>): SaveData {
   if (rawVersion < 2) {
     // Gegen die damals aktuelle Kurve rechnen (xpForLevelV6), nicht gegen die
     // heutige - sonst laeuft ein v1-Stand durch zwei Umrechnungen.
-    verteileXpNeu(save, legacyXpForLevel, xpForLevelV6);
+    redistributeXp(save, legacyXpForLevel, xpForLevelV6);
   }
   if (rawVersion < 4) {
     // Talentpunkte waren vor Phase 4 eine separate Währung. Nichts verlieren:
@@ -342,7 +342,7 @@ function migrate(raw: Partial<SaveData>): SaveData {
     // fruehen Stufen mehr XP als die alte, und wer schon oben ist, hat diese
     // Differenz nie bezahlt. Bewusst so entschieden: Die Kurve soll fuer alle
     // dieselbe sein, auch rueckwirkend.
-    verteileXpNeu(save, xpForLevelV6, xpForLevel);
+    redistributeXp(save, xpForLevelV6, xpForLevel);
   }
   if (rawVersion < 8) {
     // Die Schiffsformen haengen nicht mehr am Level, sondern werden im Laden
@@ -666,12 +666,12 @@ export function setOfflinePlayerName(name: string): void {
  * Das **Getragene** kommt dagegen vom Cloud-Stand, sofern er es kennt und
  * besitzt: So sieht die Figur auf beiden Geraeten gleich aus.
  */
-function hatExpliziteShopAuswahl(remote: Partial<SaveData>): boolean {
+function hasExplicitShopSelection(remote: Partial<SaveData>): boolean {
   const source = asRecord(remote);
   return ['shipShape', 'shipColor', 'shipAura'].some((key) => typeof source[key] === 'string');
 }
 
-function vereinigeShopBesitz(
+function mergeShopOwnership(
   lokal: SaveData,
   uebernommen: SaveData,
   remoteSelectionKnown = false,
@@ -699,9 +699,9 @@ function vereinigeShopBesitz(
   // sie (Audit 2026-08-23).
   const fernLeer = uebernommen.level === 1 && uebernommen.xp === 0 && uebernommen.totalRuns === 0;
   const lokalBespielt = lokal.totalRuns > 0 || lokal.level > 1;
-  const zurueckgesetzt = resetErkannt || (fernLeer && lokalBespielt);
+  const wasReset = resetErkannt || (fernLeer && lokalBespielt);
 
-  if (zurueckgesetzt) {
+  if (wasReset) {
     return {
       ...uebernommen,
       ownedShipShapes: [DEFAULT_SHIP_SHAPE],
@@ -777,7 +777,7 @@ export function adoptRemote(
   const lokal = load();
   const merged = preservePendingIdentity(
     lokal,
-    vereinigeShopBesitz(lokal, migrate(remote), hatExpliziteShopAuswahl(remote), resetErkannt),
+    mergeShopOwnership(lokal, migrate(remote), hasExplicitShopSelection(remote), resetErkannt),
   );
   merged.cloudId = cloudId;
   save(merged);
@@ -789,7 +789,7 @@ export function adoptProfileProgress(remote: Partial<SaveData>): SaveData {
   const lokal = load();
   const merged = preservePendingIdentity(
     lokal,
-    vereinigeShopBesitz(lokal, migrate(remote), hatExpliziteShopAuswahl(remote)),
+    mergeShopOwnership(lokal, migrate(remote), hasExplicitShopSelection(remote)),
   );
   merged.cloudId = lokal.cloudId;
   save(merged);

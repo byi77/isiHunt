@@ -17,14 +17,12 @@ import * as SoundSystem from '@/systems/SoundSystem';
 import * as HapticsSystem from '@/systems/HapticsSystem';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import {
+  attachVerticalScroll,
   createBackButton,
   createButton,
-  createDriftLayers,
-  createPanel,
   createMenuLayout,
-  createVignette,
-  createWorldBackdrop,
-  attachVerticalScroll,
+  createPanel,
+  createSceneBackdrop,
   PAGE_CONTENT_TOP,
 } from '@/ui/widgets';
 
@@ -37,17 +35,7 @@ export class SettingsScene extends Phaser.Scene {
     SafeAreaSystem.showStatic('EINSTELLUNGEN');
     const world = getWorld(SaveSystem.load().lastWorldId);
 
-    createWorldBackdrop(
-      this,
-      GAME_WIDTH,
-      GAME_HEIGHT,
-      world.bgTop,
-      world.bgBottom,
-      world.accent,
-      world.spaceVariant,
-    );
-    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, world.spaceVariant);
-    createVignette(this, GAME_WIDTH, GAME_HEIGHT);
+    createSceneBackdrop(this, world);
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
 
     // Karten bewegen sich gemeinsam; Kopfzeile und Zurueck-Zone bleiben

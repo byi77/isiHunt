@@ -17,6 +17,7 @@ import {
   SCROLL_INERTIA_MIN_SPEED,
   SCROLL_POINTER_VELOCITY_SMOOTHING,
 } from '@/config/GameConfig';
+import type { WorldDef } from '@/config/worlds';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
@@ -952,6 +953,32 @@ export function createVignette(
       .setDisplaySize(width * 1.5, height * 1.15)
       .setDepth(Depth.Vignette)
   );
+}
+
+/**
+ * Der vollstaendige Weltenhintergrund einer Seite: Verlauf, Drift, Vignette.
+ *
+ * Diese drei Aufrufe standen zeichengleich in dreizehn Scenes - rund 130
+ * Zeilen, die sich nur im Namen der Scene unterschieden. Wer die
+ * Hintergrundwirkung aendert, aendert sie jetzt an einer Stelle statt an
+ * dreizehn (Audit 2026-08-23).
+ *
+ * `GameScene` und `MenuScene` rufen die drei Bausteine weiterhin einzeln
+ * auf: Sie schieben eigene Ebenen dazwischen bzw. brauchen den Rueckgabewert
+ * von `createWorldBackdrop`.
+ */
+export function createSceneBackdrop(scene: Phaser.Scene, world: WorldDef): void {
+  createWorldBackdrop(
+    scene,
+    GAME_WIDTH,
+    GAME_HEIGHT,
+    world.bgTop,
+    world.bgBottom,
+    world.accent,
+    world.spaceVariant,
+  );
+  createDriftLayers(scene, GAME_WIDTH, GAME_HEIGHT, world.spaceVariant);
+  createVignette(scene, GAME_WIDTH, GAME_HEIGHT);
 }
 
 /** Kurze Partikel-Explosion beim Einsammeln. */

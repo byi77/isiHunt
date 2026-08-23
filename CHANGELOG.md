@@ -191,6 +191,24 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Der Server markierte Spielstände mit einer veralteten Version — und der
+  Client rechnete daraufhin die XP-Kurve ein zweites Mal um.** `SAVE_VERSION`
+  steht bei 8; vier Stellen in `phase_2_6_auth.sql` schrieben aber weiterhin
+  `version: 6`. Zwei davon hatte `phase_2_14` bereits per `create or replace`
+  ersetzt, die beiden anderen (`get_profile_progress`,
+  `submit_progress_event`) blieben stehen und widersprachen ihr ab da.
+
+  Der Client wertet alles unter 7 als „XP-Kurve noch nicht umgerechnet" und
+  fuhr die Umrechnung über bereits umgerechnete XP. Gemessen über den echten
+  Übernahmepfad: **Stufe 30 wurde zu Stufe 23.** Betroffen sind Altprofile,
+  die einen der beiden Migrationszweige durchlaufen — kein fortlaufender
+  Verlust, aber ein echter einmaliger.
+
+  `phase_2_18_save_version_anchor.sql` ersetzt beide Funktionen und führt
+  `save_version()` als einzige Quelle ein. Die alten Migrationsdateien bleiben
+  unverändert: Sie sind ausgeführt, und eine nachträglich umgeschriebene
+  Migration ließe Repo und Datenbank auseinanderlaufen.
+
 - **Die CI war schwächer als der lokale `pre-push`-Hook.** `ci.yml` zählte
   seine Schritte einzeln auf (typecheck, lint, format:check, test, build) und
   veraltete dabei still: `balance:inventory` und `scene:guards` kamen später
@@ -305,6 +323,34 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   (einmal vorab, einmal im Mutator) ist damit auf eine Stelle zusammengefasst.
 
 ### Geaendert
+
+- **Neues Gate `npm run save:version`.** Hält `SAVE_VERSION` (TypeScript) und
+  `save_version()` (Postgres) auf derselben Zahl und verbietet neuen
+  Migrationen, die Version von Hand hinzuschreiben. Gegen den Stand vor der
+  Reparatur meldet es die Divergenz, danach nichts.
+
+- **Der Weltenhintergrund wird an einer Stelle gebaut.** `createWorldBackdrop`
+  - `createDriftLayers` + `createVignette` standen zeichengleich in neun
+    Scenes. `createSceneBackdrop(this, world)` ersetzt sie — netto 84 Zeilen
+    weniger. `GameScene` und `MenuScene` rufen die Bausteine weiterhin einzeln
+    auf: Sie schieben eigene Ebenen dazwischen.
+
+- **Deutsche Bezeichner in der Kernlogik übersetzt.** `gekauft` → `purchased`,
+  `angeglichen` → `normalizedPair`, `vereinigeShopBesitz` →
+  `mergeShopOwnership`, `verteileXpNeu` → `redistributeXp` und weitere.
+  CLAUDE.md verlangt englische Bezeichner; Kommentare und Dokumentation
+  bleiben deutsch.
+
+- **`hasVisibleChange()` aus `MenuScene.checkCloudSave()` gelöst.** Die
+  Funktion hatte die höchste zyklomatische Komplexität des Projekts (CC=33)
+  und liegt im einzigen Verzeichnis ohne Testabdeckung. Die
+  Änderungserkennung — schon zweimal Fehlerquelle — ist jetzt eine reine
+  Rechnung in `SyncGateSystem` mit drei Tests.
+
+- **`RemoteSave.data` ist als unnormalisiert dokumentiert.** Der Typ sagt
+  `SaveData`, die Funktion liefert diese Garantie aber nicht: Die Prüfung
+  läuft erst bei `adoptRemote()`. Bewusst nicht vorgezogen — `migrate()` trägt
+  die Versionsmigrationen, und die dürfen genau einmal laufen.
 
 - **Neues Gate `npm run scene:guards`.** Die Fehlerklasse oben liegt in
   `scenes/` und ist mit Vitest nicht erreichbar (Phaser braucht ein Canvas).

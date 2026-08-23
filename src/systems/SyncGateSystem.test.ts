@@ -10,8 +10,8 @@
 import { describe, expect, it } from 'vitest';
 
 import { SYNC_MIN_INTERVAL_MS } from '@/config/backend';
-import { decideSyncGate } from '@/systems/SyncGateSystem';
-import type { SyncGateInput } from '@/systems/SyncGateSystem';
+import { decideSyncGate, hasVisibleChange } from '@/systems/SyncGateSystem';
+import type { SyncGateInput, VisibleProgress } from '@/systems/SyncGateSystem';
 
 /** Der Normalfall: alles bereit, nie zuvor abgeglichen. */
 function eingabe(overrides: Partial<SyncGateInput> = {}): SyncGateInput {
@@ -95,5 +95,33 @@ describe('decideSyncGate', () => {
     // offline ist.
     const d = decideSyncGate(eingabe({ online: false, lastStartedAt: 999_999 }));
     expect(d).toMatchObject({ run: false, status: 'offline' });
+  });
+});
+
+describe('hasVisibleChange', () => {
+  const stand = (o: Partial<VisibleProgress> = {}): VisibleProgress => ({
+    level: 10,
+    coins: 500,
+    bestScore: 2000,
+    totalRuns: 30,
+    ...o,
+  });
+
+  it('meldet keine Aenderung bei identischen Werten', () => {
+    // Der historische Fehler: Ohne diese Frage startete das Menue endlos neu,
+    // weil ein unmigrierter Cloud-Stand dauerhaft als "weiter" galt.
+    expect(hasVisibleChange(stand(), stand(), false)).toBe(false);
+  });
+
+  it('meldet jede der vier sichtbaren Zahlen einzeln', () => {
+    for (const feld of ['level', 'coins', 'bestScore', 'totalRuns'] as const) {
+      expect(hasVisibleChange(stand(), stand({ [feld]: 999 }), false)).toBe(true);
+    }
+  });
+
+  it('meldet einen erkannten Reset auch bei gleichen Zahlen', () => {
+    // Ein Reset raeumt Besitz und Outbox ab - die vier Zahlen koennen dabei
+    // zufaellig gleich bleiben, die Ansicht muss trotzdem neu aufgebaut werden.
+    expect(hasVisibleChange(stand(), stand(), true)).toBe(true);
   });
 });

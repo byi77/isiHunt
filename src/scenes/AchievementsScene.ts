@@ -17,11 +17,9 @@ import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   createBackButton,
   createButton,
-  createDriftLayers,
   createMenuLayout,
   createPanel,
-  createVignette,
-  createWorldBackdrop,
+  createSceneBackdrop,
 } from '@/ui/widgets';
 
 export class AchievementsScene extends Phaser.Scene {
@@ -34,17 +32,7 @@ export class AchievementsScene extends Phaser.Scene {
     const save = SaveSystem.load();
     const world = getWorld(save.lastWorldId);
 
-    createWorldBackdrop(
-      this,
-      GAME_WIDTH,
-      GAME_HEIGHT,
-      world.bgTop,
-      world.bgBottom,
-      world.accent,
-      world.spaceVariant,
-    );
-    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, world.spaceVariant);
-    createVignette(this, GAME_WIDTH, GAME_HEIGHT);
+    createSceneBackdrop(this, world);
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
 
     const sections = createMenuLayout().sections;

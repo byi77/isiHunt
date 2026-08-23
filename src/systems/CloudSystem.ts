@@ -187,7 +187,27 @@ export function hasPendingLeaderboardScore(): boolean {
   return readPendingLeaderboardScore() !== null;
 }
 
-/** Kurzfassung eines Spielstands - genug, um zwei Staende zu unterscheiden. */
+/**
+ * Kurzfassung eines Spielstands - genug, um zwei Staende zu unterscheiden.
+ *
+ * Die Nutzlast dazu (`RemoteSave.data`) kommt **unnormalisiert** vom Server.
+ *
+ * Der Typ ist `SaveData`, weil die Aufrufer die Felder direkt anzeigen
+ * (`data.level` im Menue, im Sync-Vergleich, im Debug-Bericht) und ein
+ * `unknown` dort nur ueberall Zusicherungen erzwingen wuerde. Die Garantie
+ * liefert er aber nicht: Was hier ankommt, ist eine RPC-Antwort.
+ *
+ * **Wer diese Daten in den Spielstand uebernimmt, muss sie durch
+ * `SaveSystem.adoptRemote()` bzw. `adoptProfileProgress()` schicken** - dort
+ * laeuft `migrate()` und damit die Feldauffuellung und Wertpruefung. Direkt
+ * gespeichert werden duerfen sie nie.
+ *
+ * Bewusst nicht hier normalisiert: `migrate()` traegt die
+ * Versionsmigrationen, und die duerfen genau einmal laufen. Ein zweiter
+ * Durchlauf rechnet bereits umgerechnete XP erneut um und senkt dabei das
+ * Level - derselbe Mechanismus, der ueber einen falschen Versionsmarker
+ * schon einmal zugeschlagen hat (Audit 2026-08-23, `phase_2_18`).
+ */
 export interface RemoteSaveSummary {
   level: number;
   bestScore: number;
@@ -266,6 +286,8 @@ export function normalizeRemoteSave(raw: unknown): RemoteSave | null {
   if (!value || !data) return null;
 
   return {
+    // Unvalidiert - siehe `RemoteSaveSummary`. Die Pruefung liegt bei
+    // `SaveSystem.adoptRemote()`, nicht hier.
     data: data as unknown as SaveData,
     level: Math.max(1, finiteNonNegative(value.level, 1)),
     bestScore: finiteNonNegative(value.best_score),
@@ -282,6 +304,8 @@ export function normalizeProfileProgress(raw: unknown): RemoteProfileProgress | 
   if (!value || !data) return null;
 
   return {
+    // Unvalidiert - siehe `RemoteSaveSummary`. Die Pruefung liegt bei
+    // `SaveSystem.adoptProfileProgress()`, nicht hier.
     data: data as unknown as SaveData,
     totalXp: finiteNonNegative(value.total_xp),
     updatedAt: typeof value.updated_at === 'string' ? value.updated_at : '',
@@ -355,7 +379,7 @@ function totalTalentRanks(talents: TalentRanks): number {
  * beim naechsten Durchlauf begann alles von vorn. Ergebnis: ein
  * Sync-Popup, das sich endlos wiederholte, samt Scene-Neustart.
  */
-function angeglichen(
+function normalizedPair(
   local: SaveData,
   remote: RemoteSave,
 ): { lokal: SaveData; fern: SaveData; fernLevel: number } {
@@ -406,7 +430,7 @@ function totalCoinsEver(save: { coins?: number; coinsSpent?: number }): number {
  * auch lokal nichts gespielt - und dann gibt es nichts zu ueberschreiben.
  */
 export function isRemoteReset(local: SaveData, remote: RemoteSave): boolean {
-  const { lokal, fern } = angeglichen(local, remote);
+  const { lokal, fern } = normalizedPair(local, remote);
 
   // Nur Felder pruefen, die der Login-Bonus nicht anfasst.
   //
@@ -453,7 +477,7 @@ export function isRemoteReset(local: SaveData, remote: RemoteSave): boolean {
 
 /** Vergleicht die Fortschrittsmarker, die fuer den Nutzer sichtbar sind. */
 export function isRemoteAhead(local: SaveData, remote: RemoteSave): boolean {
-  const { lokal, fern, fernLevel } = angeglichen(local, remote);
+  const { lokal, fern, fernLevel } = normalizedPair(local, remote);
   return (
     fernLevel > lokal.level ||
     fern.bestScore > lokal.bestScore ||
@@ -468,7 +492,7 @@ export function isRemoteAhead(local: SaveData, remote: RemoteSave): boolean {
 
 /** Das Gegenstueck fuer einen sicheren Upload nach Offline-Zeit. */
 export function isLocalAhead(local: SaveData, remote: RemoteSave): boolean {
-  const { lokal, fern, fernLevel } = angeglichen(local, remote);
+  const { lokal, fern, fernLevel } = normalizedPair(local, remote);
   return (
     lokal.level > fernLevel ||
     lokal.bestScore > fern.bestScore ||

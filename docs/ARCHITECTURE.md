@@ -760,6 +760,7 @@ Manche Fehlerklassen liegen in `scenes/` und sind mit Vitest nicht erreichbar
 | --------------------------- | --------------------------------------------------- |
 | `npm run balance:inventory` | Keine Inline-Coin/XP-Werte ausserhalb von `config/` |
 | `npm run scene:guards`      | Kein Oberflaechenzugriff nach `await` ohne Guard    |
+| `npm run save:version`      | `SAVE_VERSION` (TS) == `save_version()` (Postgres)  |
 
 Beide Workflows (`ci.yml`, `deploy.yml`) rufen `npm run verify` als Ganzes
 auf, statt die Schritte einzeln aufzuzaehlen. Die CI tat Letzteres bis zum

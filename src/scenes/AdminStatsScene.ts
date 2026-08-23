@@ -2,7 +2,7 @@
 
 import Phaser from 'phaser';
 
-import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { GAME_WIDTH } from '@/config/GameConfig';
 import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
@@ -15,11 +15,9 @@ import {
   createBackButton,
   createBackStatusText,
   createButton,
-  createDriftLayers,
   createMenuLayout,
   createPanel,
-  createVignette,
-  createWorldBackdrop,
+  createSceneBackdrop,
 } from '@/ui/widgets';
 
 const PAGE_SIZE = 3;
@@ -37,17 +35,7 @@ export class AdminStatsScene extends Phaser.Scene {
   create(): void {
     SafeAreaSystem.showStatic('ONLINE-STATISTIK');
     const world = getWorld(SaveSystem.load().lastWorldId);
-    createWorldBackdrop(
-      this,
-      GAME_WIDTH,
-      GAME_HEIGHT,
-      world.bgTop,
-      world.bgBottom,
-      world.accent,
-      world.spaceVariant,
-    );
-    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, world.spaceVariant);
-    createVignette(this, GAME_WIDTH, GAME_HEIGHT);
+    createSceneBackdrop(this, world);
     createBackButton(this, () => this.scene.start(SceneKey.Admin));
 
     const layout = createMenuLayout();

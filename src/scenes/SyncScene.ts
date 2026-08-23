@@ -22,7 +22,7 @@
 import Phaser from 'phaser';
 
 import { SYNC_CODE_LENGTH } from '@/config/backend';
-import { DEBUG_ENABLED, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { DEBUG_ENABLED, GAME_WIDTH } from '@/config/GameConfig';
 import { measureDomElement } from '@/core/layoutReport';
 import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
@@ -47,12 +47,10 @@ import {
   createBackButton,
   createBackStatusText,
   createButton,
-  createDriftLayers,
   createMenuLayout,
   createPanel,
+  createSceneBackdrop,
   createStatusPage,
-  createVignette,
-  createWorldBackdrop,
 } from '@/ui/widgets';
 import type { StatusPageHandle } from '@/ui/widgets';
 
@@ -80,17 +78,7 @@ export class SyncScene extends Phaser.Scene {
     this.transient = [];
 
     const world = getWorld(SaveSystem.load().lastWorldId);
-    createWorldBackdrop(
-      this,
-      GAME_WIDTH,
-      GAME_HEIGHT,
-      world.bgTop,
-      world.bgBottom,
-      world.accent,
-      world.spaceVariant,
-    );
-    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, world.spaceVariant);
-    createVignette(this, GAME_WIDTH, GAME_HEIGHT);
+    createSceneBackdrop(this, world);
     this.contentOffset = createMenuLayout().sections.next(150) - 300;
 
     this.statusText = createBackStatusText(this);

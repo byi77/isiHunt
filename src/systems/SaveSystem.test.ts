@@ -216,7 +216,7 @@ describe('Reset-Entscheidung durchreichen', () => {
 
   it('raeumt den Laden auch beim ZWEITEN Reset, wenn der Aufrufer ihn erkannt hat', () => {
     // Wer bereits einmal zurueckgesetzt wurde, steht selbst auf Stufe 1 ohne
-    // Runs - die eigene Herleitung in `vereinigeShopBesitz` sieht darin
+    // Runs - die eigene Herleitung in `mergeShopOwnership` sieht darin
     // keinen "bespielten" Stand und liess die Kaeufe stehen.
     SaveSystem.update((d) => {
       d.level = 1;

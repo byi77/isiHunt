@@ -16,7 +16,7 @@
 import Phaser from 'phaser';
 
 import { PLAYER_NAME_MAX_LENGTH } from '@/config/backend';
-import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { GAME_WIDTH } from '@/config/GameConfig';
 import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import type { RemoteSave } from '@/systems/CloudSystem';
@@ -35,11 +35,9 @@ import {
   attachVerticalScroll,
   createBackButton,
   createButton,
-  createDriftLayers,
   createMenuLayout,
   createPanel,
-  createVignette,
-  createWorldBackdrop,
+  createSceneBackdrop,
   PAGE_CONTENT_TOP,
 } from '@/ui/widgets';
 import type { ButtonHandle } from '@/ui/widgets';
@@ -64,18 +62,7 @@ export class ProfileScene extends Phaser.Scene {
     const world = getWorld(save.lastWorldId);
     const levelProgress = ProgressionSystem.getLevelProgress(save);
 
-    createWorldBackdrop(
-      this,
-      GAME_WIDTH,
-      GAME_HEIGHT,
-      world.bgTop,
-      world.bgBottom,
-      world.accent,
-      world.spaceVariant,
-    );
-    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, world.spaceVariant);
-    createVignette(this, GAME_WIDTH, GAME_HEIGHT);
-
+    createSceneBackdrop(this, world);
     const layout = createMenuLayout();
     if (!firstStart) createBackButton(this, () => this.scene.start(SceneKey.Menu));
 

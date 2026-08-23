@@ -76,7 +76,7 @@ function grantLevelReward(data: SaveData): number {
  * Der `guard` begrenzt die Schleife auf `MAX_LEVEL` Durchlaeufe: Ein
  * beschaedigter Stand mit unsinnig hoher XP soll das Spiel nicht einfrieren.
  */
-function verrechneLevelaufstiege(data: SaveData): number {
+function applyLevelUps(data: SaveData): number {
   let coinsGained = 0;
   let guard = 0;
   while (data.level < MAX_LEVEL && data.xp >= xpForLevel(data.level) && guard < MAX_LEVEL) {
@@ -159,7 +159,7 @@ export function applyRun(run: RunStats): ProgressionResult {
 
     // XP verrechnen; mehrere Levelaufstiege in einem Run sind moeglich.
     data.xp += safeXpGained;
-    coinsGained += verrechneLevelaufstiege(data);
+    coinsGained += applyLevelUps(data);
   });
 
   const levelsGained = after.level - levelBefore;
@@ -217,7 +217,7 @@ export function applyDailyBonus(
   const after = SaveSystem.update((data) => {
     data.coins += safeCoins;
     data.xp += safeXp;
-    totalCoinGain += verrechneLevelaufstiege(data);
+    totalCoinGain += applyLevelUps(data);
     data.totalCoinsEarned += totalCoinGain;
   });
 
@@ -260,7 +260,7 @@ export function purchaseShipShape(shapeId: string): SaveData | null {
   const shape = SHIP_SHAPES.find((entry) => entry.id === shapeId);
   if (!shape) return null;
 
-  let gekauft = false;
+  let purchased = false;
   SaveSystem.update((data) => {
     if (data.ownedShipShapes.includes(shape.id)) return;
     if (data.coins < shape.cost) return;
@@ -269,9 +269,9 @@ export function purchaseShipShape(shapeId: string): SaveData | null {
     data.ownedShipShapes = [...data.ownedShipShapes, shape.id];
     // Frisch Gekauftes gleich anziehen - wer kauft, will es sehen.
     data.shipShape = shape.id;
-    gekauft = true;
+    purchased = true;
   });
-  if (!gekauft) return null;
+  if (!purchased) return null;
   const updated = SaveSystem.recordCosmeticPurchase('shapes', shape.id);
   CloudSystem.queueCosmeticSync(updated);
   return updated;
@@ -282,7 +282,7 @@ export function purchaseShipColor(colorId: string): SaveData | null {
   const color = SHIP_COLORS.find((entry) => entry.id === colorId);
   if (!color) return null;
 
-  let gekauft = false;
+  let purchased = false;
   SaveSystem.update((data) => {
     if (data.ownedShipColors.includes(color.id)) return;
     if (data.coins < color.cost) return;
@@ -290,9 +290,9 @@ export function purchaseShipColor(colorId: string): SaveData | null {
     data.coinsSpent += color.cost;
     data.ownedShipColors = [...data.ownedShipColors, color.id];
     data.shipColor = color.id;
-    gekauft = true;
+    purchased = true;
   });
-  if (!gekauft) return null;
+  if (!purchased) return null;
   const updated = SaveSystem.recordCosmeticPurchase('colors', color.id);
   CloudSystem.queueCosmeticSync(updated);
   return updated;
@@ -311,7 +311,7 @@ export function purchaseShipAura(auraId: string): SaveData | null {
   const aura = SHIP_AURAS.find((entry) => entry.id === auraId);
   if (!aura) return null;
 
-  let gekauft = false;
+  let purchased = false;
   SaveSystem.update((data) => {
     if (data.ownedShipAuras.includes(aura.id)) return;
     if (!auraLevelReached(aura, data.level)) return;
@@ -320,9 +320,9 @@ export function purchaseShipAura(auraId: string): SaveData | null {
     data.coinsSpent += aura.cost;
     data.ownedShipAuras = [...data.ownedShipAuras, aura.id];
     data.shipAura = aura.id;
-    gekauft = true;
+    purchased = true;
   });
-  if (!gekauft) return null;
+  if (!purchased) return null;
   const updated = SaveSystem.recordCosmeticPurchase('auras', aura.id);
   CloudSystem.queueCosmeticSync(updated);
   return updated;
@@ -335,22 +335,22 @@ export function purchaseShipAura(auraId: string): SaveData | null {
  * Spielstand soll keine ungekaufte Form tragen koennen.
  */
 export function equipShip(shapeId?: string, colorId?: string, auraId?: string): SaveData | null {
-  let geaendert = false;
+  let changed = false;
   const result = SaveSystem.update((data) => {
     if (shapeId && data.ownedShipShapes.includes(shapeId) && data.shipShape !== shapeId) {
       data.shipShape = shapeId;
-      geaendert = true;
+      changed = true;
     }
     if (colorId && data.ownedShipColors.includes(colorId) && data.shipColor !== colorId) {
       data.shipColor = colorId;
-      geaendert = true;
+      changed = true;
     }
     if (auraId && data.ownedShipAuras.includes(auraId) && data.shipAura !== auraId) {
       data.shipAura = auraId;
-      geaendert = true;
+      changed = true;
     }
   });
-  if (!geaendert) return null;
+  if (!changed) return null;
   CloudSystem.queueCosmeticSync(result);
   return result;
 }
@@ -358,9 +358,9 @@ export function equipShip(shapeId?: string, colorId?: string, auraId?: string): 
 /**
  * Setzt alle Talentränge gegen die konfigurierte Reset-Gebühr zurück.
  *
- * Das `zurueckgesetzt`-Flag folgt demselben Muster wie die Kauffunktionen:
+ * Das `wasReset`-Flag folgt demselben Muster wie die Kauffunktionen:
  * Der Rueckgabewert von `SaveSystem.update()` sagt nichts darueber aus, ob
- * der Mutator tatsaechlich etwas geaendert hat - ohne das Flag meldete ein
+ * der Mutator tatsaechlich etwas changed hat - ohne das Flag meldete ein
  * uebersprungener Guard einen Erfolg.
  *
  * Vorher stand die Guthabenpruefung doppelt da: einmal als Vorpruefung ueber
@@ -369,15 +369,15 @@ export function equipShip(shapeId?: string, colorId?: string, auraId?: string): 
  * laufen sonst irgendwann auseinander (Audit 2026-08-23).
  */
 export function resetTalents(): SaveData | null {
-  let zurueckgesetzt = false;
+  let wasReset = false;
   const result = SaveSystem.update((data) => {
     if (data.coins < TALENT_RESET_COST) return;
     data.coins -= TALENT_RESET_COST;
     data.coinsSpent += TALENT_RESET_COST;
     data.talents = {};
-    zurueckgesetzt = true;
+    wasReset = true;
   });
-  return zurueckgesetzt ? result : null;
+  return wasReset ? result : null;
 }
 
 /** Prueft alle noch nicht freigeschalteten Achievements und speichert Treffer. */

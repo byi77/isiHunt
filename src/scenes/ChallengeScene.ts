@@ -29,13 +29,7 @@ import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { Depth } from '@/ui/depth';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
-import {
-  createButton,
-  createDriftLayers,
-  createPanel,
-  createVignette,
-  createWorldBackdrop,
-} from '@/ui/widgets';
+import { createButton, createPanel, createSceneBackdrop } from '@/ui/widgets';
 import type { ChallengeState } from '@/types';
 
 /** "1 Relikt" statt "1 Relikte" - der Fall tritt bei kurzen Duellen wirklich auf. */
@@ -72,17 +66,7 @@ export class ChallengeScene extends Phaser.Scene {
   }
 
   private buildBackground(world: WorldDef): void {
-    createWorldBackdrop(
-      this,
-      GAME_WIDTH,
-      GAME_HEIGHT,
-      world.bgTop,
-      world.bgBottom,
-      world.accent,
-      world.spaceVariant,
-    );
-    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, world.spaceVariant);
-    createVignette(this, GAME_WIDTH, GAME_HEIGHT);
+    createSceneBackdrop(this, world);
   }
 
   // --- Phase 1: Einfuehrung ---------------------------------------------------

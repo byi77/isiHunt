@@ -21,14 +21,7 @@ import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
-import {
-  createButton,
-  createDriftLayers,
-  createMenuLayout,
-  createPanel,
-  createVignette,
-  createWorldBackdrop,
-} from '@/ui/widgets';
+import { createButton, createMenuLayout, createPanel, createSceneBackdrop } from '@/ui/widgets';
 
 export type WorldInfoMode = 'jagd' | 'duell' | 'tageslauf';
 
@@ -66,18 +59,7 @@ export class WorldInfoScene extends Phaser.Scene {
 
     SafeAreaSystem.showStatic(world.name.toUpperCase());
 
-    createWorldBackdrop(
-      this,
-      GAME_WIDTH,
-      GAME_HEIGHT,
-      world.bgTop,
-      world.bgBottom,
-      world.accent,
-      world.spaceVariant,
-    );
-    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, world.spaceVariant);
-    createVignette(this, GAME_WIDTH, GAME_HEIGHT);
-
+    createSceneBackdrop(this, world);
     const layout = createMenuLayout(24);
     const sections = layout.sections;
 

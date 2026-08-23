@@ -19,12 +19,10 @@ import {
   createBackButton,
   createBackStatusText,
   createButton,
-  createDriftLayers,
   createMenuLayout,
   createPanel,
+  createSceneBackdrop,
   createStatusPage,
-  createVignette,
-  createWorldBackdrop,
 } from '@/ui/widgets';
 import type { StatusPageHandle } from '@/ui/widgets';
 
@@ -71,17 +69,7 @@ export class AccountScene extends Phaser.Scene {
     else SafeAreaSystem.showStatic('PROFIL VERBINDEN');
     const world = getWorld(SaveSystem.load().lastWorldId);
 
-    createWorldBackdrop(
-      this,
-      GAME_WIDTH,
-      GAME_HEIGHT,
-      world.bgTop,
-      world.bgBottom,
-      world.accent,
-      world.spaceVariant,
-    );
-    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, world.spaceVariant);
-    createVignette(this, GAME_WIDTH, GAME_HEIGHT);
+    createSceneBackdrop(this, world);
     if (!this.firstStart) createBackButton(this, () => this.scene.start(SceneKey.Settings));
     if (this.firstStart) this.buildFirstStartWelcome(world.accent);
 

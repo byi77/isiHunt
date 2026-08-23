@@ -32,7 +32,7 @@ import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
-import { decideSyncGate } from '@/systems/SyncGateSystem';
+import { decideSyncGate, hasVisibleChange } from '@/systems/SyncGateSystem';
 import * as SyncStatusSystem from '@/systems/SyncStatusSystem';
 import { shipTint } from '@/config/shop';
 import { playerTextureForShape, TextureKey } from '@/ui/textures';
@@ -378,14 +378,7 @@ export class MenuScene extends Phaser.Scene {
           // "weiter" galt. Die Ursache ist behoben (CloudSystem gleicht beide
           // Seiten an), aber der Neustart soll sich nicht erneut auf eine
           // einzelne korrekte Antwort verlassen muessen.
-          const veraendert =
-            remoteReset ||
-            uebernommen.level !== local.level ||
-            uebernommen.coins !== local.coins ||
-            uebernommen.bestScore !== local.bestScore ||
-            uebernommen.totalRuns !== local.totalRuns;
-
-          if (!veraendert) {
+          if (!hasVisibleChange(local, uebernommen, remoteReset)) {
             DebugSystem.pushLogEntry({
               timestamp: Date.now(),
               kind: 'event',

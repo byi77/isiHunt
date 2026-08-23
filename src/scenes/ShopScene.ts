@@ -58,13 +58,11 @@ import { ThreeDShipPreview } from '@/ui/threeDShipPreview';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import {
   attachVerticalScroll,
-  BACK_BUTTON_RESERVED_HEIGHT,
   createBackButton,
   createButton,
-  createDriftLayers,
   createPanel,
-  createVignette,
-  createWorldBackdrop,
+  createSceneBackdrop,
+  BACK_BUTTON_RESERVED_HEIGHT,
   PAGE_CONTENT_TOP,
 } from '@/ui/widgets';
 
@@ -184,18 +182,7 @@ export class ShopScene extends Phaser.Scene {
       this.anprobeShape = erster3DShape?.id ?? null;
     }
 
-    createWorldBackdrop(
-      this,
-      GAME_WIDTH,
-      GAME_HEIGHT,
-      world.bgTop,
-      world.bgBottom,
-      world.accent,
-      world.spaceVariant,
-    );
-    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, world.spaceVariant);
-    createVignette(this, GAME_WIDTH, GAME_HEIGHT);
-
+    createSceneBackdrop(this, world);
     this.buildVorschau(world.accent);
     this.buildReiter();
     this.buildListe(world.accent);

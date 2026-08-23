@@ -79,3 +79,40 @@ export function decideSyncGate(input: SyncGateInput): SyncGateDecision {
 
   return { run: true };
 }
+
+/** Die Felder, an denen ein Spieler eine Uebernahme bemerken wuerde. */
+export interface VisibleProgress {
+  level: number;
+  coins: number;
+  bestScore: number;
+  totalRuns: number;
+}
+
+/**
+ * Hat sich durch eine Cloud-Uebernahme sichtbar etwas geaendert?
+ *
+ * **Warum das gefragt wird.** Nach einer Uebernahme startet das Menue neu,
+ * damit Level, Muenzen und Welten den neuen Stand zeigen. Ohne diese Frage
+ * genuegt eine falsch-positive "die Cloud ist weiter"-Antwort, um die Szene
+ * endlos neu zu starten - genau das passierte nach der XP-Umstellung, als ein
+ * unmigrierter Cloud-Stand dauerhaft als weiter galt.
+ *
+ * Ein erkannter Reset zaehlt immer als Aenderung: Er raeumt Besitz und Outbox
+ * ab, auch wenn die vier Zahlen unten zufaellig gleich bleiben.
+ *
+ * Die Logik lag in `MenuScene.checkCloudSave()` und war dort - wie die ganze
+ * Funktion - durch keinen Test erreichbar (Audit 2026-08-23).
+ */
+export function hasVisibleChange(
+  vorher: VisibleProgress,
+  nachher: VisibleProgress,
+  resetErkannt: boolean,
+): boolean {
+  return (
+    resetErkannt ||
+    nachher.level !== vorher.level ||
+    nachher.coins !== vorher.coins ||
+    nachher.bestScore !== vorher.bestScore ||
+    nachher.totalRuns !== vorher.totalRuns
+  );
+}

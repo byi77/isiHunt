@@ -600,7 +600,7 @@ describe('Laden: Besitz ueberlebt den Profil-Abgleich', () => {
     const danach = SaveSystem.adoptProfileProgress(vomServer);
 
     expect(danach.ownedShipShapes).toEqual(expect.arrayContaining(['arrow', 'star', 'eagle']));
-    // Das Getragene bleibt lokal - siehe `vereinigeShopBesitz()`. Der Server
+    // Das Getragene bleibt lokal - siehe `mergeShopOwnership()`. Der Server
     // fuehrt es nicht mit, also wuerde ein uebernommener Wert die Auswahl bei
     // jedem Abgleich zuruecksetzen.
     expect(danach.shipShape).toBe('star');
