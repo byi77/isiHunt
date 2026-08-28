@@ -28,6 +28,8 @@ import type { SaveData } from '@/types';
 
 const TEST_PROFILE_KEY = 'isihunt.admin-test-profile.v1';
 const TEST_PROFILE_BACKUP_KEY = 'isihunt.admin-test-profile-backup.v1';
+const CLOUD_ACCESS_TOKEN_KEY = 'isihunt.cloud-access-token.v1';
+const LEGACY_SAVE_BACKUP_KEY = 'isihunt.pre-v9-save-backup.v1';
 /**
  * PIN vor dem lokalen Wartungsbereich.
  *
@@ -397,7 +399,16 @@ export function load(): SaveData {
     const stored = window.localStorage.getItem(SAVE_KEY);
     const raw = stored ? (JSON.parse(stored) as Partial<SaveData>) : null;
     const rawVersion = raw ? versionOf(raw) : SAVE_VERSION;
-    cache = raw ? migrate(raw) : createDefaultSave();
+    // v8 wird in Phase 2.23 absichtlich auf die neue Talentwirtschaft gesetzt.
+    // Vor dem Reset muss der lokale Rohstand aber mindestens einmal separat
+    // archiviert sein. Sonst kann ein voller/private localStorage den alten
+    // Stand unwiederbringlich machen (Audit Punkt 6).
+    const legacyBackupReady = rawVersion !== SAVE_VERSION - 1 || !raw || backupLegacySave(raw);
+    cache = raw
+      ? rawVersion === SAVE_VERSION - 1 && !legacyBackupReady
+        ? reconcile(raw)
+        : migrate(raw)
+      : createDefaultSave();
 
     // Migrationen müssen sofort persistiert werden. Sonst würde ein alter
     // Spielstand nach jedem Browser-/App-Neustart erneut Talentpunkte und
@@ -405,7 +416,7 @@ export function load(): SaveData {
     // try/catch: schlägt nur das Schreiben fehl (Quota, privater Modus),
     // bleibt der bereits migrierte Stand im Speicher gültig - der äußere
     // catch würde ihn sonst faelschlich durch einen leeren Stand ersetzen.
-    if (raw && rawVersion < SAVE_VERSION) {
+    if (raw && rawVersion < SAVE_VERSION && legacyBackupReady) {
       try {
         window.localStorage.setItem(SAVE_KEY, JSON.stringify(cache));
       } catch (error) {
@@ -497,6 +508,7 @@ export function markCosmeticsSeen(category: 'shapes' | 'colors' | 'auras'): Save
 /** Setzt den Spielstand zurueck (Debug-Taste / spaeter Einstellungsmenue). */
 export function reset(): SaveData {
   const fresh = createDefaultSave();
+  clearCloudAccessToken();
   save(fresh);
   return fresh;
 }
@@ -511,8 +523,97 @@ export function clearLocalProfile(): SaveData {
   const fresh = createDefaultSave();
   fresh.soundEnabled = current.soundEnabled;
   fresh.hapticsEnabled = current.hapticsEnabled;
+  clearCloudAccessToken();
   save(fresh);
   return fresh;
+}
+
+interface StoredCloudAccessToken {
+  cloudId: string;
+  token: string;
+}
+
+function isCloudAccessToken(value: unknown): value is StoredCloudAccessToken {
+  if (!value || typeof value !== 'object') return false;
+  const candidate = value as Partial<StoredCloudAccessToken>;
+  return (
+    typeof candidate.cloudId === 'string' &&
+    candidate.cloudId.length > 0 &&
+    typeof candidate.token === 'string' &&
+    /^[a-f0-9]{64}$/i.test(candidate.token)
+  );
+}
+
+/** Liest das lokale Save-Capability-Token nur fuer die aktuelle Cloud-ID. */
+export function getCloudAccessToken(): string | null {
+  const cloudId = load().cloudId;
+  if (!cloudId) return null;
+
+  try {
+    const raw = window.localStorage.getItem(CLOUD_ACCESS_TOKEN_KEY);
+    if (!raw) return null;
+    const stored: unknown = JSON.parse(raw);
+    return isCloudAccessToken(stored) && stored.cloudId === cloudId ? stored.token : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Speichert ein vom Server ausgestelltes Token, ohne es im Spielstand abzulegen. */
+export function setCloudAccessToken(token: string, cloudId = load().cloudId): boolean {
+  if (!cloudId || !/^[a-f0-9]{64}$/i.test(token)) return false;
+  try {
+    window.localStorage.setItem(CLOUD_ACCESS_TOKEN_KEY, JSON.stringify({ cloudId, token }));
+    return true;
+  } catch (error) {
+    console.warn('[SaveSystem] Cloud-Zugriffstoken nicht speicherbar.', error);
+    return false;
+  }
+}
+
+/** Erzeugt das langlebige Token fuer einen neuen oder bereits bekannten Gast-Save. */
+export function ensureCloudAccessToken(): string {
+  const existing = getCloudAccessToken();
+  if (existing) return existing;
+
+  const cloudId = ensureCloudId();
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  const token = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  setCloudAccessToken(token, cloudId);
+  return token;
+}
+
+/** Entfernt das lokale Capability-Token beim Profilwechsel oder Reset. */
+export function clearCloudAccessToken(): void {
+  try {
+    window.localStorage.removeItem(CLOUD_ACCESS_TOKEN_KEY);
+  } catch {
+    // Privater Modus / blockierter Speicher: Der aktuelle Stand bleibt nutzbar.
+  }
+}
+
+/** Zeigt an, ob ein alter v8-Stand vor dem sicheren Reset gesichert wurde. */
+export function hasLegacySaveBackup(): boolean {
+  try {
+    return window.localStorage.getItem(LEGACY_SAVE_BACKUP_KEY) !== null;
+  } catch {
+    return false;
+  }
+}
+
+function backupLegacySave(raw: Partial<SaveData>): boolean {
+  try {
+    if (window.localStorage.getItem(LEGACY_SAVE_BACKUP_KEY)) return true;
+    window.localStorage.setItem(LEGACY_SAVE_BACKUP_KEY, JSON.stringify(raw));
+    return true;
+  } catch (error) {
+    console.warn(
+      '[SaveSystem] v8-Stand nicht sicher archiviert; Wirtschaftsmigration wird verschoben.',
+      error,
+    );
+    return false;
+  }
 }
 
 /** True, wenn der lokale Wartungs-Teststand aktiv ist. */
@@ -783,6 +884,7 @@ export function adoptRemote(
   remote: Partial<SaveData>,
   cloudId: string,
   resetErkannt = false,
+  accessToken?: string,
 ): SaveData {
   const lokal = load();
   const merged = preservePendingIdentity(
@@ -790,6 +892,7 @@ export function adoptRemote(
     mergeShopOwnership(lokal, migrate(remote), hasExplicitShopSelection(remote), resetErkannt),
   );
   merged.cloudId = cloudId;
+  if (accessToken) setCloudAccessToken(accessToken, cloudId);
   save(merged);
   return merged;
 }

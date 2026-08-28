@@ -119,6 +119,37 @@ describe('SaveSystem.load Migration', () => {
     expect(migrated.version).toBe(SAVE_VERSION);
   });
 
+  it('archiviert einen v8-Stand vor dem sicheren Wirtschaftsmigrations-Reset', async () => {
+    window.localStorage.setItem(
+      SAVE_KEY,
+      JSON.stringify({ version: SAVE_VERSION - 1, level: 30, coins: 5000, totalRuns: 80 }),
+    );
+
+    const migrated = SaveSystem.load();
+    const backup = JSON.parse(window.localStorage.getItem('isihunt.pre-v9-save-backup.v1')!) as {
+      version: number;
+      level: number;
+    };
+
+    expect(migrated.version).toBe(SAVE_VERSION);
+    expect(SaveSystem.hasLegacySaveBackup()).toBe(true);
+    expect(backup).toMatchObject({ version: SAVE_VERSION - 1, level: 30 });
+  });
+
+  it('bindet das Capability-Token an die Cloud-ID und haelt es aus SaveData heraus', () => {
+    const cloudId = SaveSystem.ensureCloudId();
+    const token = SaveSystem.ensureCloudAccessToken();
+
+    expect(token).toMatch(/^[a-f0-9]{64}$/);
+    expect(SaveSystem.getCloudAccessToken()).toBe(token);
+    expect(SaveSystem.load()).not.toHaveProperty('cloudAccessToken');
+
+    SaveSystem.clearLocalProfile();
+    expect(SaveSystem.getCloudAccessToken()).toBeNull();
+    expect(SaveSystem.load().cloudId).toBeNull();
+    expect(cloudId).toMatch(/^[0-9a-f-]{36}$/);
+  });
+
   it('bewahrt einen offline geaenderten Namen bei einem spaeteren Remote-Pull', async () => {
     SaveSystem.setOfflinePlayerName('OfflineName');
 

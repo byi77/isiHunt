@@ -109,6 +109,10 @@ async function flushPending(): Promise<void> {
       remaining.push(...pending.slice(pending.indexOf(event) + 1));
       break;
     }
+    // Der Server ist die Quelle fuer XP, Coins, Level und validierte
+    // Achievements. Der lokale Stand bleibt bis dahin nur UI-optimistisch;
+    // nach jedem erfolgreichen Event wird die autoritative Antwort uebernommen.
+    if (result.value) SaveSystem.adoptProfileProgress(result.value.data);
   }
 
   writeOutbox(remaining);

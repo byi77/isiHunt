@@ -241,6 +241,7 @@ describe('ohne Anmeldepflicht: Netzfehler bleibt ein Ergebnisobjekt', () => {
       data: [
         {
           save_id: 'cloud-id',
+          access_token: 'a'.repeat(64),
           data: { level: 3 },
           level: 'zwoelf',
           best_score: null,

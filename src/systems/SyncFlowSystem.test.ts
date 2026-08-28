@@ -14,6 +14,7 @@ import {
 
 const remoteSave = {
   cloudId: 'cloud-1',
+  accessToken: 'a'.repeat(64),
   save: {
     data: {} as never,
     level: 4,

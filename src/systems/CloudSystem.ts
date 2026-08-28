@@ -49,7 +49,6 @@ import type { TalentId, TalentRanks } from '@/config/talents';
 export type CloudResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
 export interface LeaderboardEntry {
-  playerId: string;
   playerName: string;
   level: number;
   score: number;
@@ -57,6 +56,8 @@ export interface LeaderboardEntry {
   createdAt: string;
   /** In welcher Welt der Lauf stattfand - in der Gesamtliste als Farbmarke. */
   worldId: string;
+  /** Serverseitig berechnet; die stabile Spieler-ID bleibt privat. */
+  isOwn: boolean;
 }
 
 interface PendingLeaderboardScore {
@@ -604,35 +605,24 @@ export async function fetchLeaderboard(worldId?: string): Promise<CloudResult<Le
   const supabase = getClient();
   if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
 
-  let query = supabase
-    .from('scores')
-    .select('player_id, player_name, player_level, score, best_combo, created_at, world_id');
-
-  if (worldId) query = query.eq('world_id', worldId);
-
   const result = await withTimeout(
-    query
-      .order('score', { ascending: false })
-      // Bei Gleichstand gewinnt, wer es zuerst geschafft hat.
-      .order('created_at', { ascending: true })
-      .limit(LEADERBOARD_LIMIT),
+    supabase.rpc('get_public_leaderboard', {
+      p_world_id: worldId ?? null,
+      p_access_token: SaveSystem.getCloudAccessToken(),
+      p_limit: LEADERBOARD_LIMIT,
+    }),
     'Bestenliste laden',
   );
 
   if (!result.ok) return result;
   if (result.value.error) return { ok: false, error: result.value.error.message };
 
-  const seenPlayerIds = new Set<string>();
-  const rows = (result.value.data ?? []).filter((row) => {
-    const playerId = String(row.player_id ?? '');
-    if (!playerId || seenPlayerIds.has(playerId)) return false;
-    seenPlayerIds.add(playerId);
-    return true;
-  });
+  const rows: Record<string, unknown>[] = Array.isArray(result.value.data)
+    ? (result.value.data as Record<string, unknown>[])
+    : [];
   return {
     ok: true,
     value: rows.map((row) => ({
-      playerId: String(row.player_id),
       playerName: String(row.player_name),
       // Wie beim Sync-Vergleich: Diese Zahlen werden direkt angezeigt, hier
       // in der Bestenliste. `Number(null)` ergaebe stillschweigend 0, ein
@@ -642,6 +632,7 @@ export async function fetchLeaderboard(worldId?: string): Promise<CloudResult<Le
       bestCombo: finiteNonNegative(row.best_combo),
       createdAt: String(row.created_at),
       worldId: String(row.world_id),
+      isOwn: row.is_own === true,
     })),
   };
 }
@@ -681,9 +672,14 @@ export async function submitScore(
     p_duration_ms: Math.max(0, Math.round(durationMs)),
     p_collected: collected,
   };
+  const accessToken =
+    playerId === SaveSystem.load().cloudId
+      ? SaveSystem.ensureCloudAccessToken()
+      : SaveSystem.getCloudAccessToken();
   const result = await withTimeout(
     supabase.rpc('submit_best_score', {
       ...scoreArgs,
+      p_access_token: accessToken,
       p_recorded_at: normalizedRecordTimestamp(recordedAt),
     }),
     'Bestwert eintragen',
@@ -691,21 +687,7 @@ export async function submitScore(
 
   if (!result.ok) return result;
   if (!result.value.error) return { ok: true, value: true };
-  if (!needsLegacyLeaderboardRpc(result.value.error.message)) {
-    return { ok: false, error: result.value.error.message };
-  }
-
-  // Die App darf zwischen Web-Release und SQL-Migration nicht jeden neuen
-  // Bestwert verlieren. Der Rückfall speichert dann noch das Upload-Datum;
-  // nach Ausführen der Migration wird automatisch der echte Laufzeitpunkt
-  // übertragen.
-  const legacyResult = await withTimeout(
-    supabase.rpc('submit_best_score', scoreArgs),
-    'Bestwert eintragen',
-  );
-  if (!legacyResult.ok) return legacyResult;
-  if (legacyResult.value.error) return { ok: false, error: legacyResult.value.error.message };
-  return { ok: true, value: true };
+  return { ok: false, error: result.value.error.message };
 }
 
 /**
@@ -786,13 +768,6 @@ function normalizedRecordTimestamp(value: string): string {
   return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : new Date().toISOString();
 }
 
-function needsLegacyLeaderboardRpc(message: string): boolean {
-  return (
-    /submit_best_score|p_recorded_at/i.test(message) &&
-    /function|schema cache|parameter/i.test(message)
-  );
-}
-
 /** Aktualisiert den Anzeigenamen des bereits vorhandenen eigenen Bestwerts. */
 export async function updateLeaderboardName(
   playerId: string,
@@ -809,6 +784,10 @@ export async function updateLeaderboardName(
     supabase.rpc('rename_best_score', {
       p_player_id: playerId,
       p_player_name: name,
+      p_access_token:
+        playerId === SaveSystem.load().cloudId
+          ? SaveSystem.ensureCloudAccessToken()
+          : SaveSystem.getCloudAccessToken(),
     }),
     'Ranglistenname aktualisieren',
   );
@@ -876,6 +855,7 @@ export async function pushSave(): Promise<CloudResult<string>> {
       p_level: save.level,
       p_best_score: save.bestScore,
       p_total_runs: save.totalRuns,
+      p_access_token: SaveSystem.ensureCloudAccessToken(),
     }),
     'Spielstand hochladen',
   );
@@ -919,7 +899,13 @@ export async function fetchSave(cloudId: string): Promise<CloudResult<RemoteSave
   const supabase = getClient();
   if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
 
-  const result = await withTimeout(supabase.rpc('get_save', { p_id: cloudId }), 'Spielstand laden');
+  const result = await withTimeout(
+    supabase.rpc('get_save', {
+      p_id: cloudId,
+      p_access_token: SaveSystem.getCloudAccessToken(),
+    }),
+    'Spielstand laden',
+  );
 
   if (!result.ok) return result;
   if (result.value.error) return { ok: false, error: result.value.error.message };
@@ -1064,8 +1050,10 @@ export async function initializeProfileProgress(
 
   const result = await withTimeout(
     authenticated.value.rpc('initialize_profile_progress', {
-      p_data: save,
-      p_total_xp: totalXpForSave(save),
+      // Der Server verwendet ausschließlich den Namen. Fortschritt und XP
+      // aus einem Browser-Snapshot sind keine vertrauenswürdige Quelle.
+      p_data: { playerName: save.playerName },
+      p_total_xp: 0,
     }),
     'Profilstand anlegen',
   );
@@ -1085,7 +1073,7 @@ export async function claimCloudProfile(
   const result = await withTimeout(
     authenticated.value.rpc('claim_cloud_profile', {
       p_cloud_id: cloudId,
-      p_total_xp: totalXpForSave(SaveSystem.load()),
+      p_access_token: SaveSystem.getCloudAccessToken(),
     }),
     'Bestehendes Profil übernehmen',
   );
@@ -1257,7 +1245,11 @@ export async function createSyncCode(): Promise<CloudResult<string>> {
   for (let attempt = 0; attempt < 3; attempt++) {
     const code = createCode();
     const result = await withTimeout(
-      supabase.rpc('create_sync_code', { p_save_id: uploaded.value, p_code: code }),
+      supabase.rpc('create_sync_code', {
+        p_save_id: uploaded.value,
+        p_code: code,
+        p_access_token: SaveSystem.getCloudAccessToken(),
+      }),
       'Code erzeugen',
     );
 
@@ -1281,7 +1273,7 @@ export async function createSyncCode(): Promise<CloudResult<string>> {
  */
 export async function redeemSyncCode(
   rawCode: string,
-): Promise<CloudResult<{ cloudId: string; save: RemoteSave } | null>> {
+): Promise<CloudResult<{ cloudId: string; accessToken: string; save: RemoteSave } | null>> {
   const supabase = getClient();
   if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
 
@@ -1302,11 +1294,15 @@ export async function redeemSyncCode(
 
   const row = Array.isArray(result.value.data) ? result.value.data[0] : null;
   if (!row) return { ok: true, value: null };
+  if (typeof row.access_token !== 'string' || !/^[a-f0-9]{64}$/i.test(row.access_token)) {
+    return { ok: false, error: 'Server liefert kein gültiges Save-Zugriffstoken' };
+  }
 
   return {
     ok: true,
     value: {
       cloudId: String(row.save_id),
+      accessToken: typeof row.access_token === 'string' ? row.access_token : '',
       save: {
         data: row.data as SaveData,
         // Ueber `finiteNonNegative` statt blossem `Number()`: Diese Werte

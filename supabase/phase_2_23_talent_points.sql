@@ -1,8 +1,10 @@
 -- Kostenlose, levelgebundene Talentpunkte und kostenloser Talent-Reset.
 --
--- Die bisherigen Profile sind reine Testdaten. Die Migration setzt deshalb
--- alle Profilfortschritte auf einen frischen Stand zurueck. Profilnamen und
--- lokale Einstellungen bleiben erhalten.
+-- Die bisherigen Profile waren zum Zeitpunkt dieser Migration als Testdaten
+-- gedacht. Der Reset ist trotzdem destruktiv und darf nicht mehr versehentlich
+-- auf einer produktiven Instanz laufen. Fuer einen bewusst gewollten Reset im
+-- SQL Editor vorher in derselben Sitzung setzen:
+--   set app.isihunt_allow_test_reset = 'on';
 
 begin;
 
@@ -29,6 +31,15 @@ $$;
 -- Bestehende Testprofile sauber auf Level 1 und die Standardkosmetik setzen.
 -- Die zugehoerigen Ranglisten- und Eventreste gehoeren ebenfalls zum
 -- Teststand und werden deshalb vollstaendig entfernt.
+do $$
+begin
+  if current_setting('app.isihunt_allow_test_reset', true) <> 'on' then
+    raise exception
+      'Phase 2.23 enthaelt einen globalen Testdaten-Reset. Fuer bewusstes Ausfuehren zuerst SET app.isihunt_allow_test_reset = ''on'' setzen.';
+  end if;
+end;
+$$;
+
 delete from public.scores;
 delete from public.profile_progress_events;
 

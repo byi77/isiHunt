@@ -485,7 +485,7 @@ export class SyncScene extends Phaser.Scene {
     const pending = this.flow.pending;
     if (!pending) return;
 
-    SaveSystem.adoptRemote(pending.save.data, pending.cloudId);
+    SaveSystem.adoptRemote(pending.save.data, pending.cloudId, false, pending.accessToken);
     this.flow = clearSyncPending(this.flow);
 
     // Ins Menue statt hier zu bleiben: Level, Welten und Bestwert haben sich

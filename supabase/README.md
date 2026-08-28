@@ -36,9 +36,15 @@ Auf einer leeren Datenbank in dieser Reihenfolge einspielen:
 | 17  | `phase_2_21_talent_balance_sync.sql`         | Talent-Balance und Kauf-RPC synchronisieren                       |
 | 18  | `phase_2_22_talent_power_balance.sql`        | Mathematisch begrenzte Talentwirkungen aktualisieren              |
 | 19  | `phase_2_23_talent_points.sql`               | Kostenlose Levelpunkte, kostenloser Reset und Testprofil-Neustart |
-| 20  | `phase_2_24_score_balance.sql`               | Hoehere Reliktpunkte und staerkere Serien-Jackpots               |
-| 21  | `phase_2_25_cosmetic_coin_sync.sql`          | Shop-Ausgaben beim Kosmetik-Sync serverseitig nachbuchen         |
-| 22  | `phase_2_26_uncapped_series.sql`             | Serien-Multiplikator wächst nach Serie 16 ohne Obergrenze        |
+| 20  | `phase_2_24_score_balance.sql`               | Hoehere Reliktpunkte und staerkere Serien-Jackpots                |
+| 21  | `phase_2_25_cosmetic_coin_sync.sql`          | Shop-Ausgaben beim Kosmetik-Sync serverseitig nachbuchen          |
+| 22  | `phase_2_26_uncapped_series.sql`             | Serien-Multiplikator wächst nach Serie 16 ohne Obergrenze         |
+| 23  | `phase_2_27_security_hardening.sql`          | Admin-/Reward-/Save-/Leaderboard-Hardening                        |
+
+`phase_2_23_talent_points.sql` enthält einen historischen globalen
+Testdaten-Reset. Das Skript bricht ohne ausdrückliches Opt-in ab. Nur wenn
+dieser Reset wirklich gewollt ist, vorher in derselben SQL-Editor-Sitzung
+ausführen: `set app.isihunt_allow_test_reset = 'on';`.
 
 ## Warum alte Dateien nicht rückwirkend geändert werden
 
@@ -46,6 +52,12 @@ Eine bereits ausgeführte Migration umzuschreiben, lässt Repo und Datenbank
 auseinanderlaufen: Die Datei zeigt einen Stand, den der Server nie hatte.
 Korrekturen kommen deshalb als **neue** Migration, die die betroffene Funktion
 per `create or replace` ersetzt.
+
+`phase_2_23_talent_points.sql` ist die bewusste Ausnahme für einen
+Sicherheits-Guard: Der historische Reset bleibt inhaltlich unverändert, läuft
+aber ohne explizites Sitzungs-Opt-in nicht mehr an. Das kann bereits gelöschte
+Daten nicht zurückholen; dafür ist die read-only Inventur vor dem Live-Run
+verbindlich.
 
 Das hat einen Preis, der zweimal zugeschlagen hat: `create or replace` ersetzt
 genau die benannten Funktionen, **nicht die Datei**. Wer in einer neuen

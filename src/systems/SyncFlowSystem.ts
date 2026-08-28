@@ -14,6 +14,7 @@ export type SyncPhase = 'start' | 'code' | 'comparison';
 
 export interface SyncPendingSave {
   cloudId: string;
+  accessToken: string;
   save: RemoteSave;
 }
 
