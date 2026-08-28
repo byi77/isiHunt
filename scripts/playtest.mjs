@@ -75,9 +75,9 @@ const url = externalUrl ?? `http://localhost:${PORT}/`;
 const runSuite = (name) => !only || only.includes(name);
 
 // --- Spielstand ---------------------------------------------------------------
-// MenuScene schickt jeden Stand ohne `playerName` in den Login (MenuScene.ts
-// 76-82). Ein vorgesetzter lokaler Stand haelt den Testlauf offline und
-// unabhaengig von Zugangsdaten.
+// Der Test setzt weiterhin einen benannten lokalen Stand vor, damit die
+// Online-Ergebniswege und die Fortschrittssuiten reproduzierbar bleiben. Die
+// App selbst startet inzwischen auch mit leerem Stand direkt im Gastmodus.
 //
 // Level 1 mit 0 XP ist der einzige in sich stimmige Startwert: migrate()
 // rechnet das Level aus der XP-Summe zurueck (SaveSystem.ts 145-155).

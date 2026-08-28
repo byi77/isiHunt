@@ -401,6 +401,9 @@ export class ResultScene extends Phaser.Scene {
    */
   private uploadSave(): void {
     if (!CloudSystem.isAvailable() || SaveSystem.isTestProfileActive()) return;
+    // Ein namenloser Gast spielt vollständig lokal. Erst ein Name oder ein
+    // Login macht einen späteren Cloud-Abgleich sinnvoll.
+    if (!AuthSystem.isSignedIn() && !SaveSystem.load().playerName) return;
     void ProgressSyncSystem.flush();
     if (!AuthSystem.isSignedIn()) void CloudSystem.syncSaveSafely();
   }

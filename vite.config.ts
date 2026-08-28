@@ -1,7 +1,8 @@
 import { defineConfig } from 'vite';
 import type { Plugin } from 'vite';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, relative, sep } from 'node:path';
 import { fileURLToPath, URL } from 'node:url';
-import { readFileSync } from 'node:fs';
 
 // Version aus der package.json ins Spiel reichen. Sie wird bei jedem Commit
 // hochgezaehlt (scripts/bump-version.mjs) und steht unten rechts auf dem
@@ -37,11 +38,47 @@ function versionManifest(): Plugin {
   };
 }
 
+/**
+ * Erzeugt den Service Worker mit allen Build- und Public-Dateien als
+ * Precache-Liste. Die Dateinamen der Vite-Chunks sind gehasht und können
+ * deshalb nicht zuverlässig in einer statischen `public/sw.js` stehen.
+ */
+function offlineServiceWorker(): Plugin {
+  const publicRoot = fileURLToPath(new URL('./public/', import.meta.url));
+  const templatePath = fileURLToPath(new URL('./scripts/sw-template.txt', import.meta.url));
+
+  const publicFiles = (directory: string): string[] =>
+    readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+      const fullPath = join(directory, entry.name);
+      if (entry.isDirectory()) return publicFiles(fullPath);
+      if (entry.name === '.gitkeep') return [];
+      return [relative(publicRoot, fullPath).split(sep).join('/')];
+    });
+
+  return {
+    name: 'isihunt-offline-service-worker',
+    apply: 'build',
+    generateBundle(_options, bundle) {
+      const precacheUrls = [
+        './',
+        './index.html',
+        ...Object.keys(bundle).map((fileName) => `./${fileName}`),
+        ...publicFiles(publicRoot).map((fileName) => `./${fileName}`),
+      ];
+      const source = readFileSync(templatePath, 'utf8')
+        .replace('__ISIHUNT_CACHE_NAME__', JSON.stringify(`isihunt-app-shell-${version}`))
+        .replace('__ISIHUNT_PRECACHE_URLS__', JSON.stringify([...new Set(precacheUrls)], null, 2));
+
+      this.emitFile({ type: 'asset', fileName: 'sw.js', source });
+    },
+  } satisfies Plugin;
+}
+
 // `base: './'` haelt alle Asset-Pfade relativ, damit der Build sowohl unter
 // https://<user>.github.io/isiHunt/ als auch lokal per `vite preview` laeuft.
 export default defineConfig({
   base: './',
-  plugins: [versionManifest()],
+  plugins: [versionManifest(), offlineServiceWorker()],
   define: {
     __APP_VERSION__: JSON.stringify(version),
   },

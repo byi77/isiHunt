@@ -84,23 +84,8 @@ export class MenuScene extends Phaser.Scene {
   create(): void {
     SafeAreaSystem.showMenuTicker();
     const save = SaveSystem.load();
-    // Der lokale Stand darf nicht weiter wie ein eingeloggtes Profil wirken,
-    // wenn die Auth-Session bereits beendet oder abgelaufen ist. Das ist vor
-    // allem nach einer externen Abmeldung wichtig: Der Cloud-Stand bleibt
-    // erhalten und wird beim nächsten Einloggen wieder geladen.
-    if (AuthSystem.isReady() && !AuthSystem.isSignedIn() && save.playerName) {
-      SaveSystem.clearLocalProfile();
-      this.scene.start(SceneKey.Account, { firstStart: true });
-      return;
-    }
-    if (!save.playerName) {
-      // Ein Erstprofil ist immer ein Online-Profil. Ohne erfolgreiche
-      // Anmeldung wird kein lokaler Ersatzstand angelegt, damit jeder neue
-      // Spielstand nach einer Neuinstallation wiederherstellbar bleibt.
-      this.scene.start(SceneKey.Account, { firstStart: true });
-      return;
-    }
-
+    // Das Hauptmenü bleibt auch ohne Name, Konto oder Auth-Session erreichbar.
+    // Der Name wird unten nur für die Anzeige auf "GAST" zurückgestellt.
     const unlocked = WORLDS.filter((w) => w.unlockLevel <= save.level);
     this.selectedWorld =
       unlocked.find((w) => w.id === save.lastWorldId) ??
@@ -122,7 +107,7 @@ export class MenuScene extends Phaser.Scene {
 
     this.buildTitle();
     this.buildFullscreenToggle();
-    this.buildProfilePanel(save.playerName, save.level, save.bestScore, save.coins);
+    this.buildProfilePanel(save.playerName || 'GAST', save.level, save.bestScore, save.coins);
     this.buildWorldList(save.level);
     this.buildFooter();
 
@@ -192,9 +177,14 @@ export class MenuScene extends Phaser.Scene {
     // `SyncGateSystem` - dort ist sie ohne Phaser testbar. Hier bleibt nur
     // die Ausfuehrung.
     const jetzt = Date.now();
+    const localSave = SaveSystem.load();
+    // Ein Gast ohne eigenen Namen braucht keinen Cloud-Spielstand. Der
+    // lokale Spielstand bleibt voll nutzbar; ein späteres Login kann ihn
+    // weiterhin bewusst mit einem Online-Profil verbinden.
+    const guestWithoutName = !AuthSystem.isSignedIn() && !localSave.playerName;
     const tor = decideSyncGate({
       busy: this.saveSyncBusy,
-      cloudAvailable: CloudSystem.isAvailable(),
+      cloudAvailable: CloudSystem.isAvailable() && !guestWithoutName,
       testProfile: SaveSystem.isTestProfileActive(),
       online: navigator.onLine,
       force,
@@ -828,6 +818,7 @@ export class MenuScene extends Phaser.Scene {
     const y = 270;
     const width = GAME_WIDTH - 80;
     const levelProgress = ProgressionSystem.getLevelProgress(SaveSystem.load());
+    const localPlay = !AuthSystem.isSignedIn() || !navigator.onLine;
     const rowBounds = [
       { center: y - 26, height: FontSize.body },
       { center: y + 2, height: FontSize.body },
@@ -902,9 +893,11 @@ export class MenuScene extends Phaser.Scene {
       .text(
         172,
         y + 73,
-        levelProgress.xpNeeded === 0
-          ? 'MAX LEVEL'
-          : `${levelProgress.xpNeeded - levelProgress.xpInLevel} XP BIS LEVEL ${levelProgress.level + 1}`,
+        localPlay
+          ? 'OFFLINE · LOKAL GESPEICHERT'
+          : levelProgress.xpNeeded === 0
+            ? 'MAX LEVEL'
+            : `${levelProgress.xpNeeded - levelProgress.xpInLevel} XP BIS LEVEL ${levelProgress.level + 1}`,
         textStyle(FontSize.tiny, Palette.inkDim, { fontStyle: 'bold' }),
       )
       .setOrigin(0, 0.5);

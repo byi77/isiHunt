@@ -223,6 +223,27 @@ requestPortraitOrientationLock();
 let game: Phaser.Game | null = null;
 
 /**
+ * Hält die App-Shell für einen vollständigen Offline-Neustart vor.
+ *
+ * Der Spielstand liegt zwar in `localStorage`, ohne gecachte HTML-/JS-Dateien
+ * könnte der Browser die App nach einem Neustart ohne Netz aber gar nicht erst
+ * öffnen. Im Dev-Server bleibt der Service Worker bewusst ausgeschaltet, damit
+ * er Entwicklung und HMR nicht beeinflusst.
+ */
+function registerOfflineAppShell(): void {
+  if (import.meta.env.DEV || !('serviceWorker' in navigator)) return;
+
+  const register = (): void => {
+    void navigator.serviceWorker.register('./sw.js').catch((error: unknown) => {
+      console.warn('[isiHunt] Offline-App-Shell konnte nicht registriert werden.', error);
+    });
+  };
+
+  if (document.readyState === 'complete') register();
+  else window.addEventListener('load', register, { once: true });
+}
+
+/**
  * Dreimal tippen und danach lange auf die Versionsnummer druecken oeffnet
  * den Wartungsbildschirm.
  *
@@ -331,4 +352,5 @@ async function startGame(): Promise<void> {
   }
 }
 
+registerOfflineAppShell();
 void startGame();

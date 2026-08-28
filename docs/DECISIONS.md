@@ -1069,3 +1069,38 @@ begrenzt. Duelle verwenden weiterhin keine Talentboni.
 - Der Vollausbau umfasst 41 Ränge und kostet aktuell 18.950 Coins.
 - `TalentScene` benötigt Scrollen, damit alle zehn Einträge auf kleinen
   Bildschirmen erreichbar bleiben.
+
+---
+
+## ADR-0020 — Offline-Spiel ohne Pflichtkonto
+
+**Datum:** 2026-08-28 · **Status:** Angenommen
+
+### Kontext
+
+Der Spielstand wird lokal gespeichert und die Cloud-Schicht ist bereits als
+optionale Ergänzung ausgelegt. Der bisherige Menüstart verlangte trotzdem für
+einen leeren Spielstand ein Online-Konto. Dadurch konnten neue Spieler und
+bereits bekannte Spieler ohne aktuelle Auth-Session nicht spielen.
+
+### Entscheidung
+
+Der normale Spielstart ist immer lokal möglich. Ein leerer oder nicht
+angemeldeter Spielstand startet im Gastmodus; der Menüname lautet `GAST`, und
+der Fortschritt wird wie bei einem Konto in `localStorage` gespeichert. Ein
+bestehendes Konto kann mit geladener Sitzung auch ohne Netzwerk weiterspielen;
+ausstehende Fortschrittsereignisse werden nach der Netzrückkehr synchronisiert.
+
+Internet bleibt nur für Registrierung und Login erforderlich. Bestenliste,
+Cloud-Abgleich und Netzwerk-Duell sind optionale bzw. bewusst netzgebundene
+Funktionen. Die Production-PWA cached zusätzlich ihre App-Shell, damit ein
+vollständiger Neustart ohne Netz möglich ist.
+
+### Konsequenzen
+
+- Der Menüstart darf nicht mehr in `AccountScene` umleiten, nur weil
+  `playerName` leer ist.
+- Namenlose Gäste erzeugen keinen automatischen Cloud-Spielstand; ein Name
+  kann später im Profil vergeben und online geprüft werden.
+- Registrierung und Login zeigen offline direkt einen Hinweis, statt den
+  Spielstart zu beeinflussen.

@@ -575,6 +575,13 @@ weg — nichts davon darf verhindern, dass man spielt. Ohne Zugangsdaten
 erscheinen die Online-Knoepfe gar nicht erst; ein Knopf, der zuverlaessig in
 eine Fehlermeldung fuehrt, ist schlimmer als keiner.
 
+Der normale Spielstart ist davon getrennt: `MenuScene` ist auch mit leerem
+Spielstand, ohne Konto und ohne Auth-Session erreichbar. Der lokale Gast wird
+als `GAST` angezeigt und spielt mit demselben `localStorage`-Spielstand wie ein
+angemeldetes Profil. Registrierung und Login bleiben die einzigen Aktionen,
+die eine Online-Verbindung voraussetzen; das Netzwerk-Duell ist als bewusst
+netzwerkgebundener Sondermodus davon ausgenommen.
+
 **Kein Konto, kein Passwort, keine E-Mail.** Ein Spielstand gehoert einer
 zufaelligen UUID, die nur lokal liegt. Fuer das zweite Geraet erzeugt das
 erste einen sechsstelligen Code, der 15 Minuten gilt.

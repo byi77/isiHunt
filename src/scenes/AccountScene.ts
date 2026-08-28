@@ -215,7 +215,7 @@ export class AccountScene extends Phaser.Scene {
 
   private async signIn(): Promise<void> {
     if (this.busy || !this.aliasInput || !this.pinInput) return;
-    if (!this.ensureFirstStartOnline()) return;
+    if (!this.ensureAccountOnline()) return;
     const alias = AuthSystem.normalizeAlias(this.aliasInput.getValue());
     const pinOrLegacyPassword = this.pinInput.getValue();
     if (!AuthSystem.isValidAlias(alias) || !pinOrLegacyPassword) {
@@ -246,7 +246,7 @@ export class AccountScene extends Phaser.Scene {
 
   private async signUp(): Promise<void> {
     if (this.busy || !this.aliasInput || !this.pinInput || !this.pinConfirmInput) return;
-    if (!this.ensureFirstStartOnline()) return;
+    if (!this.ensureAccountOnline()) return;
     const alias = AuthSystem.normalizeAlias(this.aliasInput.getValue());
     const pin = this.pinInput.getValue();
     const pinConfirmation = this.pinConfirmInput.getValue();
@@ -279,11 +279,11 @@ export class AccountScene extends Phaser.Scene {
     await this.syncProfile();
   }
 
-  /** Der Erststart hat keinen Offline-Fallback: das Profil muss in die Cloud. */
-  private ensureFirstStartOnline(): boolean {
-    if (!this.firstStart || navigator.onLine) return true;
+  /** Registrierung und Login brauchen Internet; das Spiel selbst nicht. */
+  private ensureAccountOnline(): boolean {
+    if (navigator.onLine) return true;
     this.statusPage.setStatus(
-      'Bitte stelle für die erste Anmeldung eine Internetverbindung her.',
+      'Zum Einloggen oder Registrieren brauchst du Internet. Spielen kannst du offline.',
       Palette.gold,
     );
     return false;

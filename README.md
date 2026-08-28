@@ -136,8 +136,10 @@ aber keinen einzelnen echten Handytest fuer Touch, Safari/PWA und Mobilfunk.
 ### Online-Funktionen (optional)
 
 Bestenliste und Spielstand-Abgleich brauchen ein Supabase-Projekt. **Ohne
-Zugangsdaten laeuft das Spiel vollstaendig** — die beiden Knoepfe erscheinen
-dann gar nicht erst.
+Zugangsdaten laeuft das Spiel vollstaendig** — auch ohne Konto und ohne
+Internetverbindung kann gespielt werden. Spielstaende werden lokal gespeichert;
+Internet wird nur fuer Registrierung, Login und die optionalen Online-Funktionen
+gebraucht. Die beiden Online-Knoepfe erscheinen ohne Backend gar nicht erst.
 
 Zum Einrichten:
 
