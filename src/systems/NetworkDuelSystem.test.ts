@@ -13,8 +13,9 @@
  * braucht einen echten Zwei-Geraete-Test (siehe TODO.md-Planungsnotiz).
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ONLINE_DUEL_PRESENCE_GRACE_MS } from '@/config/onlineDuel';
 import * as DebugSystem from '@/systems/DebugSystem';
 import * as NetworkDuelSystem from '@/systems/NetworkDuelSystem';
 
@@ -111,8 +112,10 @@ describe('broadcastReady/broadcastStartTime ohne aktiven Kanal', () => {
 function createFakeSupabase(): {
   client: unknown;
   fire: (event: string, payload: unknown) => void;
+  firePresence: (event: 'join' | 'leave', key: string) => void;
 } {
   const broadcastHandlers = new Map<string, (message: unknown) => void>();
+  const presenceHandlers = new Map<string, (message: unknown) => void>();
 
   // Explizit typisiert, weil `on`/`subscribe` den Kanal selbst
   // zurueckgeben - ohne Annotation kann TypeScript den Typ nicht aus seiner
@@ -128,6 +131,7 @@ function createFakeSupabase(): {
   const channel: FakeChannel = {
     on(type, filter, handler) {
       if (type === 'broadcast') broadcastHandlers.set(filter.event, handler);
+      if (type === 'presence') presenceHandlers.set(filter.event, handler);
       return channel;
     },
     subscribe() {
@@ -141,6 +145,7 @@ function createFakeSupabase(): {
   return {
     client: { channel: () => channel },
     fire: (event, payload) => broadcastHandlers.get(event)?.({ payload }),
+    firePresence: (event, key) => presenceHandlers.get(event)?.({ key }),
   };
 }
 
@@ -413,5 +418,103 @@ describe('Sendepfad hinterlaesst eine Spur', () => {
       (item) => item.label === 'duel:live-verworfen',
     );
     expect(entries).toHaveLength(1);
+  });
+});
+
+/**
+ * Der Kern des Fixes vom 2026-08-25: ein Presence-`leave` ist beim
+ * Szenenwechsel Lobby -> GameScene der Normalfall, kein Abbruch. Der Bericht
+ * zeigte die Folge der fehlenden Karenz unmissverstaendlich - 5 ms nach
+ * `run:started` stand "Verbindung weg", und der Gegnerstand blieb die ganze
+ * Runde bei 0.
+ */
+describe('Presence mit Karenzfrist', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    NetworkDuelSystem.unsubscribeFromRoom();
+    DebugSystem.clearLogBuffer();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('meldet keine Trennung, wenn der Gegner sofort zurueckkehrt', () => {
+    const onOpponentDisconnected = vi.fn();
+    const fake = createFakeSupabase();
+    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {
+      onOpponentDisconnected,
+    });
+
+    // Genau der Ablauf beim Szenenwechsel: leave, wenige Millisekunden
+    // spaeter join desselben Schluessels.
+    fake.firePresence('leave', '1');
+    vi.advanceTimersByTime(5);
+    fake.firePresence('join', '1');
+
+    vi.advanceTimersByTime(ONLINE_DUEL_PRESENCE_GRACE_MS * 2);
+
+    expect(onOpponentDisconnected).not.toHaveBeenCalled();
+  });
+
+  it('meldet die Trennung, wenn der Gegner wegbleibt', () => {
+    const onOpponentDisconnected = vi.fn();
+    const fake = createFakeSupabase();
+    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {
+      onOpponentDisconnected,
+    });
+
+    fake.firePresence('leave', '1');
+
+    // Vor Ablauf der Frist noch nichts - sonst waere die Karenz wirkungslos.
+    vi.advanceTimersByTime(ONLINE_DUEL_PRESENCE_GRACE_MS - 1);
+    expect(onOpponentDisconnected).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(2);
+    expect(onOpponentDisconnected).toHaveBeenCalledTimes(1);
+  });
+
+  it('ignoriert das eigene leave', () => {
+    const onOpponentDisconnected = vi.fn();
+    const fake = createFakeSupabase();
+    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {
+      onOpponentDisconnected,
+    });
+
+    fake.firePresence('leave', '0');
+    vi.advanceTimersByTime(ONLINE_DUEL_PRESENCE_GRACE_MS * 2);
+
+    expect(onOpponentDisconnected).not.toHaveBeenCalled();
+  });
+
+  it('laesst keine Frist in einen neuen Kanal hineinlaufen', () => {
+    const onOpponentDisconnected = vi.fn();
+    const fake = createFakeSupabase();
+    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {
+      onOpponentDisconnected,
+    });
+
+    fake.firePresence('leave', '1');
+    // Neuer Kanal, bevor die Frist ablaeuft - die alte Frist darf im neuen
+    // Kanal keine Trennung melden, die es dort nie gab.
+    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'DEF456', 0, {
+      onOpponentDisconnected,
+    });
+
+    vi.advanceTimersByTime(ONLINE_DUEL_PRESENCE_GRACE_MS * 2);
+
+    expect(onOpponentDisconnected).not.toHaveBeenCalled();
+  });
+
+  it('protokolliert leave und join im geschuetzten Puffer', () => {
+    const fake = createFakeSupabase();
+    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {});
+
+    fake.firePresence('leave', '1');
+    fake.firePresence('join', '1');
+
+    const labels = DebugSystem.getProtectedLogBuffer().map((entry) => entry.label);
+    expect(labels).toContain('duel:presence-leave');
+    expect(labels).toContain('duel:presence-join');
   });
 });

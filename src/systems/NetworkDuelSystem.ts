@@ -27,7 +27,11 @@
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 
 import { BACKEND_TIMEOUT_MS, SYNC_CODE_ALPHABET } from '@/config/backend';
-import { DUEL_ROOM_CODE_TTL_MINUTES, ONLINE_DUEL_CLOCK_SYNC_SAMPLES } from '@/config/onlineDuel';
+import {
+  DUEL_ROOM_CODE_TTL_MINUTES,
+  ONLINE_DUEL_CLOCK_SYNC_SAMPLES,
+  ONLINE_DUEL_PRESENCE_GRACE_MS,
+} from '@/config/onlineDuel';
 import * as CloudSystem from '@/systems/CloudSystem';
 import type { CloudResult } from '@/systems/CloudSystem';
 import * as DebugSystem from '@/systems/DebugSystem';
@@ -416,6 +420,9 @@ export function subscribeToRoom(
   // Ein neuer Kanal ist ein neuer Diagnosefall - sonst bliebe ein Grund, der
   // im ersten Duell einmal gemeldet wurde, im zweiten fuer immer stumm.
   reportedLiveDrops.clear();
+  // Eine Karenzfrist aus dem alten Kanal darf nicht in den neuen hineinlaufen
+  // und dort eine Trennung melden, die es gar nicht gibt.
+  clearPendingDisconnects();
 
   const channel = supabase.channel(code, {
     config: { private: true, presence: { key: String(localPlayerIndex) } },
@@ -490,7 +497,14 @@ export function subscribeToRoom(
       // Nur reagieren, wenn der ANDERE Spieler gegangen ist - Presence
       // meldet grundsaetzlich jeden Abgang im Kanal, auch den eigenen beim
       // Neuverbinden.
-      if (key !== String(activeLocalPlayerIndex)) activeHandlers.onOpponentDisconnected?.();
+      if (key === String(activeLocalPlayerIndex)) return;
+      scheduleDisconnect(key);
+    })
+    .on('presence', { event: 'join' }, ({ key }: { key: string }) => {
+      // Der Gegenpart zur Karenz im `leave`: kehrt derselbe Schluessel
+      // zurueck, war das `leave` ein Kanalwechsel und kein Abbruch.
+      if (key === String(activeLocalPlayerIndex)) return;
+      cancelPendingDisconnect(key, 'join');
     })
     .subscribe((status, error) => {
       // JEDEN Statuswechsel mitschreiben, nicht nur den Fehlerfall. Ein
@@ -623,6 +637,84 @@ function isOpponentActivity(raw: unknown): raw is DuelOpponentActivity {
 }
 
 /**
+ * Laufende Karenzfristen je Presence-Schluessel.
+ *
+ * Eine Map und kein einzelner Timer: theoretisch koennen mehrere Schluessel
+ * gleichzeitig in Karenz sein, und ein `join` darf nur die Frist des eigenen
+ * Schluessels aufheben - sonst wuerde die Rueckkehr des einen den Abbruch des
+ * anderen verschlucken.
+ */
+const pendingDisconnects = new Map<string, ReturnType<typeof setTimeout>>();
+
+/**
+ * Meldet eine Trennung erst nach `ONLINE_DUEL_PRESENCE_GRACE_MS`.
+ *
+ * Der Grund steht ausfuehrlich bei der Konstante: ein Presence-`leave` ist
+ * beim Szenenwechsel Lobby -> GameScene der Normalfall, kein Abbruch. Ohne
+ * Karenz meldete das Geraet die Trennung 5ms nach dem Rundenstart und zeigte
+ * danach die ganze Runde lang "Verbindung weg" (Bericht 2026-08-25).
+ *
+ * `setTimeout` statt eines Phaser-Timers: `systems/` kennt Phaser nicht
+ * (Regel 6), und der Kanal lebt ohnehin laenger als jede einzelne Scene.
+ */
+function scheduleDisconnect(key: string): void {
+  if (pendingDisconnects.has(key)) return;
+
+  DebugSystem.pushProtectedLogEntry({
+    timestamp: Date.now(),
+    kind: 'event',
+    label: 'duel:presence-leave',
+    detail: `Schluessel ${key} - Karenz laeuft`,
+  });
+
+  pendingDisconnects.set(
+    key,
+    setTimeout(() => {
+      pendingDisconnects.delete(key);
+      DebugSystem.pushProtectedLogEntry({
+        timestamp: Date.now(),
+        kind: 'error',
+        label: 'duel:presence-weg',
+        detail: `Schluessel ${key} - keine Rueckkehr, Trennung gemeldet`,
+      });
+      activeHandlers.onOpponentDisconnected?.();
+    }, ONLINE_DUEL_PRESENCE_GRACE_MS),
+  );
+}
+
+/**
+ * Hebt eine laufende Karenzfrist auf - der Gegner ist zurueck.
+ *
+ * Protokolliert bewusst auch den Fall ohne laufende Frist: ein `join` ohne
+ * vorheriges `leave` ist die normale Erstanmeldung und belegt, dass Presence
+ * ueberhaupt funktioniert. Beides zusammen macht im Bericht den Unterschied
+ * zwischen "Kanalwechsel" und "echter Abbruch" lesbar, ohne dass man ihn
+ * erraten muss.
+ */
+function cancelPendingDisconnect(key: string, reason: string): void {
+  const pending = pendingDisconnects.get(key);
+
+  DebugSystem.pushProtectedLogEntry({
+    timestamp: Date.now(),
+    kind: 'event',
+    label: 'duel:presence-join',
+    detail: pending
+      ? `Schluessel ${key} - zurueck (${reason}), Karenz aufgehoben`
+      : `Schluessel ${key} - angemeldet (${reason})`,
+  });
+
+  if (!pending) return;
+  clearTimeout(pending);
+  pendingDisconnects.delete(key);
+}
+
+/** Beendet alle laufenden Karenzfristen - beim Kanalwechsel und beim Verlassen. */
+function clearPendingDisconnects(): void {
+  for (const timer of pendingDisconnects.values()) clearTimeout(timer);
+  pendingDisconnects.clear();
+}
+
+/**
  * Bereits gemeldete Verwurfsgruende - der `live`-Takt feuert alle 400ms, eine
  * Meldung pro Nachricht wuerde den Ringpuffer (`DEBUG_LOG_BUFFER_SIZE`) in gut
  * zwei Minuten vollstaendig ueberschreiben und damit genau den Verlauf
@@ -648,6 +740,9 @@ function logLiveDropOnce(reason: string, detail: string): void {
 /** Verlaesst den aktuellen Kanal, falls einer aktiv ist - wirft nie. */
 export function unsubscribeFromRoom(): void {
   activeHandlers = {};
+  // Ohne das feuerte eine laufende Frist nach dem Verlassen noch in einen
+  // Handler, den niemand mehr erwartet.
+  clearPendingDisconnects();
   if (!activeChannel) return;
   void activeChannel.unsubscribe();
   activeChannel = null;

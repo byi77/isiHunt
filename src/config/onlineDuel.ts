@@ -59,6 +59,38 @@ export const ONLINE_DUEL_SCORE_BROADCAST_INTERVAL_MS = 400;
 export const ONLINE_DUEL_LIVE_STALE_MS = 3_000;
 
 /**
+ * Wie lange nach einem Presence-`leave` auf die Rueckkehr des Gegners
+ * gewartet wird, bevor die Trennung gemeldet wird.
+ *
+ * **Warum ueberhaupt gewartet wird.** Ein `leave` ist nicht gleichbedeutend
+ * mit "weg". Beim Wechsel Lobby -> GameScene baut jeder Client seinen Kanal
+ * neu auf; der jeweils andere sieht dabei ein `leave`, dem unmittelbar ein
+ * `join` folgt. Bis v0.1.252 galt jedes `leave` sofort als Abbruch - der
+ * Zwei-Geraete-Bericht vom 2026-08-25 zeigt die Folge in aller Deutlichkeit:
+ *
+ *     10:58:38.512  run:started
+ *     10:58:38.517  duel:opponent-disconnected     <- 5 ms spaeter
+ *
+ * Fuenf Millisekunden nach dem Rundenstart kann keine Verbindung
+ * zusammengebrochen sein. Das HUD zeigte danach die ganze Runde lang
+ * "Verbindung weg" und den Gegnerstand bei 0, obwohl beide Geraete
+ * durchspielten und ihr Ergebnis abgaben.
+ *
+ * **Warum dieser Wert.** Ein Kanalwechsel beim Szenenuebergang ist in
+ * Millisekunden erledigt (im Bericht: 5 ms) - eine Sekunde ist dafuer
+ * grosszuegig, selbst wenn das Geraet gerade den Rundenaufbau stemmt. Nach
+ * oben begrenzt ihn die Ehrlichkeit der Anzeige: laenger zu warten hiesse,
+ * einen echten Abbruch sekundenlang zu verschweigen.
+ *
+ * Ein zu kurzer Wert ist hier ausserdem unkritisch, weil er nichts kaputt
+ * macht: `ONLINE_DUEL_LIVE_STALE_MS` erkennt ein echtes Verstummen ohnehin
+ * unabhaengig davon (siehe `GameScene.checkOpponentAlive`). Presence ist die
+ * Abkuerzung fuer den sauberen Abgang, nicht die alleinige Wahrheit -
+ * dieselbe Aufteilung wie bei Startzeit und Rundenergebnis.
+ */
+export const ONLINE_DUEL_PRESENCE_GRACE_MS = 1_000;
+
+/**
  * Anzahl Messungen zur Bestimmung des Uhr-Offsets gegenueber der
  * Supabase-Serverzeit.
  *

@@ -57,6 +57,33 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Netzwerk-Duell: der Live-Punktestand des Gegners blieb bei 0 und die
+  Anzeige meldete "Verbindung weg".** Der Bericht vom 2026-08-25 zeigt die
+  Ursache auf die Millisekunde genau:
+
+  ```
+  10:58:38.512  run:started
+  10:58:38.517  duel:opponent-disconnected     ← 5 ms später
+  ```
+
+  Fuenf Millisekunden nach dem Rundenstart kann keine Verbindung
+  zusammengebrochen sein — das war der Szenenwechsel des Gegners. Beim Wechsel
+  Lobby → GameScene baut jeder Client seinen Kanal neu auf, der andere sieht
+  dabei ein Presence-`leave` mit unmittelbar folgendem `join`. Jedes `leave`
+  galt bisher sofort als Abbruch.
+
+  Nach einem `leave` laeuft jetzt eine Karenzfrist von einer Sekunde; kehrt
+  derselbe Schluessel zurueck, war es ein Kanalwechsel. Ein echter Abbruch
+  wird dadurch eine Sekunde spaeter gemeldet — und ein stilles Verstummen
+  (Funkloch, leerer Akku) erkennt `ONLINE_DUEL_LIVE_STALE_MS` ohnehin
+  unabhaengig davon.
+
+  Der geschuetzte Puffer aus v0.1.251 hat den Befund erst moeglich gemacht:
+  sein einziger Eintrag (`duel:kanalstatus SUBSCRIBED`, ohne jede Fehler- oder
+  Verwurfszeile) belegte, dass der Kanal stand und das Senden gelang — die
+  Ursache lag also auf der Empfangsseite. `leave` und `join` werden dort jetzt
+  ebenfalls protokolliert.
+
 - **Netzwerk-Duell: die Gegneranzeige lag im eigenen Punktestand.** Sie
   funktionierte die ganze Zeit — sie war nur unlesbar. Beide Duell-Zeilen
   standen auf y=76 und y=100, mitten im eigenen Punktestand, der bei y=62

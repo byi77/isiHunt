@@ -265,6 +265,19 @@ Invarianten fest, statt die Zahlen selbst zu wiederholen. Und weil der Raum das
 Zeitlimit ueberlebt, endet das Aufgeben nicht in einer Sackgasse, sondern in
 einer Rueckfrage (**WEITER WARTEN**), die Takt und Limit neu startet.
 
+**Ein Presence-`leave` ist kein Abbruch.** Beim Wechsel Lobby -> GameScene
+baut jeder Client seinen Kanal neu auf; der jeweils andere sieht dabei ein
+`leave`, dem unmittelbar ein `join` folgt. Bis v0.1.252 galt jedes `leave`
+sofort als Trennung - der Zwei-Geraete-Bericht vom 2026-08-25 zeigt die Folge:
+`duel:opponent-disconnected` fuenf Millisekunden nach `run:started`, danach
+die ganze Runde lang "Verbindung weg" und ein Gegnerstand von 0, obwohl beide
+Geraete durchspielten. Seitdem laeuft nach einem `leave` eine Karenzfrist
+(`ONLINE_DUEL_PRESENCE_GRACE_MS`); ein `join` desselben Schluessels hebt sie
+auf. Ein echter Abbruch wird dadurch um eine Sekunde spaeter gemeldet - und
+`ONLINE_DUEL_LIVE_STALE_MS` erkennt ein stilles Verstummen ohnehin unabhaengig
+davon. Presence ist die Abkuerzung fuer den sauberen Abgang, nicht die
+alleinige Wahrheit.
+
 **Der Sendepfad hinterlaesst eine Spur.** `void activeChannel?.send(...)` war
 doppelt blind: `?.` machte einen fehlenden Kanal zu einem stillen Nichtstun,
 `void` verwarf die Antwort. Als im Zwei-Geraete-Test (2026-08-23) waehrend
