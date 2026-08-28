@@ -14,9 +14,9 @@ export interface SaveData {
   level: number;
   /** XP innerhalb des aktuellen Levels, nicht kumulativ. */
   xp: number;
-  /** Legacy-Feld aus der früheren Talentpunkt-Phase; bleibt für Migration. */
+  /** Nicht ausgegebene, durch Levelaufstiege verdiente Talentpunkte. */
   talentPoints: number;
-  /** Waehrung fuer Run-Belohnungen und Talentkäufe. */
+  /** Waehrung fuer Run-Belohnungen und den kosmetischen Shop. */
   coins: number;
   talents: TalentRanks;
   bestScore: number;
@@ -29,7 +29,7 @@ export interface SaveData {
   totalPlayTimeMs: number;
   /** Alle im Spiel gutgeschriebenen Coins, inklusive Boni. */
   totalCoinsEarned: number;
-  /** Alle für Talente und Resets ausgegebenen Coins. */
+  /** Historische Buchhaltung frueherer Talent- und Resetkosten. */
   coinsSpent: number;
   /** Serverbestätigter Kalendertag des zuletzt abgeholten Login-Bonus. */
   lastLoginBonusKey: string | null;

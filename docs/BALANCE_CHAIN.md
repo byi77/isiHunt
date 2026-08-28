@@ -16,8 +16,8 @@ Beispiele:
 
 - Aendert sich XP je Relikt, wird die XP-Kurve so skaliert, dass die geplante
   Level-Dauer in Runs erhalten bleibt.
-- Aendert sich die Coin-Einnahme, werden Talent-, Reset- und Shop-Kosten sowie
-  laufbasierte Boni mit der neuen Economy skaliert.
+- Aendert sich die Coin-Einnahme, werden Shop-Kosten und laufbasierte Boni mit
+  der neuen Economy skaliert; Talentränge verbrauchen kostenlose Levelpunkte.
 - Aendert sich der Punktewert eines Relikts, verschiebt sich auch die
   Score-Schwelle des Tagesbonus.
 
@@ -34,11 +34,13 @@ die ungefähre Run-Anzahl bis Level 100 bzw. zum vollständigen Talentstand.
 Für ein konkretes Supabase-Projekt müssen die Migrationen in der Reihenfolge
 aus `TODO.md` ausgeführt und separat nachgewiesen werden. Der Repository-Stand
 beweist keine produktive Ausführung. `supabase/phase_2_14_balance_chain.sql`
-hält Level-XP, Tagesboni, Talentkosten, Resetkosten und die
+hält Level-XP, Tagesboni und die
 Score-Plausibilitätsprüfung auf derselben Ableitungslogik wie der Client. Die
 zehn Talente und ihre 41 Ränge werden aus derselben Balance-Kopie gelesen.
 `supabase/phase_2_15_cosmetic_sync.sql` ergänzt den atomaren Geräteabgleich für
 Kosmetikbesitz und Ausrüstung sowie den vollständigen Admin-Reset.
+`supabase/phase_2_23_talent_points.sql` setzt die bisherigen Testprofile zurück
+und verankert kostenlose Levelpunkte, kostenlose Talent-Resets und Version 9.
 
 Wenn `balance-data.json` geändert wurde, aktualisiert `npm run balance:sync`
 den JSON-Block der Migration automatisch.
@@ -91,7 +93,7 @@ npm run balance:report
 
 Der Befehl importiert die echte TypeScript-Ableitung und gibt deterministisch
 aus: Punkte/XP/Coins pro Fang und Run, Runs bis Level 100 und Talentmaximum,
-Tagesabschluss und maximale Tagesbelohnung, Talentkosten sowie Beispiele für
+Tagesabschluss und maximale Tagesbelohnung, kostenlose Talentpunkte sowie Beispiele für
 die teuersten und günstigsten bezahlten Shop-Einträge. Er enthält kein zweites
 Berechnungsmodell und ist deshalb die schnellste Kontrolle nach einer Änderung
 an `balance-data.json`.

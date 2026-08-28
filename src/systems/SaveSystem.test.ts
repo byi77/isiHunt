@@ -90,6 +90,35 @@ describe('SaveSystem.load Migration', () => {
     expect(persisted.coins).toBe(data.coins);
   });
 
+  it('setzt den bisherigen Produktionsstand fuer die kostenlose Talentwirtschaft zurueck', async () => {
+    window.localStorage.setItem(
+      SAVE_KEY,
+      JSON.stringify({
+        ...SaveSystem.load(),
+        version: SAVE_VERSION - 1,
+        level: 30,
+        xp: 100,
+        talentPoints: 3,
+        coins: 5000,
+        talents: { reach: 4 },
+        totalRuns: 80,
+        playerName: 'Testprofil',
+      }),
+    );
+
+    vi.resetModules();
+    const migrated = (await import('@/systems/SaveSystem')).load();
+
+    expect(migrated.level).toBe(1);
+    expect(migrated.xp).toBe(0);
+    expect(migrated.talentPoints).toBe(0);
+    expect(migrated.coins).toBe(0);
+    expect(migrated.talents).toEqual({});
+    expect(migrated.totalRuns).toBe(0);
+    expect(migrated.playerName).toBe('Testprofil');
+    expect(migrated.version).toBe(SAVE_VERSION);
+  });
+
   it('bewahrt einen offline geaenderten Namen bei einem spaeteren Remote-Pull', async () => {
     SaveSystem.setOfflinePlayerName('OfflineName');
 

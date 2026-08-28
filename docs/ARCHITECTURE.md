@@ -136,7 +136,7 @@ isiHunt/
 │   │   ├── SyncStatusSystem.ts Sichtbarer Sync-Status im Menue
 │   │   ├── SyncGateSystem.ts   Darf jetzt abgeglichen werden? (ohne Phaser)
 │   │   ├── SyncGateSystem.test.ts
-│   │   ├── ProgressionSystem.ts XP, Level, Coin-Talente, Erfolge
+│   │   ├── ProgressionSystem.ts XP, Level, Talentpunkte, Erfolge
 │   │   ├── ProgressionSystem.test.ts
 │   │   ├── ScoreSystem.ts      Punkte + Combo eines Runs
 │   │   ├── ScoreSystem.test.ts

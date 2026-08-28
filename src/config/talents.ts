@@ -1,7 +1,7 @@
 /**
- * Talente - dauerhafte Upgrades, gekauft mit Coins aus Runs und Erfolgen.
+ * Talente - dauerhafte Upgrades, gekauft mit kostenlosen Punkten aus Leveln.
  *
- * Die Stat-Auflösung und die Coin-basierte Vergabe sind vollständig implementiert.
+ * Die Stat-Aufloesung und die kostenlose Vergabe sind vollstaendig implementiert.
  */
 
 import {
@@ -11,11 +11,7 @@ import {
   PLAYER_BASE_SPEED,
   RUN_DURATION_MS,
 } from './GameConfig';
-import {
-  BALANCE,
-  TALENT_COSTS as BALANCED_TALENT_COSTS,
-  talentCost as balanceTalentCost,
-} from './balance';
+import { BALANCE } from './balance';
 
 export type TalentId =
   | 'reach'
@@ -116,16 +112,8 @@ export type TalentRanks = Partial<Record<TalentId, number>>;
 /** Aufgeloeste, begrenzte Raenge fuer Gameplay- und Visual-Feedback. */
 export type ResolvedTalentRanks = Readonly<Record<TalentId, number>>;
 
-/** Kosten des nächsten Rangs: steigend, damit der Talentbaum langfristig bleibt. */
-/** Ein brauchbarer Rang soll etwa vier bis sechs normale Runs erfordern. */
-export const TALENT_COSTS = BALANCED_TALENT_COSTS;
-
 export function talentMaxRank(id: TalentId): number {
   return TALENTS.find((talent) => talent.id === id)?.maxRank ?? 0;
-}
-
-export function talentCost(currentRank: number): number {
-  return balanceTalentCost(currentRank);
 }
 
 /**

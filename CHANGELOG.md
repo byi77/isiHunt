@@ -44,6 +44,14 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   Seltenheits-Aufstiege, **Resonanz** für aktive Serien und **Schutzfeld** für
   schwächere Hindernisse. Neue Spielstände starten weiterhin mit Rang 0.
 
+- **Talentpunkte sind jetzt kostenlose Levelbelohnungen.** Alle zwei Level
+  wird ein Talentpunkt vergeben, der erste bei Level 3. Talentränge verbrauchen
+  keine Coins mehr; der Reset ist kostenlos und erstattet investierte Punkte.
+  Die Migration `phase_2_23_talent_points.sql` setzt die bisherigen Testprofile
+  auf Level 1, 0 XP, 0 Coins und Standardkosmetik zurück und hebt den
+  Spielstand auf Version 9. Die SQL-Migration muss im Supabase SQL Editor
+  ausgeführt werden.
+
 - **Seltenheit und Serie zahlen sich jetzt deutlich stärker aus.** Die Punkte
   steigen bei farbigen Relikten von 10 über 25 und 75 bis auf **250 Punkte für
   Orange**. Der Serienbonus wächst von ×1,2 bis auf **×3,2 ab Serie 16**; ein

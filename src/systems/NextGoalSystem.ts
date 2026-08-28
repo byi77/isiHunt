@@ -8,7 +8,7 @@
 
 import { MAX_LEVEL } from '@/config/GameConfig';
 import { SHIP_SHAPES } from '@/config/shop';
-import { TALENTS, talentCost, type TalentId } from '@/config/talents';
+import { TALENTS, type TalentId } from '@/config/talents';
 import { WORLDS } from '@/config/worlds';
 import type { SaveData } from '@/types';
 
@@ -29,29 +29,21 @@ interface TalentTarget {
   readonly id: TalentId;
   readonly name: string;
   readonly nextRank: number;
-  readonly cost: number;
-  readonly missingCoins: number;
+  readonly missingPoints: number;
 }
 
 function nextTalentTarget(save: SaveData): TalentTarget | null {
   const targets = TALENTS.filter((talent) => (save.talents[talent.id] ?? 0) < talent.maxRank)
     .map((talent) => {
       const currentRank = save.talents[talent.id] ?? 0;
-      const cost = talentCost(currentRank);
       return {
         id: talent.id,
         name: talent.name,
         nextRank: currentRank + 1,
-        cost,
-        missingCoins: Math.max(0, cost - save.coins),
+        missingPoints: Math.max(0, 1 - save.talentPoints),
       } satisfies TalentTarget;
     })
-    .sort((left, right) => {
-      if (left.missingCoins !== right.missingCoins) {
-        return left.missingCoins - right.missingCoins;
-      }
-      return left.cost - right.cost;
-    });
+    .sort((left, right) => left.nextRank - right.nextRank);
 
   return targets[0] ?? null;
 }
@@ -95,13 +87,13 @@ function nextShopTarget(
  */
 export function getNextGoal(save: SaveData): NextGoal {
   const talent = nextTalentTarget(save);
-  if (talent && talent.missingCoins === 0) {
+  if (talent && talent.missingPoints === 0) {
     return {
       kind: 'talent',
       title: `Talent bereit: ${talent.name}`,
-      detail: `Rang ${talent.nextRank} jetzt fuer ${talent.cost.toLocaleString('de-DE')} Coins kaufen.`,
-      current: save.coins,
-      target: talent.cost,
+      detail: `Rang ${talent.nextRank} jetzt fuer 1 Talentpunkt kaufen.`,
+      current: save.talentPoints,
+      target: 1,
     };
   }
 
@@ -119,10 +111,10 @@ export function getNextGoal(save: SaveData): NextGoal {
   if (talent) {
     return {
       kind: 'talent',
-      title: `Noch ${talent.missingCoins.toLocaleString('de-DE')} Coins bis ${talent.name}`,
-      detail: `Dann kannst du Rang ${talent.nextRank} kaufen.`,
-      current: save.coins,
-      target: talent.cost,
+      title: `Noch 1 Talentpunkt bis ${talent.name}`,
+      detail: `Level weiter, dann kannst du Rang ${talent.nextRank} kaufen.`,
+      current: save.talentPoints,
+      target: 1,
     };
   }
 

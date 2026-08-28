@@ -52,13 +52,14 @@ zusätzliche Quelle.
 
 ## Coin-Senken
 
-| Senke             | Rohquelle                                 | Client-Stelle                                                  | Schutz                                             |
-| ----------------- | ----------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------- |
-| Talent-Rang       | `sinks.talentCosts[]`                     | `talentCost()` / `ProgressionSystem.purchaseTalent()`          | `purchase_talent()` mit Rang- und Guthabenprüfung  |
-| Talent-Reset      | `sinks.talentResetRuns`                   | `resetTalents()`                                               | `reset_talents()` mit Sperre und Kostenprüfung     |
-| Schiffsformen     | Referenzpreise in `SHIP_SHAPES_REFERENCE` | `balancedCoinCost()` in `shop.ts`, Kauf in `ProgressionSystem` | Besitzprüfung, Guthabenprüfung und Cloud-Reconcile |
-| Schiff-Farben     | Referenzpreise in `SHIP_COLORS_REFERENCE` | `balancedCoinCost()` in `shop.ts`, Kauf in `ProgressionSystem` | Besitzprüfung, Guthabenprüfung und Cloud-Reconcile |
-| Künftige Kosmetik | eigene Referenzpreise, sobald eingeführt  | muss denselben `balancedCoinCost()`-Pfad verwenden             | vor Umsetzung in diese Inventur aufnehmen          |
+| Senke             | Rohquelle                                 | Client-Stelle                                                  | Schutz                                                                                 |
+| ----------------- | ----------------------------------------- | -------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| Talentpunkt       | `talents.levelsPerTalentPoint`            | `grantLevelReward()` / `talentPointsEarnedByLevel()`           | `claim_daily_bonus()` und `submit_progress_event()` berechnen Levelpunkte serverseitig |
+| Talent-Rang       | kostenloser Talentpunkt                   | `ProgressionSystem.purchaseTalent()`                           | `purchase_talent()` mit Rang- und Punkteprüfung                                        |
+| Talent-Reset      | kostenlos, erstattet investierte Punkte   | `resetTalents()`                                               | `reset_talents()` mit Sperre und Punkteerstattung                                      |
+| Schiffsformen     | Referenzpreise in `SHIP_SHAPES_REFERENCE` | `balancedCoinCost()` in `shop.ts`, Kauf in `ProgressionSystem` | Besitzprüfung, Guthabenprüfung und Cloud-Reconcile                                     |
+| Schiff-Farben     | Referenzpreise in `SHIP_COLORS_REFERENCE` | `balancedCoinCost()` in `shop.ts`, Kauf in `ProgressionSystem` | Besitzprüfung, Guthabenprüfung und Cloud-Reconcile                                     |
+| Künftige Kosmetik | eigene Referenzpreise, sobald eingeführt  | muss denselben `balancedCoinCost()`-Pfad verwenden             | vor Umsetzung in diese Inventur aufnehmen                                              |
 
 Shop-Referenzpreise sind absichtlich keine zweite Coin-Wahrheit: Sie sind
 Gestaltungswerte in einer anderen Einheit und werden beim Export in echte
@@ -79,8 +80,8 @@ eine Coin-Senke, aber keine neue Währung oder zusätzliche Balancequelle.
   Tagesquellen und prüfen den erlaubten Tages-Key.
 - `totalCoinsEarned` und `coinsSpent` sind Buchhaltungsfelder. Sie dürfen nur
   zusammen mit einer echten Gutschrift bzw. Ausgabe verändert werden.
-- `COINS_PER_EXTRA_TALENT_POINT` und alte `talentPoints` sind ausschließlich
-  SAVE-/RPC-Migrationskompatibilität. Sie sind keine aktive neue Belohnung.
+- `COINS_PER_EXTRA_TALENT_POINT` bleibt ausschließlich für alte SAVE-/RPC-
+  Migrationen erhalten; `talentPoints` ist jetzt die aktive Talentwährung.
 
 ## Bewusste Ausnahmen
 

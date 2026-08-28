@@ -40,12 +40,12 @@ Raumschiff-Skins und schwierigere Welten freigeschaltet.
 
 ### M4 — Belohnung, Coins und Talente ✅
 
-Punkte-Popups, Kettenbonus, Coins, Erfolge, die Coin-basierte Talent-/Shop-
+Punkte-Popups, Kettenbonus, Coins, Erfolge, die talentpunktbasierte Talent- und Shop-
 Ansicht und der sichtbare Level-Up-Moment sind spielbar.
 
-> Die Coin-basierte Talent-/Shop-Wirtschaft ist die geltende Entscheidung
-> (ADR-0018). Die zehn unabhängigen Talente werden moderat skaliert; ein
-> Talentpunkte-Umbau ist verworfen.
+> Die Talentpunkt-Wirtschaft ist die geltende Entscheidung (ADR-0021):
+> Level vergeben kostenlose Talentpunkte, der Reset ist kostenlos, und Coins
+> bleiben für Runs, Levelbelohnungen und den Shop.
 
 ### M5 — Herausforderungen und Modi ✅
 
@@ -58,12 +58,11 @@ Person oder einen Bot sowie Weltmodifikatoren und Hindernisse sind vorhanden.
 
 ### M4.1 — Talentdarstellung und Profilidentität
 
-- Coin-basierte Talente beibehalten; kein Talentpunkte-Umbau und keine
-  Talentpunkte-Bestandsmigration.
+- Kostenlose Talentpunkte aus Leveln und einen kostenlosen Reset beibehalten;
+  bestehende Testprofile werden bei der Version-9-Migration zurückgesetzt.
 - Die zehn unabhängigen Talent-Ränge als ehrliche, kindgerechte Liste
   verständlich darstellen und visuell weiter polieren; kein Baumversprechen.
-- Bestehende Coin-, Talent- und Kosmetikstände erhalten und geräteübergreifend
-  synchron halten.
+- Talentpunkte, Talentränge und Kosmetikstände geräteübergreifend synchron halten.
 - Profil-Icons, getrennten sichtbaren Spielernamen und Skin-Inventar
   weiterführen.
 

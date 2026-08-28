@@ -451,8 +451,9 @@ export const XP_PER_RUN_REFERENCE = Balance.XP_PER_RUN_REFERENCE;
 /** XP fuer den Aufstieg von `level` auf `level + 1`; auf Maximalstufe 0. */
 export const xpForLevel = Balance.xpForLevel;
 
-/** Veralteter Speicherwert; neue Talentkäufe laufen vollständig über Coins. */
-export const TALENT_POINTS_PER_LEVEL = Balance.TALENT_POINTS_PER_LEVEL;
+/** Anzahl der Level pro kostenlos verdientem Talentpunkt. */
+export const LEVELS_PER_TALENT_POINT = Balance.LEVELS_PER_TALENT_POINT;
+export const talentPointsEarnedByLevel = Balance.talentPointsEarnedByLevel;
 /** Veraltete Umrechnung fuer Spielstände aus der Talentpunkt-Phase. */
 export const COINS_PER_EXTRA_TALENT_POINT = Balance.COINS_PER_EXTRA_TALENT_POINT;
 /** Grundbelohnung fuer jede abgeschlossene Solo-Runde. */
@@ -465,15 +466,7 @@ export const MAX_COLLECTION_BONUS_COINS = Balance.MAX_COLLECTION_BONUS_COINS;
 export const COINS_PER_ACHIEVEMENT = Balance.COINS_PER_ACHIEVEMENT;
 /** Coins pro Levelaufstieg als dauerhafte Spielbelohnung. */
 export const COINS_PER_LEVEL = Balance.COINS_PER_LEVEL;
-/**
- * Kosten eines Talent-Resets.
- *
- * Bewusst deutlich unter dem ersten Rangkauf (250): ein frueher Fehlkauf soll
- * korrigierbar bleiben, ohne dass der Reset selbst wie eine zweite Strafe
- * wirkt. Bei vollem Ausbau (18.950 Coins Gesamtkosten) bleibt der Reset
- * ohnehin fast kostenlos - die Untergrenze zaehlt fuer Einsteiger.
- * S. docs/BALANCE_2026-08-17.md Abschnitt 3.
- */
+/** Talent-Reset ist kostenlos; Coins bleiben fuer Shop und Run-Belohnungen. */
 export const TALENT_RESET_COST = Balance.TALENT_RESET_COST;
 /** Einmalige Begruessung pro Kalendertag fuer einen echten Profil-Login. */
 export const DAILY_LOGIN_BONUS_COINS = Balance.DAILY_LOGIN_BONUS_COINS;
@@ -489,7 +482,7 @@ export const DAILY_SCORE_BONUS_MAX_TIERS = Balance.DAILY_SCORE_BONUS_MAX_TIERS;
 // --- Persistenz -------------------------------------------------------------
 
 export const SAVE_KEY = 'isihunt.save.v1';
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 // --- Entwicklung ------------------------------------------------------------
 

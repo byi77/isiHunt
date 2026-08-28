@@ -67,12 +67,13 @@
       }
     },
     "sinks": {
-      "talentCosts": [250, 350, 500, 650, 850],
-      "talentResetRuns": 2,
+      "talentCosts": [],
+      "talentResetRuns": 0,
       "shopPriceScale": true
     }
   },
   "talents": {
+    "levelsPerTalentPoint": 2,
     "capstoneRankMultiplier": 1.25,
     "magnetRadiusCapstoneRankMultiplier": 1,
     "reachRadiusPerRank": 5,

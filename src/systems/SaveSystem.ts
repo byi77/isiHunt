@@ -7,8 +7,8 @@
  */
 
 import {
-  COINS_PER_LEVEL,
   COINS_PER_EXTRA_TALENT_POINT,
+  COINS_PER_LEVEL,
   MAX_LEVEL,
   RUN_DURATION_MS,
   SAVE_KEY,
@@ -259,25 +259,11 @@ function legacyXpForLevel(level: number): number {
   return Math.floor(80 * Math.pow(level, 1.45));
 }
 
-/**
- * Die XP-Kurve der Versionen 2 bis 6, eingefroren.
- *
- * Migrationen muessen mit der Kurve rechnen, die zum jeweiligen Stand gehoert
- * - nicht mit der aktuellen. Wuerde hier `xpForLevel` stehen, verschoebe sich
- * das Ergebnis jeder alten Migration bei jeder kuenftigen Balance-Aenderung,
- * und ein v1-Stand liefe durch beide Umrechnungen hintereinander.
- */
+/** Die historischen XP-Kurven bleiben fuer alte Migrationsdaten eingefroren. */
 function xpForLevelV6(level: number): number {
   return level >= MAX_LEVEL ? 0 : Math.floor(750 * Math.sqrt(level) + 8 * Math.pow(level, 1.25));
 }
 
-/**
- * Verteilt die gesamte gesammelte XP auf eine neue Kurve.
- *
- * `alteKurve` liefert den Bedarf je Stufe im alten System, `neueKurve` den im
- * neuen. Aus Level und Rest-XP wird die Gesamtsumme rekonstruiert und von
- * Stufe 1 an neu verteilt.
- */
 function redistributeXp(
   save: SaveData,
   alteKurve: (level: number) => number,
@@ -311,6 +297,23 @@ function versionOf(raw: Partial<SaveData>): number {
   return typeof version === 'number' && Number.isFinite(version) ? Math.floor(version) : 1;
 }
 
+/**
+ * Startet bestehende Teststaende fuer die neue Talentpunkt-Wirtschaft sauber
+ * neu. Profilidentitaet und lokale Einstellungen bleiben erhalten; Fortschritt,
+ * Besitz und Wirtschaft werden auf den frischen Spielstand gesetzt.
+ */
+function resetForTalentPointEconomy(save: SaveData): SaveData {
+  const fresh = createDefaultSave();
+  return {
+    ...fresh,
+    playerName: save.playerName,
+    pendingPlayerName: save.pendingPlayerName,
+    cloudId: save.cloudId,
+    soundEnabled: save.soundEnabled,
+    hapticsEnabled: save.hapticsEnabled,
+  };
+}
+
 /** Uebersetzt die alte XP-Kurve in die neue, ohne Fortschritt zu verschenken. */
 function migrate(raw: Partial<SaveData>): SaveData {
   const save = reconcile(raw);
@@ -319,6 +322,11 @@ function migrate(raw: Partial<SaveData>): SaveData {
     if (save.level >= MAX_LEVEL) save.xp = 0;
     return save;
   }
+
+  // Die bisherige Fassung nutzte Coins fuer Talente. Da die vorhandenen
+  // Profile ausdruecklich nur Testdaten sind, gibt es keine Umrechnung: Alle
+  // alten Fortschrittsstaende beginnen mit der neuen kostenlosen Wirtschaft.
+  if (rawVersion === SAVE_VERSION - 1) return resetForTalentPointEconomy(save);
 
   // Version 1 hatte noch die alte XP-Kurve. Version 2 bekam bereits die
   // aktuelle Kurve; Version 3 fuegt nur das Coins-Feld hinzu.

@@ -47,7 +47,7 @@ function save(overrides: Partial<SaveData> = {}): SaveData {
 
 describe('NextGoalSystem', () => {
   it('priorisiert ein sofort kaufbares Talent', () => {
-    const goal = getNextGoal(save({ coins: 250 }));
+    const goal = getNextGoal(save({ talentPoints: 1 }));
 
     expect(goal.kind).toBe('talent');
     expect(goal.title).toContain('Reichweite');
@@ -61,11 +61,11 @@ describe('NextGoalSystem', () => {
     expect(goal.title).toContain('Eisring');
   });
 
-  it('zeigt die fehlenden Coins fuer den naechsten Talent-Rang', () => {
+  it('zeigt den fehlenden Talentpunkt fuer den naechsten Talent-Rang', () => {
     const goal = getNextGoal(save({ level: 7, coins: 100 }));
 
     expect(goal.kind).toBe('talent');
-    expect(goal.title).toContain('150');
+    expect(goal.title).toContain('1 Talentpunkt');
   });
 
   it('faellt nach vollstaendigem Talent- und Formen-Ausbau auf den Tageslauf zurueck', () => {

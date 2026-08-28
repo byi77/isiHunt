@@ -13,7 +13,6 @@ import {
   MAX_LEVEL,
   SAVE_KEY,
   SAVE_VERSION,
-  TALENT_RESET_COST,
   xpForLevel,
 } from '@/config/GameConfig';
 import { ACHIEVEMENT_BY_ID } from '@/config/achievements';
@@ -165,7 +164,7 @@ describe('applyRun - Levelaufstieg', () => {
   it('vergibt pro Levelaufstieg Coins', () => {
     const result = Progression.applyRun(createRun({ xpGained: xpForLevel(1) + xpForLevel(2) }));
 
-    expect(result.talentPointsGained).toBe(0);
+    expect(result.talentPointsGained).toBe(1);
     expect(result.coinsGained).toBeGreaterThanOrEqual(2 * COINS_PER_LEVEL);
     expect(SaveSystem.load().coins).toBe(result.coinsGained);
   });
@@ -273,6 +272,7 @@ describe('grantLevels', () => {
 
     expect(save.level).toBe(4);
     expect(save.coins).toBe(3 * COINS_PER_LEVEL);
+    expect(save.talentPoints).toBe(1);
   });
 
   it('geht nie ueber die Maximalstufe hinaus', () => {
@@ -386,17 +386,20 @@ describe('Spielstand-Migration', () => {
 describe('Talentkäufe', () => {
   it('kauft Ränge mit Coins und berechnet den kostenpflichtigen Reset', () => {
     SaveSystem.update((data) => {
+      data.talentPoints = 2;
       data.coins = 1400;
     });
 
     expect(Progression.purchaseTalent('reach')).not.toBeNull();
     expect(Progression.purchaseTalent('reach')).not.toBeNull();
     expect(SaveSystem.load().talents.reach).toBe(2);
-    expect(SaveSystem.load().coins).toBe(800);
+    expect(SaveSystem.load().talentPoints).toBe(0);
+    expect(SaveSystem.load().coins).toBe(1400);
 
     expect(Progression.resetTalents()).not.toBeNull();
     expect(SaveSystem.load().talents.reach).toBeUndefined();
-    expect(SaveSystem.load().coins).toBe(700);
+    expect(SaveSystem.load().talentPoints).toBe(2);
+    expect(SaveSystem.load().coins).toBe(1400);
   });
 
   it('verweigert Käufe ohne ausreichende Coins', () => {
@@ -410,15 +413,16 @@ describe('Talentkäufe', () => {
     // meldete damit einen Erfolg. Geprueft wird deshalb beides: die Absage
     // UND dass der Stand danach unveraendert dasteht.
     SaveSystem.update((data) => {
-      data.coins = TALENT_RESET_COST - 1;
-      data.talents = { reach: 2 };
+      data.coins = 0;
+      data.talentPoints = 2;
     });
 
     expect(Progression.resetTalents()).toBeNull();
 
     const danach = SaveSystem.load();
-    expect(danach.talents.reach).toBe(2);
-    expect(danach.coins).toBe(TALENT_RESET_COST - 1);
+    expect(danach.talents.reach).toBeUndefined();
+    expect(danach.talentPoints).toBe(2);
+    expect(danach.coins).toBe(0);
     expect(danach.coinsSpent).toBe(0);
   });
 
@@ -428,7 +432,8 @@ describe('Talentkäufe', () => {
     // Maximalrang getestet - magnetism hat mit maxRank 4 den guenstigsten
     // Weg dorthin.
     SaveSystem.update((data) => {
-      data.coins = 100_000;
+      data.talentPoints = 4;
+      data.coins = 0;
     });
 
     for (let i = 0; i < 4; i++) {
@@ -441,6 +446,7 @@ describe('Talentkäufe', () => {
 
     // Ein verweigerter Kauf darf weder Coins abziehen noch den Rang erhoehen.
     expect(SaveSystem.load().talents.magnetism).toBe(4);
+    expect(SaveSystem.load().talentPoints).toBe(0);
     expect(SaveSystem.load().coins).toBe(coinsBeforeExtraPurchase);
   });
 });
@@ -570,7 +576,7 @@ describe('Laden: Besitz ueberlebt den Profil-Abgleich', () => {
       data.shipColor = 'gold';
     });
 
-    const alterServerStand = { version: 8, level: 30, xp: 100, coins: 500 };
+    const alterServerStand = { version: SAVE_VERSION, level: 30, xp: 100, coins: 500 };
     const danach = SaveSystem.adoptProfileProgress(alterServerStand);
 
     expect(danach.shipShape).toBe('star');
@@ -590,7 +596,7 @@ describe('Laden: Besitz ueberlebt den Profil-Abgleich', () => {
     });
 
     const vomServer = {
-      version: 8,
+      version: SAVE_VERSION,
       level: 30,
       ownedShipShapes: ['arrow', 'eagle'],
       ownedShipColors: ['world', 'ruby'],
@@ -613,7 +619,7 @@ describe('Laden: Besitz ueberlebt den Profil-Abgleich', () => {
     });
 
     const serverMitGemeinsamemBesitz = {
-      version: 8,
+      version: SAVE_VERSION,
       ownedShipShapes: ['arrow', 'star', 'eagle'],
       shipShape: 'eagle',
     };
@@ -633,7 +639,7 @@ describe('Laden: Besitz ueberlebt den Profil-Abgleich', () => {
     });
 
     const serverMitAnderemStand = {
-      version: 8,
+      version: SAVE_VERSION,
       level: 30,
       ownedShipShapes: ['arrow'],
       shipShape: 'arrow',
@@ -650,7 +656,7 @@ describe('Laden: Besitz ueberlebt den Profil-Abgleich', () => {
       data.shipColor = 'gold';
     });
 
-    const danach = SaveSystem.adoptRemote({ version: 8, level: 12 }, 'cloud-1');
+    const danach = SaveSystem.adoptRemote({ version: SAVE_VERSION, level: 12 }, 'cloud-1');
 
     expect(danach.shipColor).toBe('gold');
     expect(danach.ownedShipColors).toContain('gold');
@@ -673,7 +679,7 @@ describe('Laden: Wartungs-Reset', () => {
     });
 
     const zurueckgesetzt = {
-      version: 8,
+      version: SAVE_VERSION,
       level: 1,
       xp: 0,
       totalRuns: 0,
@@ -702,7 +708,7 @@ describe('Laden: Wartungs-Reset', () => {
     });
 
     const frischesProfil = {
-      version: 8,
+      version: SAVE_VERSION,
       level: 1,
       xp: 0,
       totalRuns: 0,

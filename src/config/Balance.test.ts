@@ -18,7 +18,6 @@ import {
   BALANCE_SNAPSHOT,
   EXPECTED_POINTS_PER_CATCH,
   EXPECTED_XP_PER_CATCH,
-  TALENT_COSTS,
   totalXpForLevel,
   xpForLevel,
 } from '@/config/balance';
@@ -37,7 +36,6 @@ import {
   shipHullTint,
   shipTint,
 } from '@/config/shop';
-import { talentCost } from '@/config/talents';
 import {
   applyTintShift,
   AURA_FRAME_RUHE,
@@ -94,8 +92,9 @@ describe('Phase-5-Balance', () => {
   it('berechnet die Langzeitziele aus denselben Referenz-Runs', () => {
     expect(BALANCE_SNAPSHOT.runsToMaxLevel).toBeGreaterThan(200);
     expect(BALANCE_SNAPSHOT.runsToMaxLevel).toBeLessThan(600);
-    expect(BALANCE_SNAPSHOT.runsToMaxTalents).toBeGreaterThan(200);
-    expect(TALENT_COSTS).toEqual([250, 350, 500, 650, 850]);
+    expect(BALANCE_SNAPSHOT.runsToMaxTalents).toBe(0);
+    expect(BALANCE_SNAPSHOT.talentRanks).toBe(41);
+    expect(BALANCE_SNAPSHOT.talentPointsAtMaxLevel).toBe(49);
   });
 
   it('verwendet fuer Levelanker dieselbe aktuelle XP-Kurve', () => {
@@ -162,9 +161,7 @@ describe('Phase-5-Balance', () => {
     expect(COINS_PER_RUN).toBe(20);
     expect(DAILY_LOGIN_BONUS_COINS).toBe(25);
     expect(DAILY_COMPLETION_BONUS_COINS).toBe(90);
-    expect(talentCost(0)).toBe(250);
-    expect(talentCost(1)).toBe(350);
-    expect(TALENT_RESET_COST).toBe(100);
+    expect(TALENT_RESET_COST).toBe(0);
   });
 });
 

@@ -155,7 +155,6 @@ export const ACHIEVEMENT_COINS_PER_RANK = coinsForRuns(
   BALANCE.economy.sources.achievement.additionalRunsPerRank,
 );
 export const TALENT_RESET_COST = coinsForRuns(BALANCE.economy.sinks.talentResetRuns);
-export const TALENT_COSTS = BALANCE.economy.sinks.talentCosts.map(balancedCoinCost);
 export const DAILY_LOGIN_BONUS_COINS = coinsForRuns(BALANCE.economy.sources.daily.loginRuns);
 export const DAILY_COMPLETION_BONUS_COINS = coinsForRuns(
   BALANCE.economy.sources.daily.completionRuns,
@@ -166,19 +165,29 @@ export const DAILY_SCORE_BONUS_COINS = coinsForRuns(BALANCE.economy.sources.dail
 export const DAILY_SCORE_BONUS_XP = xpForRuns(BALANCE.progression.xp.dailyScoreTierRuns);
 export const DAILY_SCORE_BONUS_MAX_TIERS = BALANCE.economy.sources.daily.scoreTierCount;
 
-export const TALENT_POINTS_PER_LEVEL = 1;
+/** Nach wie vielen Leveln ein weiterer kostenloser Talentpunkt entsteht. */
+export const LEVELS_PER_TALENT_POINT = Math.max(
+  1,
+  Math.floor(BALANCE.talents.levelsPerTalentPoint),
+);
 export const COINS_PER_EXTRA_TALENT_POINT = 10;
 export const COMBO_TIERS = BALANCE.score.comboTiers;
 export const SERIES_RAISING_MIN_RARITY_INDEX = BALANCE.score.seriesRaisingMinRarityIndex;
 export const WORLD_REWARDS = BALANCE.worlds;
 
-export function achievementCoinReward(rank: number): number {
-  return Math.max(0, COINS_PER_ACHIEVEMENT + Math.max(0, rank - 1) * ACHIEVEMENT_COINS_PER_RANK);
+/** Gesamtzahl der verteilbaren Talentraenge im aktuellen Talentbaum. */
+export const TOTAL_TALENT_RANKS = Object.values(BALANCE.talents.maxRanks).reduce(
+  (sum, maxRank) => sum + maxRank,
+  0,
+);
+
+/** Verdiente Talentpunkte bis zum angegebenen Level, Level 1 beginnt bei 0. */
+export function talentPointsEarnedByLevel(level: number): number {
+  return Math.max(0, Math.floor(Math.max(0, Math.floor(level) - 1) / LEVELS_PER_TALENT_POINT));
 }
 
-export function talentCost(currentRank: number): number {
-  const index = Math.min(Math.max(0, currentRank), TALENT_COSTS.length - 1);
-  return TALENT_COSTS[index] ?? 0;
+export function achievementCoinReward(rank: number): number {
+  return Math.max(0, COINS_PER_ACHIEVEMENT + Math.max(0, rank - 1) * ACHIEVEMENT_COINS_PER_RANK);
 }
 
 export interface BalanceSnapshot {
@@ -191,14 +200,13 @@ export interface BalanceSnapshot {
   readonly runsToMaxLevel: number;
   readonly totalTalentCost: number;
   readonly runsToMaxTalents: number;
+  readonly talentRanks: number;
+  readonly talentPointsAtMaxLevel: number;
 }
 
 export function getBalanceSnapshot(): BalanceSnapshot {
   const xpToMaxLevel = totalXpForLevel(MAX_LEVEL);
-  const totalTalentCost = Object.values(BALANCE.talents.maxRanks).reduce(
-    (sum, maxRank) => sum + TALENT_COSTS.slice(0, maxRank).reduce((costs, cost) => costs + cost, 0),
-    0,
-  );
+  const totalTalentCost = 0;
 
   return {
     expectedPointsPerCatch: EXPECTED_POINTS_PER_CATCH,
@@ -210,6 +218,8 @@ export function getBalanceSnapshot(): BalanceSnapshot {
     runsToMaxLevel: xpToMaxLevel / Math.max(1, EXPECTED_XP_PER_RUN),
     totalTalentCost,
     runsToMaxTalents: totalTalentCost / Math.max(1, EXPECTED_COINS_PER_RUN),
+    talentRanks: TOTAL_TALENT_RANKS,
+    talentPointsAtMaxLevel: talentPointsEarnedByLevel(MAX_LEVEL),
   };
 }
 
@@ -258,7 +268,7 @@ function getBalanceReport(): BalanceReport {
     },
     costs: {
       talentReset: TALENT_RESET_COST,
-      talents: TALENT_COSTS,
+      talents: BALANCE.economy.sinks.talentCosts.map(balancedCoinCost),
     },
   };
 }

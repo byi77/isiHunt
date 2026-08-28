@@ -34,7 +34,7 @@ kommt nicht ins Spiel.
 setzt voraus, dass "Orange = extrem selten" bereits verinnerlicht ist.
 
 **Referenz:** World of Warcraft — nicht als Genre, sondern als _Grammatik_:
-Item-Qualitaetsfarben, Erfahrungsbalken, Coin-basierte Talente, Zonen mit
+Item-Qualitaetsfarben, Erfahrungsbalken, talentpunktbasierte Talente, Zonen mit
 Levelanforderung, Erfolge. Das sind erprobte Fortschrittsmuster, die hier auf
 eine kurze Arcade-Schleife komprimiert werden.
 
@@ -283,21 +283,21 @@ Runs-bis-Level-Tabellen mit mehreren Fangquoten-Annahmen stehen in
 `docs/BALANCE_2026-08-17.md` Abschnitt 2.
 
 Jeder Levelaufstieg gibt die zentral konfigurierte Levelbelohnung von
-`COINS_PER_LEVEL = 20` Coins. Talente werden nicht über Talentpunkte, sondern
-atomar mit Coins gekauft; überschüssige alte `talentPoints` werden nur in der
-Save-/RPC-Migration kompatibel behandelt. So bleibt jeder Levelaufstieg eine
-Belohnung und Coins bleiben die gemeinsame Entscheidung zwischen Talent und
-Kosmetik. Im Ergebnis bündelt ein eigener Level-Up-Moment Stufe, XP-Restwert,
-Level-Coins, aktuelles Guthaben und unmittelbare Freischaltungen; das nächste
+`COINS_PER_LEVEL = 20` Coins. Zusätzlich gibt es alle zwei Level einen
+kostenlosen Talentpunkt; der erste wird bei Level 3 vergeben. Talentränge
+werden ausschließlich mit diesen Punkten gekauft, Coins bleiben für Shop und
+Run-Belohnungen. Ein Reset ist kostenlos und erstattet alle investierten
+Punkte. Im Ergebnis bündelt ein eigener Level-Up-Moment Stufe, XP-Restwert,
+Level-Coins, neue Talentpunkte und unmittelbare Freischaltungen; das nächste
 Ziel folgt direkt darunter.
 
 ### 7.2 Talente
 
-Dauerhafte Upgrades. Die zehn Talente sind unabhängige Coin-basierte Ränge
-ohne Voraussetzungen. Kauf, Reset und die Darstellung als ehrliche Liste im
-Profil sind implementiert. Der Start erfolgt immer mit Rang 0; ein voller
-Ausbau soll spürbar helfen, darf aber weder die Jagd noch die Score-Jagd
-ersetzen.
+Dauerhafte Upgrades. Die zehn Talente sind unabhängige, mit Talentpunkten
+gekaufte Ränge ohne Voraussetzungen. Kauf, kostenloser Reset und die
+Darstellung als ehrliche Liste im Profil sind implementiert. Der Start erfolgt
+immer mit Rang 0; ein voller Ausbau soll spürbar helfen, darf aber weder die
+Jagd noch die Score-Jagd ersetzen.
 
 | Talent      | Max. Rang | Pro Rang              |
 | ----------- | --------- | --------------------- |
@@ -340,8 +340,9 @@ Zeitverlust eines Zeit-Hindernisses. _Spürsinn_ hebt ein Relikt höchstens um
 eine Seltenheitsstufe an und erzeugt keine direkte Orange-Garantie.
 
 Quelle: `src/config/balance-data.json`, aufgelöst in `src/config/talents.ts`.
-Die zehn Talente umfassen 41 Ränge und kosten bei der aktuellen Coin-Kurve
-18.950 Coins bis zum Vollausbau.
+Die zehn Talente umfassen 41 Ränge. Bei einem Talentpunkt alle zwei Level
+werden bis Level 100 insgesamt 49 Punkte verdient; die acht Punkte über dem
+Vollausbau bleiben als kleiner Endgame-Puffer ohne weitere Coin-Kosten.
 
 ### 7.3 Welten
 

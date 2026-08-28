@@ -8,8 +8,8 @@
 
 import Phaser from 'phaser';
 
-import { GAME_HEIGHT, GAME_WIDTH, TALENT_RESET_COST } from '@/config/GameConfig';
-import { TALENTS, talentCost, type TalentId } from '@/config/talents';
+import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { TALENTS, type TalentId } from '@/config/talents';
 import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import type { SceneKeyValue } from '@/scenes/SceneKey';
@@ -72,7 +72,7 @@ export class TalentScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         walletY,
-        'COINS ' + save.coins.toLocaleString('de-DE'),
+        'TALENTPUNKTE ' + save.talentPoints + '  ·  COINS ' + save.coins.toLocaleString('de-DE'),
         textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
       )
       .setOrigin(0.5);
@@ -95,7 +95,7 @@ export class TalentScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       resetY,
-      'RESET ' + TALENT_RESET_COST + ' COINS',
+      'TALENTE ZURÜCKSETZEN',
       () => this.openResetConfirmation(),
       {
         width: 380,
@@ -105,15 +105,13 @@ export class TalentScene extends Phaser.Scene {
       },
     );
     content.add(resetButton.container);
-    resetButton.setEnabled(save.coins >= TALENT_RESET_COST);
-    // Einzige Warnung vor einem unwiderruflichen Coin-Verlust - keine
-    // Dekoration, deshalb der helle Standardton statt gedaempft.
+    resetButton.setEnabled(TALENTS.some((talent) => (save.talents[talent.id] ?? 0) > 0));
     content.add(
       this.add
         .text(
           GAME_WIDTH / 2,
           resetY + 48,
-          'Reset kostet ' + TALENT_RESET_COST + ' Coins und erstattet nichts.',
+          'Reset ist kostenlos und erstattet alle investierten Talentpunkte.',
           textStyle(FontSize.tiny, Palette.ink),
         )
         .setOrigin(0.5),
@@ -191,12 +189,11 @@ export class TalentScene extends Phaser.Scene {
           .setStrokeStyle(1, accent, 0.55),
       );
     }
-    const cost = talentCost(rank);
     const purchaseButton = createButton(
       this,
       605,
       y,
-      rank >= talent.maxRank ? 'MAX' : cost + ' COINS',
+      rank >= talent.maxRank ? 'MAX' : '1 PUNKT',
       () => void this.purchase(id),
       {
         width: 150,
@@ -206,7 +203,7 @@ export class TalentScene extends Phaser.Scene {
       },
     );
     content.add(purchaseButton.container);
-    purchaseButton.setEnabled(rank < talent.maxRank && save.coins >= cost);
+    purchaseButton.setEnabled(rank < talent.maxRank && save.talentPoints > 0);
   }
 
   private async purchase(id: TalentId): Promise<void> {
@@ -233,7 +230,8 @@ export class TalentScene extends Phaser.Scene {
         } else error = result.ok ? 'Profilstand nicht erhalten.' : result.error;
       }
     } else {
-      if (!ProgressionSystem.purchaseTalent(id)) error = 'Nicht genug Coins für diesen Rang.';
+      if (!ProgressionSystem.purchaseTalent(id))
+        error = 'Nicht genug Talentpunkte für diesen Rang.';
     }
     this.busy = false;
 
@@ -257,9 +255,13 @@ export class TalentScene extends Phaser.Scene {
   }
 
   private openResetConfirmation(): void {
-    if (this.resetDialogObjects.length > 0 || SaveSystem.load().coins < TALENT_RESET_COST) {
+    const investedRanks = TALENTS.reduce(
+      (sum, talent) => sum + (SaveSystem.load().talents[talent.id] ?? 0),
+      0,
+    );
+    if (this.resetDialogObjects.length > 0 || investedRanks <= 0) {
       this.feedbackText
-        .setText('Für den Reset fehlen ' + TALENT_RESET_COST + ' Coins.')
+        .setText('Es gibt keine investierten Talentpunkte zum Zurücksetzen.')
         .setColor(Palette.gold);
       return;
     }
@@ -295,7 +297,7 @@ export class TalentScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         GAME_HEIGHT / 2 - 20,
-        'Das kostet ' + TALENT_RESET_COST + ' Coins.',
+        'Kostenlos: Alle investierten Talentpunkte werden erstattet.',
         textStyle(FontSize.small, Palette.ink),
       )
       .setOrigin(0.5)
@@ -338,7 +340,7 @@ export class TalentScene extends Phaser.Scene {
       else error = result.ok ? 'Profilstand nicht erhalten.' : result.error;
     } else {
       if (!ProgressionSystem.resetTalents()) {
-        error = 'Für den Reset fehlen ' + TALENT_RESET_COST + ' Coins.';
+        error = 'Es gibt keine investierten Talentpunkte zum Zurücksetzen.';
       }
     }
     this.busy = false;

@@ -17,11 +17,11 @@ import {
   MAX_LEVEL,
   MAX_COLLECTION_BONUS_COINS,
   RARE_CATCHES_PER_BONUS_COIN,
-  TALENT_RESET_COST,
+  talentPointsEarnedByLevel,
   xpForLevel,
 } from '@/config/GameConfig';
 import { auraLevelReached, SHIP_AURAS, SHIP_COLORS, SHIP_SHAPES } from '@/config/shop';
-import { TALENTS, talentCost, type TalentId } from '@/config/talents';
+import { TALENTS, type TalentId } from '@/config/talents';
 import { WORLDS } from '@/config/worlds';
 import * as CloudSystem from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
@@ -58,14 +58,17 @@ export function coinsForRun(run: RunStats): number {
 }
 
 function grantLevelReward(data: SaveData): number {
-  data.talentPoints = 0;
   data.coins += COINS_PER_LEVEL;
+  const previousLevel = Math.max(1, data.level - 1);
+  const pointsBefore = talentPointsEarnedByLevel(previousLevel);
+  const pointsAfter = talentPointsEarnedByLevel(data.level);
+  data.talentPoints += Math.max(0, pointsAfter - pointsBefore);
   return COINS_PER_LEVEL;
 }
 
 /**
- * Rechnet vorhandene XP in Levelaufstiege um und gibt die dabei verdienten
- * Coins zurueck. Mehrere Aufstiege auf einmal sind moeglich.
+ * Rechnet vorhandene XP in Levelaufstiege um und gibt dabei Coins sowie
+ * kostenlose Talentpunkte. Mehrere Aufstiege auf einmal sind moeglich.
  *
  * Stand zeichengleich in `applyRun()` und `applyDailyBonus()` - nur die
  * Nachbehandlung wich ab (einmal mit, einmal ohne `level = MAX_LEVEL`).
@@ -138,7 +141,6 @@ export function applyRun(run: RunStats): ProgressionResult {
   };
   const isNewBestScore = safeScore > before.bestScore;
   const recordTimestamp = normalizedTimestamp(run.completedAt);
-  const talentPointsGained = 0;
   let coinsGained = 0;
   const runCoins = coinsForRun(safeRun);
   coinsGained += runCoins;
@@ -163,6 +165,7 @@ export function applyRun(run: RunStats): ProgressionResult {
   });
 
   const levelsGained = after.level - levelBefore;
+  const talentPointsGained = Math.max(0, after.talentPoints - before.talentPoints);
 
   const unlockedWorldIds = WORLDS.filter(
     (w) => w.unlockLevel > levelBefore && w.unlockLevel <= after.level,
@@ -208,6 +211,7 @@ export function applyDailyBonus(
   coinsGained: number;
   xpGained: number;
   levelsGained: number;
+  talentPointsGained: number;
 } {
   const before = SaveSystem.load();
   const safeCoins = Math.max(0, Math.round(coins));
@@ -225,6 +229,7 @@ export function applyDailyBonus(
     coinsGained: totalCoinGain,
     xpGained: safeXp,
     levelsGained: after.level - before.level,
+    talentPointsGained: Math.max(0, after.talentPoints - before.talentPoints),
   };
 }
 
@@ -234,7 +239,7 @@ function normalizedTimestamp(value: string | undefined): string {
   return Number.isFinite(timestamp) ? new Date(timestamp).toISOString() : new Date().toISOString();
 }
 
-/** Kauft genau einen Rang lokal; der Talentbildschirm validiert nicht blind. */
+/** Kauft genau einen Rang lokal mit einem kostenlosen Talentpunkt. */
 export function purchaseTalent(talentId: TalentId): SaveData | null {
   const talent = TALENTS.find((entry) => entry.id === talentId);
   if (!talent) return null;
@@ -242,10 +247,8 @@ export function purchaseTalent(talentId: TalentId): SaveData | null {
   let purchased = false;
   const result = SaveSystem.update((data) => {
     const currentRank = data.talents[talentId] ?? 0;
-    const cost = talentCost(currentRank);
-    if (data.coins < cost || currentRank >= talent.maxRank) return;
-    data.coins -= cost;
-    data.coinsSpent += cost;
+    if (data.talentPoints < 1 || currentRank >= talent.maxRank) return;
+    data.talentPoints -= 1;
     data.talents[talentId] = currentRank + 1;
     purchased = true;
   });
@@ -356,24 +359,19 @@ export function equipShip(shapeId?: string, colorId?: string, auraId?: string): 
 }
 
 /**
- * Setzt alle Talentränge gegen die konfigurierte Reset-Gebühr zurück.
+ * Setzt alle Talentränge kostenlos zurück und erstattet die investierten Punkte.
  *
  * Das `wasReset`-Flag folgt demselben Muster wie die Kauffunktionen:
  * Der Rueckgabewert von `SaveSystem.update()` sagt nichts darueber aus, ob
  * der Mutator tatsaechlich etwas changed hat - ohne das Flag meldete ein
  * uebersprungener Guard einen Erfolg.
- *
- * Vorher stand die Guthabenpruefung doppelt da: einmal als Vorpruefung ueber
- * `load()`, einmal im Mutator. Die Vorpruefung faengt denselben Fall ab und
- * ist mit dem Flag ueberfluessig - zwei Stellen mit derselben Bedingung
- * laufen sonst irgendwann auseinander (Audit 2026-08-23).
  */
 export function resetTalents(): SaveData | null {
   let wasReset = false;
   const result = SaveSystem.update((data) => {
-    if (data.coins < TALENT_RESET_COST) return;
-    data.coins -= TALENT_RESET_COST;
-    data.coinsSpent += TALENT_RESET_COST;
+    const investedRanks = TALENTS.reduce((sum, talent) => sum + (data.talents[talent.id] ?? 0), 0);
+    if (investedRanks <= 0) return;
+    data.talentPoints += investedRanks;
     data.talents = {};
     wasReset = true;
   });
@@ -399,10 +397,11 @@ function evaluateAchievements(save: SaveData, run: RunStats): string[] {
 export function grantLevels(count: number): SaveData {
   return SaveSystem.update((data) => {
     const currentLevel = Math.min(MAX_LEVEL, Math.max(1, data.level));
-    const nextLevel = Math.min(MAX_LEVEL, currentLevel + Math.max(0, count));
-    const gained = nextLevel - currentLevel;
-    data.level = nextLevel;
-    for (let index = 0; index < gained; index++) grantLevelReward(data);
+    const gained = Math.min(MAX_LEVEL, currentLevel + Math.max(0, count)) - currentLevel;
+    for (let index = 0; index < gained; index++) {
+      data.level = currentLevel + index + 1;
+      grantLevelReward(data);
+    }
     data.xp = 0;
   });
 }

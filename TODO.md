@@ -383,24 +383,24 @@ Die finale iPhone-/iPad-Abnahme bleibt als Release-Gate offen.
   auflösen.**
 
 Beim Audit wurden veraltete Aussagen gefunden, insbesondere die alte
-Roadmap-Planung „Talentpunkte statt Coin-Kosten“, obwohl ADR-0018 genau diese
-Alternative verwirft. Außerdem darf „SQL ausgeführt“ nicht behauptet werden,
+Roadmap-Planung „Talentpunkte statt Coin-Kosten“, die seit ADR-0021 umgesetzt
+wird. Außerdem darf „SQL ausgeführt“ nicht behauptet werden,
 wenn kein produktiver Nachweis vorliegt.
 
 **Vorgehen:**
 
-- `docs/ROADMAP.md` auf die Entscheidung „Talente bleiben bei Coins“ bringen.
+- `docs/ROADMAP.md` auf die Entscheidung „kostenlose Talentpunkte aus Leveln“ bringen.
 - `docs/GAME_DESIGN.md`, `docs/BALANCE_CHAIN.md` und `docs/DECISIONS.md` auf
   aktuelle XP-, Coin-, Shop- und Talentbegriffe prüfen.
-- Mit `rg` nach den verworfenen Talentpunkte-Plänen suchen.
+- Mit `rg` nach veralteten aktiven Coin-Talent-Plänen suchen.
 - Version, Datum und tatsächlichen SQL-Stand in der Dokumentation angleichen.
 
 **Abnahme:** Eine neue Person findet in TODO, Roadmap und ADR dieselbe
-Reihenfolge und keine aktive Aufgabe für den verworfenen Talentpunkte-Umbau.
+Reihenfolge und keine aktive Aufgabe für die alte Coin-Talent-Wirtschaft.
 
-**Erledigt 2026-08-22:** Aktive Produktdokumente nennen jetzt den
-Repository-/Live-Stand über `package.json`/`version.json`, die sieben
-unabhängigen Coin-Talente und die Migrationen bis
+**Historischer Stand 2026-08-22 vor ADR-0021:** Aktive Produktdokumente nennen jetzt den
+Repository-/Live-Stand über `package.json`/`version.json`, die zehn
+unabhängigen Talente und die Migrationen bis
 `phase_2_15_cosmetic_sync.sql`. Historische ADR-, Audit- und Changelog-Stellen
 bleiben als Historie erhalten und sind entsprechend nicht als offene Planung
 zu lesen. Es wird ausdrücklich nicht behauptet, dass SQL produktiv ausgeführt
@@ -531,21 +531,21 @@ Hinweise.
 - [x] **Entscheidung „Baum, Route oder ehrliche Liste“ abschließen.**
 
 Die zehn Talente sind fachlich eine unabhängige Liste ohne Voraussetzungen.
-Die Coin-Kosten sind durch ADR-0018 entschieden und werden nicht erneut auf
-Talentpunkte umgebaut. Die Darstellung bleibt deshalb bewusst eine ehrliche
-Liste unter „Talente“; eine Route oder ein Voraussetzungen-Baum würde eine
-Spielregel versprechen, die es nicht gibt.
+Die Talentpunkte aus Leveln und der kostenlose Reset sind durch ADR-0021
+entschieden. Die Darstellung bleibt deshalb bewusst eine ehrliche Liste unter
+„Talente“; eine Route oder ein Voraussetzungen-Baum würde eine Spielregel
+versprechen, die es nicht gibt.
 
 **Abnahme:** Entscheidung in ADR/TODO notiert, `TalentScene` spiegelt sie
-korrekt, keine versteckten Voraussetzungen und keine Änderung bestehender
-Coin-Käufe ohne eigene Entscheidung.
+korrekt, keine versteckten Voraussetzungen und keine Änderung der kostenlosen
+Talentpunkt-Käufe ohne eigene Entscheidung.
 
 **Umsetzung 2026-08-28:** Die frühere Route bleibt eine unabhängige Talentliste.
 `TalentScene` zeigt zehn separat kaufbare Talente; die Liste ist auf kleinen
 Bildschirmen scrollbar. Die Maximalwirkung wurde gegenüber dem vorherigen
 Stand gedämpft, drei neue Talente ergänzen Seltenheit, Serien und Hindernisse.
 Neue Spielstände beginnen weiterhin bei Rang 0; es gibt keine versteckten
-Voraussetzungen und keine Talentpunkte-Migration.
+Voraussetzungen. Die Version-9-Migration setzt die bisherigen Teststände zurück.
 
 ## P2-02 — Ein klares nächstes Ziel nach jedem Run
 
@@ -1398,7 +1398,7 @@ Priorität, Abhängigkeit und Abnahme.
 
 | Entscheidung | Stand | Konsequenz |
 | --- | --- | --- |
-| Talente mit Coins statt Talentpunkten | **entschieden, ADR-0018** | Kein Talentpunkte-Umbau und keine Migration dafür. Die Darstellung bleibt die ehrliche unabhängige Liste (P2-01). |
+| Kostenlose Talentpunkte aus Leveln | **entschieden, ADR-0021** | Ein Talentpunkt alle zwei Level ab Level 3; Talent-Reset kostenlos mit Rückerstattung. Version 9 setzt die bisherigen Testprofile zurück. |
 | Welten unter dem eigenen Level sperren | **verworfen** | Gemeinsames Spielen und Duell bleiben möglich; höhere Welten motivieren über Belohnung. |
 | Duell-Link als erster Netzwerkweg | **übersprungen** | Raumcode/Realtime Phase 1 ist gebaut; Stabilität kommt vor weiteren Varianten. |
 | Öffentliche Bestenliste | **nicht freigegeben** | Familienkreis bleibt der aktuelle Scope; Datenschutz/Moderation ist ein Gate. |
@@ -1449,7 +1449,7 @@ Git-Historie.
 - [Architektur](docs/ARCHITECTURE.md) — Szenen, Systeme, Datenfluss und Tests
 - [Spielregeln](docs/GAME_DESIGN.md) — Run, Score, Progression und Welten
 - [Balance-Kette](docs/BALANCE_CHAIN.md) — zentrale Rohwerte und Ableitungen
-- [Entscheidungen](docs/DECISIONS.md) — ADRs, insbesondere ADR-0018
+- [Entscheidungen](docs/DECISIONS.md) — ADRs, insbesondere ADR-0021
 - [Roadmap](docs/ROADMAP.md) — Produktmeilensteine; bei Widerspruch zuerst
   P0-06 aktualisieren
 - [Code-Stil](docs/CODE_STYLE.md) — Definition of Done und Testregeln

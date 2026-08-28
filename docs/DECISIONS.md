@@ -1047,7 +1047,7 @@ gezielte Wege für seltene Relikte, hohe Serien und Hindernisse.
 
 ### Entscheidung
 
-Die unabhängige Coin-Liste bleibt bestehen und wächst auf zehn Talente. Die
+Die unabhängige Talentliste bleibt bestehen und wächst auf zehn Talente. Die
 bestehenden Maximalwirkungen werden auf eine moderatere Kurve zurückgeführt:
 XP und Punkte enden bei +26,25 %, Tempo bei +26,25 %, Laufzeit bei +12,75
 Sekunden und das Combo-Fenster bei +425 ms. Der letzte Rang ist als Capstone
@@ -1073,7 +1073,8 @@ begrenzt. Duelle verwenden weiterhin keine Talentboni.
 
 - `balance-data.json` bleibt die Quelle für Maximalränge und Wirkungen; Client
   und Supabase-Kette werden synchronisiert.
-- Der Vollausbau umfasst 41 Ränge und kostet aktuell 18.950 Coins.
+- Der Vollausbau umfasst 41 Ränge; die Talentkosten werden durch ADR-0021
+  ersetzt.
 - `TalentScene` benötigt Scrollen, damit alle zehn Einträge auf kleinen
   Bildschirmen erreichbar bleiben.
 
@@ -1111,3 +1112,37 @@ vollständiger Neustart ohne Netz möglich ist.
   kann später im Profil vergeben und online geprüft werden.
 - Registrierung und Login zeigen offline direkt einen Hinweis, statt den
   Spielstart zu beeinflussen.
+
+---
+
+## ADR-0021 — Kostenlose Talentpunkte aus Leveln
+
+**Datum:** 2026-08-28 · **Status:** Angenommen
+
+### Kontext
+
+Die Talentwirkungen sind jetzt mathematisch begrenzt und sollen trotzdem
+spürbar bleiben. Die bisherigen Coin-Kosten machten den Talentfortschritt
+unnötig langsam und konkurrierten mit dem kosmetischen Shop. Außerdem waren
+Talentpunkte im Spielstand nur noch ein historisches Feld.
+
+### Entscheidung
+
+Talente werden mit kostenlosen Talentpunkten gekauft. Alle zwei Level gibt es
+einen Punkt, der erste bei Level 3. Bis Level 100 entstehen 49 Punkte für 41
+Ränge. Der kleine Überschuss ist bewusst ein Endgame-Puffer; er erzeugt keine
+zusätzlichen Talentwirkungen. Ein Reset ist kostenlos und erstattet alle
+investierten Punkte. Coins bleiben für Shop, Runs, Erfolge und Levelbelohnungen.
+
+Bestehende Testprofile werden mit `SAVE_VERSION 9` auf Level 1, 0 XP, 0
+Talentpunkte, 0 Coins, leere Talente und Standardkosmetik zurückgesetzt.
+Spielernamen und lokale Einstellungen bleiben erhalten.
+
+### Konsequenzen
+
+- ADR-0018 ist für die Talentkosten abgelöst; ADR-0019 bleibt für die
+  mathematische Wirkungsbegrenzung und den Capstone gültig.
+- `ProgressionSystem` und die serverseitigen RPCs berechnen Talentpunkte aus
+  echten Levelaufstiegen; Clientwerte werden nicht als Belohnung vertraut.
+- Talentkosten bleiben als leere historische Konfigurationsstruktur erhalten,
+  damit alte Migrationen und Balanceberichte nachvollziehbar bleiben.
