@@ -1049,14 +1049,21 @@ gezielte Wege für seltene Relikte, hohe Serien und Hindernisse.
 
 Die unabhängige Coin-Liste bleibt bestehen und wächst auf zehn Talente. Die
 bestehenden Maximalwirkungen werden auf eine moderatere Kurve zurückgeführt:
-XP und Punkte enden bei +25 %, Tempo bei +25 %, Laufzeit bei +16 Sekunden und
-das Combo-Fenster bei +600 ms. Drei neue Talente ergänzen jeweils eine klar
+XP und Punkte enden bei +26,25 %, Tempo bei +26,25 %, Laufzeit bei +12,75
+Sekunden und das Combo-Fenster bei +425 ms. Der letzte Rang ist als Capstone
+1,25-mal stärker als ein normaler Rang. Drei neue Talente ergänzen jeweils eine klar
 begrenzte Nische:
 
 - **Spürsinn:** bis zu 9 % Chance auf einen einstufigen Seltenheits-Aufstieg.
-- **Resonanz:** bis zu +0,15x auf sichtbare Serienmultiplikatoren; Orange bei
-  Serie 16 steigt dadurch von 800 auf rund 838 Basispunkte.
+- **Resonanz:** bis zu +0,1625x auf sichtbare Serienmultiplikatoren; Orange bei
+  Serie 16 steigt dadurch von 800 auf rund 841 Basispunkte.
 - **Schutzfeld:** bis zu 24 % weniger Hinderniswirkung.
+
+Die Komfortwerte werden zusaetzlich ueber ihre tatsaechliche Geometrie und
+Runwirkung begrenzt: Rang 5 Reichweite darf die theoretische Fangflaeche nur
+auf rund 179 % des Grundwerts bringen, Magnetismus endet bei 180 px Feldradius
+und 63,75 % hoeherer Soggeschwindigkeit. So bleibt Macht sichtbar, ohne dass ein
+einzelnes Talent Fangreichweite, Laufzeit oder Serienfenster nahezu verdoppelt.
 
 Neue und migrierte Spielstände beginnen bei Rang 0. Bestehende gültige Ränge
 bleiben erhalten, werden beim Laden aber auf den jeweiligen neuen Maximalrang

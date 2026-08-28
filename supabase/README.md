@@ -34,6 +34,7 @@ Auf einer leeren Datenbank in dieser Reihenfolge einspielen:
 | 15  | `phase_2_19_talent_max_rank_from_config.sql` | Maximalränge aus der Balance-Kette statt abgetippt         |
 | 16  | `phase_2_20_duel_realtime_policies.sql`      | Duell-Kanal: Senden und Presence erlauben                  |
 | 17  | `phase_2_21_talent_balance_sync.sql`         | Talent-Balance und Kauf-RPC synchronisieren                |
+| 18  | `phase_2_22_talent_power_balance.sql`        | Mathematisch begrenzte Talentwirkungen aktualisieren       |
 
 ## Warum alte Dateien nicht rückwirkend geändert werden
 

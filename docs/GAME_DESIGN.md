@@ -301,27 +301,38 @@ ersetzen.
 
 | Talent      | Max. Rang | Pro Rang              |
 | ----------- | --------- | --------------------- |
-| Reichweite  | 5         | +8 Sammelradius       |
+| Reichweite  | 5         | +5 Sammelradius       |
 | Flinkheit   | 5         | +5 % Tempo            |
-| Magnetismus | 4         | +65 Sogreichweite     |
-| Ausdauer    | 4         | +4 s Rundendauer      |
-| Fokus       | 4         | +150 ms Combo-Fenster |
+| Magnetismus | 4         | +45 Sogreichweite     |
+| Ausdauer    | 4         | +3 s Rundendauer      |
+| Fokus       | 4         | +100 ms Combo-Fenster |
 | Spürsinn    | 3         | +3 % Aufstiegschance  |
 | Erkenntnis  | 5         | +5 % XP               |
 | Gunst       | 5         | +5 % Punkte           |
 | Resonanz    | 3         | +0,05x Serienbonus    |
 | Schutzfeld  | 3         | -8 % Hinderniswirkung |
 
+**Mathematisches Machtbudget:** Die Reichweite wird ueber die zweidimensionale
+Fangflaeche bewertet. Bei einem gewichteten Reliktradius von 31,49 px steigt
+die Fangflaeche von Rang 0 auf Rang 5 damit um rund 79 %; der letzte Rang ist
+als Capstone 1,25-mal staerker als ein normaler Rang. Magnetismus endet bei
+180 px Sogreichweite und 63,75 % hoeherer Soggeschwindigkeit; Ausdauer
+verlaengert einen 90-Sekunden-Run um maximal 12,75 Sekunden (14,2 %), Fokus
+das 900-ms-Fenster um maximal 425 ms (47,2 %). Diese Komforttalente bleiben im
+Spiel klar spuerbar, koennen aber die Fang- und Serienleistung nicht mehr
+nahezu verdoppeln. Direkte Fortschrittsboni fuer Tempo, XP und Punkte enden
+durch den Capstone bei maximal 26,25 %.
+
 **Balancing-Absicht:** Kein Talent ist Pflicht. _Reichweite_ und _Magnetismus_
 machen das Spiel leichter, _Spürsinn_ macht farbige Relikte etwas
 wahrscheinlicher, und _Gunst_/_Resonanz_ machen gute Serien ertragreicher.
 Die Maximalwerte bleiben bewusst moderat: Die direkten Prozentboni für Tempo,
-XP, Punkte und Hindernisse liegen zwischen 24 und 25 %; _Erkenntnis_ und
-_Gunst_ erreichen je 25 %. Die übrigen Talente verändern nur klar begrenzte
+XP, Punkte und Hindernisse liegen jetzt zwischen 24 und 26,25 %; _Erkenntnis_
+und _Gunst_ erreichen je 26,25 %. Die übrigen Talente verändern nur klar begrenzte
 Komfortwerte wie Radius, Sekunden oder Serienmultiplikator.
 _Resonanz_ addiert ihren Bonus erst ab der ersten sichtbaren Serienbonus-Stufe,
 damit der erste Fang nicht künstlich aufgebläht wird. Mit Resonanz auf Rang 3
-steigt Orange bei Serie 16 von 800 auf 838 Basispunkte; Gunst wirkt erst danach
+steigt Orange bei Serie 16 von 800 auf rund 841 Basispunkte; Gunst wirkt erst danach
 als weiterer Multiplikator.
 
 _Schutzfeld_ reduziert sowohl die Dauer eines Bremsfelds als auch den

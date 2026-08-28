@@ -44,7 +44,7 @@ export const TALENTS: readonly TalentDef[] = [
     name: 'Reichweite',
     description: 'Vergrößert den Radius, in dem du Relikte einsammelst.',
     maxRank: BALANCE.talents.maxRanks.reach,
-    perRank: '+8 Sammelradius',
+    perRank: '+5 Sammelradius',
   },
   {
     id: 'swiftness',
@@ -58,21 +58,21 @@ export const TALENTS: readonly TalentDef[] = [
     name: 'Magnetismus',
     description: 'Relikte in der Nähe werden zu dir gezogen.',
     maxRank: BALANCE.talents.maxRanks.magnetism,
-    perRank: '+65 Sogreichweite',
+    perRank: '+45 Sogreichweite',
   },
   {
     id: 'endurance',
     name: 'Ausdauer',
     description: 'Verlängert die Dauer eines Runs.',
     maxRank: BALANCE.talents.maxRanks.endurance,
-    perRank: '+4 Sekunden',
+    perRank: '+3 Sekunden',
   },
   {
     id: 'focus',
     name: 'Fokus',
     description: 'Deine Combo hält länger, bevor sie zerfällt.',
     maxRank: BALANCE.talents.maxRanks.focus,
-    perRank: '+150 ms Combo-Fenster',
+    perRank: '+100 ms Combo-Fenster',
   },
   {
     id: 'prospector',
@@ -154,6 +154,23 @@ function rank(ranks: TalentRanks, id: TalentId): number {
   return Math.min(def.maxRank, Math.max(0, Math.floor(value)));
 }
 
+/**
+ * Berechnet den Bonus eines Talents mit einem staerkeren letzten Rang.
+ *
+ * Der Capstone gilt nur bei exakt erreichtem Maximalrang. So bleiben alle
+ * ZwischenrÃ¤nge linear und der letzte Kauf fuehlt sich als Abschluss an.
+ */
+function talentBonus(
+  currentRank: number,
+  maxRank: number,
+  perRank: number,
+  capstoneMultiplier = BALANCE.talents.capstoneRankMultiplier,
+): number {
+  const hasCapstone = currentRank > 0 && currentRank === maxRank;
+  const regularRanks = Math.max(0, currentRank - (hasCapstone ? 1 : 0));
+  return perRank * (regularRanks + (hasCapstone ? capstoneMultiplier : 0));
+}
+
 /** Rechnet Talentraenge in konkrete Spielwerte um. Reine Funktion, testbar. */
 export function resolveStats(ranks: TalentRanks): PlayerStats {
   const talentRanks: ResolvedTalentRanks = {
@@ -169,25 +186,75 @@ export function resolveStats(ranks: TalentRanks): PlayerStats {
     shield: rank(ranks, 'shield'),
   };
 
+  const reachBonus = talentBonus(
+    talentRanks.reach,
+    BALANCE.talents.maxRanks.reach,
+    BALANCE.talents.reachRadiusPerRank,
+  );
+  const swiftnessBonus = talentBonus(
+    talentRanks.swiftness,
+    BALANCE.talents.maxRanks.swiftness,
+    BALANCE.talents.swiftnessSpeedPerRank,
+  );
+  const magnetRadiusBonus = talentBonus(
+    talentRanks.magnetism,
+    BALANCE.talents.maxRanks.magnetism,
+    BALANCE.talents.magnetRadiusPerRank,
+    BALANCE.talents.magnetRadiusCapstoneRankMultiplier,
+  );
+  const magnetPullBonus = talentBonus(
+    talentRanks.magnetism,
+    BALANCE.talents.maxRanks.magnetism,
+    BALANCE.talents.magnetPullSpeedPerRank,
+  );
+  const enduranceBonus = talentBonus(
+    talentRanks.endurance,
+    BALANCE.talents.maxRanks.endurance,
+    BALANCE.talents.enduranceSecondsPerRank,
+  );
+  const focusBonus = talentBonus(
+    talentRanks.focus,
+    BALANCE.talents.maxRanks.focus,
+    BALANCE.talents.focusComboMsPerRank,
+  );
+  const prospectorBonus = talentBonus(
+    talentRanks.prospector,
+    BALANCE.talents.maxRanks.prospector,
+    BALANCE.talents.prospectorPromotionChancePerRank,
+  );
+  const insightBonus = talentBonus(
+    talentRanks.insight,
+    BALANCE.talents.maxRanks.insight,
+    BALANCE.talents.insightXpPerRank,
+  );
+  const fortuneBonus = talentBonus(
+    talentRanks.fortune,
+    BALANCE.talents.maxRanks.fortune,
+    BALANCE.talents.fortuneScorePerRank,
+  );
+  const resonanceBonus = talentBonus(
+    talentRanks.resonance,
+    BALANCE.talents.maxRanks.resonance,
+    BALANCE.talents.resonanceSeriesMultiplierPerRank,
+  );
+  const shieldBonus = talentBonus(
+    talentRanks.shield,
+    BALANCE.talents.maxRanks.shield,
+    BALANCE.talents.shieldObstacleResistancePerRank,
+  );
+
   return {
     talentRanks,
-    collectRadius:
-      PLAYER_BASE_COLLECT_RADIUS + talentRanks.reach * BALANCE.talents.reachRadiusPerRank,
-    moveSpeed:
-      PLAYER_BASE_SPEED * (1 + talentRanks.swiftness * BALANCE.talents.swiftnessSpeedPerRank),
-    magnetRadius: talentRanks.magnetism * BALANCE.talents.magnetRadiusPerRank,
-    magnetPullSpeed:
-      talentRanks.magnetism > 0
-        ? MAGNET_PULL_SPEED * (1 + talentRanks.magnetism * BALANCE.talents.magnetPullSpeedPerRank)
-        : 0,
-    runDurationMs:
-      RUN_DURATION_MS + talentRanks.endurance * BALANCE.talents.enduranceSecondsPerRank * 1000,
-    comboGraceMs: COMBO_GRACE_MS + talentRanks.focus * BALANCE.talents.focusComboMsPerRank,
-    rarityPromotionChance:
-      talentRanks.prospector * BALANCE.talents.prospectorPromotionChancePerRank,
-    xpMultiplier: 1 + talentRanks.insight * BALANCE.talents.insightXpPerRank,
-    scoreMultiplier: 1 + talentRanks.fortune * BALANCE.talents.fortuneScorePerRank,
-    seriesMultiplierBonus: talentRanks.resonance * BALANCE.talents.resonanceSeriesMultiplierPerRank,
-    obstacleResistance: talentRanks.shield * BALANCE.talents.shieldObstacleResistancePerRank,
+    collectRadius: PLAYER_BASE_COLLECT_RADIUS + reachBonus,
+    moveSpeed: PLAYER_BASE_SPEED * (1 + swiftnessBonus),
+    magnetRadius: magnetRadiusBonus,
+    magnetPullSpeed: talentRanks.magnetism > 0 ? MAGNET_PULL_SPEED * (1 + magnetPullBonus) : 0,
+    runDurationMs: RUN_DURATION_MS + enduranceBonus * 1000,
+    comboGraceMs: COMBO_GRACE_MS + focusBonus,
+    rarityPromotionChance: prospectorBonus,
+    xpMultiplier: 1 + insightBonus,
+    scoreMultiplier: 1 + fortuneBonus,
+    seriesMultiplierBonus: resonanceBonus,
+    obstacleResistance: shieldBonus,
   };
 }

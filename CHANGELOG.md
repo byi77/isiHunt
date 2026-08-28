@@ -33,6 +33,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- **Die Komforttalente sind mathematisch nachgeschärft.** Reichweite steigt
+  jetzt um 5 statt 8 px je Rang, Magnetismus um 45 statt 65 px, Ausdauer um 3
+  statt 4 Sekunden und Fokus um 100 statt 150 ms. Der letzte Rang ist als
+  Capstone 1,25-mal stärker; dadurch bleiben rund 79 % zusätzliche Fangfläche,
+  14,2 % längere Laufzeit und 47,2 % längeres Combo-Fenster spürbar begrenzt.
+
 - **Das Talentsystem umfasst jetzt zehn moderate Talente.** Die bisherigen
   Maximalwirkungen wurden gedämpft; neu sind **Spürsinn** für etwas bessere
   Seltenheits-Aufstiege, **Resonanz** für aktive Serien und **Schutzfeld** für
