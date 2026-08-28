@@ -55,6 +55,34 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   Der geschuetzte Puffer bleibt trotzdem noetig: der groessere Hauptpuffer
   verschiebt die Grenze, er hebt sie nicht auf.
 
+### Hinzugefuegt
+
+- **Netzwerk-Duell: Presence und Empfang werden gemessen statt angenommen.**
+  Drei neue Marken im geschuetzten Puffer beantworten die Frage, die nach dem
+  Presence-Fix offen blieb:
+
+  - `duel:presence-track` — ob sich dieses Geraet nach `SUBSCRIBED`
+    erfolgreich als anwesend gemeldet hat. Der Rueckgabewert von `track()`
+    wurde bisher mit `void` verworfen; schlaegt die Anmeldung fehl, entsteht
+    beim Gegner nie ein `join`, und niemand erfaehrt davon.
+  - `duel:presence-sync` — **wer** laut Kanal anwesend ist, bei jeder
+    Aenderung. `sync` liefert den vollstaendigen Stand und feuert auch dann,
+    wenn ein einzelnes `join` verlorenging.
+  - `duel:live-empfangen` — einmalig, sobald der erste Zwischenstand des
+    Gegners ankommt. Bisher war ausgerechnet der Erfolgsfall der einzige, der
+    keine Spur hinterliess.
+
+  Anlass ist der Bericht vom 2026-08-28: nach einem `transport failure` stand
+  der Kanal 1,5 Sekunden spaeter wieder auf `SUBSCRIBED`, aber ueber die ganze
+  Runde kam kein einziges Presence-Ereignis und kein Zwischenstand. Der
+  Presence-Fix aus v0.1.253 wirkt (der Fehlalarm ist weg — kein
+  `duel:opponent-disconnected` mehr), er war aber nicht die vollstaendige
+  Ursache.
+
+  **Das ist eine Messung, keine Reparatur.** Der naechste Zwei-Geraete-Lauf
+  zeigt, ob die Wiederanmeldung gelingt und ob der Gegner im Kanal sichtbar
+  ist — erst danach ist der Umbau begruendbar statt geraten.
+
 ### Behoben
 
 - **Netzwerk-Duell: der Live-Punktestand des Gegners blieb bei 0 und die

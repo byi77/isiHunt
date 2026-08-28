@@ -113,6 +113,7 @@ function createFakeSupabase(): {
   client: unknown;
   fire: (event: string, payload: unknown) => void;
   firePresence: (event: 'join' | 'leave', key: string) => void;
+  fireSync: (anwesend: Record<string, unknown>) => void;
 } {
   const broadcastHandlers = new Map<string, (message: unknown) => void>();
   const presenceHandlers = new Map<string, (message: unknown) => void>();
@@ -122,11 +123,16 @@ function createFakeSupabase(): {
   // eigenen Initialisierung ableiten (TS7022).
   interface FakeChannel {
     on(type: string, filter: { event: string }, handler: (message: unknown) => void): FakeChannel;
-    subscribe(): FakeChannel;
+    subscribe(callback?: (status: string, error?: Error) => void): FakeChannel;
     track(): Promise<string>;
     send(): Promise<string>;
     unsubscribe(): Promise<string>;
+    presenceState(): Record<string, unknown>;
   }
+
+  // Wer laut Presence gerade im Kanal ist - vom Test steuerbar, damit sich
+  // "Gegner sichtbar" und "niemand da" unterscheiden lassen.
+  let presence: Record<string, unknown> = {};
 
   const channel: FakeChannel = {
     on(type, filter, handler) {
@@ -134,10 +140,14 @@ function createFakeSupabase(): {
       if (type === 'presence') presenceHandlers.set(filter.event, handler);
       return channel;
     },
-    subscribe() {
+    subscribe(callback) {
+      // Den Statuslauf nachstellen: erst nach SUBSCRIBED ruft der echte
+      // Kanal `track()` auf, und genau das soll pruefbar sein.
+      callback?.('SUBSCRIBED');
       return channel;
     },
     track: () => Promise.resolve('ok'),
+    presenceState: () => presence,
     send: () => Promise.resolve('ok'),
     unsubscribe: () => Promise.resolve('ok'),
   };
@@ -146,6 +156,10 @@ function createFakeSupabase(): {
     client: { channel: () => channel },
     fire: (event, payload) => broadcastHandlers.get(event)?.({ payload }),
     firePresence: (event, key) => presenceHandlers.get(event)?.({ key }),
+    fireSync: (anwesend: Record<string, unknown>) => {
+      presence = anwesend;
+      presenceHandlers.get('sync')?.({});
+    },
   };
 }
 
@@ -516,5 +530,107 @@ describe('Presence mit Karenzfrist', () => {
     const labels = DebugSystem.getProtectedLogBuffer().map((entry) => entry.label);
     expect(labels).toContain('duel:presence-leave');
     expect(labels).toContain('duel:presence-join');
+  });
+});
+
+/**
+ * Die drei Messungen aus v0.1.254. Sie beantworten die Frage, die nach dem
+ * Presence-Fix offen blieb: der Bericht vom 2026-08-28 zeigte einen stehenden
+ * Kanal (SUBSCRIBED nach `transport failure`), aber ueber die ganze Runde
+ * kein einziges Presence-Ereignis und keinen Zwischenstand. Ob sich das
+ * Geraet ueberhaupt wieder als anwesend meldete und ob der Gegner im Kanal
+ * sichtbar war, liess sich nicht feststellen.
+ */
+describe('Presence- und Empfangsdiagnose', () => {
+  beforeEach(() => {
+    NetworkDuelSystem.unsubscribeFromRoom();
+    DebugSystem.clearLogBuffer();
+  });
+
+  it('protokolliert das Ergebnis der eigenen Presence-Anmeldung', async () => {
+    const fake = createFakeSupabase();
+    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {});
+
+    // `track()` liefert ein Promise - eine Mikrotask-Runde abwarten.
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const entry = DebugSystem.getProtectedLogBuffer().find(
+      (item) => item.label === 'duel:presence-track',
+    );
+    expect(entry?.detail).toBe('ok');
+  });
+
+  it('meldet, wer laut Presence im Kanal ist', () => {
+    const fake = createFakeSupabase();
+    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {});
+
+    fake.fireSync({ '0': [], '1': [] });
+
+    const entry = DebugSystem.getProtectedLogBuffer().find(
+      (item) => item.label === 'duel:presence-sync',
+    );
+    expect(entry?.detail).toBe('anwesend: 0,1');
+  });
+
+  it('unterscheidet einen leeren Kanal von einem besetzten', () => {
+    const fake = createFakeSupabase();
+    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {});
+
+    // Genau der Verdachtsfall: der Kanal steht, aber niemand ist angemeldet.
+    fake.fireSync({});
+
+    const entry = DebugSystem.getProtectedLogBuffer().find(
+      (item) => item.label === 'duel:presence-sync',
+    );
+    expect(entry?.detail).toBe('niemand anwesend');
+  });
+
+  it('meldet denselben Presence-Stand nicht mehrfach', () => {
+    const fake = createFakeSupabase();
+    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {});
+
+    // `sync` feuert bei jedem Presence-Wechsel - ohne Vergleich stuende
+    // derselbe Stand vielfach im Puffer.
+    fake.fireSync({ '0': [], '1': [] });
+    fake.fireSync({ '0': [], '1': [] });
+    fake.fireSync({ '0': [], '1': [] });
+
+    const entries = DebugSystem.getProtectedLogBuffer().filter(
+      (item) => item.label === 'duel:presence-sync',
+    );
+    expect(entries).toHaveLength(1);
+  });
+
+  it('belegt einmalig, dass ein Stand des Gegners ankam', () => {
+    const fake = createFakeSupabase();
+    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {
+      onOpponentLiveState: () => {},
+    });
+
+    fake.fire('live', { playerIndex: 1, score: 42, activity: 'playing' });
+    fake.fire('live', { playerIndex: 1, score: 99, activity: 'playing' });
+
+    const entries = DebugSystem.getProtectedLogBuffer().filter(
+      (item) => item.label === 'duel:live-empfangen',
+    );
+    // Einmal, nicht im 400ms-Takt: der Beleg lautet "es kam etwas an", nicht
+    // "wie viel".
+    expect(entries).toHaveLength(1);
+    expect(entries[0]?.detail).toContain('42');
+  });
+
+  it('schweigt, solange kein Stand des Gegners ankommt', () => {
+    const fake = createFakeSupabase();
+    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {
+      onOpponentLiveState: () => {},
+    });
+
+    // Nur der eigene Stand kommt zurueck - das ist kein Empfang vom Gegner.
+    fake.fire('live', { playerIndex: 0, score: 42, activity: 'playing' });
+
+    expect(
+      DebugSystem.getProtectedLogBuffer().filter((item) => item.label === 'duel:live-empfangen'),
+    ).toEqual([]);
   });
 });

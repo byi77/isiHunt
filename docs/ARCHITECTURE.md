@@ -278,6 +278,24 @@ auf. Ein echter Abbruch wird dadurch um eine Sekunde spaeter gemeldet - und
 davon. Presence ist die Abkuerzung fuer den sauberen Abgang, nicht die
 alleinige Wahrheit.
 
+**Presence wird gemessen, nicht angenommen.** `channel.track()` ist die
+Anmeldung dieses Geraets als anwesend - schlaegt sie fehl, entsteht beim
+Gegner nie ein `join`, und ohne Protokoll erfaehrt das niemand. Ihr Ergebnis
+wurde bis v0.1.253 mit `void` verworfen (dieselbe blinde Stelle wie beim
+Senden vor v0.1.250) und steht jetzt als `duel:presence-track` im
+geschuetzten Puffer. Dazu meldet `duel:presence-sync` bei jeder Aenderung,
+WER laut Kanal anwesend ist - `sync` liefert den vollstaendigen Stand und
+feuert auch dann, wenn ein einzelnes `join` verlorenging. Und
+`duel:live-empfangen` belegt einmalig, dass ueberhaupt je ein Zwischenstand
+des Gegners ankam; bisher war der Erfolgsfall der einzige, der gar keine
+Spur hinterliess.
+
+Anlass war der Bericht vom 2026-08-28: nach einem `transport failure` stand
+der Kanal 1,5 Sekunden spaeter wieder auf `SUBSCRIBED`, aber ueber die ganze
+Runde kam kein einziges Presence-Ereignis und kein Zwischenstand. Ob die
+Wiederanmeldung gelang und ob der Gegner im Kanal sichtbar war, liess sich
+nicht feststellen - genau diese Luecke schliessen die drei Marken.
+
 **Der Sendepfad hinterlaesst eine Spur.** `void activeChannel?.send(...)` war
 doppelt blind: `?.` machte einen fehlenden Kanal zu einem stillen Nichtstun,
 `void` verwarf die Antwort. Als im Zwei-Geraete-Test (2026-08-23) waehrend

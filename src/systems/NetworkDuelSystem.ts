@@ -423,6 +423,10 @@ export function subscribeToRoom(
   // Eine Karenzfrist aus dem alten Kanal darf nicht in den neuen hineinlaufen
   // und dort eine Trennung melden, die es gar nicht gibt.
   clearPendingDisconnects();
+  // Beide Diagnosemarken gelten je Kanal: ein neuer Kanal soll seinen ersten
+  // Presence-Stand und seinen ersten empfangenen Zwischenstand erneut melden.
+  lastPresenceKeys = null;
+  firstLiveLogged = false;
 
   const channel = supabase.channel(code, {
     config: { private: true, presence: { key: String(localPlayerIndex) } },
@@ -490,6 +494,21 @@ export function subscribeToRoom(
           return;
         }
 
+        // Einmalig belegen, dass ueberhaupt je ein Stand des Gegners ankam.
+        // Bisher liess sich "es kam nichts an" nicht von "es kam an und
+        // wurde weitergereicht" unterscheiden: der Erfolgsfall hinterliess
+        // gar keine Spur, nur die Verwurfsgruende taten es. Genau diese
+        // Zeile beantwortet die Ausgangsfrage direkt.
+        if (!firstLiveLogged) {
+          firstLiveLogged = true;
+          DebugSystem.pushProtectedLogEntry({
+            timestamp: Date.now(),
+            kind: 'event',
+            label: 'duel:live-empfangen',
+            detail: `erster Stand des Gegners: ${score}`,
+          });
+        }
+
         activeHandlers.onOpponentLiveState({ score, activity: payload.activity });
       },
     )
@@ -505,6 +524,31 @@ export function subscribeToRoom(
       // zurueck, war das `leave` ein Kanalwechsel und kein Abbruch.
       if (key === String(activeLocalPlayerIndex)) return;
       cancelPendingDisconnect(key, 'join');
+    })
+    .on('presence', { event: 'sync' }, () => {
+      // `sync` liefert den VOLLSTAENDIGEN Anwesenheitsstand, nicht nur eine
+      // Aenderung - damit laesst sich als einziges Ereignis beantworten, ob
+      // der Gegner im Kanal ueberhaupt sichtbar ist.
+      //
+      // Der Bericht vom 2026-08-28 zeigte einen stehenden Kanal
+      // (`SUBSCRIBED`) ohne ein einziges Presence-Ereignis ueber die ganze
+      // Runde. Offen blieb: meldet sich der Gegner nicht an, oder kommen
+      // seine Ereignisse nicht durch? `sync` unterscheidet das - es feuert
+      // auch dann, wenn ein `join` verlorenging.
+      //
+      // Nur der ERSTE Stand pro Kanal wird protokolliert und danach jede
+      // Aenderung der Schluesselmenge: `sync` kann bei jedem Presence-Wechsel
+      // feuern und wuerde den Puffer sonst fluten.
+      const keys = Object.keys(channel.presenceState()).sort().join(',');
+      if (keys === lastPresenceKeys) return;
+      lastPresenceKeys = keys;
+
+      DebugSystem.pushProtectedLogEntry({
+        timestamp: Date.now(),
+        kind: 'event',
+        label: 'duel:presence-sync',
+        detail: keys ? `anwesend: ${keys}` : 'niemand anwesend',
+      });
     })
     .subscribe((status, error) => {
       // JEDEN Statuswechsel mitschreiben, nicht nur den Fehlerfall. Ein
@@ -532,7 +576,34 @@ export function subscribeToRoom(
         return;
       }
       if (status === 'SUBSCRIBED') {
-        void channel.track({ online: true });
+        // **Der Rueckgabewert wurde bisher mit `void` verworfen** - dieselbe
+        // blinde Stelle wie beim Senden vor v0.1.250. `track()` ist die
+        // Anmeldung dieses Geraets als anwesend; schlaegt sie fehl, entsteht
+        // fuer den Gegner nie ein `join`, und niemand erfaehrt davon.
+        //
+        // Besonders wichtig nach einem `transport failure`: der Bericht vom
+        // 2026-08-28 zeigt Abbruch und Wiederaufbau innerhalb von 1,5
+        // Sekunden, danach aber ueber die ganze Runde kein einziges
+        // Presence-Ereignis. Ob die Wiederanmeldung dabei ueberhaupt gelang,
+        // war nicht feststellbar.
+        void channel
+          .track({ online: true })
+          .then((trackStatus) => {
+            DebugSystem.pushProtectedLogEntry({
+              timestamp: Date.now(),
+              kind: trackStatus === 'ok' ? 'event' : 'error',
+              label: 'duel:presence-track',
+              detail: String(trackStatus),
+            });
+          })
+          .catch((trackError: unknown) => {
+            DebugSystem.pushProtectedLogEntry({
+              timestamp: Date.now(),
+              kind: 'error',
+              label: 'duel:presence-track',
+              detail: trackError instanceof Error ? trackError.message : 'Unbekannter Fehler',
+            });
+          });
       }
     });
 
@@ -645,6 +716,23 @@ function isOpponentActivity(raw: unknown): raw is DuelOpponentActivity {
  * anderen verschlucken.
  */
 const pendingDisconnects = new Map<string, ReturnType<typeof setTimeout>>();
+
+/**
+ * Zuletzt protokollierte Presence-Schluesselmenge.
+ *
+ * `sync` feuert bei jedem Presence-Wechsel; ohne diesen Vergleich stuende
+ * derselbe Stand mehrfach im Puffer. Interessant ist nur die Aenderung -
+ * "wer ist jetzt da" statt "sync ist gefeuert".
+ *
+ * `null` als Startwert und nicht `''`: der leere Kanal ist ein GUELTIGER
+ * Stand ("niemand anwesend") und genau der interessanteste Verdachtsfall -
+ * mit `''` als Startwert waere ausgerechnet er als "unveraendert" verschluckt
+ * worden.
+ */
+let lastPresenceKeys: string | null = null;
+
+/** Belegt einmalig pro Kanal, dass ueberhaupt ein Stand des Gegners ankam. */
+let firstLiveLogged = false;
 
 /**
  * Meldet eine Trennung erst nach `ONLINE_DUEL_PRESENCE_GRACE_MS`.
