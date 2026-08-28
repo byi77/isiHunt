@@ -69,17 +69,21 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   `supabase/phase_2_20_duel_realtime_policies.sql` muss im Supabase SQL Editor
   ausgefuehrt werden.
 
-- **`broadcast.ack` eingeschaltet — "ok" bedeutet jetzt "angekommen".** Ohne
-  diese Option loest `channel.send()` auf, sobald die Nachricht lokal in der
-  Warteschlange liegt; eine serverseitige Ablehnung wird still verworfen. Die
-  Sendeprotokollierung meldete deshalb ueber rund 225 Versuche keinen einzigen
-  Fehler, obwohl die Policy das Senden gar nicht erlaubte — und aus diesem
-  Schweigen wurde faelschlicherweise ein funktionierender Sendepfad
-  geschlossen.
+- **`broadcast.ack` wieder zurueckgenommen — es verhinderte den Rundenstart.**
+  Kurzzeitig in v0.1.255 gesetzt, um stille RLS-Ablehnungen sichtbar zu
+  machen. Es hat seinen Zweck erfuellt: die fehlende INSERT-Policy wurde
+  dadurch gefunden.
 
-  Der Preis ist eine Serverbestaetigung je Nachricht; bei einem 400ms-Takt
-  unkritisch. Ohne diese Aenderung waere auch nicht ueberpruefbar, ob die neue
-  Policy gewirkt hat.
+  Die Option aendert aber nicht nur die Sicht, sondern das Verhalten —
+  `send()` wartet damit auf eine Serverbestaetigung. Die Kosten waren am
+  haeufigsten Aufrufer bemessen (`live`, 400ms-Takt, unkritisch) statt am
+  empfindlichsten: `broadcastReady()` und `broadcastStartTime()` liegen im
+  Lobby-Ablauf, der zum Rundenstart fuehren **muss**. Am Geraet brach die
+  Kette unmittelbar nach `presence-track: ok` ab, das Duell kam nicht mehr
+  zustande.
+
+  Der Verzicht kostet wenig: die Lobby haengt ohnehin am Polling ueber
+  `getRoomStatus()`, der Broadcast ist dort nur die Abkuerzung.
 
 ### Hinzugefuegt
 

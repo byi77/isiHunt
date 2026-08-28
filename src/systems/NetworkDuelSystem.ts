@@ -428,28 +428,27 @@ export function subscribeToRoom(
   lastPresenceKeys = null;
   firstLiveLogged = false;
 
+  // **Kein `broadcast: { ack: true }`.** Es war in v0.1.255 kurzzeitig
+  // gesetzt, um stille RLS-Ablehnungen sichtbar zu machen - und hat genau das
+  // geleistet: die fehlende INSERT-Policy wurde gefunden und in
+  // `supabase/phase_2_20_duel_realtime_policies.sql` behoben.
+  //
+  // Zurueckgenommen, weil `ack` nicht nur diagnostiziert, sondern das
+  // Laufzeitverhalten aendert: `send()` wartet dann auf eine
+  // Serverbestaetigung. Die Kosten wurden am haeufigsten Aufrufer bemessen
+  // (`live`, 400ms-Takt, unkritisch) statt am empfindlichsten -
+  // `broadcastReady()` und `broadcastStartTime()` liegen im Lobby-Ablauf, der
+  // zum Rundenstart fuehren MUSS. Am Geraet (2026-08-28) brach die Kette
+  // danach unmittelbar nach `presence-track: ok` ab, das Duell kam nicht mehr
+  // zustande.
+  //
+  // Der Verzicht kostet wenig: die Lobby haengt ohnehin nicht am Broadcast,
+  // sondern am Polling ueber `getRoomStatus()` (der Broadcast ist dort nur
+  // die Abkuerzung), und eine kuenftige Ablehnung wuerde sich heute in
+  // `duel:presence-sync` und `duel:live-empfangen` zeigen - beide gab es
+  // damals noch nicht.
   const channel = supabase.channel(code, {
-    config: {
-      private: true,
-      presence: { key: String(localPlayerIndex) },
-      // **`ack: true` macht aus "abgeschickt" ein "angekommen".** Ohne diese
-      // Option loest `channel.send()` sofort mit "ok" auf, sobald die
-      // Nachricht lokal in der Warteschlange liegt - eine serverseitige
-      // Ablehnung (etwa durch RLS) wird dabei still verworfen und erreicht
-      // den Client nie.
-      //
-      // Das hat eine Fehlersuche in die Irre gefuehrt: der Bericht vom
-      // 2026-08-25 zeigte ueber ~225 Sendeversuche keine einzige
-      // Fehlerzeile, woraus ein funktionierender Sendepfad geschlossen
-      // wurde. Tatsaechlich belegte das "ok" nur, dass die Warteschlange die
-      // Nachricht annahm - nicht, dass der Server sie akzeptierte.
-      //
-      // Der Preis ist eine Serverbestaetigung je Nachricht. Bei einem
-      // 400ms-Takt (`ONLINE_DUEL_SCORE_BROADCAST_INTERVAL_MS`) ist das
-      // unkritisch, und ein stillschweigend verworfener Zwischenstand ist
-      // teurer als eine bestaetigte Zustellung.
-      broadcast: { ack: true },
-    },
+    config: { private: true, presence: { key: String(localPlayerIndex) } },
   });
 
   channel

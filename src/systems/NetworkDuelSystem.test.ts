@@ -646,27 +646,27 @@ describe('Presence- und Empfangsdiagnose', () => {
 });
 
 /**
- * `broadcast.ack` ist keine Feinheit, sondern die Voraussetzung dafuer, dass
- * eine serverseitige Ablehnung ueberhaupt sichtbar wird.
- *
- * Ohne die Option loest `send()` sofort mit "ok" auf, sobald die Nachricht
- * lokal in der Warteschlange liegt. Die Sendeprotokollierung meldete deshalb
- * ueber rund 225 Versuche keinen einzigen Fehler (Bericht 2026-08-25) - und
- * daraus wurde faelschlicherweise ein funktionierender Sendepfad geschlossen,
- * obwohl die RLS-Policy das Senden gar nicht erlaubte
- * (`supabase/phase_2_20_duel_realtime_policies.sql`).
+ * Die Kanalkonfiguration traegt drei Entscheidungen, die je einmal am Geraet
+ * als falsch nachgewiesen wurden. Der Test haelt sie fest, damit keine davon
+ * unbemerkt zurueckfaellt.
  */
 describe('Kanalkonfiguration', () => {
   beforeEach(() => {
     NetworkDuelSystem.unsubscribeFromRoom();
   });
 
-  it('verlangt eine Zustellbestaetigung fuer Broadcasts', () => {
+  it('wartet NICHT auf eine Zustellbestaetigung', () => {
+    // `broadcast.ack` war in v0.1.255 kurz gesetzt, um stille
+    // RLS-Ablehnungen sichtbar zu machen. Es hat seinen Zweck erfuellt (die
+    // fehlende INSERT-Policy wurde gefunden), aendert aber das
+    // Laufzeitverhalten: `send()` wartet dann auf den Server. Im
+    // Lobby-Ablauf, der zum Rundenstart fuehren muss, brach die Kette
+    // daraufhin ab - das Duell kam nicht mehr zustande (2026-08-28).
     const fake = createFakeSupabase();
     NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {});
 
     const config = fake.channelConfig() as { config?: { broadcast?: { ack?: boolean } } };
-    expect(config.config?.broadcast?.ack).toBe(true);
+    expect(config.config?.broadcast?.ack).not.toBe(true);
   });
 
   it('bleibt ein privater Kanal mit eigenem Presence-Schluessel je Spieler', () => {
