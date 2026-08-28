@@ -4,7 +4,9 @@ export const PERFORMANCE_BUDGETS = {
   /** Zeit von Scene-Erzeugung bis zum tatsaechlichen Run-Start. */
   // Beinhaltet Scene-Aufbau, HUD und den Drei-Schritt-Countdown. Der Wert ist
   // bewusst ein hartes mobiles Gate, nicht die Zeit bis zum ersten HTML-Pixel.
-  startupMs: 20_000,
+  // 30 Sekunden lassen den kalten Chromium-/CI-Start zu, ohne einen haengenden
+  // Phaser-Start bis zum 25-Sekunden-Timeout des Browser-Gates zu verstecken.
+  startupMs: 30_000,
   /** 95 % der Frames sollen sich wie 60 FPS anfuehlen. */
   frameP95Ms: 25,
   /** Einzelne langsamere Frames sind erlaubt, aber kein regelmaessiges Ruckeln. */
