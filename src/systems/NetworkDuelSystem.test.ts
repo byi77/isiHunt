@@ -6,11 +6,10 @@
  * wuerde `getSupabaseClient()` in einer lokalen Umgebung mit echter `.env`
  * gegen die echte Produktionsdatenbank sprechen.
  *
- * Getestet wird hier bewusst nur, was ohne echten Realtime-/RPC-Zugriff
- * pruefbar ist: reine Funktionen (Code-Normalisierung) und der "kein
- * Online-Dienst eingerichtet"-Fruehausstieg, den jede Netzfunktion hat, wenn
- * `getSupabaseClient()` `null` liefert. Echtes RPC-/Realtime-Verhalten
- * braucht einen echten Zwei-Geraete-Test (siehe TODO.md-Planungsnotiz).
+ * Die Unit-Tests pruefen hier die Handler-/Payload-Logik mit einem kleinen
+ * Kanal-Doppelgaenger. Der echte RPC-/Realtime-Weg wird separat durch
+ * `npm run test:duel2g` mit zwei isolierten Browser-Kontexten getestet - ohne
+ * zwei physische Handys, aber mit zwei echten Supabase-Clients.
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';

@@ -126,6 +126,8 @@ export class GameScene extends Phaser.Scene {
   /** Was der Gegner zuletzt gemeldet hat - fuer den Verstummt-Test. */
   private opponentLastSeenAt = 0;
   private opponentGone = false;
+  /** Nach `finished`/`left` ist Schweigen normal und kein Verbindungsverlust. */
+  private opponentTerminal = false;
   /**
    * Wird auf `away` gesetzt, sobald dieses Geraet den Pause-Bildschirm zeigt
    * oder in den Hintergrund geht. Der Run laeuft dabei weiter (Fairness-Regel
@@ -169,6 +171,10 @@ export class GameScene extends Phaser.Scene {
     const challenge = nonProgressionMode ? ChallengeSystem.getState() : null;
     this.challenge = challenge;
     this.playerIndex = challenge ? ChallengeSystem.currentPlayerIndex() : 0;
+    this.opponentLastSeenAt = 0;
+    this.opponentGone = false;
+    this.opponentTerminal = false;
+    this.localActivity = 'playing';
 
     this.totalMs = nonProgressionMode ? CHALLENGE_DURATION_MS : this.stats.runDurationMs;
     this.remainingMs = this.totalMs;
@@ -265,6 +271,7 @@ export class GameScene extends Phaser.Scene {
     if (challenge?.kind === 'duel-online') {
       NetworkDuelSystem.updateHandlers({
         onOpponentDisconnected: () => {
+          if (this.opponentTerminal) return;
           eventBus.emitEvent(GameEvent.OpponentDisconnected, undefined);
         },
         // Uebersetzt vom Kanal auf den EventBus: `systems/` kennt Phaser
@@ -273,6 +280,9 @@ export class GameScene extends Phaser.Scene {
         onOpponentLiveState: ({ score, activity }) => {
           this.opponentLastSeenAt = this.time.now;
           this.opponentGone = false;
+          if (activity === 'finished' || activity === 'left') {
+            this.opponentTerminal = true;
+          }
           eventBus.emitEvent(GameEvent.OpponentLiveState, { score, activity });
         },
       });
@@ -885,7 +895,7 @@ export class GameScene extends Phaser.Scene {
    * zum Rundenende unveraendert da, als spiele der Gegner weiter.
    */
   private checkOpponentAlive(): void {
-    if (this.opponentGone || !this.liveBroadcastTimer) return;
+    if (this.opponentGone || this.opponentTerminal || !this.liveBroadcastTimer) return;
     if (this.time.now - this.opponentLastSeenAt <= ONLINE_DUEL_LIVE_STALE_MS) return;
 
     this.opponentGone = true;
