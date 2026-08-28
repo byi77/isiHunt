@@ -1,0 +1,8 @@
+{
+  // isiHunt ist ein reines TypeScript-Projekt. Die Python-Extension meldet
+  // sonst zu jeder .env, dass sie deren Variablen nicht ins Terminal
+  // einspeist - ein Hinweis ohne Belang: die Supabase-Variablen liest Vite
+  // selbst ueber import.meta.env, nicht ueber die VS-Code-Terminalumgebung.
+  "python.terminal.useEnvFile": false,
+  "python.envFile": ""
+}
