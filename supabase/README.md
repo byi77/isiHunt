@@ -41,6 +41,7 @@ Auf einer leeren Datenbank in dieser Reihenfolge einspielen:
 | 22  | `phase_2_26_uncapped_series.sql`             | Serien-Multiplikator wächst nach Serie 16 ohne Obergrenze         |
 | 23  | `phase_2_27_security_hardening.sql`          | Admin-/Reward-/Save-/Leaderboard-Hardening                        |
 | 24  | `phase_2_28_integrity_hardening.sql`        | Account-Outbox, Save-CAS, Tagesbonus- und Duell-Integrität        |
+| 25  | `phase_2_29_exploit_hardening.sql`          | Tagesbonus-/Sync-Code-Replay und Progress-Farming begrenzen        |
 
 `phase_2_23_talent_points.sql` enthält einen historischen globalen
 Testdaten-Reset. Das Skript bricht ohne ausdrückliches Opt-in ab. Nur wenn
