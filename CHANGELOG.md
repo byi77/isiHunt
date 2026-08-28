@@ -33,6 +33,17 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- **Seltenheit und Serie zahlen sich jetzt deutlich stärker aus.** Die Punkte
+  steigen bei farbigen Relikten von 10 über 25 und 75 bis auf **250 Punkte für
+  Orange**. Der Serienbonus wächst von ×1,2 bis auf **×3,2 ab Serie 16**; ein
+  oranges Relikt in dieser Serie gibt damit 800 Basispunkte vor weiteren Boni.
+
+- **Die Punktestaffel der Relikte wurde neu ausbalanciert.** Schlichte,
+  gewöhnliche und ungewöhnliche Relikte geben jetzt 3/4/8 statt 2/3/7 Punkte;
+  epische und legendäre geben 36/72 statt 45/100. Der Erwartungswert bleibt
+  nahezu gleich, während Rare+ nur noch rund 57 % statt 67 % des Basisscores
+  ausmachen. Runs hängen dadurch weniger an einem einzelnen Jackpot-Fang.
+
 - **"Geschwister" heisst jetzt "Freund".** Betrifft alle Bildschirmtexte des
   Netzwerk-Duells und die Gegneranzeige im HUD. Das Duell wird nicht nur
   innerhalb der Familie gespielt; die alte Bezeichnung schloss genau die

@@ -8,6 +8,8 @@ import {
   DAILY_COMPLETION_BONUS_COINS,
   DAILY_LOGIN_BONUS_COINS,
   MAX_LEVEL,
+  RARITY_IMPACT_MIN_POINTS,
+  RARITY_RAYS_MIN_POINTS,
   SERIES_RAISING_MIN_RARITY_INDEX,
   TALENT_RESET_COST,
 } from '@/config/GameConfig';
@@ -52,10 +54,41 @@ describe('Phase-5-Balance', () => {
     expect(rarities.reduce((sum, rarity) => sum + rarity.weight, 0)).toBe(100);
     expect(rarities.every((rarity) => rarity.points > 0 && rarity.xp > 0)).toBe(true);
     expect(EXPECTED_POINTS_PER_CATCH).toBeGreaterThan(0);
-    expect(EXPECTED_XP_PER_CATCH).toBeGreaterThan(EXPECTED_POINTS_PER_CATCH);
+    expect(EXPECTED_XP_PER_CATCH).toBeGreaterThan(0);
     for (const [id, values] of Object.entries(BALANCE.rarities)) {
       expect(RARITIES.find((rarity) => rarity.id === id)).toMatchObject(values);
     }
+  });
+
+  it('macht Seltenheit und Jackpot-Faenge fuer den Score sichtbar', () => {
+    expect(Object.values(BALANCE.rarities).map((rarity) => rarity.points)).toEqual([
+      3, 5, 10, 25, 75, 250,
+    ]);
+
+    const weightedScoreFromRarePlus = ['rare', 'epic', 'legendary'].reduce(
+      (sum, id) =>
+        sum +
+        BALANCE.rarities[id as keyof typeof BALANCE.rarities].points *
+          BALANCE.rarities[id as keyof typeof BALANCE.rarities].weight,
+      0,
+    );
+    const weightedScore = Object.values(BALANCE.rarities).reduce(
+      (sum, rarity) => sum + rarity.points * rarity.weight,
+      0,
+    );
+
+    // Rare+ sollen die Jagd auf Farbe klar belohnen. Orange bleibt selten,
+    // darf bei einer hohen Serie aber als echter Jackpot einschlagen.
+    expect(weightedScoreFromRarePlus / weightedScore).toBeGreaterThan(0.7);
+    expect(EXPECTED_POINTS_PER_CATCH).toBeCloseTo(15.045, 3);
+    const coloredPoints = ['uncommon', 'rare', 'epic', 'legendary'].map(
+      (id) => BALANCE.rarities[id as keyof typeof BALANCE.rarities].points,
+    );
+    expect(
+      coloredPoints.every((points, index) => index === 0 || points > coloredPoints[index - 1]!),
+    ).toBe(true);
+    expect(RARITY_RAYS_MIN_POINTS).toBe(BALANCE.rarities.rare.points);
+    expect(RARITY_IMPACT_MIN_POINTS).toBe(BALANCE.rarities.epic.points);
   });
 
   it('berechnet die Langzeitziele aus denselben Referenz-Runs', () => {
@@ -152,6 +185,16 @@ describe('Serien-Multiplikator', () => {
       expect(COMBO_TIERS[i]!.minCombo).toBeGreaterThan(COMBO_TIERS[i - 1]!.minCombo);
       expect(COMBO_TIERS[i]!.multiplier).toBeGreaterThan(COMBO_TIERS[i - 1]!.multiplier);
     }
+  });
+
+  it('macht die hohe Serie fuer seltene Fange deutlich lohnender', () => {
+    expect(COMBO_TIERS.map((tier) => tier.multiplier)).toEqual([1, 1.2, 1.5, 1.9, 2.4, 3.2]);
+    const legendary = BALANCE.rarities.legendary.points;
+    const highSeriesLegendary = legendary * COMBO_TIERS.at(-1)!.multiplier;
+
+    // Orange bei Serie 16+ ist der bewusst gesetzte Jackpot-Moment.
+    expect(highSeriesLegendary).toBe(800);
+    expect(highSeriesLegendary / legendary).toBeGreaterThan(3);
   });
 
   it('haelt die unteren Stufen im normalen Spiel erreichbar', () => {

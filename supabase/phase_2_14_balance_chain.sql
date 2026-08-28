@@ -23,32 +23,32 @@ as $$
     },
     "rarities": {
       "poor": {
-        "points": 2,
+        "points": 3,
         "xp": 2,
         "weight": 34
       },
       "common": {
-        "points": 3,
+        "points": 5,
         "xp": 3,
         "weight": 28
       },
       "uncommon": {
-        "points": 7,
+        "points": 10,
         "xp": 8,
         "weight": 20
       },
       "rare": {
-        "points": 18,
+        "points": 25,
         "xp": 20,
         "weight": 11
       },
       "epic": {
-        "points": 45,
+        "points": 75,
         "xp": 55,
         "weight": 5.5
       },
       "legendary": {
-        "points": 100,
+        "points": 250,
         "xp": 130,
         "weight": 1.5
       }
@@ -62,23 +62,23 @@ as $$
         },
         {
           "minCombo": 2,
-          "multiplier": 1.15
+          "multiplier": 1.2
         },
         {
           "minCombo": 4,
-          "multiplier": 1.35
+          "multiplier": 1.5
         },
         {
           "minCombo": 7,
-          "multiplier": 1.6
-        },
-        {
-          "minCombo": 11,
           "multiplier": 1.9
         },
         {
+          "minCombo": 11,
+          "multiplier": 2.4
+        },
+        {
           "minCombo": 16,
-          "multiplier": 2.3
+          "multiplier": 3.2
         }
       ]
     },

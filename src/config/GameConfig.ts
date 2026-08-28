@@ -163,14 +163,14 @@ export const SCROLL_POINTER_VELOCITY_SMOOTHING = 0.55;
  * "selten"). Schwelle statt Liste, damit neue Seltenheitsstufen automatisch
  * richtig einsortiert werden.
  */
-export const RARITY_RAYS_MIN_POINTS = 18;
+export const RARITY_RAYS_MIN_POINTS = Balance.BALANCE.rarities.rare.points;
 
 /**
  * Ab wie vielen Basispunkten ein Fang den Bildschirm erschuettert und heller
  * aufblitzt (ab "episch"). Bewusst hoeher als der Strahlenkranz: Sehen darf
  * man Seltenes oft, spueren selten.
  */
-export const RARITY_IMPACT_MIN_POINTS = 45;
+export const RARITY_IMPACT_MIN_POINTS = Balance.BALANCE.rarities.epic.points;
 
 // --- Spawning ---------------------------------------------------------------
 
