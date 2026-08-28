@@ -285,6 +285,14 @@ describe('Netzwerk-Duell', () => {
     expect(state.rounds).toHaveLength(0);
   });
 
+  it('zeigt im Netzwerk-Duell die Namen an fester Spielerposition', () => {
+    ChallengeSystem.startOnline(DEFAULT_WORLD_ID, 'seed-abc', 'CODE01', 0);
+    ChallengeSystem.updateOnlinePlayerNames(['Alice', 'Bob']);
+
+    expect(ChallengeSystem.playerLabel(0)).toBe('Alice');
+    expect(ChallengeSystem.playerLabel(1)).toBe('Bob');
+  });
+
   it('nutzt den localPlayerIndex als currentPlayerIndex, unabhaengig von gespielten Runden', () => {
     ChallengeSystem.startOnline(DEFAULT_WORLD_ID, 'seed-abc', 'CODE01', 1);
 

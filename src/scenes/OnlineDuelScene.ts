@@ -22,6 +22,7 @@ import {
 } from '@/config/onlineDuel';
 import { getWorld, DEFAULT_WORLD_ID } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
+import { eventBus, GameEvent } from '@/core/EventBus';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
@@ -380,33 +381,48 @@ export class OnlineDuelScene extends Phaser.Scene {
 
     const localPlayerIndex: 0 | 1 = this.isHost ? 0 : 1;
 
-    NetworkDuelSystem.subscribeToRoom(supabase, this.roomCode, localPlayerIndex, {
-      onOpponentReady: () => {
-        this.opponentReady = true;
-        if (!this.runStarted) statusText.setText('Freund bereit - Start wird vorbereitet ...');
+    NetworkDuelSystem.subscribeToRoom(
+      supabase,
+      this.roomCode,
+      localPlayerIndex,
+      {
+        onPresenceSync: (playerNames) => {
+          ChallengeSystem.updateOnlinePlayerNames(playerNames);
+          const opponentIndex = localPlayerIndex === 0 ? 1 : 0;
+          const opponentName = playerNames[opponentIndex];
+          if (opponentName) {
+            eventBus.emitEvent(GameEvent.OpponentNameChanged, { name: opponentName });
+          }
+        },
+        onOpponentReady: () => {
+          if (!this.scene.isActive()) return;
+          this.opponentReady = true;
+          if (!this.runStarted) statusText.setText('Freund bereit - Start wird vorbereitet ...');
+        },
+        onStartTimeSet: (startAtMs) => {
+          if (this.runStarted || !this.scene.isActive()) return;
+          this.runStarted = true;
+          this.beginRun(startAtMs);
+        },
+        onOpponentDisconnected: () => {
+          // Nur waehrend der Lobby relevant fuer diese Scene - ein Abbruch
+          // WAEHREND des Runs betrifft GameScene, die den Kanal separat
+          // beobachtet (siehe GameScene.subscribeOpponentDisconnect()).
+          if (this.runStarted || !this.scene.isActive()) return;
+          statusText.setText('Verbindung zum Freund verloren.').setColor(Palette.danger);
+        },
+        onChannelError: (reason) => {
+          if (this.runStarted || !this.scene.isActive()) return;
+          // Bei einem Kanalfehler ist das Polling der einzige verbliebene Weg
+          // zur Startzeit - es laeuft deshalb bewusst WEITER. Nur die Meldung
+          // sagt dem Spieler, dass die Verbindung stockt.
+          statusText
+            .setText(`Verbindungsfehler: ${reason}\nEs wird weiter versucht ...`)
+            .setColor(Palette.danger);
+        },
       },
-      onStartTimeSet: (startAtMs) => {
-        if (this.runStarted) return;
-        this.runStarted = true;
-        this.beginRun(startAtMs);
-      },
-      onOpponentDisconnected: () => {
-        // Nur waehrend der Lobby relevant fuer diese Scene - ein Abbruch
-        // WAEHREND des Runs betrifft GameScene, die den Kanal separat
-        // beobachtet (siehe GameScene.subscribeOpponentDisconnect()).
-        if (this.runStarted) return;
-        statusText.setText('Verbindung zum Freund verloren.').setColor(Palette.danger);
-      },
-      onChannelError: (reason) => {
-        if (this.runStarted) return;
-        // Bei einem Kanalfehler ist das Polling der einzige verbliebene Weg
-        // zur Startzeit - es laeuft deshalb bewusst WEITER. Nur die Meldung
-        // sagt dem Spieler, dass die Verbindung stockt.
-        statusText
-          .setText(`Verbindungsfehler: ${reason}\nEs wird weiter versucht ...`)
-          .setColor(Palette.danger);
-      },
-    });
+      ChallengeSystem.playerLabel(localPlayerIndex),
+    );
 
     const offsetResult = await NetworkDuelSystem.measureClockOffset();
     if (!this.scene.isActive() || this.runStarted) return;
@@ -772,6 +788,7 @@ export class OnlineDuelScene extends Phaser.Scene {
         label,
         () => {
           onBeforeMenu?.();
+          NetworkDuelSystem.unsubscribeFromRoom();
           ChallengeSystem.clear();
           this.scene.start(SceneKey.Menu);
         },

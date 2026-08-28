@@ -130,6 +130,8 @@ export interface OnlineDuelInfo {
   roomCode: string;
   /** 0 = Gastgeber (hat den Raum erzeugt), 1 = Beigetretener. */
   localPlayerIndex: 0 | 1;
+  /** Anzeigenamen beider Geraete, an fester Spielerposition. */
+  playerNames: [string | null, string | null];
   /** localTime + offset ergibt die geschaetzte Supabase-Serverzeit. */
   clockOffsetMs: number;
   /** Serverzeit (ms seit Epoch), zu der beide gleichzeitig starten sollen. */

@@ -253,6 +253,10 @@ export class GameScene extends Phaser.Scene {
       scoreToBeat: nonProgressionMode ? ChallengeSystem.scoreToBeat() : null,
       talentSummary: nonProgressionMode ? '' : activeTalentSummary(this.stats),
       showOpponentLive: challenge?.kind === 'duel-online',
+      opponentLabel:
+        challenge?.kind === 'duel-online'
+          ? ChallengeSystem.playerLabel(this.playerIndex === 0 ? 1 : 0)
+          : null,
     });
 
     if (DEBUG_ENABLED) this.installDebugKeys();

@@ -28,6 +28,7 @@ const MODULES = {
   challenge: '/src/systems/ChallengeSystem.ts',
   debug: '/src/systems/DebugSystem.ts',
   network: '/src/systems/NetworkDuelSystem.ts',
+  save: '/src/systems/SaveSystem.ts',
 };
 
 const argv = process.argv.slice(2);
@@ -222,7 +223,7 @@ async function clickButton(page, sceneKey, text) {
   await clickGamePoint(page, button.x, button.y);
 }
 
-async function enterDuel2G(page) {
+async function enterDuel2G(page, playerName) {
   // Wenn MenuScene verfuegbar ist, wird der echte DUELL2G-Einstieg benutzt.
   // Bei einem konfigurierten Backend kann AuthSystem den Start zusaetzlich in
   // AccountScene fuehren; dann ist der direkte Aufruf derselbe Scene-Callback
@@ -242,21 +243,31 @@ async function enterDuel2G(page) {
 
   if (startScreen === 'OnlineDuel') {
     await waitForScene(page, 'OnlineDuel');
-    return;
-  }
-
-  const menuActive = startScreen === 'Menu';
-  if (menuActive) {
-    await clickButton(page, 'Menu', 'DUELL2G');
   } else {
-    await page.evaluate(() => {
-      const game = window.isiHunt;
-      const account = game.scene.getScene('Account');
-      if (!account?.scene.isActive()) throw new Error('Kein stabiler Start-Screen aktiv.');
-      account.scene.start('OnlineDuel');
-    });
+    const menuActive = startScreen === 'Menu';
+    if (menuActive) {
+      await clickButton(page, 'Menu', 'DUELL2G');
+    } else {
+      await page.evaluate(() => {
+        const game = window.isiHunt;
+        const account = game.scene.getScene('Account');
+        if (!account?.scene.isActive()) throw new Error('Kein stabiler Start-Screen aktiv.');
+        account.scene.start('OnlineDuel');
+      });
+    }
+    await waitForScene(page, 'OnlineDuel');
   }
-  await waitForScene(page, 'OnlineDuel');
+  // Der normale Startscreen kann ein nicht angemeldetes lokales Profil
+  // bewusst loeschen. Fuer den isolierten Test wird der Name danach ueber die
+  // echte SaveSystem-API gesetzt, damit der Realtime-Test zwei Profile mit
+  // unterschiedlichen Identitaeten simuliert.
+  await page.evaluate(
+    async ([urlToModule, name]) => {
+      const save = await import(urlToModule);
+      save.setOfflinePlayerName(name);
+    },
+    [moduleUrl(MODULES.save), playerName],
+  );
 }
 
 async function readRoomCode(page) {
@@ -333,6 +344,18 @@ async function simulateRun(page) {
     const scene = game.scene.getScene('Game');
     if (!scene) throw new Error('GameScene fehlt.');
     if (scene.phase !== 'running') throw new Error(`GameScene ist ${scene.phase}, nicht running.`);
+    const hud = game.scene.getScene('Hud');
+    const hudLayout = {
+      opponent: hud?.opponentLiveText
+        ? { x: hud.opponentLiveText.x, y: hud.opponentLiveText.y }
+        : null,
+      series: hud?.comboText
+        ? { text: hud.comboText.text, x: hud.comboText.x, y: hud.comboText.y }
+        : null,
+      multiplier: hud?.multiplierText
+        ? { text: hud.multiplierText.text, x: hud.multiplierText.x, y: hud.multiplierText.y }
+        : null,
+    };
 
     game.loop.sleep();
 
@@ -420,6 +443,7 @@ async function simulateRun(page) {
         score: scene.scoring.currentScore,
         totalCollected: scene.scoring.totalCollected,
         frames,
+        hudLayout,
         firstLiveHud,
         lastLiveHud,
       };
@@ -447,7 +471,10 @@ async function runOne(browser, runNumber, failures) {
 
   try {
     stage = 'DUELL2G-Screen oeffnen';
-    await Promise.all([enterDuel2G(host.page), enterDuel2G(guest.page)]);
+    await Promise.all([
+      enterDuel2G(host.page, `DuelHost${runNumber}`),
+      enterDuel2G(guest.page, `DuelGuest${runNumber}`),
+    ]);
     assertCheck('DUELL2G-Screen auf beiden Clients', true, 'iPhone + Pixel-Kontext', failures);
 
     stage = 'Raum erzeugen';
@@ -505,6 +532,47 @@ async function runOne(browser, runNumber, failures) {
       `host=${hostBefore?.online?.localPlayerIndex}, guest=${guestBefore?.online?.localPlayerIndex}`,
       failures,
     );
+    await Promise.all([
+      host.page.waitForFunction(
+        async ([moduleUrl, expected]) => {
+          const challenge = await import(moduleUrl);
+          const names = challenge.getState()?.online?.playerNames;
+          return names?.[0] === expected.host && names?.[1] === expected.guest;
+        },
+        [
+          moduleUrl(MODULES.challenge),
+          { host: `DuelHost${runNumber}`, guest: `DuelGuest${runNumber}` },
+        ],
+        { timeout: RUN_TIMEOUT_MS },
+      ),
+      guest.page.waitForFunction(
+        async ([moduleUrl, expected]) => {
+          const challenge = await import(moduleUrl);
+          const names = challenge.getState()?.online?.playerNames;
+          return names?.[0] === expected.host && names?.[1] === expected.guest;
+        },
+        [
+          moduleUrl(MODULES.challenge),
+          { host: `DuelHost${runNumber}`, guest: `DuelGuest${runNumber}` },
+        ],
+        { timeout: RUN_TIMEOUT_MS },
+      ),
+    ]);
+    const [hostNamedState, guestNamedState] = await Promise.all([
+      readChallengeState(host.page),
+      readChallengeState(guest.page),
+    ]);
+    const hostNames = hostNamedState?.online?.playerNames;
+    const guestNames = guestNamedState?.online?.playerNames;
+    assertCheck(
+      'Spielernamen werden korrekt synchronisiert',
+      hostNames?.[0] === `DuelHost${runNumber}` &&
+        hostNames?.[1] === `DuelGuest${runNumber}` &&
+        guestNames?.[0] === `DuelHost${runNumber}` &&
+        guestNames?.[1] === `DuelGuest${runNumber}`,
+      `host=${JSON.stringify(hostNames)}, guest=${JSON.stringify(guestNames)}`,
+      failures,
+    );
 
     stage = 'Beide GameScenes simulieren';
     const [hostRun, guestRun] = await Promise.all([
@@ -517,24 +585,38 @@ async function runOne(browser, runNumber, failures) {
       `host=${hostRun.score}, guest=${guestRun.score}`,
       failures,
     );
-    const liveHudWorks = (run) =>
+    const hudLayoutWorks = (run) =>
+      run.hudLayout?.opponent?.x < 300 &&
+      run.hudLayout?.series?.x > 500 &&
+      run.hudLayout?.multiplier?.x > 500 &&
+      run.hudLayout?.series?.text.startsWith('SERIE ') &&
+      run.hudLayout?.multiplier?.text.startsWith('×');
+    assertCheck(
+      'Serie und Multiplikator liegen groesser rechts oben',
+      hudLayoutWorks(hostRun) && hudLayoutWorks(guestRun),
+      `host=${JSON.stringify(hostRun.hudLayout)}, guest=${JSON.stringify(guestRun.hudLayout)}`,
+      failures,
+    );
+    const liveHudWorks = (run, expectedOpponent) =>
       run.firstLiveHud?.activity === 'playing' &&
       run.firstLiveHud.alpha > 0 &&
-      run.firstLiveHud.text.startsWith('Freund ') &&
+      run.firstLiveHud.text.startsWith(`${expectedOpponent} `) &&
       Number.isFinite(run.firstLiveHud.opponentScore);
     assertCheck(
       'Live-Gegnerpunkte im HUD sichtbar',
-      liveHudWorks(hostRun) && liveHudWorks(guestRun),
+      liveHudWorks(hostRun, `DuelGuest${runNumber}`) &&
+        liveHudWorks(guestRun, `DuelHost${runNumber}`),
       `host=${JSON.stringify(hostRun.firstLiveHud)}, guest=${JSON.stringify(guestRun.firstLiveHud)}`,
       failures,
     );
-    const liveHudUpdates = (run) =>
-      liveHudWorks(run) &&
+    const liveHudUpdates = (run, expectedOpponent) =>
+      liveHudWorks(run, expectedOpponent) &&
       run.lastLiveHud?.opponentScore > 0 &&
       run.lastLiveHud.opponentScore >= run.firstLiveHud.opponentScore;
     assertCheck(
       'Live-Gegnerpunkte aktualisieren sich',
-      liveHudUpdates(hostRun) && liveHudUpdates(guestRun),
+      liveHudUpdates(hostRun, `DuelGuest${runNumber}`) &&
+        liveHudUpdates(guestRun, `DuelHost${runNumber}`),
       `host=${JSON.stringify(hostRun.lastLiveHud)}, guest=${JSON.stringify(guestRun.lastLiveHud)}`,
       failures,
     );

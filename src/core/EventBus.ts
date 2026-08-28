@@ -50,6 +50,8 @@ export const GameEvent = {
    * uebersetzt: sie hoert am Kanal und sendet hier weiter.
    */
   OpponentLiveState: 'duel:opponent-live',
+  /** Anzeigename des Netzwerk-Duell-Gegners ist bekannt oder hat sich geaendert. */
+  OpponentNameChanged: 'duel:opponent-name',
 } as const;
 
 export interface GameEventPayloads {
@@ -93,6 +95,7 @@ export interface GameEventPayloads {
     score: number;
     activity: 'playing' | 'away' | 'left' | 'finished' | 'gone';
   };
+  [GameEvent.OpponentNameChanged]: { name: string };
 }
 
 type EventName = keyof GameEventPayloads;

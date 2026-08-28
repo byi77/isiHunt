@@ -21,33 +21,29 @@ import { burst, createBar, createButton, createPanel } from '@/ui/widgets';
 import type { RunMode } from '@/types';
 
 /**
- * Oberkante der beiden Netzwerk-Duell-Zeilen.
+ * Layout-Koordinaten fuer die kompakten Laufzeitinformationen.
  *
- * Keine Balancing-Zahl, sondern eine Layout-Koordinate wie die uebrigen
- * Y-Werte dieser Datei - sie steht deshalb hier und nicht in `config/`
- * (Regel 1 zielt auf Balancing-Werte, siehe `CODE_STYLE.md`). Als Konstante
- * statt als Literal, weil zwei Zeilen sich aufeinander beziehen muessen:
- * genau dieser Bezug fehlte, als beide auf festen Zahlen im Punktestand
- * lagen.
- *
- * Der Wert liegt unterhalb von `comboText` (y=138, Hoehe 26, endet also bei
- * 164) auf der Hoehe der Talentanzeige, die im Duell leer bleibt - dort ist
- * Platz, den sonst niemand beansprucht. Die 18px Abstand sind kein
- * Schoenheitswert: die Kette wird bei jedem Fang kurz auf 1.2 skaliert
- * (`onCombo`), waechst dabei nach unten und liefe bei knapperem Abstand in
- * die Zeile darunter.
+ * Der Gegnerstand steht links unterhalb der Timerleiste, Serie und
+ * Multiplikator rechts darunter. Dadurch bleibt der eigene Punktestand in der
+ * Mitte frei und alle drei Informationen koennen dauerhaft sichtbar bleiben.
  */
-const DUEL_LINE_Y = 182;
+const DUEL_OPPONENT_X = 60;
+const DUEL_OPPONENT_Y = 48;
 
 /**
  * Abstand zwischen Gegnerstand und Trennmeldung.
  *
- * Eine volle Zeilenhoehe fuer `FontSize.tiny` (17px) plus Luft: beide Zeilen
+ * Eine volle Zeilenhoehe fuer die kleine Warnschrift plus Luft: beide Zeilen
  * koennen gleichzeitig sichtbar sein - "Freund 0 · Verbindung weg" und
  * "Verbindung zum Freund unterbrochen" traten am Geraet genau so zusammen
  * auf (2026-08-23), damals uebereinander gedruckt.
  */
-const DUEL_LINE_HEIGHT = 26;
+const DUEL_LINE_HEIGHT = 30;
+
+/** Rechte obere Ecke fuer Serie und Multiplikator. */
+const DUEL_STATS_X = GAME_WIDTH - 60;
+const DUEL_STATS_Y = 76;
+const DUEL_STATS_GAP = 32;
 
 export interface HudSceneData {
   worldId: string;
@@ -59,6 +55,8 @@ export interface HudSceneData {
   scoreToBeat?: number | null;
   /** Kompakte Anzeige der aktiven Talentverstaerkungen im laufenden Run. */
   talentSummary?: string;
+  /** Nur im Netzwerk-Duell: Name des Gegners fuer die Live-Zeile. */
+  opponentLabel?: string | null;
   /**
    * Nur im Netzwerk-Duell: dann zeigt das HUD den laufenden Stand des
    * Gegners. Als Flag vom Aufrufer statt per `ChallengeSystem`-Abfrage -
@@ -78,6 +76,8 @@ export class HudScene extends Phaser.Scene {
   private opponentDisconnectedText!: Phaser.GameObjects.Text;
   /** Nur im Netzwerk-Duell: laufender Stand des Gegners. */
   private opponentLiveText: Phaser.GameObjects.Text | null = null;
+  private multiplierText!: Phaser.GameObjects.Text;
+  private opponentLabel = 'Freund';
   private opponentScore = 0;
   /** Eigener Stand, gespiegelt fuer den Abstandsvergleich in der Gegnerzeile. */
   private lastOwnScore = 0;
@@ -101,6 +101,7 @@ export class HudScene extends Phaser.Scene {
     this.scoreToBeat = data.scoreToBeat ?? null;
     this.hasOvertaken = false;
     this.mode = data.mode ?? 'solo';
+    this.opponentLabel = data.opponentLabel?.trim() || 'Freund';
     this.lastComboMultiplier = 1;
     this.pauseOverlay = [];
 
@@ -130,12 +131,21 @@ export class HudScene extends Phaser.Scene {
 
     this.comboText = this.add
       .text(
-        GAME_WIDTH / 2,
-        138,
-        '',
+        DUEL_STATS_X,
+        DUEL_STATS_Y,
+        'SERIE 0',
         textStyle(FontSize.body, toCss(this.accent), { fontStyle: 'bold' }),
       )
-      .setOrigin(0.5, 0);
+      .setOrigin(1, 0);
+
+    this.multiplierText = this.add
+      .text(
+        DUEL_STATS_X,
+        DUEL_STATS_Y + DUEL_STATS_GAP,
+        '×1',
+        textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
+      )
+      .setOrigin(1, 0);
 
     this.add
       .text(
@@ -193,32 +203,14 @@ export class HudScene extends Phaser.Scene {
         .setOrigin(0, 0);
     }
 
-    // Netzwerk-Duell: eine Zeile unter dem eigenen Stand, mittig - der Blick
-    // liegt beim Spielen auf dem Feld, nicht am Rand. Erst sichtbar, wenn der
-    // erste Stand eintrifft: eine Zeile mit "0" vor der ersten Meldung waere
-    // nicht von einem tatsaechlich bei null stehenden Gegner zu
-    // unterscheiden.
-    //
-    // **Warum hier unten und nicht knapp unter dem Punktestand.** Beide
-    // Duell-Zeilen lagen bis v0.1.250 auf y=76 und y=100 - mitten IM eigenen
-    // Punktestand, der bei y=62 beginnt und in Titelgroesse (68px) bis y=130
-    // reicht. Auf dem Geraet standen dadurch drei Texte sichtbar
-    // uebereinander (Screenshot 2026-08-23): die Gegneranzeige war zwar da,
-    // aber unlesbar - was zunaechst wie eine fehlende Anzeige aussah.
-    //
-    // Kein Layoutgate hat das gefunden: `controls` prueft Ueberlappung von
-    // Knoepfen, nicht von Textobjekten, und beide Zeilen erscheinen nur, wenn
-    // ein Netzwerk-Duell laeuft UND eine Trennung gemeldet wird.
-    //
-    // Der Bereich ab `DUEL_LINE_Y` ist im Duell frei: `talentSummary` (y=168)
-    // bleibt dort leer, weil im Duell ohne Talente gespielt wird
-    // (`GameScene`: `nonProgressionMode ? '' : ...`). Die zweite Zeile liegt
-    // eine volle Zeilenhoehe darunter, damit auch beide gleichzeitig lesbar
-    // bleiben.
+    // Netzwerk-Duell: links oben, damit die Gegnerinfo nicht mehr mit der
+    // Serienanzeige oder dem eigenen Punktestand konkurriert. Die Anzeige
+    // bleibt bis zum ersten Stand unsichtbar; eine vorgezogene "0" waere
+    // nicht von einem tatsaechlich bei null stehenden Gegner zu unterscheiden.
     if (data.showOpponentLive) {
       this.opponentLiveText = this.add
-        .text(GAME_WIDTH / 2, DUEL_LINE_Y, '', textStyle(FontSize.tiny, Palette.inkDim))
-        .setOrigin(0.5, 0)
+        .text(DUEL_OPPONENT_X, DUEL_OPPONENT_Y, '', textStyle(FontSize.small, Palette.inkDim))
+        .setOrigin(0, 0)
         .setAlpha(0);
     }
 
@@ -227,12 +219,12 @@ export class HudScene extends Phaser.Scene {
     // aber im Normalfall (keine Trennung) nicht staendig Raum beanspruchen.
     this.opponentDisconnectedText = this.add
       .text(
-        GAME_WIDTH / 2,
-        DUEL_LINE_Y + DUEL_LINE_HEIGHT,
+        DUEL_OPPONENT_X,
+        DUEL_OPPONENT_Y + DUEL_LINE_HEIGHT,
         '',
         textStyle(FontSize.tiny, Palette.danger),
       )
-      .setOrigin(0.5, 0)
+      .setOrigin(0, 0)
       .setAlpha(0);
 
     this.buildPauseButton();
@@ -461,13 +453,16 @@ export class HudScene extends Phaser.Scene {
     combo: number;
     multiplier: number;
   }): void => {
+    this.comboText.setText(`SERIE ${Math.max(0, combo)}`);
+    this.multiplierText.setText(
+      `×${multiplier.toLocaleString('de-DE', { maximumFractionDigits: 2 })}`,
+    );
+
     if (combo < 2) {
-      this.comboText.setText('');
       this.lastComboMultiplier = 1;
       return;
     }
 
-    this.comboText.setText(`${combo} FÄNGE IN FOLGE`);
     this.comboText.setScale(1.2);
     this.tweens.add({ targets: this.comboText, scale: 1, duration: 200, ease: 'Back.Out' });
 
@@ -523,7 +518,9 @@ export class HudScene extends Phaser.Scene {
   };
   private readonly onResumed = (): void => this.hidePauseOverlay();
   private readonly onOpponentDisconnected = (): void => {
-    this.opponentDisconnectedText.setText('Verbindung zum Freund unterbrochen').setAlpha(1);
+    this.opponentDisconnectedText
+      .setText(`Verbindung zu ${this.opponentLabel} unterbrochen`)
+      .setAlpha(1);
     // Der Punktestand bleibt stehen, aber als letzter bekannter - sonst
     // wirkte er wie ein aktueller.
     this.renderOpponentLive('gone');
@@ -546,6 +543,18 @@ export class HudScene extends Phaser.Scene {
     this.renderOpponentLive(activity);
   };
 
+  private readonly onOpponentName = ({ name }: { name: string }): void => {
+    const cleanName = name.trim();
+    if (!cleanName) return;
+    this.opponentLabel = cleanName;
+    if (this.opponentDisconnectedText.alpha > 0) {
+      this.opponentDisconnectedText.setText(`Verbindung zu ${this.opponentLabel} unterbrochen`);
+    }
+    if (this.opponentLiveText && this.opponentLiveText.alpha > 0) {
+      this.renderOpponentLive(this.lastOpponentActivity);
+    }
+  };
+
   /**
    * Schreibt die Gegner-Zeile.
    *
@@ -563,14 +572,14 @@ export class HudScene extends Phaser.Scene {
 
     const label =
       activity === 'left'
-        ? 'Freund ausgestiegen'
+        ? `${this.opponentLabel} ausgestiegen`
         : activity === 'gone'
-          ? `Freund ${points} · Verbindung weg`
+          ? `${this.opponentLabel} ${points} · Verbindung weg`
           : activity === 'finished'
-            ? `Freund ${points} · fertig`
+            ? `${this.opponentLabel} ${points} · fertig`
             : activity === 'away'
-              ? `Freund ${points} · schaut gerade nicht hin`
-              : `Freund ${points}${diff === 0 ? '' : diff > 0 ? ` · ${diff} vorn` : ` · ${-diff} zurueck`}`;
+              ? `${this.opponentLabel} ${points} · schaut gerade nicht hin`
+              : `${this.opponentLabel} ${points}${diff === 0 ? '' : diff > 0 ? ` · ${diff} vorn` : ` · ${-diff} zurueck`}`;
 
     // Aussteiger und Verbindungsverlust in Warnfarbe, alles andere gedaempft:
     // die Zeile soll beim Spielen nicht um Aufmerksamkeit konkurrieren,
@@ -588,6 +597,7 @@ export class HudScene extends Phaser.Scene {
     eventBus.onEvent(GameEvent.RunResumed, this.onResumed);
     eventBus.onEvent(GameEvent.OpponentDisconnected, this.onOpponentDisconnected);
     eventBus.onEvent(GameEvent.OpponentLiveState, this.onOpponentLive);
+    eventBus.onEvent(GameEvent.OpponentNameChanged, this.onOpponentName);
   }
 
   /**
@@ -602,5 +612,6 @@ export class HudScene extends Phaser.Scene {
     eventBus.offEvent(GameEvent.RunResumed, this.onResumed);
     eventBus.offEvent(GameEvent.OpponentDisconnected, this.onOpponentDisconnected);
     eventBus.offEvent(GameEvent.OpponentLiveState, this.onOpponentLive);
+    eventBus.offEvent(GameEvent.OpponentNameChanged, this.onOpponentName);
   }
 }

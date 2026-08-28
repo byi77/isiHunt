@@ -26,7 +26,7 @@ import {
   DAILY_SCORE_BONUS_STEP,
   DAILY_SCORE_BONUS_XP,
 } from '@/config/GameConfig';
-import { DAILY_KEY_TOLERANCE_MS } from '@/config/backend';
+import { DAILY_KEY_TOLERANCE_MS, PLAYER_NAME_MAX_LENGTH } from '@/config/backend';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import type {
@@ -39,6 +39,22 @@ import type {
 } from '@/types';
 
 let state: ChallengeState | null = null;
+
+type OnlinePlayerNames = [string | null, string | null];
+
+function cleanOnlinePlayerName(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const clean = raw
+    .split('')
+    .filter((character) => {
+      const code = character.codePointAt(0) ?? 0;
+      return code > 0x1f && code !== 0x7f;
+    })
+    .join('')
+    .trim()
+    .slice(0, PLAYER_NAME_MAX_LENGTH);
+  return clean || null;
+}
 
 /**
  * Erzeugt einen Seed fuer die Relikt-Abfolge.
@@ -198,9 +214,13 @@ export function startOnline(
   roomCode: string,
   localPlayerIndex: 0 | 1,
 ): ChallengeState {
+  const playerNames: OnlinePlayerNames = [null, null];
+  playerNames[localPlayerIndex] = cleanOnlinePlayerName(SaveSystem.load().playerName);
+
   const online: OnlineDuelInfo = {
     roomCode,
     localPlayerIndex,
+    playerNames,
     clockOffsetMs: 0,
     startAtServerMs: null,
   };
@@ -212,6 +232,21 @@ export function startOnline(
 export function updateOnlineSync(clockOffsetMs: number, startAtServerMs: number | null): void {
   if (!state?.online) return;
   state.online = { ...state.online, clockOffsetMs, startAtServerMs };
+}
+
+/** Uebernimmt die Namen, die der Realtime-Kanal per Presence bekannt macht. */
+export function updateOnlinePlayerNames(names: readonly (string | null)[]): void {
+  if (!state?.online) return;
+
+  const playerNames: OnlinePlayerNames = [
+    ...(state.online.playerNames ?? [null, null]),
+  ] as OnlinePlayerNames;
+  for (const index of [0, 1] as const) {
+    const name = cleanOnlinePlayerName(names[index]);
+    if (name) playerNames[index] = name;
+  }
+
+  state.online = { ...state.online, playerNames };
 }
 
 /**
@@ -312,6 +347,10 @@ export function kind(): ChallengeKind {
 }
 
 export function playerLabel(index: number): string {
+  if (state?.kind === 'duel-online') {
+    const name = state.online?.playerNames?.[index];
+    if (name) return name;
+  }
   if (state?.kind === 'bot' && index === 1) return 'Bot';
   if (state?.kind === 'daily') return 'Tageslauf';
   return index === 0 ? 'Spieler 1' : `Spieler ${index + 1}`;

@@ -26,7 +26,7 @@
 
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 
-import { BACKEND_TIMEOUT_MS, SYNC_CODE_ALPHABET } from '@/config/backend';
+import { BACKEND_TIMEOUT_MS, PLAYER_NAME_MAX_LENGTH, SYNC_CODE_ALPHABET } from '@/config/backend';
 import {
   DUEL_ROOM_CODE_TTL_MINUTES,
   ONLINE_DUEL_CLOCK_SYNC_SAMPLES,
@@ -346,6 +346,8 @@ export interface DuelLiveState {
   activity: DuelOpponentActivity;
 }
 
+export type DuelPlayerNames = [string | null, string | null];
+
 export interface DuelChannelHandlers {
   onOpponentReady?: () => void;
   onStartTimeSet?: (startAtMs: number) => void;
@@ -355,6 +357,8 @@ export interface DuelChannelHandlers {
   onOpponentRoundResult?: (playerIndex: 0 | 1, result: DuelRoundResult) => void;
   /** Laufender Zwischenstand des Gegners waehrend des Runs. */
   onOpponentLiveState?: (state: DuelLiveState) => void;
+  /** Anzeigenamen aus dem aktuellen Presence-Zustand. */
+  onPresenceSync?: (playerNames: DuelPlayerNames) => void;
 }
 
 let activeChannel: RealtimeChannel | null = null;
@@ -388,6 +392,35 @@ export function updateHandlers(handlers: DuelChannelHandlers): void {
   activeHandlers = { ...activeHandlers, ...handlers };
 }
 
+function cleanPresencePlayerName(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null;
+  const clean = raw
+    .split('')
+    .filter((character) => {
+      const code = character.codePointAt(0) ?? 0;
+      return code > 0x1f && code !== 0x7f;
+    })
+    .join('')
+    .trim()
+    .slice(0, PLAYER_NAME_MAX_LENGTH);
+  return clean || null;
+}
+
+function readPresencePlayerNames(state: Record<string, unknown>): DuelPlayerNames {
+  const names: DuelPlayerNames = [null, null];
+
+  for (const index of [0, 1] as const) {
+    const entries = state[String(index)];
+    if (!Array.isArray(entries)) continue;
+
+    const latest = entries[entries.length - 1];
+    if (!latest || typeof latest !== 'object') continue;
+    names[index] = cleanPresencePlayerName((latest as { playerName?: unknown }).playerName);
+  }
+
+  return names;
+}
+
 /**
  * Abonniert den privaten Broadcast-/Presence-Kanal fuer einen Raum.
  *
@@ -413,6 +446,7 @@ export function subscribeToRoom(
   code: string,
   localPlayerIndex: 0 | 1,
   handlers: DuelChannelHandlers,
+  localPlayerName = '',
 ): void {
   unsubscribeFromRoom();
   activeHandlers = handlers;
@@ -450,6 +484,15 @@ export function subscribeToRoom(
   const channel = supabase.channel(code, {
     config: { private: true, presence: { key: String(localPlayerIndex) } },
   });
+  const cleanLocalPlayerName = cleanPresencePlayerName(localPlayerName);
+  const broadcastLocalPlayerName = (): void => {
+    if (!cleanLocalPlayerName) return;
+    void channel.send({
+      type: 'broadcast',
+      event: 'player-info',
+      payload: { playerIndex: localPlayerIndex, playerName: cleanLocalPlayerName },
+    });
+  };
 
   channel
     .on('broadcast', { event: 'ready' }, () => activeHandlers.onOpponentReady?.())
@@ -531,6 +574,18 @@ export function subscribeToRoom(
         activeHandlers.onOpponentLiveState({ score, activity: payload.activity });
       },
     )
+    .on(
+      'broadcast',
+      { event: 'player-info' },
+      ({ payload }: { payload: { playerIndex?: unknown; playerName?: unknown } }) => {
+        if (payload.playerIndex !== 0 && payload.playerIndex !== 1) return;
+        const playerName = cleanPresencePlayerName(payload.playerName);
+        if (!playerName) return;
+        const playerNames: DuelPlayerNames = [null, null];
+        playerNames[payload.playerIndex] = playerName;
+        activeHandlers.onPresenceSync?.(playerNames);
+      },
+    )
     .on('presence', { event: 'leave' }, ({ key }: { key: string }) => {
       // Nur reagieren, wenn der ANDERE Spieler gegangen ist - Presence
       // meldet grundsaetzlich jeden Abgang im Kanal, auch den eigenen beim
@@ -543,6 +598,7 @@ export function subscribeToRoom(
       // zurueck, war das `leave` ein Kanalwechsel und kein Abbruch.
       if (key === String(activeLocalPlayerIndex)) return;
       cancelPendingDisconnect(key, 'join');
+      broadcastLocalPlayerName();
     })
     .on('presence', { event: 'sync' }, () => {
       // `sync` liefert den VOLLSTAENDIGEN Anwesenheitsstand, nicht nur eine
@@ -558,7 +614,10 @@ export function subscribeToRoom(
       // Nur der ERSTE Stand pro Kanal wird protokolliert und danach jede
       // Aenderung der Schluesselmenge: `sync` kann bei jedem Presence-Wechsel
       // feuern und wuerde den Puffer sonst fluten.
-      const keys = Object.keys(channel.presenceState()).sort().join(',');
+      const presenceState = channel.presenceState();
+      const keys = Object.keys(presenceState).sort().join(',');
+      activeHandlers.onPresenceSync?.(readPresencePlayerNames(presenceState));
+      broadcastLocalPlayerName();
       if (keys === lastPresenceKeys) return;
       lastPresenceKeys = keys;
 
@@ -606,7 +665,10 @@ export function subscribeToRoom(
         // Presence-Ereignis. Ob die Wiederanmeldung dabei ueberhaupt gelang,
         // war nicht feststellbar.
         void channel
-          .track({ online: true })
+          .track({
+            online: true,
+            ...(cleanLocalPlayerName ? { playerName: cleanLocalPlayerName } : {}),
+          })
           .then((trackStatus) => {
             DebugSystem.pushProtectedLogEntry({
               timestamp: Date.now(),
@@ -623,6 +685,13 @@ export function subscribeToRoom(
               detail: trackError instanceof Error ? trackError.message : 'Unbekannter Fehler',
             });
           });
+        // Presence-Metadaten waren in einigen realen Kanalstaenden nicht im
+        // lesbaren Snapshot enthalten. Der Broadcast ist die zusaetzliche,
+        // kurzlebige Zustellung ueber denselben Kanal, ueber den auch der
+        // laufende Gegnerstand verlaesslich ankommt. Bei jedem Sync und Join
+        // wird er erneut gesendet, damit auch ein spaet beigetretener Client
+        // den Namen erhaelt.
+        broadcastLocalPlayerName();
       }
     });
 

@@ -23,9 +23,9 @@ vi.mock('@/config/backend', () => ({
   BACKEND_ANON_KEY: '',
   isBackendConfigured: false,
   LEADERBOARD_LIMIT: 10,
+  PLAYER_NAME_MAX_LENGTH: 16,
   SYNC_CODE_LENGTH: 6,
   SYNC_CODE_ALPHABET: '0123456789ABCDEFGHJKMNPQRSTUVWXYZ',
-  PLAYER_NAME_MAX_LENGTH: 12,
   BACKEND_TIMEOUT_MS: 5000,
 }));
 
@@ -114,6 +114,7 @@ function createFakeSupabase(): {
   firePresence: (event: 'join' | 'leave', key: string) => void;
   fireSync: (anwesend: Record<string, unknown>) => void;
   channelConfig: () => unknown;
+  trackPayload: () => unknown;
 } {
   const broadcastHandlers = new Map<string, (message: unknown) => void>();
   const presenceHandlers = new Map<string, (message: unknown) => void>();
@@ -124,7 +125,7 @@ function createFakeSupabase(): {
   interface FakeChannel {
     on(type: string, filter: { event: string }, handler: (message: unknown) => void): FakeChannel;
     subscribe(callback?: (status: string, error?: Error) => void): FakeChannel;
-    track(): Promise<string>;
+    track(payload?: unknown): Promise<string>;
     send(): Promise<string>;
     unsubscribe(): Promise<string>;
     presenceState(): Record<string, unknown>;
@@ -136,6 +137,7 @@ function createFakeSupabase(): {
   // Die beim Erzeugen uebergebene Kanalkonfiguration - `ack` ist die
   // Voraussetzung dafuer, dass Ablehnungen ueberhaupt sichtbar werden.
   let lastChannelConfig: unknown;
+  let lastTrackPayload: unknown;
 
   const channel: FakeChannel = {
     on(type, filter, handler) {
@@ -149,7 +151,10 @@ function createFakeSupabase(): {
       callback?.('SUBSCRIBED');
       return channel;
     },
-    track: () => Promise.resolve('ok'),
+    track: (payload?: unknown) => {
+      lastTrackPayload = payload;
+      return Promise.resolve('ok');
+    },
     presenceState: () => presence,
     send: () => Promise.resolve('ok'),
     unsubscribe: () => Promise.resolve('ok'),
@@ -169,6 +174,7 @@ function createFakeSupabase(): {
       presenceHandlers.get('sync')?.({});
     },
     channelConfig: () => lastChannelConfig,
+    trackPayload: () => lastTrackPayload,
   };
 }
 
@@ -580,6 +586,26 @@ describe('Presence- und Empfangsdiagnose', () => {
       (item) => item.label === 'duel:presence-sync',
     );
     expect(entry?.detail).toBe('anwesend: 0,1');
+  });
+
+  it('uebertraegt und liest die Spielernamen aus Presence', () => {
+    const fake = createFakeSupabase();
+    const onPresenceSync = vi.fn();
+    NetworkDuelSystem.subscribeToRoom(
+      fake.client as never,
+      'ABC123',
+      0,
+      { onPresenceSync },
+      'Alice',
+    );
+
+    fake.fireSync({
+      '0': [{ playerName: 'Alice' }],
+      '1': [{ playerName: 'Bob' }],
+    });
+
+    expect(fake.trackPayload()).toEqual({ online: true, playerName: 'Alice' });
+    expect(onPresenceSync).toHaveBeenCalledWith(['Alice', 'Bob']);
   });
 
   it('unterscheidet einen leeren Kanal von einem besetzten', () => {
