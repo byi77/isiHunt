@@ -114,6 +114,7 @@ function createFakeSupabase(): {
   fire: (event: string, payload: unknown) => void;
   firePresence: (event: 'join' | 'leave', key: string) => void;
   fireSync: (anwesend: Record<string, unknown>) => void;
+  channelConfig: () => unknown;
 } {
   const broadcastHandlers = new Map<string, (message: unknown) => void>();
   const presenceHandlers = new Map<string, (message: unknown) => void>();
@@ -133,6 +134,9 @@ function createFakeSupabase(): {
   // Wer laut Presence gerade im Kanal ist - vom Test steuerbar, damit sich
   // "Gegner sichtbar" und "niemand da" unterscheiden lassen.
   let presence: Record<string, unknown> = {};
+  // Die beim Erzeugen uebergebene Kanalkonfiguration - `ack` ist die
+  // Voraussetzung dafuer, dass Ablehnungen ueberhaupt sichtbar werden.
+  let lastChannelConfig: unknown;
 
   const channel: FakeChannel = {
     on(type, filter, handler) {
@@ -153,13 +157,19 @@ function createFakeSupabase(): {
   };
 
   return {
-    client: { channel: () => channel },
+    client: {
+      channel: (_topic: string, config?: unknown) => {
+        lastChannelConfig = config;
+        return channel;
+      },
+    },
     fire: (event, payload) => broadcastHandlers.get(event)?.({ payload }),
     firePresence: (event, key) => presenceHandlers.get(event)?.({ key }),
     fireSync: (anwesend: Record<string, unknown>) => {
       presence = anwesend;
       presenceHandlers.get('sync')?.({});
     },
+    channelConfig: () => lastChannelConfig,
   };
 }
 
@@ -632,5 +642,45 @@ describe('Presence- und Empfangsdiagnose', () => {
     expect(
       DebugSystem.getProtectedLogBuffer().filter((item) => item.label === 'duel:live-empfangen'),
     ).toEqual([]);
+  });
+});
+
+/**
+ * `broadcast.ack` ist keine Feinheit, sondern die Voraussetzung dafuer, dass
+ * eine serverseitige Ablehnung ueberhaupt sichtbar wird.
+ *
+ * Ohne die Option loest `send()` sofort mit "ok" auf, sobald die Nachricht
+ * lokal in der Warteschlange liegt. Die Sendeprotokollierung meldete deshalb
+ * ueber rund 225 Versuche keinen einzigen Fehler (Bericht 2026-08-25) - und
+ * daraus wurde faelschlicherweise ein funktionierender Sendepfad geschlossen,
+ * obwohl die RLS-Policy das Senden gar nicht erlaubte
+ * (`supabase/phase_2_20_duel_realtime_policies.sql`).
+ */
+describe('Kanalkonfiguration', () => {
+  beforeEach(() => {
+    NetworkDuelSystem.unsubscribeFromRoom();
+  });
+
+  it('verlangt eine Zustellbestaetigung fuer Broadcasts', () => {
+    const fake = createFakeSupabase();
+    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {});
+
+    const config = fake.channelConfig() as { config?: { broadcast?: { ack?: boolean } } };
+    expect(config.config?.broadcast?.ack).toBe(true);
+  });
+
+  it('bleibt ein privater Kanal mit eigenem Presence-Schluessel je Spieler', () => {
+    // Beide Werte sind sicherheits- bzw. diagnoserelevant und wurden je
+    // einmal am Geraet als fehlend nachgewiesen (2026-08-18): ohne `private`
+    // greift die RLS-Pruefung nicht, mit gleichem Presence-Key fuer beide
+    // Spieler laesst sich "wer ist weg" nicht mehr unterscheiden.
+    const fake = createFakeSupabase();
+    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 1, {});
+
+    const config = fake.channelConfig() as {
+      config?: { private?: boolean; presence?: { key?: string } };
+    };
+    expect(config.config?.private).toBe(true);
+    expect(config.config?.presence?.key).toBe('1');
   });
 });

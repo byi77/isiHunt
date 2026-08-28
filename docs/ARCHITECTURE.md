@@ -278,6 +278,21 @@ auf. Ein echter Abbruch wird dadurch um eine Sekunde spaeter gemeldet - und
 davon. Presence ist die Abkuerzung fuer den sauberen Abgang, nicht die
 alleinige Wahrheit.
 
+**Ohne `broadcast.ack` bedeutet "ok" nur "abgeschickt".** `channel.send()`
+loest ohne diese Option auf, sobald die Nachricht lokal in der Warteschlange
+liegt - eine serverseitige Ablehnung wird still verworfen. Das hat eine
+Fehlersuche in die Irre gefuehrt: ueber rund 225 Sendeversuche meldete die
+Protokollierung keinen einzigen Fehler (Bericht 2026-08-25), und daraus wurde
+ein funktionierender Sendepfad geschlossen - obwohl die RLS-Policy auf
+`realtime.messages` das Senden gar nicht erlaubte. Sie hatte nur `for select`
+und beschraenkte auf `extension = 'broadcast'`, womit auch Presence nie
+durchkam (behoben in `supabase/phase_2_20_duel_realtime_policies.sql`).
+
+Die Lehre gilt ueber diesen Fall hinaus: **eine Bestaetigung, die nur die
+eigene Warteschlange bezeugt, taugt nicht als Beleg fuer Zustellung.** Wo aus
+dem Schweigen eines Protokolls geschlossen werden soll, muss die
+Protokollquelle den ganzen Weg abdecken.
+
 **Presence wird gemessen, nicht angenommen.** `channel.track()` ist die
 Anmeldung dieses Geraets als anwesend - schlaegt sie fehl, entsteht beim
 Gegner nie ein `join`, und ohne Protokoll erfaehrt das niemand. Ihr Ergebnis

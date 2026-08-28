@@ -55,6 +55,32 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   Der geschuetzte Puffer bleibt trotzdem noetig: der groessere Hauptpuffer
   verschiebt die Grenze, er hebt sie nicht auf.
 
+### Behoben
+
+- **Netzwerk-Duell: der Kanal durfte gar nicht senden.** Die
+  Realtime-Berechtigung aus `phase_2_11_duel_rooms.sql` hatte zwei Luecken:
+  sie war ausschliesslich `for select` — Supabase verlangt fuer das Senden auf
+  einem privaten Kanal eine eigene `for insert`-Policy — und sie beschraenkte
+  auf `extension = 'broadcast'`, womit Presence weder gelesen noch geschrieben
+  werden durfte. Das erklaert beides auf einmal: den fehlenden Live-Stand des
+  Gegners und die ueber ganze Runden voellig fehlenden Presence-Ereignisse.
+
+  **Erfordert einen Datenbankschritt:**
+  `supabase/phase_2_20_duel_realtime_policies.sql` muss im Supabase SQL Editor
+  ausgefuehrt werden.
+
+- **`broadcast.ack` eingeschaltet — "ok" bedeutet jetzt "angekommen".** Ohne
+  diese Option loest `channel.send()` auf, sobald die Nachricht lokal in der
+  Warteschlange liegt; eine serverseitige Ablehnung wird still verworfen. Die
+  Sendeprotokollierung meldete deshalb ueber rund 225 Versuche keinen einzigen
+  Fehler, obwohl die Policy das Senden gar nicht erlaubte — und aus diesem
+  Schweigen wurde faelschlicherweise ein funktionierender Sendepfad
+  geschlossen.
+
+  Der Preis ist eine Serverbestaetigung je Nachricht; bei einem 400ms-Takt
+  unkritisch. Ohne diese Aenderung waere auch nicht ueberpruefbar, ob die neue
+  Policy gewirkt hat.
+
 ### Hinzugefuegt
 
 - **Netzwerk-Duell: Presence und Empfang werden gemessen statt angenommen.**

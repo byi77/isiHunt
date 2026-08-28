@@ -429,7 +429,27 @@ export function subscribeToRoom(
   firstLiveLogged = false;
 
   const channel = supabase.channel(code, {
-    config: { private: true, presence: { key: String(localPlayerIndex) } },
+    config: {
+      private: true,
+      presence: { key: String(localPlayerIndex) },
+      // **`ack: true` macht aus "abgeschickt" ein "angekommen".** Ohne diese
+      // Option loest `channel.send()` sofort mit "ok" auf, sobald die
+      // Nachricht lokal in der Warteschlange liegt - eine serverseitige
+      // Ablehnung (etwa durch RLS) wird dabei still verworfen und erreicht
+      // den Client nie.
+      //
+      // Das hat eine Fehlersuche in die Irre gefuehrt: der Bericht vom
+      // 2026-08-25 zeigte ueber ~225 Sendeversuche keine einzige
+      // Fehlerzeile, woraus ein funktionierender Sendepfad geschlossen
+      // wurde. Tatsaechlich belegte das "ok" nur, dass die Warteschlange die
+      // Nachricht annahm - nicht, dass der Server sie akzeptierte.
+      //
+      // Der Preis ist eine Serverbestaetigung je Nachricht. Bei einem
+      // 400ms-Takt (`ONLINE_DUEL_SCORE_BROADCAST_INTERVAL_MS`) ist das
+      // unkritisch, und ein stillschweigend verworfener Zwischenstand ist
+      // teurer als eine bestaetigte Zustellung.
+      broadcast: { ack: true },
+    },
   });
 
   channel

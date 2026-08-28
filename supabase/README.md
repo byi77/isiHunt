@@ -32,6 +32,7 @@ Auf einer leeren Datenbank in dieser Reihenfolge einspielen:
 | 13  | `phase_2_17_duel_round_results.sql`          | Rundenergebnisse des Netzwerk-Duells                       |
 | 14  | `phase_2_18_save_version_anchor.sql`         | `save_version()` als einzige Quelle der Spielstand-Version |
 | 15  | `phase_2_19_talent_max_rank_from_config.sql` | Maximalränge aus der Balance-Kette statt abgetippt         |
+| 16  | `phase_2_20_duel_realtime_policies.sql`      | Duell-Kanal: Senden und Presence erlauben                  |
 
 ## Warum alte Dateien nicht rückwirkend geändert werden
 
