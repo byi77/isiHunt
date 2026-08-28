@@ -1,6 +1,6 @@
 # Balance-Kette
 
-**Stand:** 2026-08-22 · Client-/Live-Version siehe `package.json`/`version.json`
+**Stand:** 2026-08-28 · Client-/Live-Version siehe `package.json`/`version.json`
 
 Alle Zahlen, die Punkte, XP oder Coins erzeugen bzw. verbrauchen, beginnen in
 `src/config/balance-data.json`. Die Berechnung liegt in `src/config/balance.ts`.
@@ -35,7 +35,8 @@ Für ein konkretes Supabase-Projekt müssen die Migrationen in der Reihenfolge
 aus `TODO.md` ausgeführt und separat nachgewiesen werden. Der Repository-Stand
 beweist keine produktive Ausführung. `supabase/phase_2_14_balance_chain.sql`
 hält Level-XP, Tagesboni, Talentkosten, Resetkosten und die
-Score-Plausibilitätsprüfung auf derselben Ableitungslogik wie der Client.
+Score-Plausibilitätsprüfung auf derselben Ableitungslogik wie der Client. Die
+zehn Talente und ihre 41 Ränge werden aus derselben Balance-Kopie gelesen.
 `supabase/phase_2_15_cosmetic_sync.sql` ergänzt den atomaren Geräteabgleich für
 Kosmetikbesitz und Ausrüstung sowie den vollständigen Admin-Reset.
 

@@ -1,7 +1,7 @@
 # Game Design Document — isiHunt
 
 **Version:** 0.1
-**Stand:** 2026-08-22 · Produktstand siehe `package.json`/`version.json`
+**Stand:** 2026-08-28 · Produktstand siehe `package.json`/`version.json`
 **Status:** lebendes Dokument — jede Balancing- oder Regelaenderung wird hier
 zuerst beschrieben, dann implementiert.
 
@@ -293,34 +293,44 @@ Ziel folgt direkt darunter.
 
 ### 7.2 Talente
 
-Dauerhafte Upgrades. Die sieben Talente sind unabhängige Coin-basierte Ränge
+Dauerhafte Upgrades. Die zehn Talente sind unabhängige Coin-basierte Ränge
 ohne Voraussetzungen. Kauf, Reset und die Darstellung als ehrliche Liste im
-Profil sind implementiert; die visuelle Politur bleibt ein eigener
-Produktpunkt.
+Profil sind implementiert. Der Start erfolgt immer mit Rang 0; ein voller
+Ausbau soll spürbar helfen, darf aber weder die Jagd noch die Score-Jagd
+ersetzen.
 
 | Talent      | Max. Rang | Pro Rang              |
 | ----------- | --------- | --------------------- |
-| Reichweite  | 5         | +6 Sammelradius       |
+| Reichweite  | 5         | +8 Sammelradius       |
 | Flinkheit   | 5         | +5 % Tempo            |
-| Magnetismus | 4         | +35 Sogreichweite     |
-| Ausdauer    | 4         | +3 s Rundendauer      |
+| Magnetismus | 4         | +65 Sogreichweite     |
+| Ausdauer    | 4         | +4 s Rundendauer      |
 | Fokus       | 4         | +150 ms Combo-Fenster |
+| Spürsinn    | 3         | +3 % Aufstiegschance  |
 | Erkenntnis  | 5         | +5 % XP               |
 | Gunst       | 5         | +5 % Punkte           |
+| Resonanz    | 3         | +0,05x Serienbonus    |
+| Schutzfeld  | 3         | -8 % Hinderniswirkung |
 
 **Balancing-Absicht:** Kein Talent ist Pflicht. _Reichweite_ und _Magnetismus_
-machen das Spiel leichter, _Gunst_ und _Erkenntnis_ machen es ertragreicher —
-zwei gleichwertige Bauweisen, keine dominante. _Erkenntnis_ und _Gunst_ sind
-bei identischen Kosten und gleichem Maximalrang bewusst gleich stark
-(je max. +25 %) — bis 2026-08-17 war _Gunst_ mit +4 %/Rang schwaecher, ohne
-erkennbaren Design-Grund; angeglichen nach `docs/BALANCE_2026-08-17.md`
-Abschnitt 4.
+machen das Spiel leichter, _Spürsinn_ macht farbige Relikte etwas
+wahrscheinlicher, und _Gunst_/_Resonanz_ machen gute Serien ertragreicher.
+Die Maximalwerte bleiben bewusst moderat: Die direkten Prozentboni für Tempo,
+XP, Punkte und Hindernisse liegen zwischen 24 und 25 %; _Erkenntnis_ und
+_Gunst_ erreichen je 25 %. Die übrigen Talente verändern nur klar begrenzte
+Komfortwerte wie Radius, Sekunden oder Serienmultiplikator.
+_Resonanz_ addiert ihren Bonus erst ab der ersten sichtbaren Serienbonus-Stufe,
+damit der erste Fang nicht künstlich aufgebläht wird. Mit Resonanz auf Rang 3
+steigt Orange bei Serie 16 von 800 auf 838 Basispunkte; Gunst wirkt erst danach
+als weiterer Multiplikator.
 
-Quelle: `src/config/talents.ts` (`resolveStats`). Werte am 2026-08-17 aus dem
-Code nachgezogen, s. `docs/AUDIT_2026-08-17.md` Abschnitt 4.4 — Reichweite,
-Flinkheit und Magnetismus stimmten bereits ueberein, die vier anderen
-Talente waren im Code zunaechst niedriger als hier dokumentiert; _Gunst_
-wurde danach im Code selbst angehoben (s.o.).
+_Schutzfeld_ reduziert sowohl die Dauer eines Bremsfelds als auch den
+Zeitverlust eines Zeit-Hindernisses. _Spürsinn_ hebt ein Relikt höchstens um
+eine Seltenheitsstufe an und erzeugt keine direkte Orange-Garantie.
+
+Quelle: `src/config/balance-data.json`, aufgelöst in `src/config/talents.ts`.
+Die zehn Talente umfassen 41 Ränge und kosten bei der aktuellen Coin-Kurve
+18.950 Coins bis zum Vollausbau.
 
 ### 7.3 Welten
 

@@ -24,6 +24,7 @@ import { shipTint } from '@/config/shop';
 import { playerTextureForShape, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
+  attachVerticalScroll,
   createBackButton,
   createButton,
   createMenuLayout,
@@ -64,7 +65,8 @@ export class TalentScene extends Phaser.Scene {
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
 
     createBackButton(this, () => this.scene.start(this.returnTo));
-    const sections = createMenuLayout().sections;
+    const layout = createMenuLayout();
+    const sections = layout.sections;
     const walletY = sections.next(30);
     this.add
       .text(
@@ -80,12 +82,15 @@ export class TalentScene extends Phaser.Scene {
       .setScale(0.26);
 
     const rowTop = sections.next(96);
-    const rowStep = 108;
+    // Die Karten berühren sich knapp; so bleibt die Reset-Aktion auch vor dem
+    // ersten Scrollen oberhalb der festen Zurück-Zone.
+    const rowStep = 96;
+    const content = this.add.container(0, 0);
     TALENTS.forEach((talent, index) =>
-      this.buildTalentRow(talent.id, rowTop + index * rowStep, world.accent),
+      this.buildTalentRow(talent.id, rowTop + index * rowStep, world.accent, content),
     );
 
-    const resetY = Math.min(GAME_HEIGHT - 190, rowTop + TALENTS.length * rowStep + 16);
+    const resetY = rowTop + TALENTS.length * rowStep + 16;
     const resetButton = createButton(
       this,
       GAME_WIDTH / 2,
@@ -99,58 +104,92 @@ export class TalentScene extends Phaser.Scene {
         fontSize: FontSize.tiny,
       },
     );
+    content.add(resetButton.container);
     resetButton.setEnabled(save.coins >= TALENT_RESET_COST);
     // Einzige Warnung vor einem unwiderruflichen Coin-Verlust - keine
     // Dekoration, deshalb der helle Standardton statt gedaempft.
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        resetY + 48,
-        'Reset kostet ' + TALENT_RESET_COST + ' Coins und erstattet nichts.',
-        textStyle(FontSize.tiny, Palette.ink),
-      )
-      .setOrigin(0.5);
+    content.add(
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          resetY + 48,
+          'Reset kostet ' + TALENT_RESET_COST + ' Coins und erstattet nichts.',
+          textStyle(FontSize.tiny, Palette.ink),
+        )
+        .setOrigin(0.5),
+    );
     this.feedbackText = this.add
       .text(GAME_WIDTH / 2, resetY + 82, '', textStyle(FontSize.tiny, Palette.gold))
       .setOrigin(0.5)
       .setWordWrapWidth(GAME_WIDTH - 100)
       .setAlign('center');
+    content.add(this.feedbackText);
+
+    const contentBottom = resetY + 105;
+    attachVerticalScroll(this, {
+      maxScroll: Math.max(0, contentBottom - layout.contentBottom),
+      dragZoneTop: 36,
+      dragZoneBottom: layout.contentBottom,
+      onOffsetChange: (offset) => content.setY(-offset),
+    });
   }
 
-  private buildTalentRow(id: TalentId, y: number, accent: number): void {
+  private buildTalentRow(
+    id: TalentId,
+    y: number,
+    accent: number,
+    content: Phaser.GameObjects.Container,
+  ): void {
     const talent = TALENTS.find((entry) => entry.id === id)!;
     const save = SaveSystem.load();
     const rank = save.talents[id] ?? 0;
-    createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 100, 96, accent, {
-      alpha: 0.5,
-      radius: 14,
-    });
-    this.add
-      .text(66, y - 24, talent.name, textStyle(FontSize.body, toCss(accent), { fontStyle: 'bold' }))
-      .setOrigin(0, 0.5);
-    this.add
-      .text(66, y + 10, talent.description, textStyle(FontSize.tiny, Palette.inkDim))
-      .setOrigin(0, 0.5)
-      .setWordWrapWidth(315);
-    this.add
-      .text(
-        405,
-        y - 20,
-        'RANG ' + rank + '/' + talent.maxRank,
-        textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }),
-      )
-      .setOrigin(0.5);
-    this.add
-      .text(405, y + 12, talent.perRank, textStyle(FontSize.tiny, Palette.gold))
-      .setOrigin(0.5);
+    content.add(
+      createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 100, 96, accent, {
+        alpha: 0.5,
+        radius: 14,
+      }),
+    );
+    content.add(
+      this.add
+        .text(
+          66,
+          y - 24,
+          talent.name,
+          textStyle(FontSize.body, toCss(accent), { fontStyle: 'bold' }),
+        )
+        .setOrigin(0, 0.5),
+    );
+    content.add(
+      this.add
+        .text(66, y + 10, talent.description, textStyle(FontSize.tiny, Palette.inkDim))
+        .setOrigin(0, 0.5)
+        .setWordWrapWidth(315),
+    );
+    content.add(
+      this.add
+        .text(
+          405,
+          y - 20,
+          'RANG ' + rank + '/' + talent.maxRank,
+          textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }),
+        )
+        .setOrigin(0.5),
+    );
+    content.add(
+      this.add
+        .text(405, y + 12, talent.perRank, textStyle(FontSize.tiny, Palette.gold))
+        .setOrigin(0.5),
+    );
     // Rang-Pips machen den Ausbau sofort sichtbar: Jeder Kauf fuellt einen
     // weiteren Abschnitt, statt nur die kleine Zahl im Rangtext zu veraendern.
     const pipStartX = 466;
     for (let pip = 0; pip < talent.maxRank; pip += 1) {
-      this.add
-        .rectangle(pipStartX + pip * 11, y + 13, 8, 16, pip < rank ? Palette.goldHex : 0x66708c)
-        .setAlpha(pip < rank ? 1 : 0.34)
-        .setStrokeStyle(1, accent, 0.55);
+      content.add(
+        this.add
+          .rectangle(pipStartX + pip * 11, y + 13, 8, 16, pip < rank ? Palette.goldHex : 0x66708c)
+          .setAlpha(pip < rank ? 1 : 0.34)
+          .setStrokeStyle(1, accent, 0.55),
+      );
     }
     const cost = talentCost(rank);
     const purchaseButton = createButton(
@@ -166,6 +205,7 @@ export class TalentScene extends Phaser.Scene {
         fontSize: FontSize.tiny,
       },
     );
+    content.add(purchaseButton.container);
     purchaseButton.setEnabled(rank < talent.maxRank && save.coins >= cost);
   }
 

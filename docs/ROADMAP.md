@@ -1,6 +1,6 @@
 # Roadmap — isiHunt
 
-**Stand:** 2026-08-22 · Produktstand siehe `package.json`/`version.json` · Die detaillierte und verbindliche Aufgabenreihenfolge
+**Stand:** 2026-08-28 · Produktstand siehe `package.json`/`version.json` · Die detaillierte und verbindliche Aufgabenreihenfolge
 steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 
 ## Bereits spielbar
@@ -44,8 +44,8 @@ Punkte-Popups, Kettenbonus, Coins, Erfolge, die Coin-basierte Talent-/Shop-
 Ansicht und der sichtbare Level-Up-Moment sind spielbar.
 
 > Die Coin-basierte Talent-/Shop-Wirtschaft ist die geltende Entscheidung
-> (ADR-0018). Als nächster Produkt-Schritt bleibt die Darstellung der sieben
-> unabhängigen Talente; ein Talentpunkte-Umbau ist verworfen.
+> (ADR-0018). Die zehn unabhängigen Talente werden moderat skaliert; ein
+> Talentpunkte-Umbau ist verworfen.
 
 ### M5 — Herausforderungen und Modi ✅
 
@@ -60,7 +60,7 @@ Person oder einen Bot sowie Weltmodifikatoren und Hindernisse sind vorhanden.
 
 - Coin-basierte Talente beibehalten; kein Talentpunkte-Umbau und keine
   Talentpunkte-Bestandsmigration.
-- Die sieben unabhängigen Talent-Ränge als ehrliche, kindgerechte Liste
+- Die zehn unabhängigen Talent-Ränge als ehrliche, kindgerechte Liste
   verständlich darstellen und visuell weiter polieren; kein Baumversprechen.
 - Bestehende Coin-, Talent- und Kosmetikstände erhalten und geräteübergreifend
   synchron halten.

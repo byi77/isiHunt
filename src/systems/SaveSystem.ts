@@ -22,6 +22,7 @@ import {
   DEFAULT_SHIP_SHAPE,
   shapesEarnedByLegacyLevel,
 } from '@/config/shop';
+import { TALENTS } from '@/config/talents';
 import { DEFAULT_WORLD_ID } from '@/config/worlds';
 import type { SaveData } from '@/types';
 
@@ -191,9 +192,10 @@ function reconcile(raw: Partial<SaveData>): SaveData {
   }
   const talents = { ...base.talents };
   const rawTalents = asRecord(source.talents);
-  for (const [talentId, rank] of Object.entries(rawTalents)) {
+  for (const talent of TALENTS) {
+    const rank = rawTalents[talent.id];
     if (typeof rank === 'number' && Number.isFinite(rank)) {
-      talents[talentId as keyof typeof talents] = Math.max(0, Math.floor(rank));
+      talents[talent.id] = Math.min(talent.maxRank, Math.max(0, Math.floor(rank)));
     }
   }
   const selectedShape = stringOr(source.shipShape, base.shipShape);

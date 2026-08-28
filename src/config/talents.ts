@@ -18,7 +18,16 @@ import {
 } from './balance';
 
 export type TalentId =
-  'reach' | 'swiftness' | 'magnetism' | 'endurance' | 'focus' | 'insight' | 'fortune';
+  | 'reach'
+  | 'swiftness'
+  | 'magnetism'
+  | 'endurance'
+  | 'focus'
+  | 'prospector'
+  | 'insight'
+  | 'fortune'
+  | 'resonance'
+  | 'shield';
 
 export interface TalentDef {
   readonly id: TalentId;
@@ -35,49 +44,70 @@ export const TALENTS: readonly TalentDef[] = [
     name: 'Reichweite',
     description: 'Vergrößert den Radius, in dem du Relikte einsammelst.',
     maxRank: BALANCE.talents.maxRanks.reach,
-    perRank: '+12 Radius',
+    perRank: '+8 Sammelradius',
   },
   {
     id: 'swiftness',
     name: 'Flinkheit',
     description: 'Deine Figur bewegt sich schneller.',
     maxRank: BALANCE.talents.maxRanks.swiftness,
-    perRank: '+8% Tempo',
+    perRank: '+5% Tempo',
   },
   {
     id: 'magnetism',
     name: 'Magnetismus',
     description: 'Relikte in der Nähe werden zu dir gezogen.',
     maxRank: BALANCE.talents.maxRanks.magnetism,
-    perRank: '+75 Sogreichweite',
+    perRank: '+65 Sogreichweite',
   },
   {
     id: 'endurance',
     name: 'Ausdauer',
     description: 'Verlängert die Dauer eines Runs.',
     maxRank: BALANCE.talents.maxRanks.endurance,
-    perRank: '+6 Sekunden',
+    perRank: '+4 Sekunden',
   },
   {
     id: 'focus',
     name: 'Fokus',
     description: 'Deine Combo hält länger, bevor sie zerfällt.',
     maxRank: BALANCE.talents.maxRanks.focus,
-    perRank: '+300 ms Combo-Fenster',
+    perRank: '+150 ms Combo-Fenster',
+  },
+  {
+    id: 'prospector',
+    name: 'Spürsinn',
+    description: 'Erhöht leicht die Chance, dass ein Relikt seltener wird.',
+    maxRank: BALANCE.talents.maxRanks.prospector,
+    perRank: '+3% Aufstiegschance',
   },
   {
     id: 'insight',
     name: 'Erkenntnis',
     description: 'Du erhältst mehr Erfahrung pro Relikt.',
     maxRank: BALANCE.talents.maxRanks.insight,
-    perRank: '+10% XP',
+    perRank: '+5% XP',
   },
   {
     id: 'fortune',
     name: 'Gunst',
     description: 'Du erhältst mehr Punkte pro Relikt.',
     maxRank: BALANCE.talents.maxRanks.fortune,
-    perRank: '+10% Punkte',
+    perRank: '+5% Punkte',
+  },
+  {
+    id: 'resonance',
+    name: 'Resonanz',
+    description: 'Verstärkt deinen Serienbonus, sobald die Serie aktiv ist.',
+    maxRank: BALANCE.talents.maxRanks.resonance,
+    perRank: '+0,05x Serienbonus',
+  },
+  {
+    id: 'shield',
+    name: 'Schutzfeld',
+    description: 'Schwächt die Wirkung von Hindernissen ab.',
+    maxRank: BALANCE.talents.maxRanks.shield,
+    perRank: '-8% Hinderniswirkung',
   },
 ];
 
@@ -110,14 +140,18 @@ export interface PlayerStats {
   readonly magnetPullSpeed: number;
   readonly runDurationMs: number;
   readonly comboGraceMs: number;
+  readonly rarityPromotionChance: number;
   readonly xpMultiplier: number;
   readonly scoreMultiplier: number;
+  readonly seriesMultiplierBonus: number;
+  readonly obstacleResistance: number;
 }
 
 function rank(ranks: TalentRanks, id: TalentId): number {
   const def = TALENTS.find((t) => t.id === id);
   const value = ranks[id] ?? 0;
-  return def ? Math.min(value, def.maxRank) : 0;
+  if (!def || !Number.isFinite(value)) return 0;
+  return Math.min(def.maxRank, Math.max(0, Math.floor(value)));
 }
 
 /** Rechnet Talentraenge in konkrete Spielwerte um. Reine Funktion, testbar. */
@@ -128,8 +162,11 @@ export function resolveStats(ranks: TalentRanks): PlayerStats {
     magnetism: rank(ranks, 'magnetism'),
     endurance: rank(ranks, 'endurance'),
     focus: rank(ranks, 'focus'),
+    prospector: rank(ranks, 'prospector'),
     insight: rank(ranks, 'insight'),
     fortune: rank(ranks, 'fortune'),
+    resonance: rank(ranks, 'resonance'),
+    shield: rank(ranks, 'shield'),
   };
 
   return {
@@ -146,7 +183,11 @@ export function resolveStats(ranks: TalentRanks): PlayerStats {
     runDurationMs:
       RUN_DURATION_MS + talentRanks.endurance * BALANCE.talents.enduranceSecondsPerRank * 1000,
     comboGraceMs: COMBO_GRACE_MS + talentRanks.focus * BALANCE.talents.focusComboMsPerRank,
+    rarityPromotionChance:
+      talentRanks.prospector * BALANCE.talents.prospectorPromotionChancePerRank,
     xpMultiplier: 1 + talentRanks.insight * BALANCE.talents.insightXpPerRank,
     scoreMultiplier: 1 + talentRanks.fortune * BALANCE.talents.fortuneScorePerRank,
+    seriesMultiplierBonus: talentRanks.resonance * BALANCE.talents.resonanceSeriesMultiplierPerRank,
+    obstacleResistance: talentRanks.shield * BALANCE.talents.shieldObstacleResistancePerRank,
   };
 }

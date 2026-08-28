@@ -530,7 +530,7 @@ Hinweise.
 
 - [x] **Entscheidung „Baum, Route oder ehrliche Liste“ abschließen.**
 
-Die sieben Talente sind fachlich eine unabhängige Liste ohne Voraussetzungen.
+Die zehn Talente sind fachlich eine unabhängige Liste ohne Voraussetzungen.
 Die Coin-Kosten sind durch ADR-0018 entschieden und werden nicht erneut auf
 Talentpunkte umgebaut. Die Darstellung bleibt deshalb bewusst eine ehrliche
 Liste unter „Talente“; eine Route oder ein Voraussetzungen-Baum würde eine
@@ -540,10 +540,12 @@ Spielregel versprechen, die es nicht gibt.
 korrekt, keine versteckten Voraussetzungen und keine Änderung bestehender
 Coin-Käufe ohne eigene Entscheidung.
 
-**Umsetzung 2026-08-22:** Die frühere Route wurde auf die bewährte unabhängige
-Talentliste zurückgeführt. `TalentScene` zeigt sieben separat kaufbare Talente;
-gekaufte Ränge, Coin-Kosten sowie Kauf-/Reset-Regeln bleiben unverändert. Es
-gibt keine versteckten Voraussetzungen und keine Talentpunkte-Migration.
+**Umsetzung 2026-08-28:** Die frühere Route bleibt eine unabhängige Talentliste.
+`TalentScene` zeigt zehn separat kaufbare Talente; die Liste ist auf kleinen
+Bildschirmen scrollbar. Die Maximalwirkung wurde gegenüber dem vorherigen
+Stand gedämpft, drei neue Talente ergänzen Seltenheit, Serien und Hindernisse.
+Neue Spielstände beginnen weiterhin bei Rang 0; es gibt keine versteckten
+Voraussetzungen und keine Talentpunkte-Migration.
 
 ## P2-02 — Ein klares nächstes Ziel nach jedem Run
 

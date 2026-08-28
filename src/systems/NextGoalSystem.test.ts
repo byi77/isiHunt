@@ -75,8 +75,11 @@ describe('NextGoalSystem', () => {
       magnetism: 4,
       endurance: 4,
       focus: 4,
+      prospector: 3,
       insight: 5,
       fortune: 5,
+      resonance: 3,
+      shield: 3,
     } as const;
     const goal = getNextGoal(
       save({

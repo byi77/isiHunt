@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { MAX_LEVEL, SAVE_VERSION } from '@/config/GameConfig';
 import { DEFAULT_SHIP_AURA, DEFAULT_SHIP_COLOR, DEFAULT_SHIP_SHAPE } from '@/config/shop';
 import { RARITY_IDS } from '@/config/rarities';
+import { TALENTS } from '@/config/talents';
 import { normalizeForComparison } from '@/systems/SaveSystem';
 
 function random(seed: number): () => number {
@@ -89,6 +90,12 @@ function expectValidSave(save: ReturnType<typeof normalizeForComparison>): void 
   expect(Object.values(save.talents).every((value) => Number.isInteger(value) && value >= 0)).toBe(
     true,
   );
+  expect(Object.keys(save.talents).every((id) => TALENTS.some((talent) => talent.id === id))).toBe(
+    true,
+  );
+  for (const talent of TALENTS) {
+    expect(save.talents[talent.id] ?? 0).toBeLessThanOrEqual(talent.maxRank);
+  }
 }
 
 describe('SaveSystem reconcile/migrate Robustheit', () => {

@@ -1031,3 +1031,41 @@ Liste unter „Talente“. Es gibt keine gezeichnete Route und keinen Baum mit
 Voraussetzungen. Gekaufte Ränge dürfen visuell hervorgehoben werden, ändern
 aber weder Kaufregeln noch Freischaltungen. Die operative Aufgabe P2-01 ist
 damit abgeschlossen; weitere Politur ist kein Systemumbau.
+
+---
+
+## ADR-0019 — Zehn Talente mit moderater Maximalwirkung
+
+**Datum:** 2026-08-28 · **Status:** Angenommen
+
+### Kontext
+
+Der bisherige Talentstand war auf sieben Talente verteilt. Auf vollem Rang
+waren mehrere Einzelwirkungen zu groß: bis zu +50 % XP, +50 % Punkte, +40 %
+Tempo, 24 Sekunden Laufzeit und 1.200 ms Combo-Fenster. Gleichzeitig fehlten
+gezielte Wege für seltene Relikte, hohe Serien und Hindernisse.
+
+### Entscheidung
+
+Die unabhängige Coin-Liste bleibt bestehen und wächst auf zehn Talente. Die
+bestehenden Maximalwirkungen werden auf eine moderatere Kurve zurückgeführt:
+XP und Punkte enden bei +25 %, Tempo bei +25 %, Laufzeit bei +16 Sekunden und
+das Combo-Fenster bei +600 ms. Drei neue Talente ergänzen jeweils eine klar
+begrenzte Nische:
+
+- **Spürsinn:** bis zu 9 % Chance auf einen einstufigen Seltenheits-Aufstieg.
+- **Resonanz:** bis zu +0,15x auf sichtbare Serienmultiplikatoren; Orange bei
+  Serie 16 steigt dadurch von 800 auf rund 838 Basispunkte.
+- **Schutzfeld:** bis zu 24 % weniger Hinderniswirkung.
+
+Neue und migrierte Spielstände beginnen bei Rang 0. Bestehende gültige Ränge
+bleiben erhalten, werden beim Laden aber auf den jeweiligen neuen Maximalrang
+begrenzt. Duelle verwenden weiterhin keine Talentboni.
+
+### Konsequenzen
+
+- `balance-data.json` bleibt die Quelle für Maximalränge und Wirkungen; Client
+  und Supabase-Kette werden synchronisiert.
+- Der Vollausbau umfasst 41 Ränge und kostet aktuell 18.950 Coins.
+- `TalentScene` benötigt Scrollen, damit alle zehn Einträge auf kleinen
+  Bildschirmen erreichbar bleiben.

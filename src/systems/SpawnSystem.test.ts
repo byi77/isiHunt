@@ -20,6 +20,8 @@ vi.mock('phaser', () => ({
 }));
 
 class FakeRng {
+  constructor(private readonly fraction = 0.5) {}
+
   realInRange(): number {
     return 1;
   }
@@ -29,7 +31,7 @@ class FakeRng {
   }
 
   frac(): number {
-    return 0.5;
+    return this.fraction;
   }
 }
 
@@ -60,6 +62,22 @@ describe('SpawnSystem - Duellfairness', () => {
     const spawner = createSpawner(true);
 
     expect(spawner.update(1_000, 0.5, 14, 360, 665)).not.toBeNull();
+  });
+
+  it('setzt Spürsinn in normalen Welten nur als einstufige Aufstiegschance um', () => {
+    const spawner = new SpawnSystem(
+      new FakeRng(0.1) as never,
+      { left: 60, right: 660, top: 170, bottom: 1160, centerX: 360, centerY: 665 } as never,
+      'blink',
+      'none',
+      1,
+      false,
+      0.2,
+    );
+
+    const spawn = spawner.update(1_000, 0, 0, 360, 665);
+
+    expect(spawn?.rarity.id).toBe('common');
   });
 });
 

@@ -89,16 +89,22 @@ function activeTalentSummary(stats: PlayerStats): string {
   const speed = Math.round((stats.moveSpeed / PLAYER_BASE_SPEED - 1) * 100);
   const run = Math.round((stats.runDurationMs - RUN_DURATION_MS) / 1000);
   const combo = Math.round(stats.comboGraceMs - COMBO_GRACE_MS);
+  const promotion = Math.round(stats.rarityPromotionChance * 100);
   const xp = Math.round((stats.xpMultiplier - 1) * 100);
   const score = Math.round((stats.scoreMultiplier - 1) * 100);
+  const resonance = stats.seriesMultiplierBonus.toFixed(2).replace('.', ',');
+  const shield = Math.round(stats.obstacleResistance * 100);
 
   if (reach > 0) active.push(`REICH R${ranks.reach} +${reach}`);
   if (speed > 0) active.push(`TEMPO R${ranks.swiftness} +${speed}%`);
   if (stats.magnetRadius > 0) active.push(`MAGNET R${ranks.magnetism} +${stats.magnetRadius}`);
   if (run > 0) active.push(`AUSDAUER R${ranks.endurance} +${run}s`);
   if (combo > 0) active.push(`FOKUS R${ranks.focus} +${combo}ms`);
+  if (promotion > 0) active.push(`SPÜRSINN R${ranks.prospector} +${promotion}%`);
   if (xp > 0) active.push(`XP R${ranks.insight} +${xp}%`);
   if (score > 0) active.push(`PUNKTE R${ranks.fortune} +${score}%`);
+  if (stats.seriesMultiplierBonus > 0) active.push(`RESONANZ R${ranks.resonance} +${resonance}x`);
+  if (shield > 0) active.push(`SCHUTZFELD R${ranks.shield} -${shield}%`);
 
   return active.length > 0 ? `AKTIV · ${active.join(' · ')}` : '';
 }
@@ -229,6 +235,7 @@ export class GameScene extends Phaser.Scene {
       this.stats.comboGraceMs,
       this.stats.scoreMultiplier * this.world.scoreMultiplier,
       this.stats.xpMultiplier * this.world.xpMultiplier * XP_GLOBAL_MULTIPLIER,
+      this.stats.seriesMultiplierBonus,
     );
 
     // Nur im Duell wird geseedet - beide Spieler bekommen dieselbe Abfolge.
@@ -242,6 +249,7 @@ export class GameScene extends Phaser.Scene {
       this.world.obstacleMode,
       this.world.difficultyScale,
       Boolean(challenge),
+      this.stats.rarityPromotionChance,
     );
 
     // HUD als eigene Scene parallel starten - siehe Kommentar in EventBus.ts.
@@ -464,13 +472,18 @@ export class GameScene extends Phaser.Scene {
       if (!touching || !obstacle.canHit()) continue;
 
       obstacle.markHit();
+      const obstacleEffectScale = 1 - this.stats.obstacleResistance;
       if (obstacle.kind === 'brake') {
-        this.player.applySlow(WORLD_BRAKE_DURATION_MS, WORLD_BRAKE_FACTOR);
+        this.player.applySlow(
+          WORLD_BRAKE_DURATION_MS * obstacleEffectScale,
+          1 - (1 - WORLD_BRAKE_FACTOR) * obstacleEffectScale,
+        );
         floatingScore(this, obstacle.x, obstacle.y, 'VERLANGSAMT', 0x38bdf8);
       } else {
-        this.remainingMs = Math.max(0, this.remainingMs - WORLD_PENALTY_MS);
+        const penaltyMs = Math.round(WORLD_PENALTY_MS * obstacleEffectScale);
+        this.remainingMs = Math.max(0, this.remainingMs - penaltyMs);
         this.scoring.registerMiss();
-        const penaltyLabel = `-${(WORLD_PENALTY_MS / 1000).toFixed(1).replace('.', ',')} s`;
+        const penaltyLabel = `-${(penaltyMs / 1000).toFixed(1).replace('.', ',')} s`;
         floatingScore(this, obstacle.x, obstacle.y, penaltyLabel, 0xa855f7);
         if (!prefersReducedMotion()) this.cameras.main.shake(120, 0.004);
       }

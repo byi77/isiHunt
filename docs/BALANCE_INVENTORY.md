@@ -1,6 +1,6 @@
 # Balance-Inventur
 
-**Stand:** 2026-08-22 · Quelle: `src/config/balance-data.json`; Version siehe
+**Stand:** 2026-08-28 · Quelle: `src/config/balance-data.json`; Version siehe
 `package.json`/`version.json`
 
 Dieses Dokument beantwortet für jede laufende Einnahme und Ausgabe drei
@@ -9,13 +9,14 @@ Server- oder Synchronisationspfad muss denselben Wert verwenden?
 
 ## Punkte
 
-| Vorgang              | Rohquelle                                 | Client-Stelle                                              | Server-/Schutzpfad                                                   |
-| -------------------- | ----------------------------------------- | ---------------------------------------------------------- | -------------------------------------------------------------------- |
-| Punkte je Relikt     | `rarities.*.points`                       | `ScoreSystem.registerCollect()`                            | `max_plausible_score()` liest dieselben Raritäten                    |
-| Combo-Multiplikator  | `score.comboTiers`                        | `multiplierForCombo()` und `ScoreSystem`                   | Tages-Score-Tiers verwenden `balance_score_for_runs()`               |
-| Weltbonus            | `worlds.*.scoreMultiplier`                | `ScoreSystem` erhält den Weltmultiplikator aus `GameScene` | `max_plausible_score()` prüft Welt-ID und Multiplikator              |
-| Tages-Score-Schwelle | `economy.daily.scoreTierRuns`             | `DAILY_SCORE_BONUS_STEP` und `ChallengeSystem`             | `claim_daily_bonus()` berechnet die Tierzahl serverseitig            |
-| Score-Grenze         | keine Belohnungsquelle; Sicherheitsgrenze | kein separater Generator                                   | `max_plausible_score()` cappt Missbrauch und nutzt Sicherheitsmargen |
+| Vorgang              | Rohquelle                                 | Client-Stelle                                               | Server-/Schutzpfad                                                         |
+| -------------------- | ----------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Punkte je Relikt     | `rarities.*.points`                       | `ScoreSystem.registerCollect()`                             | `max_plausible_score()` liest dieselben Raritäten                          |
+| Combo-Multiplikator  | `score.comboTiers`                        | `multiplierForCombo()` und `ScoreSystem`                    | Tages-Score-Tiers verwenden `balance_score_for_runs()`                     |
+| Weltbonus            | `worlds.*.scoreMultiplier`                | `ScoreSystem` erhält den Weltmultiplikator aus `GameScene`  | `max_plausible_score()` prüft Welt-ID und Multiplikator                    |
+| Talentboni           | `talents.*`                               | `resolveStats()`, `ScoreSystem`, `SpawnSystem`, `GameScene` | Duell setzt Talente auf Grundwerte; Run-Event bleibt serverseitig begrenzt |
+| Tages-Score-Schwelle | `economy.daily.scoreTierRuns`             | `DAILY_SCORE_BONUS_STEP` und `ChallengeSystem`              | `claim_daily_bonus()` berechnet die Tierzahl serverseitig                  |
+| Score-Grenze         | keine Belohnungsquelle; Sicherheitsgrenze | kein separater Generator                                    | `max_plausible_score()` cappt Missbrauch und nutzt Sicherheitsmargen       |
 
 Die Rarity-Tabelle in `src/config/rarities.ts` ist eine Kompatibilitätsansicht
 für den Client. Ihr Punkte-/XP-Inhalt wird in `Balance.test.ts` gegen die
@@ -27,7 +28,7 @@ Balance-Rohquelle geprüft.
 | ----------------- | --------------------------------------------------- | --------------------------------------- | ------------------------------------------------------------------------------------- |
 | XP je Relikt      | `rarities.*.xp`                                     | `ScoreSystem.registerCollect()`         | Run-Event überträgt `xpGained`; der Server übernimmt nur sichere, nichtnegative Werte |
 | Weltbonus         | `worlds.*.xpMultiplier`                             | `GameScene`/`ScoreSystem`               | Server-Levelberechnung bleibt auf der zentralen Kette                                 |
-| Talentbonus       | `talents.insightXpPerRank`                          | `resolveStats()`                        | kein eigener Generator; Event wird serverseitig begrenzt                              |
+| Talentboni        | `talents.*`                                         | `resolveStats()`                        | kein eigener Generator; Event wird serverseitig begrenzt                              |
 | XP je Level       | `progression.xp.runsPerLevel` und `referencePerRun` | `xpForLevel()` / `ProgressionSystem`    | `balance_xp_for_level()` und `profile_level_from_xp()`                                |
 | Tagesabschluss    | `progression.xp.dailyCompletionRuns`                | `ChallengeSystem` / `applyDailyBonus()` | `claim_daily_bonus()`                                                                 |
 | Tages-Score-Tiers | `progression.xp.dailyScoreTierRuns`                 | `ChallengeSystem`                       | `claim_daily_bonus()`                                                                 |

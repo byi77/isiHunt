@@ -52,6 +52,12 @@ export function multiplierForCombo(combo: number): number {
   return result;
 }
 
+/** Serienbonus aus der Balance plus Resonanz-Talent. */
+export function multiplierForComboWithTalent(combo: number, seriesMultiplierBonus = 0): number {
+  const baseMultiplier = multiplierForCombo(combo);
+  return baseMultiplier + (baseMultiplier > 1 ? Math.max(0, seriesMultiplierBonus) : 0);
+}
+
 /**
  * Steigert ein Fang dieser Seltenheit die Serie, oder haelt er sie nur?
  *
@@ -93,6 +99,7 @@ export class ScoreSystem {
     private readonly comboGraceMs: number,
     private readonly scoreMultiplier: number,
     private readonly xpMultiplier: number,
+    private readonly seriesMultiplierBonus = 0,
   ) {}
 
   /** Muss jeden Frame aufgerufen werden, damit die Serie zerfallen kann. */
@@ -114,7 +121,7 @@ export class ScoreSystem {
   }
 
   registerCollect(rarity: RarityDef): CollectOutcome {
-    const previousMultiplier = multiplierForCombo(this.combo);
+    const previousMultiplier = multiplierForComboWithTalent(this.combo, this.seriesMultiplierBonus);
 
     // Jeder Fang haelt die Serie am Leben - aber nur ein farbiger steigert
     // sie. Genau daraus entsteht die taktische Wahl: Wer nichts Farbiges in
@@ -127,7 +134,7 @@ export class ScoreSystem {
     this.bestCombo = Math.max(this.bestCombo, this.combo);
     this.collected[rarity.id] += 1;
 
-    const multiplier = multiplierForCombo(this.combo);
+    const multiplier = multiplierForComboWithTalent(this.combo, this.seriesMultiplierBonus);
     this.bestMultiplier = Math.max(this.bestMultiplier, multiplier);
 
     const streakBonus = multiplier > 1;
@@ -177,7 +184,7 @@ export class ScoreSystem {
   }
 
   get currentMultiplier(): number {
-    return multiplierForCombo(this.combo);
+    return multiplierForComboWithTalent(this.combo, this.seriesMultiplierBonus);
   }
 
   toRunStats(worldId: string): RunStats {

@@ -33,6 +33,11 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- **Das Talentsystem umfasst jetzt zehn moderate Talente.** Die bisherigen
+  Maximalwirkungen wurden gedämpft; neu sind **Spürsinn** für etwas bessere
+  Seltenheits-Aufstiege, **Resonanz** für aktive Serien und **Schutzfeld** für
+  schwächere Hindernisse. Neue Spielstände starten weiterhin mit Rang 0.
+
 - **Seltenheit und Serie zahlen sich jetzt deutlich stärker aus.** Die Punkte
   steigen bei farbigen Relikten von 10 über 25 und 75 bis auf **250 Punkte für
   Orange**. Der Serienbonus wächst von ×1,2 bis auf **×3,2 ab Serie 16**; ein

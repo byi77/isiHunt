@@ -101,6 +101,8 @@ export class SpawnSystem {
      * vom Bewegungsverlauf des vorherigen Spielers abhängen.
      */
     private readonly synchronizedPositions = false,
+    /** Zusatzchance aus dem Spürsinn-Talent; im Duell bleibt sie 0. */
+    private readonly rarityPromotionChance = 0,
   ) {}
 
   /**
@@ -180,12 +182,16 @@ export class SpawnSystem {
 
   private rollWorldRarity(): RarityDef {
     const rarity = rollRarity(this.rng);
-    if (this.modifier !== 'rare_bonus' || this.rng.frac() >= WORLD_RARE_PROMOTION_CHANCE)
-      return rarity;
+    const promotionChance = Math.min(
+      1,
+      (this.modifier === 'rare_bonus' ? WORLD_RARE_PROMOTION_CHANCE : 0) +
+        Math.max(0, this.rarityPromotionChance),
+    );
+    if (promotionChance <= 0 || this.rng.frac() >= promotionChance) return rarity;
 
-    // Sonnenkrone verdoppelt praktisch die Chance auf seltene Planeten, ohne
-    // die Seltenheits-Tabelle selbst zu verfälschen. Ein einmaliger Aufstieg
-    // bewahrt die sichtbare Staffelung und bleibt deterministisch.
+    // Weltbonus und Spürsinn fördern jeweils nur um eine Stufe. So bleibt die
+    // sichtbare Staffelung erhalten und ein Talent erzeugt keine direkte
+    // Legendary-Garantie.
     const promoted: Record<string, string> = {
       poor: 'common',
       common: 'uncommon',

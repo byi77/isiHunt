@@ -73,22 +73,28 @@
     }
   },
   "talents": {
-    "reachRadiusPerRank": 12,
-    "swiftnessSpeedPerRank": 0.08,
-    "magnetRadiusPerRank": 75,
-    "magnetPullSpeedPerRank": 0.35,
-    "enduranceSecondsPerRank": 6,
-    "focusComboMsPerRank": 300,
-    "insightXpPerRank": 0.1,
-    "fortuneScorePerRank": 0.1,
+    "reachRadiusPerRank": 8,
+    "swiftnessSpeedPerRank": 0.05,
+    "magnetRadiusPerRank": 65,
+    "magnetPullSpeedPerRank": 0.2,
+    "enduranceSecondsPerRank": 4,
+    "focusComboMsPerRank": 150,
+    "prospectorPromotionChancePerRank": 0.03,
+    "insightXpPerRank": 0.05,
+    "fortuneScorePerRank": 0.05,
+    "resonanceSeriesMultiplierPerRank": 0.05,
+    "shieldObstacleResistancePerRank": 0.08,
     "maxRanks": {
       "reach": 5,
       "swiftness": 5,
       "magnetism": 4,
       "endurance": 4,
       "focus": 4,
+      "prospector": 3,
       "insight": 5,
-      "fortune": 5
+      "fortune": 5,
+      "resonance": 3,
+      "shield": 3
     }
   }
 }

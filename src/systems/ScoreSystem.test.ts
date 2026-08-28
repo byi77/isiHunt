@@ -23,7 +23,12 @@ import {
 import { RARITY_BY_ID } from '@/config/rarities';
 import { resolveStats } from '@/config/talents';
 import { WORLDS } from '@/config/worlds';
-import { multiplierForCombo, ScoreSystem, trailTierForSeries } from '@/systems/ScoreSystem';
+import {
+  multiplierForCombo,
+  multiplierForComboWithTalent,
+  ScoreSystem,
+  trailTierForSeries,
+} from '@/systems/ScoreSystem';
 
 const POOR = RARITY_BY_ID.poor;
 const LEGENDARY = RARITY_BY_ID.legendary;
@@ -58,6 +63,12 @@ describe('multiplierForCombo', () => {
       expect(current).toBeGreaterThanOrEqual(previous);
       previous = current;
     }
+  });
+
+  it('setzt Resonanz erst ab dem sichtbaren Serienbonus auf den Multiplikator', () => {
+    expect(multiplierForComboWithTalent(1, 0.15)).toBe(1);
+    expect(multiplierForComboWithTalent(2, 0.15)).toBeCloseTo(1.35);
+    expect(multiplierForComboWithTalent(16, 0.15)).toBeCloseTo(3.35);
   });
 });
 
@@ -101,6 +112,18 @@ describe('ScoreSystem - Fangen', () => {
     expect(outcome.combo).toBe(3);
     expect(outcome.multiplier).toBe(multiplierForCombo(3));
     expect(outcome.xpGained).toBe(LEGENDARY!.xp);
+  });
+
+  it('belohnt Resonanz bei einer hohen Serie, ohne den ersten Fang zu veraendern', () => {
+    const system = new ScoreSystem(COMBO_GRACE_MS, 1, 1, 0.15);
+    expect(system.registerCollect(LEGENDARY!).awardedPoints).toBe(250);
+
+    for (let i = 1; i < 15; i += 1) system.registerCollect(LEGENDARY!);
+
+    const outcome = system.registerCollect(LEGENDARY!);
+    expect(outcome.combo).toBe(16);
+    expect(outcome.multiplier).toBe(3.35);
+    expect(outcome.awardedPoints).toBe(Math.round(250 * 3.35));
   });
 });
 

@@ -470,7 +470,7 @@ export const COINS_PER_LEVEL = Balance.COINS_PER_LEVEL;
  *
  * Bewusst deutlich unter dem ersten Rangkauf (250): ein frueher Fehlkauf soll
  * korrigierbar bleiben, ohne dass der Reset selbst wie eine zweite Strafe
- * wirkt. Bei vollem Ausbau (15.650 Coins Gesamtkosten) bleibt der Reset
+ * wirkt. Bei vollem Ausbau (18.950 Coins Gesamtkosten) bleibt der Reset
  * ohnehin fast kostenlos - die Untergrenze zaehlt fuer Einsteiger.
  * S. docs/BALANCE_2026-08-17.md Abschnitt 3.
  */
