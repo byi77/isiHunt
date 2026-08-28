@@ -61,6 +61,7 @@ isiHunt/
 │   ├── smoke-test.mjs          Playwright gegen den Dev-Server (npm run smoke)
 │   ├── playtest.mjs            Sieben Test-Suiten im Browser (npm run playtest)
 │   ├── check-ios-support.mjs   iOS-Mindestversion aus dem Build (npm run ios:check)
+│   ├── check-sql-contract.mjs  SQL-Verträge der Integrity-Migration (sql:check)
 │   └── sync-balance-sql.mjs    JSON-Balance in die Supabase-Migration spiegeln
 ├── src/
 │   ├── config/                 Reine Daten, keine Logik
@@ -858,9 +859,10 @@ Manche Fehlerklassen liegen in `scenes/` und sind mit Vitest nicht erreichbar
 | `npm run scene:guards`      | Kein Oberflaechenzugriff nach `await` ohne Guard    |
 | `npm run save:version`      | `SAVE_VERSION` (TS) == `save_version()` (Postgres)  |
 | `npm run balance:check`     | `balance-data.json` == JSON-Block in `phase_2_14`   |
+| `npm run sql:check`         | SQL-Verträge der Integrity-Migration                |
 
-Beide Workflows (`ci.yml`, `deploy.yml`) rufen `npm run verify` als Ganzes
-auf, statt die Schritte einzeln aufzuzaehlen. Die CI tat Letzteres bis zum
+Beide Workflows (`ci.yml`, `deploy.yml`) rufen `npm run verify` und danach die
+Release-Gates als Ganzes auf, statt die Schritte einzeln aufzuzaehlen. Die CI tat Letzteres bis zum
 2026-08-23 und war dadurch schwaecher als der lokale `pre-push`-Hook: Die
 beiden Gates kamen spaeter zur Kette dazu und fehlten in der Liste. Wer
 `verify` erweitert, erweitert damit jetzt automatisch auch die CI.
@@ -1081,14 +1083,12 @@ Bundle** und meldet die hoechste gefundene Anforderung:
 
 |                         |                                           |
 | ----------------------- | ----------------------------------------- |
-| Laedt ueberhaupt ab     | **iOS 14.0** (Logical Assignment `??=`)   |
-| Vollstaendig nutzbar ab | **iOS 15.4** (`structuredClone()`, `dvh`) |
+| Laedt ueberhaupt ab     | **iOS 16.4** (Static Init Blocks in Three.js) |
+| Vollstaendig nutzbar ab | **iOS 16.4** (Static Init Blocks in Three.js) |
 
-**Massgeblich ist iOS 15.4.** `structuredClone()` sitzt in
-`SaveSystem.update()` und laeuft bei jedem Run-Ende — dazwischen wuerde das
-Spiel starten und beim ersten Speichern abbrechen, was schlechter ist als
-gar nicht zu laden.
-
+**Massgeblich ist iOS 16.4.** Das gebaute Bundle enthaelt in der Three.js-
+Abhaengigkeit statische Initialisierungsbloecke. `npm run ios:check` prueft
+die Grenze nach jedem Build; ein niedrigeres Versprechen waere falsch.
 Geprueft wird das Bundle, nicht `src/`: Vite transpiliert auf `es2022` und
 laesst alles darueber stehen, auch aus Phaser und supabase-js. Der Check
 schreibt die Grenze fest und bricht ab, wenn eine neue Abhaengigkeit sie

@@ -29,6 +29,41 @@ select count(*) as profile_events_total,
        count(distinct profile_id) as profiles_with_events
 from public.profile_progress_events;
 
+-- 6. Tages-Events muessen einen kanonischen Schluessel tragen; normale Runs
+-- bleiben NULL. Nur Lesekontrolle fuer Phase 2.28.
+select count(*) as daily_events_total,
+       count(*) filter (where daily_key is null) as daily_key_missing_count,
+       count(*) filter (where daily_key !~ '^\d{4}-\d{2}-\d{2}$') as daily_key_invalid_count
+from public.profile_progress_events
+where daily_key is not null;
+
+-- 7. Neue sicherheitsrelevante RPC-Signaturen - insbesondere kein frei
+-- einreichbarer Tages-Score, kein clientseitiges Duell-Rollenflag und CAS
+-- fuer Saves.
+select p.proname as routine_name,
+       pg_get_function_identity_arguments(p.oid) as arguments
+from pg_proc p
+join pg_namespace n on n.oid = p.pronamespace
+where n.nspname = 'public'
+  and p.proname in (
+    'claim_daily_bonus', 'claim_daily_login_bonus', 'submit_progress_event',
+    'upsert_save', 'create_duel_room', 'join_duel_room', 'mark_duel_ready',
+    'set_duel_start_time', 'get_duel_room', 'submit_duel_result'
+  )
+order by routine_name, arguments;
+
+select count(*) filter (
+         where expires_at > now() and host_token_hash is null
+       ) as active_duel_rooms_without_host_token,
+       count(*) filter (
+         where expires_at > now() and guest_joined and guest_token_hash is null
+       ) as active_joined_rooms_without_guest_token,
+       count(*) filter (
+         where expires_at <= now()
+           and (host_token_hash is null or (guest_joined and guest_token_hash is null))
+       ) as expired_legacy_duel_rooms
+from public.duel_rooms;
+
 -- Erwartete Nachkontrolle fuer Phase 2.27: keine direkten Grants fuer
 -- anon/authenticated auf privaten Tabellen, RPC-Grants separat pruefen.
 select table_name, grantee, privilege_type

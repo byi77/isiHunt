@@ -20,9 +20,11 @@ import type * as SaveSystemModule from '@/systems/SaveSystem';
 import type { ProgressEvent, ProgressionResult, RunStats } from '@/types';
 
 let signedIn = false;
+let signedInUserId: string | null = 'user-1';
 
 vi.mock('@/systems/AuthSystem', () => ({
   isSignedIn: () => signedIn,
+  currentUserId: () => (signedIn ? signedInUserId : null),
 }));
 
 const submitProgressEvent = vi.fn();
@@ -39,6 +41,7 @@ let ProgressSyncSystem: typeof ProgressSyncSystemModule;
 beforeEach(async () => {
   window.localStorage.clear();
   signedIn = false;
+  signedInUserId = 'user-1';
   submitProgressEvent.mockReset();
   claimDailyBonus.mockReset();
 
@@ -80,7 +83,7 @@ function createRun(overrides: Partial<RunStats> = {}): RunStats {
  * Teilfehlschlag braucht es die Ereignisse selbst.
  */
 function readOutbox(): ProgressEvent[] {
-  const raw = window.localStorage.getItem('isihunt.progress-events');
+  const raw = window.localStorage.getItem(`isihunt.progress-events.v2.${signedInUserId}`);
   return raw ? (JSON.parse(raw) as ProgressEvent[]) : [];
 }
 
@@ -123,7 +126,7 @@ describe('enqueueRun', () => {
     const eventId = ProgressSyncSystem.enqueueRun(createRun(), createProgression());
 
     expect(eventId).not.toBeNull();
-    expect(ProgressSyncSystem.pendingCount()).toBe(1);
+    expect(readOutbox()).toHaveLength(1);
   });
 });
 
@@ -137,7 +140,7 @@ describe('flushPending (ueber flush())', () => {
 
     expect(submitProgressEvent).not.toHaveBeenCalled();
     // Das Ereignis bleibt in der Outbox stehen statt verworfen zu werden.
-    expect(ProgressSyncSystem.pendingCount()).toBe(1);
+    expect(readOutbox()).toHaveLength(1);
   });
 
   it('holt den Tagesbonus nicht ab, solange Laufereignisse noch ausstehen', async () => {
@@ -154,7 +157,7 @@ describe('flushPending (ueber flush())', () => {
     await ProgressSyncSystem.flush();
 
     expect(claimDailyBonus).not.toHaveBeenCalled();
-    expect(ProgressSyncSystem.pendingCount()).toBe(1);
+    expect(readOutbox()).toHaveLength(1);
   });
 
   it('holt den Tagesbonus ab, sobald die Outbox leer ist', async () => {
@@ -172,7 +175,7 @@ describe('flushPending (ueber flush())', () => {
 
     await ProgressSyncSystem.flush();
 
-    expect(claimDailyBonus).toHaveBeenCalledWith('2026-08-17', 300, 'event-1');
+    expect(claimDailyBonus).toHaveBeenCalledWith('2026-08-17', 'event-1');
     const data = SaveSystem.load();
     expect(data.pendingDailyKey).toBeNull();
     expect(data.pendingDailyEventId).toBeNull();
@@ -228,7 +231,7 @@ describe('flushPending (ueber flush())', () => {
 
     await ProgressSyncSystem.flush();
 
-    expect(claimDailyBonus).toHaveBeenCalledWith('2026-08-16', 300, 'event-1');
+    expect(claimDailyBonus).toHaveBeenCalledWith('2026-08-16', 'event-1');
   });
 
   it('verwirft einen zu alten Tagesbonus, statt ihn ewig zu wiederholen', async () => {
@@ -385,5 +388,39 @@ describe('hasPendingData', () => {
     });
 
     expect(ProgressSyncSystem.hasPendingData()).toBe(false);
+  });
+});
+
+describe('Account-Bindung', () => {
+  it('trennt die Outboxes beim Kontowechsel', () => {
+    signedIn = true;
+    signedInUserId = 'user-a';
+    const first = ProgressSyncSystem.enqueueRun(createRun({ score: 11 }), createProgression());
+
+    signedInUserId = 'user-b';
+    const second = ProgressSyncSystem.enqueueRun(createRun({ score: 22 }), createProgression());
+
+    expect(first).not.toBeNull();
+    expect(second).not.toBeNull();
+    expect(
+      JSON.parse(window.localStorage.getItem('isihunt.progress-events.v2.user-a')!),
+    ).toHaveLength(1);
+    expect(
+      JSON.parse(window.localStorage.getItem('isihunt.progress-events.v2.user-b')!),
+    ).toHaveLength(1);
+    expect(ProgressSyncSystem.pendingCount()).toBe(1);
+  });
+
+  it('uebernimmt keine alte globale Outbox in ein Konto', () => {
+    window.localStorage.setItem(
+      'isihunt.progress-events',
+      JSON.stringify([{ eventId: 'legacy', score: 999 }]),
+    );
+    signedIn = true;
+    signedInUserId = 'user-new';
+
+    expect(ProgressSyncSystem.pendingCount()).toBe(0);
+    expect(window.localStorage.getItem('isihunt.progress-events.v2.user-new')).toBeNull();
+    expect(window.localStorage.getItem('isihunt.progress-events.unbound.v1')).not.toBeNull();
   });
 });

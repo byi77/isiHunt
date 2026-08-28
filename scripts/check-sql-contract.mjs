@@ -1,0 +1,69 @@
+import { readFileSync, readdirSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+const root = resolve(import.meta.dirname, '..');
+const sqlDir = resolve(root, 'supabase');
+const migration = readFileSync(resolve(sqlDir, 'phase_2_28_integrity_hardening.sql'), 'utf8');
+const verification = readFileSync(resolve(sqlDir, 'verify_security_hardening.sql'), 'utf8');
+
+const failures = [];
+function requireText(text, fragment, label) {
+  if (!text.includes(fragment)) failures.push(`${label}: fehlt "${fragment}"`);
+}
+
+requireText(migration, 'add column if not exists daily_key text', 'Tages-Event-Spalte');
+requireText(migration, 'daily_key is distinct from p_daily_key', 'Tages-Event-Identitaet');
+requireText(
+  migration,
+  'drop function if exists public.claim_daily_bonus(text, integer, uuid)',
+  'alter Tagesbonus-Signatur',
+);
+requireText(
+  migration,
+  'create or replace function public.claim_daily_bonus(\n  p_daily_key text,\n  p_event_id uuid',
+  'neue Tagesbonus-Signatur',
+);
+requireText(migration, 'event_daily_key is distinct from p_daily_key', 'Tagesbonus-Eventbindung');
+requireText(
+  migration,
+  "server_daily_key text := to_char((now() at time zone 'UTC')::date",
+  'serverseitiger Login-Tag',
+);
+requireText(
+  migration,
+  'create or replace function public.claim_daily_login_bonus()',
+  'Loginbonus ohne Client-Tag',
+);
+requireText(migration, 'p_expected_updated_at timestamptz', 'Save-CAS-Parameter');
+requireText(migration, "using errcode = '40001'", 'Save-CAS-Konflikt');
+requireText(migration, 'add column if not exists host_token_hash text', 'Duell-Host-Token');
+requireText(migration, 'add column if not exists guest_token_hash text', 'Duell-Gast-Token');
+requireText(migration, 'p_participant_token text', 'Duell-Teilnehmer-Token');
+requireText(migration, 'duel_channel_is_authorized', 'Duell-Realtime-Bindung');
+requireText(
+  migration,
+  'revoke all on public.duel_rooms from anon, authenticated',
+  'Duell-Tabellenschutz',
+);
+
+const migrationFiles = readdirSync(sqlDir).filter((name) => /^phase_2_28_.*\.sql$/.test(name));
+for (const file of migrationFiles) {
+  const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();
+  if (!content.includes('begin;') || !content.includes('commit;')) {
+    failures.push(`${file}: Migration muss BEGIN/COMMIT enthalten`);
+  }
+}
+
+requireText(verification, 'daily_key', 'Live-Verifikation Tagesbonus');
+requireText(verification, 'upsert_save', 'Live-Verifikation Save-CAS');
+requireText(verification, 'duel_rooms', 'Live-Verifikation Duell');
+
+if (failures.length > 0) {
+  console.error('SQL-Vertragspruefung fehlgeschlagen:');
+  for (const failure of failures) console.error(`- ${failure}`);
+  process.exitCode = 1;
+} else {
+  console.log(
+    `SQL-Vertrag OK: ${migrationFiles.length} transaktionale Integrity-Migration geprueft.`,
+  );
+}

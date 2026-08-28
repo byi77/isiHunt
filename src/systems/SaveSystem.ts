@@ -94,6 +94,7 @@ export function createDefaultSave(): SaveData {
     playerName: '',
     pendingPlayerName: null,
     cloudId: null,
+    cloudUpdatedAt: null,
   };
 }
 
@@ -254,6 +255,11 @@ function reconcile(raw: Partial<SaveData>): SaveData {
     playerName: stringOr(source.playerName, base.playerName),
     pendingPlayerName: nullableStringOr(source.pendingPlayerName, base.pendingPlayerName ?? null),
     cloudId: nullableStringOr(source.cloudId, base.cloudId),
+    cloudUpdatedAt:
+      typeof source.cloudUpdatedAt === 'string' &&
+      Number.isFinite(Date.parse(source.cloudUpdatedAt))
+        ? source.cloudUpdatedAt
+        : base.cloudUpdatedAt,
   };
 }
 
@@ -311,6 +317,7 @@ function resetForTalentPointEconomy(save: SaveData): SaveData {
     playerName: save.playerName,
     pendingPlayerName: save.pendingPlayerName,
     cloudId: save.cloudId,
+    cloudUpdatedAt: save.cloudUpdatedAt,
     soundEnabled: save.soundEnabled,
     hapticsEnabled: save.hapticsEnabled,
   };
@@ -885,13 +892,18 @@ export function adoptRemote(
   cloudId: string,
   resetErkannt = false,
   accessToken?: string,
+  cloudUpdatedAt?: string | null,
 ): SaveData {
   const lokal = load();
-  const merged = preservePendingIdentity(
+  const merged = preservePendingLocalMarkers(
     lokal,
     mergeShopOwnership(lokal, migrate(remote), hasExplicitShopSelection(remote), resetErkannt),
   );
   merged.cloudId = cloudId;
+  merged.cloudUpdatedAt =
+    typeof cloudUpdatedAt === 'string' && Number.isFinite(Date.parse(cloudUpdatedAt))
+      ? cloudUpdatedAt
+      : null;
   if (accessToken) setCloudAccessToken(accessToken, cloudId);
   save(merged);
   return merged;
@@ -900,7 +912,7 @@ export function adoptRemote(
 /** Übernimmt den gemeinsamen Auth-Profilstand und bewahrt die lokale Sync-ID. */
 export function adoptProfileProgress(remote: Partial<SaveData>): SaveData {
   const lokal = load();
-  const merged = preservePendingIdentity(
+  const merged = preservePendingLocalMarkers(
     lokal,
     mergeShopOwnership(lokal, migrate(remote), hasExplicitShopSelection(remote)),
   );
@@ -909,12 +921,30 @@ export function adoptProfileProgress(remote: Partial<SaveData>): SaveData {
   return merged;
 }
 
+/** Setzt die Save-Revision nach einem erfolgreichen CAS-Read/Write. */
+export function setCloudUpdatedAt(updatedAt: string | null, cloudId = load().cloudId): boolean {
+  if (!cloudId || typeof updatedAt !== 'string' || !Number.isFinite(Date.parse(updatedAt))) {
+    return false;
+  }
+  if (load().cloudId !== cloudId) return false;
+  update((data) => {
+    data.cloudUpdatedAt = updatedAt;
+  });
+  return true;
+}
+
 /** Ein nicht bestaetigter Offline-Name darf kein Remote-Pull verlieren. */
-function preservePendingIdentity(lokal: SaveData, merged: SaveData): SaveData {
-  if (!lokal.pendingPlayerName) return merged;
-  return {
-    ...merged,
-    playerName: lokal.playerName,
-    pendingPlayerName: lokal.pendingPlayerName,
-  };
+function preservePendingLocalMarkers(lokal: SaveData, merged: SaveData): SaveData {
+  const result = { ...merged };
+  if (lokal.pendingPlayerName) {
+    result.playerName = lokal.playerName;
+    result.pendingPlayerName = lokal.pendingPlayerName;
+  }
+  if (lokal.pendingDailyKey && lokal.pendingDailyEventId && lokal.pendingDailyCoins > 0) {
+    result.pendingDailyKey = lokal.pendingDailyKey;
+    result.pendingDailyEventId = lokal.pendingDailyEventId;
+    result.pendingDailyCoins = lokal.pendingDailyCoins;
+    result.pendingDailyScore = lokal.pendingDailyScore;
+  }
+  return result;
 }

@@ -229,7 +229,7 @@ describe('"wirft nie" - Netzfunktionen ohne konfiguriertes Backend', () => {
     );
 
     expect(result.ok).toBe(false);
-    expect(CloudSystem.hasPendingLeaderboardScore()).toBe(true);
+    expect(CloudSystem.hasPendingLeaderboardScore('player-1')).toBe(true);
   });
 
   it('ueberschreibt einen vorgemerkten Score nicht mit einem niedrigeren derselben playerId', async () => {
@@ -260,7 +260,7 @@ describe('"wirft nie" - Netzfunktionen ohne konfiguriertes Backend', () => {
     );
 
     const persisted = JSON.parse(
-      window.localStorage.getItem('isihunt.pending-leaderboard-score.v1')!,
+      window.localStorage.getItem('isihunt.pending-leaderboard-score.v2.player-1')!,
     ) as { score: number };
     expect(persisted.score).toBe(500);
   });
@@ -295,7 +295,7 @@ describe('"wirft nie" - Netzfunktionen ohne konfiguriertes Backend', () => {
     );
 
     const persisted = JSON.parse(
-      window.localStorage.getItem('isihunt.pending-leaderboard-score.v1')!,
+      window.localStorage.getItem('isihunt.pending-leaderboard-score.v2.player-2')!,
     ) as { score: number; playerId: string };
     expect(persisted.playerId).toBe('player-2');
     expect(persisted.score).toBe(50);
@@ -310,36 +310,43 @@ describe('"wirft nie" - Netzfunktionen ohne konfiguriertes Backend', () => {
 
   it('merkt Kosmetik fuer den Offline-Sync vor und kann sie verwerfen', () => {
     const save = createSave({
+      cloudId: 'cloud-1',
       ownedShipShapes: [DEFAULT_SHIP_SHAPE, 'star'],
       shipShape: 'star',
     });
 
     CloudSystem.queueCosmeticSync(save);
-    expect(CloudSystem.hasPendingCosmeticSync()).toBe(true);
+    expect(CloudSystem.hasPendingCosmeticSync('cloud-1')).toBe(true);
 
-    CloudSystem.clearPendingCosmeticSync();
-    expect(CloudSystem.hasPendingCosmeticSync()).toBe(false);
+    CloudSystem.clearPendingCosmeticSync('cloud-1');
+    expect(CloudSystem.hasPendingCosmeticSync('cloud-1')).toBe(false);
   });
 
   it('merkt ausgegebene Coins im Kosmetik-Sync vor', () => {
-    CloudSystem.queueCosmeticSync(createSave({ coins: 49700, coinsSpent: 300 }));
+    CloudSystem.queueCosmeticSync(
+      createSave({ cloudId: 'cloud-1', coins: 49700, coinsSpent: 300 }),
+    );
 
     const pending = JSON.parse(
-      window.localStorage.getItem('isihunt.pending-cosmetic-sync.v1') ?? '{}',
+      window.localStorage.getItem('isihunt.pending-cosmetic-sync.v2.cloud-1') ?? '{}',
     ) as { coinsSpent?: number };
     expect(pending.coinsSpent).toBe(300);
   });
 
   it('laesst Kosmetik bei fehlendem Backend vorgemerkt', async () => {
     CloudSystem.queueCosmeticSync(
-      createSave({ ownedShipColors: [DEFAULT_SHIP_COLOR, 'gold'], shipColor: 'gold' }),
+      createSave({
+        cloudId: 'cloud-1',
+        ownedShipColors: [DEFAULT_SHIP_COLOR, 'gold'],
+        shipColor: 'gold',
+      }),
     );
 
-    await expect(CloudSystem.flushPendingCosmetics()).resolves.toEqual({
+    await expect(CloudSystem.flushPendingCosmetics('cloud-1')).resolves.toEqual({
       ok: false,
       error: expect.any(String),
     });
-    expect(CloudSystem.hasPendingCosmeticSync()).toBe(true);
+    expect(CloudSystem.hasPendingCosmeticSync('cloud-1')).toBe(true);
   });
 
   it('syncSaveSafely liefert ein Fehlerergebnis statt zu werfen', async () => {

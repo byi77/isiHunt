@@ -40,6 +40,7 @@ Auf einer leeren Datenbank in dieser Reihenfolge einspielen:
 | 21  | `phase_2_25_cosmetic_coin_sync.sql`          | Shop-Ausgaben beim Kosmetik-Sync serverseitig nachbuchen          |
 | 22  | `phase_2_26_uncapped_series.sql`             | Serien-Multiplikator wächst nach Serie 16 ohne Obergrenze         |
 | 23  | `phase_2_27_security_hardening.sql`          | Admin-/Reward-/Save-/Leaderboard-Hardening                        |
+| 24  | `phase_2_28_integrity_hardening.sql`        | Account-Outbox, Save-CAS, Tagesbonus- und Duell-Integrität        |
 
 `phase_2_23_talent_points.sql` enthält einen historischen globalen
 Testdaten-Reset. Das Skript bricht ohne ausdrückliches Opt-in ab. Nur wenn
@@ -84,6 +85,7 @@ Nicht Teil der Reihenfolge, nur bei Bedarf und bewusst:
 | ----------------------- | ------------------------------------------------------ |
 | `npm run save:version`  | `SAVE_VERSION` (TS) und `save_version()` (Postgres)    |
 | `npm run balance:check` | `balance-data.json` und der JSON-Block in `phase_2_14` |
+| `npm run sql:check`     | Verträge und Signaturen der Integrity-Migration          |
 
-Beide laufen in `npm run verify` mit. Wer `balance-data.json` ändert, überträgt
+Alle drei laufen in den Release-Gates mit. Wer `balance-data.json` ändert, überträgt
 mit `npm run balance:sync` und legt die geänderte SQL-Datei in denselben Commit.

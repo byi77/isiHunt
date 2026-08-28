@@ -114,6 +114,7 @@ function createFakeSupabase(): {
   firePresence: (event: 'join' | 'leave', key: string) => void;
   fireSync: (anwesend: Record<string, unknown>) => void;
   channelConfig: () => unknown;
+  channelTopic: () => string;
   trackPayload: () => unknown;
 } {
   const broadcastHandlers = new Map<string, (message: unknown) => void>();
@@ -137,6 +138,7 @@ function createFakeSupabase(): {
   // Die beim Erzeugen uebergebene Kanalkonfiguration - `ack` ist die
   // Voraussetzung dafuer, dass Ablehnungen ueberhaupt sichtbar werden.
   let lastChannelConfig: unknown;
+  let lastChannelTopic = '';
   let lastTrackPayload: unknown;
 
   const channel: FakeChannel = {
@@ -162,7 +164,8 @@ function createFakeSupabase(): {
 
   return {
     client: {
-      channel: (_topic: string, config?: unknown) => {
+      channel: (topic: string, config?: unknown) => {
+        lastChannelTopic = topic;
         lastChannelConfig = config;
         return channel;
       },
@@ -174,6 +177,7 @@ function createFakeSupabase(): {
       presenceHandlers.get('sync')?.({});
     },
     channelConfig: () => lastChannelConfig,
+    channelTopic: () => lastChannelTopic,
     trackPayload: () => lastTrackPayload,
   };
 }
@@ -707,5 +711,14 @@ describe('Kanalkonfiguration', () => {
     };
     expect(config.config?.private).toBe(true);
     expect(config.config?.presence?.key).toBe('1');
+  });
+
+  it('bindet das Realtime-Topic an das Teilnehmer-Token', () => {
+    const fake = createFakeSupabase();
+    const token = 'a'.repeat(64);
+
+    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {}, '', token);
+
+    expect(fake.channelTopic()).toBe(`ABC123:${token}`);
   });
 });

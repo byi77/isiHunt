@@ -84,6 +84,8 @@ export interface SaveData {
    * Spielstand; genau das stellt der Sync-Code her.
    */
   cloudId: string | null;
+  /** Revision des zuletzt gelesenen/geschriebenen Cloud-Saves fuer CAS. */
+  cloudUpdatedAt?: string | null;
 }
 
 /** Ergebnis eines einzelnen Runs - Eingabe fuer Progression und Achievements. */
@@ -128,6 +130,8 @@ export interface ChallengeRound {
 export interface OnlineDuelInfo {
   /** Raum-Code, ueber den beide Geraete denselben Realtime-Kanal finden. */
   roomCode: string;
+  /** Kurzlebiges Capability-Token des serverseitig zugewiesenen Slots. */
+  participantToken: string;
   /** 0 = Gastgeber (hat den Raum erzeugt), 1 = Beigetretener. */
   localPlayerIndex: 0 | 1;
   /** Anzeigenamen beider Geraete, an fester Spielerposition. */
@@ -192,5 +196,7 @@ export interface ProgressEvent {
   talentPointsGained: number;
   collected: Record<RarityId, number>;
   unlockedAchievementIds: string[];
+  /** Nur fuer Tageslaeufe; der Server bindet den Bonus an dieses Event. */
+  dailyKey?: string | null;
   createdAt: string;
 }

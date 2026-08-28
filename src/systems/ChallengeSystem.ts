@@ -213,12 +213,14 @@ export function startOnline(
   seed: string,
   roomCode: string,
   localPlayerIndex: 0 | 1,
+  participantToken = '',
 ): ChallengeState {
   const playerNames: OnlinePlayerNames = [null, null];
   playerNames[localPlayerIndex] = cleanOnlinePlayerName(SaveSystem.load().playerName);
 
   const online: OnlineDuelInfo = {
     roomCode,
+    participantToken,
     localPlayerIndex,
     playerNames,
     clockOffsetMs: 0,

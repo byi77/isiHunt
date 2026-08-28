@@ -43,6 +43,7 @@ const DUEL_ROOM_CODE_LENGTH = 6;
 export interface DuelRoomInfo {
   seed: string;
   worldId: string;
+  participantToken: string;
 }
 
 export interface DuelRoomStatus {
@@ -100,7 +101,7 @@ export function normalizeRoomCode(raw: string): string {
  */
 export async function createRoom(
   worldId: string,
-): Promise<CloudResult<{ code: string; seed: string }>> {
+): Promise<CloudResult<{ code: string; seed: string; participantToken: string }>> {
   const supabase = CloudSystem.getSupabaseClient();
   if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
 
@@ -114,7 +115,13 @@ export async function createRoom(
     );
 
     if (!result.ok) return result;
-    if (!result.value.error) return { ok: true, value: { code, seed } };
+    if (!result.value.error) {
+      const participantToken = String(result.value.data ?? '');
+      if (!/^[a-f0-9]{64}$/i.test(participantToken)) {
+        return { ok: false, error: 'Ungueltiges Teilnehmer-Token vom Server' };
+      }
+      return { ok: true, value: { code, seed, participantToken } };
+    }
 
     // 23505 = unique_violation. Alles andere ist ein echter Fehler.
     if (result.value.error.code !== '23505') {
@@ -150,16 +157,27 @@ export async function joinRoom(rawCode: string): Promise<CloudResult<DuelRoomInf
   const row = Array.isArray(result.value.data) ? result.value.data[0] : null;
   if (!row) return { ok: true, value: null };
 
-  return { ok: true, value: { seed: String(row.seed), worldId: String(row.world_id) } };
+  const participantToken = String(row.participant_token ?? '');
+  if (!/^[a-f0-9]{64}$/i.test(participantToken)) {
+    return { ok: false, error: 'Ungueltiges Teilnehmer-Token vom Server' };
+  }
+  return {
+    ok: true,
+    value: { seed: String(row.seed), worldId: String(row.world_id), participantToken },
+  };
 }
 
 /** Meldet dieses Geraet als bereit fuer den Start. */
-export async function markReady(code: string, isHost: boolean): Promise<CloudResult<true>> {
+export async function markReady(
+  code: string,
+  _isHost: boolean,
+  participantToken = '',
+): Promise<CloudResult<true>> {
   const supabase = CloudSystem.getSupabaseClient();
   if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
 
   const result = await withTimeout(
-    supabase.rpc('mark_duel_ready', { p_code: code, p_is_host: isHost }),
+    supabase.rpc('mark_duel_ready', { p_code: code, p_participant_token: participantToken }),
     'Bereit melden',
   );
   if (!result.ok) return result;
@@ -172,12 +190,15 @@ export async function markReady(code: string, isHost: boolean): Promise<CloudRes
  * der Gastgeber ist und beide Spieler laut `getRoomStatus()` bereit sind; die
  * RPC selbst prueft das serverseitig noch einmal und lehnt sonst ab.
  */
-export async function setStartTime(code: string): Promise<CloudResult<number>> {
+export async function setStartTime(
+  code: string,
+  participantToken = '',
+): Promise<CloudResult<number>> {
   const supabase = CloudSystem.getSupabaseClient();
   if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
 
   const result = await withTimeout(
-    supabase.rpc('set_duel_start_time', { p_code: code }),
+    supabase.rpc('set_duel_start_time', { p_code: code, p_participant_token: participantToken }),
     'Startzeit setzen',
   );
   if (!result.ok) return result;
@@ -194,12 +215,15 @@ export async function setStartTime(code: string): Promise<CloudResult<number>> {
  * nachholen muss, statt auf einen einmaligen, nicht wiederholbaren Broadcast
  * angewiesen zu sein.
  */
-export async function getRoomStatus(code: string): Promise<CloudResult<DuelRoomStatus | null>> {
+export async function getRoomStatus(
+  code: string,
+  participantToken = '',
+): Promise<CloudResult<DuelRoomStatus | null>> {
   const supabase = CloudSystem.getSupabaseClient();
   if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
 
   const result = await withTimeout(
-    supabase.rpc('get_duel_room', { p_code: code }),
+    supabase.rpc('get_duel_room', { p_code: code, p_participant_token: participantToken }),
     'Raumstatus laden',
   );
   if (!result.ok) return result;
@@ -258,8 +282,9 @@ function parseRoundResult(raw: unknown): DuelRoundResult | null {
  */
 export async function submitRoundResult(
   code: string,
-  isHost: boolean,
+  _isHost: boolean,
   result: DuelRoundResult,
+  participantToken = '',
 ): Promise<CloudResult<true>> {
   const supabase = CloudSystem.getSupabaseClient();
   if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
@@ -267,7 +292,7 @@ export async function submitRoundResult(
   const response = await withTimeout(
     supabase.rpc('submit_duel_result', {
       p_code: code,
-      p_is_host: isHost,
+      p_participant_token: participantToken,
       p_result: result,
     }),
     'Ergebnis abgeben',
@@ -447,6 +472,7 @@ export function subscribeToRoom(
   localPlayerIndex: 0 | 1,
   handlers: DuelChannelHandlers,
   localPlayerName = '',
+  participantToken = '',
 ): void {
   unsubscribeFromRoom();
   activeHandlers = handlers;
@@ -481,7 +507,10 @@ export function subscribeToRoom(
   // die Abkuerzung), und eine kuenftige Ablehnung wuerde sich heute in
   // `duel:presence-sync` und `duel:live-empfangen` zeigen - beide gab es
   // damals noch nicht.
-  const channel = supabase.channel(code, {
+  // Der Token steht im privaten Topic und wird in der Realtime-RLS-Policy
+  // serverseitig gegen genau einen Room-Slot geprueft. Ein fehlender Token
+  // bleibt absichtlich ungueltig; es gibt keinen Code-only-Fallback.
+  const channel = supabase.channel(`${code}:${participantToken}`, {
     config: { private: true, presence: { key: String(localPlayerIndex) } },
   });
   const cleanLocalPlayerName = cleanPresencePlayerName(localPlayerName);

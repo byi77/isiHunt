@@ -33,6 +33,9 @@ jobs:
 
       - run: npm ci
 
+      - name: Browser fuer Release-Gates installieren
+        run: npx playwright install --with-deps chromium
+
       # Dieselben Pruefungen wie die CI, hier aber als Sperre vor dem Deploy.
       #
       # Vorher lief der Deploy auch bei roter CI durch - beide Workflows starten
@@ -40,6 +43,9 @@ jobs:
       # `format:check` ging so live, ohne dass es jemandem auffiel.
       - name: Pruefen (blockiert den Deploy bei Fehlern)
         run: npm run verify
+
+      - name: Release-Gates (Browser, Performance, iOS, SQL)
+        run: npm run release:check
 
       - uses: actions/configure-pages@v5
 

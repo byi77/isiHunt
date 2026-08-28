@@ -33,6 +33,7 @@ import {
 } from '@/config/backend';
 import { totalXpForLevel } from '@/config/balance';
 import * as DebugSystem from '@/systems/DebugSystem';
+import * as AuthSystem from '@/systems/AuthSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import type { ProgressEvent, SaveData } from '@/types';
 import type { TalentId, TalentRanks } from '@/config/talents';
@@ -72,10 +73,14 @@ interface PendingLeaderboardScore {
   recordedAt: string;
 }
 
-const PENDING_LEADERBOARD_SCORE_KEY = 'isihunt.pending-leaderboard-score.v1';
-const PENDING_COSMETIC_SYNC_KEY = 'isihunt.pending-cosmetic-sync.v1';
+const PENDING_LEADERBOARD_SCORE_PREFIX = 'isihunt.pending-leaderboard-score.v2.';
+const PENDING_COSMETIC_SYNC_PREFIX = 'isihunt.pending-cosmetic-sync.v2.';
+const LEGACY_PENDING_LEADERBOARD_SCORE_KEY = 'isihunt.pending-leaderboard-score.v1';
+const LEGACY_PENDING_COSMETIC_SYNC_KEY = 'isihunt.pending-cosmetic-sync.v1';
+const LEGACY_PENDING_QUARANTINE_PREFIX = 'isihunt.pending-unbound.v1.';
 
 interface PendingCosmeticSync {
+  identity: string;
   ownedShipShapes: string[];
   ownedShipColors: string[];
   ownedShipAuras: string[];
@@ -87,7 +92,10 @@ interface PendingCosmeticSync {
 }
 
 function cosmeticSnapshot(save: SaveData = SaveSystem.load()): PendingCosmeticSync {
+  const identity = currentOutboxIdentity(save);
+  if (!identity) throw new Error('Kein Profil fuer den Kosmetik-Outbox-Eintrag');
   return {
+    identity,
     ownedShipShapes: [...save.ownedShipShapes],
     ownedShipColors: [...save.ownedShipColors],
     ownedShipAuras: [...save.ownedShipAuras],
@@ -98,9 +106,34 @@ function cosmeticSnapshot(save: SaveData = SaveSystem.load()): PendingCosmeticSy
   };
 }
 
-function readPendingCosmeticSync(): PendingCosmeticSync | null {
+function currentOutboxIdentity(save: SaveData = SaveSystem.load()): string | null {
+  return AuthSystem.currentUserId() ?? save.cloudId;
+}
+
+function outboxKey(prefix: string, identity: string): string {
+  return `${prefix}${encodeURIComponent(identity)}`;
+}
+
+function quarantineLegacyOutbox(key: string, label: string): void {
   try {
-    const raw = window.localStorage.getItem(PENDING_COSMETIC_SYNC_KEY);
+    const raw = window.localStorage.getItem(key);
+    if (raw) {
+      const quarantineKey = `${LEGACY_PENDING_QUARANTINE_PREFIX}${label}`;
+      if (!window.localStorage.getItem(quarantineKey)) {
+        window.localStorage.setItem(quarantineKey, raw);
+      }
+      window.localStorage.removeItem(key);
+    }
+  } catch {
+    // Privater Browsermodus darf keinen Kauf/Run blockieren.
+  }
+}
+
+function readPendingCosmeticSync(identity = currentOutboxIdentity()): PendingCosmeticSync | null {
+  quarantineLegacyOutbox(LEGACY_PENDING_COSMETIC_SYNC_KEY, 'cosmetic');
+  if (!identity) return null;
+  try {
+    const raw = window.localStorage.getItem(outboxKey(PENDING_COSMETIC_SYNC_PREFIX, identity));
     if (!raw) return null;
     const value = recordFrom(JSON.parse(raw));
     if (!value) return null;
@@ -117,7 +150,8 @@ function readPendingCosmeticSync(): PendingCosmeticSync | null {
     ) {
       return null;
     }
-    return {
+    const pending = {
+      identity,
       ownedShipShapes: arrays[0]!,
       ownedShipColors: arrays[1]!,
       ownedShipAuras: arrays[2]!,
@@ -126,6 +160,7 @@ function readPendingCosmeticSync(): PendingCosmeticSync | null {
       shipAura: value.shipAura,
       coinsSpent: finiteNonNegative(value.coinsSpent),
     };
+    return value.identity === identity ? pending : null;
   } catch {
     return null;
   }
@@ -133,28 +168,38 @@ function readPendingCosmeticSync(): PendingCosmeticSync | null {
 
 /** Merkt den aktuellen Kosmetikstand fuer den naechsten Online-Abgleich vor. */
 export function queueCosmeticSync(save: SaveData = SaveSystem.load()): void {
+  const identity = currentOutboxIdentity(save);
+  if (!identity) return;
   try {
-    window.localStorage.setItem(PENDING_COSMETIC_SYNC_KEY, JSON.stringify(cosmeticSnapshot(save)));
+    window.localStorage.setItem(
+      outboxKey(PENDING_COSMETIC_SYNC_PREFIX, identity),
+      JSON.stringify(cosmeticSnapshot(save)),
+    );
   } catch {
     // Privater Browsermodus darf den Kauf nicht blockieren.
   }
 }
 
-export function clearPendingCosmeticSync(): void {
+export function clearPendingCosmeticSync(identity = currentOutboxIdentity()): void {
+  if (!identity) return;
   try {
-    window.localStorage.removeItem(PENDING_COSMETIC_SYNC_KEY);
+    window.localStorage.removeItem(outboxKey(PENDING_COSMETIC_SYNC_PREFIX, identity));
   } catch {
     // Siehe queueCosmeticSync.
   }
 }
 
-export function hasPendingCosmeticSync(): boolean {
-  return readPendingCosmeticSync() !== null;
+export function hasPendingCosmeticSync(identity = currentOutboxIdentity()): boolean {
+  return readPendingCosmeticSync(identity) !== null;
 }
 
-function readPendingLeaderboardScore(): PendingLeaderboardScore | null {
+function readPendingLeaderboardScore(
+  playerId = currentOutboxIdentity(),
+): PendingLeaderboardScore | null {
+  quarantineLegacyOutbox(LEGACY_PENDING_LEADERBOARD_SCORE_KEY, 'leaderboard');
+  if (!playerId) return null;
   try {
-    const raw = window.localStorage.getItem(PENDING_LEADERBOARD_SCORE_KEY);
+    const raw = window.localStorage.getItem(outboxKey(PENDING_LEADERBOARD_SCORE_PREFIX, playerId));
     if (!raw) return null;
     const value = JSON.parse(raw) as Partial<PendingLeaderboardScore>;
     if (!value.playerId || !value.playerName || !value.worldId || !Number.isFinite(value.score)) {
@@ -170,26 +215,30 @@ function readPendingLeaderboardScore(): PendingLeaderboardScore | null {
 }
 
 function savePendingLeaderboardScore(score: PendingLeaderboardScore): void {
-  const existing = readPendingLeaderboardScore();
+  const existing = readPendingLeaderboardScore(score.playerId);
   if (existing && existing.playerId === score.playerId && existing.score > score.score) return;
   try {
-    window.localStorage.setItem(PENDING_LEADERBOARD_SCORE_KEY, JSON.stringify(score));
+    window.localStorage.setItem(
+      outboxKey(PENDING_LEADERBOARD_SCORE_PREFIX, score.playerId),
+      JSON.stringify(score),
+    );
   } catch {
     // Privater Browsermodus darf einen Lauf nicht beeintraechtigen.
   }
 }
 
-function clearPendingLeaderboardScore(): void {
+function clearPendingLeaderboardScore(playerId = currentOutboxIdentity()): void {
+  if (!playerId) return;
   try {
-    window.localStorage.removeItem(PENDING_LEADERBOARD_SCORE_KEY);
+    window.localStorage.removeItem(outboxKey(PENDING_LEADERBOARD_SCORE_PREFIX, playerId));
   } catch {
     // Siehe savePendingLeaderboardScore.
   }
 }
 
 /** Ob ein offline erspielter Ranglisten-Bestwert noch hochgeladen werden muss. */
-export function hasPendingLeaderboardScore(): boolean {
-  return readPendingLeaderboardScore() !== null;
+export function hasPendingLeaderboardScore(playerId = currentOutboxIdentity()): boolean {
+  return readPendingLeaderboardScore(playerId) !== null;
 }
 
 /**
@@ -730,9 +779,9 @@ export async function submitScoreSafely(
       pending.recordedAt,
     );
     if (result.ok) {
-      const existing = readPendingLeaderboardScore();
+      const existing = readPendingLeaderboardScore(playerId);
       if (!existing || (existing.playerId === playerId && existing.score <= score)) {
-        clearPendingLeaderboardScore();
+        clearPendingLeaderboardScore(playerId);
       }
     } else {
       savePendingLeaderboardScore(pending);
@@ -746,7 +795,8 @@ export async function submitScoreSafely(
 
 /** Versucht einen nach Netz- oder Serverfehler vorgemerkten Bestwert erneut. */
 export async function flushPendingLeaderboardScore(): Promise<void> {
-  const pending = readPendingLeaderboardScore();
+  const identity = currentOutboxIdentity();
+  const pending = readPendingLeaderboardScore(identity);
   if (!pending || !isAvailable()) return;
   const result = await submitScoreSafely(
     pending.playerId,
@@ -759,7 +809,8 @@ export async function flushPendingLeaderboardScore(): Promise<void> {
     pending.collected,
     pending.recordedAt,
   );
-  if (result.ok) clearPendingLeaderboardScore();
+  if (currentOutboxIdentity() !== identity) return;
+  if (result.ok) clearPendingLeaderboardScore(pending.playerId);
 }
 
 /** Der Run-Zeitpunkt muss beim Offline-Upload weitergereicht werden. */
@@ -856,6 +907,7 @@ export async function pushSave(): Promise<CloudResult<string>> {
       p_best_score: save.bestScore,
       p_total_runs: save.totalRuns,
       p_access_token: SaveSystem.ensureCloudAccessToken(),
+      p_expected_updated_at: save.cloudUpdatedAt,
     }),
     'Spielstand hochladen',
   );
@@ -863,6 +915,15 @@ export async function pushSave(): Promise<CloudResult<string>> {
   if (!result.ok) return result;
   if (result.value.error) return { ok: false, error: result.value.error.message };
 
+  const updatedAt =
+    typeof result.value.data === 'string'
+      ? result.value.data
+      : Array.isArray(result.value.data) && typeof result.value.data[0]?.updated_at === 'string'
+        ? result.value.data[0].updated_at
+        : null;
+  if (!updatedAt || !SaveSystem.setCloudUpdatedAt(updatedAt, cloudId)) {
+    return { ok: false, error: 'Ungueltige Save-Revision vom Server' };
+  }
   return { ok: true, value: cloudId };
 }
 
@@ -891,7 +952,24 @@ export async function syncSaveSafely(): Promise<
   // Ist der lokale Stand gleich oder weiter, darf der automatische Upload
   // fortgesetzt werden. So werden auch Namensaenderungen nachgezogen.
   const uploaded = await pushSave();
-  return uploaded.ok ? { ok: true, value: 'uploaded' } : uploaded;
+  if (uploaded.ok) return { ok: true, value: 'uploaded' };
+
+  // Der CAS-Fehler ist kein gewoehnlicher Netzfehler: Zwischen Read und Write
+  // hat ein anderes Geraet gespeichert. Den neuen Stand erneut lesen, damit
+  // die UI den Nutzer zur echten Entscheidung fuehren kann, statt einen
+  // parallelen Save still zu ueberschreiben.
+  if (local.cloudId && isSaveConflict(uploaded.error)) {
+    const latest = await fetchSave(local.cloudId);
+    if (latest.ok && latest.value && isRemoteAhead(SaveSystem.load(), latest.value)) {
+      return { ok: true, value: 'remote-ahead' };
+    }
+    return { ok: false, error: 'Spielstand wurde parallel geaendert. Bitte erneut abgleichen.' };
+  }
+  return uploaded;
+}
+
+function isSaveConflict(error: string): boolean {
+  return error.includes('ander') && error.includes('Geraet');
 }
 
 /** Holt einen Spielstand, ohne ihn zu uebernehmen - der Aufrufer entscheidet. */
@@ -915,6 +993,9 @@ export async function fetchSave(cloudId: string): Promise<CloudResult<RemoteSave
   }
 
   const remote = normalizeRemoteSave(result.value.data);
+  if (remote && SaveSystem.load().cloudId === cloudId) {
+    SaveSystem.setCloudUpdatedAt(remote.updatedAt, cloudId);
+  }
   return remote
     ? { ok: true, value: remote }
     : { ok: false, error: 'Ungueltige Spielstand-Antwort' };
@@ -936,12 +1017,17 @@ async function requireAuthenticatedClient(): Promise<CloudResult<SupabaseClient>
 }
 
 /** Überträgt Besitz und Ausrüstung atomar; bei Offline bleibt der Snapshot liegen. */
-export async function flushPendingCosmetics(): Promise<CloudResult<RemoteProfileProgress | null>> {
-  const pending = readPendingCosmeticSync();
+export async function flushPendingCosmetics(
+  identity = currentOutboxIdentity(),
+): Promise<CloudResult<RemoteProfileProgress | null>> {
+  const pending = readPendingCosmeticSync(identity);
   if (!pending) return { ok: true, value: null };
 
   const authenticated = await requireAuthenticatedClient();
   if (!authenticated.ok) return authenticated;
+  if (currentOutboxIdentity() !== identity) {
+    return { ok: false, error: 'Profil waehrend des Kosmetik-Syncs gewechselt' };
+  }
 
   const result = await withTimeout(
     authenticated.value.rpc('sync_profile_cosmetics', {
@@ -957,6 +1043,9 @@ export async function flushPendingCosmetics(): Promise<CloudResult<RemoteProfile
   );
   if (!result.ok) return result;
   if (result.value.error) return { ok: false, error: result.value.error.message };
+  if (currentOutboxIdentity() !== identity) {
+    return { ok: false, error: 'Profil waehrend des Kosmetik-Syncs gewechselt' };
+  }
 
   const profile = normalizeProfileProgress(result.value.data);
   if (!profile) return { ok: false, error: 'Ungueltige Kosmetik-Antwort' };
@@ -965,7 +1054,7 @@ export async function flushPendingCosmetics(): Promise<CloudResult<RemoteProfile
   // nicht den Kauf von Gerät B überschreiben; die Auswahl kommt vom letzten
   // erfolgreichen Snapshot.
   SaveSystem.adoptProfileProgress(profile.data);
-  clearPendingCosmeticSync();
+  if (currentOutboxIdentity() === identity) clearPendingCosmeticSync();
   return { ok: true, value: profile };
 }
 
@@ -1137,16 +1226,20 @@ export async function resetTalents(): Promise<CloudResult<RemoteProfileProgress 
 /** Beansprucht den einmaligen Tagesbonus atomar im gemeinsamen Profil. */
 export async function claimDailyBonus(
   dailyKey: string,
-  score: number,
-  eventId: string,
+  eventIdOrLegacyScore: string | number,
+  legacyEventId?: string,
 ): Promise<CloudResult<RemoteProfileProgress | null>> {
   const authenticated = await requireAuthenticatedClient();
   if (!authenticated.ok) return authenticated;
 
+  // Der dritte Parameter bleibt nur als quellkompatible Uebergangssignatur
+  // akzeptiert; der Score wird bewusst nie mehr an den Server gesendet.
+  const eventId =
+    typeof eventIdOrLegacyScore === 'string' ? eventIdOrLegacyScore : (legacyEventId ?? '');
+
   const result = await withTimeout(
     authenticated.value.rpc('claim_daily_bonus', {
       p_daily_key: dailyKey,
-      p_score: Math.max(0, Math.round(score)),
       p_event_id: eventId,
     }),
     'Tagesbonus synchronisieren',
@@ -1158,13 +1251,13 @@ export async function claimDailyBonus(
 
 /** Beansprucht den kleinen Login-Bonus; der Server erlaubt ihn nur einmal je Tag. */
 export async function claimDailyLoginBonus(
-  dailyKey: string,
+  _dailyKey?: string,
 ): Promise<CloudResult<DailyLoginClaim>> {
   const authenticated = await requireAuthenticatedClient();
   if (!authenticated.ok) return authenticated;
 
   const result = await withTimeout(
-    authenticated.value.rpc('claim_daily_login_bonus', { p_daily_key: dailyKey }),
+    authenticated.value.rpc('claim_daily_login_bonus'),
     'Login-Bonus abholen',
   );
   if (!result.ok) return result;
@@ -1201,6 +1294,7 @@ export async function submitProgressEvent(
       p_talent_points_gained: Math.max(0, Math.round(event.talentPointsGained)),
       p_collected: event.collected,
       p_achievement_ids: event.unlockedAchievementIds,
+      p_daily_key: event.dailyKey ?? null,
     }),
     'Fortschritt synchronisieren',
   );

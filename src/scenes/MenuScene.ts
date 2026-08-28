@@ -357,6 +357,8 @@ export class MenuScene extends Phaser.Scene {
             remote.data,
             local.cloudId ?? AuthSystem.currentUserId()!,
             remoteReset,
+            undefined,
+            remote.updatedAt,
           );
           this.saveSyncBusy = false;
           this.cancelProfileRetry();
@@ -635,7 +637,7 @@ export class MenuScene extends Phaser.Scene {
       () => {
         const local = SaveSystem.load();
         if (!local.cloudId) return;
-        SaveSystem.adoptRemote(remote.data, local.cloudId);
+        SaveSystem.adoptRemote(remote.data, local.cloudId, false, undefined, remote.updatedAt);
         this.clearSavePrompt();
         this.scene.restart();
       },

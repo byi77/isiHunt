@@ -510,7 +510,13 @@ export class ProfileScene extends Phaser.Scene {
         updatedAt: remote.value.updatedAt,
       };
       if (CloudSystem.isRemoteAhead(local, summary)) {
-        SaveSystem.adoptRemote(remote.value.data, local.cloudId ?? AuthSystem.currentUserId()!);
+        SaveSystem.adoptRemote(
+          remote.value.data,
+          local.cloudId ?? AuthSystem.currentUserId()!,
+          false,
+          undefined,
+          remote.value.updatedAt,
+        );
       }
     }
 

@@ -66,6 +66,7 @@ export class OnlineDuelScene extends Phaser.Scene {
   /** Nur waehrend Lobby/Ergebnis gesetzt. */
   private isHost = false;
   private roomCode = '';
+  private participantToken = '';
   private codeInput: TextInputHandle | null = null;
   private readyTimeout: Phaser.Time.TimerEvent | null = null;
   /** Fallback, falls der `start`-Broadcast den anderen Client nicht erreicht. */
@@ -260,7 +261,14 @@ export class OnlineDuelScene extends Phaser.Scene {
 
     this.isHost = true;
     this.roomCode = result.value.code;
-    ChallengeSystem.startOnline(this.world.id, result.value.seed, this.roomCode, 0);
+    this.participantToken = result.value.participantToken;
+    ChallengeSystem.startOnline(
+      this.world.id,
+      result.value.seed,
+      this.roomCode,
+      0,
+      this.participantToken,
+    );
     this.enterLobby();
   }
 
@@ -288,8 +296,15 @@ export class OnlineDuelScene extends Phaser.Scene {
 
     this.isHost = false;
     this.roomCode = code;
+    this.participantToken = result.value.participantToken;
     this.world = getWorld(result.value.worldId);
-    ChallengeSystem.startOnline(result.value.worldId, result.value.seed, code, 1);
+    ChallengeSystem.startOnline(
+      result.value.worldId,
+      result.value.seed,
+      code,
+      1,
+      this.participantToken,
+    );
     this.enterLobby();
   }
 
@@ -422,6 +437,7 @@ export class OnlineDuelScene extends Phaser.Scene {
         },
       },
       ChallengeSystem.playerLabel(localPlayerIndex),
+      this.participantToken,
     );
 
     const offsetResult = await NetworkDuelSystem.measureClockOffset();
@@ -432,7 +448,11 @@ export class OnlineDuelScene extends Phaser.Scene {
     }
     ChallengeSystem.updateOnlineSync(offsetResult.value, null);
 
-    const readyResult = await NetworkDuelSystem.markReady(this.roomCode, this.isHost);
+    const readyResult = await NetworkDuelSystem.markReady(
+      this.roomCode,
+      this.isHost,
+      this.participantToken,
+    );
     if (!this.scene.isActive() || this.runStarted) return;
     if (!readyResult.ok) {
       statusText.setText(readyResult.error).setColor(Palette.danger);
@@ -488,7 +508,10 @@ export class OnlineDuelScene extends Phaser.Scene {
   private async pollAndSetStartTime(statusText: Phaser.GameObjects.Text): Promise<void> {
     if (this.runStarted || !this.scene.isActive()) return;
 
-    const statusResult = await NetworkDuelSystem.getRoomStatus(this.roomCode);
+    const statusResult = await NetworkDuelSystem.getRoomStatus(
+      this.roomCode,
+      this.participantToken,
+    );
     if (this.runStarted || !this.scene.isActive()) return;
     if (!statusResult.ok || !statusResult.value) return;
 
@@ -506,7 +529,7 @@ export class OnlineDuelScene extends Phaser.Scene {
   }
 
   private async trySetStartTime(statusText: Phaser.GameObjects.Text): Promise<void> {
-    const startResult = await NetworkDuelSystem.setStartTime(this.roomCode);
+    const startResult = await NetworkDuelSystem.setStartTime(this.roomCode, this.participantToken);
     if (!this.scene.isActive() || this.runStarted) return;
     if (!startResult.ok) {
       // Kein Aufraeumen mehr: seit beide Rollen die Startzeit setzen duerfen,
@@ -630,6 +653,7 @@ export class OnlineDuelScene extends Phaser.Scene {
     if (!complete && state?.online) {
       this.roomCode = state.online.roomCode;
       this.isHost = state.online.localPlayerIndex === 0;
+      this.participantToken = state.online.participantToken;
       this.awaitOpponentResult();
     }
 
@@ -703,7 +727,10 @@ export class OnlineDuelScene extends Phaser.Scene {
       return;
     }
 
-    const statusResult = await NetworkDuelSystem.getRoomStatus(this.roomCode);
+    const statusResult = await NetworkDuelSystem.getRoomStatus(
+      this.roomCode,
+      this.participantToken,
+    );
     if (!this.scene.isActive() || !this.resultPollTimer) return;
     if (!statusResult.ok || !statusResult.value) return;
 

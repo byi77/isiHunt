@@ -298,6 +298,6 @@ describe('ohne Anmeldepflicht: Netzfehler bleibt ein Ergebnisobjekt', () => {
     expect(result.ok).toBe(false);
     // Der Bestwert darf bei einem Netzfehler nicht verloren gehen - er wird
     // vorgemerkt und beim naechsten Start erneut versucht.
-    expect(CloudSystem.hasPendingLeaderboardScore()).toBe(true);
+    expect(CloudSystem.hasPendingLeaderboardScore('spieler-id')).toBe(true);
   });
 });

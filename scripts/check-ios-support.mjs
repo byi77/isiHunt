@@ -148,7 +148,7 @@ console.log(
 // Die Grenze wird bewusst festgeschrieben. Steigt sie, weil eine neue
 // Abhaengigkeit etwas Moderneres mitbringt, soll das auffallen und nicht
 // still passieren - deshalb bricht der Check dann ab.
-const ERWARTET = '15.4';
+const ERWARTET = '16.4';
 if (cmp(softMin, ERWARTET) > 0) {
   console.error(
     `\nDie Mindestversion ist auf iOS ${softMin} gestiegen (erwartet: ${ERWARTET}).\n` +

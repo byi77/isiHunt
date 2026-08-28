@@ -60,6 +60,9 @@ jobs:
       - name: Abhaengigkeiten installieren
         run: npm ci
 
+      - name: Browser fuer Release-Gates installieren
+        run: npx playwright install --with-deps chromium
+
       # `npm run verify` als Ganzes, NICHT die Einzelschritte abgetippt.
       #
       # Vorher standen typecheck, lint, format:check, test und build hier
@@ -74,3 +77,6 @@ jobs:
       # `verify` erweitert, erweitert damit automatisch auch die CI.
       - name: Pruefen (dieselbe Kette wie pre-push und Deploy)
         run: npm run verify
+
+      - name: Release-Gates (Browser, Performance, iOS, SQL)
+        run: npm run release:check

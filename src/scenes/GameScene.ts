@@ -690,7 +690,11 @@ export class GameScene extends Phaser.Scene {
       ChallengeSystem.submitRound(stats);
       if (this.mode === 'daily') {
         const progression = ProgressionSystem.applyRun(stats);
-        const eventId = ProgressSyncSystem.enqueueRun(stats, progression);
+        const eventId = ProgressSyncSystem.enqueueRun(
+          stats,
+          progression,
+          this.challenge?.dailyKey ?? null,
+        );
         ChallengeSystem.completeDaily(stats, eventId);
         void ProgressSyncSystem.flush();
       }
@@ -729,7 +733,12 @@ export class GameScene extends Phaser.Scene {
       NetworkDuelSystem.broadcastRoundResult(playerIndex, round);
       const roomCode = this.challenge.online?.roomCode ?? '';
       if (roomCode) {
-        void NetworkDuelSystem.submitRoundResult(roomCode, playerIndex === 0, round);
+        void NetworkDuelSystem.submitRoundResult(
+          roomCode,
+          playerIndex === 0,
+          round,
+          this.challenge.online?.participantToken ?? '',
+        );
       }
 
       this.time.delayedCall(450, () => {

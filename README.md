@@ -87,21 +87,22 @@ sofort auch auf dem Handy sichtbar.
 
 ### Weitere Befehle
 
-| Befehl                | Zweck                                        |
-| --------------------- | -------------------------------------------- |
-| `npm run dev`         | Dev-Server mit Hot Reload, im LAN erreichbar |
-| `npm run build`       | Typcheck + Production-Build nach `dist/`     |
-| `npm run preview`     | Den Production-Build lokal testen            |
-| `npm run typecheck`   | Nur TypeScript pruefen                       |
-| `npm run lint`        | ESLint                                       |
-| `npm run format`      | Prettier ueber alle Quellen                  |
-| `npm run icons`       | App-Icons neu zeichnen                       |
-| `npm run test`        | Vitest ueber `systems/` und `config/`        |
-| `npm run test:scope`  | Nennt die zur Aenderung passende Teststufe   |
-| `npm run playtest`    | Browser-Playtest, sieben Suiten (~20 Min)    |
-| `npm run test:duel2g` | Zwei-Client-Duell2G gegen Supabase (~1 Min.) |
-| `npm run smoke`       | Kurzer Boot-Test gegen einen Dev-Server      |
-| `npm run ios:check`   | iOS-Mindestversion aus dem Build ermitteln   |
+| Befehl                  | Zweck                                        |
+| ----------------------- | -------------------------------------------- |
+| `npm run dev`           | Dev-Server mit Hot Reload, im LAN erreichbar |
+| `npm run build`         | Typcheck + Production-Build nach `dist/`     |
+| `npm run preview`       | Den Production-Build lokal testen            |
+| `npm run typecheck`     | Nur TypeScript pruefen                       |
+| `npm run lint`          | ESLint                                       |
+| `npm run format`        | Prettier ueber alle Quellen                  |
+| `npm run icons`         | App-Icons neu zeichnen                       |
+| `npm run test`          | Vitest ueber `systems/` und `config/`        |
+| `npm run test:scope`    | Nennt die zur Aenderung passende Teststufe   |
+| `npm run playtest`      | Browser-Playtest, sieben Suiten (~20 Min)    |
+| `npm run test:duel2g`   | Zwei-Client-Duell2G gegen Supabase (~1 Min.) |
+| `npm run smoke`         | Kurzer Boot-Test gegen einen Dev-Server      |
+| `npm run ios:check`     | iOS-Mindestversion aus dem Build ermitteln   |
+| `npm run release:check` | Browser-, Performance-, iOS- und SQL-Gates   |
 
 Der Playtest steuert das Spiel in einem echten Browser: Menuewege per Klick,
 ein kompletter Run per Tastatur, Layout ueber 19 Geraeteformate und ein Lauf
