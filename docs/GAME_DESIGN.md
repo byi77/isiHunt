@@ -116,24 +116,24 @@ Die zentrale Achse. Alles andere haengt daran.
 
 | Stufe         | Farbe            | Punkte | XP  | Spawn | Lebensdauer | Tempo    | Radius |
 | ------------- | ---------------- | ------ | --- | ----- | ----------- | -------- | ------ |
-| Schlicht      | Grau `#9d9d9d`   | 3      | 2   | 34 %  | 5,2 s       | 30 px/s  | 30     |
-| Gewoehnlich   | Weiss `#ffffff`  | 5      | 3   | 28 %  | 4,6 s       | 45 px/s  | 30     |
-| Ungewoehnlich | Gruen `#1eff00`  | 10     | 8   | 20 %  | 3,8 s       | 70 px/s  | 32     |
-| Selten        | Blau `#0070dd`   | 25     | 20  | 11 %  | 3,0 s       | 105 px/s | 34     |
-| Episch        | Lila `#a335ee`   | 75     | 55  | 5,5 % | 2,4 s       | 140 px/s | 38     |
-| Legendaer     | Orange `#ff8000` | 250    | 130 | 1,5 % | 2,0 s       | 190 px/s | 44     |
+| Schlicht      | Grau `#9d9d9d`   | 5      | 2   | 34 %  | 5,2 s       | 30 px/s  | 30     |
+| Gewoehnlich   | Weiss `#ffffff`  | 10     | 3   | 28 %  | 4,6 s       | 45 px/s  | 30     |
+| Ungewoehnlich | Gruen `#1eff00`  | 25     | 8   | 20 %  | 3,8 s       | 70 px/s  | 32     |
+| Selten        | Blau `#0070dd`   | 60     | 20  | 11 %  | 3,0 s       | 105 px/s | 34     |
+| Episch        | Lila `#a335ee`   | 150    | 55  | 5,5 % | 2,4 s       | 140 px/s | 38     |
+| Legendaer     | Orange `#ff8000` | 400    | 130 | 1,5 % | 2,0 s       | 190 px/s | 44     |
 
 **Designregel:** Seltener ⇒ wertvoller ⇒ schneller ⇒ kuerzer sichtbar ⇒
 groesser (damit man es ueberhaupt rechtzeitig sieht).
 
-**Erwartungswert pro Spawn:** ≈ 15,0 Punkte, ≈ 10,3 XP.
+**Erwartungswert pro Spawn:** ≈ 30,4 Punkte, ≈ 10,3 XP.
 Quelle: `src/config/rarities.ts` — diese Tabelle ist eine Abschrift, der Code
 ist die Wahrheit. Werte am 2026-08-17 aus dem Code nachgezogen, s.
 `docs/AUDIT_2026-08-17.md` Abschnitt 4.1 und `docs/BALANCE_2026-08-17.md`.
 
-**Neugefasst am 2026-08-28:** Die Punktestaffel wurde auf 3/5/10/25/75/250
+**Neugefasst am 2026-08-28:** Die Punktestaffel wurde auf 5/10/25/60/150/400
 gestellt. Jede farbige Stufe ist klar mehr wert als die vorherige; Rare+ tragen
-zusammen rund 71 % des Erwartungsscores. Das macht Orange zum echten Jackpot,
+zusammen rund 69 % des Erwartungsscores. Das macht Orange zum echten Jackpot,
 ohne die grauen und weissen Fänge wertlos zu machen.
 
 ## 6. Serien-System
@@ -201,11 +201,11 @@ sofort.
 | Serie | Multiplikator |
 | ----- | ------------- |
 | 0–1   | ×1            |
-| 2–3   | ×1,2          |
-| 4–6   | ×1,5          |
-| 7–10  | ×1,9          |
-| 11–15 | ×2,4          |
-| ab 16 | ×3,2          |
+| 2–3   | ×1,5          |
+| 4–6   | ×2,2          |
+| 7–10  | ×3,2          |
+| 11–15 | ×4,5          |
+| ab 16 | ×6, danach +0,25 je weiterem farbigen Fang |
 
 Der Multiplikator wirkt **nur auf Punkte, nicht auf XP** — die hängen an der
 Zahl der Fänge, damit Fortschritt und Bestenliste nicht dieselbe Schwankung
@@ -219,8 +219,9 @@ reißt die Serie aber alle 17. Vier der fünf Stufen waren damit unerreichbar,
 und der Serienbonus brachte über einen ganzen Run nur noch 3,6 % mehr Punkte.
 
 Mit den neuen Werten kommen im simulierten Lauf **alle sechs Stufen vor**. Die
-höchste Serie vervielfacht den Wert des nächsten Fangs auf das 3,2-Fache; ein
-legendäres Relikt bringt dort allein 800 Basispunkte vor Welt- und Talentboni.
+höchste Serie startet beim 6-Fachen und wächst danach um 0,25 je weiterem
+farbigen Fang. Ein legendäres Relikt bringt bei Serie 16 allein 2.400
+Basispunkte; bei Serie 20 sind es bereits 2.800 vor Welt- und Talentboni.
 
 Quelle: `src/config/GameConfig.ts` (`COMBO_GRACE_MS`,
 `SERIES_RAISING_MIN_RARITY_INDEX`, `COMBO_TIERS`, `SERIES_TRAIL_TIERS`).
@@ -332,7 +333,7 @@ und _Gunst_ erreichen je 26,25 %. Die übrigen Talente verändern nur klar begre
 Komfortwerte wie Radius, Sekunden oder Serienmultiplikator.
 _Resonanz_ addiert ihren Bonus erst ab der ersten sichtbaren Serienbonus-Stufe,
 damit der erste Fang nicht künstlich aufgebläht wird. Mit Resonanz auf Rang 3
-steigt Orange bei Serie 16 von 800 auf rund 841 Basispunkte; Gunst wirkt erst danach
+steigt Orange bei Serie 16 von 2.400 auf rund 2.461 Basispunkte; Gunst wirkt erst danach
 als weiterer Multiplikator.
 
 _Schutzfeld_ reduziert sowohl die Dauer eines Bremsfelds als auch den

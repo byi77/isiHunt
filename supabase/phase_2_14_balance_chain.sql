@@ -23,32 +23,32 @@ as $$
     },
     "rarities": {
       "poor": {
-        "points": 3,
+        "points": 5,
         "xp": 2,
         "weight": 34
       },
       "common": {
-        "points": 5,
+        "points": 10,
         "xp": 3,
         "weight": 28
       },
       "uncommon": {
-        "points": 10,
+        "points": 25,
         "xp": 8,
         "weight": 20
       },
       "rare": {
-        "points": 25,
+        "points": 60,
         "xp": 20,
         "weight": 11
       },
       "epic": {
-        "points": 75,
+        "points": 150,
         "xp": 55,
         "weight": 5.5
       },
       "legendary": {
-        "points": 250,
+        "points": 400,
         "xp": 130,
         "weight": 1.5
       }
@@ -62,25 +62,26 @@ as $$
         },
         {
           "minCombo": 2,
-          "multiplier": 1.2
-        },
-        {
-          "minCombo": 4,
           "multiplier": 1.5
         },
         {
+          "minCombo": 4,
+          "multiplier": 2.2
+        },
+        {
           "minCombo": 7,
-          "multiplier": 1.9
+          "multiplier": 3.2
         },
         {
           "minCombo": 11,
-          "multiplier": 2.4
+          "multiplier": 4.5
         },
         {
           "minCombo": 16,
-          "multiplier": 3.2
+          "multiplier": 6
         }
-      ]
+      ],
+      "comboMultiplierPerExtraSeries": 0.25
     },
     "worlds": {
       "silberhain": {

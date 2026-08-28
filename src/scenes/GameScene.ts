@@ -513,6 +513,7 @@ export class GameScene extends Phaser.Scene {
     shockwave(this, orb.x, orb.y, orb.rarity.color, isImpact ? 1.5 : 0.85);
     floatingScore(this, orb.x, orb.y, `+${outcome.awardedPoints}`, orb.rarity.color, {
       bonus: outcome.streakBonus,
+      bonusMultiplier: outcome.multiplier,
       intensity: this.stats.talentRanks.fortune / talentMaxRank('fortune'),
     });
     if (this.stats.talentRanks.insight > 0) {

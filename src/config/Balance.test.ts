@@ -60,7 +60,7 @@ describe('Phase-5-Balance', () => {
 
   it('macht Seltenheit und Jackpot-Faenge fuer den Score sichtbar', () => {
     expect(Object.values(BALANCE.rarities).map((rarity) => rarity.points)).toEqual([
-      3, 5, 10, 25, 75, 250,
+      5, 10, 25, 60, 150, 400,
     ]);
 
     const weightedScoreFromRarePlus = ['rare', 'epic', 'legendary'].reduce(
@@ -77,8 +77,8 @@ describe('Phase-5-Balance', () => {
 
     // Rare+ sollen die Jagd auf Farbe klar belohnen. Orange bleibt selten,
     // darf bei einer hohen Serie aber als echter Jackpot einschlagen.
-    expect(weightedScoreFromRarePlus / weightedScore).toBeGreaterThan(0.7);
-    expect(EXPECTED_POINTS_PER_CATCH).toBeCloseTo(15.045, 3);
+    expect(weightedScoreFromRarePlus / weightedScore).toBeGreaterThan(0.65);
+    expect(EXPECTED_POINTS_PER_CATCH).toBeCloseTo(30.35, 3);
     const coloredPoints = ['uncommon', 'rare', 'epic', 'legendary'].map(
       (id) => BALANCE.rarities[id as keyof typeof BALANCE.rarities].points,
     );
@@ -185,13 +185,19 @@ describe('Serien-Multiplikator', () => {
   });
 
   it('macht die hohe Serie fuer seltene Fange deutlich lohnender', () => {
-    expect(COMBO_TIERS.map((tier) => tier.multiplier)).toEqual([1, 1.2, 1.5, 1.9, 2.4, 3.2]);
+    expect(COMBO_TIERS.map((tier) => tier.multiplier)).toEqual([1, 1.5, 2.2, 3.2, 4.5, 6]);
+    expect(BALANCE.score.comboMultiplierPerExtraSeries).toBe(0.25);
     const legendary = BALANCE.rarities.legendary.points;
     const highSeriesLegendary = legendary * COMBO_TIERS.at(-1)!.multiplier;
 
     // Orange bei Serie 16+ ist der bewusst gesetzte Jackpot-Moment.
-    expect(highSeriesLegendary).toBe(800);
-    expect(highSeriesLegendary / legendary).toBeGreaterThan(3);
+    expect(highSeriesLegendary).toBe(2400);
+    expect(highSeriesLegendary / legendary).toBeGreaterThan(5);
+  });
+
+  it('laesst die Serie nach der hoechsten Stufe weiter wachsen', () => {
+    const lastTier = COMBO_TIERS.at(-1)!;
+    expect(lastTier.multiplier + 4 * BALANCE.score.comboMultiplierPerExtraSeries).toBe(7);
   });
 
   it('haelt die unteren Stufen im normalen Spiel erreichbar', () => {

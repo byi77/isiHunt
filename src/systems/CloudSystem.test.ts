@@ -321,6 +321,15 @@ describe('"wirft nie" - Netzfunktionen ohne konfiguriertes Backend', () => {
     expect(CloudSystem.hasPendingCosmeticSync()).toBe(false);
   });
 
+  it('merkt ausgegebene Coins im Kosmetik-Sync vor', () => {
+    CloudSystem.queueCosmeticSync(createSave({ coins: 49700, coinsSpent: 300 }));
+
+    const pending = JSON.parse(
+      window.localStorage.getItem('isihunt.pending-cosmetic-sync.v1') ?? '{}',
+    ) as { coinsSpent?: number };
+    expect(pending.coinsSpent).toBe(300);
+  });
+
   it('laesst Kosmetik bei fehlendem Backend vorgemerkt', async () => {
     CloudSystem.queueCosmeticSync(
       createSave({ ownedShipColors: [DEFAULT_SHIP_COLOR, 'gold'], shipColor: 'gold' }),

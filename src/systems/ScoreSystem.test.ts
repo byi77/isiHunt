@@ -10,6 +10,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   COMBO_GRACE_MS,
+  COMBO_MULTIPLIER_PER_EXTRA_SERIES,
   COMBO_TIERS,
   SERIES_TRAIL_BASE_ALPHA,
   SERIES_TRAIL_BASE_FREQUENCY_MS,
@@ -65,10 +66,19 @@ describe('multiplierForCombo', () => {
     }
   });
 
+  it('waechst nach der letzten konfigurierten Stufe uncapped weiter', () => {
+    const lastTier = COMBO_TIERS.at(-1)!;
+    const extraSeries = 4;
+
+    expect(multiplierForCombo(lastTier.minCombo + extraSeries)).toBeCloseTo(
+      lastTier.multiplier + extraSeries * COMBO_MULTIPLIER_PER_EXTRA_SERIES,
+    );
+  });
+
   it('setzt Resonanz erst ab dem sichtbaren Serienbonus auf den Multiplikator', () => {
     expect(multiplierForComboWithTalent(1, 0.15)).toBe(1);
-    expect(multiplierForComboWithTalent(2, 0.15)).toBeCloseTo(1.35);
-    expect(multiplierForComboWithTalent(16, 0.15)).toBeCloseTo(3.35);
+    expect(multiplierForComboWithTalent(2, 0.15)).toBeCloseTo(1.65);
+    expect(multiplierForComboWithTalent(16, 0.15)).toBeCloseTo(6.15);
   });
 });
 
@@ -116,14 +126,14 @@ describe('ScoreSystem - Fangen', () => {
 
   it('belohnt Resonanz bei einer hohen Serie, ohne den ersten Fang zu veraendern', () => {
     const system = new ScoreSystem(COMBO_GRACE_MS, 1, 1, 0.15);
-    expect(system.registerCollect(LEGENDARY!).awardedPoints).toBe(250);
+    expect(system.registerCollect(LEGENDARY!).awardedPoints).toBe(LEGENDARY!.points);
 
     for (let i = 1; i < 15; i += 1) system.registerCollect(LEGENDARY!);
 
     const outcome = system.registerCollect(LEGENDARY!);
     expect(outcome.combo).toBe(16);
-    expect(outcome.multiplier).toBe(3.35);
-    expect(outcome.awardedPoints).toBe(Math.round(250 * 3.35));
+    expect(outcome.multiplier).toBe(6.15);
+    expect(outcome.awardedPoints).toBe(Math.round(LEGENDARY!.points * 6.15));
   });
 });
 

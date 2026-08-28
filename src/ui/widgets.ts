@@ -1043,9 +1043,15 @@ export function floatingScore(
   y: number,
   label: string,
   color: number,
-  options: { bonus?: boolean; kind?: 'points' | 'xp'; intensity?: number } = {},
+  options: {
+    bonus?: boolean;
+    bonusMultiplier?: number;
+    kind?: 'points' | 'xp';
+    intensity?: number;
+  } = {},
 ): void {
   const bonus = options.bonus ?? false;
+  const bonusMultiplier = Math.max(1, options.bonusMultiplier ?? 2);
   const kind = options.kind ?? 'points';
   const intensity = Phaser.Math.Clamp(options.intensity ?? 0, 0, 1);
   const isXp = kind === 'xp';
@@ -1078,7 +1084,7 @@ export function floatingScore(
         .text(
           x,
           y + 34,
-          'x2 SERIENBONUS',
+          `x${bonusMultiplier.toLocaleString('de-DE', { maximumFractionDigits: 2 })} SERIENBONUS`,
           textStyle(FontSize.tiny, '#ffd84d', {
             fontStyle: 'bold',
             stroke: '#000000',

@@ -4,7 +4,7 @@ Diese Dateien beschreiben den Serverteil von isiHunt: Tabellen, Zugriffsregeln
 und die RPC-Funktionen, über die das Spiel mit der Datenbank spricht.
 
 **Warum es diese Datei gibt.** `docs/ARCHITECTURE.md` nannte lange nur
-`schema.sql` — tatsächlich liegen hier neunzehn Dateien, die aufeinander
+`schema.sql` — tatsächlich liegen hier einundzwanzig Dateien, die aufeinander
 aufbauen. Wer die Datenbank neu aufsetzen musste, fand keine Reihenfolge
 (Audit 2026-08-23).
 
@@ -36,6 +36,9 @@ Auf einer leeren Datenbank in dieser Reihenfolge einspielen:
 | 17  | `phase_2_21_talent_balance_sync.sql`         | Talent-Balance und Kauf-RPC synchronisieren                       |
 | 18  | `phase_2_22_talent_power_balance.sql`        | Mathematisch begrenzte Talentwirkungen aktualisieren              |
 | 19  | `phase_2_23_talent_points.sql`               | Kostenlose Levelpunkte, kostenloser Reset und Testprofil-Neustart |
+| 20  | `phase_2_24_score_balance.sql`               | Hoehere Reliktpunkte und staerkere Serien-Jackpots               |
+| 21  | `phase_2_25_cosmetic_coin_sync.sql`          | Shop-Ausgaben beim Kosmetik-Sync serverseitig nachbuchen         |
+| 22  | `phase_2_26_uncapped_series.sql`             | Serien-Multiplikator wächst nach Serie 16 ohne Obergrenze        |
 
 ## Warum alte Dateien nicht rückwirkend geändert werden
 

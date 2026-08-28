@@ -248,6 +248,7 @@ export const COMBO_GRACE_MS = 900;
 
 export const SERIES_RAISING_MIN_RARITY_INDEX = Balance.SERIES_RAISING_MIN_RARITY_INDEX;
 export const COMBO_TIERS = Balance.COMBO_TIERS;
+export const COMBO_MULTIPLIER_PER_EXTRA_SERIES = Balance.COMBO_MULTIPLIER_PER_EXTRA_SERIES;
 
 /**
  * Ab welcher Seltenheit ein Fang die Serie **steigert**.

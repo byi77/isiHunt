@@ -12,7 +12,7 @@ Server- oder Synchronisationspfad muss denselben Wert verwenden?
 | Vorgang              | Rohquelle                                 | Client-Stelle                                               | Server-/Schutzpfad                                                         |
 | -------------------- | ----------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------- |
 | Punkte je Relikt     | `rarities.*.points`                       | `ScoreSystem.registerCollect()`                             | `max_plausible_score()` liest dieselben Raritäten                          |
-| Combo-Multiplikator  | `score.comboTiers`                        | `multiplierForCombo()` und `ScoreSystem`                    | Tages-Score-Tiers verwenden `balance_score_for_runs()`                     |
+| Combo-Multiplikator  | `score.comboTiers`, `comboMultiplierPerExtraSeries` | `multiplierForCombo()` und `ScoreSystem`          | Tages-Score-Tiers verwenden `balance_score_for_runs()`                     |
 | Weltbonus            | `worlds.*.scoreMultiplier`                | `ScoreSystem` erhält den Weltmultiplikator aus `GameScene`  | `max_plausible_score()` prüft Welt-ID und Multiplikator                    |
 | Talentboni           | `talents.*`                               | `resolveStats()`, `ScoreSystem`, `SpawnSystem`, `GameScene` | Duell setzt Talente auf Grundwerte; Run-Event bleibt serverseitig begrenzt |
 | Tages-Score-Schwelle | `economy.daily.scoreTierRuns`             | `DAILY_SCORE_BONUS_STEP` und `ChallengeSystem`              | `claim_daily_bonus()` berechnet die Tierzahl serverseitig                  |
@@ -71,6 +71,9 @@ werden.
 Die dritte Kosmetik-Kategorie `SHIP_AURAS_REFERENCE` folgt demselben
 `balancedCoinCost()`- und Besitzpfad wie Formen und Farben. Sie ist deshalb
 eine Coin-Senke, aber keine neue Währung oder zusätzliche Balancequelle.
+Beim Online-Abgleich über `phase_2_25_cosmetic_coin_sync.sql` wird der
+monotone Marker `coinsSpent` zusätzlich serverseitig verbucht, damit ein
+Kosmetik-Sync ausgegebene Coins nicht wiederherstellt.
 
 - `ProgressSyncSystem` transportiert Run- und Tageswerte aus der lokalen
   Outbox; es erzeugt keine neue XP- oder Coin-Quelle.

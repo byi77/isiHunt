@@ -45,6 +45,15 @@ und verankert kostenlose Levelpunkte, kostenlose Talent-Resets und Version 9.
 Wenn `balance-data.json` geändert wurde, aktualisiert `npm run balance:sync`
 den JSON-Block der Migration automatisch.
 
+`supabase/phase_2_24_score_balance.sql` ersetzt die aktuelle Balance-Konfiguration
+für Punkte und Serien-Jackpots, ohne historische Migrationen umzuschreiben.
+
+`supabase/phase_2_25_cosmetic_coin_sync.sql` verbucht zusätzlich lokale
+Shop-Ausgaben beim Kosmetik-Sync atomar auf dem Server.
+
+`supabase/phase_2_26_uncapped_series.sql` führt das weitere Serienwachstum
+auch in der serverseitigen Score-Plausibilitätsprüfung fort.
+
 `supabase/phase_2_16_admin_boost_balance_anchor.sql` ersetzt den alten
 Admin-Boost-XP-Anker durch die aktuelle `balance_xp_for_level()`-Kette. Dadurch
 landet ein Boost auf dem angeforderten Ziellevel, auch wenn Balancewerte

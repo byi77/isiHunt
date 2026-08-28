@@ -18,6 +18,7 @@
  */
 
 import {
+  COMBO_MULTIPLIER_PER_EXTRA_SERIES,
   COMBO_TIERS,
   SERIES_RAISING_MIN_RARITY_INDEX,
   SERIES_TRAIL_TIERS,
@@ -48,6 +49,15 @@ export function multiplierForCombo(combo: number): number {
   let result = 1;
   for (const tier of COMBO_TIERS) {
     if (combo >= tier.minCombo) result = tier.multiplier;
+  }
+
+  // Die letzte sichtbare Stufe ist kein Cap: Wer die Serie weiter haelt,
+  // bekommt pro weiterem farbigen Fang einen kleinen zusaetzlichen Schub.
+  // So bleibt Serie 16 der grosse Jackpot-Moment, ohne dass eine lange
+  // perfekte Kette danach mathematisch stehen bleibt.
+  const lastTier = COMBO_TIERS[COMBO_TIERS.length - 1];
+  if (lastTier && combo > lastTier.minCombo) {
+    result += (combo - lastTier.minCombo) * COMBO_MULTIPLIER_PER_EXTRA_SERIES;
   }
   return result;
 }

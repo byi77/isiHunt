@@ -172,6 +172,7 @@ export const LEVELS_PER_TALENT_POINT = Math.max(
 );
 export const COINS_PER_EXTRA_TALENT_POINT = 10;
 export const COMBO_TIERS = BALANCE.score.comboTiers;
+export const COMBO_MULTIPLIER_PER_EXTRA_SERIES = BALANCE.score.comboMultiplierPerExtraSeries;
 export const SERIES_RAISING_MIN_RARITY_INDEX = BALANCE.score.seriesRaisingMinRarityIndex;
 export const WORLD_REWARDS = BALANCE.worlds;
 

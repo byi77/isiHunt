@@ -81,6 +81,8 @@ interface PendingCosmeticSync {
   shipShape: string;
   shipColor: string;
   shipAura: string;
+  /** Monotoner Marker, damit der Server lokale Shop-Ausgaben nachbuchen kann. */
+  coinsSpent: number;
 }
 
 function cosmeticSnapshot(save: SaveData = SaveSystem.load()): PendingCosmeticSync {
@@ -91,6 +93,7 @@ function cosmeticSnapshot(save: SaveData = SaveSystem.load()): PendingCosmeticSy
     shipShape: save.shipShape,
     shipColor: save.shipColor,
     shipAura: save.shipAura,
+    coinsSpent: save.coinsSpent,
   };
 }
 
@@ -120,6 +123,7 @@ function readPendingCosmeticSync(): PendingCosmeticSync | null {
       shipShape: value.shipShape,
       shipColor: value.shipColor,
       shipAura: value.shipAura,
+      coinsSpent: finiteNonNegative(value.coinsSpent),
     };
   } catch {
     return null;
@@ -961,6 +965,7 @@ export async function flushPendingCosmetics(): Promise<CloudResult<RemoteProfile
       p_ship_shape: pending.shipShape,
       p_ship_color: pending.shipColor,
       p_ship_aura: pending.shipAura,
+      p_coins_spent: Math.round(pending.coinsSpent),
     }),
     'Kosmetik synchronisieren',
   );
