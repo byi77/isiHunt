@@ -842,6 +842,15 @@ function mergeShopOwnership(
   const ownedShipColors = [...new Set([...lokal.ownedShipColors, ...uebernommen.ownedShipColors])];
   const ownedShipAuras = [...new Set([...lokal.ownedShipAuras, ...uebernommen.ownedShipAuras])];
 
+  // Ein lokaler Shopkauf wird zuerst abgebucht und anschliessend ueber die
+  // Kosmetik-Outbox an den Server uebertragen. Kommt dazwischen ein alter
+  // Profil-Pull (z. B. beim Reload oder beim Login-Bonus), darf dessen
+  // Guthaben den Kauf nicht rueckgaengig machen. `coinsSpent` ist monoton; die
+  // Differenz bezeichnet genau den lokalen Spend, den der Remote-Stand noch
+  // nicht kennt. Der naechste Kosmetik-Sync kann ihn danach serverseitig
+  // bestaetigen und setzt denselben Wert erneut zurueck.
+  const unconfirmedLocalSpend = Math.max(0, lokal.coinsSpent - uebernommen.coinsSpent);
+
   return {
     ...uebernommen,
     // Besitz zusammenlegen: Wer auf zwei Geraeten kauft, hat am Ende beides.
@@ -850,6 +859,8 @@ function mergeShopOwnership(
     ownedShipShapes,
     ownedShipColors,
     ownedShipAuras,
+    coins: Math.max(0, uebernommen.coins - unconfirmedLocalSpend),
+    coinsSpent: Math.max(uebernommen.coinsSpent, lokal.coinsSpent),
     // Kaufhinweise bleiben lokal erhalten; die eigentliche Cloud-Synchronisation
     // dieser Metadaten ist bewusst Teil von P2-08, nicht dieses UI-Schritts.
     newCosmeticIds: [

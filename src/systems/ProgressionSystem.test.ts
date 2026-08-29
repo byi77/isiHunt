@@ -650,6 +650,33 @@ describe('Laden: Besitz ueberlebt den Profil-Abgleich', () => {
     expect(danach.ownedShipShapes).toContain('star');
   });
 
+  it('erstattet einen lokalen Shopkauf bei einem alten Cloud-Pull nicht zurueck', () => {
+    // Regression: Admin-Boost auf 50000, danach lokaler Kauf. Ein alter
+    // Serverstand mit 50000 Coins durfte den Kauf beim Reload nicht wieder
+    // gutschreiben, bevor die Kosmetik-Outbox synchronisiert war.
+    SaveSystem.update((data) => {
+      data.level = 50;
+      data.coins = 49_000;
+      data.coinsSpent = 1_000;
+      data.ownedShipShapes = ['arrow', 'star'];
+      data.shipShape = 'star';
+    });
+
+    const alterServerStand = {
+      version: SAVE_VERSION,
+      level: 50,
+      coins: 50_000,
+      coinsSpent: 0,
+      ownedShipShapes: ['arrow'],
+      shipShape: 'arrow',
+    };
+    const danach = SaveSystem.adoptProfileProgress(alterServerStand);
+
+    expect(danach.coins).toBe(49_000);
+    expect(danach.coinsSpent).toBe(1_000);
+    expect(danach.ownedShipShapes).toContain('star');
+  });
+
   it('gilt genauso fuer adoptRemote', () => {
     SaveSystem.update((data) => {
       data.ownedShipColors = ['world', 'gold'];
