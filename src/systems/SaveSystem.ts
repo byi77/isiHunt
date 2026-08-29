@@ -24,6 +24,7 @@ import {
 } from '@/config/shop';
 import { TALENTS } from '@/config/talents';
 import { DEFAULT_WORLD_ID } from '@/config/worlds';
+import * as SyncStatusSystem from '@/systems/SyncStatusSystem';
 import type { SaveData } from '@/types';
 
 const TEST_PROFILE_KEY = 'isihunt.admin-test-profile.v1';
@@ -431,6 +432,8 @@ export function load(): SaveData {
           '[SaveSystem] Migration nicht persistierbar, Stand bleibt im Speicher.',
           error,
         );
+        saveFailed = true;
+        SyncStatusSystem.setLocalSaveFailed(true);
       }
     }
   } catch (error) {
@@ -460,10 +463,12 @@ export function save(data: SaveData): boolean {
   try {
     window.localStorage.setItem(SAVE_KEY, JSON.stringify(data));
     saveFailed = false;
+    SyncStatusSystem.setLocalSaveFailed(false);
     return true;
   } catch (error) {
     console.warn('[SaveSystem] Spielstand nicht speicherbar.', error);
     saveFailed = true;
+    SyncStatusSystem.setLocalSaveFailed(true);
     return false;
   }
 }

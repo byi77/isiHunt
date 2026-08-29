@@ -13,7 +13,9 @@ const duelLeaderboardMigration = readFileSync(
   resolve(sqlDir, 'phase_2_31_duel_leaderboard_outbox.sql'),
   'utf8',
 );
+const migrationState = readFileSync(resolve(sqlDir, 'phase_2_32_migration_state.sql'), 'utf8');
 const verification = readFileSync(resolve(sqlDir, 'verify_security_hardening.sql'), 'utf8');
+const migrationVerification = readFileSync(resolve(sqlDir, 'verify_migration_state.sql'), 'utf8');
 
 const failures = [];
 function requireText(text, fragment, label) {
@@ -63,9 +65,16 @@ requireText(authCatalogMigration, 'duel_room_limits', 'Duell-Payload-Grenze');
 requireText(duelLeaderboardMigration, 'server_seed', 'Server-Duell-Seed');
 requireText(duelLeaderboardMigration, 'max_plausible_score', 'Duell-Ergebnispruefung');
 requireText(duelLeaderboardMigration, 'authenticated_score_evidence', 'Leaderboard-Nachweis');
+requireText(migrationState, 'isihunt_schema_state', 'Migrationsmarker-Tabelle');
+requireText(migrationState, 'schema_version, migration_name', 'Migrationsmarker-Version');
+requireText(
+  migrationState,
+  'Migrationsstand unvollstaendig',
+  'Migrationsstand-Vollstaendigkeitspruefung',
+);
 
 const migrationFiles = readdirSync(sqlDir).filter((name) =>
-  /^phase_2_(2[89]|30|31)_.*\.sql$/.test(name),
+  /^phase_2_(2[89]|30|31|32)_.*\.sql$/.test(name),
 );
 for (const file of migrationFiles) {
   const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();
@@ -77,6 +86,7 @@ for (const file of migrationFiles) {
 requireText(verification, 'daily_key', 'Live-Verifikation Tagesbonus');
 requireText(verification, 'upsert_save', 'Live-Verifikation Save-CAS');
 requireText(verification, 'duel_rooms', 'Live-Verifikation Duell');
+requireText(migrationVerification, 'schema_version', 'Live-Verifikation Migrationsmarker');
 
 if (failures.length > 0) {
   console.error('SQL-Vertragspruefung fehlgeschlagen:');

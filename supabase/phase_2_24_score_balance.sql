@@ -6,7 +6,16 @@
 
 begin;
 
-alter function public.balance_config() rename to balance_config_legacy;
+-- Wiederholbar: Nach dem ersten Lauf existiert der Zielname bereits. Ein
+-- blindes RENAME wuerde dann die gesamte Migration abbrechen.
+do $$
+begin
+  if to_regprocedure('public.balance_config()') is not null
+     and to_regprocedure('public.balance_config_legacy()') is null then
+    execute 'alter function public.balance_config() rename to balance_config_legacy';
+  end if;
+end;
+$$;
 
 create or replace function public.balance_config()
 returns jsonb

@@ -178,6 +178,22 @@ reproduzierbares Prüfergebnis vorliegt.
 10. `supabase/phase_2_14_balance_chain.sql`
 11. `supabase/phase_2_15_cosmetic_sync.sql`
 12. `supabase/phase_2_16_admin_boost_balance_anchor.sql`
+13. `supabase/phase_2_17_duel_round_results.sql`
+14. `supabase/phase_2_18_save_version_anchor.sql`
+15. `supabase/phase_2_19_talent_max_rank_from_config.sql`
+16. `supabase/phase_2_20_duel_realtime_policies.sql`
+17. `supabase/phase_2_21_talent_balance_sync.sql`
+18. `supabase/phase_2_22_talent_power_balance.sql`
+19. `supabase/phase_2_23_talent_points.sql` (nur mit dem dokumentierten Opt-in)
+20. `supabase/phase_2_24_score_balance.sql`
+21. `supabase/phase_2_25_cosmetic_coin_sync.sql`
+22. `supabase/phase_2_26_uncapped_series.sql`
+23. `supabase/phase_2_27_security_hardening.sql`
+24. `supabase/phase_2_28_integrity_hardening.sql`
+25. `supabase/phase_2_29_exploit_hardening.sql`
+26. `supabase/phase_2_30_auth_catalog_limits.sql`
+27. `supabase/phase_2_31_duel_leaderboard_outbox.sql`
+28. `supabase/phase_2_32_migration_state.sql`
 
 Die Dateien sind wiederholbar angelegt, trotzdem vor jedem Lauf prüfen, ob
 eine Migration bereits ausgeführt wurde. `cleanup_leaderboard.sql`,

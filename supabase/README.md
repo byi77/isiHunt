@@ -40,22 +40,27 @@ Auf einer leeren Datenbank in dieser Reihenfolge einspielen:
 | 21  | `phase_2_25_cosmetic_coin_sync.sql`          | Shop-Ausgaben beim Kosmetik-Sync serverseitig nachbuchen          |
 | 22  | `phase_2_26_uncapped_series.sql`             | Serien-Multiplikator wächst nach Serie 16 ohne Obergrenze         |
 | 23  | `phase_2_27_security_hardening.sql`          | Admin-/Reward-/Save-/Leaderboard-Hardening                        |
-| 24  | `phase_2_28_integrity_hardening.sql`        | Account-Outbox, Save-CAS, Tagesbonus- und Duell-Integrität        |
-| 25  | `phase_2_29_exploit_hardening.sql`          | Tagesbonus-/Sync-Code-Replay und Progress-Farming begrenzen        |
-| 26  | `phase_2_30_auth_catalog_limits.sql`        | Auth-/Shop-Härtung und Grenzen für öffentliche RPC-Payloads        |
-| 27  | `phase_2_31_duel_leaderboard_outbox.sql`    | Server-Seed, Duell-Ergebnis- und Leaderboard-Nachweis             |
+| 24  | `phase_2_28_integrity_hardening.sql`         | Account-Outbox, Save-CAS, Tagesbonus- und Duell-Integrität        |
+| 25  | `phase_2_29_exploit_hardening.sql`           | Tagesbonus-/Sync-Code-Replay und Progress-Farming begrenzen       |
+| 26  | `phase_2_30_auth_catalog_limits.sql`         | Auth-/Shop-Härtung und Grenzen für öffentliche RPC-Payloads       |
+| 27  | `phase_2_31_duel_leaderboard_outbox.sql`     | Server-Seed, Duell-Ergebnis- und Leaderboard-Nachweis             |
+| 28  | `phase_2_32_migration_state.sql`             | Reproduzierbarer Marker fuer den ausgefuehrten Migrationsstand    |
 
 `phase_2_23_talent_points.sql` enthält einen historischen globalen
 Testdaten-Reset. Das Skript bricht ohne ausdrückliches Opt-in ab. Nur wenn
 dieser Reset wirklich gewollt ist, vorher in derselben SQL-Editor-Sitzung
 ausführen: `set app.isihunt_allow_test_reset = 'on';`.
 
-## Warum alte Dateien nicht rückwirkend geändert werden
+## Wiederholbarkeit und Migrationshistorie
 
-Eine bereits ausgeführte Migration umzuschreiben, lässt Repo und Datenbank
-auseinanderlaufen: Die Datei zeigt einen Stand, den der Server nie hatte.
-Korrekturen kommen deshalb als **neue** Migration, die die betroffene Funktion
-per `create or replace` ersetzt.
+Die historischen Umbenennungen in `phase_2_24` und `phase_2_26` sind
+idempotent geschützt: Ein zweiter Lauf überspringt ein bereits vollzogenes
+`RENAME`, statt die ganze Migration an einem existierenden Zielnamen scheitern
+zu lassen. Die inhaltliche Historie bleibt dabei erhalten.
+
+Für neue Korrekturen gilt weiterhin: Eine bereits ausgeführte Migration nicht
+inhaltlich umschreiben, sondern eine **neue** Migration anlegen, die die
+betroffene Funktion per `create or replace` ersetzt.
 
 `phase_2_23_talent_points.sql` ist die bewusste Ausnahme für einen
 Sicherheits-Guard: Der historische Reset bleibt inhaltlich unverändert, läuft
@@ -88,7 +93,9 @@ Nicht Teil der Reihenfolge, nur bei Bedarf und bewusst:
 | ----------------------- | ------------------------------------------------------ |
 | `npm run save:version`  | `SAVE_VERSION` (TS) und `save_version()` (Postgres)    |
 | `npm run balance:check` | `balance-data.json` und der JSON-Block in `phase_2_14` |
-| `npm run sql:check`     | Verträge und Signaturen der Integrity-Migration          |
+| `npm run sql:check`     | Verträge, Signaturen und Migrationsmarker              |
 
-Alle drei laufen in den Release-Gates mit. Wer `balance-data.json` ändert, überträgt
+Alle drei laufen in den Release-Gates mit. `supabase/verify_migration_state.sql`
+ist nach dem Live-Lauf zusätzlich im SQL-Editor auszuführen und zusammen mit
+`verify_security_hardening.sql` als Abnahmebeleg zu sichern. Wer `balance-data.json` ändert, überträgt
 mit `npm run balance:sync` und legt die geänderte SQL-Datei in denselben Commit.

@@ -176,7 +176,7 @@ describe('Fehlgeschlagenes Speichern', () => {
     vi.spyOn(console, 'warn').mockImplementation(() => undefined);
   }
 
-  it('meldet den Fehlschlag, statt still einen Erfolg vorzutaeuschen', () => {
+  it('meldet den Fehlschlag, statt still einen Erfolg vorzutaeuschen', async () => {
     // Vorher gab `save()` nichts zurueck: Der Cache trug den neuen Stand,
     // jeder Aufrufer sah einen Erfolg, im Speicher stand nichts. Der Spieler
     // sammelte eine ganze Sitzung lang und fand beim Neustart alles geloescht.
@@ -188,11 +188,13 @@ describe('Fehlgeschlagenes Speichern', () => {
 
     expect(gelungen).toBe(false);
     expect(SaveSystem.lastSaveFailed()).toBe(true);
+    const syncStatus = await import('@/systems/SyncStatusSystem');
+    expect(syncStatus.hasLocalSaveFailure()).toBe(true);
     // Die laufende Sitzung bleibt spielbar - nur gilt sie nicht als gesichert.
     expect(SaveSystem.load().coins).toBe(9999);
   });
 
-  it('meldet nach einem gelungenen Schreibvorgang wieder Erfolg', () => {
+  it('meldet nach einem gelungenen Schreibvorgang wieder Erfolg', async () => {
     SaveSystem.load();
     schreibfehlerFuer(SAVE_KEY);
     SaveSystem.save({ ...SaveSystem.load(), coins: 1 });
@@ -200,6 +202,8 @@ describe('Fehlgeschlagenes Speichern', () => {
 
     expect(SaveSystem.save({ ...SaveSystem.load(), coins: 2 })).toBe(true);
     expect(SaveSystem.lastSaveFailed()).toBe(false);
+    const syncStatus = await import('@/systems/SyncStatusSystem');
+    expect(syncStatus.hasLocalSaveFailure()).toBe(false);
   });
 
   it('legt KEIN Testprofil an, wenn das Backup nicht geschrieben werden kann', () => {
