@@ -55,6 +55,14 @@ describe('isValidAlias', () => {
   });
 });
 
+describe('isValidNewAlias', () => {
+  it('akzeptiert die Spielernamenregel fuer neue Profile', () => {
+    expect(AuthSystem.isValidNewAlias('max1234')).toBe(true);
+    expect(AuthSystem.isValidNewAlias('max12345')).toBe(false);
+    expect(AuthSystem.isValidNewAlias('max_1')).toBe(false);
+  });
+});
+
 describe('isValidPin', () => {
   it('akzeptiert genau sechs Ziffern', () => {
     expect(AuthSystem.isValidPin('123456')).toBe(true);

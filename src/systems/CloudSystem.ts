@@ -27,11 +27,11 @@ import {
   BACKEND_URL,
   isBackendConfigured,
   LEADERBOARD_LIMIT,
-  PLAYER_NAME_MAX_LENGTH,
   SYNC_CODE_ALPHABET,
   SYNC_CODE_LENGTH,
 } from '@/config/backend';
 import { totalXpForLevel } from '@/config/balance';
+import { sanitizePlayerName } from '@/config/playerName';
 import * as DebugSystem from '@/systems/DebugSystem';
 import * as AuthSystem from '@/systems/AuthSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
@@ -884,21 +884,7 @@ export async function isPlayerNameAvailable(
   return { ok: true, value: result.value.data === true };
 }
 
-/**
- * Bereinigt einen Spielernamen.
- *
- * Seit der Vereinheitlichung von Login-Alias und Anzeigename gilt fuer beide
- * dieselbe Regel: klein geschrieben, nur a-z, 0-9, - und _. Das haelt Alias
- * und Anzeigename zwangslaeufig gleich, statt sie wie zuvor unabhaengig
- * auseinanderlaufen zu lassen (docs/DECISIONS.md, ADR zur Identitaets-
- * Vereinheitlichung). Die Datenbank prueft dieselbe Regel serverseitig.
- */
-export function sanitizePlayerName(raw: string): string {
-  return raw
-    .toLowerCase()
-    .replace(/[^a-z0-9_-]/g, '')
-    .slice(0, PLAYER_NAME_MAX_LENGTH);
-}
+export { sanitizePlayerName } from '@/config/playerName';
 
 // --- Spielstand --------------------------------------------------------------
 

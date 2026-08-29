@@ -40,11 +40,7 @@ export const SYNC_CODE_LENGTH = 6;
  */
 export const SYNC_CODE_ALPHABET = '0123456789ABCDEFGHJKMNPQRSTUVWXYZ';
 
-/**
- * Obergrenze fuer den Spielernamen. Seit der Vereinheitlichung von Login-Alias
- * und Anzeigename (phase_2_8_unify_identity.sql) identisch mit
- * AuthSystem.ALIAS_MAX_LENGTH - beide bezeichnen jetzt denselben Wert.
- */
+/** Obergrenze fuer den sichtbaren Spielernamen. */
 export const PLAYER_NAME_MAX_LENGTH = 16;
 
 /**

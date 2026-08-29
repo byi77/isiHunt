@@ -3,6 +3,7 @@
 import type { Session, User } from '@supabase/supabase-js';
 
 import { BACKEND_TIMEOUT_MS, BACKEND_URL } from '@/config/backend';
+import { isValidPlayerName } from '@/config/playerName';
 import * as CloudSystem from '@/systems/CloudSystem';
 import type { CloudResult } from '@/systems/CloudSystem';
 
@@ -70,6 +71,11 @@ export function isValidAlias(value: string): boolean {
     value.length <= ALIAS_MAX_LENGTH &&
     /^[a-z0-9_-]+$/.test(value)
   );
+}
+
+/** Strengere Regel fuer neue Profile; alte Login-Aliase bleiben kompatibel. */
+export function isValidNewAlias(value: string): boolean {
+  return isValidPlayerName(value, ALIAS_MIN_LENGTH);
 }
 
 export function isValidPin(value: string): boolean {
@@ -206,10 +212,10 @@ export async function signUp(alias: string, pin: string): Promise<CloudResult<Se
   if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
 
   const normalizedAlias = normalizeAlias(alias);
-  if (!isValidAlias(normalizedAlias) || !isValidPin(pin)) {
+  if (!isValidNewAlias(normalizedAlias) || !isValidPin(pin)) {
     return {
       ok: false,
-      error: `Alias: ${ALIAS_MIN_LENGTH}-${ALIAS_MAX_LENGTH} Zeichen und ein ${PIN_LENGTH}-stelliger PIN erforderlich.`,
+      error: `Name: ${ALIAS_MIN_LENGTH}-${ALIAS_MAX_LENGTH} Zeichen, nur Buchstaben/Zahlen und höchstens 4 Zahlen; dazu ein ${PIN_LENGTH}-stelliger PIN erforderlich.`,
     };
   }
 

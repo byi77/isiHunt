@@ -26,7 +26,8 @@ import {
   DAILY_SCORE_BONUS_STEP,
   DAILY_SCORE_BONUS_XP,
 } from '@/config/GameConfig';
-import { DAILY_KEY_TOLERANCE_MS, PLAYER_NAME_MAX_LENGTH } from '@/config/backend';
+import { DAILY_KEY_TOLERANCE_MS } from '@/config/backend';
+import { sanitizePlayerName } from '@/config/playerName';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import type {
@@ -44,15 +45,7 @@ type OnlinePlayerNames = [string | null, string | null];
 
 function cleanOnlinePlayerName(raw: unknown): string | null {
   if (typeof raw !== 'string') return null;
-  const clean = raw
-    .split('')
-    .filter((character) => {
-      const code = character.codePointAt(0) ?? 0;
-      return code > 0x1f && code !== 0x7f;
-    })
-    .join('')
-    .trim()
-    .slice(0, PLAYER_NAME_MAX_LENGTH);
+  const clean = sanitizePlayerName(raw);
   return clean || null;
 }
 

@@ -34,9 +34,25 @@ import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
 import { decideSyncGate, hasVisibleChange } from '@/systems/SyncGateSystem';
 import * as SyncStatusSystem from '@/systems/SyncStatusSystem';
-import { shipTint } from '@/config/shop';
+import {
+  getShipAura,
+  getShipColor,
+  getShipShape,
+  shipAuraAssetId,
+  shipAuraIndex,
+  shipTint,
+} from '@/config/shop';
+import { auraAssetForId, type EgoAuraAsset } from '@/ui/egoAssets';
+import {
+  applyTintShift,
+  AURA_FRAME_RUHE,
+  SHIP_ANIMATIONS,
+  stehendesBild,
+  type AuraAnimation,
+} from '@/ui/shipAnimations';
 import { playerTextureForShape, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
+import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import {
   createAmbientMotes,
   createBar,
@@ -70,6 +86,14 @@ export class MenuScene extends Phaser.Scene {
   private saveSyncBusy = false;
   private profileRetryTimer: ReturnType<typeof setTimeout> | null = null;
   private profileRetryAttempt = 0;
+  private profileShapeImage: Phaser.GameObjects.Image | null = null;
+  private profileHaloImage: Phaser.GameObjects.Image | null = null;
+  private profileAuraImage: Phaser.GameObjects.Image | null = null;
+  private profileAuraAnimation: AuraAnimation | null = null;
+  private profileAuraAsset: EgoAuraAsset | undefined;
+  private profileAuraColor = 0xffffff;
+  private profileAuraMs = 0;
+  private profilePanelBottom = 385;
   private readonly onlineHandler = (): void => {
     // Ausdruecklicher Anlass: Das Netz ist gerade zurueckgekehrt, ein
     // wartender Offline-Run soll sofort hoch - nicht erst nach der
@@ -131,6 +155,63 @@ export class MenuScene extends Phaser.Scene {
       this.hideSyncPopup();
       this.hideLoginBonusPopup();
     });
+  }
+
+  override update(_time: number, delta: number): void {
+    if (this.profileShapeImage === null) return;
+    this.profileAuraMs += Math.max(0, delta);
+    this.updateProfilePreview();
+  }
+
+  /** Hält die kleine Profilfigur mit derselben Aura-Rechnung wie im Spiel aktuell. */
+  private updateProfilePreview(): void {
+    const animation = this.profileAuraAnimation;
+    const frame =
+      animation === null
+        ? AURA_FRAME_RUHE
+        : prefersReducedMotion()
+          ? stehendesBild(animation)
+          : animation(this.profileAuraMs);
+    const tint = applyTintShift(this.profileAuraColor, frame.tint);
+
+    this.profileShapeImage
+      ?.setScale(0.34 * frame.scaleX, 0.34 * frame.scaleY)
+      .setRotation(frame.rotation)
+      .setAlpha(frame.alpha)
+      .setTint(tint);
+    this.profileHaloImage?.setTint(tint);
+
+    const auraImage = this.profileAuraImage;
+    if (auraImage === null) return;
+    if (this.profileAuraAsset !== undefined) {
+      const asset = this.profileAuraAsset;
+      const frameIndex =
+        Math.floor(this.profileAuraMs / asset.frameDurationMs) % asset.frameTextureKeys.length;
+      const textureKey = asset.frameTextureKeys[frameIndex] ?? asset.frameTextureKeys[0];
+      if (textureKey !== undefined) auraImage.setTexture(textureKey);
+      auraImage
+        .setVisible(true)
+        .setBlendMode(Phaser.BlendModes.ADD)
+        .setScale(
+          asset.previewScaleMultiplier * frame.scaleX,
+          asset.previewScaleMultiplier * frame.scaleY,
+        )
+        .setAlpha(0.75 * frame.alpha)
+        .setTint(tint);
+      return;
+    }
+
+    if (animation !== null) {
+      auraImage
+        .setVisible(true)
+        .setBlendMode(Phaser.BlendModes.NORMAL)
+        .setTexture(TextureKey.Glow)
+        .setScale(0.72 * frame.scaleX, 0.72 * frame.scaleY)
+        .setAlpha(0.75 * frame.alpha)
+        .setTint(tint);
+    } else {
+      auraImage.setVisible(false);
+    }
   }
 
   /**
@@ -819,14 +900,28 @@ export class MenuScene extends Phaser.Scene {
   ): void {
     const y = 270;
     const width = GAME_WIDTH - 80;
-    const levelProgress = ProgressionSystem.getLevelProgress(SaveSystem.load());
+    const save = SaveSystem.load();
+    const levelProgress = ProgressionSystem.getLevelProgress(save);
     const localPlay = !AuthSystem.isSignedIn() || !navigator.onLine;
+    const shape = getShipShape(save.shipShape);
+    const color = getShipColor(save.shipColor);
+    const aura = getShipAura(save.shipAura);
+    const profileColor = shipTint(save, this.selectedWorld.accent);
+    const auraIndex = shipAuraIndex(save);
+    this.profileAuraAnimation = auraIndex === null ? null : (SHIP_ANIMATIONS[auraIndex] ?? null);
+    this.profileAuraAsset = auraAssetForId(shipAuraAssetId(save));
+    this.profileAuraColor = profileColor;
+    this.profileAuraMs = 0;
     const rowBounds = [
       { center: y - 26, height: FontSize.body },
       { center: y + 2, height: FontSize.body },
       { center: y + 28, height: FontSize.tiny },
       { center: y + 49, height: FontSize.body },
-      { center: y + 80, height: 20 },
+      { center: y + 72, height: FontSize.tiny },
+      { center: y + 93, height: FontSize.tiny },
+      { center: y + 114, height: FontSize.tiny },
+      { center: y + 139, height: FontSize.tiny },
+      { center: y + 157, height: 8 },
     ];
     const panelPadding = 25;
     const panelTop =
@@ -834,6 +929,7 @@ export class MenuScene extends Phaser.Scene {
     const panelBottom =
       Math.max(...rowBounds.map((row) => row.center + row.height / 2)) + panelPadding;
     const panelCenter = (panelTop + panelBottom) / 2;
+    this.profilePanelBottom = panelBottom;
 
     createPanel(
       this,
@@ -847,16 +943,19 @@ export class MenuScene extends Phaser.Scene {
       },
     );
 
-    this.add
+    this.profileHaloImage = this.add
       .image(112, y, TextureKey.PlayerHalo)
-      .setTint(this.selectedWorld.accent)
+      .setTint(profileColor)
       .setScale(0.48)
       .setAlpha(0.8);
 
-    this.add
-      .image(112, y, playerTextureForShape(SaveSystem.load().shipShape))
-      .setTint(shipTint(SaveSystem.load(), this.selectedWorld.accent))
+    this.profileAuraImage = this.add.image(112, y, TextureKey.Glow).setAlpha(0.75);
+
+    this.profileShapeImage = this.add
+      .image(112, y, playerTextureForShape(shape.id))
+      .setTint(profileColor)
       .setScale(0.34);
+    this.updateProfilePreview();
 
     this.add
       .text(172, y - 26, playerName, textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }))
@@ -891,10 +990,15 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0, 0.5)
       .setLetterSpacing(3);
 
+    const cosmeticStyle = textStyle(FontSize.tiny, Palette.inkDim, { fontStyle: 'bold' });
+    this.add.text(172, y + 72, `FORM  ${shape.name}`, cosmeticStyle).setOrigin(0, 0.5);
+    this.add.text(172, y + 93, `FARBE  ${color.name}`, cosmeticStyle).setOrigin(0, 0.5);
+    this.add.text(172, y + 114, `AURA  ${aura.name}`, cosmeticStyle).setOrigin(0, 0.5);
+
     this.add
       .text(
         172,
-        y + 73,
+        y + 139,
         localPlay
           ? 'OFFLINE · LOKAL GESPEICHERT'
           : levelProgress.xpNeeded === 0
@@ -904,7 +1008,7 @@ export class MenuScene extends Phaser.Scene {
       )
       .setOrigin(0, 0.5);
 
-    const xpBar = createBar(this, 172, y + 88, 280, 8, this.selectedWorld.accent);
+    const xpBar = createBar(this, 172, y + 157, 280, 8, this.selectedWorld.accent);
     xpBar.setRatio(levelProgress.ratio);
 
     createButton(this, 520, panelCenter, 'PROFIL', () => this.scene.start(SceneKey.Profile), {
@@ -919,12 +1023,16 @@ export class MenuScene extends Phaser.Scene {
   private buildWorldList(level: number): void {
     this.cleanupWorldList();
 
-    const centerY = 530;
     const step = 112;
     const selectedIndex = Math.max(
       0,
       WORLDS.findIndex((world) => world.id === this.selectedWorld.id),
     );
+    // Bei einer spaeten Welt liegt die vorherige Karte oberhalb des
+    // Auswahlzentrums. Der Profilblock ist durch Form/Farbe/Aura hoeher
+    // geworden; verschiebe das Wheel dann gemeinsam nach unten, statt die
+    // Karte in den Profiltext laufen zu lassen.
+    const centerY = selectedIndex > 0 ? Math.max(530, this.profilePanelBottom + step + 52) : 530;
 
     const carousel = this.add.container(0, 0);
     this.worldCarousel = carousel;

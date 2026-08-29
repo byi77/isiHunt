@@ -160,12 +160,12 @@ describe('isRemoteAhead / isLocalAhead', () => {
 });
 
 describe('sanitizePlayerName', () => {
-  it('schreibt klein und entfernt alles ausser a-z, 0-9, - und _', () => {
-    expect(CloudSystem.sanitizePlayerName('Ma x_2000!')).toBe('max_2000');
+  it('entfernt Sonderzeichen, schreibt den ersten Buchstaben gross und behaelt vier Zahlen', () => {
+    expect(CloudSystem.sanitizePlayerName('Ma x_2000!5')).toBe('Max2000');
   });
 
-  it('behaelt Bindestrich und Unterstrich - dieselbe Regel wie der Login-Alias', () => {
-    expect(CloudSystem.sanitizePlayerName('Emre-K_1')).toBe('emre-k_1');
+  it('entfernt Zahlen nach der vierten', () => {
+    expect(CloudSystem.sanitizePlayerName('Emre12345')).toBe('Emre1234');
   });
 
   it('kuerzt auf die konfigurierte Maximallaenge', () => {

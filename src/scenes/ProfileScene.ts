@@ -118,6 +118,17 @@ export class ProfileScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
+          profileY + 68,
+          'NUR BUCHSTABEN UND ZAHLEN · MAX. 4 ZAHLEN',
+          textStyle(12, Palette.inkDim),
+        )
+        .setOrigin(0.5),
+    );
+
+    addContent(
+      this.add
+        .text(
+          GAME_WIDTH / 2,
           profileY - 110,
           `LEVEL ${levelProgress.level}`,
           textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),

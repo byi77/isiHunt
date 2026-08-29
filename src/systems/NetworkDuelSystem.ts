@@ -26,7 +26,8 @@
 
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 
-import { BACKEND_TIMEOUT_MS, PLAYER_NAME_MAX_LENGTH, SYNC_CODE_ALPHABET } from '@/config/backend';
+import { BACKEND_TIMEOUT_MS, SYNC_CODE_ALPHABET } from '@/config/backend';
+import { sanitizePlayerName } from '@/config/playerName';
 import {
   DUEL_ROOM_CODE_TTL_MINUTES,
   ONLINE_DUEL_CLOCK_SYNC_SAMPLES,
@@ -432,15 +433,7 @@ export function updateHandlers(handlers: DuelChannelHandlers): void {
 
 function cleanPresencePlayerName(raw: unknown): string | null {
   if (typeof raw !== 'string') return null;
-  const clean = raw
-    .split('')
-    .filter((character) => {
-      const code = character.codePointAt(0) ?? 0;
-      return code > 0x1f && code !== 0x7f;
-    })
-    .join('')
-    .trim()
-    .slice(0, PLAYER_NAME_MAX_LENGTH);
+  const clean = sanitizePlayerName(raw);
   return clean || null;
 }
 

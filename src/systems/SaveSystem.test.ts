@@ -90,6 +90,25 @@ describe('SaveSystem.load Migration', () => {
     expect(persisted.coins).toBe(data.coins);
   });
 
+  it('bereinigt bereits gespeicherte Spielernamen beim Laden', () => {
+    window.localStorage.setItem(
+      SAVE_KEY,
+      JSON.stringify({
+        version: SAVE_VERSION,
+        playerName: 'max_12345',
+        pendingPlayerName: 'alt!2',
+      }),
+    );
+
+    const data = SaveSystem.load();
+    const persisted = JSON.parse(window.localStorage.getItem(SAVE_KEY)!) as Partial<SaveData>;
+
+    expect(data.playerName).toBe('Max1234');
+    expect(data.pendingPlayerName).toBe('Alt2');
+    expect(persisted.playerName).toBe('Max1234');
+    expect(persisted.pendingPlayerName).toBe('Alt2');
+  });
+
   it('setzt den bisherigen Produktionsstand fuer die kostenlose Talentwirtschaft zurueck', async () => {
     window.localStorage.setItem(
       SAVE_KEY,

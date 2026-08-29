@@ -48,8 +48,20 @@ export function waitForViewportToSettle(): Promise<void> {
     const startedAt = performance.now();
     let stableSince = startedAt;
     let previous = readViewportSize();
+    let resolved = false;
+
+    // `requestAnimationFrame` kann beim Start einer installierten PWA pausiert
+    // sein, z. B. waehrend Safari das Fenster aus dem Hintergrund zurueckholt.
+    // Die alte Obergrenze wurde nur innerhalb von `check()` geprueft und war
+    // deshalb wirkungslos, wenn gar kein Frame kam.
+    const safetyTimer = window.setTimeout(() => {
+      if (resolved) return;
+      resolved = true;
+      resolve();
+    }, MAX_WAIT_MS);
 
     const check = (): void => {
+      if (resolved) return;
       const now = performance.now();
       const current = readViewportSize();
 
@@ -63,6 +75,8 @@ export function waitForViewportToSettle(): Promise<void> {
       const reachedSafetyLimit = now - startedAt >= MAX_WAIT_MS;
 
       if ((waitedLongEnough && stayedStable) || reachedSafetyLimit) {
+        resolved = true;
+        window.clearTimeout(safetyTimer);
         resolve();
         return;
       }

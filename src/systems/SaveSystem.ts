@@ -24,6 +24,7 @@ import {
 } from '@/config/shop';
 import { TALENTS } from '@/config/talents';
 import { DEFAULT_WORLD_ID } from '@/config/worlds';
+import { sanitizePlayerName } from '@/config/playerName';
 import * as SyncStatusSystem from '@/systems/SyncStatusSystem';
 import type { SaveData } from '@/types';
 
@@ -205,6 +206,13 @@ function reconcile(raw: Partial<SaveData>): SaveData {
   const selectedShape = stringOr(source.shipShape, base.shipShape);
   const selectedColor = stringOr(source.shipColor, base.shipColor);
   const selectedAura = stringOr(source.shipAura, base.shipAura);
+  const playerName = sanitizePlayerName(stringOr(source.playerName, base.playerName));
+  const pendingPlayerNameRaw = nullableStringOr(
+    source.pendingPlayerName,
+    base.pendingPlayerName ?? null,
+  );
+  const pendingPlayerName =
+    pendingPlayerNameRaw === null ? null : sanitizePlayerName(pendingPlayerNameRaw);
   return {
     ...base,
     version: SAVE_VERSION,
@@ -253,8 +261,8 @@ function reconcile(raw: Partial<SaveData>): SaveData {
       typeof source.soundEnabled === 'boolean' ? source.soundEnabled : base.soundEnabled,
     hapticsEnabled:
       typeof source.hapticsEnabled === 'boolean' ? source.hapticsEnabled : base.hapticsEnabled,
-    playerName: stringOr(source.playerName, base.playerName),
-    pendingPlayerName: nullableStringOr(source.pendingPlayerName, base.pendingPlayerName ?? null),
+    playerName,
+    pendingPlayerName,
     cloudId: nullableStringOr(source.cloudId, base.cloudId),
     cloudUpdatedAt:
       typeof source.cloudUpdatedAt === 'string' &&
@@ -418,15 +426,18 @@ export function load(): SaveData {
         : migrate(raw)
       : createDefaultSave();
 
-    // Migrationen müssen sofort persistiert werden. Sonst würde ein alter
+    // Migrationen und lokale Datenbereinigungen müssen sofort persistiert werden. Sonst würde ein alter
     // Spielstand nach jedem Browser-/App-Neustart erneut Talentpunkte und
     // Level-Coins umwandeln und die Währung vervielfachen. Eigener
     // try/catch: schlägt nur das Schreiben fehl (Quota, privater Modus),
     // bleibt der bereits migrierte Stand im Speicher gültig - der äußere
     // catch würde ihn sonst faelschlich durch einen leeren Stand ersetzen.
-    if (raw && rawVersion < SAVE_VERSION && legacyBackupReady) {
+    const persistedCache = JSON.stringify(cache);
+    const needsPersistence =
+      raw !== null && legacyBackupReady && (rawVersion < SAVE_VERSION || stored !== persistedCache);
+    if (needsPersistence) {
       try {
-        window.localStorage.setItem(SAVE_KEY, JSON.stringify(cache));
+        window.localStorage.setItem(SAVE_KEY, persistedCache);
       } catch (error) {
         console.warn(
           '[SaveSystem] Migration nicht persistierbar, Stand bleibt im Speicher.',
@@ -749,17 +760,19 @@ export function ensureCloudId(): string {
 }
 
 export function setPlayerName(name: string): void {
+  const safeName = sanitizePlayerName(name);
   update((data) => {
-    data.playerName = name;
+    data.playerName = safeName;
     data.pendingPlayerName = null;
   });
 }
 
 /** Speichert einen Namen offline, ohne den Serverstand als bestaetigt auszugeben. */
 export function setOfflinePlayerName(name: string): void {
+  const safeName = sanitizePlayerName(name);
   update((data) => {
-    data.playerName = name;
-    data.pendingPlayerName = name;
+    data.playerName = safeName;
+    data.pendingPlayerName = safeName;
   });
 }
 

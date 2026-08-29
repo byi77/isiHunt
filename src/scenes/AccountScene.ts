@@ -250,9 +250,13 @@ export class AccountScene extends Phaser.Scene {
     const alias = AuthSystem.normalizeAlias(this.aliasInput.getValue());
     const pin = this.pinInput.getValue();
     const pinConfirmation = this.pinConfirmInput.getValue();
-    if (!AuthSystem.isValidAlias(alias) || !AuthSystem.isValidPin(pin) || pin !== pinConfirmation) {
+    if (
+      !AuthSystem.isValidNewAlias(alias) ||
+      !AuthSystem.isValidPin(pin) ||
+      pin !== pinConfirmation
+    ) {
       this.statusPage.setStatus(
-        `Bitte deinen Namen, einen ${AuthSystem.PIN_LENGTH}-stelligen PIN und die Wiederholung korrekt eingeben.`,
+        `Bitte einen Namen mit Buchstaben/Zahlen (höchstens 4 Zahlen), einen ${AuthSystem.PIN_LENGTH}-stelligen PIN und die Wiederholung korrekt eingeben.`,
         Palette.gold,
       );
       return;

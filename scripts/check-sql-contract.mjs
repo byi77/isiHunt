@@ -18,6 +18,10 @@ const leaderboardAuthMigration = readFileSync(
   resolve(sqlDir, 'phase_2_33_leaderboard_auth_only.sql'),
   'utf8',
 );
+const playerNameMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_34_player_name_rules.sql'),
+  'utf8',
+);
 const verification = readFileSync(resolve(sqlDir, 'verify_security_hardening.sql'), 'utf8');
 const migrationVerification = readFileSync(resolve(sqlDir, 'verify_migration_state.sql'), 'utf8');
 
@@ -78,9 +82,16 @@ requireText(
 );
 requireText(leaderboardAuthMigration, 'from anon', 'Anonyme Bestenlisten-Sperre');
 requireText(leaderboardAuthMigration, 'schema_version = 33', 'Migrationsmarker Phase 2.33');
+requireText(playerNameMigration, 'normalize_player_name', 'Spielernamen-Normalisierung');
+requireText(
+  playerNameMigration,
+  "regexp_replace(raw_name, '[^0-9]', '', 'g')) > 4",
+  'Spielernamen-Ziffernlimit',
+);
+requireText(playerNameMigration, 'schema_version = 34', 'Migrationsmarker Phase 2.34');
 
 const migrationFiles = readdirSync(sqlDir).filter((name) =>
-  /^phase_2_(2[89]|30|31|32|33)_.*\.sql$/.test(name),
+  /^phase_2_(2[89]|30|31|32|33|34)_.*\.sql$/.test(name),
 );
 for (const file of migrationFiles) {
   const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();

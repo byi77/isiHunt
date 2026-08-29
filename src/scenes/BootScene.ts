@@ -12,6 +12,16 @@ import { SceneKey } from '@/scenes/SceneKey';
 import * as AuthSystem from '@/systems/AuthSystem';
 import { createTextures, TextureKey } from '@/ui/textures';
 
+/**
+ * Auth darf den lokalen Spielstart nicht blockieren. Bei einer abgelaufenen
+ * Session kann Supabase beim ersten `getSession()` noch einen Token-Refresh
+ * versuchen, der offline beliebig lange wartet. Das Menue laeuft dann als
+ * lokaler Gast weiter; sobald das Netz wieder da ist, kuemmert sich der
+ * normale Sync-Pfad um die Session.
+ */
+const AUTH_STARTUP_TIMEOUT_ONLINE_MS = 1500;
+const AUTH_STARTUP_TIMEOUT_OFFLINE_MS = 250;
+
 export class BootScene extends Phaser.Scene {
   constructor() {
     super(SceneKey.Boot);
@@ -54,7 +64,28 @@ export class BootScene extends Phaser.Scene {
   }
 
   private async startMenuAfterAuthReady(): Promise<void> {
-    await AuthSystem.whenReady();
+    await this.waitForAuthOrStartupFallback();
     if (this.scene.isActive()) this.scene.start(SceneKey.Menu);
+  }
+
+  private waitForAuthOrStartupFallback(): Promise<void> {
+    const timeoutMs = navigator.onLine
+      ? AUTH_STARTUP_TIMEOUT_ONLINE_MS
+      : AUTH_STARTUP_TIMEOUT_OFFLINE_MS;
+
+    return new Promise((resolve) => {
+      let settled = false;
+      const timeoutId = window.setTimeout(() => {
+        settled = true;
+        resolve();
+      }, timeoutMs);
+
+      void AuthSystem.whenReady().then(() => {
+        if (settled) return;
+        settled = true;
+        window.clearTimeout(timeoutId);
+        resolve();
+      });
+    });
   }
 }

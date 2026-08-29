@@ -510,7 +510,10 @@ export class Player extends Phaser.GameObjects.Container {
           ? stehendesBild(this.auraAnimation)
           : this.auraAnimation(this.auraMs);
     if (frame === null) {
-      this.aura.setTexture(TextureKey.Glow).setScale(2.1 * this.ruheScale);
+      this.aura
+        .setBlendMode(Phaser.BlendModes.NORMAL)
+        .setTexture(TextureKey.Glow)
+        .setScale(2.1 * this.ruheScale);
       this.core.setScale(this.ruheScale);
       this.core.rotation = this.neigung;
       this.core.setAlpha(1);
@@ -528,13 +531,17 @@ export class Player extends Phaser.GameObjects.Container {
       const frameIndex =
         Math.floor(this.auraMs / auraAsset.frameDurationMs) % auraAsset.frameTextureKeys.length;
       const textureKey = auraAsset.frameTextureKeys[frameIndex] ?? auraAsset.frameTextureKeys[0];
+      this.aura.setBlendMode(Phaser.BlendModes.ADD);
       if (textureKey !== undefined) this.aura.setTexture(textureKey);
       this.aura.setScale(
         this.ruheScale * frame.scaleX * auraAsset.scaleMultiplier,
         this.ruheScale * frame.scaleY * auraAsset.scaleMultiplier,
       );
     } else {
-      this.aura.setTexture(TextureKey.Glow).setScale(2.1 * this.ruheScale);
+      this.aura
+        .setBlendMode(Phaser.BlendModes.NORMAL)
+        .setTexture(TextureKey.Glow)
+        .setScale(2.1 * this.ruheScale);
     }
 
     // Schein und Ring laufen mit, wenn die Aura den Farbton dreht.

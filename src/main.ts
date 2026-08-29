@@ -237,9 +237,11 @@ function registerOfflineAppShell(): void {
   if (import.meta.env.DEV || !('serviceWorker' in navigator)) return;
 
   const register = (): void => {
-    void navigator.serviceWorker.register('./sw.js').catch((error: unknown) => {
-      console.warn('[isiHunt] Offline-App-Shell konnte nicht registriert werden.', error);
-    });
+    void navigator.serviceWorker
+      .register('./sw.js', { updateViaCache: 'none' })
+      .catch((error: unknown) => {
+        console.warn('[isiHunt] Offline-App-Shell konnte nicht registriert werden.', error);
+      });
   };
 
   if (document.readyState === 'complete') register();

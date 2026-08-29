@@ -393,6 +393,7 @@ export class ShopScene extends Phaser.Scene {
 
     const auraAsset = auraAssetForId(auraDefinition.assetId);
     if (auraAsset !== undefined) {
+      this.vorschauHalo.setBlendMode(Phaser.BlendModes.ADD);
       const frameIndex =
         Math.floor(timeMs / auraAsset.frameDurationMs) % auraAsset.frameTextureKeys.length;
       const textureKey = auraAsset.frameTextureKeys[frameIndex] ?? auraAsset.frameTextureKeys[0];
@@ -402,7 +403,10 @@ export class ShopScene extends Phaser.Scene {
         auraAsset.previewScaleMultiplier,
       );
     } else {
-      this.vorschauHalo.setTexture(TextureKey.PlayerHalo).setScale(0.7);
+      this.vorschauHalo
+        .setBlendMode(Phaser.BlendModes.NORMAL)
+        .setTexture(TextureKey.PlayerHalo)
+        .setScale(0.7);
     }
 
     // 0,85 ist die Grundgroesse der Schiffsvorschau, siehe `buildVorschau`.
