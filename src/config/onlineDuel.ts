@@ -18,6 +18,9 @@
  */
 export const DUEL_ROOM_CODE_TTL_MINUTES = 10;
 
+/** Wie lange eine direkte Duell-Einladung auf Annahme wartet. */
+export const ONLINE_DUEL_INVITATION_TTL_SECONDS = 90;
+
 /**
  * Vorlauf zwischen dem serverseitig gesetzten `start_at` und dem
  * tatsaechlichen Rundenstart, in Millisekunden.

@@ -51,6 +51,39 @@ export interface DuelRoomInfo {
   matchNumber?: number;
 }
 
+export type DuelLobbyAvailability = 'available' | 'busy';
+
+export interface DuelLobbyPlayer {
+  /** Presence-Schluessel der konkreten Browser-Verbindung. */
+  presenceKey: string;
+  playerName: string;
+  availability: DuelLobbyAvailability;
+}
+
+export interface DuelInvitation {
+  id: string;
+  inviterName: string;
+  worldId: string;
+  expiresAt: string;
+}
+
+export interface CreatedDuelInvitation extends DuelInvitation {
+  code: string;
+  seed: string;
+  participantToken: string;
+}
+
+export interface AcceptedDuelInvitation extends DuelRoomInfo {
+  code: string;
+}
+
+export interface DuelLobbyHandlers {
+  onPlayersSync?: (players: DuelLobbyPlayer[]) => void;
+  /** Nur eine Einladung-ID; Details werden anschliessend per RPC geladen. */
+  onInvitationReceived?: (invitationId: string) => void;
+  onChannelError?: (reason: string) => void;
+}
+
 export interface DuelRoomStatus {
   seed: string;
   worldId: string;
@@ -149,6 +182,164 @@ export async function createRoom(
   }
 
   return { ok: false, error: 'Kein freier Code gefunden - bitte erneut versuchen' };
+}
+
+/**
+ * Erzeugt einen invite-only Raum und legt die Einladung atomar beim Server an.
+ * Der Gast betritt ihn spaeter ueber `acceptDuelInvitation`, nicht ueber den
+ * normalen Code-Pfad.
+ */
+export async function createDuelInvitation(
+  worldId: string,
+  targetPlayerName: string,
+): Promise<CloudResult<CreatedDuelInvitation>> {
+  const supabase = CloudSystem.getSupabaseClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+
+  const cleanTargetName = sanitizePlayerName(targetPlayerName);
+  if (!cleanTargetName) return { ok: false, error: 'Ungueltiger Spielername' };
+
+  const result = await withTimeout(
+    supabase.rpc('create_duel_invitation', {
+      p_world_id: worldId,
+      p_target_player_name: cleanTargetName,
+    }),
+    'Duell-Einladung senden',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  const record = objectFrom(result.value.data);
+  if (!record) return { ok: false, error: 'Ungueltige Einladungsantwort vom Server' };
+
+  const invitationId = stringValue(record.invitationId ?? record.invitation_id);
+  const code = stringValue(record.code);
+  const seed = stringValue(record.seed);
+  const worldIdFromServer = stringValue(record.worldId ?? record.world_id);
+  const participantToken = stringValue(record.participantToken ?? record.participant_token);
+  const inviterName = sanitizePlayerName(stringValue(record.inviterName ?? record.inviter_name));
+  const expiresAt = stringValue(record.expiresAt ?? record.expires_at);
+  if (
+    !invitationId ||
+    !code ||
+    !seed ||
+    !worldIdFromServer ||
+    !inviterName ||
+    !expiresAt ||
+    !/^[a-f0-9]{64}$/i.test(participantToken)
+  ) {
+    return { ok: false, error: 'Ungueltige Einladungsantwort vom Server' };
+  }
+
+  broadcastLobbyInvitation(cleanTargetName, invitationId);
+  return {
+    ok: true,
+    value: {
+      id: invitationId,
+      inviterName,
+      worldId: worldIdFromServer,
+      expiresAt,
+      code,
+      seed,
+      participantToken,
+    },
+  };
+}
+
+/** Laedt die eigenen noch offenen Einladungen nach App-Start oder Reconnect. */
+export async function listDuelInvitations(): Promise<CloudResult<DuelInvitation[]>> {
+  const supabase = CloudSystem.getSupabaseClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+
+  const result = await withTimeout(
+    supabase.rpc('list_duel_invitations'),
+    'Duell-Einladungen laden',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  const rows = Array.isArray(result.value.data) ? result.value.data : [];
+  const invitations: DuelInvitation[] = [];
+  for (const raw of rows) {
+    const record = objectFrom(raw);
+    if (!record) continue;
+    const id = stringValue(record.id);
+    const inviterName = sanitizePlayerName(stringValue(record.inviterName ?? record.inviter_name));
+    const worldId = stringValue(record.worldId ?? record.world_id);
+    const expiresAt = stringValue(record.expiresAt ?? record.expires_at);
+    if (!id || !inviterName || !worldId || !expiresAt) continue;
+    invitations.push({ id, inviterName, worldId, expiresAt });
+  }
+  return { ok: true, value: invitations };
+}
+
+/** Nimmt eine Einladung serverseitig an und liefert den normalen Gastzugang. */
+export async function acceptDuelInvitation(
+  invitationId: string,
+): Promise<CloudResult<AcceptedDuelInvitation>> {
+  const supabase = CloudSystem.getSupabaseClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+  if (!invitationId) return { ok: false, error: 'Ungueltige Einladung' };
+
+  const result = await withTimeout(
+    supabase.rpc('accept_duel_invitation', { p_invitation_id: invitationId }),
+    'Duell-Einladung annehmen',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  const row = Array.isArray(result.value.data) ? objectFrom(result.value.data[0]) : null;
+  if (!row) return { ok: false, error: 'Ungueltige Beitrittsantwort vom Server' };
+  const code = stringValue(row.code);
+  const seed = stringValue(row.seed);
+  const worldId = stringValue(row.worldId ?? row.world_id);
+  const participantToken = stringValue(row.participantToken ?? row.participant_token);
+  const matchNumber = Number(row.matchNumber ?? row.match_number ?? 1);
+  if (!code || !seed || !worldId || !/^[a-f0-9]{64}$/i.test(participantToken)) {
+    return { ok: false, error: 'Ungueltige Beitrittsantwort vom Server' };
+  }
+  return {
+    ok: true,
+    value: {
+      code,
+      seed,
+      worldId,
+      participantToken,
+      ...(Number.isInteger(matchNumber) && matchNumber > 0 ? { matchNumber } : {}),
+    },
+  };
+}
+
+export async function declineDuelInvitation(invitationId: string): Promise<CloudResult<true>> {
+  return respondToDuelInvitation(
+    invitationId,
+    'decline_duel_invitation',
+    'Duell-Einladung ablehnen',
+  );
+}
+
+/** Bricht eine eigene, noch nicht angenommene Einladung ab. */
+export async function cancelDuelInvitation(invitationId: string): Promise<CloudResult<true>> {
+  return respondToDuelInvitation(
+    invitationId,
+    'cancel_duel_invitation',
+    'Duell-Einladung abbrechen',
+  );
+}
+
+async function respondToDuelInvitation(
+  invitationId: string,
+  rpcName: 'decline_duel_invitation' | 'cancel_duel_invitation',
+  label: string,
+): Promise<CloudResult<true>> {
+  const supabase = CloudSystem.getSupabaseClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+  if (!invitationId) return { ok: false, error: 'Ungueltige Einladung' };
+
+  const result = await withTimeout(supabase.rpc(rpcName, { p_invitation_id: invitationId }), label);
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+  return { ok: true, value: true };
 }
 
 /** Zufaelliger Seed fuer die Relikt-Abfolge - Format analog `ChallengeSystem.createSeed`. */
@@ -276,6 +467,17 @@ function parseJsonObject(raw: string): Record<string, unknown> | null {
   } catch {
     return null;
   }
+}
+
+function objectFrom(raw: unknown): Record<string, unknown> | null {
+  if (typeof raw === 'string') return parseJsonObject(raw);
+  return raw && typeof raw === 'object' && !Array.isArray(raw)
+    ? (raw as Record<string, unknown>)
+    : null;
+}
+
+function stringValue(raw: unknown): string {
+  return typeof raw === 'string' ? raw : '';
 }
 
 /**
@@ -504,6 +706,140 @@ let activeLocalPlayerIndex: 0 | 1 = 0;
  * anzeigen, `GameScene` dagegen waehrend des laufenden Runs.
  */
 let activeHandlers: DuelChannelHandlers = {};
+
+let activeLobbyChannel: RealtimeChannel | null = null;
+let activeLobbyHandlers: DuelLobbyHandlers = {};
+let lobbyLocalPlayerName = '';
+let lobbyPresenceKey = '';
+let lobbyAvailability: DuelLobbyAvailability = 'available';
+
+/**
+ * Meldet einen eingeloggten Spieler in der globalen Duell-Lobby an.
+ *
+ * Presence ist hier bewusst nur fuer die fluechtige Liste zustaendig. Eine
+ * Einladung wird nach dem Klick separat ueber einen RPC angelegt; dadurch ist
+ * ein verlorenes Broadcast-Ereignis kein verlorener Duellstart.
+ */
+export function subscribeToDuelLobby(
+  supabase: SupabaseClient,
+  localPlayerName: string,
+  handlers: DuelLobbyHandlers,
+): void {
+  unsubscribeFromDuelLobby();
+  activeLobbyHandlers = handlers;
+  lobbyLocalPlayerName = cleanPresencePlayerName(localPlayerName) ?? '';
+  lobbyPresenceKey = createPresenceKey();
+  lobbyAvailability = 'available';
+
+  const channel = supabase.channel('duel-lobby', {
+    config: { private: true, presence: { key: lobbyPresenceKey } },
+  });
+
+  channel
+    .on('presence', { event: 'sync' }, () => {
+      activeLobbyHandlers.onPlayersSync?.(
+        readDuelLobbyPlayers(channel.presenceState(), lobbyPresenceKey),
+      );
+    })
+    .on(
+      'broadcast',
+      { event: 'duel-invitation' },
+      ({ payload }: { payload: { invitationId?: unknown; targetPlayerName?: unknown } }) => {
+        const invitationId = stringValue(payload.invitationId);
+        const targetName = cleanPresencePlayerName(payload.targetPlayerName);
+        if (
+          invitationId &&
+          targetName &&
+          targetName.toLowerCase() === lobbyLocalPlayerName.toLowerCase()
+        ) {
+          activeLobbyHandlers.onInvitationReceived?.(invitationId);
+        }
+      },
+    )
+    .subscribe((status, error) => {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        activeLobbyHandlers.onChannelError?.(error?.message ?? `Kanalstatus: ${status}`);
+        return;
+      }
+      if (status !== 'SUBSCRIBED') return;
+
+      void channel
+        .track({
+          online: true,
+          playerName: lobbyLocalPlayerName,
+          availability: lobbyAvailability,
+        })
+        .catch(() => {
+          activeLobbyHandlers.onChannelError?.('Duell-Lobby konnte nicht betreten werden');
+        });
+    });
+
+  activeLobbyChannel = channel;
+}
+
+/** Aktualisiert den sichtbaren Bereitschaftsstatus ohne den Kanal neu zu oeffnen. */
+export function setDuelLobbyAvailability(availability: DuelLobbyAvailability): void {
+  lobbyAvailability = availability;
+  if (!activeLobbyChannel) return;
+  void activeLobbyChannel.track({
+    online: true,
+    playerName: lobbyLocalPlayerName,
+    availability,
+  });
+}
+
+/** Verlaesst die globale Lobby, z. B. beim Wechsel in einen Duellraum. */
+export function unsubscribeFromDuelLobby(): void {
+  activeLobbyHandlers = {};
+  if (!activeLobbyChannel) return;
+  void activeLobbyChannel.unsubscribe();
+  activeLobbyChannel = null;
+  lobbyLocalPlayerName = '';
+  lobbyPresenceKey = '';
+}
+
+function createPresenceKey(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+}
+
+function readDuelLobbyPlayers(
+  state: Record<string, unknown>,
+  localPresenceKey: string,
+): DuelLobbyPlayer[] {
+  const byName = new Map<string, DuelLobbyPlayer>();
+  for (const [presenceKey, rawEntries] of Object.entries(state)) {
+    if (presenceKey === localPresenceKey || !Array.isArray(rawEntries)) continue;
+    const latest = rawEntries[rawEntries.length - 1];
+    if (!latest || typeof latest !== 'object') continue;
+    const record = latest as Record<string, unknown>;
+    const playerName = cleanPresencePlayerName(record.playerName);
+    if (!playerName) continue;
+    const availability: DuelLobbyAvailability =
+      record.availability === 'available' ? 'available' : 'busy';
+    const key = playerName.toLowerCase();
+    const existing = byName.get(key);
+    // Mehrere Tabs desselben Profils werden zu einem Eintrag zusammengelegt;
+    // sichtbar bleibt der guenstigere Status.
+    if (!existing || (availability === 'available' && existing.availability === 'busy')) {
+      byName.set(key, { presenceKey, playerName, availability });
+    }
+  }
+
+  return [...byName.values()].sort((left, right) =>
+    left.playerName.localeCompare(right.playerName, 'de'),
+  );
+}
+
+function broadcastLobbyInvitation(targetPlayerName: string, invitationId: string): void {
+  if (!activeLobbyChannel) return;
+  void activeLobbyChannel.send({
+    type: 'broadcast',
+    event: 'duel-invitation',
+    payload: { invitationId, targetPlayerName },
+  });
+}
 
 /**
  * Legt Handler auf dem bereits verbundenen Kanal nach, ohne neu zu verbinden.

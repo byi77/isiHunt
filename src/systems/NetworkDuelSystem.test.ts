@@ -95,6 +95,21 @@ describe('Netzfunktionen ohne konfigurierten Online-Dienst', () => {
     const result = await NetworkDuelSystem.measureClockOffset();
     expect(result.ok).toBe(false);
   });
+
+  it('createDuelInvitation scheitert freundlich statt zu werfen', async () => {
+    const result = await NetworkDuelSystem.createDuelInvitation('silberhain', 'Bob');
+    expect(result.ok).toBe(false);
+  });
+
+  it('listDuelInvitations scheitert freundlich statt zu werfen', async () => {
+    const result = await NetworkDuelSystem.listDuelInvitations();
+    expect(result.ok).toBe(false);
+  });
+
+  it('acceptDuelInvitation scheitert freundlich statt zu werfen', async () => {
+    const result = await NetworkDuelSystem.acceptDuelInvitation('invitation');
+    expect(result.ok).toBe(false);
+  });
 });
 
 describe('unsubscribeFromRoom', () => {
@@ -126,6 +141,7 @@ function createFakeSupabase(): {
   channelConfig: () => unknown;
   channelTopic: () => string;
   trackPayload: () => unknown;
+  sentPayload: () => unknown;
 } {
   const broadcastHandlers = new Map<string, (message: unknown) => void>();
   const presenceHandlers = new Map<string, (message: unknown) => void>();
@@ -150,6 +166,7 @@ function createFakeSupabase(): {
   let lastChannelConfig: unknown;
   let lastChannelTopic = '';
   let lastTrackPayload: unknown;
+  let lastSentPayload: unknown;
 
   const channel: FakeChannel = {
     on(type, filter, handler) {
@@ -168,7 +185,10 @@ function createFakeSupabase(): {
       return Promise.resolve('ok');
     },
     presenceState: () => presence,
-    send: () => Promise.resolve('ok'),
+    send: (payload?: unknown) => {
+      lastSentPayload = payload;
+      return Promise.resolve('ok');
+    },
     unsubscribe: () => Promise.resolve('ok'),
   };
 
@@ -189,6 +209,7 @@ function createFakeSupabase(): {
     channelConfig: () => lastChannelConfig,
     channelTopic: () => lastChannelTopic,
     trackPayload: () => lastTrackPayload,
+    sentPayload: () => lastSentPayload,
   };
 }
 
@@ -730,5 +751,77 @@ describe('Kanalkonfiguration', () => {
     NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {}, '', token);
 
     expect(fake.channelTopic()).toBe(`ABC123:${token}`);
+  });
+});
+
+describe('Globale Duell-Lobby', () => {
+  beforeEach(() => {
+    NetworkDuelSystem.unsubscribeFromDuelLobby();
+  });
+
+  afterEach(() => {
+    NetworkDuelSystem.unsubscribeFromDuelLobby();
+  });
+
+  it('meldet einen Spieler privat mit Duellbereitschaft an', async () => {
+    const fake = createFakeSupabase();
+    NetworkDuelSystem.subscribeToDuelLobby(fake.client as never, 'Alice', {});
+
+    const config = fake.channelConfig() as {
+      config?: { private?: boolean; presence?: { key?: string } };
+    };
+    expect(fake.channelTopic()).toBe('duel-lobby');
+    expect(config.config?.private).toBe(true);
+    expect(config.config?.presence?.key).toMatch(/^[a-f0-9]{32}$/);
+
+    await Promise.resolve();
+    expect(fake.trackPayload()).toEqual({
+      online: true,
+      playerName: 'Alice',
+      availability: 'available',
+    });
+  });
+
+  it('liest fremde Spieler, bereinigt Namen und dedupliziert Tabs', () => {
+    const fake = createFakeSupabase();
+    const onPlayersSync = vi.fn();
+    NetworkDuelSystem.subscribeToDuelLobby(fake.client as never, 'Alice', { onPlayersSync });
+
+    fake.fireSync({
+      tab1: [{ playerName: 'Bob', availability: 'busy' }],
+      tab2: [{ playerName: 'bob', availability: 'available' }],
+      tab3: [{ playerName: 'Cara!', availability: 'available' }],
+    });
+
+    expect(onPlayersSync).toHaveBeenCalledWith([
+      { presenceKey: 'tab2', playerName: 'Bob', availability: 'available' },
+      { presenceKey: 'tab3', playerName: 'Cara', availability: 'available' },
+    ]);
+  });
+
+  it('reicht eine Einladung nur an den adressierten Spielernamen weiter', () => {
+    const fake = createFakeSupabase();
+    const onInvitationReceived = vi.fn();
+    NetworkDuelSystem.subscribeToDuelLobby(fake.client as never, 'Alice', {
+      onInvitationReceived,
+    });
+
+    fake.fire('duel-invitation', { invitationId: 'invite-1', targetPlayerName: 'alice' });
+    fake.fire('duel-invitation', { invitationId: 'invite-2', targetPlayerName: 'Bob' });
+
+    expect(onInvitationReceived).toHaveBeenCalledTimes(1);
+    expect(onInvitationReceived).toHaveBeenCalledWith('invite-1');
+  });
+
+  it('aktualisiert den eigenen Bereitschaftsstatus', () => {
+    const fake = createFakeSupabase();
+    NetworkDuelSystem.subscribeToDuelLobby(fake.client as never, 'Alice', {});
+    NetworkDuelSystem.setDuelLobbyAvailability('busy');
+
+    expect(fake.trackPayload()).toEqual({
+      online: true,
+      playerName: 'Alice',
+      availability: 'busy',
+    });
   });
 });
