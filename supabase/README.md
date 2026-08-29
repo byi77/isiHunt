@@ -45,6 +45,7 @@ Auf einer leeren Datenbank in dieser Reihenfolge einspielen:
 | 26  | `phase_2_30_auth_catalog_limits.sql`         | Auth-/Shop-Härtung und Grenzen für öffentliche RPC-Payloads       |
 | 27  | `phase_2_31_duel_leaderboard_outbox.sql`     | Server-Seed, Duell-Ergebnis- und Leaderboard-Nachweis             |
 | 28  | `phase_2_32_migration_state.sql`             | Reproduzierbarer Marker fuer den ausgefuehrten Migrationsstand    |
+| 29  | `phase_2_33_leaderboard_auth_only.sql`       | Bestenliste nur fuer authentifizierte Profile beschreibbar        |
 
 `phase_2_23_talent_points.sql` enthält einen historischen globalen
 Testdaten-Reset. Das Skript bricht ohne ausdrückliches Opt-in ab. Nur wenn

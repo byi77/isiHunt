@@ -194,6 +194,7 @@ reproduzierbares Prüfergebnis vorliegt.
 26. `supabase/phase_2_30_auth_catalog_limits.sql`
 27. `supabase/phase_2_31_duel_leaderboard_outbox.sql`
 28. `supabase/phase_2_32_migration_state.sql`
+29. `supabase/phase_2_33_leaderboard_auth_only.sql`
 
 Die Dateien sind wiederholbar angelegt, trotzdem vor jedem Lauf prüfen, ob
 eine Migration bereits ausgeführt wurde. `cleanup_leaderboard.sql`,

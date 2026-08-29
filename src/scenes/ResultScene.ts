@@ -378,12 +378,21 @@ export class ResultScene extends Phaser.Scene {
    * Runs.
    */
   private submitLeaderboardScore(stats: RunStats): void {
-    if (!CloudSystem.isAvailable() || SaveSystem.isTestProfileActive()) return;
+    if (
+      !CloudSystem.isAvailable() ||
+      SaveSystem.isTestProfileActive() ||
+      !AuthSystem.isSignedIn()
+    ) {
+      return;
+    }
 
     const name = CloudSystem.sanitizePlayerName(SaveSystem.load().playerName);
     if (!name) return;
 
-    const playerId = AuthSystem.currentUserId() ?? SaveSystem.ensureCloudId();
+    // Anonyme Score-Submission bleibt bewusst aus: Ein Gast kann keinen
+    // serverseitig akzeptierten Progress-Nachweis fuer die Bestenliste tragen.
+    const playerId = AuthSystem.currentUserId();
+    if (!playerId) return;
     void CloudSystem.submitScoreSafely(
       playerId,
       name,

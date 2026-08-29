@@ -14,6 +14,10 @@ const duelLeaderboardMigration = readFileSync(
   'utf8',
 );
 const migrationState = readFileSync(resolve(sqlDir, 'phase_2_32_migration_state.sql'), 'utf8');
+const leaderboardAuthMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_33_leaderboard_auth_only.sql'),
+  'utf8',
+);
 const verification = readFileSync(resolve(sqlDir, 'verify_security_hardening.sql'), 'utf8');
 const migrationVerification = readFileSync(resolve(sqlDir, 'verify_migration_state.sql'), 'utf8');
 
@@ -72,9 +76,11 @@ requireText(
   'Migrationsstand unvollstaendig',
   'Migrationsstand-Vollstaendigkeitspruefung',
 );
+requireText(leaderboardAuthMigration, 'from anon', 'Anonyme Bestenlisten-Sperre');
+requireText(leaderboardAuthMigration, 'schema_version = 33', 'Migrationsmarker Phase 2.33');
 
 const migrationFiles = readdirSync(sqlDir).filter((name) =>
-  /^phase_2_(2[89]|30|31|32)_.*\.sql$/.test(name),
+  /^phase_2_(2[89]|30|31|32|33)_.*\.sql$/.test(name),
 );
 for (const file of migrationFiles) {
   const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();
