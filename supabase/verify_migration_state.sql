@@ -4,7 +4,7 @@
 select singleton, schema_version, migration_name, applied_at
 from public.isihunt_schema_state;
 
-select routine_name,
+select p.proname as routine_name,
        pg_get_function_identity_arguments(p.oid) as arguments
 from pg_proc p
 join pg_namespace n on n.oid = p.pronamespace

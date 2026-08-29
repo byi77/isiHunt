@@ -154,7 +154,7 @@ steht er ab jetzt explizit in **P2-11**.
 
 ## P0-01 — Supabase-Migrationsstand herstellen und beweisen
 
-- [ ] **Produktions-SQL prüfen, anwenden und protokollieren.**
+- [x] **Produktions-SQL prüfen, anwenden und protokollieren.**
 
 **Warum zuerst:** Der Client enthält Auth, Outbox, Tagesbonus, Shop, Talente,
 Duell und Balance-Funktionen, die nur funktionieren, wenn die passenden RPCs,
@@ -225,6 +225,12 @@ sein. Es wird keine zustellbare E-Mail-Adresse abgefragt.
 **Abnahme:** Datum, Supabase-Projekt, ausgeführte Dateien, Ergebnis der
 Prüfqueries und eventuelle Abweichungen in `docs/` oder im Commit-Verlauf
 notieren. Ohne diesen Nachweis bleibt P0-01 offen.
+
+**Live-Nachweis 2026-08-29:** Projekt `laopptcngluoejccchgs`, Marker
+`schema_version = 33`, `phase_2_33_leaderboard_auth_only.sql`; die erwarteten
+RPC-Signaturen sind vorhanden, anonyme Score-Submission ist deaktiviert und
+aktive Duellräume haben vollständige Teilnehmer-Tokens. Details stehen in
+`docs/AUDIT_2026-08-29.md`.
 
 **Abhängigkeiten:** keine. Blockiert P0-02, P0-03 und jede Aussage über
 Mehrgeräte-Sync oder Server-Balance.
