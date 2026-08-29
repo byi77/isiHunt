@@ -4,6 +4,11 @@ import { resolve } from 'node:path';
 const root = resolve(import.meta.dirname, '..');
 const sqlDir = resolve(root, 'supabase');
 const migration = readFileSync(resolve(sqlDir, 'phase_2_28_integrity_hardening.sql'), 'utf8');
+const exploitMigration = readFileSync(resolve(sqlDir, 'phase_2_29_exploit_hardening.sql'), 'utf8');
+const authCatalogMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_30_auth_catalog_limits.sql'),
+  'utf8',
+);
 const verification = readFileSync(resolve(sqlDir, 'verify_security_hardening.sql'), 'utf8');
 
 const failures = [];
@@ -45,8 +50,16 @@ requireText(
   'revoke all on public.duel_rooms from anon, authenticated',
   'Duell-Tabellenschutz',
 );
+requireText(exploitMigration, 'daily_bonus_claims', 'Einmaliger Tagesbonus');
+requireText(exploitMigration, 'redeemed_at', 'Einmaliger Sync-Code');
+requireText(exploitMigration, 'profile_progress_event_cooldown', 'Progress-Drosselung');
+requireText(authCatalogMigration, 'cosmetic_catalog', 'Kosmetik-Katalog');
+requireText(authCatalogMigration, 'save_payload_limits', 'Save-Payload-Grenze');
+requireText(authCatalogMigration, 'duel_room_limits', 'Duell-Payload-Grenze');
 
-const migrationFiles = readdirSync(sqlDir).filter((name) => /^phase_2_28_.*\.sql$/.test(name));
+const migrationFiles = readdirSync(sqlDir).filter((name) =>
+  /^phase_2_(2[89]|30)_.*\.sql$/.test(name),
+);
 for (const file of migrationFiles) {
   const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();
   if (!content.includes('begin;') || !content.includes('commit;')) {

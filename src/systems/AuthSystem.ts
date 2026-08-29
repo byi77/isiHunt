@@ -20,6 +20,43 @@ let sessionReadyPromise: Promise<void> = Promise.resolve();
 export const ALIAS_MIN_LENGTH = 3;
 export const ALIAS_MAX_LENGTH = 16;
 export const PIN_LENGTH = 6;
+export const AUTH_MAX_ATTEMPTS = 5;
+export const AUTH_FAILURE_WINDOW_MS = 15 * 60 * 1000;
+export const AUTH_LOCKOUT_MS = 5 * 60 * 1000;
+
+interface AuthAttemptState {
+  failures: number;
+  windowStartedAt: number;
+  lockedUntil: number;
+}
+
+const authAttempts = new Map<string, AuthAttemptState>();
+
+function authThrottleMessage(alias: string, now = Date.now()): string | null {
+  const state = authAttempts.get(alias);
+  if (!state) return null;
+  if (state.lockedUntil > now) {
+    const seconds = Math.max(1, Math.ceil((state.lockedUntil - now) / 1000));
+    return `Zu viele Fehlversuche. Bitte in ${seconds} Sekunden erneut versuchen.`;
+  }
+  if (now - state.windowStartedAt >= AUTH_FAILURE_WINDOW_MS) authAttempts.delete(alias);
+  return null;
+}
+
+function recordAuthFailure(alias: string, now = Date.now()): void {
+  const previous = authAttempts.get(alias);
+  const state =
+    !previous || now - previous.windowStartedAt >= AUTH_FAILURE_WINDOW_MS
+      ? { failures: 0, windowStartedAt: now, lockedUntil: 0 }
+      : previous;
+  state.failures += 1;
+  if (state.failures >= AUTH_MAX_ATTEMPTS) state.lockedUntil = now + AUTH_LOCKOUT_MS;
+  authAttempts.set(alias, state);
+}
+
+function clearAuthFailures(alias: string): void {
+  authAttempts.delete(alias);
+}
 /** Supabase weist reservierte Testdomains wie `.invalid` als E-Mail zurück. */
 const INTERNAL_AUTH_FALLBACK_DOMAIN = 'example.com';
 
@@ -170,6 +207,9 @@ export async function signUp(alias: string, pin: string): Promise<CloudResult<Se
     };
   }
 
+  const throttle = authThrottleMessage(normalizedAlias);
+  if (throttle) return { ok: false, error: throttle };
+
   const result = await request(
     supabase.auth.signUp({
       email: aliasToAuthEmail(normalizedAlias),
@@ -179,8 +219,15 @@ export async function signUp(alias: string, pin: string): Promise<CloudResult<Se
     'Profil anlegen',
   );
   if (!result.ok) return result;
-  if (result.value.error) return { ok: false, error: result.value.error.message };
+  if (result.value.error) {
+    recordAuthFailure(normalizedAlias);
+    return {
+      ok: false,
+      error: readableAuthError(result.value.error.message, 'Profil konnte nicht angelegt werden'),
+    };
+  }
 
+  clearAuthFailures(normalizedAlias);
   session = result.value.data.session;
   return { ok: true, value: session };
 }
@@ -200,6 +247,9 @@ export async function signIn(
     };
   }
 
+  const throttle = authThrottleMessage(normalizedAlias);
+  if (throttle) return { ok: false, error: throttle };
+
   const result = await request(
     supabase.auth.signInWithPassword({
       email: aliasToAuthEmail(normalizedAlias),
@@ -211,12 +261,14 @@ export async function signIn(
   );
   if (!result.ok) return result;
   if (result.value.error || !result.value.data.session) {
+    recordAuthFailure(normalizedAlias);
     return {
       ok: false,
       error: readableAuthError(result.value.error?.message ?? '', 'Alias oder Zugang ungültig'),
     };
   }
 
+  clearAuthFailures(normalizedAlias);
   session = result.value.data.session;
   return { ok: true, value: session };
 }
@@ -236,6 +288,7 @@ export async function signOut(): Promise<CloudResult<true>> {
 export function dispose(): void {
   unsubscribe?.();
   unsubscribe = null;
+  authAttempts.clear();
   initialized = false;
   sessionReady = false;
   sessionReadyPromise = Promise.resolve();

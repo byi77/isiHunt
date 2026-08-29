@@ -857,6 +857,11 @@ export async function isPlayerNameAvailable(
   const supabase = getClient();
   if (!supabase) return { ok: true, value: true };
 
+  // Anonyme Besucher bekommen nur beim eigentlichen Schreibversuch eine
+  // Antwort. Der separate Verfuegbarkeits-RPC ist fuer sie gesperrt, damit
+  // sich die Profile-/Bestenlistenbelegung nicht als Oracle abfragen laesst.
+  if (!AuthSystem.isSignedIn()) return { ok: true, value: true };
+
   const name = sanitizePlayerName(playerName);
   if (!name) return { ok: false, error: 'Kein Name angegeben' };
 
