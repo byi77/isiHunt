@@ -12,7 +12,11 @@
 
 import Phaser from 'phaser';
 
-import { CHALLENGE_DURATION_MS } from '@/config/challenge';
+import {
+  CHALLENGE_DURATION_MS,
+  DUEL_TALENT_DRAFT_DURATION_MS,
+  DUEL_TALENT_POINT_BUDGET,
+} from '@/config/challenge';
 import {
   DAILY_COMPLETION_BONUS_COINS,
   DAILY_COMPLETION_BONUS_XP,
@@ -28,6 +32,7 @@ import { SceneKey } from '@/scenes/SceneKey';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { Depth } from '@/ui/depth';
+import { createTalentDraftView, type TalentDraftView } from '@/ui/talentDraft';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import { createButton, createPanel, createSceneBackdrop } from '@/ui/widgets';
 import type { ChallengeState } from '@/types';
@@ -37,13 +42,23 @@ function relics(count: number): string {
   return `${count} ${count === 1 ? 'Relikt' : 'Relikte'}`;
 }
 
+function usesTalentDraft(kind: string): boolean {
+  return kind === 'duel' || kind === 'bot';
+}
+
 export class ChallengeScene extends Phaser.Scene {
+  private talentDraftView: TalentDraftView | null = null;
+  private talentDraftTimer: Phaser.Time.TimerEvent | null = null;
+  private talentDraftDeadline = 0;
+
   constructor() {
     super(SceneKey.Challenge);
   }
 
   create(): void {
     SafeAreaSystem.showStatic('DUELL');
+    this.talentDraftView = null;
+    this.talentDraftTimer = null;
     const state = ChallengeSystem.getState();
 
     // Ohne Duell-Zustand gibt es nichts anzuzeigen. Kann nur passieren, wenn
@@ -109,13 +124,19 @@ export class ChallengeScene extends Phaser.Scene {
           : 'Spieler 1 gegen Spieler 2';
     this.buildHeading(title, subtitle);
 
+    const needsDraft = usesTalentDraft(kind);
+    if (needsDraft) {
+      this.buildTalentDraft(world, kind as 'duel' | 'bot', 370, 286);
+      return;
+    }
+
     const seconds = Math.round(CHALLENGE_DURATION_MS / 1000);
     const rules: readonly string[] =
       kind === 'daily'
         ? [
-            `Du spielst ${seconds} Sekunden.`,
+            `Du spielst mindestens ${seconds} Sekunden.`,
             'Der Seed ist heute für alle gleich.',
-            'Keine Talente - gleiche Voraussetzungen.',
+            'Deine gekauften Talente und ihre Wirkungen sind aktiv.',
             `Einmal täglich: bis zu ${DAILY_COMPLETION_BONUS_COINS + DAILY_SCORE_BONUS_MAX_TIERS * DAILY_SCORE_BONUS_COINS} Bonus-Coins und ${DAILY_COMPLETION_BONUS_XP + DAILY_SCORE_BONUS_MAX_TIERS * DAILY_SCORE_BONUS_XP} XP.`,
             'Der Lauf zählt zusätzlich als normaler Fortschritt.',
           ]
@@ -123,13 +144,13 @@ export class ChallengeScene extends Phaser.Scene {
           ? [
               `Du spielst ${seconds} Sekunden.`,
               'Der Bot passt sich an deinen Lauf an.',
-              'Keine Talente - gleiche Voraussetzungen.',
+              'Temporärer Build mit gleichem Punktebudget.',
               'Das Bot-Duell ändert deinen Spielstand nicht.',
             ]
           : [
               `Jeder spielt ${seconds} Sekunden.`,
               'Beide jagen exakt dieselben Relikte.',
-              'Keine Talente - gleiche Voraussetzungen.',
+              'Temporärer Build mit gleichem Punktebudget.',
               'Das Duell ändert euren Spielstand nicht.',
             ];
 
@@ -166,6 +187,88 @@ export class ChallengeScene extends Phaser.Scene {
     this.buildBackToMenu('ABBRECHEN');
   }
 
+  /**
+   * Temporäre Duell-Talente vor jedem lokalen Durchgang.
+   *
+   * Der Vorschlag kommt aus dem vorherigen Duell/Rematch. Die Änderungen
+   * bleiben ausschließlich im ChallengeSystem und berühren den persistenten
+   * Talentbaum deshalb nicht.
+   */
+  private buildTalentDraft(
+    world: WorldDef,
+    kind: 'duel' | 'bot',
+    topY: number,
+    infoY: number,
+  ): void {
+    const playerIndex: 0 | 1 = kind === 'bot' ? 0 : (ChallengeSystem.currentPlayerIndex() as 0 | 1);
+    const initialRanks = ChallengeSystem.duelTalentDraftFor(playerIndex);
+    const hasSuggestion = Object.values(initialRanks).some((rank) => rank > 0);
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        infoY,
+        hasSuggestion
+          ? 'Dein Build aus dem letzten Duell ist vorgeschlagen. Ändere ihn mit + und −.'
+          : `Verteile ${DUEL_TALENT_POINT_BUDGET} Punkte mit + und −.`,
+        textStyle(FontSize.small, Palette.ink),
+      )
+      .setOrigin(0.5)
+      .setWordWrapWidth(GAME_WIDTH - 100)
+      .setAlign('center');
+
+    this.talentDraftView = createTalentDraftView(this, {
+      initialRanks,
+      accent: world.accent,
+      topY,
+      onChange: (ranks) => {
+        ChallengeSystem.setDuelTalentDraft(playerIndex, ranks);
+      },
+    });
+
+    const timerText = this.add
+      .text(GAME_WIDTH / 2, topY + 5 * 64 + 34, '', textStyle(FontSize.small, Palette.gold))
+      .setOrigin(0.5);
+
+    const start = (): void => {
+      if (!this.scene.isActive()) return;
+      if (this.talentDraftTimer) {
+        this.talentDraftTimer.remove();
+        this.talentDraftTimer = null;
+      }
+      this.talentDraftView?.setEnabled(false);
+      this.scene.start(SceneKey.Game, {
+        worldId: world.id,
+        mode: kind === 'bot' ? 'bot' : 'challenge',
+      });
+    };
+
+    const updateTimer = (): void => {
+      const remaining = Math.max(0, this.talentDraftDeadline - Date.now());
+      const remainingSeconds = Math.ceil(remaining / 1000);
+      timerText.setText(
+        remaining > 0
+          ? `${remainingSeconds} Sekunden zur Talentvergabe`
+          : 'Talentvergabe beendet - Duell startet ...',
+      );
+      if (remaining <= 0) start();
+    };
+
+    this.talentDraftDeadline = Date.now() + DUEL_TALENT_DRAFT_DURATION_MS;
+    updateTimer();
+    this.talentDraftTimer = this.time.addEvent({ delay: 250, loop: true, callback: updateTimer });
+
+    createButton(
+      this,
+      GAME_WIDTH / 2,
+      GAME_HEIGHT - 250,
+      hasSuggestion ? 'VORSCHLAG ÜBERNEHMEN' : 'TALENTE BESTÄTIGEN',
+      start,
+      { width: 460, accent: world.accent, fontSize: FontSize.large },
+    );
+
+    this.buildBackToMenu('ABBRECHEN');
+  }
+
   // --- Phase 2: Uebergabe -----------------------------------------------------
 
   private buildHandover(state: ChallengeState, world: WorldDef): void {
@@ -176,12 +279,12 @@ export class ChallengeScene extends Phaser.Scene {
 
     this.buildHeading('GERÄT WEITERGEBEN', `${ChallengeSystem.playerLabel(nextIndex)} ist dran`);
 
-    createPanel(this, GAME_WIDTH / 2, 500, GAME_WIDTH - 120, 230, world.accent);
+    createPanel(this, GAME_WIDTH / 2, 465, GAME_WIDTH - 120, 180, world.accent);
 
     this.add
       .text(
         GAME_WIDTH / 2,
-        424,
+        400,
         `${ChallengeSystem.playerLabel(finishedIndex)} hat vorgelegt`,
         textStyle(FontSize.small, Palette.inkDim),
       )
@@ -190,7 +293,7 @@ export class ChallengeScene extends Phaser.Scene {
     const score = this.add
       .text(
         GAME_WIDTH / 2,
-        500,
+        465,
         finished.score.toLocaleString('de-DE'),
         textStyle(FontSize.title, Palette.ink, { fontStyle: 'bold' }),
       )
@@ -202,22 +305,13 @@ export class ChallengeScene extends Phaser.Scene {
     this.add
       .text(
         GAME_WIDTH / 2,
-        566,
+        525,
         `${relics(finished.totalCollected)}  ·  beste Kette ${finished.bestCombo}`,
         textStyle(FontSize.small, toCss(world.accent)),
       )
       .setOrigin(0.5);
 
-    createButton(
-      this,
-      GAME_WIDTH / 2,
-      GAME_HEIGHT - 250,
-      `${ChallengeSystem.playerLabel(nextIndex).toUpperCase()} IST BEREIT`,
-      () => this.scene.start(SceneKey.Game, { worldId: world.id, mode: 'challenge' }),
-      { width: 460, accent: world.accent, fontSize: FontSize.large },
-    );
-
-    this.buildBackToMenu('DUELL ABBRECHEN');
+    this.buildTalentDraft(world, 'duel', 600, 585);
   }
 
   // --- Phase 3: Ergebnis ------------------------------------------------------
@@ -322,7 +416,7 @@ export class ChallengeScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       GAME_HEIGHT - 250,
-      'NOCH EINMAL',
+      'REMATCH',
       () => {
         ChallengeSystem.rematch();
         this.scene.restart();

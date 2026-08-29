@@ -48,7 +48,8 @@ where n.nspname = 'public'
   and p.proname in (
     'claim_daily_bonus', 'claim_daily_login_bonus', 'submit_progress_event',
     'upsert_save', 'create_duel_room', 'join_duel_room', 'mark_duel_ready',
-    'set_duel_start_time', 'get_duel_room', 'submit_duel_result'
+    'set_duel_start_time', 'get_duel_room', 'submit_duel_result',
+    'submit_duel_talent_draft', 'request_duel_rematch'
   )
 order by routine_name, arguments;
 

@@ -17,6 +17,7 @@ import {
   CHALLENGE_BOT_NOISE_OFFSET,
   CHALLENGE_BOT_NOISE_SCALE,
   CHALLENGE_PLAYER_COUNT,
+  DUEL_TALENT_POINT_BUDGET,
 } from '@/config/challenge';
 import {
   DAILY_COMPLETION_BONUS_COINS,
@@ -28,8 +29,10 @@ import {
 } from '@/config/GameConfig';
 import { DAILY_KEY_TOLERANCE_MS } from '@/config/backend';
 import { sanitizePlayerName } from '@/config/playerName';
+import type { TalentRanks } from '@/config/talents';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
+import { changeTalentRank, normalizeTalentRanks } from '@/systems/TalentAllocationSystem';
 import type {
   BotDifficulty,
   ChallengeKind,
@@ -42,6 +45,20 @@ import type {
 let state: ChallengeState | null = null;
 
 type OnlinePlayerNames = [string | null, string | null];
+export type DuelTalentDrafts = [TalentRanks, TalentRanks];
+
+function emptyDuelTalentDrafts(): DuelTalentDrafts {
+  return [{}, {}];
+}
+
+function copyDuelTalentDrafts(drafts?: DuelTalentDrafts): DuelTalentDrafts {
+  return drafts
+    ? [
+        normalizeTalentRanks(drafts[0], DUEL_TALENT_POINT_BUDGET),
+        normalizeTalentRanks(drafts[1], DUEL_TALENT_POINT_BUDGET),
+      ]
+    : emptyDuelTalentDrafts();
+}
 
 function cleanOnlinePlayerName(raw: unknown): string | null {
   if (typeof raw !== 'string') return null;
@@ -126,8 +143,14 @@ function botRound(
 }
 
 /** Startet ein neues Duell in der angegebenen Welt. */
-export function start(worldId: string): ChallengeState {
-  state = { seed: createSeed(), worldId, rounds: [], kind: 'duel' };
+export function start(worldId: string, suggestedDrafts?: DuelTalentDrafts): ChallengeState {
+  state = {
+    seed: createSeed(),
+    worldId,
+    rounds: [],
+    kind: 'duel',
+    duelTalentDrafts: copyDuelTalentDrafts(suggestedDrafts),
+  };
   return state;
 }
 
@@ -188,8 +211,19 @@ export function completeDaily(stats: RunStats, eventId: string | null = null): D
   return reward;
 }
 
-export function startBot(worldId: string, difficulty: BotDifficulty = 'normal'): ChallengeState {
-  state = { seed: createSeed(), worldId, rounds: [], kind: 'bot', botDifficulty: difficulty };
+export function startBot(
+  worldId: string,
+  difficulty: BotDifficulty = 'normal',
+  suggestedDrafts?: DuelTalentDrafts,
+): ChallengeState {
+  state = {
+    seed: createSeed(),
+    worldId,
+    rounds: [],
+    kind: 'bot',
+    botDifficulty: difficulty,
+    duelTalentDrafts: copyDuelTalentDrafts(suggestedDrafts),
+  };
   return state;
 }
 
@@ -207,6 +241,7 @@ export function startOnline(
   roomCode: string,
   localPlayerIndex: 0 | 1,
   participantToken = '',
+  suggestedDrafts?: DuelTalentDrafts,
 ): ChallengeState {
   const playerNames: OnlinePlayerNames = [null, null];
   playerNames[localPlayerIndex] = cleanOnlinePlayerName(SaveSystem.load().playerName);
@@ -219,7 +254,58 @@ export function startOnline(
     clockOffsetMs: 0,
     startAtServerMs: null,
   };
-  state = { seed, worldId, rounds: [], kind: 'duel-online', online };
+  state = {
+    seed,
+    worldId,
+    rounds: [],
+    kind: 'duel-online',
+    online,
+    duelMatchNumber: 1,
+    duelTalentDrafts: copyDuelTalentDrafts(suggestedDrafts),
+  };
+  return state;
+}
+
+/** Liefert den temporaeren Build eines Spielers als defensive Kopie. */
+export function duelTalentDraftFor(index: 0 | 1): TalentRanks {
+  const draft = state?.duelTalentDrafts?.[index];
+  return normalizeTalentRanks(draft ?? {}, DUEL_TALENT_POINT_BUDGET);
+}
+
+/** Speichert einen temporaeren Build, ohne den persistenten Spielstand anzufassen. */
+export function setDuelTalentDraft(index: 0 | 1, ranks: TalentRanks): TalentRanks {
+  if (!state) return normalizeTalentRanks(ranks, DUEL_TALENT_POINT_BUDGET);
+  const drafts = copyDuelTalentDrafts(state.duelTalentDrafts);
+  drafts[index] = normalizeTalentRanks(ranks, DUEL_TALENT_POINT_BUDGET);
+  state.duelTalentDrafts = drafts;
+  return { ...drafts[index] };
+}
+
+/** Aendert einen Rang im aktuellen temporaeren Build. */
+export function changeDuelTalentRank(
+  index: 0 | 1,
+  talentId: Parameters<typeof changeTalentRank>[1],
+  delta: -1 | 1,
+  budget: number,
+): TalentRanks | null {
+  const next = changeTalentRank(duelTalentDraftFor(index), talentId, delta, budget);
+  if (!next) return null;
+  return setDuelTalentDraft(index, next);
+}
+
+/** Aktualisiert den Online-Zustand nach einem serverseitig gestarteten Rematch. */
+export function resetOnlineMatch(
+  seed: string,
+  matchNumber: number,
+  suggestedDrafts?: DuelTalentDrafts,
+): ChallengeState | null {
+  if (!state || state.kind !== 'duel-online') return null;
+  state.seed = seed;
+  state.rounds = [];
+  state.onlineRounds = [null, null];
+  state.duelMatchNumber = matchNumber;
+  state.duelTalentDrafts = copyDuelTalentDrafts(suggestedDrafts ?? state.duelTalentDrafts);
+  state.online = state.online ? { ...state.online, startAtServerMs: null } : state.online;
   return state;
 }
 
@@ -244,18 +330,16 @@ export function updateOnlinePlayerNames(names: readonly (string | null)[]): void
   state.online = { ...state.online, playerNames };
 }
 
-/**
- * Neues Duell mit frischem Seed in derselben Welt.
- *
- * Fuer `duel-online` faellt das bewusst auf das lokale Duell zurueck: ein
- * Netzwerk-Rematch braucht einen neuen Raum, zu dem beide Geraete erneut
- * beitreten muessen - das ist eine spaetere Ausbaustufe (Planungsnotiz
- * Phase 3), kein Fall, den diese Funktion beilaeufig mitloesen sollte.
- */
+/** Neues lokales Duell mit frischem Seed; Online-Rematches laufen ueber den Raum-RPC. */
 export function rematch(): ChallengeState {
   if (state?.kind === 'daily') return startDaily(state.worldId);
-  if (state?.kind === 'bot') return startBot(state.worldId, state.botDifficulty ?? 'normal');
-  return start(state?.worldId ?? '');
+  if (state?.kind === 'bot') {
+    return startBot(state.worldId, state.botDifficulty ?? 'normal', state.duelTalentDrafts);
+  }
+  if (state?.kind === 'duel-online') {
+    return state;
+  }
+  return start(state?.worldId ?? '', state?.duelTalentDrafts);
 }
 
 export function getState(): ChallengeState | null {

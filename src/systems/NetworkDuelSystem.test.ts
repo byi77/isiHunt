@@ -71,6 +71,16 @@ describe('Netzfunktionen ohne konfigurierten Online-Dienst', () => {
     expect(result.ok).toBe(false);
   });
 
+  it('submitTalentDraft scheitert freundlich statt zu werfen', async () => {
+    const result = await NetworkDuelSystem.submitTalentDraft('ABC123', { reach: 1 });
+    expect(result.ok).toBe(false);
+  });
+
+  it('requestRematch scheitert freundlich statt zu werfen', async () => {
+    const result = await NetworkDuelSystem.requestRematch('ABC123', { reach: 1 });
+    expect(result.ok).toBe(false);
+  });
+
   it('setStartTime scheitert freundlich statt zu werfen', async () => {
     const result = await NetworkDuelSystem.setStartTime('ABC123');
     expect(result.ok).toBe(false);

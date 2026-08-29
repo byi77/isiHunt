@@ -22,6 +22,10 @@ const playerNameMigration = readFileSync(
   resolve(sqlDir, 'phase_2_34_player_name_rules.sql'),
   'utf8',
 );
+const duelTalentMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_35_duel_talents_rematch.sql'),
+  'utf8',
+);
 const verification = readFileSync(resolve(sqlDir, 'verify_security_hardening.sql'), 'utf8');
 const migrationVerification = readFileSync(resolve(sqlDir, 'verify_migration_state.sql'), 'utf8');
 
@@ -89,9 +93,12 @@ requireText(
   'Spielernamen-Ziffernlimit',
 );
 requireText(playerNameMigration, 'schema_version = 34', 'Migrationsmarker Phase 2.34');
+requireText(duelTalentMigration, 'submit_duel_talent_draft', 'Duell-Talent-Build-RPC');
+requireText(duelTalentMigration, 'request_duel_rematch', 'Duell-Rematch-RPC');
+requireText(duelTalentMigration, 'schema_version = 35', 'Migrationsmarker Phase 2.35');
 
 const migrationFiles = readdirSync(sqlDir).filter((name) =>
-  /^phase_2_(2[89]|30|31|32|33|34)_.*\.sql$/.test(name),
+  /^phase_2_(2[89]|30|31|32|33|34|35)_.*\.sql$/.test(name),
 );
 for (const file of migrationFiles) {
   const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();

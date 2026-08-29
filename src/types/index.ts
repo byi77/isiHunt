@@ -99,7 +99,7 @@ export interface RunStats {
   /** Relikte, die verblasst sind, bevor sie eingesammelt wurden. */
   missed: number;
   xpGained: number;
-  /** Dauer des abgeschlossenen Runs; Challenge-Runs setzen diesen Wert nicht. */
+  /** Dauer des abgeschlossenen Runs; temporäre Duell-Talente können sie verlängern. */
   durationMs?: number;
   /** Lokaler Zeitpunkt des Run-Endes, auch für einen späteren Offline-Upload. */
   completedAt?: string;
@@ -108,7 +108,8 @@ export interface RunStats {
 /**
  * In welchem Modus ein Run laeuft.
  *
- * `solo` schreibt Progression, `challenge` nicht - siehe config/challenge.ts.
+ * `solo` und `daily` schreiben Progression, `challenge` nicht - siehe
+ * config/challenge.ts.
  */
 export type RunMode = 'solo' | 'challenge' | 'daily' | 'bot';
 
@@ -159,6 +160,10 @@ export interface ChallengeState {
   dailyRewardCoins?: number;
   dailyRewardXp?: number;
   dailyPerformanceTier?: number;
+  /** Temporäre Talent-Builds je Spieler; bleiben nur im Duellzustand. */
+  duelTalentDrafts?: [TalentRanks, TalentRanks];
+  /** Serverseitige Generation des Netzwerk-Duells, wichtig fuer Rematches. */
+  duelMatchNumber?: number;
   /** Nur bei kind === 'duel-online'. */
   online?: OnlineDuelInfo;
   /**

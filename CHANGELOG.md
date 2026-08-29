@@ -11,6 +11,11 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Temporäre Duell-Talente und Rematch.** Vor jedem lokalen oder Online-Duell
+  stehen 10 Punkte für 20 Sekunden zur Verfügung. Plus/Minus ändert einzelne
+  Ränge; beim Rematch werden die letzten Builds im selben Online-Raum wieder
+  vorgeschlagen, können aber vor dem Start neu verteilt werden.
+
 - **Netzwerk-Duell: der Gegnerstand ist waehrend des Runs sichtbar.** Eine
   kompakte Zeile im HUD zeigt Punktzahl, Abstand und was der andere gerade
   tut — spielt, schaut nicht hin, ausgestiegen, fertig oder Verbindung weg.
@@ -32,6 +37,11 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   weiter, wenn nichts passiert; er traegt die Information "ich bin noch da".
 
 ### Geaendert
+
+- **Talente sind jetzt auch im Tageslauf aktiv.** Der Tageslauf verwendet die
+  gekauften Talentraenge inklusive der Laufzeitverlaengerung durch Ausdauer.
+  Die aktiven Wirkungen werden wie im Solo-Run im HUD angezeigt; Duell und
+  Bot-Modus verwenden stattdessen ihren temporaeren Punkte-Build.
 
 - **Die Komforttalente sind mathematisch nachgeschärft.** Reichweite steigt
   jetzt um 5 statt 8 px je Rang, Magnetismus um 45 statt 65 px, Ausdauer um 3

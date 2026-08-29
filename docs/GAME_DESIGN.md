@@ -70,7 +70,7 @@ ist das Spiel.
 Zwei Personen, ein Geraet, abwechselnd.
 
 ```
-Menue → Einfuehrung → Spieler 1 (90 s) → Uebergabe → Spieler 2 (90 s) → Ergebnis
+Menue → Einfuehrung → Spieler 1 (90+ s mit Ausdauer) → Uebergabe → Spieler 2 (90+ s mit Ausdauer) → Ergebnis
                                                                            │
                             └──────────────  "Revanche"  ─────────────────┘
 ```
@@ -85,15 +85,16 @@ ab statt Glueck.
 | Regel                      | Warum                                                                                                                                                                                                |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Gleiche Relikt-Abfolge** | Beide Spieler bekommen denselben Seed — dieselben Seltenheiten, an denselben Stellen, zur selben Sekunde. Sonst waere das Duell ein Wuerfelspiel darum, wer das legendaere Relikt geschenkt bekommt. |
-| **Keine Talente**          | Beide spielen mit den Grundwerten der Figur. Sonst haette der Geraetebesitzer einen Vorteil, den der Gast nicht ausgleichen kann.                                                                    |
+| **Temporäre Talente**      | Vor jedem Durchgang verteilt jeder bis zu 10 Punkte in einem 20-Sekunden-Draft. Der letzte Build wird beim Rematch vorgeschlagen und kann mit +/− geändert werden; dauerhafte Talente bleiben außen vor. |
 | **Keine Progression**      | Ein Duell vergibt weder XP noch Bestwerte noch Erfolge. Die Haelfte der Durchgaenge spielt jemand, dem der Spielstand nicht gehoert.                                                                 |
 | **Keine Kosmetik**         | Im Duell traegt niemand seine gekaufte Form, Farbe oder Aura. Sonst waere auf einen Blick zu sehen, wer gerade dran ist — der Vergleich soll am Spiel haengen, nicht am Guthaben.                    |
 
 **Die Kosmetik-Regel gilt nur dem Duell, nicht dem Tageslauf.** Sie steht hier,
 weil zwei Personen an _einem_ Geraet spielen. Der Tageslauf ist Einzelspiel:
 Verglichen wird ueber den gemeinsamen Seed, und eine Aura macht kein Relikt
-schneller. Wer eine Form gekauft hat, traegt sie dort. Talente und
-Rundenlaenge folgen weiterhin den Duell-Regeln.
+schneller. Wer eine Form gekauft hat, traegt sie dort. Auch gekaufte Talente
+samt ihrer Laufzeit wirken im Tageslauf; der Seed und die taegliche
+Abschlusslogik bleiben fuer alle gleich.
 
 Die gleiche Abfolge ist technisch anspruchsvoller, als sie klingt: Der
 Zufallsgenerator muss **unabhaengig vom Spielverlauf** verbraucht werden, sonst
@@ -104,6 +105,13 @@ laufen die beiden Durchgaenge auseinander. Die zwei Fallstricke sind in
 (`Ziel 1.234`). Faellt sie, wird das einmalig gefeiert (_UEBERHOLT!_) — der
 Moment ist die Pointe des Modus und darf nicht im Ergebnisbildschirm
 untergehen.
+
+Vor dem ersten Durchgang und bei der Übergabe erhält der jeweilige Spieler
+20 Sekunden für seinen temporären Talent-Build. Ein Punkt wird mit `+`
+vergeben und mit `−` wieder entfernt. Bei einem Rematch bleiben beide letzten
+Builds im laufenden Duellzustand und werden als Vorschlag geladen; ein neuer
+Raumcode ist dafür nicht nötig. Der Spieler kann den Vorschlag übernehmen oder
+neu verteilen. Die Auswahl wird nicht in den permanenten Talentbaum gespeichert.
 
 **Was das Duell bewusst nicht ist:** kein geteilter Bildschirm. Auf einem
 Hochformat-Handy waeren zwei Spielfelder je 360 × 640 Pixel gross — zu klein

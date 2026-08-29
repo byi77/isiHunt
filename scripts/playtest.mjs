@@ -803,7 +803,7 @@ async function suiteModes() {
       await waitForScene(page, 'WorldInfo', 15000);
       await klickeErstenKnopf(page, 'WorldInfo');
       await waitForScene(page, 'Challenge', 15000);
-      await klickeErstenKnopf(page, 'Challenge');
+      await klickeErstenKnopf(page, 'Challenge', mode === 'duell' ? 'TALENTE' : null);
 
       await waitForRunLive(page);
       const score = await playUntilDone(page);

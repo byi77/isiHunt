@@ -47,6 +47,7 @@ Auf einer leeren Datenbank in dieser Reihenfolge einspielen:
 | 28  | `phase_2_32_migration_state.sql`             | Reproduzierbarer Marker fuer den ausgefuehrten Migrationsstand    |
 | 29  | `phase_2_33_leaderboard_auth_only.sql`       | Bestenliste nur fuer authentifizierte Profile beschreibbar        |
 | 30  | `phase_2_34_player_name_rules.sql`           | Spielernamen bereinigen und serverseitig begrenzen               |
+| 31  | `phase_2_35_duel_talents_rematch.sql`        | Temporaere Duell-Talente und Rematch im selben Raum               |
 
 `phase_2_23_talent_points.sql` enthält einen historischen globalen
 Testdaten-Reset. Das Skript bricht ohne ausdrückliches Opt-in ab. Nur wenn

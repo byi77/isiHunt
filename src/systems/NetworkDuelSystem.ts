@@ -27,7 +27,10 @@
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 
 import { BACKEND_TIMEOUT_MS, SYNC_CODE_ALPHABET } from '@/config/backend';
+import { DUEL_TALENT_POINT_BUDGET } from '@/config/challenge';
 import { sanitizePlayerName } from '@/config/playerName';
+import type { TalentRanks } from '@/config/talents';
+import { normalizeTalentRanks } from '@/systems/TalentAllocationSystem';
 import {
   DUEL_ROOM_CODE_TTL_MINUTES,
   ONLINE_DUEL_CLOCK_SYNC_SAMPLES,
@@ -45,14 +48,21 @@ export interface DuelRoomInfo {
   seed: string;
   worldId: string;
   participantToken: string;
+  matchNumber?: number;
 }
 
 export interface DuelRoomStatus {
   seed: string;
   worldId: string;
+  /** Serverseitige Generation; steigt bei jedem Rematch atomar. */
+  matchNumber: number;
   hostReady: boolean;
   guestReady: boolean;
   guestJoined: boolean;
+  hostTalentReady: boolean;
+  guestTalentReady: boolean;
+  hostTalentDraft: TalentRanks;
+  guestTalentDraft: TalentRanks;
   /** Serverzeit (ms seit Epoch), zu der beide gleichzeitig starten sollen. */
   startAtMs: number | null;
   /** `null`, solange der jeweilige Spieler seine Runde nicht abgegeben hat. */
@@ -196,6 +206,78 @@ export async function markReady(
   return { ok: true, value: true };
 }
 
+/** Speichert den temporaeren Build fuer die aktuelle Duell-Generation. */
+export async function submitTalentDraft(
+  code: string,
+  draft: TalentRanks,
+  participantToken = '',
+): Promise<CloudResult<true>> {
+  const supabase = CloudSystem.getSupabaseClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+
+  const response = await withTimeout(
+    supabase.rpc('submit_duel_talent_draft', {
+      p_code: code,
+      p_participant_token: participantToken,
+      p_draft: normalizeTalentRanks(draft, DUEL_TALENT_POINT_BUDGET),
+    }),
+    'Talent-Build speichern',
+  );
+  if (!response.ok) return response;
+  if (response.value.error) return { ok: false, error: response.value.error.message };
+  return { ok: true, value: true };
+}
+
+/** Meldet ein Rematch inklusive des neuen eigenen Build-Vorschlags an. */
+export async function requestRematch(
+  code: string,
+  draft: TalentRanks,
+  participantToken = '',
+): Promise<CloudResult<{ ready: boolean; matchNumber: number; seed: string | null }>> {
+  const supabase = CloudSystem.getSupabaseClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+
+  const response = await withTimeout(
+    supabase.rpc('request_duel_rematch', {
+      p_code: code,
+      p_participant_token: participantToken,
+      p_draft: normalizeTalentRanks(draft, DUEL_TALENT_POINT_BUDGET),
+    }),
+    'Rematch vorbereiten',
+  );
+  if (!response.ok) return response;
+  if (response.value.error) return { ok: false, error: response.value.error.message };
+
+  const raw = response.value.data;
+  const value = typeof raw === 'string' ? parseJsonObject(raw) : raw;
+  if (!value || typeof value !== 'object') {
+    return { ok: false, error: 'Ungueltige Rematch-Antwort vom Server' };
+  }
+  const record = value as Record<string, unknown>;
+  const matchNumber = Number(record.matchNumber ?? record.match_number);
+  if (!Number.isInteger(matchNumber) || matchNumber < 1) {
+    return { ok: false, error: 'Ungueltige Duell-Generation vom Server' };
+  }
+  const seed = record.seed;
+  return {
+    ok: true,
+    value: {
+      ready: Boolean(record.ready),
+      matchNumber,
+      seed: typeof seed === 'string' && seed.length > 0 ? seed : null,
+    },
+  };
+}
+
+function parseJsonObject(raw: string): Record<string, unknown> | null {
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Setzt die gemeinsame Startzeit - nur sinnvoll, wenn der aufrufende Client
  * der Gastgeber ist und beide Spieler laut `getRoomStatus()` bereit sind; die
@@ -248,14 +330,24 @@ export async function getRoomStatus(
     value: {
       seed: String(row.seed),
       worldId: String(row.world_id),
+      matchNumber: Number.isInteger(Number(row.match_number)) ? Number(row.match_number) : 1,
       hostReady: Boolean(row.host_ready),
       guestReady: Boolean(row.guest_ready),
       guestJoined: Boolean(row.guest_joined),
+      hostTalentReady: Boolean(row.host_talent_ready),
+      guestTalentReady: Boolean(row.guest_talent_ready),
+      hostTalentDraft: parseTalentDraft(row.host_talent_draft),
+      guestTalentDraft: parseTalentDraft(row.guest_talent_draft),
       startAtMs: row.start_at ? Date.parse(String(row.start_at)) : null,
       hostResult: parseRoundResult(row.host_result),
       guestResult: parseRoundResult(row.guest_result),
     },
   };
+}
+
+function parseTalentDraft(raw: unknown): TalentRanks {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  return normalizeTalentRanks(raw as TalentRanks, DUEL_TALENT_POINT_BUDGET);
 }
 
 /**

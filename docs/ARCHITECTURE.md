@@ -141,12 +141,13 @@ isiHunt/
 │   │   ├── ProgressionSystem.test.ts
 │   │   ├── ScoreSystem.ts      Punkte + Combo eines Runs
 │   │   ├── ScoreSystem.test.ts
-│   │   ├── ChallengeSystem.ts  Duell-Zustand: Seed, Punktstaende, Sieger
+│   │   ├── ChallengeSystem.ts  Duell-Zustand: Seed, Talent-Drafts, Punktstaende, Sieger
+│   │   ├── TalentAllocationSystem.ts  Wiederverwendbare Plus-/Minus-Rangrechnung
 │   │   ├── ChallengeSystem.test.ts
 │   │   ├── CloudSystem.ts      Bestenliste und Spielstand ueber Supabase
 │   │   ├── CloudSystem.test.ts Backend nicht eingerichtet
 │   │   ├── CloudSystem.configured.test.ts  eingerichtet: Anmelde- und Netzfehler
-│   │   ├── NetworkDuelSystem.ts Netzwerk-Duell: Raum, Uhr-Sync, Realtime-Kanal
+│   │   ├── NetworkDuelSystem.ts Netzwerk-Duell: Raum, Rematch, Uhr-Sync, Realtime-Kanal
 │   │   ├── NetworkDuelSystem.test.ts
 │   │   ├── SpawnSystem.ts      Wann und wo etwas erscheint
 │   │   ├── SpawnSystem.test.ts
@@ -164,6 +165,7 @@ isiHunt/
 │   │   ├── hitDebug.ts         Trefferflaechen sichtbar machen (?hitboxes)
 │   │   ├── debugOverlay.ts     Schwebender Debug-Knopf ausserhalb des Canvas (ADR-0016)
 │   │   ├── textInput.ts        Echtes HTML-Eingabefeld ueber dem Canvas
+│   │   ├── talentDraft.ts      Temporaere Duell-Talentkarten mit Plus/Minus
 │   │   └── widgets.ts          Knoepfe, Balken, Hintergruende, Effekte, createStatusPage
 │   ├── env.d.ts                Typen der Umgebungsvariablen
 │   └── main.ts                 Phaser-Konfiguration

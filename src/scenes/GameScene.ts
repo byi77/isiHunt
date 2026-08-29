@@ -156,11 +156,29 @@ export class GameScene extends Phaser.Scene {
 
     this.mode = data.mode ?? 'solo';
     this.world = getWorld(data.worldId ?? save.lastWorldId);
+    const isChallengeMode = this.mode !== 'solo';
+    const challenge = isChallengeMode ? ChallengeSystem.getState() : null;
+    this.playerIndex = challenge ? ChallengeSystem.currentPlayerIndex() : 0;
 
-    // Im Duell mit Grundwerten spielen: Talente des Geraetebesitzers waeren ein
-    // Vorteil, den der Gast nicht ausgleichen kann (config/challenge.ts).
-    const nonProgressionMode = this.mode !== 'solo';
-    this.stats = resolveStats(nonProgressionMode ? {} : save.talents);
+    // Solo und Tageslauf verwenden den permanenten Talentbaum. Duelle,
+    // Bot-Runden und Netzwerk-Duelle verwenden nur den temporaeren Build aus
+    // dem Vormatch; ohne diesen bleiben sie bei den Grundwerten.
+    const usesTalents =
+      this.mode === 'solo' ||
+      this.mode === 'daily' ||
+      challenge?.kind === 'duel' ||
+      challenge?.kind === 'bot' ||
+      challenge?.kind === 'duel-online';
+    const duelTalentRanks = challenge
+      ? ChallengeSystem.duelTalentDraftFor(this.playerIndex as 0 | 1)
+      : {};
+    this.stats = resolveStats(
+      usesTalents
+        ? this.mode === 'solo' || this.mode === 'daily'
+          ? save.talents
+          : duelTalentRanks
+        : {},
+    );
 
     // Kosmetik ist eine andere Frage als Spielvorteil.
     //
@@ -171,18 +189,15 @@ export class GameScene extends Phaser.Scene {
     // Der Tageslauf ist Einzelspiel. Verglichen wird ueber den gemeinsamen
     // Seed (Regel 1), nicht ueber das Aussehen - eine Aura macht kein Relikt
     // schneller. Wer eine Form gekauft hat, soll sie deshalb auch hier tragen.
-    // Talente und Rundenlaenge bleiben davon unberuehrt.
-    const versteckeKosmetik = nonProgressionMode && this.mode !== 'daily';
+    const versteckeKosmetik = isChallengeMode && this.mode !== 'daily';
 
-    const challenge = nonProgressionMode ? ChallengeSystem.getState() : null;
     this.challenge = challenge;
-    this.playerIndex = challenge ? ChallengeSystem.currentPlayerIndex() : 0;
     this.opponentLastSeenAt = 0;
     this.opponentGone = false;
     this.opponentTerminal = false;
     this.localActivity = 'playing';
 
-    this.totalMs = nonProgressionMode ? CHALLENGE_DURATION_MS : this.stats.runDurationMs;
+    this.totalMs = usesTalents ? this.stats.runDurationMs : CHALLENGE_DURATION_MS;
     this.remainingMs = this.totalMs;
     this.phase = 'countdown';
     this.collectibles = [];
@@ -257,9 +272,9 @@ export class GameScene extends Phaser.Scene {
       worldId: this.world.id,
       mode: this.mode,
       durationMs: this.totalMs,
-      playerLabel: nonProgressionMode ? ChallengeSystem.playerLabel(this.playerIndex) : null,
-      scoreToBeat: nonProgressionMode ? ChallengeSystem.scoreToBeat() : null,
-      talentSummary: nonProgressionMode ? '' : activeTalentSummary(this.stats),
+      playerLabel: isChallengeMode ? ChallengeSystem.playerLabel(this.playerIndex) : null,
+      scoreToBeat: isChallengeMode ? ChallengeSystem.scoreToBeat() : null,
+      talentSummary: usesTalents ? activeTalentSummary(this.stats) : '',
       showOpponentLive: challenge?.kind === 'duel-online',
       opponentLabel:
         challenge?.kind === 'duel-online'

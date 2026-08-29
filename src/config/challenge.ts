@@ -9,9 +9,9 @@
  * 1. **Gleicher Seed.** Beide Spieler bekommen dieselbe Abfolge von Relikten -
  *    gleiche Seltenheiten zur gleichen Sekunde. Ohne das waere ein Duell ein
  *    Wuerfelspiel darum, wer das legendaere Relikt geschenkt bekommt.
- * 2. **Keine Talente.** Beide spielen mit den Grundwerten der Figur. Der
- *    Geraetebesitzer haette sonst durch seinen Spielstand einen Vorteil, den
- *    der Gast nicht ausgleichen kann.
+ * 2. **Temporäre Talente.** Vor jedem Durchgang verteilen beide Spieler
+ *    unabhängig voneinander bis zu zehn Punkte. So haben beide dieselbe
+ *    Auswahlchance, ohne dass der dauerhafte Spielstand einen Vorteil gibt.
  * 3. **Keine Progression.** Ein Duell vergibt weder XP noch Bestwerte. Die
  *    Haelfte der Durchgaenge wird von jemandem gespielt, dem der Spielstand
  *    nicht gehoert - sie duerfen ihn deshalb nicht veraendern.
@@ -27,6 +27,12 @@ export const CHALLENGE_PLAYER_COUNT = 2;
  * Spawns und weniger Streuung - das Ergebnis bildet Koennen ab statt Glueck.
  */
 export const CHALLENGE_DURATION_MS = 90_000;
+
+/** Punktebudget fuer den temporaeren Talent-Build vor einem Duell. */
+export const DUEL_TALENT_POINT_BUDGET = 10;
+
+/** Zeit fuer die Talentvergabe vor dem Start bzw. einem Rematch. */
+export const DUEL_TALENT_DRAFT_DURATION_MS = 20_000;
 
 /** Anzeigenamen der Spieler. Reihenfolge = Spielreihenfolge. */
 export const CHALLENGE_PLAYER_LABELS: readonly string[] = ['Spieler 1', 'Spieler 2'];

@@ -484,6 +484,11 @@ async function runOne(browser, runNumber, failures) {
 
     stage = 'Gast beitreten lassen';
     await joinRoom(guest.page, code);
+    stage = 'Temporäre Talent-Builds bestätigen';
+    await Promise.all([
+      clickButton(host.page, 'OnlineDuel', 'TALENTE'),
+      clickButton(guest.page, 'OnlineDuel', 'TALENTE'),
+    ]);
     stage = 'Beide Clients in GameScene bringen';
     try {
       await Promise.all([

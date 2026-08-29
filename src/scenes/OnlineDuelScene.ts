@@ -12,6 +12,7 @@
 
 import Phaser from 'phaser';
 
+import { DUEL_TALENT_DRAFT_DURATION_MS, DUEL_TALENT_POINT_BUDGET } from '@/config/challenge';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import {
   ONLINE_DUEL_GUEST_START_TIMEOUT_MS,
@@ -22,6 +23,7 @@ import {
 } from '@/config/onlineDuel';
 import { getWorld, DEFAULT_WORLD_ID } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
+import type { TalentRanks } from '@/config/talents';
 import { eventBus, GameEvent } from '@/core/EventBus';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
@@ -30,6 +32,7 @@ import * as NetworkDuelSystem from '@/systems/NetworkDuelSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { Depth } from '@/ui/depth';
+import { createTalentDraftView, type TalentDraftView } from '@/ui/talentDraft';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import type { TextInputHandle } from '@/ui/textInput';
 import { createTextInput } from '@/ui/textInput';
@@ -51,8 +54,8 @@ function relics(count: number): string {
 }
 
 interface OnlineDuelSceneData {
-  /** 'result' nach Rueckkehr aus GameScene; sonst beginnt der Ablauf von vorn. */
-  phase?: 'result';
+  /** 'result' nach Rueckkehr aus GameScene; 'rematch' nach Server-Reset. */
+  phase?: 'result' | 'rematch';
 }
 
 export class OnlineDuelScene extends Phaser.Scene {
@@ -83,6 +86,16 @@ export class OnlineDuelScene extends Phaser.Scene {
   private runStarted = false;
   private opponentReady = false;
   private keepWaitingButton: ButtonHandle | null = null;
+  private talentDraftView: TalentDraftView | null = null;
+  private talentDraftTimer: Phaser.Time.TimerEvent | null = null;
+  private talentDraftDeadline = 0;
+  private draftConfirmed = false;
+  private draftSubmissionStarted = false;
+  private draftConfirmButton: ButtonHandle | null = null;
+  private clockSynced = false;
+  private rematchPollTimer: Phaser.Time.TimerEvent | null = null;
+  private lastKnownMatchNumber = 1;
+  private rematchRequestStarted = false;
 
   constructor() {
     super(SceneKey.OnlineDuel);
@@ -102,6 +115,16 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.runStarted = false;
     this.opponentReady = false;
     this.keepWaitingButton = null;
+    this.talentDraftView = null;
+    this.talentDraftTimer = null;
+    this.talentDraftDeadline = 0;
+    this.draftConfirmed = false;
+    this.draftSubmissionStarted = false;
+    this.draftConfirmButton = null;
+    this.clockSynced = false;
+    this.rematchPollTimer = null;
+    this.lastKnownMatchNumber = 1;
+    this.rematchRequestStarted = false;
 
     const state = ChallengeSystem.getState();
     this.world = getWorld(state?.worldId ?? SaveSystem.load().lastWorldId ?? DEFAULT_WORLD_ID);
@@ -120,6 +143,17 @@ export class OnlineDuelScene extends Phaser.Scene {
         return;
       }
       this.buildResult();
+      return;
+    }
+
+    if (data.phase === 'rematch') {
+      if (!state || state.kind !== 'duel-online' || !state.online) {
+        this.scene.start(SceneKey.Menu);
+        return;
+      }
+      this.restoreRoomFromState(state);
+      this.lastKnownMatchNumber = state.duelMatchNumber ?? 1;
+      this.enterLobby();
       return;
     }
 
@@ -269,6 +303,7 @@ export class OnlineDuelScene extends Phaser.Scene {
       0,
       this.participantToken,
     );
+    this.lastKnownMatchNumber = 1;
     this.enterLobby();
   }
 
@@ -305,10 +340,21 @@ export class OnlineDuelScene extends Phaser.Scene {
       1,
       this.participantToken,
     );
+    this.lastKnownMatchNumber = 1;
     this.enterLobby();
   }
 
   // --- Phase: Lobby --------------------------------------------------------------
+
+  private restoreRoomFromState(
+    state: NonNullable<ReturnType<typeof ChallengeSystem.getState>>,
+  ): void {
+    if (!state.online) return;
+    this.roomCode = state.online.roomCode;
+    this.isHost = state.online.localPlayerIndex === 0;
+    this.participantToken = state.online.participantToken;
+    this.world = getWorld(state.worldId);
+  }
 
   private enterLobby(): void {
     this.clearTransient();
@@ -365,6 +411,11 @@ export class OnlineDuelScene extends Phaser.Scene {
       .setWordWrapWidth(GAME_WIDTH - 140)
       .setAlign('center');
     this.keep(lobbyStatus);
+
+    this.buildOnlineTalentDraft(lobbyStatus, 'TALENTE BESTÄTIGEN', () => {
+      this.draftConfirmed = true;
+      if (this.clockSynced) void this.submitDraftAndReady(lobbyStatus);
+    });
 
     this.buildBackToMenu('ABBRECHEN');
 
@@ -447,6 +498,108 @@ export class OnlineDuelScene extends Phaser.Scene {
       return;
     }
     ChallengeSystem.updateOnlineSync(offsetResult.value, null);
+    this.clockSynced = true;
+    statusText.setText(
+      this.draftConfirmed ? 'Talent-Build wird gespeichert ...' : 'Talent-Build festlegen ...',
+    );
+    if (this.draftConfirmed) void this.submitDraftAndReady(statusText);
+  }
+
+  private buildOnlineTalentDraft(
+    statusText: Phaser.GameObjects.Text,
+    buttonLabel: string,
+    onConfirm: () => void,
+  ): void {
+    const localIndex: 0 | 1 = this.isHost ? 0 : 1;
+    const initialRanks = ChallengeSystem.duelTalentDraftFor(localIndex);
+    const hasSuggestion = Object.values(initialRanks).some((rank) => rank > 0);
+    const topY = this.statusPage.contentY(this.isHost ? 700 : 610);
+
+    this.keep(
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          this.statusPage.contentY(this.isHost ? 650 : 560),
+          hasSuggestion
+            ? 'Dein Build aus dem Vormatch ist vorgeschlagen. Ändere ihn mit + und −.'
+            : `Verteile ${DUEL_TALENT_POINT_BUDGET} Punkte mit + und −.`,
+          textStyle(FontSize.small, Palette.ink),
+        )
+        .setOrigin(0.5)
+        .setWordWrapWidth(GAME_WIDTH - 100)
+        .setAlign('center'),
+    );
+
+    this.talentDraftView = createTalentDraftView(this, {
+      initialRanks,
+      accent: this.world.accent,
+      topY,
+      onChange: (ranks) => {
+        ChallengeSystem.setDuelTalentDraft(localIndex, ranks);
+      },
+    });
+    for (const object of this.talentDraftView.objects) this.keep(object);
+
+    const timerText = this.add
+      .text(GAME_WIDTH / 2, topY + 5 * 64 + 34, '', textStyle(FontSize.small, Palette.gold))
+      .setOrigin(0.5);
+    this.keep(timerText);
+
+    const confirm = (): void => {
+      if (this.talentDraftTimer) {
+        this.talentDraftTimer.remove();
+        this.talentDraftTimer = null;
+      }
+      this.talentDraftView?.setEnabled(false);
+      this.draftConfirmButton?.setEnabled(false);
+      onConfirm();
+    };
+
+    const button = createButton(
+      this,
+      GAME_WIDTH / 2,
+      GAME_HEIGHT - 250,
+      hasSuggestion ? 'VORSCHLAG ÜBERNEHMEN' : buttonLabel,
+      confirm,
+      { width: 460, accent: this.world.accent, fontSize: FontSize.large },
+    );
+    this.draftConfirmButton = button;
+    this.keep(button.container);
+
+    this.talentDraftDeadline = Date.now() + DUEL_TALENT_DRAFT_DURATION_MS;
+    const updateTimer = (): void => {
+      const remaining = Math.max(0, this.talentDraftDeadline - Date.now());
+      timerText.setText(
+        remaining > 0
+          ? `${Math.ceil(remaining / 1000)} Sekunden zur Talentvergabe`
+          : 'Talentvergabe beendet - Auswahl wird übernommen ...',
+      );
+      if (remaining <= 0) confirm();
+    };
+    updateTimer();
+    this.talentDraftTimer = this.time.addEvent({ delay: 250, loop: true, callback: updateTimer });
+    statusText.setText('Talent-Build festlegen ...');
+  }
+
+  private async submitDraftAndReady(statusText: Phaser.GameObjects.Text): Promise<void> {
+    if (this.draftSubmissionStarted || this.runStarted || !this.draftConfirmed) return;
+    this.draftSubmissionStarted = true;
+    const localIndex: 0 | 1 = this.isHost ? 0 : 1;
+    const draft = ChallengeSystem.duelTalentDraftFor(localIndex);
+    const draftResult = await NetworkDuelSystem.submitTalentDraft(
+      this.roomCode,
+      draft,
+      this.participantToken,
+    );
+    if (!this.scene.isActive() || this.runStarted) return;
+    if (!draftResult.ok) {
+      this.draftSubmissionStarted = false;
+      this.draftConfirmed = false;
+      this.talentDraftView?.setEnabled(true);
+      this.draftConfirmButton?.setEnabled(true);
+      statusText.setText(draftResult.error).setColor(Palette.danger);
+      return;
+    }
 
     const readyResult = await NetworkDuelSystem.markReady(
       this.roomCode,
@@ -455,6 +608,10 @@ export class OnlineDuelScene extends Phaser.Scene {
     );
     if (!this.scene.isActive() || this.runStarted) return;
     if (!readyResult.ok) {
+      this.draftSubmissionStarted = false;
+      this.draftConfirmed = false;
+      this.talentDraftView?.setEnabled(true);
+      this.draftConfirmButton?.setEnabled(true);
       statusText.setText(readyResult.error).setColor(Palette.danger);
       return;
     }
@@ -462,11 +619,7 @@ export class OnlineDuelScene extends Phaser.Scene {
     statusText.setText(
       this.opponentReady ? 'Beide bereit - Start wird vorbereitet ...' : 'Warte auf Freund ...',
     );
-
     this.startWaitTimers(statusText);
-
-    // Sofort einmal versuchen, falls der andere schon bereit ist (der
-    // haeufigere Fall) - der Poll-Takt darunter faengt alles spaetere ab.
     void this.pollAndSetStartTime(statusText);
   }
 
@@ -628,6 +781,14 @@ export class OnlineDuelScene extends Phaser.Scene {
       this.readyTimeout = null;
     }
     this.stopResultPolling();
+    if (this.rematchPollTimer) {
+      this.rematchPollTimer.remove();
+      this.rematchPollTimer = null;
+    }
+    if (this.talentDraftTimer) {
+      this.talentDraftTimer.remove();
+      this.talentDraftTimer = null;
+    }
   }
 
   private stopResultPolling(): void {
@@ -650,11 +811,10 @@ export class OnlineDuelScene extends Phaser.Scene {
     // Raum-Code aus dem Zustand zurueckholen: nach der Rueckkehr aus
     // GameScene ist `create()` neu gelaufen und hat die Felder geleert, der
     // Duell-Zustand ueberlebt den Scene-Wechsel aber im ChallengeSystem.
-    if (!complete && state?.online) {
-      this.roomCode = state.online.roomCode;
-      this.isHost = state.online.localPlayerIndex === 0;
-      this.participantToken = state.online.participantToken;
-      this.awaitOpponentResult();
+    if (state?.online) {
+      this.restoreRoomFromState(state);
+      this.lastKnownMatchNumber = state.duelMatchNumber ?? 1;
+      if (!complete) this.awaitOpponentResult();
     }
 
     this.buildHeading(
@@ -674,12 +834,123 @@ export class OnlineDuelScene extends Phaser.Scene {
       state.rounds.forEach((round, index) => {
         this.buildResultCard(round, index, winner === index);
       });
+
+      this.keep(
+        createButton(
+          this,
+          GAME_WIDTH / 2,
+          this.statusPage.contentY(930),
+          'REMATCH',
+          () => this.enterRematchDraft(),
+          { width: 460, accent: this.world.accent, fontSize: FontSize.large },
+        ).container,
+      );
     }
 
     this.buildBackToMenu('ZUM MENÜ', () => {
       this.stopResultPolling();
       NetworkDuelSystem.unsubscribeFromRoom();
     });
+  }
+
+  private enterRematchDraft(): void {
+    const state = ChallengeSystem.getState();
+    if (!state?.online) return;
+
+    this.stopResultPolling();
+    this.clearTransient();
+    this.statusPage.setStatus('', Palette.inkDim);
+    this.restoreRoomFromState(state);
+    this.draftConfirmed = false;
+    this.draftSubmissionStarted = false;
+    this.rematchRequestStarted = false;
+    this.buildHeading('REMATCH', `Der Raum bleibt offen: ${this.roomCode}`);
+
+    const statusText = this.add
+      .text(
+        GAME_WIDTH / 2,
+        this.statusPage.contentY(420),
+        'Talent-Build festlegen ...',
+        textStyle(FontSize.small, Palette.ink),
+      )
+      .setOrigin(0.5)
+      .setWordWrapWidth(GAME_WIDTH - 140)
+      .setAlign('center');
+    this.keep(statusText);
+
+    this.buildOnlineTalentDraft(statusText, 'REMATCH ANFRAGEN', () => {
+      void this.requestOnlineRematch(statusText);
+    });
+    this.buildBackToMenu('ZUM MENÜ');
+  }
+
+  private async requestOnlineRematch(statusText: Phaser.GameObjects.Text): Promise<void> {
+    if (this.rematchRequestStarted) return;
+    this.rematchRequestStarted = true;
+    const localIndex: 0 | 1 = this.isHost ? 0 : 1;
+    const draft = ChallengeSystem.duelTalentDraftFor(localIndex);
+    const result = await NetworkDuelSystem.requestRematch(
+      this.roomCode,
+      draft,
+      this.participantToken,
+    );
+    if (!this.scene.isActive()) return;
+    if (!result.ok) {
+      this.rematchRequestStarted = false;
+      this.talentDraftView?.setEnabled(true);
+      this.draftConfirmButton?.setEnabled(true);
+      statusText.setText(result.error).setColor(Palette.danger);
+      return;
+    }
+
+    this.lastKnownMatchNumber = result.value.matchNumber;
+    if (result.value.seed) {
+      this.resetOnlineMatchAndRestart(result.value.seed, result.value.matchNumber);
+      return;
+    }
+
+    statusText
+      .setText('Dein Rematch ist vorgemerkt. Warte auf den Freund ...')
+      .setColor(Palette.ink);
+    this.startRematchPolling(statusText);
+  }
+
+  private startRematchPolling(statusText: Phaser.GameObjects.Text): void {
+    if (this.rematchPollTimer) return;
+    this.rematchPollTimer = this.time.addEvent({
+      delay: ONLINE_DUEL_START_POLL_INTERVAL_MS,
+      loop: true,
+      callback: () => void this.pollRematch(statusText),
+    });
+  }
+
+  private async pollRematch(statusText: Phaser.GameObjects.Text): Promise<void> {
+    if (!this.scene.isActive() || !this.rematchPollTimer) return;
+    const result = await NetworkDuelSystem.getRoomStatus(this.roomCode, this.participantToken);
+    if (!this.scene.isActive() || !this.rematchPollTimer) return;
+    if (!result.ok || !result.value) {
+      if (!result.ok) statusText.setText(result.error).setColor(Palette.danger);
+      return;
+    }
+    if (result.value.matchNumber <= this.lastKnownMatchNumber) return;
+
+    this.resetOnlineMatchAndRestart(result.value.seed, result.value.matchNumber, [
+      result.value.hostTalentDraft,
+      result.value.guestTalentDraft,
+    ]);
+  }
+
+  private resetOnlineMatchAndRestart(
+    seed: string,
+    matchNumber: number,
+    drafts?: [TalentRanks, TalentRanks],
+  ): void {
+    if (this.rematchPollTimer) {
+      this.rematchPollTimer.remove();
+      this.rematchPollTimer = null;
+    }
+    if (!ChallengeSystem.resetOnlineMatch(seed, matchNumber, drafts)) return;
+    this.scene.restart({ phase: 'rematch' });
   }
 
   /**
@@ -829,8 +1100,14 @@ export class OnlineDuelScene extends Phaser.Scene {
   }
 
   private clearTransient(): void {
+    if (this.talentDraftTimer) {
+      this.talentDraftTimer.remove();
+      this.talentDraftTimer = null;
+    }
     for (const object of this.transient) object.destroy();
     this.transient = [];
     this.codeInput = null;
+    this.talentDraftView = null;
+    this.draftConfirmButton = null;
   }
 }

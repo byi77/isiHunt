@@ -80,6 +80,17 @@ describe('start und clear', () => {
 
     expect(state.rounds).toHaveLength(0);
   });
+
+  it('uebernimmt den letzten Talent-Build als Rematch-Vorschlag', () => {
+    const first = ChallengeSystem.start(DEFAULT_WORLD_ID, [{ reach: 3 }, { fortune: 2 }]);
+    expect(ChallengeSystem.duelTalentDraftFor(0)).toEqual({ reach: 3 });
+
+    ChallengeSystem.changeDuelTalentRank(0, 'reach', -1, 10);
+    const second = ChallengeSystem.rematch();
+
+    expect(second.duelTalentDrafts).toEqual([{ reach: 2 }, { fortune: 2 }]);
+    expect(second.seed).not.toBe(first.seed);
+  });
 });
 
 describe('rematch', () => {
@@ -366,11 +377,25 @@ describe('Netzwerk-Duell', () => {
     expect(ChallengeSystem.getState()?.online).toBeUndefined();
   });
 
-  it('faellt bei einem Rematch auf das lokale Duell zurueck (Netzwerk-Rematch ist eine spaetere Ausbaustufe)', () => {
-    ChallengeSystem.startOnline(DEFAULT_WORLD_ID, 'seed-abc', 'CODE01', 0);
+  it('behaelt beim Netzwerk-Rematch Raum und Spielerposition', () => {
+    const first = ChallengeSystem.startOnline(
+      DEFAULT_WORLD_ID,
+      'seed-abc',
+      'CODE01',
+      0,
+      'a'.repeat(64),
+      [{ reach: 2 }, { fortune: 3 }],
+    );
     const second = ChallengeSystem.rematch();
 
-    expect(second.kind).toBe('duel');
+    expect(second).toBe(first);
+    expect(second.kind).toBe('duel-online');
+    expect(second.online?.roomCode).toBe('CODE01');
+
+    ChallengeSystem.resetOnlineMatch('seed-rematch', 2);
+    expect(ChallengeSystem.getState()?.seed).toBe('seed-rematch');
+    expect(ChallengeSystem.getState()?.duelMatchNumber).toBe(2);
+    expect(ChallengeSystem.getState()?.duelTalentDrafts).toEqual([{ reach: 2 }, { fortune: 3 }]);
   });
 });
 
