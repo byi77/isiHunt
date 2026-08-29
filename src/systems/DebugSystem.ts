@@ -53,6 +53,7 @@ let tapTimestamps: number[] = [];
 let debugModeCache: boolean | null = null;
 let consoleCaptureInstalled = false;
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
+let soundDiagnosticsProvider: (() => string) | null = null;
 
 /**
  * Laedt den beim letzten Beenden gespeicherten Puffer, damit ein
@@ -152,6 +153,16 @@ export function getLogBuffer(): readonly LogEntry[] {
 
 export function getProtectedLogBuffer(): readonly LogEntry[] {
   return protectedBuffer;
+}
+
+/**
+ * Bindet die optionale Audio-Diagnose aus dem App-Einstieg an. Der Debug-
+ * Kern bleibt dadurch frei von einem statischen SoundSystem-/Phaser-Import;
+ * das haelt Cloud- und Testpfade klein und verhindert einen nutzlosen
+ * dynamisch-plus-statisch-Import im Produktionsbundle.
+ */
+export function setSoundDiagnosticsProvider(provider: (() => string) | null): void {
+  soundDiagnosticsProvider = provider;
 }
 
 /** Loescht beide Puffer auch aus dem localStorage - fuer Tests und einen moeglichen "Log leeren"-Knopf. */
@@ -340,14 +351,6 @@ export async function buildReport(
 ): Promise<string> {
   const device = measureDevice();
   const storageLine = await readWebStorageLine();
-  // Dynamischer Import statt eines statischen Modulkopf-Imports: SoundSystem
-  // haengt (ueber EventBus) an Phaser, das darf aber nicht in den statischen
-  // Importbaum dieser Datei einfliessen - CloudSystem/AuthSystem importieren
-  // pushLogEntry() auch aus reinen Vitest-Kontexten ohne Canvas-Mock, wo ein
-  // statischer Phaser-Import beim Modulladen sofort bricht
-  // (CanvasFeatures.js). buildReport() laeuft ohnehin nur im echten Browser.
-  const SoundSystem = await import('@/systems/SoundSystem');
-
   return [
     `isiHunt Debug-Report`,
     `Zeit        ${new Date().toISOString()}`,
@@ -365,7 +368,7 @@ export async function buildReport(
     screenshotDiagnosticsLine(canvas),
     '',
     'TON-DIAGNOSE',
-    SoundSystem.formatDiagnostics(SoundSystem.getDiagnostics()),
+    soundDiagnosticsProvider?.() ?? 'Nicht verfuegbar (Audio-Diagnose nicht initialisiert)',
     '',
     // Zuerst der geschuetzte Puffer: er traegt die seltenen Ereignisse, die
     // eine Diagnose ueberhaupt erst moeglich machen, und wuerde am Ende eines

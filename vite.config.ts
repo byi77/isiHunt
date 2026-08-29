@@ -94,6 +94,9 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
+    // Supabase wird nur von Cloud-/Auth-Pfaden benoetigt; ein eigener Chunk
+    // haelt den App-Entry unter der Warnschwelle und bleibt separat cachebar.
+    chunkSizeWarningLimit: 600,
     // Keine Sourcemaps im Deploy: sie machten 15 der 21 MB in `dist` aus.
     // Der Browser laedt sie zwar erst beim Oeffnen der DevTools, aber sie
     // belasten Deploy-Dauer und das Pages-Kontingent ohne Gegenwert.
@@ -105,6 +108,7 @@ export default defineConfig({
         // Phaser ist gross und aendert sich selten -> eigener Chunk fuers Caching.
         manualChunks: {
           phaser: ['phaser'],
+          supabase: ['@supabase/supabase-js'],
         },
       },
     },

@@ -606,9 +606,13 @@ export function isAvailable(): boolean {
  */
 async function withTimeout<T>(operation: PromiseLike<T>, label: string): Promise<CloudResult<T>> {
   const startedAt = Date.now();
+  let timeoutId: number | undefined;
   try {
     const timeout = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('Zeitüberschreitung')), BACKEND_TIMEOUT_MS);
+      timeoutId = window.setTimeout(
+        () => reject(new Error('Zeitüberschreitung')),
+        BACKEND_TIMEOUT_MS,
+      );
     });
 
     const value = await Promise.race([operation, timeout]);
@@ -629,6 +633,8 @@ async function withTimeout<T>(operation: PromiseLike<T>, label: string): Promise
     });
     console.warn(`[CloudSystem] ${label} fehlgeschlagen:`, error);
     return { ok: false, error: `${label}: ${reason}` };
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
   }
 }
 

@@ -105,14 +105,20 @@ function client() {
 }
 
 async function request<T>(operation: PromiseLike<T>, label: string): Promise<CloudResult<T>> {
+  let timeoutId: number | undefined;
   try {
     const timeout = new Promise<never>((_, reject) => {
-      window.setTimeout(() => reject(new Error('Zeitüberschreitung')), BACKEND_TIMEOUT_MS);
+      timeoutId = window.setTimeout(
+        () => reject(new Error('Zeitüberschreitung')),
+        BACKEND_TIMEOUT_MS,
+      );
     });
     return { ok: true, value: await Promise.race([operation, timeout]) };
   } catch (error) {
     const reason = error instanceof Error ? error.message : 'Unbekannter Fehler';
     return { ok: false, error: `${label}: ${reason}` };
+  } finally {
+    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
   }
 }
 

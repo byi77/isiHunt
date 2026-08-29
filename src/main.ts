@@ -159,6 +159,9 @@ if (isStandalone()) document.documentElement.classList.add('standalone-app');
 // Der AudioContext darf auf iOS erst nach einer Nutzergeste laufen. Das
 // SoundSystem wartet deshalb auf den ersten Tipp und bleibt ansonsten still.
 SoundSystem.initialize();
+DebugSystem.setSoundDiagnosticsProvider(() =>
+  SoundSystem.formatDiagnostics(SoundSystem.getDiagnostics()),
+);
 SafeAreaSystem.initialize();
 AuthSystem.initialize();
 
