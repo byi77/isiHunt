@@ -9,6 +9,10 @@ const authCatalogMigration = readFileSync(
   resolve(sqlDir, 'phase_2_30_auth_catalog_limits.sql'),
   'utf8',
 );
+const duelLeaderboardMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_31_duel_leaderboard_outbox.sql'),
+  'utf8',
+);
 const verification = readFileSync(resolve(sqlDir, 'verify_security_hardening.sql'), 'utf8');
 
 const failures = [];
@@ -56,9 +60,12 @@ requireText(exploitMigration, 'profile_progress_event_cooldown', 'Progress-Dross
 requireText(authCatalogMigration, 'cosmetic_catalog', 'Kosmetik-Katalog');
 requireText(authCatalogMigration, 'save_payload_limits', 'Save-Payload-Grenze');
 requireText(authCatalogMigration, 'duel_room_limits', 'Duell-Payload-Grenze');
+requireText(duelLeaderboardMigration, 'server_seed', 'Server-Duell-Seed');
+requireText(duelLeaderboardMigration, 'max_plausible_score', 'Duell-Ergebnispruefung');
+requireText(duelLeaderboardMigration, 'authenticated_score_evidence', 'Leaderboard-Nachweis');
 
 const migrationFiles = readdirSync(sqlDir).filter((name) =>
-  /^phase_2_(2[89]|30)_.*\.sql$/.test(name),
+  /^phase_2_(2[89]|30|31)_.*\.sql$/.test(name),
 );
 for (const file of migrationFiles) {
   const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();

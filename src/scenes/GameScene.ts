@@ -711,6 +711,8 @@ export class GameScene extends Phaser.Scene {
         score: stats.score,
         bestCombo: stats.bestCombo,
         totalCollected: stats.totalCollected,
+        durationMs: stats.durationMs,
+        collected: stats.collected,
       };
       const playerIndex = this.playerIndex as 0 | 1;
 

@@ -93,11 +93,10 @@ export function normalizeRoomCode(raw: string): string {
 /**
  * Erzeugt einen neuen Duell-Raum mit frischem Seed und Code.
  *
- * Der Seed wird hier (nicht serverseitig) erzeugt, weil `crypto.
- * getRandomValues` im Client genauso gut geeignet ist und die RPC dadurch
- * keinen Zufallsgenerator braucht - der Server validiert nur Format, erzeugt
- * ihn aber nicht. Bei einer Code-Kollision (Postgres 23505) wird bis zu
- * dreimal neu versucht, exakt wie bei `CloudSystem.createSyncCode()`.
+ * Der Client liefert nur noch einen Kompatibilitaets-Seed mit. Neue
+ * Servermigrationen ersetzen ihn durch einen serverseitig erzeugten Seed und
+ * geben diesen zusammen mit dem Teilnehmer-Token zurueck. Bei einer
+ * Code-Kollision (Postgres 23505) wird bis zu dreimal neu versucht.
  */
 export async function createRoom(
   worldId: string,
@@ -116,11 +115,20 @@ export async function createRoom(
 
     if (!result.ok) return result;
     if (!result.value.error) {
-      const participantToken = String(result.value.data ?? '');
+      const rawRoom = String(result.value.data ?? '');
+      let participantToken = rawRoom;
+      let serverSeed = seed;
+      try {
+        const parsed = JSON.parse(rawRoom) as { participantToken?: unknown; seed?: unknown };
+        if (typeof parsed.participantToken === 'string') participantToken = parsed.participantToken;
+        if (typeof parsed.seed === 'string' && parsed.seed.length > 0) serverSeed = parsed.seed;
+      } catch {
+        // Alte Servermigration: Die Antwort war direkt das Teilnehmer-Token.
+      }
       if (!/^[a-f0-9]{64}$/i.test(participantToken)) {
         return { ok: false, error: 'Ungueltiges Teilnehmer-Token vom Server' };
       }
-      return { ok: true, value: { code, seed, participantToken } };
+      return { ok: true, value: { code, seed: serverSeed, participantToken } };
     }
 
     // 23505 = unique_violation. Alles andere ist ein echter Fehler.
@@ -134,7 +142,9 @@ export async function createRoom(
 
 /** Zufaelliger Seed fuer die Relikt-Abfolge - Format analog `ChallengeSystem.createSeed`. */
 function createSeed(): string {
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
 /** Tritt einem bestehenden Raum bei und liefert Seed/Welt fuer denselben Run. */
@@ -352,6 +362,9 @@ export interface DuelRoundResult {
   score: number;
   bestCombo: number;
   totalCollected: number;
+  /** Serverpruefung der echten Rundenstatistik; alte Clients bleiben lesbar. */
+  durationMs?: number;
+  collected?: Record<string, number>;
 }
 
 /**

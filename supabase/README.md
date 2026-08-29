@@ -43,6 +43,7 @@ Auf einer leeren Datenbank in dieser Reihenfolge einspielen:
 | 24  | `phase_2_28_integrity_hardening.sql`        | Account-Outbox, Save-CAS, Tagesbonus- und Duell-Integrität        |
 | 25  | `phase_2_29_exploit_hardening.sql`          | Tagesbonus-/Sync-Code-Replay und Progress-Farming begrenzen        |
 | 26  | `phase_2_30_auth_catalog_limits.sql`        | Auth-/Shop-Härtung und Grenzen für öffentliche RPC-Payloads        |
+| 27  | `phase_2_31_duel_leaderboard_outbox.sql`    | Server-Seed, Duell-Ergebnis- und Leaderboard-Nachweis             |
 
 `phase_2_23_talent_points.sql` enthält einen historischen globalen
 Testdaten-Reset. Das Skript bricht ohne ausdrückliches Opt-in ab. Nur wenn

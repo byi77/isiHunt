@@ -72,7 +72,10 @@ export class ResultScene extends Phaser.Scene {
     const nextGoalBottom = this.buildNextGoal(world.accent, progressionBottom + 18);
     this.buildBreakdown(stats, world.spaceVariant, nextGoalBottom + 42);
     ProgressSyncSystem.enqueueRun(stats, progression);
-    this.submitLeaderboardScore(stats);
+    // Fuer eingeloggte Scores muss das zugehoerige Progress-Event zuerst
+    // serverseitig akzeptiert sein; die Bestenliste bleibt dadurch kein
+    // unabhaengiger Schreibpfad fuer dieselben Client-Zahlen.
+    void ProgressSyncSystem.flush().then(() => this.submitLeaderboardScore(stats));
     this.uploadSave();
     this.buildButtons(stats.worldId, world.accent);
   }

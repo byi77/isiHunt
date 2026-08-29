@@ -10,6 +10,9 @@ import type { ProgressEvent, ProgressionResult, RunStats } from '@/types';
 const OUTBOX_KEY_PREFIX = 'isihunt.progress-events.v2.';
 const LEGACY_OUTBOX_KEY = 'isihunt.progress-events';
 const LEGACY_OUTBOX_QUARANTINE_KEY = 'isihunt.progress-events.unbound.v1';
+const INVALID_OUTBOX_KEY_PREFIX = 'isihunt.progress-events.invalid.v1.';
+const OUTBOX_MAX_EVENTS = 64;
+const OUTBOX_MAX_BYTES = 256 * 1024;
 let flushPromise: Promise<void> | null = null;
 let retryTimer: ReturnType<typeof setTimeout> | null = null;
 let retryAttempt = 0;
@@ -56,6 +59,10 @@ function accountOutboxKey(accountId: string): string {
   return `${OUTBOX_KEY_PREFIX}${accountId}`;
 }
 
+function invalidOutboxKey(accountId: string): string {
+  return `${INVALID_OUTBOX_KEY_PREFIX}${accountId}`;
+}
+
 /** Alte globale Events duerfen niemals still einem neuen Login gehoeren. */
 function quarantineLegacyOutbox(): void {
   try {
@@ -69,6 +76,61 @@ function quarantineLegacyOutbox(): void {
   }
 }
 
+function isFiniteInteger(value: unknown, min: number, max: number): value is number {
+  return typeof value === 'number' && Number.isInteger(value) && value >= min && value <= max;
+}
+
+function isCollected(value: unknown): value is Record<string, number> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const entries = Object.entries(value);
+  if (entries.length > 6) return false;
+  return entries.every(
+    ([key, count]) =>
+      ['poor', 'common', 'uncommon', 'rare', 'epic', 'legendary'].includes(key) &&
+      isFiniteInteger(count, 0, 632),
+  );
+}
+
+function isProgressEvent(value: unknown): value is ProgressEvent {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const event = value as Partial<ProgressEvent>;
+  const dailyKey = event.dailyKey;
+  return (
+    typeof event.eventId === 'string' &&
+    /^[0-9a-f-]{16,64}$/i.test(event.eventId) &&
+    typeof event.worldId === 'string' &&
+    event.worldId.length >= 1 &&
+    event.worldId.length <= 32 &&
+    isFiniteInteger(event.score, 0, 10_000_000) &&
+    isFiniteInteger(event.bestCombo, 0, 10_000) &&
+    isFiniteInteger(event.xpGained, 0, 10_000_000) &&
+    isFiniteInteger(event.durationMs, 0, 120_000) &&
+    isFiniteInteger(event.coinsGained, 0, 10_000_000) &&
+    isFiniteInteger(event.talentPointsGained, 0, 10_000) &&
+    isCollected(event.collected) &&
+    Array.isArray(event.unlockedAchievementIds) &&
+    event.unlockedAchievementIds.length <= 64 &&
+    event.unlockedAchievementIds.every(
+      (id) => typeof id === 'string' && id.length > 0 && id.length <= 64,
+    ) &&
+    (dailyKey === null || dailyKey === undefined || /^\d{4}-\d{2}-\d{2}$/.test(dailyKey)) &&
+    typeof event.createdAt === 'string' &&
+    Number.isFinite(Date.parse(event.createdAt))
+  );
+}
+
+function quarantineInvalidEvents(accountId: string, events: unknown[]): void {
+  if (events.length === 0) return;
+  try {
+    window.localStorage.setItem(
+      invalidOutboxKey(accountId),
+      JSON.stringify(events).slice(0, OUTBOX_MAX_BYTES),
+    );
+  } catch {
+    // Quarantene ist nur Diagnosehilfe und darf den Spielfluss nicht blockieren.
+  }
+}
+
 function readOutbox(accountId: string | null): ProgressEvent[] {
   quarantineLegacyOutbox();
   if (!accountId) return [];
@@ -76,17 +138,37 @@ function readOutbox(accountId: string | null): ProgressEvent[] {
     const raw = window.localStorage.getItem(accountOutboxKey(accountId));
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as ProgressEvent[]) : [];
+    if (!Array.isArray(parsed)) return [];
+    const valid = parsed.filter(isProgressEvent);
+    if (valid.length !== parsed.length) {
+      quarantineInvalidEvents(
+        accountId,
+        parsed.filter((event) => !isProgressEvent(event)),
+      );
+      writeOutbox(accountId, valid);
+    }
+    return valid;
   } catch {
     return [];
   }
 }
 
-function writeOutbox(accountId: string, events: ProgressEvent[]): void {
+function writeOutbox(accountId: string, events: ProgressEvent[]): boolean {
+  if (events.length > OUTBOX_MAX_EVENTS) {
+    console.warn('[ProgressSyncSystem] Outbox-Limit erreicht.');
+    return false;
+  }
   try {
-    window.localStorage.setItem(accountOutboxKey(accountId), JSON.stringify(events));
+    const serialized = JSON.stringify(events);
+    if (serialized.length > OUTBOX_MAX_BYTES) {
+      console.warn('[ProgressSyncSystem] Outbox zu gross.');
+      return false;
+    }
+    window.localStorage.setItem(accountOutboxKey(accountId), serialized);
+    return true;
   } catch (error) {
     console.warn('[ProgressSyncSystem] Outbox nicht speicherbar.', error);
+    return false;
   }
 }
 
@@ -116,8 +198,12 @@ export function enqueueRun(
     createdAt: new Date().toISOString(),
   };
 
-  writeOutbox(accountId, [...readOutbox(accountId), event]);
-  return eventId;
+  const pending = readOutbox(accountId);
+  if (pending.length >= OUTBOX_MAX_EVENTS) {
+    console.warn('[ProgressSyncSystem] Neuer Run wegen voller Outbox verworfen.');
+    return null;
+  }
+  return writeOutbox(accountId, [...pending, event]) ? eventId : null;
 }
 
 /** Überträgt wartende Runs in Reihenfolge; Fehler bleiben in der Outbox. */
