@@ -42,6 +42,10 @@ const duelMultiInviteMigration = readFileSync(
   resolve(sqlDir, 'phase_2_39_duel_lobby_multi_invites.sql'),
   'utf8',
 );
+const duelInvitationListingFixMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_40_fix_duel_invitation_listing.sql'),
+  'utf8',
+);
 const verification = readFileSync(resolve(sqlDir, 'verify_security_hardening.sql'), 'utf8');
 const migrationVerification = readFileSync(resolve(sqlDir, 'verify_migration_state.sql'), 'utf8');
 
@@ -134,9 +138,25 @@ requireText(duelMultiInviteMigration, 'duel_invitations_room_uidx', 'Alte Raum-E
 requireText(duelMultiInviteMigration, 'duel_room_participants', 'Einladungs-Slot-Pruefung');
 requireText(duelMultiInviteMigration, 'schema_version = 38', 'Migrationsguard Phase 2.39');
 requireText(duelMultiInviteMigration, 'schema_version = 39', 'Migrationsmarker Phase 2.39');
+requireText(
+  duelInvitationListingFixMigration,
+  'update public.duel_invitations as i',
+  'Eindeutige Ablaufspalte im Einladungslisting',
+);
+requireText(
+  duelInvitationListingFixMigration,
+  'i.expires_at <= now()',
+  'Qualifizierte Ablaufpruefung im Einladungslisting',
+);
+requireText(duelInvitationListingFixMigration, 'schema_version = 39', 'Migrationsguard Phase 2.40');
+requireText(
+  duelInvitationListingFixMigration,
+  'schema_version = 40',
+  'Migrationsmarker Phase 2.40',
+);
 
 const migrationFiles = readdirSync(sqlDir).filter((name) =>
-  /^phase_2_(2[89]|30|31|32|33|34|35|36|37|38|39)_.*\.sql$/.test(name),
+  /^phase_2_(2[89]|30|31|32|33|34|35|36|37|38|39|40)_.*\.sql$/.test(name),
 );
 for (const file of migrationFiles) {
   const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();

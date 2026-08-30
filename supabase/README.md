@@ -52,6 +52,7 @@ Auf einer leeren Datenbank in dieser Reihenfolge einspielen:
 | 33  | `phase_2_37_duel_shared_realtime_topic.sql`  | Gemeinsamer Broadcast-/Presence-Kanal fuer beide Spieler          |
 | 34  | `phase_2_38_duel_four_player_lobby.sql`      | Oeffentliche Lobby fuer zwei bis vier Spieler und Host-Start      |
 | 35  | `phase_2_39_duel_lobby_multi_invites.sql`    | Mehrere direkte Einladungen in denselben Duellraum                |
+| 36  | `phase_2_40_fix_duel_invitation_listing.sql` | Fehlerkorrektur im Listing offener Duell-Einladungen              |
 
 `phase_2_23_talent_points.sql` enthält einen historischen globalen
 Testdaten-Reset. Das Skript bricht ohne ausdrückliches Opt-in ab. Nur wenn
