@@ -190,6 +190,8 @@ export class AdminStatsScene extends Phaser.Scene {
   }
 
   private renderUser(user: AdminUserStats, y: number, accent: number): void {
+    const leftColumnWidth = 250;
+    const rightColumnWidth = 260;
     this.content.push(
       createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 110, 116, accent, {
         alpha: 0.42,
@@ -203,16 +205,25 @@ export class AdminStatsScene extends Phaser.Scene {
           textStyle(FontSize.small, Palette.ink, { fontStyle: 'bold' }),
         )
         .setOrigin(0, 0.5)
-        .setWordWrapWidth(265),
+        .setWordWrapWidth(leftColumnWidth),
       this.add
         .text(
           74,
-          y + 6,
-          `Level ${user.level} · ${user.totalRuns} Runs · ${formatPlayTime(user.totalPlayTimeMs)}`,
+          y + 4,
+          `Level ${user.level} · ${user.totalRuns} Runs`,
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0, 0.5)
-        .setWordWrapWidth(390),
+        .setWordWrapWidth(leftColumnWidth),
+      this.add
+        .text(
+          74,
+          y + 31,
+          `Spielzeit ${formatPlayTime(user.totalPlayTimeMs)}`,
+          textStyle(14, Palette.inkDim),
+        )
+        .setOrigin(0, 0.5)
+        .setWordWrapWidth(leftColumnWidth),
       this.add
         .text(
           GAME_WIDTH - 74,
@@ -220,7 +231,9 @@ export class AdminStatsScene extends Phaser.Scene {
           `Verdient ${user.totalCoinsEarned.toLocaleString('de-DE')} C`,
           textStyle(FontSize.small, Palette.gold, { fontStyle: 'bold' }),
         )
-        .setOrigin(1, 0.5),
+        .setOrigin(1, 0.5)
+        .setWordWrapWidth(rightColumnWidth)
+        .setAlign('right'),
       this.add
         .text(
           GAME_WIDTH - 74,
@@ -228,7 +241,9 @@ export class AdminStatsScene extends Phaser.Scene {
           `Tasche ${user.currentCoins.toLocaleString('de-DE')} C · ${user.totalDailyRuns} Dailys`,
           textStyle(FontSize.tiny, toCss(accent)),
         )
-        .setOrigin(1, 0.5),
+        .setOrigin(1, 0.5)
+        .setWordWrapWidth(rightColumnWidth)
+        .setAlign('right'),
       this.add
         .text(
           GAME_WIDTH - 74,
@@ -236,7 +251,9 @@ export class AdminStatsScene extends Phaser.Scene {
           `${user.totalXp.toLocaleString('de-DE')} EP · ${user.achievementCount} Erfolge · Bestwert ${user.bestScore.toLocaleString('de-DE')}`,
           textStyle(FontSize.tiny, Palette.inkDim),
         )
-        .setOrigin(1, 0.5),
+        .setOrigin(1, 0.5)
+        .setWordWrapWidth(rightColumnWidth)
+        .setAlign('right'),
     );
   }
 

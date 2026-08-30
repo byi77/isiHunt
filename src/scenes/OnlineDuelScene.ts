@@ -1169,7 +1169,7 @@ export class OnlineDuelScene extends Phaser.Scene {
     for (const object of this.talentDraftView.objects) this.keep(object);
 
     const timerText = this.add
-      .text(GAME_WIDTH / 2, topY + 5 * 64 + 34, '', textStyle(FontSize.small, Palette.gold))
+      .text(GAME_WIDTH / 2, topY + 320, '', textStyle(FontSize.small, Palette.gold))
       .setOrigin(0.5);
     this.keep(timerText);
 

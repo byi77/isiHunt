@@ -8,7 +8,7 @@
 
 import Phaser from 'phaser';
 
-import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { GAME_WIDTH } from '@/config/GameConfig';
 import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as SaveSystem from '@/systems/SaveSystem';
@@ -216,13 +216,18 @@ export class SettingsScene extends Phaser.Scene {
       },
     });
 
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        GAME_HEIGHT - 180,
-        'Dein Spielstand wird automatisch lokal gespeichert.',
-        textStyle(FontSize.tiny, Palette.inkDim),
-      )
-      .setOrigin(0.5);
+    // Der Hinweis gehoert in die Impressumskarte. Als feste Textzeile bei
+    // GAME_HEIGHT - 180 lag er direkt ueber der scrollbaren Ueberschrift
+    // "IMPRESSUM" und kollidierte beim ersten Seitenaufbau mit ihr.
+    addContent(
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          legalY + 145,
+          'Dein Spielstand wird automatisch lokal gespeichert.',
+          textStyle(FontSize.tiny, Palette.inkDim),
+        )
+        .setOrigin(0.5),
+    );
   }
 }

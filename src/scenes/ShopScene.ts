@@ -255,7 +255,7 @@ export class ShopScene extends Phaser.Scene {
       .setDepth(KOPF_DEPTH);
 
     this.vorschau3dDom = this.add
-      .dom(GAME_WIDTH / 2, y - 45, 'div', {
+      .dom(GAME_WIDTH / 2, y - 58, 'div', {
         width: `${VORSCHAU_3D_BREITE}px`,
         height: `${VORSCHAU_3D_HOEHE}px`,
       })
@@ -282,6 +282,8 @@ export class ShopScene extends Phaser.Scene {
     this.vorschauName = this.add
       .text(GAME_WIDTH / 2, y + 32, '', textStyle(FontSize.small, Palette.ink))
       .setOrigin(0.5)
+      .setWordWrapWidth(GAME_WIDTH - 160)
+      .setAlign('center')
       .setDepth(KOPF_DEPTH);
 
     this.add
@@ -779,14 +781,14 @@ export class ShopScene extends Phaser.Scene {
 
     this.inhalt.push(
       this.add
-        .text(180, y - (untertitel ? 16 : 0), titel, textStyle(FontSize.body, Palette.ink))
+        .text(180, y - (untertitel ? 10 : 0), titel, textStyle(FontSize.body, Palette.ink))
         .setOrigin(0, 0.5) as ScrollElement,
     );
 
     if (untertitel) {
       this.inhalt.push(
         this.add
-          .text(180, y + 18, untertitel, {
+          .text(180, y + 28, untertitel, {
             ...textStyle(FontSize.tiny, Palette.inkDim),
             wordWrap: { width: textBreite },
           })

@@ -93,7 +93,7 @@ export function createTalentDraftView(
     );
 
     const rankText = scene.add
-      .text(centerX + 8, y, 'R0', textStyle(FontSize.tiny, Palette.ink, { fontStyle: 'bold' }))
+      .text(centerX + 20, y, 'R0', textStyle(FontSize.tiny, Palette.ink, { fontStyle: 'bold' }))
       .setOrigin(0.5);
     rankTexts.set(talent.id, rankText);
     objects.push(rankText);

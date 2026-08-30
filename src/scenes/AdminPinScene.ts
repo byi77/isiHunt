@@ -33,22 +33,22 @@ export class AdminPinScene extends Phaser.Scene {
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
 
-    const cardY = createMenuLayout().sections.next(220);
+    const cardY = createMenuLayout().sections.next(300);
     this.add
       .text(
         GAME_WIDTH / 2,
-        cardY - 65,
+        cardY - 78,
         'PIN nach der Versions-Geste eingeben',
         textStyle(FontSize.small, Palette.inkDim),
       )
       .setOrigin(0.5);
-    createPanel(this, GAME_WIDTH / 2, cardY, GAME_WIDTH - 150, 220, Palette.goldHex, {
+    createPanel(this, GAME_WIDTH / 2, cardY, GAME_WIDTH - 150, 300, Palette.goldHex, {
       alpha: 0.4,
       radius: 18,
     });
 
     const status = this.add
-      .text(GAME_WIDTH / 2, cardY + 98, '', textStyle(FontSize.small, Palette.danger))
+      .text(GAME_WIDTH / 2, cardY + 124, '', textStyle(FontSize.small, Palette.danger))
       .setOrigin(0.5);
     const input = createTextInput(this, GAME_WIDTH / 2, cardY, {
       inputType: 'password',
@@ -69,7 +69,7 @@ export class AdminPinScene extends Phaser.Scene {
       }
       this.scene.start(SceneKey.Admin);
     };
-    createButton(this, GAME_WIDTH / 2, cardY + 60, 'WARTUNG OEFFNEN', submit, {
+    createButton(this, GAME_WIDTH / 2, cardY + 75, 'WARTUNG OEFFNEN', submit, {
       width: 300,
       height: 62,
       accent: Palette.goldHex,

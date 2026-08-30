@@ -93,7 +93,6 @@ export class MenuScene extends Phaser.Scene {
   private profileAuraAsset: EgoAuraAsset | undefined;
   private profileAuraColor = 0xffffff;
   private profileAuraMs = 0;
-  private profilePanelBottom = 385;
   private readonly onlineHandler = (): void => {
     // Ausdruecklicher Anlass: Das Netz ist gerade zurueckgekehrt, ein
     // wartender Offline-Run soll sofort hoch - nicht erst nach der
@@ -916,7 +915,7 @@ export class MenuScene extends Phaser.Scene {
       { center: y - 26, height: FontSize.body },
       { center: y + 2, height: FontSize.body },
       { center: y + 28, height: FontSize.tiny },
-      { center: y + 49, height: FontSize.body },
+      { center: y + 49, height: FontSize.tiny },
       { center: y + 72, height: FontSize.tiny },
       { center: y + 93, height: FontSize.tiny },
       { center: y + 114, height: FontSize.tiny },
@@ -929,8 +928,6 @@ export class MenuScene extends Phaser.Scene {
     const panelBottom =
       Math.max(...rowBounds.map((row) => row.center + row.height / 2)) + panelPadding;
     const panelCenter = (panelTop + panelBottom) / 2;
-    this.profilePanelBottom = panelBottom;
-
     createPanel(
       this,
       GAME_WIDTH / 2,
@@ -985,7 +982,7 @@ export class MenuScene extends Phaser.Scene {
         172,
         y + 49,
         `COINS  ${coins.toLocaleString('de-DE')}`,
-        textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
+        textStyle(FontSize.tiny, Palette.gold, { fontStyle: 'bold' }),
       )
       .setOrigin(0, 0.5)
       .setLetterSpacing(3);
@@ -1023,21 +1020,25 @@ export class MenuScene extends Phaser.Scene {
   private buildWorldList(level: number): void {
     this.cleanupWorldList();
 
-    const step = 112;
     const selectedIndex = Math.max(
       0,
       WORLDS.findIndex((world) => world.id === this.selectedWorld.id),
     );
-    // Bei einer spaeten Welt liegt die vorherige Karte oberhalb des
-    // Auswahlzentrums. Der Profilblock ist durch Form/Farbe/Aura hoeher
-    // geworden; verschiebe das Wheel dann gemeinsam nach unten, statt die
-    // Karte in den Profiltext laufen zu lassen.
-    const centerY = selectedIndex > 0 ? Math.max(530, this.profilePanelBottom + step + 52) : 530;
+    // Spaetere Welten brauchen drei Karten, obwohl der Profilblock hoeher
+    // endet: Die kleinere Kartenhoehe haelt die obere Nachbarkarte aus dem
+    // Profil und die untere aus dem Wisch-Hinweis heraus.
+    const compactWheel = selectedIndex > 0;
+    const step = compactWheel ? 118 : 112;
+    // Das Wheel bleibt auf einer festen Linie: Unterhalb davon liegen der
+    // Wisch-Hinweis, ein moeglicher Update-Banner und die Footer-Aktionen.
+    // Bei spaeten Welten wird deshalb nur die Kartenhoehe reduziert, damit
+    // die obere Nachbarkarte trotzdem unter dem Profilblock beginnt.
+    const centerY = 530;
 
     const carousel = this.add.container(0, 0);
     this.worldCarousel = carousel;
     const cardWidth = GAME_WIDTH - 120;
-    const cardHeight = 96;
+    const cardHeight = compactWheel ? 80 : 96;
     const wheelCards: Array<{
       card: Phaser.GameObjects.Container;
       offset: number;
@@ -1103,7 +1104,11 @@ export class MenuScene extends Phaser.Scene {
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0, 0.5);
-      subtitle.setWordWrapWidth(isUnlocked ? cardWidth - 150 : cardWidth - 76);
+      // Die aktive Karte hat rechts neben dem Text noch das Info-Symbol.
+      // Seine Sichtflaeche bleibt deshalb auch bei langen Welttexten frei.
+      subtitle.setWordWrapWidth(
+        isUnlocked && isSelected ? cardWidth - 220 : isUnlocked ? cardWidth - 150 : cardWidth - 76,
+      );
       card.add(subtitle);
 
       // Nur die ausgewaehlte, freigeschaltete Karte bekommt das Info-Symbol -

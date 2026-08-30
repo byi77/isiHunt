@@ -128,7 +128,7 @@ export class ChallengeScene extends Phaser.Scene {
 
     const needsDraft = usesTalentDraft(kind);
     if (needsDraft) {
-      this.buildTalentDraft(world, kind as 'duel' | 'bot', 370, 286);
+      this.buildTalentDraft(world, kind as 'duel' | 'bot', 420, 286);
       return;
     }
 
@@ -200,25 +200,27 @@ export class ChallengeScene extends Phaser.Scene {
     world: WorldDef,
     kind: 'duel' | 'bot',
     topY: number,
-    infoY: number,
+    infoY?: number,
   ): void {
     const playerIndex = kind === 'bot' ? 0 : ChallengeSystem.currentPlayerIndex();
     const initialRanks = ChallengeSystem.duelTalentDraftFor(playerIndex);
     const hasSuggestion = Object.values(initialRanks).some((rank) => rank > 0);
-    this.add
-      .text(
-        GAME_WIDTH / 2,
-        infoY,
-        kind === 'bot'
-          ? `Mittelstarker Bot: Halte deine Serie aktiv. Siegbonus: +${BOT_VICTORY_BONUS_COINS} Coins und +${BOT_VICTORY_BONUS_XP} XP.`
-          : hasSuggestion
-            ? 'Dein Build aus dem letzten Duell ist vorgeschlagen. Ändere ihn mit + und −.'
-            : `Verteile ${DUEL_TALENT_POINT_BUDGET} Punkte mit + und −.`,
-        textStyle(FontSize.small, Palette.ink),
-      )
-      .setOrigin(0.5)
-      .setWordWrapWidth(GAME_WIDTH - 100)
-      .setAlign('center');
+    if (infoY !== undefined) {
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          infoY,
+          kind === 'bot'
+            ? `Mittelstarker Bot: Halte deine Serie aktiv. Siegbonus: +${BOT_VICTORY_BONUS_COINS} Coins und +${BOT_VICTORY_BONUS_XP} XP.`
+            : hasSuggestion
+              ? 'Dein Build aus dem letzten Duell ist vorgeschlagen. Ändere ihn mit + und −.'
+              : `Verteile ${DUEL_TALENT_POINT_BUDGET} Punkte mit + und −.`,
+          textStyle(FontSize.small, Palette.ink),
+        )
+        .setOrigin(0.5)
+        .setWordWrapWidth(GAME_WIDTH - 100)
+        .setAlign('center');
+    }
 
     this.talentDraftView = createTalentDraftView(this, {
       initialRanks,
@@ -230,7 +232,7 @@ export class ChallengeScene extends Phaser.Scene {
     });
 
     const timerText = this.add
-      .text(GAME_WIDTH / 2, topY + 5 * 64 + 34, '', textStyle(FontSize.small, Palette.gold))
+      .text(GAME_WIDTH / 2, topY + 320, '', textStyle(FontSize.small, Palette.gold))
       .setOrigin(0.5);
 
     const start = (): void => {
@@ -315,7 +317,10 @@ export class ChallengeScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
 
-    this.buildTalentDraft(world, 'duel', 600, 585);
+    // Die Uebergabe-Karte erklaert den naechsten Schritt bereits in der
+    // Kopfzeile. Eine zusaetzliche Infobox haette zwischen Ergebniszeile,
+    // Zusammenfassung und Talentkarten keinen sicheren Abstand.
+    this.buildTalentDraft(world, 'duel', 630);
   }
 
   // --- Phase 3: Ergebnis ------------------------------------------------------

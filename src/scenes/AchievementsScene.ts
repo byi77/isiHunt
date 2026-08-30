@@ -55,7 +55,7 @@ export class AchievementsScene extends Phaser.Scene {
     const nextAchievement = getNextAchievement(ACHIEVEMENTS, save);
     const columnX = [190, 530] as const;
     const rowTop = sections.next(112);
-    const rowStep = 145;
+    const rowStep = 195;
     pageAchievements.forEach((achievement, index) => {
       const column = index < 5 ? 0 : 1;
       const row = column === 0 ? index : index - 5;
@@ -65,7 +65,7 @@ export class AchievementsScene extends Phaser.Scene {
       const y = rowTop + row * rowStep;
 
       const progress = getAchievementProgress(achievement, save);
-      createPanel(this, x, y, 316, 124, accent, {
+      createPanel(this, x, y, 316, 180, accent, {
         alpha: isUnlocked ? 0.58 : 0.38,
         radius: 14,
       });
@@ -74,45 +74,41 @@ export class AchievementsScene extends Phaser.Scene {
       const rankBadge = this.add.graphics();
       rankBadge.fillStyle(isUnlocked ? Palette.goldHex : 0x69738d, isUnlocked ? 0.2 : 0.16);
       rankBadge.lineStyle(1.5, isUnlocked ? Palette.goldHex : 0x69738d, 0.75);
-      rankBadge.fillRoundedRect(x - 104, y - 49, 92, 28, 8);
-      rankBadge.strokeRoundedRect(x - 104, y - 49, 92, 28, 8);
+      rankBadge.fillRoundedRect(x - 104, y - 78, 92, 28, 8);
+      rankBadge.strokeRoundedRect(x - 104, y - 78, 92, 28, 8);
 
       this.add
         .text(
           x - 94,
-          y - 35,
+          y - 64,
           `RANG ${achievement.rank} · +${achievement.coinReward}`,
-          textStyle(FontSize.small, isUnlocked ? Palette.gold : Palette.inkDim, {
-            fontStyle: 'bold',
-          }),
-        )
-        .setOrigin(0, 0.5);
-      if (nextAchievement?.id === achievement.id) {
-        this.add
-          .text(
-            x + 8,
-            y - 13,
-            'NÄCHSTES ZIEL',
-            textStyle(FontSize.tiny, Palette.gold, { fontStyle: 'bold' }),
-          )
-          .setOrigin(0, 0.5);
-      }
-      this.add
-        .text(
-          x + 8,
-          y - 35,
-          achievementCategoryLabel(progress.category),
           textStyle(FontSize.tiny, isUnlocked ? Palette.gold : Palette.inkDim, {
             fontStyle: 'bold',
           }),
         )
         .setOrigin(0, 0.5);
+      this.add
+        .text(
+          x + 140,
+          y - 64,
+          nextAchievement?.id === achievement.id
+            ? 'NÄCHSTES ZIEL'
+            : achievementCategoryLabel(progress.category),
+          textStyle(
+            FontSize.tiny,
+            nextAchievement?.id === achievement.id || isUnlocked ? Palette.gold : Palette.inkDim,
+            {
+              fontStyle: 'bold',
+            },
+          ),
+        )
+        .setOrigin(1, 0.5);
       const nameText = this.add
         .text(
           x - 102,
-          y - 6,
+          y - 35,
           achievement.name,
-          textStyle(FontSize.small, isUnlocked ? Palette.ink : Palette.inkDim, {
+          textStyle(FontSize.tiny, isUnlocked ? Palette.ink : Palette.inkDim, {
             fontStyle: 'bold',
           }),
         )
@@ -130,7 +126,7 @@ export class AchievementsScene extends Phaser.Scene {
       this.add
         .text(
           x - 102,
-          nameText.y + nameText.height + 2,
+          nameText.y + nameText.height + 3,
           achievement.description,
           textStyle(FontSize.tiny, isUnlocked ? Palette.ink : Palette.inkDim),
         )
@@ -140,9 +136,9 @@ export class AchievementsScene extends Phaser.Scene {
       this.add
         .text(
           x - 102,
-          y + 48,
+          y + 66,
           progress.trackable ? `FORTSCHRITT  ${progress.label}` : progress.label,
-          textStyle(FontSize.tiny, isUnlocked ? Palette.gold : Palette.inkDim, {
+          textStyle(14, isUnlocked ? Palette.gold : Palette.inkDim, {
             fontStyle: 'bold',
           }),
         )

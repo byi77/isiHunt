@@ -4,7 +4,7 @@ Diese Dateien beschreiben den Serverteil von isiHunt: Tabellen, Zugriffsregeln
 und die RPC-Funktionen, über die das Spiel mit der Datenbank spricht.
 
 **Warum es diese Datei gibt.** `docs/ARCHITECTURE.md` nannte lange nur
-`schema.sql` — tatsächlich liegen hier 38 geordnete Migrationen, die
+`schema.sql` — tatsächlich liegen hier 40 geordnete Migrationen, die
 aufeinander aufbauen. Wer die Datenbank neu aufsetzen muss, findet hier die
 verbindliche Reihenfolge und den aktuellen Live-Nachweis.
 
@@ -55,6 +55,8 @@ Auf einer leeren Datenbank in dieser Reihenfolge einspielen:
 | 36  | `phase_2_40_fix_duel_invitation_listing.sql` | Fehlerkorrektur im Listing offener Duell-Einladungen                |
 | 37  | `phase_2_41_fix_duel_invitation_accept.sql`  | Fehlerkorrektur beim Annehmen direkter Duell-Einladungen            |
 | 38  | `phase_2_42_duel_initial_talent_draft.sql`   | Talentauswahl vor dem ersten Duellstart, serverseitige Ready-Sperre |
+| 39  | `phase_2_43_duel_room_leave.sql`             | Duellraum beim bewussten Verlassen sofort freigeben                 |
+| 40  | `phase_2_44_duel_leaderboard.sql`            | Mehrspieler-Rangliste fuer 2 bis 4 Teilnehmer mit Elo-Wertung       |
 
 ## Aktueller Live-Stand
 
@@ -71,6 +73,12 @@ Am 2026-08-30 wurde der verknuepfte Supabase-Stand mit
 - Der neue Talentphasen-RPC ist fuer die anonymen Test-Clients und angemeldete
   Clients freigegeben; die produktive Einladungsliste bleibt an die Anmeldung
   gebunden.
+
+Die neuen Phasen 2.43 und 2.44 sind vorbereitet und muessen fuer den Fix des
+Leave-Problems sowie die Duell-Rangliste noch in dieser Reihenfolge ausgefuehrt
+werden. Danach erwartet `verify_migration_state.sql` den Marker
+`schema_version = 44`. Die Duell-Rangliste umfasst 2-, 3- und 4-Spieler-Matches;
+anonyme oder nicht vollstaendig beendete Raeume werden nicht gewertet.
 
 Der Nachweis wird erneut ausgefuehrt mit:
 
