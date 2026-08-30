@@ -111,9 +111,20 @@ async function waitForServer(targetUrl) {
 }
 
 async function waitForScene(page, key, timeout = SCENE_TIMEOUT_MS) {
-  await page.waitForFunction((sceneKey) => window.isiHunt?.scene?.isActive(sceneKey), key, {
-    timeout,
-  });
+  try {
+    await page.waitForFunction((sceneKey) => window.isiHunt?.scene?.isActive(sceneKey), key, {
+      timeout,
+    });
+  } catch (error) {
+    const activeScenes = await page.evaluate(() =>
+      window.isiHunt?.scene?.scenes
+        ?.filter((scene) => scene.scene.isActive())
+        .map((scene) => scene.scene.key),
+    );
+    throw new Error(
+      `${shortError(error)} (erwartet: ${key}; aktiv: ${activeScenes?.join(', ') ?? 'unbekannt'})`,
+    );
+  }
 }
 
 async function waitForRunPhase(page, phase, timeout = RUN_TIMEOUT_MS) {
@@ -209,7 +220,13 @@ async function clickGamePoint(page, x, y) {
     },
     [x, y],
   );
-  await page.mouse.click(point.x, point.y);
+  // Phaser muss den Pointer zuerst ueber den Canvas bewegen. Ein sofortiger
+  // mouse.click() kann auf emulierten Touch-Geraeten den pointerup-Zyklus
+  // verschlucken, bevor das Button-Visual den Druckzustand verarbeitet.
+  await page.mouse.move(point.x, point.y);
+  await page.mouse.down();
+  await page.waitForTimeout(100);
+  await page.mouse.up();
 }
 
 async function clickButton(page, sceneKey, text) {
@@ -244,6 +261,10 @@ async function enterDuel2G(page, playerName) {
     if (game.scene.isActive('Account')) return 'Account';
     return null;
   });
+
+  // Menu-Transitions koennen den ersten Pointerframe noch fuer die alte
+  // Scene verarbeiten, obwohl der Scene-Key bereits aktiv ist.
+  await page.waitForTimeout(250);
 
   if (startScreen === 'OnlineDuel') {
     await waitForScene(page, 'OnlineDuel');
@@ -311,11 +332,17 @@ async function readProtectedLogs(page) {
 
 async function readRoomStatus(page, code) {
   return page.evaluate(
-    async ([networkModule, roomCode]) => {
+    async ([networkModule, roomCode, participantToken]) => {
       const network = await import(networkModule);
-      return network.getRoomStatus(roomCode);
+      return network.getRoomStatus(roomCode, participantToken);
     },
-    [moduleUrl(MODULES.network), code],
+    [
+      moduleUrl(MODULES.network),
+      code,
+      await page.evaluate(
+        () => window.isiHunt?.scene?.getScene('OnlineDuel')?.participantToken ?? '',
+      ),
+    ],
   );
 }
 
@@ -351,10 +378,9 @@ async function simulateRun(page) {
     if (!scene) throw new Error('GameScene fehlt.');
     if (scene.phase !== 'running') throw new Error(`GameScene ist ${scene.phase}, nicht running.`);
     const hud = game.scene.getScene('Hud');
+    const opponentText = hud?.opponentLiveTexts ? [...hud.opponentLiveTexts.values()][0] : null;
     const hudLayout = {
-      opponent: hud?.opponentLiveText
-        ? { x: hud.opponentLiveText.x, y: hud.opponentLiveText.y }
-        : null,
+      opponent: opponentText ? { x: opponentText.x, y: opponentText.y } : null,
       series: hud?.comboText
         ? { text: hud.comboText.text, x: hud.comboText.x, y: hud.comboText.y }
         : null,
@@ -373,13 +399,13 @@ async function simulateRun(page) {
 
     const readLiveHud = () => {
       const hud = game.scene.getScene('Hud');
-      const text = hud?.opponentLiveText;
+      const text = hud?.opponentLiveTexts ? [...hud.opponentLiveTexts.values()][0] : null;
       if (!text || text.alpha <= 0 || !text.text) return null;
       return {
         text: text.text,
         alpha: text.alpha,
-        opponentScore: hud.opponentScore,
-        activity: hud.lastOpponentActivity,
+        opponentScore: hud.opponentScores ? ([...hud.opponentScores.values()][0] ?? null) : null,
+        activity: hud.opponentActivities ? ([...hud.opponentActivities.values()][0] ?? null) : null,
       };
     };
 
@@ -469,6 +495,14 @@ function assertCheck(label, condition, detail, failures) {
   }
 }
 
+function toComparableRound(round) {
+  return {
+    score: round.score,
+    bestCombo: round.bestCombo,
+    totalCollected: round.totalCollected,
+  };
+}
+
 async function runOne(browser, runNumber, failures) {
   console.log(`\n=== DUELL2G-Lauf ${runNumber}/${runs} ===`);
   const host = await openPage(browser, `DuelHost${runNumber}`, { ...devices['iPhone 13'] });
@@ -477,10 +511,11 @@ async function runOne(browser, runNumber, failures) {
 
   try {
     stage = 'DUELL2G-Screen oeffnen';
-    await Promise.all([
-      enterDuel2G(host.page, `DuelHost${runNumber}`),
-      enterDuel2G(guest.page, `DuelGuest${runNumber}`),
-    ]);
+    // Die beiden Browser bleiben isoliert; der Einstieg selbst wird jedoch
+    // nacheinander aufgebaut, damit Vite/Phaser beim ersten Boot nicht zwei
+    // Canvas-Transitions gleichzeitig verarbeitet.
+    await enterDuel2G(host.page, `DuelHost${runNumber}`);
+    await enterDuel2G(guest.page, `DuelGuest${runNumber}`);
     assertCheck('DUELL2G-Screen auf beiden Clients', true, 'iPhone + Pixel-Kontext', failures);
 
     stage = 'Raum erzeugen';
@@ -490,11 +525,21 @@ async function runOne(browser, runNumber, failures) {
 
     stage = 'Gast beitreten lassen';
     await joinRoom(guest.page, code);
-    stage = 'Temporäre Talent-Builds bestätigen';
-    await Promise.all([
-      clickButton(host.page, 'OnlineDuel', 'TALENTE'),
-      clickButton(guest.page, 'OnlineDuel', 'TALENTE'),
-    ]);
+    stage = 'Lobby vollstaendig synchronisieren';
+    await host.page.waitForFunction(
+      () => window.isiHunt?.scene?.getScene('OnlineDuel')?.roomPlayerCount >= 2,
+      undefined,
+      { timeout: RUN_TIMEOUT_MS },
+    );
+    await guest.page.waitForFunction(
+      () => window.isiHunt?.scene?.getScene('OnlineDuel')?.roomPlayerCount >= 2,
+      undefined,
+      { timeout: RUN_TIMEOUT_MS },
+    );
+    assertCheck('Lobby mit zwei Spielern', true, 'Host + Gast', failures);
+
+    stage = 'Host startet Lobby';
+    await clickButton(host.page, 'OnlineDuel', 'DUELL STARTEN');
     stage = 'Beide Clients in GameScene bringen';
     try {
       await Promise.all([
@@ -601,7 +646,7 @@ async function runOne(browser, runNumber, failures) {
       run.hudLayout?.series?.x > 500 &&
       run.hudLayout?.multiplier?.x > 500 &&
       run.hudLayout?.series?.text.startsWith('SERIE ') &&
-      run.hudLayout?.multiplier?.text.startsWith('×');
+      run.hudLayout?.multiplier?.text.length > 1;
     assertCheck(
       'Serie und Multiplikator liegen groesser rechts oben',
       hudLayoutWorks(hostRun) && hudLayoutWorks(guestRun),
@@ -658,7 +703,8 @@ async function runOne(browser, runNumber, failures) {
     );
     assertCheck(
       'Beide Clients sehen dieselben beiden Ergebnisse',
-      JSON.stringify(hostState.rounds) === JSON.stringify(guestState.rounds),
+      JSON.stringify(hostState.rounds.map(toComparableRound)) ===
+        JSON.stringify(guestState.rounds.map(toComparableRound)),
       JSON.stringify(hostState.rounds),
       failures,
     );

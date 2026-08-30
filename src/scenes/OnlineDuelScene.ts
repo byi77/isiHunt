@@ -107,6 +107,9 @@ export class OnlineDuelScene extends Phaser.Scene {
   }
 
   create(data: OnlineDuelSceneData = {}): void {
+    // Die alte Direkt-Einladungslobby darf keinen Zustand aus einer
+    // vorherigen Scene-Instanz in den Raumcode-Einstieg uebernehmen.
+    NetworkDuelSystem.unsubscribeFromDuelLobby();
     SafeAreaSystem.showStatic('NETZWERK-DUELL');
     this.busy = false;
     this.transient = [];
@@ -214,20 +217,20 @@ export class OnlineDuelScene extends Phaser.Scene {
   // --- Phase: Einstieg ---------------------------------------------------------
 
   private buildStart(): void {
-    if (AuthSystem.isSignedIn()) {
-      this.buildDuelLobbyStart();
-      return;
-    }
+    // Fuer alle Spieler derselbe Einstieg: Online-Duell bedeutet eine
+    // gemeinsame Lobby mit Raumcode (2 bis 4 Geraete). Die alte globale
+    // Direkt-Einladungsliste hat den Raumcode-Ablauf ueberlagert und bleibt
+    // deshalb aus der sichtbaren Oberflaeche entfernt.
     this.buildCodeStart();
   }
 
-  /** Einstieg fuer Gaeste und als Fallback fuer eingeloggte Spieler. */
+  /** Einstieg fuer Host und Gaeste der gemeinsamen Raumcode-Lobby. */
   private buildCodeStart(): void {
     this.clearTransient();
     this.statusPage.setStatus('', Palette.inkDim);
     this.buildHeading(
       'NETZWERK-DUELL',
-      'Spielt gleichzeitig gegeneinander - jeder auf seinem eigenen Geraet.',
+      'Lobby fuer 2 bis 4 Spieler - jeder auf seinem eigenen Geraet.',
     );
 
     this.keep(
@@ -303,7 +306,8 @@ export class OnlineDuelScene extends Phaser.Scene {
    * er weiterhin fuer Freunde ohne Login und bei Realtime-Problemen gebraucht
    * wird.
    */
-  private buildDuelLobbyStart(): void {
+  /** Kept for compatibility with older scene callers; no UI path uses it. */
+  buildDuelLobbyStart(): void {
     this.clearTransient();
     this.statusPage.setStatus('', Palette.inkDim);
     this.buildHeading('DUELL', 'Fordere einen duellbereiten Spieler direkt heraus.');
@@ -946,7 +950,8 @@ export class OnlineDuelScene extends Phaser.Scene {
     buttonLabel: string,
     onConfirm: () => void,
   ): void {
-    const localIndex: 0 | 1 = this.isHost ? 0 : 1;
+    const localIndex =
+      ChallengeSystem.getState()?.online?.localPlayerIndex ?? (this.isHost ? 0 : 1);
     const initialRanks = ChallengeSystem.duelTalentDraftFor(localIndex);
     const hasSuggestion = Object.values(initialRanks).some((rank) => rank > 0);
     const topY = this.statusPage.contentY(this.isHost ? 700 : 610);
@@ -1029,10 +1034,10 @@ export class OnlineDuelScene extends Phaser.Scene {
   }
 
   private cleanupLobby(): void {
-    // Die globale Lobby ist bewusst laenger als diese Scene aktiv: vom
-    // Einstieg ueber GameScene bis zum Ergebnis muss der Spieler fuer andere
-    // Clients als IM DUELL sichtbar bleiben. ABBRECHEN und GameScene.abortRun
-    // kuemmern sich explizit um das endgueltige Unsubscribe.
+    // Der Raumkanal bleibt fuer GameScene und Ergebnis aktiv. Die alte globale
+    // Direkt-Einladungslobby wird dagegen nicht mehr ueber die UI verwendet
+    // und darf keine veralteten Presence-Eintraege hinterlassen.
+    NetworkDuelSystem.unsubscribeFromDuelLobby();
     if (this.startPollTimer) {
       this.startPollTimer.remove();
       this.startPollTimer = null;
@@ -1157,7 +1162,8 @@ export class OnlineDuelScene extends Phaser.Scene {
   private async requestOnlineRematch(statusText: Phaser.GameObjects.Text): Promise<void> {
     if (this.rematchRequestStarted) return;
     this.rematchRequestStarted = true;
-    const localIndex: 0 | 1 = this.isHost ? 0 : 1;
+    const localIndex =
+      ChallengeSystem.getState()?.online?.localPlayerIndex ?? (this.isHost ? 0 : 1);
     const draft = ChallengeSystem.duelTalentDraftFor(localIndex);
     const result = await NetworkDuelSystem.requestRematch(
       this.roomCode,
