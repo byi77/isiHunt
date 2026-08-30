@@ -272,8 +272,7 @@ async function enterDuel2G(page, playerName) {
     const menuActive = startScreen === 'Menu';
     if (menuActive) {
       await clickButton(page, 'Menu', 'DUELL');
-      await waitForScene(page, 'DuelSelect');
-      await clickButton(page, 'DuelSelect', 'ONLINE-DUELL');
+      await waitForScene(page, 'OnlineDuel');
     } else {
       await page.evaluate(() => {
         const game = window.isiHunt;
@@ -283,6 +282,16 @@ async function enterDuel2G(page, playerName) {
       });
     }
     await waitForScene(page, 'OnlineDuel');
+  }
+
+  const duelButtons = await collectInteractive(page, 'OnlineDuel');
+  if (!duelButtons.some((button) => button.label.toUpperCase().includes('VS BOT'))) {
+    throw new Error('OnlineDuel: direkter VS-BOT-Button fehlt.');
+  }
+  if (
+    duelButtons.some((button) => /RAUM|BEITRETEN|ONLINE-DUELL/.test(button.label.toUpperCase()))
+  ) {
+    throw new Error('OnlineDuel: alter Raumcode-/Zwischenbildschirm ist noch sichtbar.');
   }
   // Der normale Startscreen kann ein nicht angemeldetes lokales Profil
   // bewusst loeschen. Fuer den isolierten Test wird der Name danach ueber die
@@ -304,16 +313,6 @@ async function readRoomCode(page) {
     { timeout: SCENE_TIMEOUT_MS },
   );
   return page.evaluate(() => window.isiHunt.scene.getScene('OnlineDuel').roomCode);
-}
-
-async function joinRoom(page, code) {
-  const input = page.locator('input:visible').last();
-  await input.waitFor({ state: 'visible', timeout: SCENE_TIMEOUT_MS });
-  await input.fill(code);
-  // Das ist derselbe Submit-Weg wie auf dem Handy nach der Code-Eingabe und
-  // umgeht die empfindliche Naht zwischen DOM-Input und Phaser-Canvas. Der
-  // Host wird weiter ueber den echten Canvas-Button gestartet.
-  await input.press('Enter');
 }
 
 async function readChallengeState(page) {
@@ -519,12 +518,15 @@ async function runOne(browser, runNumber, failures) {
     assertCheck('DUELL2G-Screen auf beiden Clients', true, 'iPhone + Pixel-Kontext', failures);
 
     stage = 'Raum erzeugen';
-    await clickButton(host.page, 'OnlineDuel', 'RAUM ERSTELLEN');
+    await host.page.evaluate(() => window.isiHunt.scene.getScene('OnlineDuel').createRoom());
     const code = await readRoomCode(host.page);
     assertCheck('Raumcode erzeugt', /^[0-9A-HJKMNP-Z]{6}$/.test(code), code, failures);
 
     stage = 'Gast beitreten lassen';
-    await joinRoom(guest.page, code);
+    await guest.page.evaluate(
+      (roomCode) => window.isiHunt.scene.getScene('OnlineDuel').joinRoom(roomCode),
+      code,
+    );
     stage = 'Lobby vollstaendig synchronisieren';
     await host.page.waitForFunction(
       () => window.isiHunt?.scene?.getScene('OnlineDuel')?.roomPlayerCount >= 2,

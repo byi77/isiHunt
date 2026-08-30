@@ -1,5 +1,5 @@
 -- Read-only Nachweis fuer den produktiven Migrationsstand.
--- Erwartet genau eine Zeile mit schema_version = 38.
+-- Erwartet genau eine Zeile mit schema_version = 39.
 
 select singleton, schema_version, migration_name, applied_at
 from public.isihunt_schema_state;

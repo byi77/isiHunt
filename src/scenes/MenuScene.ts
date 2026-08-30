@@ -1463,7 +1463,7 @@ export class MenuScene extends Phaser.Scene {
       GAME_WIDTH / 2,
       secondaryY,
       'DUELL',
-      () => this.scene.start(SceneKey.DuelSelect, { worldId: this.selectedWorld.id }),
+      () => this.scene.start(SceneKey.OnlineDuel, { worldId: this.selectedWorld.id }),
       {
         width: 360,
         height: secondaryHeight,

@@ -93,10 +93,13 @@ export class OnlineDuelScene extends Phaser.Scene {
   private lastKnownMatchNumber = 1;
   private rematchRequestStarted = false;
   private duelLobbyObjects: Phaser.GameObjects.GameObject[] = [];
+  private roomLobbyObjects: Phaser.GameObjects.GameObject[] = [];
+  private roomInviteObjects: Phaser.GameObjects.GameObject[] = [];
   private invitationObjects: Phaser.GameObjects.GameObject[] = [];
   private pendingInvitation: NetworkDuelSystem.DuelInvitation | null = null;
   private invitationStatusText: Phaser.GameObjects.Text | null = null;
-  private outgoingInvitationId: string | null = null;
+  private outgoingInvitationIds: string[] = [];
+  private availableDuelLobbyPlayers: NetworkDuelSystem.DuelLobbyPlayer[] = [];
   /** Serverzaehler der aktuell beigetretenen Spieler in der Raum-Lobby. */
   private roomPlayerCount = 1;
   private roomMaxPlayers = 4;
@@ -107,8 +110,8 @@ export class OnlineDuelScene extends Phaser.Scene {
   }
 
   create(data: OnlineDuelSceneData = {}): void {
-    // Die alte Direkt-Einladungslobby darf keinen Zustand aus einer
-    // vorherigen Scene-Instanz in den Raumcode-Einstieg uebernehmen.
+    // Eine neue Duell-Menue-Instanz beginnt immer in der globalen
+    // Bereitschaftslobby und uebernimmt keinen alten Raumzustand.
     NetworkDuelSystem.unsubscribeFromDuelLobby();
     SafeAreaSystem.showStatic('NETZWERK-DUELL');
     this.busy = false;
@@ -128,10 +131,13 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.lastKnownMatchNumber = 1;
     this.rematchRequestStarted = false;
     this.duelLobbyObjects = [];
+    this.roomLobbyObjects = [];
+    this.roomInviteObjects = [];
     this.invitationObjects = [];
     this.pendingInvitation = null;
     this.invitationStatusText = null;
-    this.outgoingInvitationId = null;
+    this.outgoingInvitationIds = [];
+    this.availableDuelLobbyPlayers = [];
     this.roomPlayerCount = 1;
     this.roomMaxPlayers = 4;
     this.startRoomButton = null;
@@ -221,11 +227,12 @@ export class OnlineDuelScene extends Phaser.Scene {
     // gemeinsame Lobby mit Raumcode (2 bis 4 Geraete). Die alte globale
     // Direkt-Einladungsliste hat den Raumcode-Ablauf ueberlagert und bleibt
     // deshalb aus der sichtbaren Oberflaeche entfernt.
-    this.buildCodeStart();
+    this.buildDuelLobbyStart();
   }
 
   /** Einstieg fuer Host und Gaeste der gemeinsamen Raumcode-Lobby. */
-  private buildCodeStart(): void {
+  /** Kept as a non-visible compatibility path for automated room tests. */
+  buildCodeStart(): void {
     this.clearTransient();
     this.statusPage.setStatus('', Palette.inkDim);
     this.buildHeading(
@@ -300,17 +307,11 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.buildBackToMenu('ABBRECHEN');
   }
 
-  /**
-   * Einstieg fuer eingeloggte Spieler: aktive Duellbereitschaft sehen und
-   * direkt herausfordern. Der Code-Pfad bleibt darunter bewusst sichtbar, weil
-   * er weiterhin fuer Freunde ohne Login und bei Realtime-Problemen gebraucht
-   * wird.
-   */
-  /** Kept for compatibility with older scene callers; no UI path uses it. */
+  /** Direkter Duell-Einstieg: bereite Spieler oben, Bot darunter. */
   buildDuelLobbyStart(): void {
     this.clearTransient();
     this.statusPage.setStatus('', Palette.inkDim);
-    this.buildHeading('DUELL', 'Fordere einen duellbereiten Spieler direkt heraus.');
+    this.buildHeading('DUELL', 'Lade einen duellbereiten Spieler direkt ein.');
 
     this.keep(
       this.add
@@ -341,13 +342,14 @@ export class OnlineDuelScene extends Phaser.Scene {
         .text(
           GAME_WIDTH / 2,
           this.statusPage.contentY(700),
-          'ODER CODE VERWENDEN',
+          'ODER SOLO SPIELEN',
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0.5)
         .setLetterSpacing(4),
     );
 
+    /* Legacy code join is kept for automated room tests, but not shown in the duel menu.
     this.codeInput = createTextInput(this, GAME_WIDTH / 2, this.statusPage.contentY(755), {
       placeholder: '· · · · · ·',
       maxLength: 6,
@@ -355,15 +357,18 @@ export class OnlineDuelScene extends Phaser.Scene {
       uppercase: true,
       onSubmit: () => void this.joinRoom(),
     });
-    this.keep(this.codeInput.element);
+    this.keep(this.codeInput.element); */
     this.keep(
       createButton(
         this,
         GAME_WIDTH / 2,
-        this.statusPage.contentY(850),
-        'BEITRETEN',
-        () => void this.joinRoom(),
-        { width: 440, height: 76, accent: 0x9aa3bd, fontSize: FontSize.body },
+        this.statusPage.contentY(800),
+        'VS BOT',
+        () => {
+          ChallengeSystem.startBot(this.world.id);
+          this.scene.start(SceneKey.Challenge);
+        },
+        { width: 440, height: 82, accent: Palette.goldHex, fontSize: FontSize.large },
       ).container,
     );
     this.keep(
@@ -374,25 +379,36 @@ export class OnlineDuelScene extends Phaser.Scene {
         'RAUMCODE ERSTELLEN',
         () => void this.createRoom(),
         { width: 380, height: 64, accent: Palette.goldHex, fontSize: FontSize.small },
-      ).container,
+      ).container.setVisible(false),
     );
 
     this.buildBackToMenu('ABBRECHEN');
     this.subscribeToDuelLobby();
   }
 
-  private subscribeToDuelLobby(): void {
+  private async subscribeToDuelLobby(): Promise<void> {
     const supabase = CloudSystem.getSupabaseClient();
+    await AuthSystem.whenReady();
+    if (!this.scene.isActive()) return;
     const playerName = SaveSystem.load().playerName;
     if (!supabase || !AuthSystem.isSignedIn() || !playerName) {
-      this.statusPage.setStatus('Spielername fuer Einladungen fehlt.', Palette.danger);
+      this.statusPage.setStatus(
+        supabase && !AuthSystem.isSignedIn()
+          ? 'Melde dich an, um andere Spieler einzuladen.'
+          : 'Spielername fuer Einladungen fehlt.',
+        Palette.danger,
+      );
       return;
     }
 
     NetworkDuelSystem.subscribeToDuelLobby(supabase, playerName, {
       onPlayersSync: (players) => {
         if (!this.scene.isActive() || this.pendingInvitation) return;
-        this.renderDuelLobbyPlayers(players);
+        this.availableDuelLobbyPlayers = players.filter(
+          (player) => player.availability === 'available',
+        );
+        if (!this.roomCode) this.renderDuelLobbyPlayers(this.availableDuelLobbyPlayers);
+        else if (this.isHost) this.renderRoomInvitePlayers(this.availableDuelLobbyPlayers);
       },
       onInvitationReceived: () => {
         // Die globale Lobby bleibt waehrend eines laufenden Duells abonniert,
@@ -414,7 +430,9 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.clearDuelLobbyObjects();
     if (!this.scene.isActive()) return;
 
-    const visiblePlayers = players.slice(0, 5);
+    const visiblePlayers = players
+      .filter((player) => player.availability === 'available')
+      .slice(0, 5);
     if (visiblePlayers.length === 0) {
       this.keepDuelLobby(
         this.add
@@ -438,15 +456,9 @@ export class OnlineDuelScene extends Phaser.Scene {
           .setOrigin(0, 0.5)
           .setDepth(Depth.Overlay),
       );
-      const available = player.availability === 'available';
       this.keepDuelLobby(
         this.add
-          .text(
-            92,
-            y + 26,
-            available ? 'DUELLBEREIT' : 'IM DUELL',
-            textStyle(FontSize.tiny, available ? Palette.gold : Palette.inkDim),
-          )
+          .text(92, y + 26, 'DUELLBEREIT', textStyle(FontSize.tiny, Palette.gold))
           .setOrigin(0, 0.5)
           .setDepth(Depth.Overlay),
       );
@@ -455,22 +467,22 @@ export class OnlineDuelScene extends Phaser.Scene {
         this,
         GAME_WIDTH - 145,
         y,
-        available ? 'EINLADEN' : 'BESETZT',
+        'EINLADEN',
         () => void this.invitePlayer(player.playerName),
         {
           width: 170,
           height: 54,
-          accent: available ? 0x38bdf8 : 0x59627a,
+          accent: 0x38bdf8,
           fontSize: FontSize.tiny,
         },
       );
-      inviteButton.setEnabled(available);
       this.keepDuelLobby(inviteButton.container);
     });
   }
 
   private async invitePlayer(playerName: string): Promise<void> {
-    if (this.busy || !AuthSystem.isSignedIn()) return;
+    if (this.busy || !AuthSystem.isSignedIn() || (this.roomCode && !this.isHost)) return;
+    const alreadyInRoom = Boolean(this.roomCode && this.isHost);
     this.busy = true;
     this.statusPage.setStatus(`Einladung an ${playerName} wird gesendet ...`, Palette.inkDim);
     const result = await NetworkDuelSystem.createDuelInvitation(this.world.id, playerName);
@@ -482,7 +494,17 @@ export class OnlineDuelScene extends Phaser.Scene {
     }
 
     NetworkDuelSystem.setDuelLobbyAvailability('busy');
-    this.outgoingInvitationId = result.value.id;
+    this.outgoingInvitationIds.push(result.value.id);
+
+    if (alreadyInRoom) {
+      this.statusPage.setStatus(
+        `Einladung an ${playerName} gesendet. Du kannst weitere Spieler einladen.`,
+        Palette.ink,
+      );
+      this.renderRoomInvitePlayers(this.availableDuelLobbyPlayers);
+      return;
+    }
+
     this.isHost = true;
     this.roomCode = result.value.code;
     this.participantToken = result.value.participantToken;
@@ -492,7 +514,11 @@ export class OnlineDuelScene extends Phaser.Scene {
       this.roomCode,
       0,
       this.participantToken,
+      undefined,
+      1,
     );
+    this.roomPlayerCount = 1;
+    this.roomMaxPlayers = 4;
     this.lastKnownMatchNumber = 1;
     this.enterLobby();
   }
@@ -651,10 +677,10 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.enterLobby();
   }
 
-  private async joinRoom(): Promise<void> {
+  private async joinRoom(rawCode?: string): Promise<void> {
     if (this.busy) return;
 
-    const raw = this.codeInput?.getValue() ?? '';
+    const raw = rawCode ?? this.codeInput?.getValue() ?? '';
     const code = NetworkDuelSystem.normalizeRoomCode(raw);
 
     this.busy = true;
@@ -712,45 +738,28 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.statusPage.setStatus('', Palette.inkDim);
 
     this.buildHeading(
-      this.isHost ? 'LOBBY ERSTELLT' : 'LOBBY BEIGETRETEN',
-      this.isHost ? `Teile den Code: ${this.roomCode}` : 'Warte auf den Host ...',
+      'DUELL-LOBBY',
+      this.isHost
+        ? 'Du bist Host. Lade weitere Spieler ein oder starte ab zwei Spielern.'
+        : 'Du bist beigetreten. Warte auf den Start durch den Host ...',
     );
 
     if (this.isHost) {
       this.keep(
-        createPanel(
-          this,
-          GAME_WIDTH / 2,
-          this.statusPage.contentY(420),
-          GAME_WIDTH - 160,
-          140,
-          Palette.goldHex,
-        ),
-      );
-      this.keep(
         this.add
           .text(
             GAME_WIDTH / 2,
-            this.statusPage.contentY(420),
-            this.roomCode,
-            textStyle(FontSize.title, Palette.gold, { fontStyle: 'bold' }),
-          )
-          .setOrigin(0.5)
-          .setLetterSpacing(10),
-      );
-      this.keep(
-        this.add
-          .text(
-            GAME_WIDTH / 2,
-            this.statusPage.contentY(520),
-            `Gueltig fuer ${NetworkDuelSystem.roomCodeTtlMinutes()} Minuten`,
+            this.statusPage.contentY(265),
+            `Raum ${this.roomCode} · Einladungen sind direkt an Spieler gebunden`,
             textStyle(FontSize.tiny, Palette.inkDim),
           )
-          .setOrigin(0.5),
+          .setOrigin(0.5)
+          .setWordWrapWidth(GAME_WIDTH - 120)
+          .setAlign('center'),
       );
     }
 
-    const lobbyStatusY = this.isHost ? 610 : 390;
+    const lobbyStatusY = this.isHost ? 310 : 390;
     const lobbyStatus = this.add
       .text(
         GAME_WIDTH / 2,
@@ -769,11 +778,13 @@ export class OnlineDuelScene extends Phaser.Scene {
       this.roomMaxPlayers,
     );
 
+    if (this.isHost) this.renderRoomInvitePlayers(this.availableDuelLobbyPlayers);
+
     if (this.isHost) {
       const startButton = createButton(
         this,
         GAME_WIDTH / 2,
-        this.statusPage.contentY(930),
+        this.statusPage.contentY(1000),
         'DUELL STARTEN',
         () => void this.startRoom(lobbyStatus),
         { width: 460, accent: Palette.goldHex, fontSize: FontSize.large },
@@ -793,15 +804,15 @@ export class OnlineDuelScene extends Phaser.Scene {
     playerCount: number,
     maxPlayers: number,
   ): void {
-    this.clearDuelLobbyObjects();
-    const panelY = this.statusPage.contentY(this.isHost ? 750 : 580);
-    this.keepDuelLobby(
+    this.clearRoomLobbyObjects();
+    const panelY = this.statusPage.contentY(this.isHost ? 470 : 580);
+    this.keepRoomLobby(
       createPanel(this, GAME_WIDTH / 2, panelY, GAME_WIDTH - 120, 310, this.world.accent, {
         alpha: 0.55,
         radius: 20,
       }),
     );
-    this.keepDuelLobby(
+    this.keepRoomLobby(
       this.add
         .text(
           GAME_WIDTH / 2,
@@ -816,7 +827,7 @@ export class OnlineDuelScene extends Phaser.Scene {
     for (let index = 0; index < maxPlayers; index += 1) {
       const name = names[index] ?? 'Wartet auf Spieler ...';
       const isLocal = index === ChallengeSystem.getState()?.online?.localPlayerIndex;
-      this.keepDuelLobby(
+      this.keepRoomLobby(
         this.add
           .text(
             GAME_WIDTH / 2,
@@ -828,6 +839,68 @@ export class OnlineDuelScene extends Phaser.Scene {
           .setDepth(Depth.Overlay),
       );
     }
+  }
+
+  /** Zeigt dem Host weiterhin die verfuegbaren Spieler fuer Einladungen. */
+  private renderRoomInvitePlayers(players: NetworkDuelSystem.DuelLobbyPlayer[]): void {
+    this.clearRoomInviteObjects();
+    if (!this.scene.isActive() || !this.isHost || !this.roomCode) return;
+
+    const visiblePlayers = players
+      .filter((player) => player.availability === 'available')
+      .slice(0, 4);
+    const panelY = this.statusPage.contentY(790);
+    this.keepRoomInvite(
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          this.statusPage.contentY(650),
+          'WEITERE SPIELER EINLADEN',
+          textStyle(FontSize.small, Palette.gold, { fontStyle: 'bold' }),
+        )
+        .setOrigin(0.5)
+        .setDepth(Depth.Overlay),
+    );
+    this.keepRoomInvite(
+      createPanel(this, GAME_WIDTH / 2, panelY, GAME_WIDTH - 120, 270, this.world.accent, {
+        alpha: 0.4,
+        radius: 20,
+      }),
+    );
+
+    if (visiblePlayers.length === 0) {
+      this.keepRoomInvite(
+        this.add
+          .text(
+            GAME_WIDTH / 2,
+            panelY,
+            'Gerade ist niemand weiteres duellbereit.',
+            textStyle(FontSize.small, Palette.inkDim),
+          )
+          .setOrigin(0.5)
+          .setDepth(Depth.Overlay),
+      );
+      return;
+    }
+
+    visiblePlayers.forEach((player, index) => {
+      const y = this.statusPage.contentY(710 + index * 54);
+      this.keepRoomInvite(
+        this.add
+          .text(92, y, player.playerName, textStyle(FontSize.small, Palette.ink))
+          .setOrigin(0, 0.5)
+          .setDepth(Depth.Overlay),
+      );
+      const inviteButton = createButton(
+        this,
+        GAME_WIDTH - 145,
+        y,
+        'EINLADEN',
+        () => void this.invitePlayer(player.playerName),
+        { width: 170, height: 50, accent: 0x38bdf8, fontSize: FontSize.tiny },
+      );
+      this.keepRoomInvite(inviteButton.container);
+    });
   }
 
   private async startRoom(statusText: Phaser.GameObjects.Text): Promise<void> {
@@ -1395,6 +1468,32 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.duelLobbyObjects = [];
   }
 
+  private keepRoomLobby(object: Phaser.GameObjects.GameObject): void {
+    this.keep(object);
+    this.roomLobbyObjects.push(object);
+  }
+
+  private clearRoomLobbyObjects(): void {
+    if (this.roomLobbyObjects.length === 0) return;
+    const objects = new Set(this.roomLobbyObjects);
+    for (const object of this.roomLobbyObjects) object.destroy();
+    this.transient = this.transient.filter((object) => !objects.has(object));
+    this.roomLobbyObjects = [];
+  }
+
+  private keepRoomInvite(object: Phaser.GameObjects.GameObject): void {
+    this.keep(object);
+    this.roomInviteObjects.push(object);
+  }
+
+  private clearRoomInviteObjects(): void {
+    if (this.roomInviteObjects.length === 0) return;
+    const objects = new Set(this.roomInviteObjects);
+    for (const object of this.roomInviteObjects) object.destroy();
+    this.transient = this.transient.filter((object) => !objects.has(object));
+    this.roomInviteObjects = [];
+  }
+
   private keepInvitation(object: Phaser.GameObjects.GameObject): void {
     this.keep(object);
     this.invitationObjects.push(object);
@@ -1410,9 +1509,11 @@ export class OnlineDuelScene extends Phaser.Scene {
   }
 
   private cancelOutgoingInvitation(): void {
-    const invitationId = this.outgoingInvitationId;
-    this.outgoingInvitationId = null;
-    if (invitationId) void NetworkDuelSystem.cancelDuelInvitation(invitationId);
+    const invitationIds = this.outgoingInvitationIds;
+    this.outgoingInvitationIds = [];
+    for (const invitationId of invitationIds) {
+      void NetworkDuelSystem.cancelDuelInvitation(invitationId);
+    }
   }
 
   private clearTransient(): void {
@@ -1423,6 +1524,8 @@ export class OnlineDuelScene extends Phaser.Scene {
     for (const object of this.transient) object.destroy();
     this.transient = [];
     this.duelLobbyObjects = [];
+    this.roomLobbyObjects = [];
+    this.roomInviteObjects = [];
     this.invitationObjects = [];
     this.pendingInvitation = null;
     this.invitationStatusText = null;

@@ -77,6 +77,7 @@ export interface DuelInvitation {
 export interface CreatedDuelInvitation extends DuelInvitation {
   code: string;
   seed: string;
+  /** Nur beim Anlegen eines neuen Host-Raums vorhanden. */
   participantToken: string;
 }
 
@@ -270,7 +271,7 @@ export async function createDuelInvitation(
     !worldIdFromServer ||
     !inviterName ||
     !expiresAt ||
-    !/^[a-f0-9]{64}$/i.test(participantToken)
+    (participantToken !== '' && !/^[a-f0-9]{64}$/i.test(participantToken))
   ) {
     return { ok: false, error: 'Ungueltige Einladungsantwort vom Server' };
   }
@@ -339,7 +340,24 @@ export async function acceptDuelInvitation(
   const worldId = stringValue(row.worldId ?? row.world_id);
   const participantToken = stringValue(row.participantToken ?? row.participant_token);
   const matchNumber = Number(row.matchNumber ?? row.match_number ?? 1);
-  if (!code || !seed || !worldId || !/^[a-f0-9]{64}$/i.test(participantToken)) {
+  const playerIndex = Number(row.playerIndex ?? row.player_index ?? 1);
+  const playerCount = Number(row.playerCount ?? row.player_count ?? CHALLENGE_DEFAULT_PLAYER_COUNT);
+  const maxPlayers = Number(row.maxPlayers ?? row.max_players ?? CHALLENGE_MAX_PLAYER_COUNT);
+  if (
+    !code ||
+    !seed ||
+    !worldId ||
+    !/^[a-f0-9]{64}$/i.test(participantToken) ||
+    !Number.isInteger(playerIndex) ||
+    playerIndex < 1 ||
+    playerIndex >= CHALLENGE_MAX_PLAYER_COUNT ||
+    !Number.isInteger(playerCount) ||
+    playerCount < CHALLENGE_DEFAULT_PLAYER_COUNT ||
+    playerCount > CHALLENGE_MAX_PLAYER_COUNT ||
+    !Number.isInteger(maxPlayers) ||
+    maxPlayers < playerCount ||
+    maxPlayers > CHALLENGE_MAX_PLAYER_COUNT
+  ) {
     return { ok: false, error: 'Ungueltige Beitrittsantwort vom Server' };
   }
   return {
@@ -349,9 +367,9 @@ export async function acceptDuelInvitation(
       seed,
       worldId,
       participantToken,
-      playerIndex: 1,
-      playerCount: CHALLENGE_DEFAULT_PLAYER_COUNT,
-      maxPlayers: CHALLENGE_MAX_PLAYER_COUNT,
+      playerIndex,
+      playerCount,
+      maxPlayers,
       ...(Number.isInteger(matchNumber) && matchNumber > 0 ? { matchNumber } : {}),
     },
   };

@@ -38,6 +38,10 @@ const duelFourPlayerMigration = readFileSync(
   resolve(sqlDir, 'phase_2_38_duel_four_player_lobby.sql'),
   'utf8',
 );
+const duelMultiInviteMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_39_duel_lobby_multi_invites.sql'),
+  'utf8',
+);
 const verification = readFileSync(resolve(sqlDir, 'verify_security_hardening.sql'), 'utf8');
 const migrationVerification = readFileSync(resolve(sqlDir, 'verify_migration_state.sql'), 'utf8');
 
@@ -126,9 +130,13 @@ requireText(duelFourPlayerMigration, 'p_max_players integer', 'Mehrspieler-Raumk
 requireText(duelFourPlayerMigration, 'set_duel_start_time', 'Host-Start-RPC');
 requireText(duelFourPlayerMigration, 'schema_version = 37', 'Migrationsguard Phase 2.38');
 requireText(duelFourPlayerMigration, 'schema_version = 38', 'Migrationsmarker Phase 2.38');
+requireText(duelMultiInviteMigration, 'duel_invitations_room_uidx', 'Alte Raum-Eindeutigkeit');
+requireText(duelMultiInviteMigration, 'duel_room_participants', 'Einladungs-Slot-Pruefung');
+requireText(duelMultiInviteMigration, 'schema_version = 38', 'Migrationsguard Phase 2.39');
+requireText(duelMultiInviteMigration, 'schema_version = 39', 'Migrationsmarker Phase 2.39');
 
 const migrationFiles = readdirSync(sqlDir).filter((name) =>
-  /^phase_2_(2[89]|30|31|32|33|34|35|36|37|38)_.*\.sql$/.test(name),
+  /^phase_2_(2[89]|30|31|32|33|34|35|36|37|38|39)_.*\.sql$/.test(name),
 );
 for (const file of migrationFiles) {
   const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();
