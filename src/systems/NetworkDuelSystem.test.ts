@@ -744,13 +744,14 @@ describe('Kanalkonfiguration', () => {
     expect(config.config?.presence?.key).toBe('1');
   });
 
-  it('bindet das Realtime-Topic an das Teilnehmer-Token', () => {
+  it('bindet das Realtime-Topic an den gemeinsamen Kanal-Schluessel', () => {
     const fake = createFakeSupabase();
     const token = 'a'.repeat(64);
+    const sharedSeed = 'b'.repeat(64);
 
-    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {}, '', token);
+    NetworkDuelSystem.subscribeToRoom(fake.client as never, 'ABC123', 0, {}, '', token, sharedSeed);
 
-    expect(fake.channelTopic()).toBe(`ABC123:${token}`);
+    expect(fake.channelTopic()).toBe(`ABC123:${sharedSeed}`);
   });
 });
 

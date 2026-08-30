@@ -224,18 +224,22 @@ async function clickButton(page, sceneKey, text) {
 }
 
 async function enterDuel2G(page, playerName) {
-  // Wenn MenuScene verfuegbar ist, wird der echte DUELL2G-Einstieg benutzt.
+  // Wenn MenuScene verfuegbar ist, wird der echte DUELL-Einstieg benutzt.
   // Bei einem konfigurierten Backend kann AuthSystem den Start zusaetzlich in
   // AccountScene fuehren; dann ist der direkte Aufruf derselbe Scene-Callback
   // und macht den Test unabhaengig von einem vorhandenen Login.
   await page.waitForFunction(
-    () => ['Menu', 'Account', 'OnlineDuel'].some((key) => window.isiHunt?.scene?.isActive(key)),
+    () =>
+      ['Menu', 'Account', 'DuelSelect', 'OnlineDuel'].some((key) =>
+        window.isiHunt?.scene?.isActive(key),
+      ),
     undefined,
     { timeout: SCENE_TIMEOUT_MS },
   );
   const startScreen = await page.evaluate(() => {
     const game = window.isiHunt;
     if (game.scene.isActive('OnlineDuel')) return 'OnlineDuel';
+    if (game.scene.isActive('DuelSelect')) return 'DuelSelect';
     if (game.scene.isActive('Menu')) return 'Menu';
     if (game.scene.isActive('Account')) return 'Account';
     return null;
@@ -246,7 +250,9 @@ async function enterDuel2G(page, playerName) {
   } else {
     const menuActive = startScreen === 'Menu';
     if (menuActive) {
-      await clickButton(page, 'Menu', 'DUELL2G');
+      await clickButton(page, 'Menu', 'DUELL');
+      await waitForScene(page, 'DuelSelect');
+      await clickButton(page, 'DuelSelect', 'ONLINE-SPIELER');
     } else {
       await page.evaluate(() => {
         const game = window.isiHunt;

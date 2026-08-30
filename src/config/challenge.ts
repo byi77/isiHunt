@@ -1,5 +1,5 @@
 /**
- * Der Duell-Modus: zwei Spieler, ein Geraet, dieselbe Jagd.
+ * Der lokale Duell-Modus: zwei bis vier Spieler, ein Geraet, dieselbe Jagd.
  *
  * Ablauf: Spieler 1 spielt einen Durchgang, gibt das Geraet weiter, Spieler 2
  * spielt denselben Durchgang. Danach wird verglichen.
@@ -12,13 +12,17 @@
  * 2. **Temporäre Talente.** Vor jedem Durchgang verteilen beide Spieler
  *    unabhängig voneinander bis zu zehn Punkte. So haben beide dieselbe
  *    Auswahlchance, ohne dass der dauerhafte Spielstand einen Vorteil gibt.
- * 3. **Keine Progression.** Ein Duell vergibt weder XP noch Bestwerte. Die
- *    Haelfte der Durchgaenge wird von jemandem gespielt, dem der Spielstand
- *    nicht gehoert - sie duerfen ihn deshalb nicht veraendern.
+ * 3. **Keine normale Progression.** Ein Spielerduell vergibt weder XP noch
+ *    Bestwerte. Das Bot-Duell ist die bewusste Ausnahme: Ein Sieg gibt einen
+ *    einmaligen Bonus.
  */
 
-/** Anzahl Spieler in einem Duell. */
-export const CHALLENGE_PLAYER_COUNT = 2;
+/** Standardanzahl Spieler in einem lokalen Duell. */
+export const CHALLENGE_DEFAULT_PLAYER_COUNT = 2;
+export const CHALLENGE_MIN_PLAYER_COUNT = 2;
+export const CHALLENGE_MAX_PLAYER_COUNT = 4;
+/** Netzwerkduelle bleiben auf zwei feste Spielerpositionen begrenzt. */
+export const CHALLENGE_PLAYER_COUNT = CHALLENGE_DEFAULT_PLAYER_COUNT;
 
 /**
  * Laenge eines Duell-Durchgangs in Millisekunden.
@@ -35,7 +39,12 @@ export const DUEL_TALENT_POINT_BUDGET = 10;
 export const DUEL_TALENT_DRAFT_DURATION_MS = 20_000;
 
 /** Anzeigenamen der Spieler. Reihenfolge = Spielreihenfolge. */
-export const CHALLENGE_PLAYER_LABELS: readonly string[] = ['Spieler 1', 'Spieler 2'];
+export const CHALLENGE_PLAYER_LABELS: readonly string[] = [
+  'Spieler 1',
+  'Spieler 2',
+  'Spieler 3',
+  'Spieler 4',
+];
 
 export function challengePlayerLabel(index: number): string {
   return CHALLENGE_PLAYER_LABELS[index] ?? `Spieler ${index + 1}`;
@@ -45,7 +54,8 @@ export function challengePlayerLabel(index: number): string {
  * Wie stark ein Bot je Schwierigkeitsstufe im Verhaeltnis zur echten
  * Spielerleistung abschneidet (1 = gleichauf).
  */
-export const CHALLENGE_BOT_DIFFICULTY_RATIOS = { easy: 0.72, normal: 0.9, hard: 1.04 } as const;
+export const CHALLENGE_BOT_DEFAULT_DIFFICULTY = 'normal' as const;
+export const CHALLENGE_BOT_DIFFICULTY_RATIOS = { easy: 0.72, normal: 0.96, hard: 1.04 } as const;
 /** Modulo-Basis fuer die deterministische Bot-Streuung aus dem Seed-Hash. */
 export const CHALLENGE_BOT_NOISE_MODULO = 13;
 /** Verschiebt den Modulo-Rest auf ein symmetrisches Intervall um 0. */

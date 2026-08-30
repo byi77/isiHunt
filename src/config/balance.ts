@@ -164,6 +164,9 @@ export const DAILY_SCORE_BONUS_STEP = scoreForRuns(1);
 export const DAILY_SCORE_BONUS_COINS = coinsForRuns(BALANCE.economy.sources.daily.scoreTierRuns);
 export const DAILY_SCORE_BONUS_XP = xpForRuns(BALANCE.progression.xp.dailyScoreTierRuns);
 export const DAILY_SCORE_BONUS_MAX_TIERS = BALANCE.economy.sources.daily.scoreTierCount;
+/** Bonus fuer einen gewonnenen Bot-Durchgang, ohne normale Run-Progression. */
+export const BOT_VICTORY_BONUS_XP = xpForRuns(BALANCE.progression.xp.botVictoryRuns);
+export const BOT_VICTORY_BONUS_COINS = coinsForRuns(BALANCE.economy.sources.botVictoryRuns);
 
 /** Nach wie vielen Leveln ein weiterer kostenloser Talentpunkt entsteht. */
 export const LEVELS_PER_TALENT_POINT = Math.max(

@@ -479,6 +479,9 @@ export const DAILY_SCORE_BONUS_STEP = Balance.DAILY_SCORE_BONUS_STEP;
 export const DAILY_SCORE_BONUS_COINS = Balance.DAILY_SCORE_BONUS_COINS;
 export const DAILY_SCORE_BONUS_XP = Balance.DAILY_SCORE_BONUS_XP;
 export const DAILY_SCORE_BONUS_MAX_TIERS = Balance.DAILY_SCORE_BONUS_MAX_TIERS;
+/** Einmaliger Bonus fuer einen gewonnenen Bot-Duell. */
+export const BOT_VICTORY_BONUS_XP = Balance.BOT_VICTORY_BONUS_XP;
+export const BOT_VICTORY_BONUS_COINS = Balance.BOT_VICTORY_BONUS_COINS;
 
 // --- Persistenz -------------------------------------------------------------
 

@@ -30,6 +30,10 @@ const duelLobbyMigration = readFileSync(
   resolve(sqlDir, 'phase_2_36_duel_lobby_invitations.sql'),
   'utf8',
 );
+const duelSharedTopicMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_37_duel_shared_realtime_topic.sql'),
+  'utf8',
+);
 const verification = readFileSync(resolve(sqlDir, 'verify_security_hardening.sql'), 'utf8');
 const migrationVerification = readFileSync(resolve(sqlDir, 'verify_migration_state.sql'), 'utf8');
 
@@ -105,9 +109,17 @@ requireText(duelLobbyMigration, 'create_duel_invitation', 'Duell-Einladungserzeu
 requireText(duelLobbyMigration, 'accept_duel_invitation', 'Duell-Einladungsannahme');
 requireText(duelLobbyMigration, 'invite_only', 'Invite-only-Raumzugriff');
 requireText(duelLobbyMigration, 'schema_version = 36', 'Migrationsmarker Phase 2.36');
+requireText(
+  duelSharedTopicMigration,
+  'duel_channel_is_authorized',
+  'Gemeinsamer Duell-Realtime-Kanal',
+);
+requireText(duelSharedTopicMigration, "seed = split_part(p_topic, ':', 2)", 'Realtime-Seedbindung');
+requireText(duelSharedTopicMigration, 'schema_version = 36', 'Migrationsguard Phase 2.37');
+requireText(duelSharedTopicMigration, 'schema_version = 37', 'Migrationsmarker Phase 2.37');
 
 const migrationFiles = readdirSync(sqlDir).filter((name) =>
-  /^phase_2_(2[89]|30|31|32|33|34|35|36)_.*\.sql$/.test(name),
+  /^phase_2_(2[89]|30|31|32|33|34|35|36|37)_.*\.sql$/.test(name),
 );
 for (const file of migrationFiles) {
   const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();

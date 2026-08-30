@@ -18,6 +18,8 @@ import {
   DUEL_TALENT_POINT_BUDGET,
 } from '@/config/challenge';
 import {
+  BOT_VICTORY_BONUS_COINS,
+  BOT_VICTORY_BONUS_XP,
   DAILY_COMPLETION_BONUS_COINS,
   DAILY_COMPLETION_BONUS_XP,
   DAILY_SCORE_BONUS_COINS,
@@ -120,8 +122,8 @@ export class ChallengeScene extends Phaser.Scene {
       kind === 'daily'
         ? 'Jeden Tag ein fester Lauf für alle.'
         : kind === 'bot'
-          ? `Du spielst gegen den ${state.botDifficulty ?? 'normalen'} Bot.`
-          : 'Spieler 1 gegen Spieler 2';
+          ? 'Du spielst gegen einen mittelstarken Bot.'
+          : `${state.playerCount ?? 2} Spieler spielen um den hoechsten Score.`;
     this.buildHeading(title, subtitle);
 
     const needsDraft = usesTalentDraft(kind);
@@ -200,16 +202,18 @@ export class ChallengeScene extends Phaser.Scene {
     topY: number,
     infoY: number,
   ): void {
-    const playerIndex: 0 | 1 = kind === 'bot' ? 0 : (ChallengeSystem.currentPlayerIndex() as 0 | 1);
+    const playerIndex = kind === 'bot' ? 0 : ChallengeSystem.currentPlayerIndex();
     const initialRanks = ChallengeSystem.duelTalentDraftFor(playerIndex);
     const hasSuggestion = Object.values(initialRanks).some((rank) => rank > 0);
     this.add
       .text(
         GAME_WIDTH / 2,
         infoY,
-        hasSuggestion
-          ? 'Dein Build aus dem letzten Duell ist vorgeschlagen. Ändere ihn mit + und −.'
-          : `Verteile ${DUEL_TALENT_POINT_BUDGET} Punkte mit + und −.`,
+        kind === 'bot'
+          ? `Mittelstarker Bot: Halte deine Serie aktiv. Siegbonus: +${BOT_VICTORY_BONUS_COINS} Coins und +${BOT_VICTORY_BONUS_XP} XP.`
+          : hasSuggestion
+            ? 'Dein Build aus dem letzten Duell ist vorgeschlagen. Ändere ihn mit + und −.'
+            : `Verteile ${DUEL_TALENT_POINT_BUDGET} Punkte mit + und −.`,
         textStyle(FontSize.small, Palette.ink),
       )
       .setOrigin(0.5)
@@ -342,21 +346,45 @@ export class ChallengeScene extends Phaser.Scene {
       winner === null ? 'Punktgleich - das muss wiederholt werden.' : 'Gut gejagt.',
     );
 
+    const playerCount = state.playerCount ?? 2;
+    const compactCards = playerCount > 2;
+    const firstCardY = compactCards ? 400 : 470;
+    const cardHeight = compactCards ? 122 : 158;
+    const cardStep = compactCards ? 150 : 190;
+
     state.rounds.forEach((round, index) => {
       const isWinner = winner === index;
-      this.buildResultCard(round, index, world, isWinner);
+      this.buildResultCard(
+        round,
+        index,
+        world,
+        isWinner,
+        firstCardY + index * cardStep,
+        cardHeight,
+      );
     });
 
-    // Abstand zwischen den beiden Ergebnissen - die eigentliche Pointe.
-    const [first, second] = state.rounds;
-    if (first && second) {
-      const gap = Math.abs(first.score - second.score);
+    // Der Abstand bleibt auch bei drei oder vier Spielern sichtbar.
+    const scores = state.rounds.map((round) => round.score);
+    if (scores.length > 1) {
+      const gap = Math.max(...scores) - Math.min(...scores);
+      const infoY = compactCards
+        ? firstCardY + (state.rounds.length - 1) * cardStep + cardHeight / 2 + 28
+        : 846;
       this.add
         .text(
           GAME_WIDTH / 2,
-          846,
-          gap === 0 ? 'Kein Punkt Unterschied.' : `Abstand: ${gap.toLocaleString('de-DE')} Punkte`,
-          textStyle(FontSize.small, Palette.inkDim),
+          infoY,
+          state.botVictoryReward
+            ? `BOT BESIEGT  +${state.botVictoryReward.coins} COINS  |  +${state.botVictoryReward.xp} XP`
+            : gap === 0
+              ? 'Kein Punkt Unterschied.'
+              : `Abstand: ${gap.toLocaleString('de-DE')} Punkte`,
+          textStyle(
+            FontSize.small,
+            state.botVictoryReward ? Palette.gold : Palette.inkDim,
+            state.botVictoryReward ? { fontStyle: 'bold' } : undefined,
+          ),
         )
         .setOrigin(0.5);
     }
@@ -369,10 +397,11 @@ export class ChallengeScene extends Phaser.Scene {
     index: number,
     world: WorldDef,
     isWinner: boolean,
+    y = 470 + index * 190,
+    height = 158,
   ): void {
-    const y = 470 + index * 190;
     const color = isWinner ? Palette.goldHex : world.accent;
-    createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, 158, color, {
+    createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, height, color, {
       alpha: isWinner ? 0.75 : 0.45,
     });
     this.add

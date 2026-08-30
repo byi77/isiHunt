@@ -161,7 +161,14 @@ export interface ChallengeState {
   dailyRewardXp?: number;
   dailyPerformanceTier?: number;
   /** Temporäre Talent-Builds je Spieler; bleiben nur im Duellzustand. */
-  duelTalentDrafts?: [TalentRanks, TalentRanks];
+  duelTalentDrafts?: TalentRanks[];
+  /** Anzahl lokaler Spieler; alte Zustände ohne Feld bedeuten zwei. */
+  playerCount?: number;
+  /** Einmaliger Bonus für einen Sieg gegen den Bot. */
+  botVictoryReward?: {
+    coins: number;
+    xp: number;
+  };
   /** Serverseitige Generation des Netzwerk-Duells, wichtig fuer Rematches. */
   duelMatchNumber?: number;
   /** Nur bei kind === 'duel-online'. */

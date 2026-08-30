@@ -137,7 +137,8 @@ as $$
           "rampEnd": 10
         },
         "dailyCompletionRuns": 0.3494874184529366,
-        "dailyScoreTierRuns": 0.1164
+        "dailyScoreTierRuns": 0.1164,
+        "botVictoryRuns": 1
       }
     },
     "economy": {
@@ -166,7 +167,8 @@ as $$
           "completionRuns": 1.8,
           "scoreTierRuns": 0.4,
           "scoreTierCount": 3
-        }
+        },
+        "botVictoryRuns": 1
       },
       "sinks": {
         "talentCosts": [],

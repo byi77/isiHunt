@@ -11,6 +11,14 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Neue Duell-Auswahl.** Das Menue fuehrt jetzt ueber einen einzigen
+  `DUELL`-Knopf in die Auswahl fuer 2, 3 oder 4 lokale Spieler, ein Duell
+  gegen den Bot oder ein Netzwerkduell.
+
+- **Bot-Duell mit mittlerer Schwierigkeit und Siegbonus.** Der Bot liegt
+  nahe an der Spielerleistung und bleibt durch eine aktive Serie schlagbar.
+  Ein Sieg gibt einmalig den zentral konfigurierten Bonus von XP und Coins.
+
 - **Temporäre Duell-Talente und Rematch.** Vor jedem lokalen oder Online-Duell
   stehen 10 Punkte für 20 Sekunden zur Verfügung. Plus/Minus ändert einzelne
   Ränge; beim Rematch werden die letzten Builds im selben Online-Raum wieder
@@ -37,6 +45,13 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   weiter, wenn nichts passiert; er traegt die Information "ich bin noch da".
 
 ### Geaendert
+
+- **Online-Duell-Verbindung repariert.** Beide Spieler teilen jetzt den
+  autorisierten Realtime-Kanal, sodass Gegnername, Live-Punktestand und
+  Verbindungsstatus korrekt ankommen. Die globale Duell-Lobby zeigt Spieler
+  waehrend eines laufenden Duells als **IM DUELL**; beim Abbruch werden Raum-
+  und Lobby-Kanal sauber geschlossen, damit ein neues Duell ohne App-Neustart
+  gestartet werden kann.
 
 - **Talente sind jetzt auch im Tageslauf aktiv.** Der Tageslauf verwendet die
   gekauften Talentraenge inklusive der Laufzeitverlaengerung durch Ausdauer.

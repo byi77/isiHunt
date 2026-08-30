@@ -169,9 +169,7 @@ export class GameScene extends Phaser.Scene {
       challenge?.kind === 'duel' ||
       challenge?.kind === 'bot' ||
       challenge?.kind === 'duel-online';
-    const duelTalentRanks = challenge
-      ? ChallengeSystem.duelTalentDraftFor(this.playerIndex as 0 | 1)
-      : {};
+    const duelTalentRanks = challenge ? ChallengeSystem.duelTalentDraftFor(this.playerIndex) : {};
     this.stats = resolveStats(
       usesTalents
         ? this.mode === 'solo' || this.mode === 'daily'
@@ -703,6 +701,7 @@ export class GameScene extends Phaser.Scene {
     // fuer Fairness, der fertig gespielte Lauf ist trotzdem echter Fortschritt.
     if (this.mode !== 'solo' && this.challenge?.kind !== 'duel-online') {
       ChallengeSystem.submitRound(stats);
+      if (this.challenge?.kind === 'bot') ChallengeSystem.awardBotVictory();
       if (this.mode === 'daily') {
         const progression = ProgressionSystem.applyRun(stats);
         const eventId = ProgressSyncSystem.enqueueRun(
@@ -868,6 +867,14 @@ export class GameScene extends Phaser.Scene {
     // waere die Meldung still verschwunden, und der Gegner saehe den
     // Aussteiger bis zum Rundenende als "spielt".
     this.setLocalActivity('left');
+    // Auch beim direkten ABBRECHEN aus GameScene muss der alte Realtime-
+    // Zustand verschwinden. Sonst bleiben Kanal-Handler an der beendeten
+    // Scene haengen und blockieren den naechsten Netzwerk-Duell-Einstieg bis zum
+    // kompletten App-Neustart.
+    if (this.challenge?.kind === 'duel-online') {
+      NetworkDuelSystem.unsubscribeFromRoom();
+      NetworkDuelSystem.unsubscribeFromDuelLobby();
+    }
 
     this.phase = 'ended';
 

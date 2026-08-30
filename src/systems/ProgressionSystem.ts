@@ -233,6 +233,25 @@ export function applyDailyBonus(
   };
 }
 
+/**
+ * Gewaehrt den einmaligen Siegbonus eines Bot-Duells.
+ *
+ * Bot-Duelle sind kein normaler Run und schreiben deshalb weder Runs,
+ * Bestwerte noch Reliktzaehler. XP, Levelaufstiege und Coins laufen aber ueber
+ * denselben sicheren Bonuspfad wie der Tagesbonus.
+ */
+export function applyBotVictoryBonus(
+  coins: number,
+  xp: number,
+): {
+  coinsGained: number;
+  xpGained: number;
+  levelsGained: number;
+  talentPointsGained: number;
+} {
+  return applyDailyBonus(coins, xp);
+}
+
 /** Bewahrt einen vom Run stammenden Zeitstempel, ohne kaputte Altwerte zu speichern. */
 function normalizedTimestamp(value: string | undefined): string {
   const timestamp = value ? Date.parse(value) : Number.NaN;

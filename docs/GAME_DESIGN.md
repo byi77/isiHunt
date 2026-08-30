@@ -47,7 +47,8 @@ Menue  →  Run (90 s)  →  Ergebnis  →  Menue
 ```
 
 Daneben steht der **Duell-Modus** (Abschnitt 4.1) als zweite Schleife fuer zwei
-Personen an einem Geraet.
+bis vier Personen an einem Geraet. Die Auswahl bietet zusaetzlich einen
+mittelstarken Bot und das Netzwerkduell.
 
 **Im Run, alle paar Sekunden:**
 
@@ -67,7 +68,7 @@ ist das Spiel.
 
 ### 4.1 Duell-Modus
 
-Zwei Personen, ein Geraet, abwechselnd.
+Zwei bis vier Personen, ein Geraet, abwechselnd.
 
 ```
 Menue → Einfuehrung → Spieler 1 (90+ s mit Ausdauer) → Uebergabe → Spieler 2 (90+ s mit Ausdauer) → Ergebnis
@@ -84,9 +85,9 @@ ab statt Glueck.
 
 | Regel                      | Warum                                                                                                                                                                                                |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Gleiche Relikt-Abfolge** | Beide Spieler bekommen denselben Seed — dieselben Seltenheiten, an denselben Stellen, zur selben Sekunde. Sonst waere das Duell ein Wuerfelspiel darum, wer das legendaere Relikt geschenkt bekommt. |
+| **Gleiche Relikt-Abfolge** | Alle Spieler bekommen denselben Seed — dieselben Seltenheiten, an denselben Stellen, zur selben Sekunde. Sonst waere das Duell ein Wuerfelspiel darum, wer das legendaere Relikt geschenkt bekommt. |
 | **Temporäre Talente**      | Vor jedem Durchgang verteilt jeder bis zu 10 Punkte in einem 20-Sekunden-Draft. Der letzte Build wird beim Rematch vorgeschlagen und kann mit +/− geändert werden; dauerhafte Talente bleiben außen vor. |
-| **Keine Progression**      | Ein Duell vergibt weder XP noch Bestwerte noch Erfolge. Die Haelfte der Durchgaenge spielt jemand, dem der Spielstand nicht gehoert.                                                                 |
+| **Keine normale Progression** | Ein Spielerduell vergibt weder XP noch Bestwerte noch Erfolge. Das Bot-Duell ist die Ausnahme: Ein Sieg gibt einen einmaligen XP- und Coin-Bonus. |
 | **Keine Kosmetik**         | Im Duell traegt niemand seine gekaufte Form, Farbe oder Aura. Sonst waere auf einen Blick zu sehen, wer gerade dran ist — der Vergleich soll am Spiel haengen, nicht am Guthaben.                    |
 
 **Die Kosmetik-Regel gilt nur dem Duell, nicht dem Tageslauf.** Sie steht hier,

@@ -883,11 +883,11 @@ function readPresencePlayerNames(state: Record<string, unknown>): DuelPlayerName
 /**
  * Abonniert den privaten Broadcast-/Presence-Kanal fuer einen Raum.
  *
- * Topic = der Raum-Code selbst, kein Praefix - siehe
- * `supabase/phase_2_11_duel_rooms.sql` fuer die RLS-Policy, die genau diesen
- * Topic-Namen gegen `duel_rooms.code` prueft. `private: true` aktiviert die
- * RLS-Pruefung ueberhaupt erst; ohne dieses Flag wuerde Supabase den Kanal
- * als oeffentlich behandeln.
+ * Topic = Raum-Code und gemeinsamer Server-Seed. Beide Spieler erhalten den
+ * Seed beim Erzeugen/Beitreten desselben Raums und muessen deshalb exakt den
+ * gleichen Realtime-Kanal abonnieren. `private: true` aktiviert die
+ * RLS-Pruefung; die Policy verifiziert Code und Seed gemeinsam gegen den
+ * Raum. Die individuellen Teilnehmer-Tokens bleiben fuer die RPCs zustaendig.
  *
  * `localPlayerIndex` wird als Presence-Key genutzt (nicht der Raum-Code):
  * Presence unterscheidet Clients ueber ihren Key - mit demselben Key fuer
@@ -907,6 +907,7 @@ export function subscribeToRoom(
   handlers: DuelChannelHandlers,
   localPlayerName = '',
   participantToken = '',
+  sharedChannelKey = '',
 ): void {
   unsubscribeFromRoom();
   activeHandlers = handlers;
@@ -941,10 +942,15 @@ export function subscribeToRoom(
   // die Abkuerzung), und eine kuenftige Ablehnung wuerde sich heute in
   // `duel:presence-sync` und `duel:live-empfangen` zeigen - beide gab es
   // damals noch nicht.
-  // Der Token steht im privaten Topic und wird in der Realtime-RLS-Policy
-  // serverseitig gegen genau einen Room-Slot geprueft. Ein fehlender Token
-  // bleibt absichtlich ungueltig; es gibt keinen Code-only-Fallback.
-  const channel = supabase.channel(`${code}:${participantToken}`, {
+  // Beide Spieler muessen denselben Kanal sehen. Ihre Teilnehmer-Tokens sind
+  // absichtlich verschieden und wuerden den Host- und Gast-Kanal trennen:
+  // genau dadurch blieben Live-Score, Presence und Namen bisher unsichtbar.
+  // Der Server-Seed ist beiden Clients bekannt und bindet den gemeinsamen
+  // Kanal per Realtime-RLS an exakt diesen Raum. Der Token-Fallback haelt alte
+  // isolierte Aufrufer testbar; der produktive Online-Duell-Pfad uebergibt
+  // immer den Seed.
+  const channelKey = sharedChannelKey || participantToken;
+  const channel = supabase.channel(`${code}:${channelKey}`, {
     config: { private: true, presence: { key: String(localPlayerIndex) } },
   });
   const cleanLocalPlayerName = cleanPresencePlayerName(localPlayerName);

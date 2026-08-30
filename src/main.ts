@@ -31,6 +31,7 @@ import { AccountScene } from '@/scenes/AccountScene';
 import { AchievementsScene } from '@/scenes/AchievementsScene';
 import { BootScene } from '@/scenes/BootScene';
 import { ChallengeScene } from '@/scenes/ChallengeScene';
+import { DuelSelectScene } from '@/scenes/DuelSelectScene';
 import { GameScene } from '@/scenes/GameScene';
 import { HudScene } from '@/scenes/HudScene';
 import { LeaderboardScene } from '@/scenes/LeaderboardScene';
@@ -125,6 +126,7 @@ function createGameConfig(): Phaser.Types.Core.GameConfig {
       HudScene,
       ResultScene,
       ChallengeScene,
+      DuelSelectScene,
       OnlineDuelScene,
       LeaderboardScene,
       SettingsScene,

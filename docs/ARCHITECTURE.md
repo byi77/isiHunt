@@ -110,6 +110,7 @@ isiHunt/
 │   │   ├── GameScene.ts        Die Simulation (Solo und Duell)
 │   │   ├── HudScene.ts         Anzeige waehrend des Runs
 │   │   ├── ChallengeScene.ts   Duell: Einfuehrung, Uebergabe, Ergebnis
+│   │   ├── DuelSelectScene.ts  Spielerzahl, Bot oder Netzwerkduell auswaehlen
 │   │   ├── OnlineDuelScene.ts  Netzwerk-Duell: Raum, Lobby, Ergebnis (ADR-0010 Schritt 2)
 │   │   ├── LeaderboardScene.ts Online-Bestenliste, Gesamtansicht + Weltfilter
 │   │   ├── SyncScene.ts        Legacy-Abgleich für anonyme Alt-Spielstände
@@ -244,6 +245,12 @@ prinzipiell keinen Empfaenger, unabhaengig von der Verbindungsqualitaet.
 (`NetworkDuelSystem.submitRoundResult`), und der Ergebnisbildschirm fragt sie
 im Takt von `ONLINE_DUEL_RESULT_POLL_INTERVAL_MS` ab. Der Broadcast bleibt als
 Abkuerzung fuer den Fall, dass beide fast gleichzeitig fertig werden.
+
+**Broadcast und Presence teilen einen Kanal.** Der Realtime-Topic lautet
+`CODE:SEED`: Beide Teilnehmer kennen den serverseitigen Seed aus ihrem Raum-RPC
+und abonnieren damit exakt denselben Kanal. Die individuellen Teilnehmer-Tokens
+bleiben getrennt und schuetzen weiterhin die RPCs; die Realtime-Policy bindet
+Code und Seed gemeinsam an den noch gueltigen Raum (`phase_2_37`).
 
 **Die Lobby wartet symmetrisch — beide Rollen duerfen starten.** Bis v0.1.246
 setzte nur der Gastgeber die Startzeit; der Gast pollte ausschliesslich auf ein

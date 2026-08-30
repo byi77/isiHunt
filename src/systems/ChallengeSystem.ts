@@ -1,10 +1,10 @@
 /**
  * Zustand eines laufenden Duells.
  *
- * Reine Logik ohne Phaser und ohne Persistenz. Ein Duell lebt nur, solange die
- * Seite offen ist - bewusst: Es ist ein Spiel zu zweit an einem Geraet, kein
- * Fortschritt, der aufgehoben werden muesste. Nichts davon landet im
- * Spielstand (Begruendung in config/challenge.ts).
+ * Reine Logik ohne Phaser und ohne Duell-Persistenz. Ein Duell lebt nur,
+ * solange die Seite offen ist - bewusst: Spielerduelle sind ein gemeinsamer
+ * Vergleich am Geraet. Nur der einmalige Bot-Siegbonus wird in den
+ * Spielstand geschrieben (Begruendung in config/challenge.ts).
  *
  * Warum ein Modul-Singleton und kein Scene-Feld: Das Duell ueberspannt vier
  * Scene-Wechsel (Einfuehrung -> Runde 1 -> Uebergabe -> Runde 2 -> Ergebnis).
@@ -12,14 +12,20 @@
  */
 
 import {
+  CHALLENGE_BOT_DEFAULT_DIFFICULTY,
   CHALLENGE_BOT_DIFFICULTY_RATIOS,
   CHALLENGE_BOT_NOISE_MODULO,
   CHALLENGE_BOT_NOISE_OFFSET,
   CHALLENGE_BOT_NOISE_SCALE,
+  CHALLENGE_DEFAULT_PLAYER_COUNT,
+  CHALLENGE_MAX_PLAYER_COUNT,
+  CHALLENGE_MIN_PLAYER_COUNT,
   CHALLENGE_PLAYER_COUNT,
   DUEL_TALENT_POINT_BUDGET,
 } from '@/config/challenge';
 import {
+  BOT_VICTORY_BONUS_COINS,
+  BOT_VICTORY_BONUS_XP,
   DAILY_COMPLETION_BONUS_COINS,
   DAILY_COMPLETION_BONUS_XP,
   DAILY_SCORE_BONUS_COINS,
@@ -45,19 +51,21 @@ import type {
 let state: ChallengeState | null = null;
 
 type OnlinePlayerNames = [string | null, string | null];
-export type DuelTalentDrafts = [TalentRanks, TalentRanks];
+export type DuelTalentDrafts = TalentRanks[];
 
-function emptyDuelTalentDrafts(): DuelTalentDrafts {
-  return [{}, {}];
+function normalizePlayerCount(value: number | undefined): number {
+  const requested = Number.isFinite(value) ? Math.floor(value!) : CHALLENGE_DEFAULT_PLAYER_COUNT;
+  return Math.min(CHALLENGE_MAX_PLAYER_COUNT, Math.max(CHALLENGE_MIN_PLAYER_COUNT, requested));
 }
 
-function copyDuelTalentDrafts(drafts?: DuelTalentDrafts): DuelTalentDrafts {
-  return drafts
-    ? [
-        normalizeTalentRanks(drafts[0], DUEL_TALENT_POINT_BUDGET),
-        normalizeTalentRanks(drafts[1], DUEL_TALENT_POINT_BUDGET),
-      ]
-    : emptyDuelTalentDrafts();
+function copyDuelTalentDrafts(
+  drafts?: DuelTalentDrafts,
+  playerCount = CHALLENGE_DEFAULT_PLAYER_COUNT,
+): DuelTalentDrafts {
+  const count = normalizePlayerCount(playerCount);
+  return Array.from({ length: count }, (_, index) =>
+    normalizeTalentRanks(drafts?.[index] ?? {}, DUEL_TALENT_POINT_BUDGET),
+  );
 }
 
 function cleanOnlinePlayerName(raw: unknown): string | null {
@@ -143,13 +151,23 @@ function botRound(
 }
 
 /** Startet ein neues Duell in der angegebenen Welt. */
-export function start(worldId: string, suggestedDrafts?: DuelTalentDrafts): ChallengeState {
+export function start(
+  worldId: string,
+  suggestedDraftsOrPlayerCount?: DuelTalentDrafts | number,
+  playerCount = CHALLENGE_DEFAULT_PLAYER_COUNT,
+): ChallengeState {
+  const suggestedDrafts =
+    typeof suggestedDraftsOrPlayerCount === 'number' ? undefined : suggestedDraftsOrPlayerCount;
+  const requestedPlayerCount =
+    typeof suggestedDraftsOrPlayerCount === 'number' ? suggestedDraftsOrPlayerCount : playerCount;
+  const normalizedPlayerCount = normalizePlayerCount(requestedPlayerCount);
   state = {
     seed: createSeed(),
     worldId,
     rounds: [],
     kind: 'duel',
-    duelTalentDrafts: copyDuelTalentDrafts(suggestedDrafts),
+    playerCount: normalizedPlayerCount,
+    duelTalentDrafts: copyDuelTalentDrafts(suggestedDrafts, normalizedPlayerCount),
   };
   return state;
 }
@@ -213,7 +231,7 @@ export function completeDaily(stats: RunStats, eventId: string | null = null): D
 
 export function startBot(
   worldId: string,
-  difficulty: BotDifficulty = 'normal',
+  difficulty: BotDifficulty = CHALLENGE_BOT_DEFAULT_DIFFICULTY,
   suggestedDrafts?: DuelTalentDrafts,
 ): ChallengeState {
   state = {
@@ -222,7 +240,8 @@ export function startBot(
     rounds: [],
     kind: 'bot',
     botDifficulty: difficulty,
-    duelTalentDrafts: copyDuelTalentDrafts(suggestedDrafts),
+    playerCount: CHALLENGE_DEFAULT_PLAYER_COUNT,
+    duelTalentDrafts: copyDuelTalentDrafts(suggestedDrafts, CHALLENGE_DEFAULT_PLAYER_COUNT),
   };
   return state;
 }
@@ -261,21 +280,28 @@ export function startOnline(
     kind: 'duel-online',
     online,
     duelMatchNumber: 1,
-    duelTalentDrafts: copyDuelTalentDrafts(suggestedDrafts),
+    playerCount: CHALLENGE_PLAYER_COUNT,
+    duelTalentDrafts: copyDuelTalentDrafts(suggestedDrafts, CHALLENGE_PLAYER_COUNT),
   };
   return state;
 }
 
 /** Liefert den temporaeren Build eines Spielers als defensive Kopie. */
-export function duelTalentDraftFor(index: 0 | 1): TalentRanks {
+export function duelTalentDraftFor(index: number): TalentRanks {
   const draft = state?.duelTalentDrafts?.[index];
   return normalizeTalentRanks(draft ?? {}, DUEL_TALENT_POINT_BUDGET);
 }
 
 /** Speichert einen temporaeren Build, ohne den persistenten Spielstand anzufassen. */
-export function setDuelTalentDraft(index: 0 | 1, ranks: TalentRanks): TalentRanks {
+export function setDuelTalentDraft(index: number, ranks: TalentRanks): TalentRanks {
   if (!state) return normalizeTalentRanks(ranks, DUEL_TALENT_POINT_BUDGET);
-  const drafts = copyDuelTalentDrafts(state.duelTalentDrafts);
+  const drafts = copyDuelTalentDrafts(
+    state.duelTalentDrafts,
+    state.playerCount ??
+      (state.kind === 'duel-online' ? CHALLENGE_PLAYER_COUNT : CHALLENGE_DEFAULT_PLAYER_COUNT),
+  );
+  if (index < 0 || index >= drafts.length)
+    return normalizeTalentRanks(ranks, DUEL_TALENT_POINT_BUDGET);
   drafts[index] = normalizeTalentRanks(ranks, DUEL_TALENT_POINT_BUDGET);
   state.duelTalentDrafts = drafts;
   return { ...drafts[index] };
@@ -283,7 +309,7 @@ export function setDuelTalentDraft(index: 0 | 1, ranks: TalentRanks): TalentRank
 
 /** Aendert einen Rang im aktuellen temporaeren Build. */
 export function changeDuelTalentRank(
-  index: 0 | 1,
+  index: number,
   talentId: Parameters<typeof changeTalentRank>[1],
   delta: -1 | 1,
   budget: number,
@@ -304,7 +330,10 @@ export function resetOnlineMatch(
   state.rounds = [];
   state.onlineRounds = [null, null];
   state.duelMatchNumber = matchNumber;
-  state.duelTalentDrafts = copyDuelTalentDrafts(suggestedDrafts ?? state.duelTalentDrafts);
+  state.duelTalentDrafts = copyDuelTalentDrafts(
+    suggestedDrafts ?? state.duelTalentDrafts,
+    CHALLENGE_PLAYER_COUNT,
+  );
   state.online = state.online ? { ...state.online, startAtServerMs: null } : state.online;
   return state;
 }
@@ -334,12 +363,20 @@ export function updateOnlinePlayerNames(names: readonly (string | null)[]): void
 export function rematch(): ChallengeState {
   if (state?.kind === 'daily') return startDaily(state.worldId);
   if (state?.kind === 'bot') {
-    return startBot(state.worldId, state.botDifficulty ?? 'normal', state.duelTalentDrafts);
+    return startBot(
+      state.worldId,
+      state.botDifficulty ?? CHALLENGE_BOT_DEFAULT_DIFFICULTY,
+      state.duelTalentDrafts,
+    );
   }
   if (state?.kind === 'duel-online') {
     return state;
   }
-  return start(state?.worldId ?? '', state?.duelTalentDrafts);
+  return start(
+    state?.worldId ?? '',
+    state?.duelTalentDrafts,
+    state?.playerCount ?? CHALLENGE_DEFAULT_PLAYER_COUNT,
+  );
 }
 
 export function getState(): ChallengeState | null {
@@ -386,6 +423,28 @@ export function submitRound(stats: RunStats): void {
   }
 }
 
+export interface BotVictoryReward {
+  coins: number;
+  xp: number;
+}
+
+/** Gutschrift des Bot-Siegbonus, exakt einmal pro abgeschlossenem Duell. */
+export function awardBotVictory(): BotVictoryReward | null {
+  if (!state || state.kind !== 'bot') return null;
+  if (state.botVictoryReward) return { ...state.botVictoryReward };
+  if (winnerIndex() !== 0) return null;
+
+  const progression = ProgressionSystem.applyBotVictoryBonus(
+    BOT_VICTORY_BONUS_COINS,
+    BOT_VICTORY_BONUS_XP,
+  );
+  state.botVictoryReward = {
+    coins: progression.coinsGained,
+    xp: progression.xpGained,
+  };
+  return { ...state.botVictoryReward };
+}
+
 /**
  * Traegt ein Netzwerk-Duell-Ergebnis an einer festen Spielerposition ein.
  *
@@ -418,7 +477,10 @@ export function submitOnlineRound(index: 0 | 1, round: ChallengeRound): void {
 export function isComplete(): boolean {
   if (!state) return false;
   if (state.kind === 'duel-online') return state.rounds.length === CHALLENGE_PLAYER_COUNT;
-  return state.rounds.length >= (state.kind === 'duel' ? CHALLENGE_PLAYER_COUNT : 1);
+  return (
+    state.rounds.length >=
+    (state.kind === 'duel' ? (state.playerCount ?? CHALLENGE_DEFAULT_PLAYER_COUNT) : 1)
+  );
 }
 
 export function kind(): ChallengeKind {
@@ -432,7 +494,7 @@ export function playerLabel(index: number): string {
   }
   if (state?.kind === 'bot' && index === 1) return 'Bot';
   if (state?.kind === 'daily') return 'Tageslauf';
-  return index === 0 ? 'Spieler 1' : `Spieler ${index + 1}`;
+  return `Spieler ${index + 1}`;
 }
 
 /**

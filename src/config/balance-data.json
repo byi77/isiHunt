@@ -43,7 +43,8 @@
       "globalMultiplier": 1,
       "runsPerLevel": { "start": 0.5, "settled": 2.2, "max": 3, "rampEnd": 10 },
       "dailyCompletionRuns": 0.3494874184529366,
-      "dailyScoreTierRuns": 0.1164
+      "dailyScoreTierRuns": 0.1164,
+      "botVictoryRuns": 1
     }
   },
   "economy": {
@@ -65,7 +66,8 @@
         "completionRuns": 1.8,
         "scoreTierRuns": 0.4,
         "scoreTierCount": 3
-      }
+      },
+      "botVictoryRuns": 1
     },
     "sinks": {
       "talentCosts": [],

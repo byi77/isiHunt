@@ -1414,9 +1414,9 @@ export class MenuScene extends Phaser.Scene {
     const secondaryY = tertiaryY - tertiaryHeight / 2 - rowGap - secondaryHeight / 2;
     const primaryY = secondaryY - secondaryHeight / 2 - rowGap - primaryHeight / 2;
 
-    // JAGD und TAGESLAUF teilen sich die betonte obere Reihe, DUELL und
-    // DUELL2G die zweite - beide Reihen mit derselben Breite/demselben
-    // Abstand, damit sie sich optisch als zusammengehoeriges Paar lesen.
+    // JAGD und TAGESLAUF teilen sich die betonte obere Reihe. Das Duell hat
+    // darunter einen eigenen, zentralen Einstieg fuer lokale, Bot- und
+    // Netzwerkduelle.
     const secondaryGap = 115;
     const secondaryWidth = 210;
 
@@ -1460,34 +1460,15 @@ export class MenuScene extends Phaser.Scene {
 
     createButton(
       this,
-      GAME_WIDTH / 2 - secondaryGap,
+      GAME_WIDTH / 2,
       secondaryY,
       'DUELL',
-      () => {
-        this.scene.start(SceneKey.WorldInfo, {
-          worldId: this.selectedWorld.id,
-          mode: 'duell' satisfies WorldInfoMode,
-        });
-      },
+      () => this.scene.start(SceneKey.DuelSelect, { worldId: this.selectedWorld.id }),
       {
-        width: secondaryWidth,
+        width: 360,
         height: secondaryHeight,
         accent: Palette.goldHex,
-        fontSize: FontSize.small,
-      },
-    );
-
-    createButton(
-      this,
-      GAME_WIDTH / 2 + secondaryGap,
-      secondaryY,
-      'DUELL2G',
-      () => this.scene.start(SceneKey.OnlineDuel),
-      {
-        width: secondaryWidth,
-        height: secondaryHeight,
-        accent: 0x38bdf8,
-        fontSize: FontSize.small,
+        fontSize: FontSize.body,
       },
     );
 

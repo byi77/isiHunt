@@ -58,6 +58,8 @@ function relics(count: number): string {
 interface OnlineDuelSceneData {
   /** 'result' nach Rueckkehr aus GameScene; 'rematch' nach Server-Reset. */
   phase?: 'result' | 'rematch';
+  /** Welt aus der vorgelagerten Duellauswahl. */
+  worldId?: string;
 }
 
 export class OnlineDuelScene extends Phaser.Scene {
@@ -139,7 +141,9 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.outgoingInvitationId = null;
 
     const state = ChallengeSystem.getState();
-    this.world = getWorld(state?.worldId ?? SaveSystem.load().lastWorldId ?? DEFAULT_WORLD_ID);
+    this.world = getWorld(
+      data.worldId ?? state?.worldId ?? SaveSystem.load().lastWorldId ?? DEFAULT_WORLD_ID,
+    );
 
     this.buildBackground();
     this.contentOffset = createMenuLayout().sections.next(150) - 300;
@@ -309,7 +313,7 @@ export class OnlineDuelScene extends Phaser.Scene {
   private buildDuelLobbyStart(): void {
     this.clearTransient();
     this.statusPage.setStatus('', Palette.inkDim);
-    this.buildHeading('DUELL2G', 'Fordere einen duellbereiten Spieler direkt heraus.');
+    this.buildHeading('DUELL', 'Fordere einen duellbereiten Spieler direkt heraus.');
 
     this.keep(
       this.add
@@ -394,6 +398,10 @@ export class OnlineDuelScene extends Phaser.Scene {
         this.renderDuelLobbyPlayers(players);
       },
       onInvitationReceived: () => {
+        // Die globale Lobby bleibt waehrend eines laufenden Duells abonniert,
+        // damit andere Spieler den Status IM DUELL sehen. Eine Einladung darf
+        // in dieser Zeit aber keine bereits beendete Scene wiederbeleben.
+        if (!this.scene.isActive()) return;
         NetworkDuelSystem.setDuelLobbyAvailability('busy');
         void this.loadPendingDuelInvitations();
       },
@@ -476,7 +484,7 @@ export class OnlineDuelScene extends Phaser.Scene {
       return;
     }
 
-    NetworkDuelSystem.unsubscribeFromDuelLobby();
+    NetworkDuelSystem.setDuelLobbyAvailability('busy');
     this.outgoingInvitationId = result.value.id;
     this.isHost = true;
     this.roomCode = result.value.code;
@@ -576,7 +584,7 @@ export class OnlineDuelScene extends Phaser.Scene {
     }
 
     this.clearInvitationPrompt();
-    NetworkDuelSystem.unsubscribeFromDuelLobby();
+    NetworkDuelSystem.setDuelLobbyAvailability('busy');
     this.isHost = false;
     this.roomCode = result.value.code;
     this.participantToken = result.value.participantToken;
@@ -623,7 +631,7 @@ export class OnlineDuelScene extends Phaser.Scene {
       return;
     }
 
-    NetworkDuelSystem.unsubscribeFromDuelLobby();
+    NetworkDuelSystem.setDuelLobbyAvailability('busy');
     this.isHost = true;
     this.roomCode = result.value.code;
     this.participantToken = result.value.participantToken;
@@ -660,7 +668,7 @@ export class OnlineDuelScene extends Phaser.Scene {
       return;
     }
 
-    NetworkDuelSystem.unsubscribeFromDuelLobby();
+    NetworkDuelSystem.setDuelLobbyAvailability('busy');
     this.isHost = false;
     this.roomCode = code;
     this.participantToken = result.value.participantToken;
@@ -778,6 +786,8 @@ export class OnlineDuelScene extends Phaser.Scene {
     }
 
     const localPlayerIndex: 0 | 1 = this.isHost ? 0 : 1;
+    const challengeState = ChallengeSystem.getState();
+    const sharedChannelKey = challengeState?.kind === 'duel-online' ? challengeState.seed : '';
 
     NetworkDuelSystem.subscribeToRoom(
       supabase,
@@ -821,6 +831,7 @@ export class OnlineDuelScene extends Phaser.Scene {
       },
       ChallengeSystem.playerLabel(localPlayerIndex),
       this.participantToken,
+      sharedChannelKey,
     );
 
     const offsetResult = await NetworkDuelSystem.measureClockOffset();
@@ -1104,7 +1115,10 @@ export class OnlineDuelScene extends Phaser.Scene {
   }
 
   private cleanupLobby(): void {
-    NetworkDuelSystem.unsubscribeFromDuelLobby();
+    // Die globale Lobby ist bewusst laenger als diese Scene aktiv: vom
+    // Einstieg ueber GameScene bis zum Ergebnis muss der Spieler fuer andere
+    // Clients als IM DUELL sichtbar bleiben. ABBRECHEN und GameScene.abortRun
+    // kuemmern sich explizit um das endgueltige Unsubscribe.
     if (this.startPollTimer) {
       this.startPollTimer.remove();
       this.startPollTimer = null;

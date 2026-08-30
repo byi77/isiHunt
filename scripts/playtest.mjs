@@ -666,6 +666,7 @@ async function suiteScreens() {
       ['Achievements', 'Erfolge'],
       ['Settings', 'Einstellungen'],
       ['Leaderboard', 'Rangliste'],
+      ['DuelSelect', 'Duellauswahl'],
       ['Admin', 'Wartung'],
     ];
 

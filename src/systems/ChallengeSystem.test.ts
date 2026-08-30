@@ -12,8 +12,17 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { CHALLENGE_PLAYER_COUNT, challengePlayerLabel } from '@/config/challenge';
-import { DAILY_COMPLETION_BONUS_COINS, DAILY_COMPLETION_BONUS_XP } from '@/config/GameConfig';
+import {
+  CHALLENGE_MAX_PLAYER_COUNT,
+  CHALLENGE_PLAYER_COUNT,
+  challengePlayerLabel,
+} from '@/config/challenge';
+import {
+  BOT_VICTORY_BONUS_COINS,
+  BOT_VICTORY_BONUS_XP,
+  DAILY_COMPLETION_BONUS_COINS,
+  DAILY_COMPLETION_BONUS_XP,
+} from '@/config/GameConfig';
 import { emptyRarityCounts } from '@/config/rarities';
 import { DEFAULT_WORLD_ID, WORLDS } from '@/config/worlds';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
@@ -160,6 +169,20 @@ describe('Rundenablauf', () => {
     expect(ChallengeSystem.isComplete()).toBe(true);
   });
 
+  it('unterstuetzt bis zu vier lokale Spieler', () => {
+    ChallengeSystem.start(DEFAULT_WORLD_ID, CHALLENGE_MAX_PLAYER_COUNT);
+
+    expect(ChallengeSystem.getState()?.playerCount).toBe(CHALLENGE_MAX_PLAYER_COUNT);
+    expect(ChallengeSystem.getState()?.duelTalentDrafts).toHaveLength(CHALLENGE_MAX_PLAYER_COUNT);
+
+    for (const score of [100, 200, 300, 400]) {
+      ChallengeSystem.submitRound(createRun(score));
+    }
+
+    expect(ChallengeSystem.isComplete()).toBe(true);
+    expect(ChallengeSystem.winnerIndex()).toBe(3);
+  });
+
   it('ist ohne laufendes Duell nicht beendet', () => {
     expect(ChallengeSystem.isComplete()).toBe(false);
   });
@@ -269,6 +292,18 @@ describe('Bot-Duell', () => {
     // pruefbar ist nur, dass ueberhaupt ein Sieger feststeht (kein Gleichstand
     // durch den deterministischen Seed-Hash).
     expect(ChallengeSystem.winnerIndex()).not.toBeNull();
+  });
+
+  it('vergibt den Siegbonus genau einmal, wenn der Spieler den Bot besiegt', () => {
+    ChallengeSystem.startBot(DEFAULT_WORLD_ID, 'easy');
+    ChallengeSystem.submitRound(createRun(1000));
+
+    const reward = ChallengeSystem.awardBotVictory();
+
+    expect(reward).not.toBeNull();
+    expect(reward!.xp).toBe(BOT_VICTORY_BONUS_XP);
+    expect(reward!.coins).toBeGreaterThanOrEqual(BOT_VICTORY_BONUS_COINS);
+    expect(ChallengeSystem.awardBotVictory()).toEqual(reward);
   });
 
   it('wechselt bei einem Rematch die Schwierigkeit nicht, aber den Seed', () => {
