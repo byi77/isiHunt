@@ -93,6 +93,8 @@ export class MenuScene extends Phaser.Scene {
   private profileAuraAsset: EgoAuraAsset | undefined;
   private profileAuraColor = 0xffffff;
   private profileAuraMs = 0;
+  private profilePanelBottom = 385;
+  private swipeHintText: Phaser.GameObjects.Text | null = null;
   private readonly onlineHandler = (): void => {
     // Ausdruecklicher Anlass: Das Netz ist gerade zurueckgekehrt, ein
     // wartender Offline-Run soll sofort hoch - nicht erst nach der
@@ -770,17 +772,18 @@ export class MenuScene extends Phaser.Scene {
     const info = await checkForUpdate();
     if (!info || !this.scene.isActive()) return;
 
-    // Im freien Streifen unter dem Wisch-Hinweis (endet bei y=730) und ueber
-    // der JAGD-Reihe (beginnt fruehestens bei y=839, siehe buildFooter) - dort
-    // ist Platz, ohne mit Weltenwheel oder Footer zu kollidieren. Ein neuer
-    // Stand ist eine Ausnahmemeldung und darf entsprechend auffallen: groesser
-    // als ein normaler Knopf und mit einem zusaetzlichen, rein dekorativen
-    // Puls-Glow dahinter.
+    // Der Update-Hinweis bekommt den festen Platz direkt ueber der JAGD-Reihe.
+    // Er ersetzt dort temporaer den Wisch-Hinweis: Beide Hinweise gleichzeitig
+    // waeren an dieser Stelle zu eng und wuerden den Blick vor dem Start
+    // zerreissen. Der Kreisel ist bis zum Hinweisbereich symmetrisch gesetzt.
+    const footer = this.getFooterLayout();
+    const primaryTop = footer.primaryY - footer.primaryHeight / 2;
+    const bannerY = primaryTop - 46;
     //
     // Der Puls sitzt bewusst NICHT auf banner.container: Ein pulsierender
     // setScale() auf dem interaktiven Container wuerde periodisch auch die
     // Trefferflaeche schrumpfen lassen - exakt die Falle aus ART_STYLE.md 8.2.
-    const bannerY = 785;
+    this.swipeHintText?.setVisible(false);
     const bannerWidth = GAME_WIDTH - 60;
     const pulseGlow = this.add
       .image(GAME_WIDTH / 2, bannerY, TextureKey.Glow)
@@ -915,7 +918,7 @@ export class MenuScene extends Phaser.Scene {
       { center: y - 26, height: FontSize.body },
       { center: y + 2, height: FontSize.body },
       { center: y + 28, height: FontSize.tiny },
-      { center: y + 49, height: FontSize.tiny },
+      { center: y + 49, height: FontSize.body },
       { center: y + 72, height: FontSize.tiny },
       { center: y + 93, height: FontSize.tiny },
       { center: y + 114, height: FontSize.tiny },
@@ -928,6 +931,8 @@ export class MenuScene extends Phaser.Scene {
     const panelBottom =
       Math.max(...rowBounds.map((row) => row.center + row.height / 2)) + panelPadding;
     const panelCenter = (panelTop + panelBottom) / 2;
+    this.profilePanelBottom = panelBottom;
+
     createPanel(
       this,
       GAME_WIDTH / 2,
@@ -982,7 +987,7 @@ export class MenuScene extends Phaser.Scene {
         172,
         y + 49,
         `COINS  ${coins.toLocaleString('de-DE')}`,
-        textStyle(FontSize.tiny, Palette.gold, { fontStyle: 'bold' }),
+        textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
       )
       .setOrigin(0, 0.5)
       .setLetterSpacing(3);
@@ -1020,25 +1025,31 @@ export class MenuScene extends Phaser.Scene {
   private buildWorldList(level: number): void {
     this.cleanupWorldList();
 
+    const step = 112;
     const selectedIndex = Math.max(
       0,
       WORLDS.findIndex((world) => world.id === this.selectedWorld.id),
     );
-    // Spaetere Welten brauchen drei Karten, obwohl der Profilblock hoeher
-    // endet: Die kleinere Kartenhoehe haelt die obere Nachbarkarte aus dem
-    // Profil und die untere aus dem Wisch-Hinweis heraus.
     const compactWheel = selectedIndex > 0;
-    const step = compactWheel ? 118 : 112;
-    // Das Wheel bleibt auf einer festen Linie: Unterhalb davon liegen der
-    // Wisch-Hinweis, ein moeglicher Update-Banner und die Footer-Aktionen.
-    // Bei spaeten Welten wird deshalb nur die Kartenhoehe reduziert, damit
-    // die obere Nachbarkarte trotzdem unter dem Profilblock beginnt.
-    const centerY = 530;
+    const cardHeight = compactWheel ? 80 : 96;
+    const wheelAngle = 0.8;
+    const wheelRadius = compactWheel ? 108 : 140;
+    const neighborScale = 0.72 + Math.cos(wheelAngle) * 0.28;
+    const neighborExtent = Math.sin(wheelAngle) * wheelRadius + (cardHeight * neighborScale) / 2;
+    const footer = this.getFooterLayout();
+    const primaryTop = footer.primaryY - footer.primaryHeight / 2;
+    const swipeHintY = primaryTop - 24;
+    const layoutTop = this.profilePanelBottom + 18;
+    const layoutBottom = swipeHintY - 10 - 18;
+    const topExtent = selectedIndex > 0 ? neighborExtent : cardHeight / 2;
+    const bottomExtent = selectedIndex < WORLDS.length - 1 ? neighborExtent : cardHeight / 2;
+    // Der gesamte sichtbare Kartenstapel bekommt oben und unten denselben
+    // Abstand: Profilblock und Wisch-Hinweis bilden die festen Grenzen.
+    const centerY = (layoutTop + layoutBottom + topExtent - bottomExtent) / 2;
 
     const carousel = this.add.container(0, 0);
     this.worldCarousel = carousel;
     const cardWidth = GAME_WIDTH - 120;
-    const cardHeight = compactWheel ? 80 : 96;
     const wheelCards: Array<{
       card: Phaser.GameObjects.Container;
       offset: number;
@@ -1071,7 +1082,7 @@ export class MenuScene extends Phaser.Scene {
       card.add(
         this.add
           .image(0, 0, TextureKey.Glow)
-          .setDisplaySize(cardWidth * 1.08, cardHeight * 2.1)
+          .setDisplaySize(cardWidth * 1.08, compactWheel ? cardHeight * 1.05 : cardHeight * 2.1)
           .setTint(world.accent)
           .setAlpha(0.06)
           .setBlendMode(Phaser.BlendModes.ADD),
@@ -1104,11 +1115,7 @@ export class MenuScene extends Phaser.Scene {
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0, 0.5);
-      // Die aktive Karte hat rechts neben dem Text noch das Info-Symbol.
-      // Seine Sichtflaeche bleibt deshalb auch bei langen Welttexten frei.
-      subtitle.setWordWrapWidth(
-        isUnlocked && isSelected ? cardWidth - 220 : isUnlocked ? cardWidth - 150 : cardWidth - 76,
-      );
+      subtitle.setWordWrapWidth(isUnlocked ? cardWidth - 150 : cardWidth - 76);
       card.add(subtitle);
 
       // Nur die ausgewaehlte, freigeschaltete Karte bekommt das Info-Symbol -
@@ -1167,8 +1174,6 @@ export class MenuScene extends Phaser.Scene {
     // geraden Liste. Die Karten selbst bleiben dabei immer gerade: Nur ihre
     // Hoehe, Groesse und Tiefe aendern sich wie bei einem echten Wheel.
     const dragState = { offset: 0 };
-    const wheelRadius = 140;
-    const wheelAngle = 0.8;
     const updateWheel = (dragY: number): void => {
       // Ein Fingerzug darf nur genau eine Welt vor- oder zurueckschalten.
       // Ohne diese Begrenzung konnten die Karten bei langen Wischbewegungen
@@ -1206,62 +1211,24 @@ export class MenuScene extends Phaser.Scene {
     updateWheel(0);
 
     const swipeHint = this.add
-      .text(GAME_WIDTH / 2, 730, 'HOCH / RUNTER WISCHEN', textStyle(FontSize.tiny, Palette.inkDim))
+      .text(
+        GAME_WIDTH / 2,
+        swipeHintY,
+        'HOCH / RUNTER WISCHEN',
+        textStyle(FontSize.tiny, Palette.inkDim),
+      )
       .setOrigin(0.5)
       .setLetterSpacing(3);
+    this.swipeHintText = swipeHint;
     this.worldListDecorations.push(swipeHint);
-
-    // Pfeile als zuverlaessiger Zweitweg zur Wisch-Geste. Wische-mit-
-    // Geschwindigkeitsschwelle ist fuer motorisch weniger sichere Finger
-    // (Kinder, aeltere Nutzer) ein unzuverlaessiger Erstkontakt - ein
-    // misslungener Swipe gibt kein Feedback ausser dem Zurueckschnappen.
-    // Die Pfeile rufen dieselbe selectWorld()-Funktion auf wie die Geste,
-    // es entsteht also kein zweiter Auswahlpfad mit eigenem Zustand.
-    // Die Karte oberhalb der Mitte zeigt den vorherigen Index (offset -1),
-    // die Karte darunter den naechsten (offset +1) - siehe y = centerY +
-    // offset * step weiter oben. Die Pfeile folgen dieser Bildschirmrichtung:
-    // ▲ geht zur oben angezeigten (vorherigen), ▼ zur unten angezeigten
-    // (naechsten) Welt.
-    const arrowX = GAME_WIDTH / 2 + cardWidth / 2 + 30;
-    const arrowUp = createButton(
-      this,
-      arrowX,
-      centerY - step,
-      '▲',
-      () => this.stepWorld(-1, level),
-      {
-        width: 52,
-        height: 52,
-        accent: 0x9aa3bd,
-        fontSize: FontSize.body,
-      },
-    );
-    const arrowDown = createButton(
-      this,
-      arrowX,
-      centerY + step,
-      '▼',
-      () => this.stepWorld(1, level),
-      {
-        width: 52,
-        height: 52,
-        accent: 0x9aa3bd,
-        fontSize: FontSize.body,
-      },
-    );
-    arrowUp.setEnabled(selectedIndex > 0);
-    arrowDown.setEnabled(selectedIndex < WORLDS.length - 1);
-    this.worldListDecorations.push(arrowUp.container, arrowDown.container);
 
     let startY = 0;
     let startX = 0;
     let activePointerId: number | null = null;
-    const selectorTop = 370;
-    const selectorBottom = 700;
-    // Seitlich auf den Kartenbereich begrenzt, damit ein Tipp auf die
-    // Pfeil-Buttons rechts daneben nicht zusaetzlich einen Wheel-Drag
-    // startet - sonst koennte ein leicht zitternder Finger auf dem Pfeil
-    // gleichzeitig den Klick UND ein Zurueckschnappen des Wheels ausloesen.
+    const selectorTop = Math.max(370, layoutTop - 20);
+    const selectorBottom = Math.min(swipeHintY - 10, layoutBottom + 20);
+    // Seitlich auf den Kartenbereich begrenzt, damit Tipps ausserhalb des
+    // Kreisels keinen unbeabsichtigten Wheel-Drag starten.
     const selectorLeft = GAME_WIDTH / 2 - cardWidth / 2;
     const selectorRight = GAME_WIDTH / 2 + cardWidth / 2;
 
@@ -1327,12 +1294,7 @@ export class MenuScene extends Phaser.Scene {
     this.worldCarousel = null;
     for (const decoration of this.worldListDecorations) decoration.destroy();
     this.worldListDecorations = [];
-  }
-
-  /** Pfeil-Fallback zum Wisch-Wheel: einen Schritt vor oder zurueck. */
-  private stepWorld(direction: 1 | -1, level: number): void {
-    const currentIndex = WORLDS.findIndex((world) => world.id === this.selectedWorld.id);
-    this.selectWorld(currentIndex + direction, level);
+    this.swipeHintText = null;
   }
 
   private selectWorld(index: number, level: number): boolean {
@@ -1379,6 +1341,43 @@ export class MenuScene extends Phaser.Scene {
     });
   }
 
+  private getFooterLayout(): {
+    primaryY: number;
+    secondaryY: number;
+    tertiaryY: number;
+    settingsY: number;
+    primaryHeight: number;
+    secondaryHeight: number;
+    tertiaryHeight: number;
+    settingsHeight: number;
+    rowGap: number;
+  } {
+    const primaryHeight = 96;
+    const secondaryHeight = 76;
+    const tertiaryHeight = 60;
+    const settingsHeight = 66;
+    const rowGap = 22;
+    const zeigtHinweis = isIos() && !isStandalone();
+    const hinweisHoehe = 76;
+    const hinweisPlatz = zeigtHinweis ? hinweisHoehe + rowGap : 0;
+    const settingsY = GAME_HEIGHT - 110 - hinweisPlatz;
+    const tertiaryY = settingsY - settingsHeight / 2 - rowGap - tertiaryHeight / 2;
+    const secondaryY = tertiaryY - tertiaryHeight / 2 - rowGap - secondaryHeight / 2;
+    const primaryY = secondaryY - secondaryHeight / 2 - rowGap - primaryHeight / 2;
+
+    return {
+      primaryY,
+      secondaryY,
+      tertiaryY,
+      settingsY,
+      primaryHeight,
+      secondaryHeight,
+      tertiaryHeight,
+      settingsHeight,
+      rowGap,
+    };
+  }
+
   /**
    * Drei Stufen statt eines gleichfoermigen Rasters: JAGD ist der Kern-Loop
    * und steht allein und gross oben. DUELL/TAGESLAUF sind Nebenmodi mit
@@ -1390,34 +1389,20 @@ export class MenuScene extends Phaser.Scene {
    */
   private buildFooter(): void {
     const hasLeaderboard = CloudSystem.isAvailable();
+    const footer = this.getFooterLayout();
+    const {
+      primaryY,
+      secondaryY,
+      tertiaryY,
+      settingsY,
+      primaryHeight,
+      secondaryHeight,
+      tertiaryHeight,
+      settingsHeight,
+      rowGap,
+    } = footer;
 
-    const primaryHeight = 96;
-    const secondaryHeight = 76;
-    const tertiaryHeight = 60;
-    const settingsHeight = 66;
-    const rowGap = 22;
-
-    // Der iOS-Hinweis bekommt eigenen Platz UNTER den Knoepfen, statt ueber
-    // sie gelegt zu werden.
-    //
-    // Vorher hing er fest an `GAME_HEIGHT - 88` und ueberdeckte auf einem
-    // iPhone 13 die EINSTELLUNGEN-Zeile um 49 Pixel. Aufgefallen war das nie:
-    // Der Hinweis erscheint nur im iOS-Browser, und getestet wird in der
-    // Home-Bildschirm-App, wo er ausgeblendet ist. Ihn nur nach oben zu
-    // schieben half nicht - dann traf die Ueberlappung die Reihe darueber.
-    // Nur ein reservierter Bereich loest das: Die Knopfreihen bauen sich von
-    // `settingsY` nach oben auf und wandern dadurch alle mit.
-    const zeigtHinweis = isIos() && !isStandalone();
     const hinweisHoehe = 76;
-    const hinweisPlatz = zeigtHinweis ? hinweisHoehe + rowGap : 0;
-    const settingsY = GAME_HEIGHT - 110 - hinweisPlatz;
-
-    // Abstand zu EINSTELLUNGEN genauso gross wie zwischen den anderen Reihen -
-    // sonst reicht der optische Lichtschein der Knoepfe (createButton haelt
-    // seinen Halo bis zum 2,6-fachen der Knopfhoehe) in die Nachbarreihe.
-    const tertiaryY = settingsY - settingsHeight / 2 - rowGap - tertiaryHeight / 2;
-    const secondaryY = tertiaryY - tertiaryHeight / 2 - rowGap - secondaryHeight / 2;
-    const primaryY = secondaryY - secondaryHeight / 2 - rowGap - primaryHeight / 2;
 
     // JAGD und TAGESLAUF teilen sich die betonte obere Reihe. Das Duell hat
     // darunter einen eigenen, zentralen Einstieg fuer lokale, Bot- und
