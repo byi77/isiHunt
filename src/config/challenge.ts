@@ -21,7 +21,7 @@
 export const CHALLENGE_DEFAULT_PLAYER_COUNT = 2;
 export const CHALLENGE_MIN_PLAYER_COUNT = 2;
 export const CHALLENGE_MAX_PLAYER_COUNT = 4;
-/** Netzwerkduelle bleiben auf zwei feste Spielerpositionen begrenzt. */
+/** Legacy-Konstante fuer den Standardfall des Zwei-Spieler-Duells. */
 export const CHALLENGE_PLAYER_COUNT = CHALLENGE_DEFAULT_PLAYER_COUNT;
 
 /**

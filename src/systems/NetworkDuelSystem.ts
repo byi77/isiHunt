@@ -27,7 +27,11 @@
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 
 import { BACKEND_TIMEOUT_MS, SYNC_CODE_ALPHABET } from '@/config/backend';
-import { DUEL_TALENT_POINT_BUDGET } from '@/config/challenge';
+import {
+  CHALLENGE_DEFAULT_PLAYER_COUNT,
+  CHALLENGE_MAX_PLAYER_COUNT,
+  DUEL_TALENT_POINT_BUDGET,
+} from '@/config/challenge';
 import { sanitizePlayerName } from '@/config/playerName';
 import type { TalentRanks } from '@/config/talents';
 import { normalizeTalentRanks } from '@/systems/TalentAllocationSystem';
@@ -48,6 +52,9 @@ export interface DuelRoomInfo {
   seed: string;
   worldId: string;
   participantToken: string;
+  playerIndex: number;
+  playerCount: number;
+  maxPlayers: number;
   matchNumber?: number;
 }
 
@@ -101,6 +108,9 @@ export interface DuelRoomStatus {
   /** `null`, solange der jeweilige Spieler seine Runde nicht abgegeben hat. */
   hostResult: DuelRoundResult | null;
   guestResult: DuelRoundResult | null;
+  playerCount: number;
+  maxPlayers: number;
+  playerResults: (DuelRoundResult | null)[];
 }
 
 // --- Code-Erzeugung -----------------------------------------------------------
@@ -142,9 +152,16 @@ export function normalizeRoomCode(raw: string): string {
  * geben diesen zusammen mit dem Teilnehmer-Token zurueck. Bei einer
  * Code-Kollision (Postgres 23505) wird bis zu dreimal neu versucht.
  */
-export async function createRoom(
-  worldId: string,
-): Promise<CloudResult<{ code: string; seed: string; participantToken: string }>> {
+export async function createRoom(worldId: string): Promise<
+  CloudResult<{
+    code: string;
+    seed: string;
+    participantToken: string;
+    playerIndex: number;
+    playerCount: number;
+    maxPlayers: number;
+  }>
+> {
   const supabase = CloudSystem.getSupabaseClient();
   if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
 
@@ -153,7 +170,12 @@ export async function createRoom(
   for (let attempt = 0; attempt < 3; attempt++) {
     const code = createRoomCode();
     const result = await withTimeout(
-      supabase.rpc('create_duel_room', { p_world_id: worldId, p_code: code, p_seed: seed }),
+      supabase.rpc('create_duel_room', {
+        p_world_id: worldId,
+        p_code: code,
+        p_seed: seed,
+        p_max_players: CHALLENGE_MAX_PLAYER_COUNT,
+      }),
       'Raum erzeugen',
     );
 
@@ -162,17 +184,39 @@ export async function createRoom(
       const rawRoom = String(result.value.data ?? '');
       let participantToken = rawRoom;
       let serverSeed = seed;
+      let playerIndex = 0;
+      let playerCount = 1;
+      let maxPlayers = CHALLENGE_MAX_PLAYER_COUNT;
       try {
-        const parsed = JSON.parse(rawRoom) as { participantToken?: unknown; seed?: unknown };
+        const parsed = JSON.parse(rawRoom) as {
+          participantToken?: unknown;
+          seed?: unknown;
+          playerIndex?: unknown;
+          playerCount?: unknown;
+          maxPlayers?: unknown;
+        };
         if (typeof parsed.participantToken === 'string') participantToken = parsed.participantToken;
         if (typeof parsed.seed === 'string' && parsed.seed.length > 0) serverSeed = parsed.seed;
+        if (Number.isInteger(parsed.playerIndex)) playerIndex = Number(parsed.playerIndex);
+        if (Number.isInteger(parsed.playerCount)) playerCount = Number(parsed.playerCount);
+        if (Number.isInteger(parsed.maxPlayers)) maxPlayers = Number(parsed.maxPlayers);
       } catch {
         // Alte Servermigration: Die Antwort war direkt das Teilnehmer-Token.
       }
       if (!/^[a-f0-9]{64}$/i.test(participantToken)) {
         return { ok: false, error: 'Ungueltiges Teilnehmer-Token vom Server' };
       }
-      return { ok: true, value: { code, seed: serverSeed, participantToken } };
+      return {
+        ok: true,
+        value: {
+          code,
+          seed: serverSeed,
+          participantToken,
+          playerIndex,
+          playerCount,
+          maxPlayers,
+        },
+      };
     }
 
     // 23505 = unique_violation. Alles andere ist ein echter Fehler.
@@ -305,6 +349,9 @@ export async function acceptDuelInvitation(
       seed,
       worldId,
       participantToken,
+      playerIndex: 1,
+      playerCount: CHALLENGE_DEFAULT_PLAYER_COUNT,
+      maxPlayers: CHALLENGE_MAX_PLAYER_COUNT,
       ...(Number.isInteger(matchNumber) && matchNumber > 0 ? { matchNumber } : {}),
     },
   };
@@ -375,7 +422,18 @@ export async function joinRoom(rawCode: string): Promise<CloudResult<DuelRoomInf
   }
   return {
     ok: true,
-    value: { seed: String(row.seed), worldId: String(row.world_id), participantToken },
+    value: {
+      seed: String(row.seed),
+      worldId: String(row.world_id),
+      participantToken,
+      playerIndex: Number.isInteger(Number(row.player_index)) ? Number(row.player_index) : 1,
+      playerCount: Number.isInteger(Number(row.player_count))
+        ? Number(row.player_count)
+        : CHALLENGE_DEFAULT_PLAYER_COUNT,
+      maxPlayers: Number.isInteger(Number(row.max_players))
+        ? Number(row.max_players)
+        : CHALLENGE_MAX_PLAYER_COUNT,
+    },
   };
 }
 
@@ -543,6 +601,13 @@ export async function getRoomStatus(
       startAtMs: row.start_at ? Date.parse(String(row.start_at)) : null,
       hostResult: parseRoundResult(row.host_result),
       guestResult: parseRoundResult(row.guest_result),
+      playerCount: Number.isInteger(Number(row.player_count))
+        ? Number(row.player_count)
+        : CHALLENGE_DEFAULT_PLAYER_COUNT,
+      maxPlayers: Number.isInteger(Number(row.max_players))
+        ? Number(row.max_players)
+        : CHALLENGE_MAX_PLAYER_COUNT,
+      playerResults: parsePlayerResults(row.player_results, row.host_result, row.guest_result),
     },
   };
 }
@@ -573,6 +638,25 @@ function parseRoundResult(raw: unknown): DuelRoundResult | null {
   }
 
   return { score, bestCombo, totalCollected };
+}
+
+function parsePlayerResults(
+  raw: unknown,
+  hostResult: unknown,
+  guestResult: unknown,
+): (DuelRoundResult | null)[] {
+  const results = Array.from(
+    { length: CHALLENGE_MAX_PLAYER_COUNT },
+    () => null as DuelRoundResult | null,
+  );
+  if (Array.isArray(raw)) {
+    raw.slice(0, CHALLENGE_MAX_PLAYER_COUNT).forEach((value, index) => {
+      results[index] = parseRoundResult(value);
+    });
+  }
+  results[0] ??= parseRoundResult(hostResult);
+  results[1] ??= parseRoundResult(guestResult);
+  return results;
 }
 
 /**
@@ -679,23 +763,23 @@ export interface DuelLiveState {
   activity: DuelOpponentActivity;
 }
 
-export type DuelPlayerNames = [string | null, string | null];
+export type DuelPlayerNames = (string | null)[];
 
 export interface DuelChannelHandlers {
   onOpponentReady?: () => void;
   onStartTimeSet?: (startAtMs: number) => void;
   /** Feuert, wenn der jeweils ANDERE Spieler den Kanal verlaesst. */
-  onOpponentDisconnected?: () => void;
+  onOpponentDisconnected?: (playerIndex: number) => void;
   onChannelError?: (reason: string) => void;
-  onOpponentRoundResult?: (playerIndex: 0 | 1, result: DuelRoundResult) => void;
+  onOpponentRoundResult?: (playerIndex: number, result: DuelRoundResult) => void;
   /** Laufender Zwischenstand des Gegners waehrend des Runs. */
-  onOpponentLiveState?: (state: DuelLiveState) => void;
+  onOpponentLiveState?: (state: DuelLiveState, playerIndex: number) => void;
   /** Anzeigenamen aus dem aktuellen Presence-Zustand. */
-  onPresenceSync?: (playerNames: DuelPlayerNames) => void;
+  onPresenceSync?: (playerNames: DuelPlayerNames, isFullSync?: boolean) => void;
 }
 
 let activeChannel: RealtimeChannel | null = null;
-let activeLocalPlayerIndex: 0 | 1 = 0;
+let activeLocalPlayerIndex = 0;
 
 /**
  * Aktuell registrierte Handler - veraenderbar statt einmalig in `subscribeToRoom()`
@@ -866,9 +950,9 @@ function cleanPresencePlayerName(raw: unknown): string | null {
 }
 
 function readPresencePlayerNames(state: Record<string, unknown>): DuelPlayerNames {
-  const names: DuelPlayerNames = [null, null];
+  const names: DuelPlayerNames = Array.from({ length: CHALLENGE_MAX_PLAYER_COUNT }, () => null);
 
-  for (const index of [0, 1] as const) {
+  for (let index = 0; index < CHALLENGE_MAX_PLAYER_COUNT; index += 1) {
     const entries = state[String(index)];
     if (!Array.isArray(entries)) continue;
 
@@ -903,7 +987,7 @@ function readPresencePlayerNames(state: Record<string, unknown>): DuelPlayerName
 export function subscribeToRoom(
   supabase: SupabaseClient,
   code: string,
-  localPlayerIndex: 0 | 1,
+  localPlayerIndex: number,
   handlers: DuelChannelHandlers,
   localPlayerName = '',
   participantToken = '',
@@ -982,8 +1066,13 @@ export function subscribeToRoom(
           totalCollected?: unknown;
         };
       }) => {
-        const playerIndex = payload.playerIndex;
-        if (playerIndex !== 0 && playerIndex !== 1) return;
+        const playerIndex = Number(payload.playerIndex);
+        if (
+          !Number.isInteger(playerIndex) ||
+          playerIndex < 0 ||
+          playerIndex >= CHALLENGE_MAX_PLAYER_COUNT
+        )
+          return;
         activeHandlers.onOpponentRoundResult?.(playerIndex, {
           score: Number(payload.score) || 0,
           bestCombo: Number(payload.bestCombo) || 0,
@@ -1003,7 +1092,14 @@ export function subscribeToRoom(
         // Pruefung wuerde das Geraet den eigenen Stand als den des Gegners
         // anzeigen. Das ist der einzige stille Fall: er tritt bei JEDEM
         // eigenen Takt ein und ist voellig normal.
-        if (payload.playerIndex === activeLocalPlayerIndex) return;
+        const playerIndex = Number(payload.playerIndex);
+        if (
+          !Number.isInteger(playerIndex) ||
+          playerIndex < 0 ||
+          playerIndex >= CHALLENGE_MAX_PLAYER_COUNT ||
+          playerIndex === activeLocalPlayerIndex
+        )
+          return;
 
         const score = Number(payload.score);
 
@@ -1040,18 +1136,27 @@ export function subscribeToRoom(
           });
         }
 
-        activeHandlers.onOpponentLiveState({ score, activity: payload.activity });
+        activeHandlers.onOpponentLiveState({ score, activity: payload.activity }, playerIndex);
       },
     )
     .on(
       'broadcast',
       { event: 'player-info' },
       ({ payload }: { payload: { playerIndex?: unknown; playerName?: unknown } }) => {
-        if (payload.playerIndex !== 0 && payload.playerIndex !== 1) return;
+        const playerIndex = Number(payload.playerIndex);
+        if (
+          !Number.isInteger(playerIndex) ||
+          playerIndex < 0 ||
+          playerIndex >= CHALLENGE_MAX_PLAYER_COUNT
+        )
+          return;
         const playerName = cleanPresencePlayerName(payload.playerName);
         if (!playerName) return;
-        const playerNames: DuelPlayerNames = [null, null];
-        playerNames[payload.playerIndex] = playerName;
+        const playerNames: DuelPlayerNames = Array.from(
+          { length: CHALLENGE_MAX_PLAYER_COUNT },
+          () => null,
+        );
+        playerNames[playerIndex] = playerName;
         activeHandlers.onPresenceSync?.(playerNames);
       },
     )
@@ -1085,7 +1190,7 @@ export function subscribeToRoom(
       // feuern und wuerde den Puffer sonst fluten.
       const presenceState = channel.presenceState();
       const keys = Object.keys(presenceState).sort().join(',');
-      activeHandlers.onPresenceSync?.(readPresencePlayerNames(presenceState));
+      activeHandlers.onPresenceSync?.(readPresencePlayerNames(presenceState), true);
       broadcastLocalPlayerName();
       if (keys === lastPresenceKeys) return;
       lastPresenceKeys = keys;
@@ -1242,7 +1347,7 @@ export function broadcastStartTime(startAtMs: number): void {
  * ein Rundenergebnis eine andere Payload und Bedeutung hat als ein
  * Zwischenstand waehrend des Laufs.
  */
-export function broadcastRoundResult(playerIndex: 0 | 1, result: DuelRoundResult): void {
+export function broadcastRoundResult(playerIndex: number, result: DuelRoundResult): void {
   sendBroadcast('round-result', { playerIndex, ...result });
 }
 
@@ -1256,7 +1361,7 @@ export function broadcastRoundResult(playerIndex: 0 | 1, result: DuelRoundResult
  * dagegen liegt aus genau diesem Grund persistent im Raum
  * (`submitRoundResult`).
  */
-export function broadcastLiveState(playerIndex: 0 | 1, state: DuelLiveState): void {
+export function broadcastLiveState(playerIndex: number, state: DuelLiveState): void {
   sendBroadcast('live', { playerIndex, ...state });
 }
 
@@ -1322,7 +1427,8 @@ function scheduleDisconnect(key: string): void {
         label: 'duel:presence-weg',
         detail: `Schluessel ${key} - keine Rueckkehr, Trennung gemeldet`,
       });
-      activeHandlers.onOpponentDisconnected?.();
+      const playerIndex = Number(key);
+      activeHandlers.onOpponentDisconnected?.(Number.isInteger(playerIndex) ? playerIndex : -1);
     }, ONLINE_DUEL_PRESENCE_GRACE_MS),
   );
 }

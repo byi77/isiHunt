@@ -356,6 +356,45 @@ describe('Netzwerk-Duell', () => {
     expect(ChallengeSystem.isComplete()).toBe(true);
   });
 
+  it('unterstuetzt vier Online-Spieler mit fester Slot-Zuordnung', () => {
+    ChallengeSystem.startOnline(DEFAULT_WORLD_ID, 'seed-abc', 'CODE01', 3, '', undefined, 4);
+    ChallengeSystem.updateOnlinePlayerNames(['Alice', 'Bob', 'Cara', 'Dora']);
+
+    expect(ChallengeSystem.getState()?.playerCount).toBe(4);
+    expect(ChallengeSystem.playerLabel(0)).toBe('Alice');
+    expect(ChallengeSystem.playerLabel(3)).toBe('Dora');
+
+    for (const [index, score] of [
+      [2, 300],
+      [0, 100],
+      [3, 400],
+    ] as const) {
+      ChallengeSystem.submitOnlineRound(index, {
+        score,
+        bestCombo: 1,
+        totalCollected: 1,
+      });
+    }
+    expect(ChallengeSystem.isComplete()).toBe(false);
+
+    ChallengeSystem.submitOnlineRound(1, { score: 200, bestCombo: 1, totalCollected: 1 });
+
+    expect(ChallengeSystem.isComplete()).toBe(true);
+    expect(ChallengeSystem.getState()?.rounds.map((round) => round.score)).toEqual([
+      100, 200, 300, 400,
+    ]);
+    expect(ChallengeSystem.winnerIndex()).toBe(3);
+  });
+
+  it('loescht bei einem vollstaendigen Presence-Stand verlassene Namen', () => {
+    ChallengeSystem.startOnline(DEFAULT_WORLD_ID, 'seed-abc', 'CODE01', 0);
+    ChallengeSystem.updateOnlinePlayerNames(['Alice', 'Bob', 'Cara', null]);
+    ChallengeSystem.updateOnlinePlayerNames(['Alice', null, 'Cara', null], true);
+
+    expect(ChallengeSystem.playerLabel(1)).toBe('Spieler 2');
+    expect(ChallengeSystem.playerLabel(2)).toBe('Cara');
+  });
+
   it('ordnet Ergebnisse der festen Position zu, nicht der Ankunftsreihenfolge', () => {
     // Regressionsfall: das Gegnerergebnis (Index 1) trifft zuerst ein, das
     // eigene (Index 0) danach. Ohne feste Positionszuordnung wuerde ein

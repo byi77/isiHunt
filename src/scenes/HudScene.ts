@@ -23,20 +23,15 @@ import type { RunMode } from '@/types';
 /**
  * Layout-Koordinaten fuer die kompakten Laufzeitinformationen.
  *
- * Der Gegnerstand steht links unterhalb der Timerleiste, Serie und
- * Multiplikator rechts darunter. Dadurch bleibt der eigene Punktestand in der
- * Mitte frei und alle drei Informationen koennen dauerhaft sichtbar bleiben.
+ * Die Gegenstaende stehen links unterhalb der Timerleiste, Serie und
+ * Multiplikator rechts darunter. Bei einer Mehrspieler-Lobby bekommt jeder
+ * weitere Spieler eine eigene Zeile.
  */
 const DUEL_OPPONENT_X = 60;
 const DUEL_OPPONENT_Y = 48;
 
 /**
- * Abstand zwischen Gegnerstand und Trennmeldung.
- *
- * Eine volle Zeilenhoehe fuer die kleine Warnschrift plus Luft: beide Zeilen
- * koennen gleichzeitig sichtbar sein - "Freund 0 · Verbindung weg" und
- * "Verbindung zum Freund unterbrochen" traten am Geraet genau so zusammen
- * auf (2026-08-23), damals uebereinander gedruckt.
+ * Zeilenabstand zwischen den Live-Staenden der Gegner.
  */
 const DUEL_LINE_HEIGHT = 30;
 
@@ -55,8 +50,12 @@ export interface HudSceneData {
   scoreToBeat?: number | null;
   /** Kompakte Anzeige der aktiven Talentverstaerkungen im laufenden Run. */
   talentSummary?: string;
-  /** Nur im Netzwerk-Duell: Name des Gegners fuer die Live-Zeile. */
-  opponentLabel?: string | null;
+  /** Anzeigenamen aller Spieler, indiziert nach dem Server-Slot. */
+  opponentLabels?: (string | null)[];
+  /** Eigener Server-Slot im Netzwerk-Duell. */
+  localPlayerIndex?: number;
+  /** Anzahl der Spieler im aktuellen Netzwerk-Duell. */
+  playerCount?: number;
   /**
    * Nur im Netzwerk-Duell: dann zeigt das HUD den laufenden Stand des
    * Gegners. Als Flag vom Aufrufer statt per `ChallengeSystem`-Abfrage -
@@ -73,15 +72,16 @@ export class HudScene extends Phaser.Scene {
   private timerText!: Phaser.GameObjects.Text;
   private worldText!: Phaser.GameObjects.Text;
   private targetText: Phaser.GameObjects.Text | null = null;
-  private opponentDisconnectedText!: Phaser.GameObjects.Text;
-  /** Nur im Netzwerk-Duell: laufender Stand des Gegners. */
-  private opponentLiveText: Phaser.GameObjects.Text | null = null;
+  /** Nur im Netzwerk-Duell: laufende Staende der anderen Slots. */
+  private opponentLiveTexts = new Map<number, Phaser.GameObjects.Text>();
+  private opponentLabels: (string | null)[] = [];
+  private opponentScores = new Map<number, number>();
+  private opponentActivities = new Map<number, 'playing' | 'away' | 'left' | 'finished' | 'gone'>();
+  private localPlayerIndex = 0;
+  private playerCount = 2;
   private multiplierText!: Phaser.GameObjects.Text;
-  private opponentLabel = 'Freund';
-  private opponentScore = 0;
   /** Eigener Stand, gespiegelt fuer den Abstandsvergleich in der Gegnerzeile. */
   private lastOwnScore = 0;
-  private lastOpponentActivity: 'playing' | 'away' | 'left' | 'finished' | 'gone' = 'playing';
   private timerBar!: BarHandle;
   private accent = 0xffffff;
   private scoreToBeat: number | null = null;
@@ -101,7 +101,13 @@ export class HudScene extends Phaser.Scene {
     this.scoreToBeat = data.scoreToBeat ?? null;
     this.hasOvertaken = false;
     this.mode = data.mode ?? 'solo';
-    this.opponentLabel = data.opponentLabel?.trim() || 'Freund';
+    this.opponentLabels = data.opponentLabels ? [...data.opponentLabels] : [];
+    this.localPlayerIndex = Number.isInteger(data.localPlayerIndex) ? data.localPlayerIndex! : 0;
+    this.playerCount = Math.max(2, Math.min(4, Math.floor(data.playerCount ?? 2)));
+    this.opponentLiveTexts.clear();
+    this.opponentScores.clear();
+    this.opponentActivities.clear();
+    this.lastOwnScore = 0;
     this.lastComboMultiplier = 1;
     this.pauseOverlay = [];
 
@@ -208,24 +214,20 @@ export class HudScene extends Phaser.Scene {
     // bleibt bis zum ersten Stand unsichtbar; eine vorgezogene "0" waere
     // nicht von einem tatsaechlich bei null stehenden Gegner zu unterscheiden.
     if (data.showOpponentLive) {
-      this.opponentLiveText = this.add
-        .text(DUEL_OPPONENT_X, DUEL_OPPONENT_Y, '', textStyle(FontSize.small, Palette.inkDim))
-        .setOrigin(0, 0)
-        .setAlpha(0);
+      for (let playerIndex = 0; playerIndex < this.playerCount; playerIndex += 1) {
+        if (playerIndex === this.localPlayerIndex) continue;
+        const text = this.add
+          .text(
+            DUEL_OPPONENT_X,
+            DUEL_OPPONENT_Y + this.opponentLiveTexts.size * DUEL_LINE_HEIGHT,
+            '',
+            textStyle(FontSize.small, Palette.inkDim),
+          )
+          .setOrigin(0, 0)
+          .setAlpha(0);
+        this.opponentLiveTexts.set(playerIndex, text);
+      }
     }
-
-    // Nur beim Netzwerk-Duell relevant, deshalb erst bei Bedarf eingeblendet
-    // statt fest reserviertem Platz - ein Verbindungsabbruch soll auffallen,
-    // aber im Normalfall (keine Trennung) nicht staendig Raum beanspruchen.
-    this.opponentDisconnectedText = this.add
-      .text(
-        DUEL_OPPONENT_X,
-        DUEL_OPPONENT_Y + DUEL_LINE_HEIGHT,
-        '',
-        textStyle(FontSize.tiny, Palette.danger),
-      )
-      .setOrigin(0, 0)
-      .setAlpha(0);
 
     this.buildPauseButton();
 
@@ -404,8 +406,8 @@ export class HudScene extends Phaser.Scene {
     this.lastOwnScore = score;
     // Der Abstand in der Gegnerzeile haengt an BEIDEN Staenden - ohne dieses
     // Nachziehen bliebe er stehen, bis der Gegner das naechste Mal sendet.
-    if (this.opponentLiveText && this.opponentLiveText.alpha > 0) {
-      this.renderOpponentLive(this.lastOpponentActivity);
+    for (const [playerIndex, text] of this.opponentLiveTexts) {
+      if (text.alpha > 0) this.renderOpponentLive(playerIndex);
     }
     this.scoreText.setText(score.toLocaleString('de-DE'));
     // Kurzer Pop bei jeder Aenderung - macht Punktzuwachs spuerbar.
@@ -517,42 +519,44 @@ export class HudScene extends Phaser.Scene {
     this.showPauseOverlay(payload.reason);
   };
   private readonly onResumed = (): void => this.hidePauseOverlay();
-  private readonly onOpponentDisconnected = (): void => {
-    this.opponentDisconnectedText
-      .setText(`Verbindung zu ${this.opponentLabel} unterbrochen`)
-      .setAlpha(1);
+  private readonly onOpponentDisconnected = ({ playerIndex }: { playerIndex: number }): void => {
+    if (playerIndex === this.localPlayerIndex || !this.opponentLiveTexts.has(playerIndex)) return;
+    this.opponentActivities.set(playerIndex, 'gone');
     // Der Punktestand bleibt stehen, aber als letzter bekannter - sonst
     // wirkte er wie ein aktueller.
-    this.renderOpponentLive('gone');
+    this.renderOpponentLive(playerIndex);
   };
 
   private readonly onOpponentLive = ({
     score,
     activity,
+    playerIndex,
   }: {
     score: number;
     activity: 'playing' | 'away' | 'left' | 'finished' | 'gone';
+    playerIndex: number;
   }): void => {
-    this.opponentScore = score;
-
-    // Eine wieder eintreffende Meldung hebt den Trennungshinweis auf: ein
-    // kurzes Funkloch soll nicht bis zum Rundenende als Abbruch stehen
-    // bleiben.
-    if (activity !== 'gone') this.opponentDisconnectedText.setAlpha(0);
-
-    this.renderOpponentLive(activity);
+    if (playerIndex === this.localPlayerIndex || !this.opponentLiveTexts.has(playerIndex)) return;
+    this.opponentScores.set(playerIndex, score);
+    this.opponentActivities.set(playerIndex, activity);
+    this.renderOpponentLive(playerIndex);
   };
 
-  private readonly onOpponentName = ({ name }: { name: string }): void => {
+  private readonly onOpponentName = ({
+    name,
+    playerIndex,
+  }: {
+    name: string;
+    playerIndex?: number;
+  }): void => {
     const cleanName = name.trim();
     if (!cleanName) return;
-    this.opponentLabel = cleanName;
-    if (this.opponentDisconnectedText.alpha > 0) {
-      this.opponentDisconnectedText.setText(`Verbindung zu ${this.opponentLabel} unterbrochen`);
-    }
-    if (this.opponentLiveText && this.opponentLiveText.alpha > 0) {
-      this.renderOpponentLive(this.lastOpponentActivity);
-    }
+    const targetIndex = Number.isInteger(playerIndex)
+      ? playerIndex!
+      : [...this.opponentLiveTexts.keys()][0];
+    if (targetIndex === undefined) return;
+    this.opponentLabels[targetIndex] = cleanName;
+    this.renderOpponentLive(targetIndex);
   };
 
   /**
@@ -563,30 +567,32 @@ export class HudScene extends Phaser.Scene {
    * Punktzahl daneben steigt also sichtbar weiter. "Pausiert" wuerde dem
    * widersprechen und wie ein Anzeigefehler wirken.
    */
-  private renderOpponentLive(activity: 'playing' | 'away' | 'left' | 'finished' | 'gone'): void {
-    if (!this.opponentLiveText) return;
-    this.lastOpponentActivity = activity;
+  private renderOpponentLive(playerIndex: number): void {
+    const text = this.opponentLiveTexts.get(playerIndex);
+    if (!text) return;
+    const activity = this.opponentActivities.get(playerIndex) ?? 'playing';
+    const opponentScore = this.opponentScores.get(playerIndex) ?? 0;
+    const displayName = this.opponentLabels[playerIndex]?.trim() || `Spieler ${playerIndex + 1}`;
+    const points = opponentScore.toLocaleString('de-DE');
+    const diff = opponentScore - this.lastOwnScore;
 
-    const points = this.opponentScore.toLocaleString('de-DE');
-    const diff = this.opponentScore - this.lastOwnScore;
-
-    const label =
+    const lineLabel =
       activity === 'left'
-        ? `${this.opponentLabel} ausgestiegen`
+        ? `${displayName} ausgestiegen`
         : activity === 'gone'
-          ? `${this.opponentLabel} ${points} · Verbindung weg`
+          ? `${displayName} ${points} · Verbindung weg`
           : activity === 'finished'
-            ? `${this.opponentLabel} ${points} · fertig`
+            ? `${displayName} ${points} · fertig`
             : activity === 'away'
-              ? `${this.opponentLabel} ${points} · schaut gerade nicht hin`
-              : `${this.opponentLabel} ${points}${diff === 0 ? '' : diff > 0 ? ` · ${diff} vorn` : ` · ${-diff} zurueck`}`;
+              ? `${displayName} ${points} · schaut gerade nicht hin`
+              : `${displayName} ${points}${diff === 0 ? '' : diff > 0 ? ` · ${diff} vorn` : ` · ${-diff} zurueck`}`;
 
     // Aussteiger und Verbindungsverlust in Warnfarbe, alles andere gedaempft:
     // die Zeile soll beim Spielen nicht um Aufmerksamkeit konkurrieren,
     // ausser wenn sich etwas Endgueltiges geaendert hat.
     const color = activity === 'left' || activity === 'gone' ? Palette.danger : Palette.inkDim;
 
-    this.opponentLiveText.setText(label).setColor(color).setAlpha(1);
+    text.setText(lineLabel).setColor(color).setAlpha(1);
   }
 
   private registerEvents(): void {

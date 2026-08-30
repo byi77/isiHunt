@@ -36,13 +36,13 @@ export const GameEvent = {
   /** Bitte, den Run abzubrechen. Ebenfalls vom HUD ausgeloest. */
   AbortRequested: 'run:abort-requested',
   /**
-   * Der Netzwerk-Duell-Gegner hat waehrend des laufenden Runs die Verbindung
-   * verloren (Realtime-Presence-"leave"). Der lokale Run laeuft trotzdem
-   * regulaer weiter (Planungsnotiz: "Solo-Fortsetzung statt Abbruch").
+   * Ein anderer Netzwerk-Duell-Spieler hat waehrend des laufenden Runs die
+   * Verbindung verloren (Realtime-Presence-"leave"). Der lokale Run laeuft
+   * trotzdem regulaer weiter.
    */
   OpponentDisconnected: 'duel:opponent-disconnected',
   /**
-   * Zwischenstand des Netzwerk-Duell-Gegners waehrend des laufenden Runs.
+   * Zwischenstand eines anderen Netzwerk-Duell-Spielers waehrend des Runs.
    *
    * Geht ueber den EventBus statt direkt vom Kanal ins HUD, weil `systems/`
    * Phaser nicht kennt (Regel 6) und das HUD keine Netzwerkverbindung kennen
@@ -83,7 +83,7 @@ export interface GameEventPayloads {
   [GameEvent.RunResumed]: undefined;
   [GameEvent.PauseRequested]: undefined;
   [GameEvent.AbortRequested]: undefined;
-  [GameEvent.OpponentDisconnected]: undefined;
+  [GameEvent.OpponentDisconnected]: { playerIndex: number };
   /**
    * `activity` beschreibt, was der Gegner gerade tut - `away` heisst
    * "schaut nicht hin", nicht "angehalten": im Duell laeuft die Simulation
@@ -94,8 +94,9 @@ export interface GameEventPayloads {
   [GameEvent.OpponentLiveState]: {
     score: number;
     activity: 'playing' | 'away' | 'left' | 'finished' | 'gone';
+    playerIndex: number;
   };
-  [GameEvent.OpponentNameChanged]: { name: string };
+  [GameEvent.OpponentNameChanged]: { name: string; playerIndex?: number };
 }
 
 type EventName = keyof GameEventPayloads;

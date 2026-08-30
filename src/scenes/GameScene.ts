@@ -129,11 +129,11 @@ export class GameScene extends Phaser.Scene {
   private playerIndex = 0;
   /** Nur im Netzwerk-Duell gesetzt - Taktgeber fuer den eigenen Live-Stand. */
   private liveBroadcastTimer: Phaser.Time.TimerEvent | null = null;
-  /** Was der Gegner zuletzt gemeldet hat - fuer den Verstummt-Test. */
-  private opponentLastSeenAt = 0;
-  private opponentGone = false;
-  /** Nach `finished`/`left` ist Schweigen normal und kein Verbindungsverlust. */
-  private opponentTerminal = false;
+  /** Was die anderen Spieler zuletzt gemeldet haben - je Slot getrennt. */
+  private opponentLastSeenAt = new Map<number, number>();
+  private opponentGone = new Set<number>();
+  /** Nach `finished`/`left` ist Schweigen je Slot normal. */
+  private opponentTerminal = new Set<number>();
   /**
    * Wird auf `away` gesetzt, sobald dieses Geraet den Pause-Bildschirm zeigt
    * oder in den Hintergrund geht. Der Run laeuft dabei weiter (Fairness-Regel
@@ -190,9 +190,9 @@ export class GameScene extends Phaser.Scene {
     const versteckeKosmetik = isChallengeMode && this.mode !== 'daily';
 
     this.challenge = challenge;
-    this.opponentLastSeenAt = 0;
-    this.opponentGone = false;
-    this.opponentTerminal = false;
+    this.opponentLastSeenAt.clear();
+    this.opponentGone.clear();
+    this.opponentTerminal.clear();
     this.localActivity = 'playing';
 
     this.totalMs = usesTalents ? this.stats.runDurationMs : CHALLENGE_DURATION_MS;
@@ -274,10 +274,11 @@ export class GameScene extends Phaser.Scene {
       scoreToBeat: isChallengeMode ? ChallengeSystem.scoreToBeat() : null,
       talentSummary: usesTalents ? activeTalentSummary(this.stats) : '',
       showOpponentLive: challenge?.kind === 'duel-online',
-      opponentLabel:
-        challenge?.kind === 'duel-online'
-          ? ChallengeSystem.playerLabel(this.playerIndex === 0 ? 1 : 0)
-          : null,
+      localPlayerIndex:
+        challenge?.kind === 'duel-online' ? challenge.online?.localPlayerIndex : undefined,
+      playerCount: challenge?.kind === 'duel-online' ? challenge.playerCount : undefined,
+      opponentLabels:
+        challenge?.kind === 'duel-online' ? (challenge.online?.playerNames ?? []) : undefined,
     });
 
     if (DEBUG_ENABLED) this.installDebugKeys();
@@ -295,20 +296,22 @@ export class GameScene extends Phaser.Scene {
     // eigenen `started`-Sperre) leer laufen, ohne dass irgendwer reagiert.
     if (challenge?.kind === 'duel-online') {
       NetworkDuelSystem.updateHandlers({
-        onOpponentDisconnected: () => {
-          if (this.opponentTerminal) return;
-          eventBus.emitEvent(GameEvent.OpponentDisconnected, undefined);
+        onOpponentDisconnected: (playerIndex) => {
+          if (playerIndex === this.playerIndex || this.opponentTerminal.has(playerIndex)) return;
+          this.opponentGone.add(playerIndex);
+          eventBus.emitEvent(GameEvent.OpponentDisconnected, { playerIndex });
         },
         // Uebersetzt vom Kanal auf den EventBus: `systems/` kennt Phaser
         // nicht (Regel 6) und das HUD soll keine Netzwerkverbindung kennen
         // (ADR-0003) - diese Scene sitzt als einzige zwischen beiden.
-        onOpponentLiveState: ({ score, activity }) => {
-          this.opponentLastSeenAt = this.time.now;
-          this.opponentGone = false;
+        onOpponentLiveState: ({ score, activity }, playerIndex) => {
+          if (playerIndex === this.playerIndex) return;
+          this.opponentLastSeenAt.set(playerIndex, this.time.now);
+          this.opponentGone.delete(playerIndex);
           if (activity === 'finished' || activity === 'left') {
-            this.opponentTerminal = true;
+            this.opponentTerminal.add(playerIndex);
           }
-          eventBus.emitEvent(GameEvent.OpponentLiveState, { score, activity });
+          eventBus.emitEvent(GameEvent.OpponentLiveState, { score, activity, playerIndex });
         },
       });
 
@@ -728,7 +731,7 @@ export class GameScene extends Phaser.Scene {
         durationMs: stats.durationMs,
         collected: stats.collected,
       };
-      const playerIndex = this.playerIndex as 0 | 1;
+      const playerIndex = this.playerIndex;
 
       // Vor dem Ergebnis: der Gegner spielt womoeglich noch und soll sofort
       // sehen, dass hier fertig gespielt ist - nicht erst, wenn er selbst
@@ -905,7 +908,12 @@ export class GameScene extends Phaser.Scene {
    * unterscheiden.
    */
   private startLiveBroadcast(): void {
-    this.opponentLastSeenAt = this.time.now;
+    const playerCount = this.challenge?.playerCount ?? 2;
+    for (let playerIndex = 0; playerIndex < playerCount; playerIndex += 1) {
+      if (playerIndex !== this.playerIndex) {
+        this.opponentLastSeenAt.set(playerIndex, this.time.now);
+      }
+    }
     this.liveBroadcastTimer = this.time.addEvent({
       delay: ONLINE_DUEL_SCORE_BROADCAST_INTERVAL_MS,
       loop: true,
@@ -915,7 +923,7 @@ export class GameScene extends Phaser.Scene {
 
   private sendLiveState(): void {
     if (this.phase === 'ended') return;
-    NetworkDuelSystem.broadcastLiveState(this.playerIndex as 0 | 1, {
+    NetworkDuelSystem.broadcastLiveState(this.playerIndex, {
       score: this.scoring.currentScore,
       activity: this.localActivity,
     });
@@ -946,11 +954,19 @@ export class GameScene extends Phaser.Scene {
    * zum Rundenende unveraendert da, als spiele der Gegner weiter.
    */
   private checkOpponentAlive(): void {
-    if (this.opponentGone || this.opponentTerminal || !this.liveBroadcastTimer) return;
-    if (this.time.now - this.opponentLastSeenAt <= ONLINE_DUEL_LIVE_STALE_MS) return;
+    if (!this.liveBroadcastTimer || this.challenge?.kind !== 'duel-online') return;
 
-    this.opponentGone = true;
-    eventBus.emitEvent(GameEvent.OpponentDisconnected, undefined);
+    const playerCount = this.challenge.playerCount ?? 2;
+    for (let playerIndex = 0; playerIndex < playerCount; playerIndex += 1) {
+      if (playerIndex === this.playerIndex || this.opponentTerminal.has(playerIndex)) continue;
+      const lastSeenAt = this.opponentLastSeenAt.get(playerIndex);
+      if (lastSeenAt === undefined || this.time.now - lastSeenAt <= ONLINE_DUEL_LIVE_STALE_MS) {
+        continue;
+      }
+      if (this.opponentGone.has(playerIndex)) continue;
+      this.opponentGone.add(playerIndex);
+      eventBus.emitEvent(GameEvent.OpponentDisconnected, { playerIndex });
+    }
   }
 
   private cleanup(): void {

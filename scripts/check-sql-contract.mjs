@@ -34,6 +34,10 @@ const duelSharedTopicMigration = readFileSync(
   resolve(sqlDir, 'phase_2_37_duel_shared_realtime_topic.sql'),
   'utf8',
 );
+const duelFourPlayerMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_38_duel_four_player_lobby.sql'),
+  'utf8',
+);
 const verification = readFileSync(resolve(sqlDir, 'verify_security_hardening.sql'), 'utf8');
 const migrationVerification = readFileSync(resolve(sqlDir, 'verify_migration_state.sql'), 'utf8');
 
@@ -117,9 +121,14 @@ requireText(
 requireText(duelSharedTopicMigration, "seed = split_part(p_topic, ':', 2)", 'Realtime-Seedbindung');
 requireText(duelSharedTopicMigration, 'schema_version = 36', 'Migrationsguard Phase 2.37');
 requireText(duelSharedTopicMigration, 'schema_version = 37', 'Migrationsmarker Phase 2.37');
+requireText(duelFourPlayerMigration, 'duel_room_participants', 'Mehrspieler-Teilnehmertabelle');
+requireText(duelFourPlayerMigration, 'p_max_players integer', 'Mehrspieler-Raumkapazitaet');
+requireText(duelFourPlayerMigration, 'set_duel_start_time', 'Host-Start-RPC');
+requireText(duelFourPlayerMigration, 'schema_version = 37', 'Migrationsguard Phase 2.38');
+requireText(duelFourPlayerMigration, 'schema_version = 38', 'Migrationsmarker Phase 2.38');
 
 const migrationFiles = readdirSync(sqlDir).filter((name) =>
-  /^phase_2_(2[89]|30|31|32|33|34|35|36|37)_.*\.sql$/.test(name),
+  /^phase_2_(2[89]|30|31|32|33|34|35|36|37|38)_.*\.sql$/.test(name),
 );
 for (const file of migrationFiles) {
   const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();

@@ -50,12 +50,16 @@ import type {
 
 let state: ChallengeState | null = null;
 
-type OnlinePlayerNames = [string | null, string | null];
+type OnlinePlayerNames = (string | null)[];
 export type DuelTalentDrafts = TalentRanks[];
 
 function normalizePlayerCount(value: number | undefined): number {
   const requested = Number.isFinite(value) ? Math.floor(value!) : CHALLENGE_DEFAULT_PLAYER_COUNT;
   return Math.min(CHALLENGE_MAX_PLAYER_COUNT, Math.max(CHALLENGE_MIN_PLAYER_COUNT, requested));
+}
+
+function normalizeOnlinePlayerIndex(value: number): number {
+  return Number.isInteger(value) && value >= 0 && value < CHALLENGE_MAX_PLAYER_COUNT ? value : 0;
 }
 
 function copyDuelTalentDrafts(
@@ -258,17 +262,23 @@ export function startOnline(
   worldId: string,
   seed: string,
   roomCode: string,
-  localPlayerIndex: 0 | 1,
+  localPlayerIndex: number,
   participantToken = '',
   suggestedDrafts?: DuelTalentDrafts,
+  playerCount = CHALLENGE_DEFAULT_PLAYER_COUNT,
 ): ChallengeState {
-  const playerNames: OnlinePlayerNames = [null, null];
-  playerNames[localPlayerIndex] = cleanOnlinePlayerName(SaveSystem.load().playerName);
+  const normalizedPlayerIndex = normalizeOnlinePlayerIndex(localPlayerIndex);
+  const normalizedPlayerCount = normalizePlayerCount(playerCount);
+  const playerNames: OnlinePlayerNames = Array.from(
+    { length: CHALLENGE_MAX_PLAYER_COUNT },
+    () => null,
+  );
+  playerNames[normalizedPlayerIndex] = cleanOnlinePlayerName(SaveSystem.load().playerName);
 
   const online: OnlineDuelInfo = {
     roomCode,
     participantToken,
-    localPlayerIndex,
+    localPlayerIndex: normalizedPlayerIndex,
     playerNames,
     clockOffsetMs: 0,
     startAtServerMs: null,
@@ -280,8 +290,9 @@ export function startOnline(
     kind: 'duel-online',
     online,
     duelMatchNumber: 1,
-    playerCount: CHALLENGE_PLAYER_COUNT,
-    duelTalentDrafts: copyDuelTalentDrafts(suggestedDrafts, CHALLENGE_PLAYER_COUNT),
+    playerCount: normalizedPlayerCount,
+    duelTalentDrafts: copyDuelTalentDrafts(suggestedDrafts, normalizedPlayerCount),
+    onlineRounds: Array.from({ length: normalizedPlayerCount }, () => null),
   };
   return state;
 }
@@ -326,16 +337,22 @@ export function resetOnlineMatch(
   suggestedDrafts?: DuelTalentDrafts,
 ): ChallengeState | null {
   if (!state || state.kind !== 'duel-online') return null;
-  state.seed = seed;
-  state.rounds = [];
-  state.onlineRounds = [null, null];
-  state.duelMatchNumber = matchNumber;
-  state.duelTalentDrafts = copyDuelTalentDrafts(
-    suggestedDrafts ?? state.duelTalentDrafts,
-    CHALLENGE_PLAYER_COUNT,
+  const currentState = state;
+  currentState.seed = seed;
+  currentState.rounds = [];
+  currentState.onlineRounds = Array.from(
+    { length: currentState.playerCount ?? CHALLENGE_DEFAULT_PLAYER_COUNT },
+    (_, index) => currentState.onlineRounds?.[index] ?? null,
   );
-  state.online = state.online ? { ...state.online, startAtServerMs: null } : state.online;
-  return state;
+  currentState.duelMatchNumber = matchNumber;
+  currentState.duelTalentDrafts = copyDuelTalentDrafts(
+    suggestedDrafts ?? currentState.duelTalentDrafts,
+    currentState.playerCount ?? CHALLENGE_DEFAULT_PLAYER_COUNT,
+  );
+  currentState.online = currentState.online
+    ? { ...currentState.online, startAtServerMs: null }
+    : currentState.online;
+  return currentState;
 }
 
 /** Aktualisiert Uhr-Offset/Startzeit eines laufenden Netzwerk-Duells. */
@@ -344,19 +361,39 @@ export function updateOnlineSync(clockOffsetMs: number, startAtServerMs: number 
   state.online = { ...state.online, clockOffsetMs, startAtServerMs };
 }
 
-/** Uebernimmt die Namen, die der Realtime-Kanal per Presence bekannt macht. */
-export function updateOnlinePlayerNames(names: readonly (string | null)[]): void {
+/** Aktualisiert die tatsaechliche Anzahl beigetretener Online-Spieler. */
+export function updateOnlinePlayerCount(count: number): void {
   if (!state?.online) return;
+  const currentState = state;
+  const normalized = normalizePlayerCount(count);
+  currentState.playerCount = normalized;
+  currentState.duelTalentDrafts = copyDuelTalentDrafts(currentState.duelTalentDrafts, normalized);
+  currentState.onlineRounds = Array.from(
+    { length: normalized },
+    (_, index) => currentState.onlineRounds?.[index] ?? null,
+  );
+}
 
-  const playerNames: OnlinePlayerNames = [
-    ...(state.online.playerNames ?? [null, null]),
-  ] as OnlinePlayerNames;
-  for (const index of [0, 1] as const) {
+/** Uebernimmt die Namen, die der Realtime-Kanal per Presence bekannt macht. */
+export function updateOnlinePlayerNames(
+  names: readonly (string | null)[],
+  replaceExisting = false,
+): void {
+  if (!state?.online) return;
+  const currentState = state;
+  const online = currentState.online;
+  if (!online) return;
+
+  const playerNames: OnlinePlayerNames = Array.from(
+    { length: CHALLENGE_MAX_PLAYER_COUNT },
+    (_, index) => (replaceExisting ? null : (online.playerNames?.[index] ?? null)),
+  );
+  for (let index = 0; index < CHALLENGE_MAX_PLAYER_COUNT; index += 1) {
     const name = cleanOnlinePlayerName(names[index]);
     if (name) playerNames[index] = name;
   }
 
-  state.online = { ...state.online, playerNames };
+  currentState.online = { ...online, playerNames };
 }
 
 /** Neues lokales Duell mit frischem Seed; Online-Rematches laufen ueber den Raum-RPC. */
@@ -456,27 +493,32 @@ export function awardBotVictory(): BotVictoryReward | null {
  * je nach Netzwerktiming den falschen Spieler als "Spieler 1"/"Spieler 2"
  * ausweisen.
  */
-export function submitOnlineRound(index: 0 | 1, round: ChallengeRound): void {
+export function submitOnlineRound(index: number, round: ChallengeRound): void {
   if (!state || state.kind !== 'duel-online') return;
+  const currentState = state;
 
-  const onlineRounds: [ChallengeRound | null, ChallengeRound | null] = state.onlineRounds ?? [
-    null,
-    null,
-  ];
+  const playerCount = currentState.playerCount ?? CHALLENGE_DEFAULT_PLAYER_COUNT;
+  if (!Number.isInteger(index) || index < 0 || index >= playerCount) return;
+  const onlineRounds: (ChallengeRound | null)[] = Array.from(
+    { length: playerCount },
+    (_, playerIndex) => currentState.onlineRounds?.[playerIndex] ?? null,
+  );
   onlineRounds[index] = round;
-  state.onlineRounds = onlineRounds;
+  currentState.onlineRounds = onlineRounds;
 
   // `rounds` erst befuellen, wenn beide Positionen feststehen - vorher
   // wuerden winnerIndex()/scoreToBeat() mit nur einem Ergebnis rechnen, das
   // je nach Netzwerktiming das des Gastgebers oder des Gasts sein koennte.
-  if (onlineRounds[0] && onlineRounds[1]) {
-    state.rounds = [onlineRounds[0], onlineRounds[1]];
+  if (onlineRounds.every((round) => round !== null)) {
+    currentState.rounds = onlineRounds.filter((round): round is ChallengeRound => round !== null);
   }
 }
 
 export function isComplete(): boolean {
   if (!state) return false;
-  if (state.kind === 'duel-online') return state.rounds.length === CHALLENGE_PLAYER_COUNT;
+  if (state.kind === 'duel-online') {
+    return state.rounds.length === (state.playerCount ?? CHALLENGE_DEFAULT_PLAYER_COUNT);
+  }
   return (
     state.rounds.length >=
     (state.kind === 'duel' ? (state.playerCount ?? CHALLENGE_DEFAULT_PLAYER_COUNT) : 1)

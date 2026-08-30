@@ -133,10 +133,10 @@ export interface OnlineDuelInfo {
   roomCode: string;
   /** Kurzlebiges Capability-Token des serverseitig zugewiesenen Slots. */
   participantToken: string;
-  /** 0 = Gastgeber (hat den Raum erzeugt), 1 = Beigetretener. */
-  localPlayerIndex: 0 | 1;
-  /** Anzeigenamen beider Geraete, an fester Spielerposition. */
-  playerNames: [string | null, string | null];
+  /** 0 = Gastgeber; weitere Spieler erhalten den naechsten freien Slot. */
+  localPlayerIndex: number;
+  /** Anzeigenamen der bis zu vier Geraete, an fester Spielerposition. */
+  playerNames: (string | null)[];
   /** localTime + offset ergibt die geschaetzte Supabase-Serverzeit. */
   clockOffsetMs: number;
   /** Serverzeit (ms seit Epoch), zu der beide gleichzeitig starten sollen. */
@@ -182,7 +182,7 @@ export interface ChallengeState {
    * Positionen gesetzt sind, damit winnerIndex()/scoreToBeat() unveraendert
    * funktionieren.
    */
-  onlineRounds?: [ChallengeRound | null, ChallengeRound | null];
+  onlineRounds?: (ChallengeRound | null)[];
 }
 
 /** Was ein Run an Progression ausgeloest hat - fuer den Ergebnisbildschirm. */

@@ -94,7 +94,7 @@ export class DuelSelectScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       620,
-      'GEGEN BOT',
+      'VS BOT',
       () => {
         ChallengeSystem.startBot(world.id, CHALLENGE_BOT_DEFAULT_DIFFICULTY);
         this.scene.start(SceneKey.Challenge);

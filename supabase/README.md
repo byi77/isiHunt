@@ -49,7 +49,8 @@ Auf einer leeren Datenbank in dieser Reihenfolge einspielen:
 | 30  | `phase_2_34_player_name_rules.sql`           | Spielernamen bereinigen und serverseitig begrenzen                |
 | 31  | `phase_2_35_duel_talents_rematch.sql`        | Temporaere Duell-Talente und Rematch im selben Raum               |
 | 32  | `phase_2_36_duel_lobby_invitations.sql`      | Duellbereite Spieler und direkte Einladungen                      |
-| 33  | `phase_2_37_duel_shared_realtime_topic.sql`  | Gemeinsamer Broadcast-/Presence-Kanal fuer beide Spieler         |
+| 33  | `phase_2_37_duel_shared_realtime_topic.sql`  | Gemeinsamer Broadcast-/Presence-Kanal fuer beide Spieler          |
+| 34  | `phase_2_38_duel_four_player_lobby.sql`      | Oeffentliche Lobby fuer zwei bis vier Spieler und Host-Start      |
 
 `phase_2_23_talent_points.sql` enthält einen historischen globalen
 Testdaten-Reset. Das Skript bricht ohne ausdrückliches Opt-in ab. Nur wenn

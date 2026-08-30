@@ -361,7 +361,7 @@ describe('Live-Stand ueber den Kanal', () => {
 
     fake.fire('live', { playerIndex: 1, score: 1402, activity: 'playing' });
 
-    expect(onOpponentLiveState).toHaveBeenCalledWith({ score: 1402, activity: 'playing' });
+    expect(onOpponentLiveState).toHaveBeenCalledWith({ score: 1402, activity: 'playing' }, 1);
   });
 
   /**
@@ -640,7 +640,7 @@ describe('Presence- und Empfangsdiagnose', () => {
     });
 
     expect(fake.trackPayload()).toEqual({ online: true, playerName: 'Alice' });
-    expect(onPresenceSync).toHaveBeenCalledWith(['Alice', 'Bob']);
+    expect(onPresenceSync).toHaveBeenCalledWith(['Alice', 'Bob', null, null], true);
   });
 
   it('unterscheidet einen leeren Kanal von einem besetzten', () => {

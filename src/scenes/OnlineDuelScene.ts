@@ -6,8 +6,9 @@
  *
  *   Menue --> [Einstieg] --> [Lobby: warten] --> GameScene --> [Ergebnis]
  *
- * Phase 1 dieses Features (siehe Planungsnotiz): kein Live-Score waehrend
- * des Runs, nur synchroner Start und Ergebnis am Ende.
+ * Ein Raum kann zwei bis vier Spieler aufnehmen. Der Host startet, sobald
+ * mindestens zwei Teilnehmer beigetreten sind; waehrend des Runs erscheinen
+ * die Live-Staende der anderen Slots.
  */
 
 import Phaser from 'phaser';
@@ -15,9 +16,7 @@ import Phaser from 'phaser';
 import { DUEL_TALENT_DRAFT_DURATION_MS, DUEL_TALENT_POINT_BUDGET } from '@/config/challenge';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import {
-  ONLINE_DUEL_GUEST_START_TIMEOUT_MS,
   ONLINE_DUEL_INVITATION_TTL_SECONDS,
-  ONLINE_DUEL_READY_TIMEOUT_MS,
   ONLINE_DUEL_RESULT_POLL_INTERVAL_MS,
   ONLINE_DUEL_RESULT_TIMEOUT_MS,
   ONLINE_DUEL_START_POLL_INTERVAL_MS,
@@ -25,7 +24,6 @@ import {
 import { getWorld, DEFAULT_WORLD_ID } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import type { TalentRanks } from '@/config/talents';
-import { eventBus, GameEvent } from '@/core/EventBus';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as AuthSystem from '@/systems/AuthSystem';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
@@ -75,7 +73,6 @@ export class OnlineDuelScene extends Phaser.Scene {
   private roomCode = '';
   private participantToken = '';
   private codeInput: TextInputHandle | null = null;
-  private readyTimeout: Phaser.Time.TimerEvent | null = null;
   /** Fallback, falls der `start`-Broadcast den anderen Client nicht erreicht. */
   private startPollTimer: Phaser.Time.TimerEvent | null = null;
   /** Dasselbe fuer das Rundenergebnis des Gegners im Ergebnisbildschirm. */
@@ -88,15 +85,10 @@ export class OnlineDuelScene extends Phaser.Scene {
    * nicht mehr erreichbar.
    */
   private runStarted = false;
-  private opponentReady = false;
-  private keepWaitingButton: ButtonHandle | null = null;
   private talentDraftView: TalentDraftView | null = null;
   private talentDraftTimer: Phaser.Time.TimerEvent | null = null;
   private talentDraftDeadline = 0;
-  private draftConfirmed = false;
-  private draftSubmissionStarted = false;
   private draftConfirmButton: ButtonHandle | null = null;
-  private clockSynced = false;
   private rematchPollTimer: Phaser.Time.TimerEvent | null = null;
   private lastKnownMatchNumber = 1;
   private rematchRequestStarted = false;
@@ -105,6 +97,10 @@ export class OnlineDuelScene extends Phaser.Scene {
   private pendingInvitation: NetworkDuelSystem.DuelInvitation | null = null;
   private invitationStatusText: Phaser.GameObjects.Text | null = null;
   private outgoingInvitationId: string | null = null;
+  /** Serverzaehler der aktuell beigetretenen Spieler in der Raum-Lobby. */
+  private roomPlayerCount = 1;
+  private roomMaxPlayers = 4;
+  private startRoomButton: ButtonHandle | null = null;
 
   constructor() {
     super(SceneKey.OnlineDuel);
@@ -117,20 +113,14 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.isHost = false;
     this.roomCode = '';
     this.codeInput = null;
-    this.readyTimeout = null;
     this.startPollTimer = null;
     this.resultPollTimer = null;
     this.resultPollStartedAt = 0;
     this.runStarted = false;
-    this.opponentReady = false;
-    this.keepWaitingButton = null;
     this.talentDraftView = null;
     this.talentDraftTimer = null;
     this.talentDraftDeadline = 0;
-    this.draftConfirmed = false;
-    this.draftSubmissionStarted = false;
     this.draftConfirmButton = null;
-    this.clockSynced = false;
     this.rematchPollTimer = null;
     this.lastKnownMatchNumber = 1;
     this.rematchRequestStarted = false;
@@ -139,6 +129,9 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.pendingInvitation = null;
     this.invitationStatusText = null;
     this.outgoingInvitationId = null;
+    this.roomPlayerCount = 1;
+    this.roomMaxPlayers = 4;
+    this.startRoomButton = null;
 
     const state = ChallengeSystem.getState();
     this.world = getWorld(
@@ -169,7 +162,7 @@ export class OnlineDuelScene extends Phaser.Scene {
       }
       this.restoreRoomFromState(state);
       this.lastKnownMatchNumber = state.duelMatchNumber ?? 1;
-      this.enterLobby();
+      this.enterRematchDraft();
       return;
     }
 
@@ -588,13 +581,17 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.isHost = false;
     this.roomCode = result.value.code;
     this.participantToken = result.value.participantToken;
+    this.roomPlayerCount = result.value.playerCount;
+    this.roomMaxPlayers = result.value.maxPlayers;
     this.world = getWorld(result.value.worldId);
     ChallengeSystem.startOnline(
       result.value.worldId,
       result.value.seed,
       this.roomCode,
-      1,
+      result.value.playerIndex,
       this.participantToken,
+      undefined,
+      result.value.playerCount,
     );
     this.lastKnownMatchNumber = result.value.matchNumber ?? 1;
     this.enterLobby();
@@ -635,12 +632,16 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.isHost = true;
     this.roomCode = result.value.code;
     this.participantToken = result.value.participantToken;
+    this.roomPlayerCount = result.value.playerCount;
+    this.roomMaxPlayers = result.value.maxPlayers;
     ChallengeSystem.startOnline(
       this.world.id,
       result.value.seed,
       this.roomCode,
-      0,
+      result.value.playerIndex,
       this.participantToken,
+      undefined,
+      result.value.playerCount,
     );
     this.lastKnownMatchNumber = 1;
     this.enterLobby();
@@ -672,13 +673,17 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.isHost = false;
     this.roomCode = code;
     this.participantToken = result.value.participantToken;
+    this.roomPlayerCount = result.value.playerCount;
+    this.roomMaxPlayers = result.value.maxPlayers;
     this.world = getWorld(result.value.worldId);
     ChallengeSystem.startOnline(
       result.value.worldId,
       result.value.seed,
       code,
-      1,
+      result.value.playerIndex,
       this.participantToken,
+      undefined,
+      result.value.playerCount,
     );
     this.lastKnownMatchNumber = 1;
     this.enterLobby();
@@ -693,6 +698,8 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.roomCode = state.online.roomCode;
     this.isHost = state.online.localPlayerIndex === 0;
     this.participantToken = state.online.participantToken;
+    this.roomPlayerCount = state.playerCount ?? 2;
+    this.roomMaxPlayers = 4;
     this.world = getWorld(state.worldId);
   }
 
@@ -701,8 +708,8 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.statusPage.setStatus('', Palette.inkDim);
 
     this.buildHeading(
-      this.isHost ? 'WARTE AUF DEIN GESCHWISTER' : 'VERBUNDEN',
-      this.isHost ? `Code: ${this.roomCode}` : 'Uhr wird abgeglichen ...',
+      this.isHost ? 'LOBBY ERSTELLT' : 'LOBBY BEIGETRETEN',
+      this.isHost ? `Teile den Code: ${this.roomCode}` : 'Warte auf den Host ...',
     );
 
     if (this.isHost) {
@@ -739,12 +746,12 @@ export class OnlineDuelScene extends Phaser.Scene {
       );
     }
 
-    const lobbyStatusY = this.isHost ? 610 : 420;
+    const lobbyStatusY = this.isHost ? 610 : 390;
     const lobbyStatus = this.add
       .text(
         GAME_WIDTH / 2,
         this.statusPage.contentY(lobbyStatusY),
-        'Uhr wird abgeglichen ...',
+        'Lobby wird verbunden ...',
         textStyle(FontSize.small, Palette.ink),
       )
       .setOrigin(0.5)
@@ -752,60 +759,114 @@ export class OnlineDuelScene extends Phaser.Scene {
       .setAlign('center');
     this.keep(lobbyStatus);
 
-    this.buildOnlineTalentDraft(lobbyStatus, 'TALENTE BESTÄTIGEN', () => {
-      this.draftConfirmed = true;
-      if (this.clockSynced) void this.submitDraftAndReady(lobbyStatus);
-    });
+    this.renderRoomLobby(
+      ChallengeSystem.getState()?.online?.playerNames ?? [],
+      this.roomPlayerCount,
+      this.roomMaxPlayers,
+    );
+
+    if (this.isHost) {
+      const startButton = createButton(
+        this,
+        GAME_WIDTH / 2,
+        this.statusPage.contentY(930),
+        'DUELL STARTEN',
+        () => void this.startRoom(lobbyStatus),
+        { width: 460, accent: Palette.goldHex, fontSize: FontSize.large },
+      );
+      startButton.setEnabled(false);
+      this.startRoomButton = startButton;
+      this.keep(startButton.container);
+    }
 
     this.buildBackToMenu('ABBRECHEN');
 
     void this.runLobbyFlow(lobbyStatus);
   }
 
-  /**
-   * Verbindet den Realtime-Kanal, misst den Uhr-Offset, meldet Bereitschaft
-   * und wartet auf die gemeinsame Startzeit.
-   *
-   * **Beide Rollen koennen die Startzeit setzen.** Frueher tat das nur der
-   * Gastgeber; der Gast pollte ausschliesslich auf ein fertiges `startAtMs`
-   * und war damit auf einen Ausloeser angewiesen, den nur das andere Geraet
-   * betaetigen konnte. Gab der Gastgeber vorher auf (Ready-Timeout), wartete
-   * der Gast unbegrenzt auf etwas, das nie mehr kommen konnte - belegt durch
-   * den Zwei-Geraete-Bericht v0.1.246 (2026-08-23). `set_duel_start_time`
-   * prueft serverseitig nur `host_ready and guest_ready`, nicht *wer* ruft
-   * (siehe `supabase/phase_2_11_duel_rooms.sql`), und `update ... set
-   * start_at` ist fuer denselben berechneten Wert unkritisch, wenn beide es
-   * tun. Die Beschraenkung auf den Gastgeber war reine Client-Konvention -
-   * und genau die wurde in diesem Fall zur Falle.
-   */
+  private renderRoomLobby(
+    names: readonly (string | null)[],
+    playerCount: number,
+    maxPlayers: number,
+  ): void {
+    this.clearDuelLobbyObjects();
+    const panelY = this.statusPage.contentY(this.isHost ? 750 : 580);
+    this.keepDuelLobby(
+      createPanel(this, GAME_WIDTH / 2, panelY, GAME_WIDTH - 120, 310, this.world.accent, {
+        alpha: 0.55,
+        radius: 20,
+      }),
+    );
+    this.keepDuelLobby(
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          panelY - 118,
+          `${Math.max(0, playerCount)}/${maxPlayers} SPIELER VERBUNDEN`,
+          textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
+        )
+        .setOrigin(0.5)
+        .setDepth(Depth.Overlay),
+    );
+
+    for (let index = 0; index < maxPlayers; index += 1) {
+      const name = names[index] ?? 'Wartet auf Spieler ...';
+      const isLocal = index === ChallengeSystem.getState()?.online?.localPlayerIndex;
+      this.keepDuelLobby(
+        this.add
+          .text(
+            GAME_WIDTH / 2,
+            panelY - 64 + index * 56,
+            `${index + 1}. ${name}${isLocal ? ' (Du)' : ''}`,
+            textStyle(FontSize.small, name.startsWith('Wartet') ? Palette.inkDim : Palette.ink),
+          )
+          .setOrigin(0.5)
+          .setDepth(Depth.Overlay),
+      );
+    }
+  }
+
+  private async startRoom(statusText: Phaser.GameObjects.Text): Promise<void> {
+    if (!this.isHost || this.busy || this.roomPlayerCount < 2) return;
+    this.busy = true;
+    this.startRoomButton?.setEnabled(false);
+    statusText.setText('Duell wird gestartet ...').setColor(Palette.ink);
+    const result = await NetworkDuelSystem.setStartTime(this.roomCode, this.participantToken);
+    this.busy = false;
+    if (!this.scene.isActive() || this.runStarted) return;
+    if (!result.ok) {
+      statusText.setText(result.error).setColor(Palette.danger);
+      this.startRoomButton?.setEnabled(this.roomPlayerCount >= 2);
+      return;
+    }
+    this.runStarted = true;
+    this.beginRun(result.value);
+  }
+
+  /** Verbindet den Kanal, gleicht die Uhr ab und wartet auf den Host-Start. */
   private async runLobbyFlow(statusText: Phaser.GameObjects.Text): Promise<void> {
     const supabase = CloudSystem.getSupabaseClient();
-    if (!supabase) {
+    const challengeState = ChallengeSystem.getState();
+    if (!supabase || !challengeState?.online) {
       statusText.setText('Kein Online-Dienst eingerichtet.').setColor(Palette.danger);
       return;
     }
 
-    const localPlayerIndex: 0 | 1 = this.isHost ? 0 : 1;
-    const challengeState = ChallengeSystem.getState();
-    const sharedChannelKey = challengeState?.kind === 'duel-online' ? challengeState.seed : '';
+    const localPlayerIndex = challengeState.online.localPlayerIndex;
+    const sharedChannelKey = challengeState.seed;
 
     NetworkDuelSystem.subscribeToRoom(
       supabase,
       this.roomCode,
       localPlayerIndex,
       {
-        onPresenceSync: (playerNames) => {
-          ChallengeSystem.updateOnlinePlayerNames(playerNames);
-          const opponentIndex = localPlayerIndex === 0 ? 1 : 0;
-          const opponentName = playerNames[opponentIndex];
-          if (opponentName) {
-            eventBus.emitEvent(GameEvent.OpponentNameChanged, { name: opponentName });
-          }
-        },
-        onOpponentReady: () => {
-          if (!this.scene.isActive()) return;
-          this.opponentReady = true;
-          if (!this.runStarted) statusText.setText('Freund bereit - Start wird vorbereitet ...');
+        onPresenceSync: (playerNames, isFullSync) => {
+          ChallengeSystem.updateOnlinePlayerNames(playerNames, isFullSync);
+          this.renderRoomLobby(
+            ChallengeSystem.getState()?.online?.playerNames ?? [],
+            this.roomPlayerCount,
+            this.roomMaxPlayers,
+          );
         },
         onStartTimeSet: (startAtMs) => {
           if (this.runStarted || !this.scene.isActive()) return;
@@ -813,19 +874,13 @@ export class OnlineDuelScene extends Phaser.Scene {
           this.beginRun(startAtMs);
         },
         onOpponentDisconnected: () => {
-          // Nur waehrend der Lobby relevant fuer diese Scene - ein Abbruch
-          // WAEHREND des Runs betrifft GameScene, die den Kanal separat
-          // beobachtet (siehe GameScene.subscribeOpponentDisconnect()).
           if (this.runStarted || !this.scene.isActive()) return;
-          statusText.setText('Verbindung zum Freund verloren.').setColor(Palette.danger);
+          statusText.setText('Ein Spieler hat die Lobby verlassen.').setColor(Palette.danger);
         },
         onChannelError: (reason) => {
           if (this.runStarted || !this.scene.isActive()) return;
-          // Bei einem Kanalfehler ist das Polling der einzige verbliebene Weg
-          // zur Startzeit - es laeuft deshalb bewusst WEITER. Nur die Meldung
-          // sagt dem Spieler, dass die Verbindung stockt.
           statusText
-            .setText(`Verbindungsfehler: ${reason}\nEs wird weiter versucht ...`)
+            .setText(`Verbindungsfehler: ${reason}\nDie Lobby versucht es weiter ...`)
             .setColor(Palette.danger);
         },
       },
@@ -841,11 +896,49 @@ export class OnlineDuelScene extends Phaser.Scene {
       return;
     }
     ChallengeSystem.updateOnlineSync(offsetResult.value, null);
-    this.clockSynced = true;
     statusText.setText(
-      this.draftConfirmed ? 'Talent-Build wird gespeichert ...' : 'Talent-Build festlegen ...',
+      this.isHost
+        ? 'Warte auf mindestens einen weiteren Spieler ...'
+        : 'Warte auf den Start durch den Host ...',
     );
-    if (this.draftConfirmed) void this.submitDraftAndReady(statusText);
+    this.startLobbyPolling(statusText);
+    void this.pollLobbyStatus(statusText);
+  }
+
+  private startLobbyPolling(statusText: Phaser.GameObjects.Text): void {
+    if (this.startPollTimer) return;
+    this.startPollTimer = this.time.addEvent({
+      delay: ONLINE_DUEL_START_POLL_INTERVAL_MS,
+      loop: true,
+      callback: () => void this.pollLobbyStatus(statusText),
+    });
+  }
+
+  private async pollLobbyStatus(statusText: Phaser.GameObjects.Text): Promise<void> {
+    if (this.runStarted || !this.scene.isActive()) return;
+    const result = await NetworkDuelSystem.getRoomStatus(this.roomCode, this.participantToken);
+    if (this.runStarted || !this.scene.isActive() || !result.ok || !result.value) return;
+
+    this.roomPlayerCount = result.value.playerCount;
+    this.roomMaxPlayers = result.value.maxPlayers;
+    if (this.roomPlayerCount >= 2) {
+      ChallengeSystem.updateOnlinePlayerCount(this.roomPlayerCount);
+    }
+    const names = ChallengeSystem.getState()?.online?.playerNames ?? [];
+    this.renderRoomLobby(names, this.roomPlayerCount, this.roomMaxPlayers);
+    this.startRoomButton?.setEnabled(this.isHost && this.roomPlayerCount >= 2);
+
+    if (result.value.startAtMs !== null) {
+      this.runStarted = true;
+      this.beginRun(result.value.startAtMs);
+      return;
+    }
+
+    statusText.setText(
+      this.isHost
+        ? `${this.roomPlayerCount}/${this.roomMaxPlayers} Spieler verbunden. Host kann starten.`
+        : `${this.roomPlayerCount}/${this.roomMaxPlayers} Spieler verbunden. Warte auf den Host ...`,
+    );
   }
 
   private buildOnlineTalentDraft(
@@ -924,191 +1017,12 @@ export class OnlineDuelScene extends Phaser.Scene {
     statusText.setText('Talent-Build festlegen ...');
   }
 
-  private async submitDraftAndReady(statusText: Phaser.GameObjects.Text): Promise<void> {
-    if (this.draftSubmissionStarted || this.runStarted || !this.draftConfirmed) return;
-    this.draftSubmissionStarted = true;
-    const localIndex: 0 | 1 = this.isHost ? 0 : 1;
-    const draft = ChallengeSystem.duelTalentDraftFor(localIndex);
-    const draftResult = await NetworkDuelSystem.submitTalentDraft(
-      this.roomCode,
-      draft,
-      this.participantToken,
-    );
-    if (!this.scene.isActive() || this.runStarted) return;
-    if (!draftResult.ok) {
-      this.draftSubmissionStarted = false;
-      this.draftConfirmed = false;
-      this.talentDraftView?.setEnabled(true);
-      this.draftConfirmButton?.setEnabled(true);
-      statusText.setText(draftResult.error).setColor(Palette.danger);
-      return;
-    }
-
-    const readyResult = await NetworkDuelSystem.markReady(
-      this.roomCode,
-      this.isHost,
-      this.participantToken,
-    );
-    if (!this.scene.isActive() || this.runStarted) return;
-    if (!readyResult.ok) {
-      this.draftSubmissionStarted = false;
-      this.draftConfirmed = false;
-      this.talentDraftView?.setEnabled(true);
-      this.draftConfirmButton?.setEnabled(true);
-      statusText.setText(readyResult.error).setColor(Palette.danger);
-      return;
-    }
-    NetworkDuelSystem.broadcastReady();
-    statusText.setText(
-      this.opponentReady ? 'Beide bereit - Start wird vorbereitet ...' : 'Warte auf Freund ...',
-    );
-    this.startWaitTimers(statusText);
-    void this.pollAndSetStartTime(statusText);
-  }
-
-  /**
-   * Startet Wartetakt und Zeitlimit der Lobby - als eigene Methode, weil der
-   * WEITER-WARTEN-Knopf sie ein zweites Mal braucht.
-   */
-  private startWaitTimers(statusText: Phaser.GameObjects.Text): void {
-    // Das Zeitlimit gilt jetzt fuer BEIDE Rollen. Der Gast hatte vorher gar
-    // keins und wartete im Fehlerfall stumm bis zum Schliessen der App.
-    this.readyTimeout = this.time.delayedCall(
-      this.isHost ? ONLINE_DUEL_READY_TIMEOUT_MS : ONLINE_DUEL_GUEST_START_TIMEOUT_MS,
-      () => this.giveUpWaiting(statusText),
-    );
-
-    // Fallback fuer BEIDE Rollen: `channel.send()` von Supabase Realtime
-    // besitzt ohne `broadcast.ack` keine Zustellbestaetigung und loest
-    // trotzdem mit "ok" auf (siehe ONLINE_DUEL_START_POLL_INTERVAL_MS-
-    // Kommentar in config/onlineDuel.ts). Dieses Polling findet die
-    // Startzeit unabhaengig davon, ob das begleitende `start`-Broadcast-
-    // Event ankam - und setzt sie selbst, sobald beide bereit sind.
-    this.startPollTimer = this.time.addEvent({
-      delay: ONLINE_DUEL_START_POLL_INTERVAL_MS,
-      loop: true,
-      callback: () => {
-        void this.pollAndSetStartTime(statusText);
-      },
-    });
-  }
-
-  /**
-   * Ein Poll-Durchlauf: Startzeit uebernehmen, wenn sie schon steht - sonst
-   * selbst setzen, sobald beide bereit sind.
-   *
-   * Beide Schritte in einem Abruf, weil sie auf derselben Antwort beruhen:
-   * ein zweiter `getRoomStatus()` fuer die zweite Frage waere eine
-   * ueberfluessige Anfrage im 1,5-Sekunden-Takt.
-   */
-  private async pollAndSetStartTime(statusText: Phaser.GameObjects.Text): Promise<void> {
-    if (this.runStarted || !this.scene.isActive()) return;
-
-    const statusResult = await NetworkDuelSystem.getRoomStatus(
-      this.roomCode,
-      this.participantToken,
-    );
-    if (this.runStarted || !this.scene.isActive()) return;
-    if (!statusResult.ok || !statusResult.value) return;
-
-    const room = statusResult.value;
-
-    if (room.startAtMs !== null) {
-      this.runStarted = true;
-      this.beginRun(room.startAtMs);
-      return;
-    }
-
-    if (room.hostReady && room.guestReady) {
-      await this.trySetStartTime(statusText);
-    }
-  }
-
-  private async trySetStartTime(statusText: Phaser.GameObjects.Text): Promise<void> {
-    const startResult = await NetworkDuelSystem.setStartTime(this.roomCode, this.participantToken);
-    if (!this.scene.isActive() || this.runStarted) return;
-    if (!startResult.ok) {
-      // Kein Aufraeumen mehr: seit beide Rollen die Startzeit setzen duerfen,
-      // ist ein Fehlschlag hier meistens ein Rennen (der andere war eine
-      // Zehntelsekunde schneller, der Raum steht bereits auf "gestartet") und
-      // kein Grund aufzugeben. Der naechste Poll-Durchlauf findet dann die
-      // gesetzte `startAtMs` und startet den Run. Das Zeitlimit bleibt der
-      // Waechter fuer den Fall, dass es doch ein echter Fehler war.
-      statusText
-        .setText(`${startResult.error}\nEs wird weiter versucht ...`)
-        .setColor(Palette.danger);
-      return;
-    }
-    this.runStarted = true;
-    NetworkDuelSystem.broadcastStartTime(startResult.value);
-    this.beginRun(startResult.value);
-  }
-
-  /**
-   * Das Zeitlimit ist abgelaufen - Warten einstellen, aber nicht in eine
-   * Sackgasse fuehren.
-   *
-   * **Warum ein WEITER-WARTEN-Knopf und kein blosser Abbruch.** Frueher
-   * setzte diese Stelle nur eine Meldung und raeumte auf; der Bildschirm bot
-   * danach ausser ABBRECHEN nichts mehr an. Trat der Freund eine
-   * Sekunde spaeter bei, erfuhr das Geraet davon nichts mehr - es fragte
-   * nicht mehr nach, und niemand rief `set_duel_start_time`. Der Raum lebt
-   * laut `DUEL_ROOM_CODE_TTL_MINUTES` aber noch Minuten weiter: aufgeben ist
-   * hier eine Frage an den Spieler, keine Tatsache.
-   */
-  private giveUpWaiting(statusText: Phaser.GameObjects.Text): void {
-    if (this.runStarted || !this.scene.isActive()) return;
-
-    // Das Polling wird eingestellt, solange die Frage offen steht - sonst
-    // liefe es hinter einer stehenden Meldung weiter (Debug-Report v0.1.205,
-    // 2026-08-21: 17 weitere Abrufe nach dem aufgegebenen Warten).
-    this.cleanupLobby();
-
-    statusText
-      .setText(
-        this.isHost
-          ? 'Freund ist noch nicht beigetreten.\nCode prüfen - oder weiter warten.'
-          : 'Der Start laesst auf sich warten.\nGeraet des Freundes pruefen - oder weiter warten.',
-      )
-      .setColor(Palette.danger);
-
-    const button = createButton(
-      this,
-      GAME_WIDTH / 2,
-      GAME_HEIGHT - 240,
-      'WEITER WARTEN',
-      () => {
-        this.discardKeepWaitingButton();
-        statusText.setText('Warte auf Freund ...').setColor(Palette.ink);
-        this.startWaitTimers(statusText);
-      },
-      { width: 300, height: 72, accent: Palette.goldHex, fontSize: FontSize.small },
-    );
-    this.keepWaitingButton = button;
-    this.keep(button.container);
-  }
-
-  /**
-   * Entfernt den WEITER-WARTEN-Knopf restlos - auch aus `transient`.
-   *
-   * Ohne das Herausnehmen bliebe bei jedem Warte-Zyklus eine tote Referenz in
-   * der Liste zurueck; `clearTransient()` riefe `destroy()` ein zweites Mal
-   * auf (unschaedlich, aber falsch) und die Liste wuechse bei jedem
-   * Durchlauf weiter.
-   */
-  private discardKeepWaitingButton(): void {
-    if (!this.keepWaitingButton) return;
-    const { container } = this.keepWaitingButton;
-    this.transient = this.transient.filter((object) => object !== container);
-    container.destroy();
-    this.keepWaitingButton = null;
-  }
-
   private beginRun(startAtServerMs: number): void {
     // `runStarted` hier statt nur an den Aufrufstellen: `beginRun` ist der
-    // einzige Weg in den Run, und alle Wartepfade fragen dieses Feld ab.
+    // einzige Weg in den Run.
     this.runStarted = true;
     this.cleanupLobby();
+    ChallengeSystem.updateOnlinePlayerCount(this.roomPlayerCount);
     const state = ChallengeSystem.getState();
     ChallengeSystem.updateOnlineSync(state?.online?.clockOffsetMs ?? 0, startAtServerMs);
     this.scene.start(SceneKey.Game, { worldId: this.world.id, mode: 'challenge' });
@@ -1122,10 +1036,6 @@ export class OnlineDuelScene extends Phaser.Scene {
     if (this.startPollTimer) {
       this.startPollTimer.remove();
       this.startPollTimer = null;
-    }
-    if (this.readyTimeout) {
-      this.readyTimeout.remove();
-      this.readyTimeout = null;
     }
     this.stopResultPolling();
     if (this.rematchPollTimer) {
@@ -1171,7 +1081,7 @@ export class OnlineDuelScene extends Phaser.Scene {
           ? 'UNENTSCHIEDEN'
           : `${ChallengeSystem.playerLabel(winner).toUpperCase()} GEWINNT`,
       !complete
-        ? 'Dein Freund spielt noch seine Runde.'
+        ? 'Die anderen Spieler spielen noch ihre Runde.'
         : winner === null
           ? 'Punktgleich - das muss wiederholt werden.'
           : 'Gut gejagt.',
@@ -1182,16 +1092,31 @@ export class OnlineDuelScene extends Phaser.Scene {
         this.buildResultCard(round, index, winner === index);
       });
 
-      this.keep(
-        createButton(
-          this,
-          GAME_WIDTH / 2,
-          this.statusPage.contentY(930),
-          'REMATCH',
-          () => this.enterRematchDraft(),
-          { width: 460, accent: this.world.accent, fontSize: FontSize.large },
-        ).container,
-      );
+      if ((state.playerCount ?? 2) === 2) {
+        this.keep(
+          createButton(
+            this,
+            GAME_WIDTH / 2,
+            this.statusPage.contentY(930),
+            'REMATCH',
+            () => this.enterRematchDraft(),
+            { width: 460, accent: this.world.accent, fontSize: FontSize.large },
+          ).container,
+        );
+      } else {
+        this.keep(
+          this.add
+            .text(
+              GAME_WIDTH / 2,
+              this.statusPage.contentY(930),
+              'Fuer ein neues Mehrspieler-Duell eine neue Lobby erstellen.',
+              textStyle(FontSize.small, Palette.inkDim),
+            )
+            .setOrigin(0.5)
+            .setWordWrapWidth(GAME_WIDTH - 120)
+            .setAlign('center'),
+        );
+      }
     }
 
     this.buildBackToMenu('ZUM MENÜ', () => {
@@ -1208,8 +1133,6 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.clearTransient();
     this.statusPage.setStatus('', Palette.inkDim);
     this.restoreRoomFromState(state);
-    this.draftConfirmed = false;
-    this.draftSubmissionStarted = false;
     this.rematchRequestStarted = false;
     this.buildHeading('REMATCH', `Der Raum bleibt offen: ${this.roomCode}`);
 
@@ -1290,7 +1213,7 @@ export class OnlineDuelScene extends Phaser.Scene {
   private resetOnlineMatchAndRestart(
     seed: string,
     matchNumber: number,
-    drafts?: [TalentRanks, TalentRanks],
+    drafts?: TalentRanks[],
   ): void {
     if (this.rematchPollTimer) {
       this.rematchPollTimer.remove();
@@ -1352,12 +1275,13 @@ export class OnlineDuelScene extends Phaser.Scene {
     if (!this.scene.isActive() || !this.resultPollTimer) return;
     if (!statusResult.ok || !statusResult.value) return;
 
-    const opponentResult = this.isHost
-      ? statusResult.value.guestResult
-      : statusResult.value.hostResult;
-    if (!opponentResult) return;
-
-    this.applyOpponentResult(this.isHost ? 1 : 0, opponentResult);
+    const localIndex = ChallengeSystem.getState()?.online?.localPlayerIndex ?? 0;
+    const playerResults = statusResult.value.playerResults;
+    for (let index = 0; index < statusResult.value.playerCount; index += 1) {
+      if (index === localIndex) continue;
+      const result = playerResults[index];
+      if (result) this.applyOpponentResult(index, result);
+    }
   }
 
   /**
@@ -1368,7 +1292,10 @@ export class OnlineDuelScene extends Phaser.Scene {
    * schreibt an eine feste Position statt anzuhaengen, und der
    * `isComplete()`-Torwaechter verhindert einen zweiten Neuaufbau.
    */
-  private applyOpponentResult(playerIndex: 0 | 1, result: NetworkDuelSystem.DuelRoundResult): void {
+  private applyOpponentResult(
+    playerIndex: number,
+    result: NetworkDuelSystem.DuelRoundResult,
+  ): void {
     if (ChallengeSystem.isComplete()) return;
 
     ChallengeSystem.submitOnlineRound(playerIndex, result);
