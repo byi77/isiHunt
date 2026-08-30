@@ -22,6 +22,16 @@ export const DUEL_ROOM_CODE_TTL_MINUTES = 10;
 export const ONLINE_DUEL_INVITATION_TTL_SECONDS = 90;
 
 /**
+ * Polling-Takt fuer offene Duell-Einladungen in der globalen Lobby.
+ *
+ * Das Realtime-Broadcast ist nur ein schneller Hinweis. Die Einladung liegt
+ * dauerhaft in der Datenbank und muss auch dann auftauchen, wenn der Hinweis
+ * wegen eines kurzen Mobilfunk-Aussetzers oder beim Szenenwechsel verloren
+ * geht.
+ */
+export const ONLINE_DUEL_INVITATION_POLL_INTERVAL_MS = 2_000;
+
+/**
  * Vorlauf zwischen dem serverseitig gesetzten `start_at` und dem
  * tatsaechlichen Rundenstart, in Millisekunden.
  *

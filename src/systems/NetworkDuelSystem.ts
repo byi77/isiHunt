@@ -833,8 +833,15 @@ export function subscribeToDuelLobby(
   lobbyPresenceKey = createPresenceKey();
   lobbyAvailability = 'available';
 
+  // Die globale Lobby ist absichtlich ein oeffentlicher Realtime-Kanal. Die
+  // Raumkanaele bleiben privat und werden ueber duel_channel_is_authorized
+  // geschuetzt. Fuer die globale Presence gibt es dagegen keine einzelne
+  // Raum-Mitgliedschaft, gegen die Supabase die private Kanal-Policy pruefen
+  // koennte; auf iOS wurden deshalb trotz SUBSCRIBED nur lokale Presence-
+  // Eintraege geliefert. Die Einladung selbst bleibt serverseitig ueber den
+  // authentifizierten RPC und die Zielspieler-ID geschuetzt.
   const channel = supabase.channel('duel-lobby', {
-    config: { private: true, presence: { key: lobbyPresenceKey } },
+    config: { private: false, presence: { key: lobbyPresenceKey } },
   });
 
   channel

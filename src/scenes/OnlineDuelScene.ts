@@ -17,6 +17,7 @@ import { DUEL_TALENT_DRAFT_DURATION_MS, DUEL_TALENT_POINT_BUDGET } from '@/confi
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import {
   ONLINE_DUEL_INVITATION_TTL_SECONDS,
+  ONLINE_DUEL_INVITATION_POLL_INTERVAL_MS,
   ONLINE_DUEL_RESULT_POLL_INTERVAL_MS,
   ONLINE_DUEL_RESULT_TIMEOUT_MS,
   ONLINE_DUEL_START_POLL_INTERVAL_MS,
@@ -75,6 +76,8 @@ export class OnlineDuelScene extends Phaser.Scene {
   private codeInput: TextInputHandle | null = null;
   /** Fallback, falls der `start`-Broadcast den anderen Client nicht erreicht. */
   private startPollTimer: Phaser.Time.TimerEvent | null = null;
+  /** Erneuert offene Einladungen, falls der einmalige Broadcast verloren geht. */
+  private invitationPollTimer: Phaser.Time.TimerEvent | null = null;
   /** Dasselbe fuer das Rundenergebnis des Gegners im Ergebnisbildschirm. */
   private resultPollTimer: Phaser.Time.TimerEvent | null = null;
   private resultPollStartedAt = 0;
@@ -120,6 +123,7 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.roomCode = '';
     this.codeInput = null;
     this.startPollTimer = null;
+    this.invitationPollTimer = null;
     this.resultPollTimer = null;
     this.resultPollStartedAt = 0;
     this.runStarted = false;
@@ -424,6 +428,16 @@ export class OnlineDuelScene extends Phaser.Scene {
       },
     });
     void this.loadPendingDuelInvitations();
+    this.startInvitationPolling();
+  }
+
+  private startInvitationPolling(): void {
+    if (this.invitationPollTimer) return;
+    this.invitationPollTimer = this.time.addEvent({
+      delay: ONLINE_DUEL_INVITATION_POLL_INTERVAL_MS,
+      loop: true,
+      callback: () => void this.loadPendingDuelInvitations(),
+    });
   }
 
   private renderDuelLobbyPlayers(players: NetworkDuelSystem.DuelLobbyPlayer[]): void {
@@ -524,6 +538,7 @@ export class OnlineDuelScene extends Phaser.Scene {
   }
 
   private async loadPendingDuelInvitations(): Promise<void> {
+    if (!this.scene.isActive() || this.pendingInvitation || this.busy) return;
     const result = await NetworkDuelSystem.listDuelInvitations();
     if (!this.scene.isActive() || !result.ok || result.value.length === 0) return;
     NetworkDuelSystem.setDuelLobbyAvailability('busy');
@@ -1114,6 +1129,10 @@ export class OnlineDuelScene extends Phaser.Scene {
     if (this.startPollTimer) {
       this.startPollTimer.remove();
       this.startPollTimer = null;
+    }
+    if (this.invitationPollTimer) {
+      this.invitationPollTimer.remove();
+      this.invitationPollTimer = null;
     }
     this.stopResultPolling();
     if (this.rematchPollTimer) {

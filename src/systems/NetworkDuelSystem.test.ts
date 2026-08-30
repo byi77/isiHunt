@@ -764,7 +764,7 @@ describe('Globale Duell-Lobby', () => {
     NetworkDuelSystem.unsubscribeFromDuelLobby();
   });
 
-  it('meldet einen Spieler privat mit Duellbereitschaft an', async () => {
+  it('meldet einen Spieler in der globalen Duell-Lobby an', async () => {
     const fake = createFakeSupabase();
     NetworkDuelSystem.subscribeToDuelLobby(fake.client as never, 'Alice', {});
 
@@ -772,7 +772,7 @@ describe('Globale Duell-Lobby', () => {
       config?: { private?: boolean; presence?: { key?: string } };
     };
     expect(fake.channelTopic()).toBe('duel-lobby');
-    expect(config.config?.private).toBe(true);
+    expect(config.config?.private).toBe(false);
     expect(config.config?.presence?.key).toMatch(/^[a-f0-9]{32}$/);
 
     await Promise.resolve();
