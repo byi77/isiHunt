@@ -200,6 +200,13 @@ describe('"wirft nie" - Netzfunktionen ohne konfiguriertes Backend', () => {
     });
   });
 
+  it('fetchDuelLeaderboard liefert ein Fehlerergebnis statt zu werfen', async () => {
+    await expect(CloudSystem.fetchDuelLeaderboard()).resolves.toEqual({
+      ok: false,
+      error: expect.any(String),
+    });
+  });
+
   it('submitScore liefert ein Fehlerergebnis statt zu werfen', async () => {
     const result = await CloudSystem.submitScore(
       'player-1',

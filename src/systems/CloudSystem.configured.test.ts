@@ -206,6 +206,10 @@ describe('ohne Anmeldepflicht: Netzfehler bleibt ein Ergebnisobjekt', () => {
     await expect(CloudSystem.fetchLeaderboard()).resolves.toMatchObject({ ok: false });
   });
 
+  it('fetchDuelLeaderboard', async () => {
+    await expect(CloudSystem.fetchDuelLeaderboard()).resolves.toMatchObject({ ok: false });
+  });
+
   it('fetchSave', async () => {
     await expect(CloudSystem.fetchSave('cloud-id')).resolves.toMatchObject({ ok: false });
   });

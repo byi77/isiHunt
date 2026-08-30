@@ -13,7 +13,7 @@ import { getWorld, WORLDS } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
-import type { LeaderboardEntry } from '@/systems/CloudSystem';
+import type { DuelLeaderboardEntry, LeaderboardEntry } from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { planetTextureForVariant, TextureKey } from '@/ui/textures';
@@ -24,11 +24,13 @@ import {
   createDriftLayers,
   createMenuLayout,
   createPanel,
+  createButton,
   createVignette,
   createWorldBackdrop,
 } from '@/ui/widgets';
 
-const ROW_HEIGHT = 72;
+const ROW_HEIGHT = 60;
+type LeaderboardMode = 'hunt' | 'duel';
 
 function formatRecordDate(value: string): string {
   const timestamp = Date.parse(value);
@@ -41,6 +43,7 @@ function formatRecordDate(value: string): string {
 }
 
 export class LeaderboardScene extends Phaser.Scene {
+  private mode: LeaderboardMode = 'hunt';
   /**
    * Welt, nach der gefiltert wird - `null` heisst: alle Welten zusammen.
    *
@@ -61,11 +64,15 @@ export class LeaderboardScene extends Phaser.Scene {
     super(SceneKey.Leaderboard);
   }
 
-  create(data: { worldId?: string } = {}): void {
+  create(data: { mode?: LeaderboardMode; worldId?: string } = {}): void {
     SafeAreaSystem.showStatic('RANGLISTE');
     const save = SaveSystem.load();
 
-    this.filter = data.worldId ? (WORLDS.find((w) => w.id === data.worldId) ?? null) : null;
+    this.mode = data.mode === 'duel' ? 'duel' : 'hunt';
+    this.filter =
+      this.mode === 'hunt' && data.worldId
+        ? (WORLDS.find((w) => w.id === data.worldId) ?? null)
+        : null;
     this.backdropWorld = this.filter ?? WORLDS.find((w) => w.id === save.lastWorldId) ?? WORLDS[0]!;
     this.listItems = [];
     this.requestId = 0;
@@ -84,13 +91,72 @@ export class LeaderboardScene extends Phaser.Scene {
 
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
 
-    const sections = createMenuLayout().sections;
-    this.buildWorldTabs(sections.next(138));
+    const sections = createMenuLayout(30).sections;
+    this.buildModeTabs(sections.next(70));
+    if (this.mode === 'hunt') {
+      this.buildWorldTabs(sections.next(115));
+    } else {
+      this.buildDuelIntro(sections.next(100));
+    }
     this.listTop = sections.currentTop();
 
     this.statusText = createBackStatusText(this);
 
     void this.loadList();
+  }
+
+  /** Gemeinsamer Einstiegspunkt fuer Jagd- und Duellwertung. */
+  private buildModeTabs(sectionY: number): void {
+    createButton(
+      this,
+      GAME_WIDTH / 2 - 120,
+      sectionY,
+      'JAGD',
+      () => {
+        if (this.mode !== 'hunt') this.scene.restart({ mode: 'hunt' });
+      },
+      {
+        width: 210,
+        height: 52,
+        accent: this.mode === 'hunt' ? Palette.goldHex : 0x687394,
+        fontSize: FontSize.small,
+      },
+    );
+    createButton(
+      this,
+      GAME_WIDTH / 2 + 120,
+      sectionY,
+      'DUELLE',
+      () => {
+        if (this.mode !== 'duel') this.scene.restart({ mode: 'duel' });
+      },
+      {
+        width: 210,
+        height: 52,
+        accent: this.mode === 'duel' ? Palette.goldHex : 0x687394,
+        fontSize: FontSize.small,
+      },
+    );
+  }
+
+  /** Erklaert kurz die Mehrspielerwertung, ohne die Liste mit Weltfiltern zu vermischen. */
+  private buildDuelIntro(sectionY: number): void {
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        sectionY - 18,
+        'DUELL-WERTUNG',
+        textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
+      )
+      .setOrigin(0.5);
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        sectionY + 20,
+        '2 bis 4 Spieler · Rating aus abgeschlossenen Online-Matches',
+        textStyle(FontSize.tiny, Palette.inkDim),
+      )
+      .setOrigin(0.5);
   }
 
   /**
@@ -148,7 +214,7 @@ export class LeaderboardScene extends Phaser.Scene {
       marker.on('pointerup', () => {
         if (world.id === this.filter?.id) return;
         // Neu aufbauen statt selektiv aendern - der Hintergrund wechselt mit.
-        this.scene.restart({ worldId: world.id });
+        this.scene.restart({ mode: 'hunt', worldId: world.id });
       });
     });
 
@@ -198,7 +264,7 @@ export class LeaderboardScene extends Phaser.Scene {
 
     marker.on('pointerup', () => {
       if (this.filter === null) return;
-      this.scene.restart({});
+      this.scene.restart({ mode: 'hunt' });
     });
   }
 
@@ -206,6 +272,32 @@ export class LeaderboardScene extends Phaser.Scene {
     const requestId = ++this.requestId;
     this.clearList();
     this.statusText.setText('Wird geladen ...').setColor(Palette.inkDim);
+
+    if (this.mode === 'duel') {
+      const result = await CloudSystem.fetchDuelLeaderboard();
+
+      // Zwischenzeitlich wurde die Scene verlassen - diese Antwort ist nicht
+      // mehr aktuell und darf keine alte Liste neu zeichnen.
+      if (requestId !== this.requestId || !this.scene.isActive()) return;
+
+      if (!result.ok) {
+        this.statusText
+          .setText(`Bestenliste nicht erreichbar.\n${result.error}`)
+          .setColor(Palette.danger);
+        return;
+      }
+
+      if (result.value.length === 0) {
+        this.statusText
+          .setText('Noch kein gewertetes Duell.\nSpielt ein Online-Match mit 2 bis 4 Spielern.')
+          .setColor(Palette.inkDim);
+        return;
+      }
+
+      this.statusText.setText('');
+      this.renderDuelList(result.value);
+      return;
+    }
 
     const result = await CloudSystem.fetchLeaderboard(this.filter?.id);
 
@@ -264,7 +356,7 @@ export class LeaderboardScene extends Phaser.Scene {
         this.add
           .text(
             134,
-            y - 10,
+            y - 8,
             entry.playerName,
             textStyle(FontSize.small, isOwn ? Palette.gold : Palette.ink),
           )
@@ -272,7 +364,7 @@ export class LeaderboardScene extends Phaser.Scene {
         this.add
           .text(
             134,
-            y + 15,
+            y + 13,
             `LEVEL ${entry.level} · REKORD ${formatRecordDate(entry.createdAt)}`,
             textStyle(FontSize.tiny, Palette.inkDim),
           )
@@ -285,6 +377,49 @@ export class LeaderboardScene extends Phaser.Scene {
             textStyle(FontSize.small, Palette.ink, { fontStyle: 'bold' }),
           )
           .setOrigin(1, 0.5),
+      );
+    });
+  }
+
+  private renderDuelList(entries: readonly DuelLeaderboardEntry[]): void {
+    entries.forEach((entry) => {
+      const y = this.listTop + (entry.rank - 1) * ROW_HEIGHT;
+      const isPodium = entry.rank <= 3;
+
+      if (entry.isOwn) {
+        this.listItems.push(
+          createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 110, ROW_HEIGHT - 6, Palette.goldHex, {
+            alpha: 0.4,
+            radius: 10,
+          }),
+        );
+      }
+
+      this.listItems.push(
+        this.add
+          .text(
+            76,
+            y,
+            `${entry.rank}`,
+            textStyle(FontSize.small, isPodium ? Palette.gold : Palette.ink, { fontStyle: 'bold' }),
+          )
+          .setOrigin(0, 0.5),
+        this.add
+          .text(
+            134,
+            y - 8,
+            entry.playerName,
+            textStyle(FontSize.small, entry.isOwn ? Palette.gold : Palette.ink),
+          )
+          .setOrigin(0, 0.5),
+        this.add
+          .text(
+            134,
+            y + 13,
+            `RATING ${entry.rating} · ${entry.matches} MATCHES · S ${entry.wins} / N ${entry.losses} / U ${entry.draws}`,
+            textStyle(FontSize.tiny, Palette.inkDim),
+          )
+          .setOrigin(0, 0.5),
       );
     });
   }

@@ -213,6 +213,8 @@ export class OnlineDuelScene extends Phaser.Scene {
         )
         .setOrigin(0.5)
         .setLetterSpacing(2)
+        .setWordWrapWidth(GAME_WIDTH - 80)
+        .setAlign('center')
         .setDepth(Depth.Overlay),
     );
     this.keep(
@@ -1145,7 +1147,7 @@ export class OnlineDuelScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          this.statusPage.contentY(this.isHost ? 650 : 560),
+          topY - 112,
           hasSuggestion
             ? 'Dein Build aus dem Vormatch ist vorgeschlagen. Ändere ihn mit + und −.'
             : `Verteile ${DUEL_TALENT_POINT_BUDGET} Punkte mit + und −.`,
@@ -1505,10 +1507,13 @@ export class OnlineDuelScene extends Phaser.Scene {
     index: number,
     isWinner: boolean,
   ): void {
-    const y = this.statusPage.contentY(420 + index * 190);
+    const playerCount = ChallengeSystem.getState()?.playerCount ?? 2;
+    const compact = playerCount > 2;
+    const y = this.statusPage.contentY((compact ? 350 : 420) + index * (compact ? 135 : 190));
+    const cardHeight = compact ? 116 : 170;
     const color = isWinner ? Palette.goldHex : this.world.accent;
     this.keep(
-      createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, 158, color, {
+      createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, cardHeight, color, {
         alpha: isWinner ? 0.75 : 0.45,
       }),
     );
@@ -1516,9 +1521,15 @@ export class OnlineDuelScene extends Phaser.Scene {
       this.add
         .text(
           104,
-          y - 44,
+          y - (compact ? 32 : 50),
           ChallengeSystem.playerLabel(index),
-          textStyle(FontSize.body, isWinner ? Palette.gold : Palette.ink, { fontStyle: 'bold' }),
+          textStyle(
+            compact ? FontSize.small : FontSize.body,
+            isWinner ? Palette.gold : Palette.ink,
+            {
+              fontStyle: 'bold',
+            },
+          ),
         )
         .setOrigin(0, 0.5),
     );
@@ -1526,21 +1537,21 @@ export class OnlineDuelScene extends Phaser.Scene {
       this.add
         .text(
           104,
-          y + 18,
+          y + (compact ? 4 : 5),
           round.score.toLocaleString('de-DE'),
-          textStyle(FontSize.heading, Palette.ink, { fontStyle: 'bold' }),
+          textStyle(compact ? FontSize.body : FontSize.heading, Palette.ink, { fontStyle: 'bold' }),
         )
         .setOrigin(0, 0.5),
     );
     this.keep(
       this.add
         .text(
-          GAME_WIDTH - 104,
-          y + 24,
+          104,
+          y + (compact ? 37 : 54),
           `${relics(round.totalCollected)}  ·  Kette ${round.bestCombo}`,
           textStyle(FontSize.tiny, Palette.inkDim),
         )
-        .setOrigin(1, 0.5),
+        .setOrigin(0, 0.5),
     );
   }
 
@@ -1553,18 +1564,38 @@ export class OnlineDuelScene extends Phaser.Scene {
         GAME_WIDTH / 2,
         GAME_HEIGHT - 140,
         label,
-        () => {
-          onBeforeMenu?.();
-          this.cancelOutgoingInvitation();
-          NetworkDuelSystem.unsubscribeFromRoom();
-          NetworkDuelSystem.unsubscribeFromDuelLobby();
-          this.clearInvitationPrompt();
-          ChallengeSystem.clear();
-          this.scene.start(SceneKey.Menu);
-        },
+        () => void this.leaveDuelAndReturn(onBeforeMenu),
         { width: 300, height: 72, accent: 0x9aa3bd, fontSize: FontSize.small },
       ).container,
     );
+  }
+
+  /**
+   * Beendet den serverseitigen Raum vor dem Wechsel ins Hauptmenue.
+   *
+   * Die Presence-Lobby und die Datenbank-Mitgliedschaft sind zwei getrennte
+   * Zustaende. Nur den Realtime-Kanal zu schliessen liess die beiden Spieler
+   * zwar wieder sichtbar werden, hielt ihre Profile aber bis zum Raum-Timeout
+   * blockiert. Der Await ist absichtlich vor `scene.start(Menu)`, damit ein
+   * direkt anschliessend gestartetes Duell nicht gegen den alten Raum laeuft.
+   */
+  private async leaveDuelAndReturn(onBeforeMenu?: () => void): Promise<void> {
+    if (this.busy) return;
+    this.busy = true;
+    this.statusPage.setStatus('Duell wird verlassen ...', Palette.inkDim);
+
+    if (this.roomCode && this.participantToken) {
+      await NetworkDuelSystem.leaveRoom(this.roomCode, this.participantToken);
+    }
+    if (!this.scene.isActive()) return;
+
+    onBeforeMenu?.();
+    this.cancelOutgoingInvitation();
+    NetworkDuelSystem.unsubscribeFromRoom();
+    NetworkDuelSystem.unsubscribeFromDuelLobby();
+    this.clearInvitationPrompt();
+    ChallengeSystem.clear();
+    this.scene.start(SceneKey.Menu);
   }
 
   private keep(object: Phaser.GameObjects.GameObject): void {

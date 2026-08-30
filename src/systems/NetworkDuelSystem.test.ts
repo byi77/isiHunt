@@ -110,6 +110,11 @@ describe('Netzfunktionen ohne konfigurierten Online-Dienst', () => {
     const result = await NetworkDuelSystem.acceptDuelInvitation('invitation');
     expect(result.ok).toBe(false);
   });
+
+  it('leaveRoom scheitert freundlich statt zu werfen', async () => {
+    const result = await NetworkDuelSystem.leaveRoom('ABC123', 'participant-token');
+    expect(result.ok).toBe(false);
+  });
 });
 
 describe('unsubscribeFromRoom', () => {

@@ -744,6 +744,34 @@ export async function submitRoundResult(
   return { ok: true, value: true };
 }
 
+/**
+ * Schliesst einen Raum sofort, wenn ein Spieler Lobby, Ergebnis oder laufendes
+ * Duell bewusst verlaesst. Ohne diesen RPC blieb die Profilmitgliedschaft bis
+ * zum zehnminuetigen Raum-Timeout aktiv: Die globale Presence-Lobby zeigte den
+ * Spieler bereits wieder als verfuegbar, `create_duel_invitation()` lehnte ihn
+ * serverseitig aber weiterhin als "bereits in einem Duell" ab.
+ *
+ * Der Server prueft das Teilnehmer-Token. Ein abgelaufener oder bereits
+ * geschlossener Raum ist ein idempotenter No-op; dadurch kann jeder Exit-Pfad
+ * dieselbe Aufraeumroutine sicher aufrufen.
+ */
+export async function leaveRoom(code: string, participantToken = ''): Promise<CloudResult<true>> {
+  const supabase = CloudSystem.getSupabaseClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+  if (!code || !participantToken) return { ok: true, value: true };
+
+  const result = await withTimeout(
+    supabase.rpc('leave_duel_room', {
+      p_code: code,
+      p_participant_token: participantToken,
+    }),
+    'Duell verlassen',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+  return { ok: true, value: true };
+}
+
 // --- Uhr-Synchronisation --------------------------------------------------------
 
 /**

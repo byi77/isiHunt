@@ -9,7 +9,7 @@ const authCatalogMigration = readFileSync(
   resolve(sqlDir, 'phase_2_30_auth_catalog_limits.sql'),
   'utf8',
 );
-const duelLeaderboardMigration = readFileSync(
+const duelLeaderboardRankingMigration = readFileSync(
   resolve(sqlDir, 'phase_2_31_duel_leaderboard_outbox.sql'),
   'utf8',
 );
@@ -52,6 +52,14 @@ const duelInvitationAcceptFixMigration = readFileSync(
 );
 const duelInitialTalentDraftMigration = readFileSync(
   resolve(sqlDir, 'phase_2_42_duel_initial_talent_draft.sql'),
+  'utf8',
+);
+const duelRoomLeaveMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_43_duel_room_leave.sql'),
+  'utf8',
+);
+const duelLeaderboardMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_44_duel_leaderboard.sql'),
   'utf8',
 );
 const verification = readFileSync(resolve(sqlDir, 'verify_security_hardening.sql'), 'utf8');
@@ -102,9 +110,13 @@ requireText(exploitMigration, 'profile_progress_event_cooldown', 'Progress-Dross
 requireText(authCatalogMigration, 'cosmetic_catalog', 'Kosmetik-Katalog');
 requireText(authCatalogMigration, 'save_payload_limits', 'Save-Payload-Grenze');
 requireText(authCatalogMigration, 'duel_room_limits', 'Duell-Payload-Grenze');
-requireText(duelLeaderboardMigration, 'server_seed', 'Server-Duell-Seed');
-requireText(duelLeaderboardMigration, 'max_plausible_score', 'Duell-Ergebnispruefung');
-requireText(duelLeaderboardMigration, 'authenticated_score_evidence', 'Leaderboard-Nachweis');
+requireText(duelLeaderboardRankingMigration, 'server_seed', 'Server-Duell-Seed');
+requireText(duelLeaderboardRankingMigration, 'max_plausible_score', 'Duell-Ergebnispruefung');
+requireText(
+  duelLeaderboardRankingMigration,
+  'authenticated_score_evidence',
+  'Leaderboard-Nachweis',
+);
 requireText(migrationState, 'isihunt_schema_state', 'Migrationsmarker-Tabelle');
 requireText(migrationState, 'schema_version, migration_name', 'Migrationsmarker-Version');
 requireText(
@@ -196,9 +208,17 @@ requireText(
 );
 requireText(duelInitialTalentDraftMigration, 'schema_version = 41', 'Migrationsguard Phase 2.42');
 requireText(duelInitialTalentDraftMigration, 'schema_version = 42', 'Migrationsmarker Phase 2.42');
+requireText(duelRoomLeaveMigration, 'leave_duel_room', 'Duellraum sofort verlassen');
+requireText(duelRoomLeaveMigration, 'schema_version = 42', 'Migrationsguard Phase 2.43');
+requireText(duelRoomLeaveMigration, 'schema_version = 43', 'Migrationsmarker Phase 2.43');
+requireText(duelLeaderboardMigration, 'duel_leaderboard', 'Mehrspieler-Duellrangliste');
+requireText(duelLeaderboardMigration, 'record_duel_leaderboard_match', 'Duellwertungstrigger');
+requireText(duelLeaderboardMigration, 'get_duel_leaderboard', 'Duellranglisten-RPC');
+requireText(duelLeaderboardMigration, 'schema_version = 43', 'Migrationsguard Phase 2.44');
+requireText(duelLeaderboardMigration, 'schema_version = 44', 'Migrationsmarker Phase 2.44');
 
 const migrationFiles = readdirSync(sqlDir).filter((name) =>
-  /^phase_2_(2[89]|30|31|32|33|34|35|36|37|38|39|40|41|42)_.*\.sql$/.test(name),
+  /^phase_2_(2[89]|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44)_.*\.sql$/.test(name),
 );
 for (const file of migrationFiles) {
   const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();

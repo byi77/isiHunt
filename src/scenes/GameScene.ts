@@ -333,7 +333,9 @@ export class GameScene extends Phaser.Scene {
   // Als Klassenfelder, damit `offEvent` dieselbe Referenz bekommt wie
   // `onEvent` - sonst wird nicht abgemeldet (CODE_STYLE.md 1.4).
   private readonly onPauseRequested = (): void => this.togglePause();
-  private readonly onAbortRequested = (): void => this.abortRun();
+  private readonly onAbortRequested = (): void => {
+    void this.abortRun();
+  };
 
   // Im Duell meldet das HUD damit, dass der Pausenbildschirm wieder zu ist -
   // angehalten war nichts (Fairness-Regel), aber der Gegner soll sehen, dass
@@ -862,7 +864,7 @@ export class GameScene extends Phaser.Scene {
    * bekommen koennte, haette einen Grund, jeden mittelmaessigen Run
    * wegzuwerfen - das waere kein Spiel mehr, sondern eine Auslese.
    */
-  abortRun(): void {
+  async abortRun(): Promise<void> {
     if (this.phase === 'ended') return;
 
     // Vor dem Setzen von `ended` und vor `ChallengeSystem.clear()`: der
@@ -870,16 +872,21 @@ export class GameScene extends Phaser.Scene {
     // waere die Meldung still verschwunden, und der Gegner saehe den
     // Aussteiger bis zum Rundenende als "spielt".
     this.setLocalActivity('left');
+    const onlineRoom = this.challenge?.kind === 'duel-online' ? this.challenge.online : undefined;
+    this.phase = 'ended';
+
     // Auch beim direkten ABBRECHEN aus GameScene muss der alte Realtime-
     // Zustand verschwinden. Sonst bleiben Kanal-Handler an der beendeten
     // Scene haengen und blockieren den naechsten Netzwerk-Duell-Einstieg bis zum
     // kompletten App-Neustart.
-    if (this.challenge?.kind === 'duel-online') {
+    if (onlineRoom?.roomCode && onlineRoom.participantToken) {
+      await NetworkDuelSystem.leaveRoom(onlineRoom.roomCode, onlineRoom.participantToken);
+    }
+    if (!this.scene.isActive()) return;
+    if (onlineRoom) {
       NetworkDuelSystem.unsubscribeFromRoom();
       NetworkDuelSystem.unsubscribeFromDuelLobby();
     }
-
-    this.phase = 'ended';
 
     // Die Scene laeuft moeglicherweise pausiert - sonst bleibt sie es auch
     // nach dem Wechsel und der naechste Run startet eingefroren.

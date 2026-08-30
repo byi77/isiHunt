@@ -61,6 +61,18 @@ export interface LeaderboardEntry {
   isOwn: boolean;
 }
 
+/** Eine serverseitig berechnete Platzierung fuer Online-Duelle. */
+export interface DuelLeaderboardEntry {
+  rank: number;
+  playerName: string;
+  rating: number;
+  matches: number;
+  wins: number;
+  losses: number;
+  draws: number;
+  isOwn: boolean;
+}
+
 interface PendingLeaderboardScore {
   playerId: string;
   playerName: string;
@@ -687,6 +699,42 @@ export async function fetchLeaderboard(worldId?: string): Promise<CloudResult<Le
       bestCombo: finiteNonNegative(row.best_combo),
       createdAt: String(row.created_at),
       worldId: String(row.world_id),
+      isOwn: row.is_own === true,
+    })),
+  };
+}
+
+/**
+ * Laedt die getrennte Mehrspieler-Rangliste fuer Online-Duelle.
+ *
+ * Die Wertung kennt bewusst keine Weltfilter: Ein Match mit zwei, drei oder
+ * vier Teilnehmern wird serverseitig als ein gemeinsames Ergebnis gewertet.
+ */
+export async function fetchDuelLeaderboard(): Promise<CloudResult<DuelLeaderboardEntry[]>> {
+  const supabase = getClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+
+  const result = await withTimeout(
+    supabase.rpc('get_duel_leaderboard', { p_limit: LEADERBOARD_LIMIT }),
+    'Duell-Bestenliste laden',
+  );
+
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  const rows: Record<string, unknown>[] = Array.isArray(result.value.data)
+    ? (result.value.data as Record<string, unknown>[])
+    : [];
+  return {
+    ok: true,
+    value: rows.map((row) => ({
+      rank: Math.max(1, finiteNonNegative(row.rank, 1)),
+      playerName: String(row.player_name),
+      rating: Math.max(100, finiteNonNegative(row.rating, 1000)),
+      matches: finiteNonNegative(row.matches),
+      wins: finiteNonNegative(row.wins),
+      losses: finiteNonNegative(row.losses),
+      draws: finiteNonNegative(row.draws),
       isOwn: row.is_own === true,
     })),
   };
