@@ -1,5 +1,5 @@
 -- Read-only Nachweis fuer den produktiven Migrationsstand.
--- Erwartet genau eine Zeile mit schema_version = 41.
+-- Erwartet genau eine Zeile mit schema_version = 42.
 
 select singleton, schema_version, migration_name, applied_at
 from public.isihunt_schema_state;
@@ -14,6 +14,6 @@ where n.nspname = 'public'
     'upsert_save', 'submit_duel_result', 'submit_duel_talent_draft',
     'request_duel_rematch', 'create_duel_invitation', 'list_duel_invitations',
     'accept_duel_invitation', 'decline_duel_invitation', 'cancel_duel_invitation',
-    'duel_participant_slot', 'set_duel_start_time', 'get_duel_room'
+    'duel_participant_slot', 'start_duel_talent_draft', 'set_duel_start_time', 'get_duel_room'
   )
 order by routine_name, arguments;

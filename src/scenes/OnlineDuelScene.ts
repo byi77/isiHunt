@@ -88,6 +88,9 @@ export class OnlineDuelScene extends Phaser.Scene {
    * nicht mehr erreichbar.
    */
   private runStarted = false;
+  private talentDraftStarted = false;
+  private talentReadySubmitted = false;
+  private startTimeRequestStarted = false;
   private talentDraftView: TalentDraftView | null = null;
   private talentDraftTimer: Phaser.Time.TimerEvent | null = null;
   private talentDraftDeadline = 0;
@@ -127,6 +130,9 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.resultPollTimer = null;
     this.resultPollStartedAt = 0;
     this.runStarted = false;
+    this.talentDraftStarted = false;
+    this.talentReadySubmitted = false;
+    this.startTimeRequestStarted = false;
     this.talentDraftView = null;
     this.talentDraftTimer = null;
     this.talentDraftDeadline = 0;
@@ -801,7 +807,7 @@ export class OnlineDuelScene extends Phaser.Scene {
         GAME_WIDTH / 2,
         this.statusPage.contentY(1000),
         'DUELL STARTEN',
-        () => void this.startRoom(lobbyStatus),
+        () => void this.startTalentDraft(lobbyStatus),
         { width: 460, accent: Palette.goldHex, fontSize: FontSize.large },
       );
       startButton.setEnabled(false);
@@ -918,20 +924,89 @@ export class OnlineDuelScene extends Phaser.Scene {
     });
   }
 
-  private async startRoom(statusText: Phaser.GameObjects.Text): Promise<void> {
+  private async startTalentDraft(statusText: Phaser.GameObjects.Text): Promise<void> {
     if (!this.isHost || this.busy || this.roomPlayerCount < 2) return;
     this.busy = true;
     this.startRoomButton?.setEnabled(false);
-    statusText.setText('Duell wird gestartet ...').setColor(Palette.ink);
-    const result = await NetworkDuelSystem.setStartTime(this.roomCode, this.participantToken);
+    statusText.setText('Talentphase wird gestartet ...').setColor(Palette.ink);
+    const result = await NetworkDuelSystem.startTalentDraft(this.roomCode, this.participantToken);
     this.busy = false;
-    if (!this.scene.isActive() || this.runStarted) return;
+    if (!this.scene.isActive() || this.talentDraftStarted || this.runStarted) return;
     if (!result.ok) {
       statusText.setText(result.error).setColor(Palette.danger);
       this.startRoomButton?.setEnabled(this.roomPlayerCount >= 2);
       return;
     }
+    this.beginInitialTalentDraft(statusText);
+    NetworkDuelSystem.broadcastTalentDraftStarted(result.value);
+  }
+
+  private beginInitialTalentDraft(statusText: Phaser.GameObjects.Text): void {
+    if (this.talentDraftStarted || this.runStarted || !this.scene.isActive()) return;
+    this.talentDraftStarted = true;
+    this.clearRoomLobbyObjects();
+    this.clearRoomInviteObjects();
+    if (this.startRoomButton) {
+      const button = this.startRoomButton.container;
+      this.transient = this.transient.filter((object) => object !== button);
+      button.destroy();
+      this.startRoomButton = null;
+    }
+    this.buildOnlineTalentDraft(statusText, 'TALENT-BUILD BESTAETIGEN', () => {
+      void this.submitInitialTalentDraft(statusText);
+    });
+  }
+
+  private async submitInitialTalentDraft(statusText: Phaser.GameObjects.Text): Promise<void> {
+    if (this.talentReadySubmitted || this.busy || !this.talentDraftStarted) return;
+    this.busy = true;
+    const localIndex =
+      ChallengeSystem.getState()?.online?.localPlayerIndex ?? (this.isHost ? 0 : 1);
+    const draft = ChallengeSystem.duelTalentDraftFor(localIndex);
+    const result = await NetworkDuelSystem.submitTalentDraft(
+      this.roomCode,
+      draft,
+      this.participantToken,
+    );
+    this.busy = false;
+    if (!this.scene.isActive()) return;
+    if (!result.ok) {
+      this.talentDraftView?.setEnabled(true);
+      this.draftConfirmButton?.setEnabled(true);
+      statusText.setText(result.error).setColor(Palette.danger);
+      return;
+    }
+
+    this.talentReadySubmitted = true;
+    statusText.setText('Talent-Build gespeichert. Warte auf die anderen Spieler ...');
+    void this.pollLobbyStatus(statusText);
+  }
+
+  private async startDuelAfterTalentDraft(statusText: Phaser.GameObjects.Text): Promise<void> {
+    if (
+      !this.isHost ||
+      !this.talentDraftStarted ||
+      !this.talentReadySubmitted ||
+      this.startTimeRequestStarted ||
+      this.busy ||
+      this.runStarted
+    )
+      return;
+
+    this.startTimeRequestStarted = true;
+    this.busy = true;
+    statusText.setText('Duell wird gestartet ...').setColor(Palette.ink);
+    const result = await NetworkDuelSystem.setStartTime(this.roomCode, this.participantToken);
+    this.busy = false;
+    if (!this.scene.isActive() || this.runStarted) return;
+    if (!result.ok) {
+      this.startTimeRequestStarted = false;
+      statusText.setText(result.error).setColor(Palette.danger);
+      return;
+    }
+
     this.runStarted = true;
+    NetworkDuelSystem.broadcastStartTime(result.value);
     this.beginRun(result.value);
   }
 
@@ -954,11 +1029,16 @@ export class OnlineDuelScene extends Phaser.Scene {
       {
         onPresenceSync: (playerNames, isFullSync) => {
           ChallengeSystem.updateOnlinePlayerNames(playerNames, isFullSync);
-          this.renderRoomLobby(
-            ChallengeSystem.getState()?.online?.playerNames ?? [],
-            this.roomPlayerCount,
-            this.roomMaxPlayers,
-          );
+          if (!this.talentDraftStarted) {
+            this.renderRoomLobby(
+              ChallengeSystem.getState()?.online?.playerNames ?? [],
+              this.roomPlayerCount,
+              this.roomMaxPlayers,
+            );
+          }
+        },
+        onTalentDraftStarted: () => {
+          this.beginInitialTalentDraft(statusText);
         },
         onStartTimeSet: (startAtMs) => {
           if (this.runStarted || !this.scene.isActive()) return;
@@ -988,11 +1068,13 @@ export class OnlineDuelScene extends Phaser.Scene {
       return;
     }
     ChallengeSystem.updateOnlineSync(offsetResult.value, null);
-    statusText.setText(
-      this.isHost
-        ? 'Warte auf mindestens einen weiteren Spieler ...'
-        : 'Warte auf den Start durch den Host ...',
-    );
+    if (!this.talentDraftStarted) {
+      statusText.setText(
+        this.isHost
+          ? 'Warte auf mindestens einen weiteren Spieler ...'
+          : 'Warte auf den Start durch den Host ...',
+      );
+    }
     this.startLobbyPolling(statusText);
     void this.pollLobbyStatus(statusText);
   }
@@ -1016,13 +1098,28 @@ export class OnlineDuelScene extends Phaser.Scene {
     if (this.roomPlayerCount >= 2) {
       ChallengeSystem.updateOnlinePlayerCount(this.roomPlayerCount);
     }
+    if (result.value.talentDraftStartedAtMs !== null && !this.talentDraftStarted) {
+      this.beginInitialTalentDraft(statusText);
+    }
     const names = ChallengeSystem.getState()?.online?.playerNames ?? [];
-    this.renderRoomLobby(names, this.roomPlayerCount, this.roomMaxPlayers);
+    if (!this.talentDraftStarted) {
+      this.renderRoomLobby(names, this.roomPlayerCount, this.roomMaxPlayers);
+    }
     this.startRoomButton?.setEnabled(this.isHost && this.roomPlayerCount >= 2);
 
     if (result.value.startAtMs !== null) {
       this.runStarted = true;
       this.beginRun(result.value.startAtMs);
+      return;
+    }
+
+    if (this.talentDraftStarted) {
+      statusText.setText(
+        `${result.value.talentReadyCount}/${this.roomPlayerCount} Spieler haben ihren Talent-Build bestaetigt.`,
+      );
+      if (result.value.talentReadyCount >= this.roomPlayerCount) {
+        void this.startDuelAfterTalentDraft(statusText);
+      }
       return;
     }
 

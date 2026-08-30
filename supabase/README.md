@@ -54,6 +54,7 @@ Auf einer leeren Datenbank in dieser Reihenfolge einspielen:
 | 35  | `phase_2_39_duel_lobby_multi_invites.sql`    | Mehrere direkte Einladungen in denselben Duellraum                |
 | 36  | `phase_2_40_fix_duel_invitation_listing.sql` | Fehlerkorrektur im Listing offener Duell-Einladungen              |
 | 37  | `phase_2_41_fix_duel_invitation_accept.sql`  | Fehlerkorrektur beim Annehmen direkter Duell-Einladungen          |
+| 38  | `phase_2_42_duel_initial_talent_draft.sql`  | Talentauswahl vor dem ersten Duellstart                          |
 
 `phase_2_23_talent_points.sql` enthält einen historischen globalen
 Testdaten-Reset. Das Skript bricht ohne ausdrückliches Opt-in ab. Nur wenn

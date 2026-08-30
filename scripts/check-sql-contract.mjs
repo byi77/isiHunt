@@ -50,6 +50,10 @@ const duelInvitationAcceptFixMigration = readFileSync(
   resolve(sqlDir, 'phase_2_41_fix_duel_invitation_accept.sql'),
   'utf8',
 );
+const duelInitialTalentDraftMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_42_duel_initial_talent_draft.sql'),
+  'utf8',
+);
 const verification = readFileSync(resolve(sqlDir, 'verify_security_hardening.sql'), 'utf8');
 const migrationVerification = readFileSync(resolve(sqlDir, 'verify_migration_state.sql'), 'utf8');
 
@@ -170,9 +174,31 @@ requireText(
 );
 requireText(duelInvitationAcceptFixMigration, 'schema_version = 40', 'Migrationsguard Phase 2.41');
 requireText(duelInvitationAcceptFixMigration, 'schema_version = 41', 'Migrationsmarker Phase 2.41');
+requireText(
+  duelInitialTalentDraftMigration,
+  'add column if not exists talent_draft_started_at timestamptz',
+  'Persistenter Start der Talentphase',
+);
+requireText(
+  duelInitialTalentDraftMigration,
+  'start_duel_talent_draft',
+  'RPC zum Start der Talentphase',
+);
+requireText(
+  duelInitialTalentDraftMigration,
+  'talent_ready_count',
+  'Mehrspieler-Talentbereitschaft',
+);
+requireText(
+  duelInitialTalentDraftMigration,
+  'Alle Spieler muessen ihren Talent-Build bestaetigen',
+  'Servergate vor dem Duellstart',
+);
+requireText(duelInitialTalentDraftMigration, 'schema_version = 41', 'Migrationsguard Phase 2.42');
+requireText(duelInitialTalentDraftMigration, 'schema_version = 42', 'Migrationsmarker Phase 2.42');
 
 const migrationFiles = readdirSync(sqlDir).filter((name) =>
-  /^phase_2_(2[89]|30|31|32|33|34|35|36|37|38|39|40|41)_.*\.sql$/.test(name),
+  /^phase_2_(2[89]|30|31|32|33|34|35|36|37|38|39|40|41|42)_.*\.sql$/.test(name),
 );
 for (const file of migrationFiles) {
   const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();

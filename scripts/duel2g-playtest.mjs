@@ -365,6 +365,9 @@ async function readClientSnapshot(page) {
         .map((scene) => scene.scene.key),
       roomCode: online?.roomCode ?? null,
       lobbyStatus: online?.statusText?.text ?? null,
+      talentDraftStarted: online?.talentDraftStarted ?? false,
+      talentDraftVisible: Boolean(online?.talentDraftView?.objects?.length),
+      talentReadySubmitted: online?.talentReadySubmitted ?? false,
       gamePhase: game?.scene?.getScene('Game')?.phase ?? null,
     };
   });
@@ -542,6 +545,41 @@ async function runOne(browser, runNumber, failures) {
 
     stage = 'Host startet Lobby';
     await clickButton(host.page, 'OnlineDuel', 'DUELL STARTEN');
+    stage = 'Talentauswahl auf beiden Clients oeffnen';
+    try {
+      await Promise.all([
+        host.page.waitForFunction(
+          () => window.isiHunt?.scene?.getScene('OnlineDuel')?.talentDraftView?.objects?.length > 0,
+          undefined,
+          { timeout: RUN_TIMEOUT_MS },
+        ),
+        guest.page.waitForFunction(
+          () => window.isiHunt?.scene?.getScene('OnlineDuel')?.talentDraftView?.objects?.length > 0,
+          undefined,
+          { timeout: RUN_TIMEOUT_MS },
+        ),
+      ]);
+    } catch (error) {
+      const [hostSnapshot, guestSnapshot] = await Promise.all([
+        readClientSnapshot(host.page),
+        readClientSnapshot(guest.page),
+      ]);
+      const [hostLogs, guestLogs] = await Promise.all([
+        readProtectedLogs(host.page),
+        readProtectedLogs(guest.page),
+      ]);
+      console.log(`  Diagnose Talentphase host=${JSON.stringify(hostSnapshot)}`);
+      console.log(`  Diagnose Talentphase guest=${JSON.stringify(guestSnapshot)}`);
+      console.log(`  Host-Debug=${JSON.stringify(hostLogs.slice(-12))}`);
+      console.log(`  Guest-Debug=${JSON.stringify(guestLogs.slice(-12))}`);
+      throw error;
+    }
+    console.log('  OK   Talentauswahl auf beiden Clients sichtbar');
+    stage = 'Talent-Build bestaetigen';
+    await Promise.all([
+      clickButton(host.page, 'OnlineDuel', 'TALENT-BUILD'),
+      clickButton(guest.page, 'OnlineDuel', 'TALENT-BUILD'),
+    ]);
     stage = 'Beide Clients in GameScene bringen';
     try {
       await Promise.all([

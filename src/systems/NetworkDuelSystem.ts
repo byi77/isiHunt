@@ -104,6 +104,10 @@ export interface DuelRoomStatus {
   guestTalentReady: boolean;
   hostTalentDraft: TalentRanks;
   guestTalentDraft: TalentRanks;
+  /** Serverzeit (ms seit Epoch), zu der die Talentphase geoeffnet wurde. */
+  talentDraftStartedAtMs: number | null;
+  /** Anzahl der Teilnehmer, die ihren Build fuer diese Runde bestaetigt haben. */
+  talentReadyCount: number;
   /** Serverzeit (ms seit Epoch), zu der beide gleichzeitig starten sollen. */
   startAtMs: number | null;
   /** `null`, solange der jeweilige Spieler seine Runde nicht abgegeben hat. */
@@ -495,6 +499,31 @@ export async function submitTalentDraft(
   return { ok: true, value: true };
 }
 
+/** Oeffnet die Talentphase fuer alle Teilnehmer; nur der Host darf sie starten. */
+export async function startTalentDraft(
+  code: string,
+  participantToken = '',
+): Promise<CloudResult<number>> {
+  const supabase = CloudSystem.getSupabaseClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+
+  const result = await withTimeout(
+    supabase.rpc('start_duel_talent_draft', {
+      p_code: code,
+      p_participant_token: participantToken,
+    }),
+    'Talentphase starten',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  const startedAtMs = Date.parse(String(result.value.data));
+  if (!Number.isFinite(startedAtMs)) {
+    return { ok: false, error: 'Ungueltiger Start der Talentphase vom Server' };
+  }
+  return { ok: true, value: startedAtMs };
+}
+
 /** Meldet ein Rematch inklusive des neuen eigenen Build-Vorschlags an. */
 export async function requestRematch(
   code: string,
@@ -616,6 +645,12 @@ export async function getRoomStatus(
       guestTalentReady: Boolean(row.guest_talent_ready),
       hostTalentDraft: parseTalentDraft(row.host_talent_draft),
       guestTalentDraft: parseTalentDraft(row.guest_talent_draft),
+      talentDraftStartedAtMs: row.talent_draft_started_at
+        ? Date.parse(String(row.talent_draft_started_at))
+        : null,
+      talentReadyCount: Number.isInteger(Number(row.talent_ready_count))
+        ? Number(row.talent_ready_count)
+        : 0,
       startAtMs: row.start_at ? Date.parse(String(row.start_at)) : null,
       hostResult: parseRoundResult(row.host_result),
       guestResult: parseRoundResult(row.guest_result),
@@ -785,6 +820,7 @@ export type DuelPlayerNames = (string | null)[];
 
 export interface DuelChannelHandlers {
   onOpponentReady?: () => void;
+  onTalentDraftStarted?: (startedAtMs: number) => void;
   onStartTimeSet?: (startAtMs: number) => void;
   /** Feuert, wenn der jeweils ANDERE Spieler den Kanal verlaesst. */
   onOpponentDisconnected?: (playerIndex: number) => void;
@@ -1074,6 +1110,14 @@ export function subscribeToRoom(
 
   channel
     .on('broadcast', { event: 'ready' }, () => activeHandlers.onOpponentReady?.())
+    .on(
+      'broadcast',
+      { event: 'talent-draft-start' },
+      ({ payload }: { payload: { startedAtMs?: unknown } }) => {
+        const startedAtMs = Number(payload.startedAtMs);
+        if (Number.isFinite(startedAtMs)) activeHandlers.onTalentDraftStarted?.(startedAtMs);
+      },
+    )
     .on('broadcast', { event: 'start' }, ({ payload }: { payload: { startAtMs?: unknown } }) => {
       const startAtMs = Number(payload.startAtMs);
       if (Number.isFinite(startAtMs)) activeHandlers.onStartTimeSet?.(startAtMs);
@@ -1356,6 +1400,11 @@ function sendBroadcast(event: string, payload: Record<string, unknown>): void {
 /** Sendet ein "ich bin bereit"-Signal an den Kanal. */
 export function broadcastReady(): void {
   sendBroadcast('ready', {});
+}
+
+/** Teilt den anderen Clients den Beginn der serverseitigen Talentphase mit. */
+export function broadcastTalentDraftStarted(startedAtMs: number): void {
+  sendBroadcast('talent-draft-start', { startedAtMs });
 }
 
 /** Verteilt die vom Gastgeber gesetzte Startzeit an den Kanal. */
