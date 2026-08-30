@@ -1,6 +1,6 @@
 # Roadmap — isiHunt
 
-**Stand:** 2026-08-28 · Produktstand siehe `package.json`/`version.json` · Die detaillierte und verbindliche Aufgabenreihenfolge
+**Stand:** 2026-08-30 · Produktstand siehe `package.json`/`version.json` · Die detaillierte und verbindliche Aufgabenreihenfolge
 steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 
 ## Bereits spielbar
@@ -28,9 +28,10 @@ seinen Namen ändern und wird im Hauptmenü gezeigt.
 Alias-Login mit PIN, gemeinsamer Fortschritt, Offline-Outbox und sichere
 Zusammenführung sind implementiert.
 
-**Noch zu bestätigen:** Das Supabase-SQL muss produktiv ausgeführt und ein
-echter iPhone-/iPad-Test mit Offline-Runs und anschließender Verbindung
-durchgeführt werden.
+**Live bestaetigt am 2026-08-30:** Der verknuepfte Supabase-Stand steht auf
+Phase 2.42; `supabase/verify_migration_state.sql` findet den Migrationsmarker
+und die erwarteten RPC-Signaturen. Offen bleibt der echte iPhone-/iPad-Test mit
+Offline-Runs und anschliessender Verbindung.
 
 ### M3 — Weltraumwelt ✅
 
@@ -49,10 +50,14 @@ Ansicht und der sichtbare Level-Up-Moment sind spielbar.
 
 ### M5 — Herausforderungen und Modi ✅
 
-Normaler Solo-Run, Tages-Herausforderung, lokales Duell gegen eine zweite
-Person oder einen Bot sowie Weltmodifikatoren und Hindernisse sind vorhanden.
+Normaler Solo-Run, Tages-Herausforderung, VS Bot mit mittlerer Schwierigkeit
+und Siegbonus sowie Weltmodifikatoren und Hindernisse sind vorhanden. Das
+Online-Duell erweitert den Modus um eine direkte Bereitschaftslobby, einen
+Host-Raum fuer zwei bis vier Geraete, Einladungen, gemeinsame Talentphase,
+Live-Gegnerpunkte und persistente Ergebnisse.
 
-**Noch offen:** Schwierigkeit und Belohnungen mit der Zielgruppe balancieren.
+**Noch offen:** Schwierigkeit und Belohnungen mit der Zielgruppe sowie der
+Online-Ablauf auf echten iPhone-/Android-Geraeten balancieren und abnehmen.
 
 ## Nächste Meilensteine
 
@@ -73,7 +78,8 @@ Person oder einen Bot sowie Weltmodifikatoren und Hindernisse sind vorhanden.
   Apps.
 - Serverseitige Laufprüfung als Grundlage für Ranked.
 - Freundesliste mit Anfrage, Online-Status, Rekord und Coins.
-- 1vs1-Einladung zuerst per Link zwischen zwei Geräten; Echtzeit danach.
+- Erweiterte Freundesfunktionen rund um die bestehende Duell-Lobby, sobald
+  Datenschutz, Moderation und Reichweite geklaert sind.
 
 ### M7 — Prestige
 

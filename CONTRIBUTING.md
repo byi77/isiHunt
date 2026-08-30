@@ -4,7 +4,7 @@
 
 ## Einrichten
 
-**Voraussetzung:** [Node.js](https://nodejs.org/) 20 oder neuer.
+**Voraussetzung:** [Node.js](https://nodejs.org/) 22.22.2 oder neuer.
 
 ```bash
 npm install
@@ -21,7 +21,14 @@ auf dem Geraet sichtbar.
 ## Vor jedem Commit
 
 ```bash
-npm run typecheck && npm run lint && npm run build
+npm run verify
+```
+
+Bei Aenderungen am Online-Duell zusaetzlich den Zwei-Client-Playtest gegen den
+konfigurierten Supabase-Stand ausfuehren:
+
+```bash
+npm run test:duel2g -- http://127.0.0.1:5173/
 ```
 
 ## Branches

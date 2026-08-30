@@ -1,6 +1,6 @@
 # Art Style Guide — isiHunt
 
-**Stand:** 2026-08-22 · Produktstand siehe `package.json`/`version.json`
+**Stand:** 2026-08-30 · Produktstand siehe `package.json`/`version.json`
 
 ---
 

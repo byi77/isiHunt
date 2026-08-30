@@ -1,11 +1,12 @@
 /**
- * Netzwerk-Duell: zwei Spieler, zwei Geraete, gleicher Seed, ueber Internet.
+ * Netzwerk-Duell: zwei bis vier Spieler, getrennte Geraete, gleicher Seed,
+ * ueber Internet.
  *
  * Getrennt von `challenge.ts`, weil dort die Fairness-Regeln des *lokalen*
  * Duells begruendet stehen (ein Geraet, Uebergabe) - dieses Modul enthaelt
  * nur die zusaetzlichen Werte, die aus der Netzwerkuebertragung selbst
- * entstehen. `CHALLENGE_DURATION_MS`/`CHALLENGE_PLAYER_COUNT` gelten
- * unveraendert weiter und werden von dort importiert, nicht dupliziert.
+ * entstehen. `CHALLENGE_DURATION_MS` gilt unveraendert weiter und wird von
+ * dort importiert, nicht dupliziert. Die Spielerzahl kommt aus dem Raumstatus.
  */
 
 /**

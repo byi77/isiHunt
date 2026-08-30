@@ -1,6 +1,6 @@
 # Kosmetik-Assets und Ego-Modul
 
-**Stand:** 2026-08-22
+**Stand:** 2026-08-30
 
 Die sichtbare Schiffsidentitaet ist ueber stabile Shop-IDs angebunden. Der
 Katalog enthaelt 110 Schiffsformen: 100 prozedurale 2D-Silhouetten, den

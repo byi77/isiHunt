@@ -22,9 +22,15 @@ Achievement-System fuer alle, die dranbleiben.
   bis x5. Ein zu langes Zoegern setzt ihn zurueck.
 - **Fortschritt bleibt.** XP → Charakterlevel → Coin-basierte Talente → neue Welten und
   Erfolge.
-- **Duell zu zweit.** Zwei Personen, ein Geraet, je 90 Sekunden — beide jagen
-  dieselben Relikte in derselben Reihenfolge.
-- **Bestenliste und Geraetewechsel.** Optional, ohne Konto und ohne Passwort.
+- **Duell gegen den Bot.** Ein 90-Sekunden-Lauf gegen einen mittelstarken Bot;
+  vor dem Start verteilst du zehn temporaere Talentpunkte. Ein Sieg bringt den
+  zentral konfigurierten XP-/Coin-Bonus.
+- **Online-Duell.** Zwei bis vier Personen spielen auf getrennten Geraeten in
+  einer gemeinsamen Lobby. Der Host laedt duellbereite Spieler ein, startet
+  nach der Talent-Bestaetigung aller Teilnehmer und sieht waehrend des Runs
+  die Gegnerpunkte live.
+- **Bestenliste und Geraetewechsel.** Optional; der normale Run funktioniert
+  ohne Konto und ohne Passwort.
 
 Details: [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md)
 
@@ -70,7 +76,7 @@ Browser-Konsole (`isiHunt.scale`, `isiHunt.scene.getScene('Game')`).
 
 ## Loslegen
 
-**Voraussetzung:** [Node.js](https://nodejs.org/) 20 oder neuer.
+**Voraussetzung:** [Node.js](https://nodejs.org/) 22.22.2 oder neuer.
 
 ```bash
 npm install
@@ -87,22 +93,24 @@ sofort auch auf dem Handy sichtbar.
 
 ### Weitere Befehle
 
-| Befehl                  | Zweck                                        |
-| ----------------------- | -------------------------------------------- |
-| `npm run dev`           | Dev-Server mit Hot Reload, im LAN erreichbar |
-| `npm run build`         | Typcheck + Production-Build nach `dist/`     |
-| `npm run preview`       | Den Production-Build lokal testen            |
-| `npm run typecheck`     | Nur TypeScript pruefen                       |
-| `npm run lint`          | ESLint                                       |
-| `npm run format`        | Prettier ueber alle Quellen                  |
-| `npm run icons`         | App-Icons neu zeichnen                       |
-| `npm run test`          | Vitest ueber `systems/` und `config/`        |
-| `npm run test:scope`    | Nennt die zur Aenderung passende Teststufe   |
-| `npm run playtest`      | Browser-Playtest, sieben Suiten (~20 Min)    |
-| `npm run test:duel2g`   | Zwei-Client-Duell2G gegen Supabase (~1 Min.) |
-| `npm run smoke`         | Kurzer Boot-Test gegen einen Dev-Server      |
-| `npm run ios:check`     | iOS-Mindestversion aus dem Build ermitteln   |
-| `npm run release:check` | Browser-, Performance-, iOS- und SQL-Gates   |
+| Befehl                  | Zweck                                                               |
+| ----------------------- | ------------------------------------------------------------------- |
+| `npm run dev`           | Dev-Server mit Hot Reload, im LAN erreichbar                        |
+| `npm run build`         | Typcheck + Production-Build nach `dist/`                            |
+| `npm run preview`       | Den Production-Build lokal testen                                   |
+| `npm run typecheck`     | Nur TypeScript pruefen                                              |
+| `npm run lint`          | ESLint                                                              |
+| `npm run format`        | Prettier ueber alle Quellen                                         |
+| `npm run icons`         | App-Icons neu zeichnen                                              |
+| `npm run test`          | Vitest ueber `systems/` und `config/`                               |
+| `npm run test:scope`    | Nennt die zur Aenderung passende Teststufe                          |
+| `npm run playtest`      | Browser-Playtest, sieben Suiten (~20 Min)                           |
+| `npm run test:duel2g`   | Zwei-Client-Online-Duell inkl. Talentphase gegen Supabase (~1 Min.) |
+| `npm run verify`        | Typecheck, Lint, Format, Gates, Tests und Build                     |
+| `npm run sql:check`     | SQL-Signaturen und Migrationsvertraege pruefen                      |
+| `npm run smoke`         | Kurzer Boot-Test gegen einen Dev-Server                             |
+| `npm run ios:check`     | iOS-Mindestversion aus dem Build ermitteln                          |
+| `npm run release:check` | Browser-, Performance-, iOS- und SQL-Gates                          |
 
 Der Playtest steuert das Spiel in einem echten Browser: Menuewege per Klick,
 ein kompletter Run per Tastatur, Layout ueber 19 Geraeteformate und ein Lauf
@@ -114,12 +122,15 @@ npm run playtest -- --watch --only=nav
 
 Fuer die `ios`-Suite einmalig `npx playwright install webkit`.
 
-### DUELL2G ohne zwei Handys
+### Online-Duell automatisch testen (DUELL2G)
 
 `npm run test:duel2g` oeffnet zwei isolierte Browser-Kontexte mit eigenen
-Supabase-Clients. Der Host erstellt den Raum, der Gast tritt ueber den echten
-Code-Submit bei; danach werden Lobby, gemeinsamer Seed, Realtime-Live-Stand,
-Presence, Ergebnis-Polling und die persistenten Rundenergebnisse geprueft.
+Supabase-Clients. Der Test nutzt fuer die reproduzierbare Integration den
+internen Raumcode-Einstieg, der im normalen Duell-Menue nicht angezeigt wird.
+Der Host erstellt den Raum, der Gast tritt bei; danach werden Lobby,
+Talentphase mit Bestaetigung auf beiden Clients, gemeinsamer Seed,
+Realtime-Live-Stand, Presence, Ergebnis-Polling und die persistenten
+Rundenergebnisse geprueft.
 Die 90-Sekunden-GameScene laeuft dabei mit echten 60-Hz-Deltas beschleunigt,
 damit der Test in Sekunden fertig ist. Bei transienten RPC-/Realtime-Fehlern
 wird der komplette Lauf bis zu zweimal mit einem frischen Raum wiederholt.
@@ -140,7 +151,9 @@ Bestenliste und Spielstand-Abgleich brauchen ein Supabase-Projekt. **Ohne
 Zugangsdaten laeuft das Spiel vollstaendig** — auch ohne Konto und ohne
 Internetverbindung kann gespielt werden. Spielstaende werden lokal gespeichert;
 Internet wird nur fuer Registrierung, Login und die optionalen Online-Funktionen
-gebraucht. Die beiden Online-Knoepfe erscheinen ohne Backend gar nicht erst.
+gebraucht. Das Online-Duell mit Bereitschaftslobby und Einladungen setzt ein
+konfiguriertes Supabase-Backend, eine Anmeldung und einen Spielernamen voraus;
+`VS BOT` bleibt lokal spielbar.
 
 Zum Einrichten:
 
@@ -179,16 +192,17 @@ Wie der Code aufgebaut ist: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)
 
 ## Dokumentation
 
-| Datei                                        | Inhalt                                         |
-| -------------------------------------------- | ---------------------------------------------- |
-| [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md)   | Spielidee, Regeln, Balancing, Progression      |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Ordnerstruktur, Scenes, Systeme, Datenfluss    |
-| [docs/ROADMAP.md](docs/ROADMAP.md)           | Meilensteine M0–M6                             |
-| [docs/ART_STYLE.md](docs/ART_STYLE.md)       | Farbpalette, Formensprache, Asset-Regeln       |
-| [docs/CODE_STYLE.md](docs/CODE_STYLE.md)     | Namenskonventionen, Regeln, Definition of Done |
-| [docs/DECISIONS.md](docs/DECISIONS.md)       | Architekturentscheidungen mit Begruendung      |
-| [CONTRIBUTING.md](CONTRIBUTING.md)           | Branches, Commits, Pull Requests               |
-| [CHANGELOG.md](CHANGELOG.md)                 | Was sich je Version geaendert hat              |
+| Datei                                                | Inhalt                                         |
+| ---------------------------------------------------- | ---------------------------------------------- |
+| [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md)           | Spielidee, Regeln, Balancing, Progression      |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)         | Ordnerstruktur, Scenes, Systeme, Datenfluss    |
+| [docs/ROADMAP.md](docs/ROADMAP.md)                   | Meilensteine M0–M6                             |
+| [docs/ART_STYLE.md](docs/ART_STYLE.md)               | Farbpalette, Formensprache, Asset-Regeln       |
+| [docs/CODE_STYLE.md](docs/CODE_STYLE.md)             | Namenskonventionen, Regeln, Definition of Done |
+| [docs/DECISIONS.md](docs/DECISIONS.md)               | Architekturentscheidungen mit Begruendung      |
+| [docs/AUDIT_2026-08-30.md](docs/AUDIT_2026-08-30.md) | Aktueller Doku-/Produktstand und Belege        |
+| [CONTRIBUTING.md](CONTRIBUTING.md)                   | Branches, Commits, Pull Requests               |
+| [CHANGELOG.md](CHANGELOG.md)                         | Was sich je Version geaendert hat              |
 
 ## Lizenz
 

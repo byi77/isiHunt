@@ -10,7 +10,8 @@ Repository gearbeitet wird.
 isiHunt ist ein 2D-Arcade-Collector fuer den Handy-Browser. Der Spieler steuert
 eine Lichtgestalt und faengt Relikte verschiedener Seltenheit, bevor sie
 verblassen. Ein Run dauert 90 Sekunden; Level, Talente und Erfolge tragen den
-Langzeitfortschritt.
+Langzeitfortschritt. Duelle laufen lokal gegen den Bot oder online in einer
+Lobby fuer zwei bis vier Geraete.
 
 **Stack:** TypeScript (strict) · Phaser 3 · Vite · Ziel: mobiler Browser,
 Hochformat.
@@ -153,8 +154,8 @@ src/config/     Reine Daten: Balancing, Seltenheiten, Welten, Talente, Erfolge
 src/core/       EventBus
 src/entities/   Player, Collectible
 src/input/      InputController (Touch + Tastatur), DebugKeys
-src/scenes/     Boot, Menu, Game, Hud, Result
-src/systems/    Save, Progression, Score, Spawn — Regeln ohne Darstellung
+src/scenes/     Boot, Menu, DuelSelect, OnlineDuel, Game, Hud, Result, Challenge
+src/systems/    Save, Progression, Score, Spawn, Challenge, NetworkDuel — Regeln ohne Darstellung
 src/types/      SaveData, RunStats, ProgressionResult
 src/ui/         theme, textures (prozedural), shipShapes, widgets
 ```
@@ -206,6 +207,7 @@ npm run playtest                  # alle sieben Suiten, ~20 Minuten
 npm run playtest -- --sim         # Runden simuliert, ~9 Minuten
 npm run playtest -- --only=nav    # screens|nav|controls|layout|ios|progress|modes
 npm run playtest -- --watch       # sichtbares Fenster statt headless
+npm run test:duel2g               # Online-Duell: Lobby, Talentphase, Run, Ergebnis
 npm run ios:check                 # iOS-Mindestversion aus dem Build
 ```
 

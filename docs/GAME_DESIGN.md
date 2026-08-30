@@ -1,7 +1,7 @@
 # Game Design Document — isiHunt
 
 **Version:** 0.1
-**Stand:** 2026-08-28 · Produktstand siehe `package.json`/`version.json`
+**Stand:** 2026-08-30 · Produktstand siehe `package.json`/`version.json`
 **Status:** lebendes Dokument — jede Balancing- oder Regelaenderung wird hier
 zuerst beschrieben, dann implementiert.
 
@@ -46,9 +46,9 @@ Menue  →  Run (90 s)  →  Ergebnis  →  Menue
              └──────  "Nochmal"  ───────┘
 ```
 
-Daneben steht der **Duell-Modus** (Abschnitt 4.1) als zweite Schleife fuer zwei
-bis vier Personen an einem Geraet. Die Auswahl bietet zusaetzlich einen
-mittelstarken Bot und das Netzwerkduell.
+Daneben stehen die **Duell-Modi** (Abschnitt 4.1): ein Bot-Duell auf einem
+Geraet sowie ein Online-Duell fuer zwei bis vier Personen auf getrennten
+Geraeten.
 
 **Im Run, alle paar Sekunden:**
 
@@ -66,58 +66,68 @@ liegen mehrere Relikte gleichzeitig. Das lila ist 25-mal so viel wert wie das
 graue — aber es ist weiter weg und verschwindet frueher. Genau diese Abwaegung
 ist das Spiel.
 
-### 4.1 Duell-Modus
+### 4.1 Duell-Modi
 
-Zwei bis vier Personen, ein Geraet, abwechselnd.
+Die Auswahl unter `DUELL` bietet zwei Wege:
+
+1. **VS BOT:** ein lokaler 90-Sekunden-Lauf gegen einen mittelstarken Bot.
+2. **ONLINE-DUELL:** eine gemeinsame Lobby fuer zwei bis vier Personen auf
+   getrennten Geraeten.
+
+#### Gemeinsame Regeln
+
+| Regel                         | Warum                                                                                                                                                                   |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Gleiche Relikt-Abfolge**    | Alle menschlichen Teilnehmer erhalten denselben serverseitig festgelegten Seed. So entscheidet die Jagd und nicht ein zufaellig geschenktes legendaeres Relikt.         |
+| **Temporaere Talente**        | Vor jedem Lauf verteilt jeder bis zu 10 Punkte in einem 20-Sekunden-Draft. Dauerhafte Talente bleiben aussen vor. Beim Rematch werden die letzten Builds vorgeschlagen. |
+| **Keine normale Progression** | Ein normales Spielerduell veraendert weder XP noch Bestwerte noch Erfolge. Das Bot-Duell ist die Ausnahme bei einem Siegbonus.                                          |
+| **Keine Kosmetik im Duell**   | Gekaufte Form, Farbe und Aura beeinflussen den Vergleich nicht.                                                                                                         |
+
+#### VS BOT
+
+Der Bot verwendet standardmaessig die Schwierigkeit `normal`: seine Leistung
+liegt nahe an einer guten menschlichen Runde, bleibt aber durch eine aktive
+Serie schlagbar. Vor dem Start bestaetigt der Spieler seinen temporaeren
+Talent-Build. Ein Sieg vergibt den zentral konfigurierten Bonus von XP und
+Coins; Niederlagen vergeben keinen Sonderbonus. Die konkreten Werte liegen in
+`src/config/balance-data.json` und werden nicht in der Scene dupliziert.
+
+#### ONLINE-DUELL
+
+Der Ablauf ist ein Host-/Teilnehmer-Modell und kein gemeinsamer Bildschirm:
 
 ```
-Menue → Einfuehrung → Spieler 1 (90+ s mit Ausdauer) → Uebergabe → Spieler 2 (90+ s mit Ausdauer) → Ergebnis
-                                                                           │
-                            └──────────────  "Revanche"  ─────────────────┘
+Hauptmenue → DUELL → ONLINE-DUELL → Bereitschaftslobby
+                                    ↓ Einladung an Spieler
+                            Host-Raum: 2–4 Spieler
+                                    ↓ Host startet
+                            Talentphase: alle bestaetigen
+                                    ↓ Host startet die Runde
+                            synchroner 90-Sekunden-Lauf → Ergebnis
 ```
 
-**Warum 90 Sekunden.** Im Solo-Modus glaettet sich Pech ueber viele Runs
-hinweg. Im Duell zaehlt genau _ein_ Durchgang pro Person — mehr Zeit bedeutet
-mehr Spawns und damit spuerbar weniger Streuung. Das Ergebnis bildet Koennen
-ab statt Glueck.
+In der Bereitschaftslobby erscheinen angemeldete Spieler mit Status
+`DUELLBEREIT`. Der Einladende erstellt beim ersten Invite den Raum und ist
+Host. Der eingeladene Spieler nimmt die direkte Einladung an und wird als
+Teilnehmer hinzugefuegt. Der Host kann danach einen dritten und vierten Spieler
+einladen. Sobald mindestens zwei Personen verbunden sind, kann nur der Host
+die Talentphase starten.
 
-**Drei Fairness-Regeln.** Sie sind der Kern des Modus, nicht Beiwerk:
+Jeder Teilnehmer verteilt 10 Punkte. Die Runde beginnt erst, wenn alle
+Teilnehmer den Build bestaetigt haben; der Host setzt danach die gemeinsame
+serverzeitbasierte Startzeit. Waehrend der Runde werden die Gegnernamen und
+Punktestaende ueber den gemeinsamen Realtime-Kanal angezeigt. Die Ergebnisse
+werden serverseitig im Raum gespeichert und von allen Clients abgefragt.
 
-| Regel                      | Warum                                                                                                                                                                                                |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Gleiche Relikt-Abfolge** | Alle Spieler bekommen denselben Seed — dieselben Seltenheiten, an denselben Stellen, zur selben Sekunde. Sonst waere das Duell ein Wuerfelspiel darum, wer das legendaere Relikt geschenkt bekommt. |
-| **Temporäre Talente**      | Vor jedem Durchgang verteilt jeder bis zu 10 Punkte in einem 20-Sekunden-Draft. Der letzte Build wird beim Rematch vorgeschlagen und kann mit +/− geändert werden; dauerhafte Talente bleiben außen vor. |
-| **Keine normale Progression** | Ein Spielerduell vergibt weder XP noch Bestwerte noch Erfolge. Das Bot-Duell ist die Ausnahme: Ein Sieg gibt einen einmaligen XP- und Coin-Bonus. |
-| **Keine Kosmetik**         | Im Duell traegt niemand seine gekaufte Form, Farbe oder Aura. Sonst waere auf einen Blick zu sehen, wer gerade dran ist — der Vergleich soll am Spiel haengen, nicht am Guthaben.                    |
+Der Raumcode bleibt als technischer bzw. automatisierter Fallback erhalten,
+ist aber im normalen Duell-Menue nicht sichtbar. Die sichtbare Einladung laeuft
+ueber die Bereitschaftslobby. Der aktuelle Backend-Vertrag steht in
+`supabase/phase_2_36_duel_lobby_invitations.sql` bis
+`supabase/phase_2_42_duel_initial_talent_draft.sql`.
 
-**Die Kosmetik-Regel gilt nur dem Duell, nicht dem Tageslauf.** Sie steht hier,
-weil zwei Personen an _einem_ Geraet spielen. Der Tageslauf ist Einzelspiel:
-Verglichen wird ueber den gemeinsamen Seed, und eine Aura macht kein Relikt
-schneller. Wer eine Form gekauft hat, traegt sie dort. Auch gekaufte Talente
-samt ihrer Laufzeit wirken im Tageslauf; der Seed und die taegliche
-Abschlusslogik bleiben fuer alle gleich.
-
-Die gleiche Abfolge ist technisch anspruchsvoller, als sie klingt: Der
-Zufallsgenerator muss **unabhaengig vom Spielverlauf** verbraucht werden, sonst
-laufen die beiden Durchgaenge auseinander. Die zwei Fallstricke sind in
-`src/systems/SpawnSystem.ts` dokumentiert.
-
-**Waehrend des zweiten Durchgangs** steht die Vorlage des Gegners im HUD
-(`Ziel 1.234`). Faellt sie, wird das einmalig gefeiert (_UEBERHOLT!_) — der
-Moment ist die Pointe des Modus und darf nicht im Ergebnisbildschirm
-untergehen.
-
-Vor dem ersten Durchgang und bei der Übergabe erhält der jeweilige Spieler
-20 Sekunden für seinen temporären Talent-Build. Ein Punkt wird mit `+`
-vergeben und mit `−` wieder entfernt. Bei einem Rematch bleiben beide letzten
-Builds im laufenden Duellzustand und werden als Vorschlag geladen; ein neuer
-Raumcode ist dafür nicht nötig. Der Spieler kann den Vorschlag übernehmen oder
-neu verteilen. Die Auswahl wird nicht in den permanenten Talentbaum gespeichert.
-
-**Was das Duell bewusst nicht ist:** kein geteilter Bildschirm. Auf einem
-Hochformat-Handy waeren zwei Spielfelder je 360 × 640 Pixel gross — zu klein
-fuer einen Sammelradius von 46 Pixeln, und beide Daumen wuerden sich in die
-Quere kommen.
+**Warum kein geteilter Bildschirm:** Zwei Spielfelder waeren auf einem
+Hochformat-Handy zu klein. Das Online-Duell nutzt deshalb getrennte Geraete;
+das lokale Bot-Duell bleibt der direkte Einzelgeraet-Weg.
 
 ## 5. Seltenheitsstufen
 
@@ -207,13 +217,13 @@ nicht verdeckt. Ab dort trägt nur noch die Farbe die Information; „lang" von
 „sehr lang" unterscheidet im Spiel ohnehin niemand, „gold statt türkis"
 sofort.
 
-| Serie | Multiplikator |
-| ----- | ------------- |
-| 0–1   | ×1            |
-| 2–3   | ×1,5          |
-| 4–6   | ×2,2          |
-| 7–10  | ×3,2          |
-| 11–15 | ×4,5          |
+| Serie | Multiplikator                              |
+| ----- | ------------------------------------------ |
+| 0–1   | ×1                                         |
+| 2–3   | ×1,5                                       |
+| 4–6   | ×2,2                                       |
+| 7–10  | ×3,2                                       |
+| 11–15 | ×4,5                                       |
 | ab 16 | ×6, danach +0,25 je weiterem farbigen Fang |
 
 Der Multiplikator wirkt **nur auf Punkte, nicht auf XP** — die hängen an der
@@ -521,20 +531,18 @@ darf nicht als Geschenk direkt unter dem Daumen erscheinen.
 
 ## 10. Was bewusst NICHT drin ist
 
-| Nicht drin                    | Begruendung                                                                                            |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Gegner / Schaden / Verlieren  | Es gibt keine Lebenspunkte und kein Game Over. Hindernisse bremsen oder ziehen nur wenige Sekunden ab. |
-| Tutorial                      | Wenn es eins braucht, ist das Design gescheitert (Designziel 1).                                       |
-| Werbung / Kaeufe              | Vorerst kein Monetarisierungsdruck. Beeinflusst sonst das Balancing.                                   |
-| Online-Bestenliste            | Erst wenn die Kernschleife steht (M5).                                                                 |
-| Querformat                    | Das Spiel ist fuer eine Hand gebaut.                                                                   |
-| Geteilter Bildschirm im Duell | Zwei Spielfelder auf einem Hochformat-Handy sind zu klein (siehe 4.1).                                 |
-| Echtzeit-Duell ueber Netzwerk | Braucht einen Server. Der Weg dorthin steht in ADR-0010.                                               |
+| Nicht drin                           | Begruendung                                                                                            |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| Gegner / Schaden / Verlieren         | Es gibt keine Lebenspunkte und kein Game Over. Hindernisse bremsen oder ziehen nur wenige Sekunden ab. |
+| Tutorial                             | Wenn es eins braucht, ist das Design gescheitert (Designziel 1).                                       |
+| Werbung / Kaeufe                     | Vorerst kein Monetarisierungsdruck. Beeinflusst sonst das Balancing.                                   |
+| Oeffentliches Ranked                 | Erst nach serverseitiger Laufpruefung sowie Datenschutz- und Moderationskonzept.                       |
+| Querformat                           | Das Spiel ist fuer eine Hand gebaut.                                                                   |
+| Geteilter Bildschirm im Online-Duell | Zwei Spielfelder auf einem Hochformat-Handy sind zu klein; Online-Spieler nutzen getrennte Geraete.    |
 
 ## 11. Offene Designfragen
 
 - [ ] Endlos-Modus ohne Timer als zweiter Spielmodus?
-- [ ] Soll das Duell benannte Spieler erlauben statt "Spieler 1 / Spieler 2"?
-- [ ] Duell ueber zwei Geraete per geteiltem Link (ADR-0010)?
-- [ ] Echtes Netzwerkduell erst nach ausreichendem Bedarf und stabiler
-      serverseitiger Bewertung?
+- [ ] Serverseitige Laufpruefung als Voraussetzung fuer Ranked-Duelle?
+- [ ] Datenschutz, Moderation und Reichweite der Spieler-Lobby ausserhalb des
+      privaten/familiären Kreises?

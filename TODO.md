@@ -1,6 +1,6 @@
 # TODO — Arbeitsplan und Produkt-Audit
 
-**Stand:** 2026-08-22
+**Stand:** 2026-08-30
 **Repository-/Live-Version:** siehe `package.json` und `version.json`; der
 ausgelieferte Stand wird erst nach einem Deploy als live bestätigt.
 **Verbindliche Arbeitsreihenfolge:** die Phasen und Prioritäten in dieser Datei
@@ -67,14 +67,14 @@ Für eine Geräte- oder Backendaufgabe zusätzlich:
 | Bereich | Stand | Was noch fehlt |
 | --- | --- | --- |
 | Browser-Spiel, 90-Sekunden-Run, Touch, Pause, Persistenz | gebaut und ausgeliefert | echte Geräteabnahme der aktuellen Spielinhalte |
-| Profil, Alias-Login, Offline-Outbox, Zusammenführung | implementiert | produktive SQL-Prüfung und iPhone-/iPad-End-to-End-Test |
+| Profil, Alias-Login, Offline-Outbox, Zusammenführung | implementiert | iPhone-/iPad-End-to-End-Test mit Offline-Runs |
 | Weltraum-Thema, Welten, Hindernisse, Tageslauf, Bot-Duell | implementiert | Balancing mit Emre und Simay |
-| Coins, XP, Punkte, Talente, Shop | implementiert; zentrale Balance-Kette aktiv | Client/SQL-Synchronitäts-Gate und echte Economy-Messung |
+| Coins, XP, Punkte, Talente, Shop | implementiert; zentrale Balance-Kette aktiv | echte Economy-Messung mit Zielgruppe |
 | Shop | 100 Fluggestalten, Farben und Anprobe vorhanden | Figuren im laufenden Spiel auf Gerät sehen; weitere Kosmetik erst danach |
-| Netzwerk-Duell Phase 1 | Raum, Ready, Startzeit, Ergebnisvergleich vorhanden | dritter Zwei-Geräte-Test mit Report vom Slave |
+| Netzwerk-Duell Phase 1 | 2–4-Spieler-Raum, direkte Einladungen, Talentphase, Startzeit, Live-Stand und Ergebnisvergleich vorhanden | echte Geräteabnahme, 3-/4-Spieler-Lauf und Abbruch-/Reconnect-Matrix |
 | Bestenliste | gemeinsame Casual-Liste und automatischer Eintrag vorhanden | Fairness bei Weltmodifikatoren; Ranked bleibt gesperrt |
 | Debugging und Release | Debug-Report, Versionsanzeige, `verify`, Pre-Push und GitHub-Pages-Deploy vorhanden | Gerätebelege konsequent als Release-Gate verwenden |
-| Supabase-Migrationsstand | im Repository vorhanden, produktiver Ausführungsstand nicht aus dem Code beweisbar | P0-01 ausführen und protokollieren |
+| Supabase-Migrationsstand | produktiv auf Phase 2.42 ausgeführt und per `verify_migration_state.sql` geprüft | weitere SQL-Änderungen wieder mit CLI ausführen und nachweisen |
 | Native App / Dynamic Island | bewusst noch nicht begonnen | erst nach stabiler Web-Basis und P3-Gate |
 
 ### Neue verbindliche Ausführungsreihenfolge
@@ -83,31 +83,29 @@ Die IDs bleiben stabil, damit Verweise und Git-Historie lesbar bleiben. Die
 folgende Reihenfolge ist die aktuelle Priorisierung; erledigte Punkte werden
 nicht erneut als Arbeit eingeplant:
 
-1. **P0-01:** Supabase-Migrationen ausführen, prüfen und mit SQL-/Dashboard-
-   Nachweis dokumentieren.
-2. **P0-02:** den tatsächlich ausgelieferten `version.json`-Stand auf iPhone
+1. **P0-02:** den tatsächlich ausgelieferten `version.json`-Stand auf iPhone
    und iPad mit Profil, Offline-Runs, Boost und Zusammenführung prüfen.
-3. **P0-03:** Netzwerk-Duell mit vollständigem Master- und Slave-Report sowie
-   sauberem Abbruch testen.
-4. **P0-04:** echten Spielabend ohne `--sim` durchführen und Phase 5, Serien,
+2. **P0-03:** Netzwerk-Duell auf echten Geräten mit vollständigem Host- und
+   Teilnehmer-Report, 3-/4-Spieler-Lauf sowie sauberem Abbruch testen.
+3. **P0-04:** echten Spielabend ohne `--sim` durchführen und Phase 5, Serien,
    XP, Coins, Shop und Lesbarkeit messen.
-5. **P1-02:** Serien-/Kinderregel anhand der Beobachtungen verbindlich
+4. **P1-02:** Serien-/Kinderregel anhand der Beobachtungen verbindlich
    entscheiden und zentral testen.
-6. **P1-03:** XP-Kurve und Bestandsmigration mit realen Profilen bestätigen.
-7. **P1-04:** Coin-Quellen, -Senken und Kaufgeschwindigkeit vermessen; erst
+5. **P1-03:** XP-Kurve und Bestandsmigration mit realen Profilen bestätigen.
+6. **P1-04:** Coin-Quellen, -Senken und Kaufgeschwindigkeit vermessen; erst
    danach Zahlen ändern.
-8. **P1-06:** erste drei Minuten und Onboarding aus den Messdaten verbessern.
-9. **P5-08:** Begriffe, Texte und Content-Validierung zentralisieren.
-10. **P5-11:** Konto-, Lösch-, Export- und Diagnose-Lebenszyklus abschließen.
-11. **P5-12:** austauschbare Soundmodule und lizenzgeprüfte Audio-Assets
+7. **P1-06:** erste drei Minuten und Onboarding aus den Messdaten verbessern.
+8. **P5-08:** Begriffe, Texte und Content-Validierung zentralisieren.
+9. **P5-11:** Konto-, Lösch-, Export- und Diagnose-Lebenszyklus abschließen.
+10. **P5-12:** austauschbare Soundmodule und lizenzgeprüfte Audio-Assets
     vorbereiten und erst danach zusätzliche Audio-Assets integrieren.
-12. **P5-13:** Ego-Modul mit lizenzgeprüften Schiffsdesigns und Aura-
+11. **P5-13:** Ego-Modul mit lizenzgeprüften Schiffsdesigns und Aura-
     Animationen als austauschbare Asset-Module erweitern.
-13. **P4-01 ff.:** soziales Spiel erst nach stabilem Profil, Duell und
+12. **P4-01 ff.:** soziales Spiel erst nach stabilem Profil, Duell und
     Datenschutz-Gate weiter ausbauen.
 
 P1-05 ist technisch umgesetzt und bleibt nur als Teil der manuellen
-Geräte-/Zielgruppenabnahme in P0-04 zu beobachten. P0-01 bis P0-04 haben trotz
+Geräte-/Zielgruppenabnahme in P0-04 zu beobachten. P0-02 bis P0-04 haben trotz
 der späteren P1-/P5-Codearbeiten weiterhin Vorrang für den Produktbeleg.
 
 ## Phasenübersicht
@@ -196,6 +194,14 @@ reproduzierbares Prüfergebnis vorliegt.
 28. `supabase/phase_2_32_migration_state.sql`
 29. `supabase/phase_2_33_leaderboard_auth_only.sql`
 30. `supabase/phase_2_34_player_name_rules.sql`
+31. `supabase/phase_2_35_duel_talents_rematch.sql`
+32. `supabase/phase_2_36_duel_lobby_invitations.sql`
+33. `supabase/phase_2_37_duel_shared_realtime_topic.sql`
+34. `supabase/phase_2_38_duel_four_player_lobby.sql`
+35. `supabase/phase_2_39_duel_lobby_multi_invites.sql`
+36. `supabase/phase_2_40_fix_duel_invitation_listing.sql`
+37. `supabase/phase_2_41_fix_duel_invitation_accept.sql`
+38. `supabase/phase_2_42_duel_initial_talent_draft.sql`
 
 Die Dateien sind wiederholbar angelegt, trotzdem vor jedem Lauf prüfen, ob
 eine Migration bereits ausgeführt wurde. `cleanup_leaderboard.sql`,
@@ -227,14 +233,15 @@ sein. Es wird keine zustellbare E-Mail-Adresse abgefragt.
 Prüfqueries und eventuelle Abweichungen in `docs/` oder im Commit-Verlauf
 notieren. Ohne diesen Nachweis bleibt P0-01 offen.
 
-**Live-Nachweis 2026-08-29:** Projekt `laopptcngluoejccchgs`, Marker
-`schema_version = 33`, `phase_2_33_leaderboard_auth_only.sql`; die erwarteten
-RPC-Signaturen sind vorhanden, anonyme Score-Submission ist deaktiviert und
-aktive Duellräume haben vollständige Teilnehmer-Tokens. Details stehen in
-`docs/AUDIT_2026-08-29.md`.
+**Live-Nachweis 2026-08-30:** Das verknüpfte Projekt steht auf Marker
+`schema_version = 42`, `phase_2_42_duel_initial_talent_draft.sql`. Die
+Duell-RPCs für Einladungen, Raumstatus, Talentphase, Startzeit und Ergebnisse
+sind vorhanden. Der Nachweis wurde mit
+`npx supabase db query --linked --file supabase/verify_migration_state.sql`
+ausgeführt; Details stehen in `docs/AUDIT_2026-08-30.md`.
 
-**Abhängigkeiten:** keine. Blockiert P0-02, P0-03 und jede Aussage über
-Mehrgeräte-Sync oder Server-Balance.
+**Abhängigkeiten:** keine. Der Live-Nachweis ist Voraussetzung für Aussagen
+über weitere produktive SQL- oder Mehrgeräte-Abläufe.
 
 ## P0-02 — iPhone-/iPad-Abnahme für Profil und Offline-Sync
 
@@ -291,46 +298,45 @@ und ein kurzer Satz „kein Datenverlust / Datenverlust in …“.
 `MenuScene`, `ProgressSyncSystem`, `CloudSystem`, `SaveSystem`,
 `src/config/backend.ts`.
 
-## P0-03 — Netzwerk-Duell mit Master- und Slave-Report
+## P0-03 — Netzwerk-Duell mit Host- und Teilnehmer-Report
 
-- [ ] **Dritten Zwei-Geräte-Test reproduzierbar abschließen.**
+- [ ] **Echte Geräteabnahme für das Online-Duell abschließen.**
 
-**Ausgangslage:** Im letzten aussagekräftigen Report hat der Master einen Raum
-erstellt und weiter gepollt, aber es gab auf dem Master keinen Beleg für
-`duel:Raum beitreten` des Slaves. Das beweist weder einen neuen Fehler im
-Polling-Fix noch dessen Erfolg. Der nächste Versuch braucht deshalb zwingend
-den Report des Slave-Geräts.
+Der automatisierte Zwei-Client-Test ist grün und prüft bereits Lobby,
+Talentphase, gemeinsamen Start, Gegnerpunkte und Ergebnis. Offen ist der
+Nachweis auf echten Geräten sowie mit drei und vier Teilnehmern.
 
 **Ablauf:**
 
-1. Master erstellt einen Raum und teilt den Code.
-2. Slave gibt den Code ein; auf beiden Geräten Report-Aufzeichnung starten.
-3. Beide drücken „bereit“.
-4. Master startet `JAGD`; Slave darf nicht manuell in eine andere Scene
-   wechseln.
-5. In beiden Reports müssen Raumbeitritt, Ready, gemeinsame Startzeit und
-   Run-Beginn auftauchen.
-6. Beide spielen bis zum Ergebnisbildschirm.
-7. Test wiederholen: einmal mit Abbruch des Wartens, einmal mit App-Hintergrund
+1. Host öffnet `DUELL → ONLINE-DUELL`, lädt einen duellbereiten Spieler ein
+   und dokumentiert auf beiden Geräten Version und Report-Aufzeichnung.
+2. Teilnehmer nimmt an; der Host lädt optional einen dritten und vierten
+   Spieler ein.
+3. Host startet die Talentphase. Jeder verteilt seinen Build und bestätigt ihn.
+4. Host startet den Lauf erst nach allen Bestätigungen.
+5. Alle prüfen gemeinsamen Start, sichtbare Spielernamen, Live-Gegnerpunkte,
+   Ergebnisreihenfolge und Rückkehr ohne App-Neustart.
+6. Test wiederholen: einmal mit Abbruch des Wartens, einmal mit App-Hintergrund
    oder kurzem Netzwechsel.
 
 **Besonders prüfen:**
 
-- `guestReady` wird auf dem Master tatsächlich wahr.
-- Der Slave verlässt „Warte auf Geschwister …“ und startet mit derselben
-  serverzeitbasierten Startzeit.
+- Die Lobby zeigt nur `DUELLBEREIT`; Spieler im Raum erscheinen nicht erneut als
+  verfügbar.
+- Der Gast öffnet die Talentphase auch ohne Talent-Broadcast über Polling.
+- Der Rundenstart wird vor vollständiger Talent-Bestätigung serverseitig
+  abgewiesen.
 - Der Polling-Timer stoppt nach Start, Abbruch, Timeout und Fehler.
 - Ein Kanalfehler hinterlässt keinen endlosen Ladezustand.
-- Der Gegner wird nach einem echten Abbruch sichtbar gemeldet.
 - Online-Duell-Ergebnisse werden nicht in die Casual-Bestenliste geschrieben.
 
-**Abnahme:** mindestens ein kompletter erfolgreicher Lauf auf beiden Geräten
-plus ein sauberer Abbruch. Bei Fehlschlag die beiden Reports gemeinsam
-auswerten; keine Ursache aus nur einem Gerät ableiten.
+**Abnahme:** je ein kompletter erfolgreicher Lauf mit zwei, drei und vier
+Teilnehmern plus ein sauberer Abbruch auf echten Geräten. Bei Fehlschlag die
+Reports gemeinsam auswerten; keine Ursache aus nur einem Gerät ableiten.
 
-**Abhängigkeiten:** P0-01. Technische Basis ist
-`OnlineDuelScene`, `NetworkDuelSystem` und
-`supabase/phase_2_11_duel_rooms.sql`.
+**Abhängigkeiten:** P0-01 erledigt. Technische Basis ist
+`OnlineDuelScene`, `NetworkDuelSystem` und die Migrationen
+`phase_2_36` bis `phase_2_42`.
 
 ## P0-04 — Echter Spielabend ohne `--sim`
 
@@ -430,6 +436,12 @@ bleiben als Historie erhalten und sind entsprechend nicht als offene Planung
 zu lesen. Es wird ausdrücklich nicht behauptet, dass SQL produktiv ausgeführt
 wurde; dafür bleibt P0-01 mit einem reproduzierbaren Dashboard-/SQL-Nachweis
 zuständig.
+
+**Aktualisierung 2026-08-30:** Der Folgeaudit hat den aktuellen
+Online-Duell-Ablauf ergänzt: direkte Bereitschaftslobby, Host-Raum für zwei bis
+vier Geräte, serverseitige Talentphase und persistente Ergebnisse. Der
+verknüpfte Supabase-Stand wurde mit `verify_migration_state.sql` auf Phase 2.42
+bestätigt. Der aktuelle Beleg liegt in `docs/AUDIT_2026-08-30.md`.
 
 ---
 
@@ -952,12 +964,12 @@ Familienkreis hinaus erweitern, wenn P4-06 Datenschutz/Moderation geklärt ist.
 
 ## P4-01 — Netzwerk-Duell Phase 1 stabilisieren
 
-- [ ] **Auf Basis von P0-03 alle Abbruch-, Wiederverbindungs- und
-  Hintergrundzustände definieren.**
+- [ ] **Auf Basis von P0-03 die echten Geräte- und Reconnect-Zustände
+  abschließen.**
 
-Der Grundablauf muss nicht nur starten, sondern auch bei App-Wechsel,
-Bildschirmsperre, Netzverlust, verspätetem Presence-Event, Timeout und doppeltem
-Ergebnis einen eindeutigen Zustand erreichen.
+Der Grundablauf ist implementiert und im Zwei-Client-Simulator geprüft. Offen
+bleibt die Abnahme bei App-Wechsel, Bildschirmsperre, Netzverlust, verspätetem
+Presence-Event, Timeout und doppeltem Ergebnis auf echten Geräten.
 
 **Abnahme:** Kein endloser Ladebildschirm, keine weiterlaufenden Timer nach
 Abbruch, keine doppelte Ergebnisbuchung und eine klare Meldung mit nächster
@@ -965,12 +977,13 @@ Aktion.
 
 ## P4-02 — Live-Punktestand des Gegners
 
-- [ ] **Zuerst nur den gegnerischen Score im HUD übertragen.**
+- [x] **Gegnerischen Score im HUD übertragen und im Simulator prüfen.**
 
-Der Nutzerwunsch ist ausdrücklich gestuft: erst Score, testen, danach eventuell
-vollständige Live-Sicht. Übertragungstakt, Netzpufferung, veraltete Werte und
-Abbruch müssen dokumentiert werden. Der eigene Score bleibt maßgeblich für das
-lokale Ergebnis.
+Der Score läuft über Broadcast im konfigurierten Takt; der eigene Score bleibt
+maßgeblich für das lokale Ergebnis. Der Zwei-Client-Playtest bestätigte am
+2026-08-30 Namen, Zwischenstände, Aktualisierung und keinen falschen
+Verbindungsverlust beim Scene-Wechsel. Ein echter Netzverlust-Test bleibt
+Teil von P0-03.
 
 **Abnahme:** Beide Geräte sehen während eines erfolgreichen Duells einen
 verständlichen, nicht flackernden gegnerischen Zwischenstand; Netzverlust zeigt
@@ -978,13 +991,13 @@ verständlichen, nicht flackernden gegnerischen Zwischenstand; Netzverlust zeigt
 
 ## P4-03 — Rematch, Reconnect und sichtbarer Spielername
 
-- [ ] **Nach einem stabilen Duell ein zweites Duell ohne vollständigen Neustart
-  ermöglichen.**
+- [ ] **Rematch und Reconnect auf echten Geräten abnehmen.**
 
-Dazu gehören Raum-Lebensdauer, neues Ready, erneuter Seed/Startzeit,
-Wiederbeitritt während der Lobby und ein echter Anzeigename statt „Spieler 2“.
-Reconnect während einer laufenden Runde bleibt bewusst schwieriger als Lobby-
-Reconnect und braucht eine eigene Entscheidung.
+Der Rematch- und Anzeigenamepfad ist implementiert. Die Abnahme muss
+Raum-Lebensdauer, neuen Seed/Startzeit, erneute Talentphase, Wiederbeitritt
+während der Lobby und einen echten Anzeigenamen statt „Spieler 2“ prüfen.
+Reconnect während einer laufenden Runde bleibt bewusst schwieriger als
+Lobby-Reconnect und braucht eine eigene Entscheidung.
 
 ## P4-04 — Vollständige gegenseitige Live-Sicht als eigenes Paket
 
@@ -1424,7 +1437,7 @@ Priorität, Abhängigkeit und Abnahme.
 | --- | --- | --- |
 | Kostenlose Talentpunkte aus Leveln | **entschieden, ADR-0021** | Ein Talentpunkt alle zwei Level ab Level 3; Talent-Reset kostenlos mit Rückerstattung. Version 9 setzt die bisherigen Testprofile zurück. |
 | Welten unter dem eigenen Level sperren | **verworfen** | Gemeinsames Spielen und Duell bleiben möglich; höhere Welten motivieren über Belohnung. |
-| Duell-Link als erster Netzwerkweg | **übersprungen** | Raumcode/Realtime Phase 1 ist gebaut; Stabilität kommt vor weiteren Varianten. |
+| Duell-Link als erster Netzwerkweg | **übersprungen** | Direkte Einladung, Raumcode/Realtime und 2–4-Spieler-Lobby sind der aktuelle Netzwerkweg. |
 | Öffentliche Bestenliste | **nicht freigegeben** | Familienkreis bleibt der aktuelle Scope; Datenschutz/Moderation ist ein Gate. |
 | Dynamic Island im Web | **nicht möglich** | Native Live Activity erst in Phase 6. |
 | Boosts mit Leistungsänderung | **zurückgestellt** | Keine Vorteile, die Score-/Ranked-Vergleiche verfälschen. |
@@ -1461,8 +1474,10 @@ Git-Historie.
   World-Info-Screen sind gebaut; echte Zielgruppen-Balance ist P0-04/P1-01.
 - **Shop:** 100 Fluggestalten, Farben und Vorschau sind ausgeliefert; echte
   Sichtbarkeit in einem laufenden Run ist Teil von P0-04.
-- **Netzwerk-Duell:** Raumcode, Ready, gemeinsame Startzeit, Presence und
-  Ergebnisvergleich sind gebaut; der Slave-Test bleibt P0-03.
+- **Netzwerk-Duell:** Bereitschaftslobby, direkte Einladungen, Host-Raum für
+  zwei bis vier Spieler, Talentphase, gemeinsame Startzeit, Presence, Live-
+  Gegnerpunkte und Ergebnisvergleich sind gebaut. Echte Geräteabnahme und
+  3-/4-Spieler-Lauf bleiben P0-03.
 - **Testlücken, die inzwischen geschlossen wurden:** Die konfigurierte
   `CloudSystem`-Suite und der Mehrere-Ereignisse-Test für die Outbox existieren
   bereits. Die alte Audit-Zahl „13 von 30 ohne Test“ ist deshalb kein aktueller
@@ -1478,6 +1493,7 @@ Git-Historie.
   P0-06 aktualisieren
 - [Code-Stil](docs/CODE_STYLE.md) — Definition of Done und Testregeln
 - [Audit 2026-08-17](docs/AUDIT_2026-08-17.md) — technischer Audit-Kontext
+- [Audit 2026-08-30](docs/AUDIT_2026-08-30.md) — aktueller Produkt-, Doku- und Live-Beleg
 
 ## Release-Befehle
 
@@ -1489,6 +1505,13 @@ git push origin main
 npm run deploy:wait
 ```
 
-Für eine SQL-Änderung zusätzlich den SQL-Editor-Schritt aus **P0-01**
-dokumentieren. Ein grüner Frontend-Build beweist nicht, dass die Supabase-
-Migration ausgeführt wurde.
+Für eine SQL-Änderung zusätzlich den SQL-Editor- oder CLI-Schritt aus **P0-01**
+dokumentieren, zum Beispiel:
+
+```bash
+npx supabase db query --linked --file supabase/phase_2_XX_neue_aenderung.sql
+npx supabase db query --linked --file supabase/verify_migration_state.sql
+```
+
+Ein grüner Frontend-Build beweist nicht, dass die Supabase-Migration
+ausgeführt wurde.

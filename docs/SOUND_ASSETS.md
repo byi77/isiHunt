@@ -1,6 +1,6 @@
 # Sound-Assets und Audio-Lizenzen
 
-**Stand:** 2026-08-22
+**Stand:** 2026-08-30
 
 Ein CC0-UI-Pilot ist integriert. Reliktfang, Combo, Level-Up, Run-Ende und
 Weltwechsel bleiben bewusst prozedural, bis weitere konkrete Dateien separat
@@ -21,8 +21,8 @@ Format und SHA-256.
 
 ## Inventar
 
-| Asset-ID | Ereignis | Datei | Quelle/Autor | Lizenz | Attribution | SHA-256 | Status |
-| -------- | -------- | ---- | ------------ | ------- | ----------- | ------- | ------ |
+| Asset-ID   | Ereignis | Datei                                  | Quelle/Autor                                                         | Lizenz                                                | Attribution        | SHA-256                                                            | Status     |
+| ---------- | -------- | -------------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------- | ------------------ | ------------------------------------------------------------------ | ---------- |
 | `ui.click` | UI-Klick | `public/assets/audio/cc0-ui-click.wav` | [OpenGameArt: Click](https://opengameart.org/content/click), qubodup | [CC0](https://creativecommons.org/public-domain/cc0/) | keine erforderlich | `9E8DBBD40836EAA3F8305403E869FBEE0752E85FCB86B3A536FB03844F40912E` | integriert |
 
 Download: 2026-08-22. Der Hash der gelieferten Datei ist im Repository als

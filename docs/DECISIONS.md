@@ -341,7 +341,7 @@ Hochformat-Sperre mit.
 
 ## ADR-0010 — Netzwerkduell: erst per geteiltem Link, Echtzeit spaeter
 
-**Datum:** 2026-08-12 · **Status:** Vorgeschlagen — noch nicht umgesetzt
+**Datum:** 2026-08-12 · **Status:** Ueberholt durch ADR-0022
 
 ### Kontext
 
@@ -394,6 +394,11 @@ zeigt, dass das Zeitversetzte nicht reicht, lohnt sich Schritt 2.
 Weg zum Echtzeitduell ist damit kuerzer als hier beschrieben — die
 Infrastrukturfrage ist beantwortet, offen bleibt der Abgleich zweier
 laufender Spiele.
+
+**Aktualisierung 2026-08-30:** Die vorgeschlagene Link-Variante wurde nicht
+gebaut. Stattdessen ist das Echtzeitduell mit Supabase-Raum, direkter Einladung
+und 2–4-Spieler-Lobby umgesetzt; die aktuelle Entscheidung und die verbleibenden
+Abnahmegrenzen stehen in ADR-0022.
 
 ---
 
@@ -1146,3 +1151,64 @@ Spielernamen und lokale Einstellungen bleiben erhalten.
   echten Levelaufstiegen; Clientwerte werden nicht als Belohnung vertraut.
 - Talentkosten bleiben als leere historische Konfigurationsstruktur erhalten,
   damit alte Migrationen und Balanceberichte nachvollziehbar bleiben.
+
+---
+
+## ADR-0022 — Online-Duell als direkte 2–4-Spieler-Lobby mit Talentphase
+
+**Datum:** 2026-08-30 · **Status:** Angenommen
+
+### Kontext
+
+Der bisherige Online-Einstieg fuehrte ueber mehrere Raumcode-Bildschirme. Das
+passte nicht zum gewuenschten Ablauf: Im Duell-Menue sollen duellbereite
+Spieler direkt sichtbar und einladbar sein. Nach der Annahme einer Einladung
+soll der Einladende Host bleiben und weitere Spieler bis zu vier Teilnehmern
+hinzufuegen koennen. Ausserdem fehlte beim ersten Duellstart die
+Talentauswahl, obwohl sie beim lokalen Duell und beim Rematch bereits existierte.
+
+### Entscheidung
+
+`OnlineDuelScene` verwendet zwei sichtbare Phasen vor dem Run:
+
+1. Die globale Bereitschaftslobby zeigt angemeldete Spieler mit
+   `DUELLBEREIT`; ein Klick auf `EINLADEN` erzeugt die Einladung und den
+   Host-Raum atomar.
+2. Nach Annahme tritt der eingeladene Spieler als Teilnehmer bei. Der Host
+   kann einen dritten und vierten Spieler einladen und ab zwei verbundenen
+   Teilnehmern die Talentphase starten.
+
+In der Talentphase verteilt jeder zehn temporaere Punkte und bestaetigt den
+Build. `start_duel_talent_draft` markiert die Phase serverseitig;
+`set_duel_start_time` akzeptiert den Rundenstart erst, wenn alle Teilnehmer
+`talent_ready` gesetzt haben. Die eigentliche Runde startet ueber eine
+serverzeitbasierte Zielzeit. Gegnerpunkte laufen kurzlebig ueber Realtime,
+Rundenergebnisse persistent ueber `duel_rooms`.
+
+Der sichtbare Raumcode-Einstieg wird entfernt. Er bleibt nur als interner
+Fallback fuer automatisierte Integrationstests erhalten. `VS BOT` bleibt ein
+lokaler Einzelgeraet-Modus mit mittlerer Schwierigkeit, eigener Talentphase
+und Siegbonus.
+
+### Begruendung
+
+- Die Lobby entspricht dem sozialen Ziel: Spieler werden gefunden und direkt
+  eingeladen, ohne Codes zwischen zwei bekannten Personen austauschen zu
+  muessen.
+- Host und Teilnehmer sind serverseitig eindeutig. Dadurch kann der Host den
+  Start kontrollieren, waehrend der Server die Mindestzahl und alle
+  Talent-Bestaetigungen erzwingt.
+- Die Talentphase vor dem ersten Lauf macht den Ablauf fuer Online- und
+  Rematch-Duelle konsistent und verhindert, dass Spieler ohne ihren temporaeren
+  Build starten.
+- Ein persistent gespeicherter Raumstatus ist der Fallback fuer verlorene
+  Broadcasts; deshalb kann ein Gast die Talentphase auch per Polling erkennen.
+
+### Konsequenzen
+
+- Die Migrationen `phase_2_36` bis `phase_2_42` sind fuer die Online-Lobby und
+  Talentphase gemeinsam erforderlich; der Live-Marker steht auf Phase 2.42.
+- Der Zwei-Client-Playtest prueft den vollständigen Ablauf bis Ergebnis. Eine
+  echte 3-/4-Spieler-Abnahme sowie iPhone-/Safari-Netzwechsel bleiben offen.
+- Die globale Lobby und direkte Einladungen bleiben an Anmeldung und
+  Spielernamen gebunden; `VS BOT` benötigt kein Online-Backend.

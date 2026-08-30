@@ -1,6 +1,6 @@
 # Architektur — isiHunt
 
-**Stand:** 2026-08-22 · gilt fuer den Stand aus `package.json`/`version.json`
+**Stand:** 2026-08-30 · gilt fuer den Stand aus `package.json`/`version.json`
 
 Dieses Dokument beschreibt, **wie** der Code aufgebaut ist und **warum**.
 Entscheidungen mit Alternativen stehen in [DECISIONS.md](DECISIONS.md).
@@ -110,8 +110,8 @@ isiHunt/
 │   │   ├── GameScene.ts        Die Simulation (Solo und Duell)
 │   │   ├── HudScene.ts         Anzeige waehrend des Runs
 │   │   ├── ChallengeScene.ts   Duell: Einfuehrung, Uebergabe, Ergebnis
-│   │   ├── DuelSelectScene.ts  Spielerzahl, Bot oder Netzwerkduell auswaehlen
-│   │   ├── OnlineDuelScene.ts  Netzwerk-Duell: Raum, Lobby, Ergebnis (ADR-0010 Schritt 2)
+│   │   ├── DuelSelectScene.ts  Online-Duell oder VS Bot auswaehlen
+│   │   ├── OnlineDuelScene.ts  Bereitschaftslobby, Raum, Talentphase, Ergebnis
 │   │   ├── LeaderboardScene.ts Online-Bestenliste, Gesamtansicht + Weltfilter
 │   │   ├── SyncScene.ts        Legacy-Abgleich für anonyme Alt-Spielstände
 │   │   ├── AdminScene.ts       Wartung: Version, Neuladen, Reset (versteckt)
@@ -148,7 +148,7 @@ isiHunt/
 │   │   ├── CloudSystem.ts      Bestenliste und Spielstand ueber Supabase
 │   │   ├── CloudSystem.test.ts Backend nicht eingerichtet
 │   │   ├── CloudSystem.configured.test.ts  eingerichtet: Anmelde- und Netzfehler
-│   │   ├── NetworkDuelSystem.ts Netzwerk-Duell: Raum, Rematch, Uhr-Sync, Realtime-Kanal
+│   │   ├── NetworkDuelSystem.ts Netzwerk-Duell: Lobby, Einladungen, Raum, Talentphase, Realtime
 │   │   ├── NetworkDuelSystem.test.ts
 │   │   ├── SpawnSystem.ts      Wann und wo etwas erscheint
 │   │   ├── SpawnSystem.test.ts
@@ -196,16 +196,16 @@ Gameplay-Code und faellt bei WebGL-/Ladefehlern auf die 2D-Zeichnung zurueck.
 ```
 BootScene          Texturen erzeugen, Ladehinweis entfernen
     ↓
-MenuScene    ←──────────────────────┬───────────────────────┐
-    │                               │                       │
-    │ Solo                          │ Duell                 │
-    ↓  scene.start(Game)            ↓  scene.start(Challenge)│
-GameScene  ──launch──▶  HudScene    ChallengeScene           │
-    ↓  scene.start(Result)          │        ↑               │
-ResultScene ────────────────────────┘        │               │
-    └── "Nochmal" ──▶ GameScene              │               │
-                                             ↓               │
-                             GameScene (mode: challenge) ────┘
+MenuScene    ←──────────────────────┬──────────────────────────────┐
+    │                               │                              │
+    │ Solo                          │ Duell                        │
+    ↓  scene.start(Game)            ↓  scene.start(DuelSelect)      │
+GameScene  ──launch──▶  HudScene    DuelSelectScene                 │
+    ↓  scene.start(Result)          ├── VS BOT → ChallengeScene      │
+ResultScene ────────────────────────┘                               │
+    └── "Nochmal" ──▶ GameScene     └── ONLINE → OnlineDuelScene     │
+                                               ↓                    │
+                                  GameScene (mode: challenge) ──────┘
 ```
 
 `GameScene` und `HudScene` laufen **gleichzeitig**. Sie kennen sich nicht.
@@ -219,23 +219,37 @@ ohne dass der Aufrufer den Fortschritt kennen muss.
 
 **Warum der Duell-Zustand ein Modul-Singleton ist:** Ein Duell ueberspannt vier
 Scene-Wechsel. Scene-Felder ueberleben `scene.start()` nicht, dieser Zustand
-muss das aber. Persistiert wird er bewusst nicht — ein Duell ist ein Spiel zu
-zweit im Hier und Jetzt, kein Fortschritt zum Aufheben.
+muss das aber. Persistiert wird er bewusst nicht — ein Duell ist ein Spiel im
+Hier und Jetzt, kein Fortschritt zum Aufheben. Der Online-Raum selbst liegt
+dagegen serverseitig, damit mehrere Geraete unabhaengig voneinander beitreten
+und Ergebnisse nachladen koennen.
 
-**Netzwerk-Duell (`kind: 'duel-online'`, ADR-0010 Schritt 2):** dieselbe
-`ChallengeState`-Struktur, aber `OnlineDuelScene` statt `ChallengeScene` und
-`GameScene` startet ueber eine serverseitige Zielzeit statt eines festen
-Schrittzaehlers. `NetworkDuelSystem` kapselt Supabase Realtime (Raum-RPCs,
-Uhr-Offset-Messung, Broadcast/Presence); `ChallengeSystem.submitOnlineRound()`
-ordnet Ergebnisse ueber `onlineRounds` einer festen Spielerposition zu, weil
-sie unabhaengig voneinander eintreffen (Ankunftsreihenfolge ≠ Spielerreihenfolge,
-anders als beim lokalen Duell). Phase 1: kein Live-Score waehrend des Laufs,
-nur synchroner Start und Ergebnisvergleich am Ende.
+**Netzwerk-Duell (`kind: 'duel-online'`):** `DuelSelectScene` oeffnet
+`OnlineDuelScene`. Dort abonniert der Client zuerst die globale
+Bereitschaftslobby. Ein Invite erzeugt atomar einen Raum und macht den
+Einladenden zum Host; der eingeladene Spieler nimmt die Einladung an und tritt
+als Teilnehmer bei. Der Host kann bis zu vier Slots fuellen und die
+Talentphase starten, sobald mindestens zwei Teilnehmer verbunden sind.
+
+In der Talentphase verteilt jeder Teilnehmer zehn temporaere Punkte und
+bestaetigt seinen Build. Erst wenn alle Bestaetigungen serverseitig vorliegen,
+darf der Host `set_duel_start_time` aufrufen. `GameScene` startet dann ueber
+die serverseitige Zielzeit. `NetworkDuelSystem` kapselt Supabase Realtime
+(Raum-RPCs, Uhr-Offset-Messung, Broadcast/Presence); `live` uebertraegt die
+Gegnerpunkte waehrend des Laufs, waehrend `submit_duel_result` die Ergebnisse
+persistent ablegt.
+
+`ChallengeState` speichert die lokale Sicht auf Seed, Spielerpositionen,
+Talent-Drafts, laufende Runden und Ergebnisse. `onlineRounds` ordnet Ergebnisse
+ueber eine feste Spielerposition zu, weil sie unabhaengig voneinander eintreffen
+(Ankunftsreihenfolge ≠ Spielerreihenfolge). Der Raumcode-Einstieg bleibt fuer
+Integrationstests erhalten, ist im normalen Menue aber nicht sichtbar.
 
 **Welcher Zustand ueber welchen Weg laeuft.** Die Regel steht in
 `supabase/phase_2_11_duel_rooms.sql` (Abschnitt 3): seltene, dauerhafte
 Zustandsaenderungen laufen ueber die Tabelle, haeufige und kurzlebige ueber
-Broadcast. Ready-Flags, Startzeit und Rundenergebnis sind dauerhaft und
+Broadcast. Talentphasen-Marker, Talent-Bestaetigungen, Startzeit und
+Rundenergebnis sind dauerhaft und
 gehoeren damit in `duel_rooms`; der Zwischenstand waehrend des Laufs bleibt
 Broadcast. Beim Rundenergebnis kommt ein zweiter Grund hinzu: es gibt keinen
 Zeitpunkt, zu dem beide Geraete gleichzeitig empfangsbereit sind — wer zuerst
@@ -252,16 +266,13 @@ und abonnieren damit exakt denselben Kanal. Die individuellen Teilnehmer-Tokens
 bleiben getrennt und schuetzen weiterhin die RPCs; die Realtime-Policy bindet
 Code und Seed gemeinsam an den noch gueltigen Raum (`phase_2_37`).
 
-**Die Lobby wartet symmetrisch — beide Rollen duerfen starten.** Bis v0.1.246
-setzte nur der Gastgeber die Startzeit; der Gast pollte ausschliesslich auf ein
-fertiges `startAtMs`. Damit hing er an einem Ausloeser, den allein das andere
-Geraet betaetigen konnte: gab der Gastgeber vorher auf, wartete der Gast
-unbegrenzt auf etwas, das nie mehr kommen konnte. `set_duel_start_time` prueft
-serverseitig ohnehin nur `host_ready and guest_ready` und nicht, _wer_ ruft
-(`supabase/phase_2_11_duel_rooms.sql`) — die Beschraenkung auf den Gastgeber war
-reine Client-Konvention. Jetzt setzt die Zeit, wer zuerst beide Seiten bereit
-sieht; ein Fehlschlag gilt als Rennen und nicht als Abbruchgrund, weil der
-naechste Poll-Durchlauf die inzwischen gesetzte Zeit findet.
+**Der Host steuert den Start.** Nach dem Invite ist der Einladende Host, der
+angenommene Spieler ist Teilnehmer. Der Host kann bis zu vier Slots fuellen und
+startet ab zwei verbundenen Spielern zuerst die Talentphase. Der Server markiert
+diesen Zustand mit `talent_draft_started_at`; erst wenn die
+`talent_ready_count` der Teilnehmerzahl entspricht, akzeptiert
+`set_duel_start_time` den Rundenstart. Der Gast pollt den persistenten Raumstatus
+und oeffnet die Talentphase auch dann, wenn der Broadcast verloren geht.
 
 **Zeitlimits in der Lobby warten auf Menschen, nicht auf Pakete.** Zwischen
 "Raum erstellt" und "Gast ist bereit" liegt kein Roundtrip, sondern eine
@@ -947,6 +958,13 @@ etwa 25 Minuten.
 Einzeln zu fahren ueber `--only=nav,controls` (kommagetrennt).
 `--watch` oeffnet ein sichtbares Fenster mit gebremster Eingabe.
 
+**`npm run test:duel2g`** ist die separate Integrationstufe fuer das
+Online-Duell. Sie oeffnet zwei isolierte Browser-Kontexte und prueft den
+Invite-/Raumablauf, die Talentphase auf beiden Clients, den gemeinsamen Seed,
+Live-Gegnerpunkte, Presence und den Ergebnis-Pollingpfad. Der Test kann mit
+`--runs=3` wiederholt werden; reale iPhone-/Safari-Netzwechsel bleiben ein
+manueller Test.
+
 #### Sichtbarer Fortschritt
 
 Ein Solo-Run dauert 90 echte Sekunden. Ohne Zwischenmeldung schweigt der Test
@@ -1090,8 +1108,8 @@ die Eigenheiten, die dieses Projekt teuer bezahlt hat (`100dvh`,
 **Ab welchem iOS laeuft es?** `npm run ios:check` liest das **gebaute
 Bundle** und meldet die hoechste gefundene Anforderung:
 
-|                         |                                           |
-| ----------------------- | ----------------------------------------- |
+|                         |                                               |
+| ----------------------- | --------------------------------------------- |
 | Laedt ueberhaupt ab     | **iOS 16.4** (Static Init Blocks in Three.js) |
 | Vollstaendig nutzbar ab | **iOS 16.4** (Static Init Blocks in Three.js) |
 
@@ -1175,12 +1193,12 @@ es startet, und faellt dort um, wo es tatsaechlich laufen muss.
 
 Ehrlich benannt, damit sie nicht ueberrascht:
 
-| Grenze                                              | Ab wann relevant                                    | Loesung                                                                                                                                                                                                                                                                             |
-| --------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Kein Object Pooling — jedes Relikt wird neu erzeugt | > 100 gleichzeitige Objekte                         | Pool in `SpawnSystem`                                                                                                                                                                                                                                                               |
-| Vitest deckt nur `systems/`, nicht Scenes/Entities  | ab Regressionen in Darstellung oder Eingabe         | `npm run playtest` deckt Scene-Fluss, Navigation, Bedienelemente, Steuerung, Kollision, Layout und Persistenz ab (9.3). Offen bleiben: Touch-Eigenheiten echter Geraete, Game-Feel, Bildrate unter Last, Aussehen jenseits von "laeuft und liegt richtig", Online-Duell und Duell2G |
-| Kollisionstest ist O(n) ueber alle Objekte          | > ~200 Objekte                                      | Raeumliches Gitter                                                                                                                                                                                                                                                                  |
-| Ton nur prozedural, keine Audiodateien              | Musik oder komplexe Klangkulisse                    | Dateien/Audio-Mixer in M4                                                                                                                                                                                                                                                           |
-| HUD-Layout nutzt 720×variable Portraithoehe         | nie (FIT skaliert)                                  | —                                                                                                                                                                                                                                                                                   |
-| **Bestenliste ist manipulierbar**                   | sobald sie oeffentlich beworben wird                | Runs serverseitig nachrechnen (ADR-0011)                                                                                                                                                                                                                                            |
-| Sync ueberschreibt, statt zusammenzufuehren         | wenn auf beiden Geraeten regelmaessig gespielt wird | Feldweises Zusammenfuehren monotoner Werte                                                                                                                                                                                                                                          |
+| Grenze                                              | Ab wann relevant                                    | Loesung                                                                                                                                                                                                                                                                                                                                     |
+| --------------------------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Kein Object Pooling — jedes Relikt wird neu erzeugt | > 100 gleichzeitige Objekte                         | Pool in `SpawnSystem`                                                                                                                                                                                                                                                                                                                       |
+| Vitest deckt nur `systems/`, nicht Scenes/Entities  | ab Regressionen in Darstellung oder Eingabe         | `npm run playtest` deckt Scene-Fluss, Navigation, Bedienelemente, Steuerung, Kollision, Layout und Persistenz ab (9.3); `npm run test:duel2g` deckt den Zwei-Client-Online-Ablauf ab. Offen bleiben: Touch-Eigenheiten echter Geraete, Game-Feel, Bildrate unter Last sowie reale iPhone-/Safari-Netzwechsel und 3-/4-Spieler-Geräteabnahme |
+| Kollisionstest ist O(n) ueber alle Objekte          | > ~200 Objekte                                      | Raeumliches Gitter                                                                                                                                                                                                                                                                                                                          |
+| Ton nur prozedural, keine Audiodateien              | Musik oder komplexe Klangkulisse                    | Dateien/Audio-Mixer in M4                                                                                                                                                                                                                                                                                                                   |
+| HUD-Layout nutzt 720×variable Portraithoehe         | nie (FIT skaliert)                                  | —                                                                                                                                                                                                                                                                                                                                           |
+| **Bestenliste ist manipulierbar**                   | sobald sie oeffentlich beworben wird                | Runs serverseitig nachrechnen (ADR-0011)                                                                                                                                                                                                                                                                                                    |
+| Sync ueberschreibt, statt zusammenzufuehren         | wenn auf beiden Geraeten regelmaessig gespielt wird | Feldweises Zusammenfuehren monotoner Werte                                                                                                                                                                                                                                                                                                  |

@@ -12,8 +12,9 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 ### Hinzugefuegt
 
 - **Neue Duell-Auswahl.** Das Menue fuehrt jetzt ueber einen einzigen
-  `DUELL`-Knopf in die Auswahl fuer 2, 3 oder 4 lokale Spieler, ein Duell
-  gegen den Bot oder ein Netzwerkduell.
+  `DUELL`-Knopf zu `ONLINE-DUELL` und `VS BOT`. Das Online-Duell oeffnet direkt
+  die Bereitschaftslobby fuer Einladungen; die lokalen 2-/3-/4-Spieler-Buttons
+  sind aus der sichtbaren Auswahl entfernt.
 
 - **Bot-Duell mit mittlerer Schwierigkeit und Siegbonus.** Der Bot liegt
   nahe an der Spielerleistung und bleibt durch eine aktive Serie schlagbar.
@@ -43,6 +44,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   ein sauberes Verlassen des Kanals — ein Funkloch, eine eingefrorene App oder
   ein leerer Akku erzeugen kein `leave`. Deshalb sendet der Takt auch dann
   weiter, wenn nichts passiert; er traegt die Information "ich bin noch da".
+
+- **Online-Duell startet jetzt mit einer echten Talentphase.** Der Host oeffnet
+  nach mindestens zwei verbundenen Spielern zuerst die Talentvergabe. Alle
+  Teilnehmer muessen ihren Build bestaetigen; erst danach setzt der Host die
+  gemeinsame Startzeit. Der Server erzwingt diesen Ablauf fuer zwei bis vier
+  Spieler.
 
 ### Geaendert
 
