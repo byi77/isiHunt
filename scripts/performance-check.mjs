@@ -112,6 +112,11 @@ try {
     console.error('Performance-Browserfehler vor Phaser-Start:', errors);
     throw error;
   }
+  // BootScene startet Menu nach dem Auth-Check asynchron. Erst danach darf der
+  // direkte Game-Start erfolgen, sonst kann BootScene ihn wieder überschreiben.
+  await page.waitForFunction(() => window.isiHunt?.scene?.isActive('Menu') === true, undefined, {
+    timeout: 25_000,
+  });
   await page.evaluate(() => {
     window.isiHunt.scene.start('Game', { mode: 'solo', worldId: 'silberhain' });
   });
