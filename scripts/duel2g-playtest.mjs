@@ -252,7 +252,7 @@ async function enterDuel2G(page, playerName) {
     if (menuActive) {
       await clickButton(page, 'Menu', 'DUELL');
       await waitForScene(page, 'DuelSelect');
-      await clickButton(page, 'DuelSelect', 'ONLINE-SPIELER');
+      await clickButton(page, 'DuelSelect', 'ONLINE-DUELL');
     } else {
       await page.evaluate(() => {
         const game = window.isiHunt;

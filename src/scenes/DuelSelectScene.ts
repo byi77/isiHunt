@@ -1,12 +1,8 @@
-/** Auswahl der Besetzung vor einem Duell. */
+/** Auswahl des Gegners vor einem Duell. */
 
 import Phaser from 'phaser';
 
-import {
-  CHALLENGE_BOT_DEFAULT_DIFFICULTY,
-  CHALLENGE_MAX_PLAYER_COUNT,
-  CHALLENGE_MIN_PLAYER_COUNT,
-} from '@/config/challenge';
+import { CHALLENGE_BOT_DEFAULT_DIFFICULTY } from '@/config/challenge';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { DEFAULT_WORLD_ID, getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
@@ -44,19 +40,19 @@ export class DuelSelectScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         212,
-        `Welt: ${world.name}  |  WER SPIELT?`,
+        `Welt: ${world.name}  |  WÄHLE DEINEN GEGNER`,
         textStyle(FontSize.small, toCss(world.accent)),
       )
       .setOrigin(0.5);
 
-    createPanel(this, GAME_WIDTH / 2, 610, GAME_WIDTH - 100, 680, world.accent, {
+    createPanel(this, GAME_WIDTH / 2, 600, GAME_WIDTH - 100, 500, world.accent, {
       alpha: 0.28,
     });
     this.add
       .text(
         GAME_WIDTH / 2,
-        315,
-        'AN EINEM GERÄT',
+        380,
+        'ONLINE-DUELL',
         textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }),
       )
       .setOrigin(0.5)
@@ -64,51 +60,31 @@ export class DuelSelectScene extends Phaser.Scene {
     this.add
       .text(
         GAME_WIDTH / 2,
-        355,
-        'Jeder spielt dieselbe Reliktfolge.',
+        420,
+        'Spiele online mit zwei bis vier Spielern.',
         textStyle(FontSize.small, Palette.inkDim),
       )
       .setOrigin(0.5);
 
-    const countY = 455;
-    const countGap = 190;
-    for (
-      let playerCount = CHALLENGE_MIN_PLAYER_COUNT;
-      playerCount <= CHALLENGE_MAX_PLAYER_COUNT;
-      playerCount += 1
-    ) {
-      createButton(
-        this,
-        GAME_WIDTH / 2 + (playerCount - 3) * countGap,
-        countY,
-        `${playerCount} SPIELER`,
-        () => {
-          ChallengeSystem.start(world.id, undefined, playerCount);
-          this.scene.start(SceneKey.Challenge);
-        },
-        { width: 166, height: 86, accent: world.accent, fontSize: FontSize.small },
-      );
-    }
+    createButton(
+      this,
+      GAME_WIDTH / 2,
+      500,
+      'ONLINE-DUELL',
+      () => this.scene.start(SceneKey.OnlineDuel, { worldId: world.id }),
+      { width: 430, height: 92, accent: 0x38bdf8, fontSize: FontSize.large },
+    );
 
     createButton(
       this,
       GAME_WIDTH / 2,
-      620,
+      700,
       'VS BOT',
       () => {
         ChallengeSystem.startBot(world.id, CHALLENGE_BOT_DEFAULT_DIFFICULTY);
         this.scene.start(SceneKey.Challenge);
       },
       { width: 430, height: 92, accent: Palette.goldHex, fontSize: FontSize.large },
-    );
-
-    createButton(
-      this,
-      GAME_WIDTH / 2,
-      770,
-      'ONLINE-SPIELER',
-      () => this.scene.start(SceneKey.OnlineDuel, { worldId: world.id }),
-      { width: 430, height: 92, accent: 0x38bdf8, fontSize: FontSize.body },
     );
 
     createButton(
