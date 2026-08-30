@@ -46,6 +46,10 @@ const duelInvitationListingFixMigration = readFileSync(
   resolve(sqlDir, 'phase_2_40_fix_duel_invitation_listing.sql'),
   'utf8',
 );
+const duelInvitationAcceptFixMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_41_fix_duel_invitation_accept.sql'),
+  'utf8',
+);
 const verification = readFileSync(resolve(sqlDir, 'verify_security_hardening.sql'), 'utf8');
 const migrationVerification = readFileSync(resolve(sqlDir, 'verify_migration_state.sql'), 'utf8');
 
@@ -154,9 +158,21 @@ requireText(
   'schema_version = 40',
   'Migrationsmarker Phase 2.40',
 );
+requireText(
+  duelInvitationAcceptFixMigration,
+  'from public.duel_rooms as r',
+  'Qualifizierte Raumabfrage im Einladungsaccept',
+);
+requireText(
+  duelInvitationAcceptFixMigration,
+  'where r.code = invitation.room_code and r.expires_at > now()',
+  'Eindeutige Raumspalten im Einladungsaccept',
+);
+requireText(duelInvitationAcceptFixMigration, 'schema_version = 40', 'Migrationsguard Phase 2.41');
+requireText(duelInvitationAcceptFixMigration, 'schema_version = 41', 'Migrationsmarker Phase 2.41');
 
 const migrationFiles = readdirSync(sqlDir).filter((name) =>
-  /^phase_2_(2[89]|30|31|32|33|34|35|36|37|38|39|40)_.*\.sql$/.test(name),
+  /^phase_2_(2[89]|30|31|32|33|34|35|36|37|38|39|40|41)_.*\.sql$/.test(name),
 );
 for (const file of migrationFiles) {
   const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();
