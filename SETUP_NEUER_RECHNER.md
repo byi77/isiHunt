@@ -8,8 +8,37 @@ Aufgenommen am **2026-09-03** vom Hauptrechner (Windows 11, ARM64).
 Alles darin ist ausgelesen, nicht erinnert. Was nicht geprueft werden konnte,
 ist im Anhang als solches benannt.
 
-> **Reihenfolge einhalten.** Teil 3 (Repo) setzt Teil 1 (Toolchain) voraus,
-> Teil 5 (Verifikation) setzt alles davor voraus.
+---
+
+## Der kurze Weg: vier Handgriffe, dann `/start`
+
+Wer nicht alles lesen will — das hier genuegt:
+
+```powershell
+winget install OpenJS.NodeJS.LTS
+winget install Git.Git
+winget install Microsoft.VisualStudioCode
+git clone https://github.com/byi77/isiHunt.git C:\Git\isiHunt
+```
+
+Dann VS Code oeffnen, die Erweiterung `anthropic.claude-code` installieren,
+anmelden, den Ordner `C:\Git\isiHunt` oeffnen und in Claude Code sagen:
+
+```
+/start
+```
+
+Der Skill erledigt den Rest: Git-Hooks, Abhaengigkeiten, Playwright-Browser,
+globale Claude-Konfiguration, Erinnerungen, `.env` — und prueft am Ende mit
+`npm run verify`, ob es wirklich laeuft. Fehlende Werkzeuge installiert er
+selbst nach.
+
+**Der Rest dieses Dokuments erklaert, was `/start` tut** — als Nachschlagewerk,
+wenn etwas klemmt oder von Hand gemacht werden soll.
+
+> **Reihenfolge einhalten**, wenn von Hand gearbeitet wird: Teil 3 (Repo)
+> setzt Teil 1 (Toolchain) voraus, Teil 5 (Verifikation) setzt alles davor
+> voraus.
 
 ---
 
@@ -76,7 +105,8 @@ winget install Microsoft.VisualStudioCode
 ```
 
 Beim Installieren **"Zu PATH hinzufuegen"** anhaken — sonst fehlt der Befehl
-`code` in der Konsole, den Teil 2.6 und das Bootstrap-Skript brauchen.
+`code` in der Konsole, den Teil 2.6 braucht. Fuer `/start` ist er nicht
+noetig.
 
 ### 1.5 GitHub-Zugang
 
@@ -161,9 +191,9 @@ Stichworten:
   2. Erst Schwachstellen suchen, dann bewerten
   3. Bei strittigen Fragen Gegenposition zuerst, dann klares Urteil
 
-**Uebertragen:** Datei vom Hauptrechner kopieren
-(`C:\Users\yavuz\.claude\CLAUDE.md` → gleicher Pfad auf dem neuen Rechner,
-siehe Teil 6.1). Sie ist nicht im Repo versioniert.
+**Uebertragen:** erledigt `/start` — die Datei liegt versioniert unter
+`.claude/global/CLAUDE.md` und wird nach `~/.claude/` kopiert, falls dort noch
+keine steht (Teil 6.2).
 
 ### 2.4 MCP-Server
 
@@ -201,8 +231,9 @@ nach. Sonst manuell in einer Claude-Code-Sitzung:
 /plugin install claude-code-setup@claude-plugins-official
 ```
 
-**Zwei eigene Skills** liegen unter `~/.claude/skills/` und sind **nicht**
-versioniert — also mitkopieren (Teil 6.1):
+**Zwei eigene Skills** liegen unter `~/.claude/skills/`. Sie sind im Repo
+unter `.claude/global/skills/` versioniert und werden von `/start` eingespielt
+(Teil 6.2):
 
 - `codebase-improvement-audit/`
 - `task-observer/`
@@ -493,97 +524,86 @@ Rendering, Tweens und Bildrate werden dabei nicht geprueft.
 
 ---
 
-## Teil 6 — Bootstrap-Skript
+## Teil 6 — Einrichtung per `/start`
 
-Erledigt Teil 1, Teil 3 und Teil 2.6 in einem Rutsch. Was es **nicht** kann:
-Claude-Code-Anmeldung, `~/.claude`-Dateien vom Hauptrechner holen, `.env`
-fuellen — das steht in 6.1 und in der Schlussmeldung des Skripts.
+Der Skill `/start` erledigt Teil 3 und Teil 4 vollstaendig und Teil 2 bis auf
+die Anmeldung. Er liegt versioniert unter `.claude/skills/start/SKILL.md` und
+ist damit nach dem Klonen sofort da.
 
-```powershell
-# --- isiHunt Bootstrap ---------------------------------------------------
-$ErrorActionPreference = 'Stop'
-
-Write-Host '[1/6] Werkzeuge installieren...'
-foreach ($pkg in 'OpenJS.NodeJS.LTS','Git.Git','GitHub.cli','Microsoft.VisualStudioCode') {
-  winget install --id $pkg --accept-source-agreements --accept-package-agreements
-}
-
-Write-Host '[2/6] Repository klonen...'
-New-Item -ItemType Directory -Force C:\Git | Out-Null
-if (-not (Test-Path C:\Git\isiHunt)) {
-  git clone https://github.com/byi77/isiHunt.git C:\Git\isiHunt
-}
-Set-Location C:\Git\isiHunt
-
-Write-Host '[3/6] Git-Hooks aktivieren...'
-git config core.hooksPath .githooks
-
-Write-Host '[4/6] Abhaengigkeiten installieren...'
-npm ci
-npm run memory:load   # Claude-Erinnerungen aus dem Repo einspielen
-
-Write-Host '[5/6] Playwright-Browser installieren...'
-npx playwright install chromium
-npx playwright install webkit
-
-Write-Host '[6/6] VS-Code-Erweiterungen...'
-foreach ($ext in 'anthropic.claude-code','github.vscode-github-actions','github.vscode-pull-request-github','ms-vscode.powershell') {
-  code --install-extension $ext
-}
-
-Write-Host ''
-Write-Host 'Fertig. Von Hand bleibt:'
-Write-Host '  a) .env anlegen          -> Copy-Item .env.example .env, dann Werte eintragen (Teil 4)'
-Write-Host '  b) ~/.claude uebernehmen -> CLAUDE.md, settings.json, skills/ (Teil 6.1)'
-Write-Host '  c) Claude Code in VS Code anmelden'
-Write-Host '  d) gh auth login'
-Write-Host ''
-Write-Host 'Danach pruefen: npm run verify'
+```
+/start
 ```
 
-> Das Skript setzt voraus, dass `winget`, `git`, `npm` und `code` nach der
-> Installation im PATH stehen. Nach dem Installieren von Node und VS Code
-> **die PowerShell einmal neu oeffnen**, sonst kennt die laufende Sitzung die
-> neuen Befehle noch nicht.
-
-### 6.1 Den `~/.claude`-Ordner uebernehmen
-
-**Drei** Dinge vom Hauptrechner kopieren. Die Memory ist **nicht** dabei — die
-kommt mit dem Repo und wird per `npm run memory:load` eingespielt (Teil 2.7).
-Der Skill `/finish` ebenfalls nicht: er liegt versioniert im Repo (Teil 2.8).
-
-| Vom Hauptrechner          | Enthaelt                                      |
-| ------------------------- | --------------------------------------------- |
-| `~\.claude\CLAUDE.md`     | globale Arbeitsanweisungen (Teil 2.3)         |
-| `~\.claude\settings.json` | Berechtigungen, Modell, Plugins (Teil 2.2)    |
-| `~\.claude\skills\`       | `codebase-improvement-audit`, `task-observer` |
-
-Auf dem **Hauptrechner** einsammeln:
+Dahinter steht `scripts/setup-workstation.mjs`, das auch von Hand fahrbar ist:
 
 ```powershell
-$ziel = "$HOME\Desktop\claude-transfer"
-New-Item -ItemType Directory -Force $ziel | Out-Null
-Copy-Item "$HOME\.claude\CLAUDE.md"     $ziel
-Copy-Item "$HOME\.claude\settings.json" $ziel
-Copy-Item "$HOME\.claude\skills"        $ziel -Recurse
+npm run setup          # einrichten
+npm run setup:check    # nur pruefen, nichts schreiben
 ```
 
-Auf dem **neuen Rechner** einspielen (Ordner liegt auf dem Desktop):
+Was es der Reihe nach tut:
 
-```powershell
-$quelle = "$HOME\Desktop\claude-transfer"
-New-Item -ItemType Directory -Force "$HOME\.claude" | Out-Null
-Copy-Item "$quelle\CLAUDE.md"     "$HOME\.claude\"
-Copy-Item "$quelle\settings.json" "$HOME\.claude\"
-Copy-Item "$quelle\skills"        "$HOME\.claude\" -Recurse
-```
+| Schritt               | Tut                                                                   |
+| --------------------- | --------------------------------------------------------------------- |
+| Werkzeuge             | prueft Node, Git, gh und meldet Fehlendes mit dem winget-Befehl       |
+| Git-Hooks             | `git config core.hooksPath .githooks`                                 |
+| Abhaengigkeiten       | `npm ci`, wenn `node_modules` fehlt                                   |
+| Playwright            | `chromium` und `webkit` nachinstallieren                              |
+| Globale Claude-Config | `.claude/global/` → `~/.claude/` (CLAUDE.md, settings.json, 2 Skills) |
+| Erinnerungen          | `memory:load` — Repo → `~/.claude/projects/<slug>/memory/`            |
+| `.env`                | aus `.env.example` anlegen                                            |
 
-> **`settings.json` nicht blind kopieren**, wenn auf dem neuen Rechner schon
-> eine liegt — die Berechtigungsliste des Hauptrechners enthaelt Pfade zu einem
-> anderen Repo (`isilive-workspace`). Die Minimalfassung aus Teil 2.2 ist
-> sauberer.
+**Wiederholbar.** Was schon sitzt, wird nicht angefasst; ein zweiter Lauf
+aendert nichts. `npm run setup:check` taugt deshalb auch als Diagnose, wenn
+spaeter etwas klemmt.
 
----
+**Vorhandene Dateien in `~/.claude` werden nie ueberschrieben.** Auf einem
+Rechner, auf dem schon gearbeitet wurde, steht dort der gewachsene Stand. Das
+Skript meldet stattdessen "weicht vom Repo ab" — ein Hinweis, keine
+Aufforderung.
+
+### 6.1 Was `/start` nicht kann
+
+Vier Dinge bleiben Handarbeit, weil sie einen Browser oder eine Entscheidung
+brauchen:
+
+| Offen                      | Warum                                                |
+| -------------------------- | ---------------------------------------------------- |
+| Claude Code anmelden       | OAuth im Browser, an das Anthropic-Konto gebunden    |
+| `gh auth login`            | dito; nur fuer PR- und Actions-Arbeit noetig         |
+| VS-Code-Erweiterungen      | `code` steht nicht zuverlaessig im PATH (Teil 2.6)   |
+| Supabase-Schema einspielen | nur bei eigener Instanz — eine Entscheidung (Teil 4) |
+
+Die Supabase-Schluessel fragt `/start` ab und traegt sie ein; wer sie nicht zur
+Hand hat, kann abwinken und spaeter nachtragen.
+
+### 6.2 Die globale Claude-Konfiguration im Repo
+
+Unter `.claude/global/` liegt versioniert, was sonst nur in `~/.claude`
+stuende:
+
+| Datei                                | Enthaelt                                   |
+| ------------------------------------ | ------------------------------------------ |
+| `CLAUDE.md`                          | globale Arbeitsanweisungen (Teil 2.3)      |
+| `settings.json`                      | Berechtigungen, Modell, Plugins (Teil 2.2) |
+| `skills/codebase-improvement-audit/` | Audit-Skill                                |
+| `skills/task-observer/`              | Beobachter-Skill                           |
+
+Das ist eine bewusste Entscheidung mit einem Preis: `~/.claude/CLAUDE.md` gilt
+fuer **alle** Projekte, nicht nur isiHunt. Sie hier zu versionieren heisst,
+dass isiHunt die projektuebergreifenden Arbeitsregeln mitverwaltet. Bei zwei
+Rechnern und einem Hauptprojekt ist das der einzige Weg, die Einrichtung ohne
+Handarbeit zu bekommen.
+
+Die versionierte `settings.json` ist die **bereinigte** Fassung: ohne die
+historisch gewachsene `permissions.allow`-Liste des Hauptrechners, die Pfade
+zu einem anderen Repo (`isilive-workspace`) enthaelt und durch
+`"defaultMode": "bypassPermissions"` ohnehin wirkungslos ist.
+
+Aendert sich auf dem Hauptrechner etwas an diesen Dateien, gehoert es von Hand
+nach `.claude/global/` zurueck — dafuer gibt es keinen Automatismus, weil ein
+`~/.claude` mit gewachsenem Stand nicht ungefragt ins Repo geschrieben werden
+soll.
 
 ## Teil 7 — Der taegliche Arbeitsablauf
 
@@ -678,23 +698,13 @@ jeder Claude-Code-Sitzung automatisch geladen.
 ## Teil 8 — Checkliste zum Abhaken
 
 ```
-[ ] Node 24 installiert            -> node -v
-[ ] Git installiert                -> git --version
-[ ] gh installiert und angemeldet  -> gh auth status
-[ ] VS Code installiert, code im PATH
-[ ] Repo nach C:\Git\isiHunt geklont
-[ ] git config core.hooksPath .githooks
-[ ] npm ci gelaufen
-[ ] npm run memory:load gelaufen  -> npm run memory:check sagt "gleich"
-[ ] npx playwright install chromium + webkit
-[ ] .env aus .env.example angelegt und gefuellt
-[ ] ~/.claude/CLAUDE.md kopiert
-[ ] ~/.claude/settings.json angelegt
-[ ] ~/.claude/skills/ kopiert (2 Skills)
+[ ] Node 24, Git, VS Code installiert
 [ ] Claude-Code-Erweiterung installiert und angemeldet
-[ ] /finish ist da              -> in einer Sitzung /finish tippen
-[ ] Plugins da                     -> /plugin in einer Sitzung
+[ ] Repo nach C:\Git\isiHunt geklont
+[ ] /start gefahren
+[ ] npm run setup:check meldet nichts Offenes
 [ ] npm run verify ist gruen
+[ ] gh auth login          (nur fuer PR-Arbeit)
 [ ] npm run dev laeuft, Handy erreicht die Netzwerkadresse
 [ ] npm run playtest -- --sim --watch ist gruen
 ```
@@ -705,9 +715,9 @@ jeder Claude-Code-Sitzung automatisch geladen.
 
 - **`code` im PATH:** Auf dem Hauptrechner war der Befehl im geprueften
   Shell-PATH nicht auffindbar (die Aufnahme lief in Git Bash). Ob er in
-  PowerShell dort funktioniert, wurde nicht geprueft. Das Bootstrap-Skript
-  setzt ihn voraus; falls er fehlt, die Erweiterungen von Hand im
-  VS-Code-Marktplatz installieren.
+  PowerShell dort funktioniert, wurde nicht geprueft. `/start` braucht ihn
+  nicht; nur die Erweiterungsbefehle in Teil 2.6 setzen ihn voraus. Falls er
+  fehlt, die Erweiterungen von Hand im VS-Code-Marktplatz installieren.
 - **Supabase-Projekt:** Ob der Zweitrechner gegen dieselbe Instanz arbeitet
   oder eine eigene bekommt, ist eine Entscheidung, keine Einstellung.
   Dieselbe Instanz ist einfacher; eine eigene braucht das volle
