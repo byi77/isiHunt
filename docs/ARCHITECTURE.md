@@ -54,6 +54,11 @@ isiHunt/
 ├── .githooks/
 │   ├── pre-commit              Zieht die Version hoch (CODE_STYLE.md 1.9)
 │   └── pre-push                Kein Push ohne Versionssprung
+├── .claude/                    Arbeitsumgebung, reist mit dem Klon mit
+│   ├── skills/start/           /start — Arbeitskopie einrichten
+│   ├── skills/finish/          /finish — verify, commit, push, Deploy abwarten
+│   ├── memory/                 Claude-Erinnerungen, per memory:save gepflegt
+│   └── global/                 Was sonst nur in ~/.claude staende (9.6)
 ├── scripts/
 │   ├── generate-icons.mjs      Zeichnet die App-Icons (npm run icons)
 │   ├── bump-version.mjs        Patch-Version +1, vom pre-commit-Hook gerufen
@@ -62,7 +67,9 @@ isiHunt/
 │   ├── playtest.mjs            Sieben Test-Suiten im Browser (npm run playtest)
 │   ├── check-ios-support.mjs   iOS-Mindestversion aus dem Build (npm run ios:check)
 │   ├── check-sql-contract.mjs  SQL-Verträge der Integrity-Migration (sql:check)
-│   └── sync-balance-sql.mjs    JSON-Balance in die Supabase-Migration spiegeln
+│   ├── sync-balance-sql.mjs    JSON-Balance in die Supabase-Migration spiegeln
+│   ├── setup-workstation.mjs   Arbeitskopie einrichten (npm run setup, /start)
+│   └── sync-memory.mjs         Claude-Erinnerungen Repo ↔ ~/.claude (memory:save)
 ├── src/
 │   ├── config/                 Reine Daten, keine Logik
 │   │   ├── balance-data.json   Eine Quelle fuer Punkte, XP, Coins und Kosten
@@ -1188,6 +1195,77 @@ fahren jetzt Node 24, `engines` in der `package.json` steht auf `>=22.22.2`.
 
 Dasselbe Muster wie eine Ebene hoeher: Ein Werkzeug laeuft dort gruen, wo man
 es startet, und faellt dort um, wo es tatsaechlich laufen muss.
+
+## 9.5 Die Arbeitsumgebung reist mit dem Repo
+
+Ein zweiter Rechner soll ohne Handarbeit denselben Stand bekommen. Alles, was
+dafuer noetig ist und nicht am Anthropic-Konto haengt, liegt deshalb
+versioniert unter `.claude/`.
+
+| Was             | Wo                       | Eingespielt von       |
+| --------------- | ------------------------ | --------------------- |
+| Skill `/start`  | `.claude/skills/start/`  | kommt mit dem Klon    |
+| Skill `/finish` | `.claude/skills/finish/` | kommt mit dem Klon    |
+| Erinnerungen    | `.claude/memory/`        | `npm run memory:load` |
+| Globale Config  | `.claude/global/`        | `npm run setup`       |
+
+**Projektlokale Skills brauchen keinen eigenen Abgleich** — sie liegen im Repo
+und sind nach dem Klonen da. Das ist der Grund, warum `/start` und `/finish`
+dort stehen und nicht unter `~/.claude/skills/`.
+
+`npm run setup` (bzw. `/start`) richtet den Rest ein: Git-Hooks, `npm ci`,
+Playwright-Browser, globale Konfiguration, Erinnerungen, `.env`. Das Skript ist
+**wiederholbar** — was schon sitzt, wird nicht angefasst —, weshalb
+`npm run setup:check` auch als Diagnose taugt, wenn spaeter etwas klemmt.
+
+Die vollstaendige Anleitung fuer einen neuen Rechner steht in
+`SETUP_NEUER_RECHNER.md`.
+
+## 9.6 Die Erinnerungen liegen im Git, nicht in der Cloud
+
+Claude Code legt seine Erinnerungen unter
+`~/.claude/projects/<pfad-slug>/memory/` ab — ausserhalb des Repos, also
+rechnerlokal. Bei zwei Rechnern laufen die Staende auseinander: eine Korrektur,
+die auf dem einen gelernt wurde, fehlt auf dem anderen.
+
+**Warum Git und nicht ein Cloud-Ordner.** Der Ordner
+`~/.claude/projects/<slug>/` ist rund 113 MB gross, davon sind die
+Erinnerungen 2,5 KB. Der Rest sind Sitzungstranskripte (`.jsonl`, einzelne
+ueber 20 MB), in die Claude waehrend laufender Sitzungen schreibt — ein
+Sync-Client wuerde dort Konfliktdateien mitten in der Historie erzeugen. Viel
+Verkehr, echtes Risiko, fuer 2,5 KB Nutzen.
+
+`scripts/sync-memory.mjs` fasst deshalb nur `*.md` im `memory/`-Ordner an:
+
+```bash
+npm run memory:save     # ~/.claude -> Repo   (vor dem Commit; /finish macht das)
+npm run memory:load     # Repo -> ~/.claude   (einmal nach dem Klonen)
+npm run memory:check    # nur melden, nichts schreiben
+```
+
+Zwei Eigenschaften, die beim Bauen Absicht waren:
+
+- **Loeschungen werden propagiert.** Eine als falsch erkannte Erinnerung muss
+  auch drueben verschwinden — sonst kaeme sie beim naechsten Abgleich zurueck.
+- **Ein leerer `~/.claude`-Ordner loescht nichts.** Genau dieser Fall tritt auf
+  einem frisch geklonten Rechner ein, auf dem `memory:load` noch nicht lief;
+  ohne die Abfrage wuerde ein `/finish` dort die versionierte Erinnerung
+  loeschen. `--save` bricht deshalb ab und verweist auf `--load`.
+
+Der Ordnername leitet sich vom Projektpfad ab (`C:\Git\isiHunt` →
+`C--Git-isiHunt`). Das Skript berechnet ihn aus dem tatsaechlichen Pfad und
+prueft beide Schreibweisen des Laufwerksbuchstabens, weil Claude Code je nach
+Sitzungsstart mal `C--` und mal `c--` schreibt.
+
+Die globale `~/.claude/CLAUDE.md` unter `.claude/global/` mitzuversionieren ist
+eine bewusste Entscheidung mit Preis: Sie gilt fuer **alle** Projekte, isiHunt
+verwaltet sie damit mit. Bei zwei Rechnern und einem Hauptprojekt ist das der
+einzige Weg zu einer Einrichtung ohne Handgriffe. Vorhandene Dateien in
+`~/.claude` werden nie ueberschrieben — auf einem gewachsenen Rechner waere das
+ein Datenverlust; das Skript meldet stattdessen, dass der Stand abweicht.
+
+Vollstaendige Begruendung samt verworfener Alternativen: `DECISIONS.md`
+ADR-0023.
 
 ## 10. Grenzen der aktuellen Architektur
 

@@ -139,6 +139,29 @@ npm run test          # einmalig
 npm run test:watch    # laeuft mit
 ```
 
+### Die beiden Skills
+
+```
+/start     Arbeitskopie einrichten - Hooks, npm ci, Playwright-Browser,
+           globale Claude-Konfiguration, Erinnerungen, .env, dann verify
+/finish    Arbeitseinheit ausliefern - memory:save, verify, commit, push,
+           deploy:wait, Versionsnummer melden
+```
+
+Beide liegen versioniert unter `.claude/skills/` und sind nach dem Klonen
+sofort da. Von Hand fahrbar sind sie ueber ihre Skripte:
+
+```bash
+npm run setup          # was /start tut
+npm run setup:check    # nur pruefen, nichts schreiben - taugt als Diagnose
+npm run memory:save    # Erinnerungen -> Repo (vor dem Commit)
+npm run memory:load    # Erinnerungen <- Repo (nach dem Klonen)
+npm run memory:check   # weichen die Staende ab?
+```
+
+Einen neuen Rechner richtet `SETUP_NEUER_RECHNER.md` ein; die Begruendung
+steht in `docs/ARCHITECTURE.md` 9.5/9.6.
+
 ## Sprache
 
 - **Code, Bezeichner, Commit-Typen:** Englisch (`ScoreSystem`, `feat(hud):`)
@@ -158,6 +181,10 @@ src/scenes/     Boot, Menu, DuelSelect, OnlineDuel, Game, Hud, Result, Challenge
 src/systems/    Save, Progression, Score, Spawn, Challenge, NetworkDuel — Regeln ohne Darstellung
 src/types/      SaveData, RunStats, ProgressionResult
 src/ui/         theme, textures (prozedural), shipShapes, widgets
+
+.claude/skills/ /start und /finish - reisen mit dem Klon
+.claude/memory/ Claude-Erinnerungen, per memory:save gepflegt
+.claude/global/ Was sonst nur in ~/.claude staende (ARCHITECTURE.md 9.6)
 ```
 
 ## Wiederkehrende Fallen

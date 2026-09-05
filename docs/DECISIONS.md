@@ -1212,3 +1212,80 @@ und Siegbonus.
   echte 3-/4-Spieler-Abnahme sowie iPhone-/Safari-Netzwechsel bleiben offen.
 - Die globale Lobby und direkte Einladungen bleiben an Anmeldung und
   Spielernamen gebunden; `VS BOT` benötigt kein Online-Backend.
+
+---
+
+## ADR-0023 — Arbeitsumgebung und Claude-Erinnerungen liegen im Repository
+
+**Datum:** 2026-09-05 · **Status:** Angenommen
+
+### Kontext
+
+Das Projekt soll auf einem zweiten Rechner ohne Handarbeit denselben Stand
+bekommen. Zwei Dinge stehen dem im Weg, weil sie ausserhalb des Repos liegen:
+
+1. **Die Claude-Erinnerungen** unter `~/.claude/projects/<slug>/memory/` sind
+   rechnerlokal. Eine Korrektur, die auf dem einen Rechner gelernt wurde, fehlt
+   auf dem anderen — Claude wiederholt dort denselben Fehler.
+2. **Die globale Claude-Konfiguration** (`~/.claude/CLAUDE.md`,
+   `settings.json`, zwei Skills) muesste von Hand kopiert werden. Genau das
+   war die Anforderung: "von Hand nix".
+
+Erschwerend kommt ein Henne-Ei-Problem hinzu: Ein Skill kann die Umgebung erst
+einrichten, wenn Claude Code bereits laeuft — also erst, nachdem ein Teil der
+Einrichtung schon von Hand geschehen ist.
+
+### Entscheidung
+
+**Die Erinnerungen und die globale Konfiguration werden im Repository
+versioniert**, unter `.claude/memory/` und `.claude/global/`.
+`scripts/sync-memory.mjs` und `scripts/setup-workstation.mjs` spiegeln sie
+nach `~/.claude`. Die beiden Skills `/start` und `/finish` liegen unter
+`.claude/skills/` und brauchen dadurch gar keinen Abgleich.
+
+Verworfen wurden zwei Alternativen:
+
+- **Ein Cloud-Ordner ueber `~/.claude/projects/`.** Der Ordner ist rund 113 MB
+  gross, davon sind die Erinnerungen 2,5 KB. Der Rest sind
+  Sitzungstranskripte, in die Claude waehrend laufender Sitzungen schreibt —
+  ein Sync-Client erzeugt dort Konfliktdateien mitten in der Historie.
+- **Ein Symlink nur fuer `memory/`.** Braucht unter Windows Administratorrechte
+  oder den Entwicklermodus und hat dasselbe Schreibkonflikt-Problem im Kleinen.
+
+### Begruendung
+
+- Die Erinnerungen aendern sich **selten** — die beiden vorhandenen waren zum
+  Zeitpunkt der Entscheidung mehrere Wochen alt. Das ist kein Datenstrom,
+  sondern eine Handvoll Textdateien.
+- Git laeuft ohnehin zwischen beiden Rechnern und wird ohnehin bedient. Es
+  kostet keine zusaetzliche Software, keinen Hintergrundprozess, keine
+  Administratorrechte.
+- **Konflikte werden sichtbar statt still.** Git meldet, wenn beide Rechner
+  dieselbe Erinnerung geaendert haben; ein Cloud-Client legt eine Datei
+  "(Konflikt)" an, die niemand liest.
+- Projektlokale Skills im Repo loesen das Henne-Ei-Problem fuer `/start` und
+  `/finish` vollstaendig: Sie sind nach dem Klonen da, ohne Einrichtung.
+
+### Konsequenzen
+
+- **`~/.claude/CLAUDE.md` gilt fuer alle Projekte, nicht nur isiHunt.** Sie
+  hier zu versionieren heisst, dass isiHunt die projektuebergreifenden
+  Arbeitsregeln mitverwaltet. Das ist der Preis der Entscheidung und bewusst
+  akzeptiert; bei zwei Rechnern und einem Hauptprojekt gibt es keinen anderen
+  Weg zu einer Einrichtung ohne Handgriffe.
+- **Der Abgleich ist nicht automatisch.** Wer eine Erinnerung dazugewinnt, muss
+  `npm run memory:save` fahren und committen — `/finish` tut das als ersten
+  Schritt, ein Commit von Hand nicht. Wird es vergessen, fehlt die Erinnerung
+  auf dem anderen Rechner. Das ist der Preis dafuer, dass nichts still
+  kaputtgeht.
+- **Aenderungen an der globalen Konfiguration muessen von Hand zurueck** nach
+  `.claude/global/`. Dafuer gibt es absichtlich keinen Automatismus: Ein
+  gewachsenes `~/.claude` ungefragt ins Repo zu schreiben waere gefaehrlicher
+  als der vergessene Handgriff.
+- Vorhandene Dateien in `~/.claude` werden nie ueberschrieben. Auf einem
+  Rechner, auf dem schon gearbeitet wurde, meldet das Setup-Skript stattdessen,
+  dass der Stand abweicht.
+- Die versionierte `settings.json` ist die bereinigte Fassung — ohne die
+  historisch gewachsene `permissions.allow`-Liste, die Pfade zu einem anderen
+  Repository enthaelt und durch `"defaultMode": "bypassPermissions"` ohnehin
+  wirkungslos ist.

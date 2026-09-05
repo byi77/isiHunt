@@ -11,6 +11,39 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Ein zweiter Rechner ist in vier Handgriffen arbeitsfaehig.** Node, Git und
+  VS Code installieren, das Repo nach `C:\Git\isiHunt` klonen, Claude Code
+  anmelden — dann erledigt der Skill **`/start`** den Rest: Git-Hooks,
+  `npm ci`, die Playwright-Browser `chromium` und `webkit`, die globale
+  Claude-Konfiguration, die Erinnerungen und die `.env`. Zum Schluss faehrt er
+  `npm run verify` als Nachweis, dass es wirklich laeuft.
+
+  Dahinter steht `scripts/setup-workstation.mjs` (`npm run setup`). Es ist
+  **wiederholbar** — was schon sitzt, wird nicht angefasst —, weshalb
+  `npm run setup:check` auch als Diagnose taugt, wenn spaeter etwas klemmt.
+  Vorhandene Dateien in `~/.claude` werden nie ueberschrieben: Auf einem
+  Rechner, auf dem schon gearbeitet wurde, waere das ein Datenverlust.
+
+  Die vollstaendige Anleitung steht in `SETUP_NEUER_RECHNER.md`; ihre
+  Checkliste schrumpft dadurch von 17 auf 9 Punkte.
+
+- **Der Skill `/finish` liefert eine Arbeitseinheit vollstaendig aus:**
+  `memory:save` → `verify` → commit → push → `deploy:wait` → Versionsnummer.
+  Er ist erst fertig, wenn der Server die neue Version tatsaechlich
+  ausliefert — ein `git push` allein ist kein Abschluss (`CODE_STYLE.md` 1.9).
+  Ist `verify` rot, bricht er ab, statt zu reparieren.
+
+- **Die Claude-Erinnerungen laufen ueber das Repo statt ueber die Cloud.**
+  `npm run memory:save` / `memory:load` / `memory:check` gleichen
+  `.claude/memory/` mit `~/.claude/projects/<slug>/memory/` ab.
+
+  Ein Cloud-Ordner schied aus: Das Verzeichnis in `~/.claude` ist rund 113 MB
+  gross, davon sind die Erinnerungen 2,5 KB — der Rest sind
+  Sitzungstranskripte, in die Claude waehrend laufender Sitzungen schreibt.
+  Ein Sync-Client wuerde dort Konfliktdateien erzeugen. Das Skript fasst nur
+  `*.md` im `memory/`-Ordner an, propagiert Loeschungen und weigert sich, bei
+  leerem `~/.claude` die versionierten Erinnerungen zu loeschen.
+
 - **Neue Duell-Auswahl.** Das Menue fuehrt jetzt ueber einen einzigen
   `DUELL`-Knopf zu `ONLINE-DUELL` und `VS BOT`. Das Online-Duell oeffnet direkt
   die Bereitschaftslobby fuer Einladungen; die lokalen 2-/3-/4-Spieler-Buttons
