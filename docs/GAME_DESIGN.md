@@ -92,6 +92,18 @@ Talent-Build. Ein Sieg vergibt den zentral konfigurierten Bonus von XP und
 Coins; Niederlagen vergeben keinen Sonderbonus. Die konkreten Werte liegen in
 `src/config/balance-data.json` und werden nicht in der Scene dupliziert.
 
+**Der Bonus wird nur versprochen, wenn er auch gehalten werden kann.** Bei
+einem angemeldeten Spieler bucht ihn der Server; er braucht dafuer eine
+Kennung, die beim Duellstart ausgestellt wird. Kommt diese Kennung nicht
+zustande — Funkloch beim Start, obwohl das Duell trotzdem laeuft —, steht die
+Gutschrift nur lokal und wird vom naechsten Profilabgleich ersetzt. Der
+Ergebnisbildschirm sagt das dann: die Zeile erscheint gedaempft statt in Gold,
+darunter steht **"Nur auf diesem Gerät - nicht im Konto gesichert."**
+
+Ein Spieler **ohne** Konto sieht diesen Hinweis nicht. Bei ihm gibt es keinen
+Serverstand, der die lokale Gutschrift ueberschreiben koennte — sie ist
+dauerhaft, und ein Warnhinweis waere schlicht falsch.
+
 #### ONLINE-DUELL
 
 Der Ablauf ist ein Host-/Teilnehmer-Modell und kein gemeinsamer Bildschirm:

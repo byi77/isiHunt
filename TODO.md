@@ -74,7 +74,7 @@ Für eine Geräte- oder Backendaufgabe zusätzlich:
 | Netzwerk-Duell Phase 1 | 2–4-Spieler-Raum, direkte Einladungen, Talentphase, Startzeit, Live-Stand und Ergebnisvergleich vorhanden | echte Geräteabnahme, 3-/4-Spieler-Lauf und Abbruch-/Reconnect-Matrix |
 | Bestenliste | gemeinsame Casual-Liste und automatischer Eintrag vorhanden | Fairness bei Weltmodifikatoren; Ranked bleibt gesperrt |
 | Debugging und Release | Debug-Report, Versionsanzeige, `verify`, Pre-Push und GitHub-Pages-Deploy vorhanden | Gerätebelege konsequent als Release-Gate verwenden |
-| Supabase-Migrationsstand | produktiv auf Phase 2.42 ausgeführt und per `verify_migration_state.sql` geprüft | weitere SQL-Änderungen wieder mit CLI ausführen und nachweisen |
+| Supabase-Migrationsstand | produktiv auf Phase 2.42 belegt; **2.43 bis 2.50 liegen versioniert vor, sind aber nicht eingespielt** | P0-01a: die acht offenen Phasen ausführen und `schema_version = 50` nachweisen |
 | Native App / Dynamic Island | bewusst noch nicht begonnen | erst nach stabiler Web-Basis und P3-Gate |
 
 ### Neue verbindliche Ausführungsreihenfolge
@@ -83,25 +83,29 @@ Die IDs bleiben stabil, damit Verweise und Git-Historie lesbar bleiben. Die
 folgende Reihenfolge ist die aktuelle Priorisierung; erledigte Punkte werden
 nicht erneut als Arbeit eingeplant:
 
-1. **P0-02:** den tatsächlich ausgelieferten `version.json`-Stand auf iPhone
+1. **P0-01a:** die Migrationen 2.43 bis 2.50 einspielen und
+   `schema_version = 50` nachweisen. Zuerst, weil Phase 2.50 die Serverseite
+   eines belegten Datenverlusts behebt und jede Geräteabnahme sonst gegen
+   einen anderen Serverstand läuft als den versionierten.
+2. **P0-02:** den tatsächlich ausgelieferten `version.json`-Stand auf iPhone
    und iPad mit Profil, Offline-Runs, Boost und Zusammenführung prüfen.
-2. **P0-03:** Netzwerk-Duell auf echten Geräten mit vollständigem Host- und
+3. **P0-03:** Netzwerk-Duell auf echten Geräten mit vollständigem Host- und
    Teilnehmer-Report, 3-/4-Spieler-Lauf sowie sauberem Abbruch testen.
-3. **P0-04:** echten Spielabend ohne `--sim` durchführen und Phase 5, Serien,
+4. **P0-04:** echten Spielabend ohne `--sim` durchführen und Phase 5, Serien,
    XP, Coins, Shop und Lesbarkeit messen.
-4. **P1-02:** Serien-/Kinderregel anhand der Beobachtungen verbindlich
+5. **P1-02:** Serien-/Kinderregel anhand der Beobachtungen verbindlich
    entscheiden und zentral testen.
-5. **P1-03:** XP-Kurve und Bestandsmigration mit realen Profilen bestätigen.
-6. **P1-04:** Coin-Quellen, -Senken und Kaufgeschwindigkeit vermessen; erst
+6. **P1-03:** XP-Kurve und Bestandsmigration mit realen Profilen bestätigen.
+7. **P1-04:** Coin-Quellen, -Senken und Kaufgeschwindigkeit vermessen; erst
    danach Zahlen ändern.
-7. **P1-06:** erste drei Minuten und Onboarding aus den Messdaten verbessern.
-8. **P5-08:** Begriffe, Texte und Content-Validierung zentralisieren.
-9. **P5-11:** Konto-, Lösch-, Export- und Diagnose-Lebenszyklus abschließen.
-10. **P5-12:** austauschbare Soundmodule und lizenzgeprüfte Audio-Assets
+8. **P1-06:** erste drei Minuten und Onboarding aus den Messdaten verbessern.
+9. **P5-08:** Begriffe, Texte und Content-Validierung zentralisieren.
+10. **P5-11:** Konto-, Lösch-, Export- und Diagnose-Lebenszyklus abschließen.
+11. **P5-12:** austauschbare Soundmodule und lizenzgeprüfte Audio-Assets
     vorbereiten und erst danach zusätzliche Audio-Assets integrieren.
-11. **P5-13:** Ego-Modul mit lizenzgeprüften Schiffsdesigns und Aura-
+12. **P5-13:** Ego-Modul mit lizenzgeprüften Schiffsdesigns und Aura-
     Animationen als austauschbare Asset-Module erweitern.
-12. **P4-01 ff.:** soziales Spiel erst nach stabilem Profil, Duell und
+13. **P4-01 ff.:** soziales Spiel erst nach stabilem Profil, Duell und
     Datenschutz-Gate weiter ausbauen.
 
 P1-05 ist technisch umgesetzt und bleibt nur als Teil der manuellen
@@ -242,6 +246,46 @@ ausgeführt; Details stehen in `docs/AUDIT_2026-08-30.md`.
 
 **Abhängigkeiten:** keine. Der Live-Nachweis ist Voraussetzung für Aussagen
 über weitere produktive SQL- oder Mehrgeräte-Abläufe.
+
+### P0-01a — Migrationen 2.43 bis 2.50 einspielen und belegen
+
+- [ ] **Die seit dem Live-Nachweis hinzugekommenen Phasen ausführen.**
+
+Der Live-Nachweis oben deckt Stand `schema_version = 42` ab. Seither sind acht
+Migrationen dazugekommen, die letzte am 2026-09-05:
+
+39. `supabase/phase_2_43_duel_room_leave.sql`
+40. `supabase/phase_2_44_duel_leaderboard.sql`
+41. `supabase/phase_2_45_fix_cosmetic_sync_ambiguity.sql`
+42. `supabase/phase_2_46_duel_result_grace.sql`
+43. `supabase/phase_2_47_bot_victory_bonus.sql`
+44. `supabase/phase_2_48_balance_config_resync.sql`
+45. `supabase/phase_2_49_bot_match_challenge.sql`
+46. `supabase/phase_2_50_bot_match_retention.sql`
+
+**Warum das jetzt drängt:** Phase 2.50 behebt die Serverseite von Befund 3 des
+Reaudits (`docs/AUDIT_2026-09-05_REAUDIT.md`). Solange sie nicht eingespielt
+ist, löscht der Server offene Bot-Match-IDs weiterhin nach einem Tag — ein
+offline gewonnener Bot-Sieg verfällt dann durch bloßen Zeitablauf. Der
+Client-Fix (v0.1.313) verhindert nur, dass die Prämie *lautlos* verloren geht;
+die Entstehungsbedingung beseitigt erst die Migration.
+
+**Prüfen:**
+
+- `npx supabase db query --linked --file supabase/verify_migration_state.sql`
+  meldet `schema_version = 50` ohne Exception.
+- `bot_match_retention_count` und `prune_bot_victory_claims` erscheinen in der
+  Funktionsliste derselben Abfrage.
+- Ein Konto mit mehr als 24 offenen Bot-Matches wird beim Einspielen einmalig
+  auf diese Grenze gebracht (die Migration enthält den Bestandslauf).
+
+**Abnahme:** Datum, Supabase-Projekt, ausgeführte Dateien und das Ergebnis der
+Prüfabfrage notieren — wie bei P0-01. Ohne diesen Nachweis bleibt der
+Serverteil von Reaudit-Befund 3 offen, auch wenn der Client ausgeliefert ist.
+
+**Abhängigkeiten:** P0-01 (Reihenfolge). Die Phasen 2.45 bis 2.50 müssen in
+dieser Reihenfolge laufen; 2.48 verändert den Marker nicht, 2.49 setzt ihn auf
+49 und 2.50 auf 50 (`supabase/README.md`).
 
 ## P0-02 — iPhone-/iPad-Abnahme für Profil und Offline-Sync
 

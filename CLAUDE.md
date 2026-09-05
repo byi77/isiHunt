@@ -201,15 +201,32 @@ src/ui/         theme, textures (prozedural), shipShapes, widgets
   auf). Umbenennungen und Bedeutungswechsel schon.
 - **Texturen sind weiss und werden getintet.** Farbige Assets brechen das
   Seltenheitssystem.
+- **Ein `error` in einer Supabase-Antwort heisst nicht "fachlich abgelehnt".**
+  Das SDK meldet auch Funkloecher als aufgeloeste Antwort mit gesetztem
+  `error` (`TypeError: Failed to fetch`). Wer daraufhin einen Outbox-Eintrag
+  verwirft, verliert ihn genau dann, wenn er wiederholen muesste. Es
+  entscheidet eine Allowlist der bekannten SQL-Meldungen; Unbekanntes gilt als
+  wiederholbar (`docs/ARCHITECTURE.md` 8.3).
+- **Serverseitige Aufraeumfristen und Client-Warteschlangen muessen
+  zusammenpassen.** Eine Frist auf dem Server laesst einen offline erspielten
+  Anspruch durch blossen Zeitablauf verfallen, wenn der Client unbefristete
+  Nachlieferung verspricht. Deshalb begrenzt Phase 2.50 nach Anzahl statt nach
+  Alter (ADR-0024).
 
 ## Testen
 
 Auf einem echten Handy testen, nicht nur im Browser-Emulator. `npm run dev`
 gibt eine Netzwerk-Adresse aus; Handy und PC muessen im selben WLAN sein.
 
-**Automatisiert:** Vitest deckt `ScoreSystem`, `ProgressionSystem` und
-`ChallengeSystem` ab (`npm run test`, Details in `docs/ARCHITECTURE.md` 9.2).
-Neue Logik in `systems/` bekommt Tests.
+**Automatisiert:** Vitest deckt `ScoreSystem`, `ProgressionSystem`,
+`ChallengeSystem`, `ProgressSyncSystem`, `CloudSystem` und `NetworkDuelSystem`
+ab (`npm run test`, Details in `docs/ARCHITECTURE.md` 9.2). Neue Logik in
+`systems/` bekommt Tests.
+
+**Ein neuer Regressionstest wird einmal ohne seinen Fix gefahren.** Bleibt er
+dabei gruen, prueft er nicht, was sein Name behauptet — beim Reaudit vom
+2026-09-05 entstand so eine ganze Playtest-Suite, die wieder entfernt werden
+musste (`docs/ARCHITECTURE.md` 9.3, "Der fuenfte Fehlalarm").
 
 Scenes, Entities und Darstellung deckt der Browser-Playtest ab
 (`docs/ARCHITECTURE.md` 9.3/9.4):
@@ -269,7 +286,7 @@ npx playwright install webkit
 **Was auch das nicht ersetzt:** Touch-Eigenheiten echter Geraete, Game-Feel
 und Bildrate unter Last bleiben Handarbeit auf dem Geraet.
 
-Zwei Fallen beim Testschreiben:
+Fallen beim Testschreiben:
 
 - **Kein Phaser-Import in `systems/`.** Er zieht die Canvas-Erkennung mit und
   laesst die Datei ausserhalb des Browsers gar nicht erst laden.
@@ -279,3 +296,11 @@ Zwei Fallen beim Testschreiben:
   Hooks mit kleingeschriebenem Laufwerksbuchstaben; Vitest fand dadurch seinen
   Runner nicht, obwohl dieselbe Suite in jeder Shell gruen lief
   (`docs/ARCHITECTURE.md` 9.2).
+- **Spies auf `Storage.prototype` im `afterEach` zuruecksetzen**, nicht am
+  Testende. Faellt eine Assertion vorher um, bleibt der Spy stehen und
+  vergiftet jeden folgenden Test derselben Datei — die Folgefehler sehen dann
+  aus wie echte Regressionen an ganz anderer Stelle.
+- **`enqueue`-Funktionen, die selbst einen `flush()` starten**, machen
+  "zwei Eintraege in einem Durchlauf" untestbar: `flush()` fuehrt parallele
+  Auftraege zusammen. Wer die Schleife pruefen will, schreibt direkt in den
+  Speicher.

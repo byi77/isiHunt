@@ -275,6 +275,8 @@ Ein Feature ist fertig, wenn **alle** Punkte zutreffen:
 
 - [ ] `npm run verify` ist gruen (Typecheck, Lint, Formatierung, Tests, Build)
 - [ ] Neue Logik in `systems/` hat Tests (siehe ARCHITECTURE.md 9.2)
+- [ ] Jeder neue Regressionstest wurde einmal **ohne** seinen Fix gefahren und
+      war dabei rot (Reviewfrage 9)
 - [ ] `npm run test:scope -- --run` gruen — die Stufe richtet sich nach den
       geaenderten Dateien (ARCHITECTURE.md 9.3)
 - [ ] Auf einem echten Handy getestet (nicht nur im Browser-Emulator) —
@@ -296,3 +298,44 @@ Was beim Durchsehen eines Diffs zuerst gefragt wird:
 6. Wurde die Doku mitgezogen?
 7. Steht hinter jeder Zahl und jeder Begruendung eine Quelle — oder ist sie
    geraten?
+8. Wird irgendwo ein Eintrag **verworfen**, obwohl der Fehler voruebergehend
+   sein koennte? (Siehe unten.)
+9. Ist ein neuer Test ohne den zugehoerigen Fix tatsaechlich rot?
+
+### Zu Frage 8: Fehler klassifizieren, nicht raten
+
+Beide Audits vom 2026-09-05 fanden denselben Fehler in vier Varianten: Ein
+wartender Eintrag — ein Duellergebnis, ein Lauf, ein Bot-Sieg — wurde
+weggeworfen, weil ein Fehlerobjekt vorlag. Ob dieser Fehler dauerhaft war,
+hatte niemand geprueft.
+
+Die Falle ist konkret: **Das Supabase/PostgREST-SDK meldet auch reine
+Transportfehler als aufgeloeste Antwort mit gesetztem `error`.** Ein Funkloch
+kommt als `TypeError: Failed to fetch` an, nicht als abgelehnte Promise. Wer
+`if (response.error) verwerfen()` schreibt, verwirft also genau dann, wenn er
+wiederholen muesste.
+
+Die Regel daraus:
+
+- **Eine Allowlist der bekannten fachlichen Ablehnungen entscheidet**, nicht
+  die blosse Existenz eines Fehlers. Unbekanntes gilt als wiederholbar.
+- **Zeitabhaengiges ist nie dauerhaft** — Cooldowns nicht, und Zustandsfehler
+  auch nicht, wenn ein Rennen sie ausloesen kann.
+- **Ein faelschlich behaltener Eintrag kostet einen Retry, ein faelschlich
+  verworfener kostet den Fortschritt.** Im Zweifel behalten.
+- **Dauerhaft Abgelehntes wird beiseitegelegt, nicht geloescht** — und es darf
+  die Warteschlange nicht aufhalten, sonst kommt kein spaeterer Eintrag mehr
+  durch.
+
+Die Ausfuehrung mit allen Fundstellen steht in ARCHITECTURE.md 8.3.
+
+### Zu Frage 9: Gruen beweist nichts
+
+Ein Test, der ohne den Fix ebenfalls gruen ist, deckt nichts ab — er beendet
+nur die Suche. Beim Reaudit entstand so eine ganze Playtest-Suite, die die
+Fehlerbedingung gar nicht herstellen konnte und wieder entfernt wurde
+(ARCHITECTURE.md 9.3, "Der fuenfte Fehlalarm").
+
+Deshalb: **Fix testweise zuruecknehmen, Test muss rot werden, Fix
+wiederherstellen.** Das kostet zwei Minuten und ist der einzige Beleg, dass
+ein Test das prueft, was sein Name behauptet.

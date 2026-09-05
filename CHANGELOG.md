@@ -11,9 +11,59 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Alle sechs Befunde des Reaudits vom 2026-09-05** (`docs/AUDIT_2026-09-05_REAUDIT.md`).
+  Gemeinsames Muster aller sechs: ein Eintrag wurde verworfen oder blockierte
+  die Warteschlange, obwohl der Fehler voruebergehend war.
+
+  - **Ein Duellergebnis ueberlebt jetzt ein Funkloch.** Das Supabase-SDK meldet
+    auch Transportfehler als aufgeloeste Antwort mit gesetztem `error` — ein
+    `TypeError: Failed to fetch` galt deshalb als fachliche Ablehnung, und das
+    Ergebnis wurde nach einem einzigen Versuch geloescht. Ohne alle
+    Teilnehmerergebnisse wertet die Rangliste das Match nie. Jetzt entscheidet
+    eine Allowlist der tatsaechlichen SQL-Meldungen.
+  - **Die Outbox-Migration verliert keine Runs mehr.** Der alte Array-Schluessel
+    wurde auch dann geloescht, wenn die Kopie in Einzelschluessel scheiterte —
+    bei vollem `localStorage` genau der wahrscheinliche Fall.
+  - **Ein dauerhaft abgelehnter Bot-Sieg blockiert nichts mehr.** Er wandert in
+    Quarantaene, statt alle folgenden Praemien, den Tagesbonus und die
+    Abmeldung aufzuhalten.
+  - **Der Bot-Duellstart wird wiederholt.** Schlaegt er trotzdem fehl, benennt
+    der Ergebnisbildschirm die Praemie als "Nur auf diesem Gerät" — statt eine
+    gesicherte Gutschrift zu versprechen, die der naechste Profilabgleich
+    loescht. Ein abgemeldeter Spieler sieht diesen Hinweis nicht: seine lokale
+    Gutschrift ist dauerhaft.
+  - **Ein gesperrter `localStorage` haelt den Ergebnisbildschirm nicht mehr
+    auf.** Bei blockierten Cookies wirft schon die Schluessel-Aufzaehlung; der
+    Szenenwechsel haengt jetzt an keiner Persistenz mehr.
+  - **Ein voruebergehender Tagesbonus-Fehler plant wieder einen Retry.** Zuvor
+    blieb der Bonus bis zum naechsten zufaelligen Ausloeser liegen und verfiel
+    nach Ablauf des Datumsfensters.
+
+- **Offene Bot-Matches verfallen serverseitig nicht mehr durch Zeitablauf**
+  (`supabase/phase_2_50_bot_match_retention.sql`, ADR-0024). Der Server
+  loeschte offene Match-IDs nach einem Tag, die Client-Outbox versprach
+  unbefristete Nachlieferung. Wer offline gewann und ueber einen Tag spaeter
+  wieder spielte, loeschte mit dem eigenen Duellstart seinen eigenen Anspruch.
+  Die Grenze ist jetzt eine **Anzahl** (24 offene Matches je Konto) statt einer
+  Frist: eine Frist hat immer ein Fenster, das ein Offline-Geraet verpassen
+  kann, eine Anzahl hat keines.
+
+  Nebenbei aufgeraeumt: `bot_victory_claims` wuchs bisher unbegrenzt und wird
+  jetzt auf dieselbe Grenze gebracht.
+
 - Duell-Ergebnisse werden persistent nachgesendet, Fortschritts-Outboxes sind
   zwischen Tabs verlustfrei, Bot-Siege brauchen eine serverseitige Challenge,
   und Migrations-/Performance-Gates pruefen den aktuellen Stand.
+
+### Geaendert
+
+- **Das SQL-Vertragsgate haelt jetzt auch eine Entscheidung fest**, nicht nur
+  Fehlermuster: Taucht in Phase 2.50 wieder eine Altersgrenze
+  (`started_at < now() - interval`) auf, bricht `npm run sql:check` ab. Ein
+  ADR allein wird beim naechsten Refactoring nicht gelesen.
+- Die Testsuite waechst von 552 auf 576 Tests. Neu sind
+  `CloudSystem.botMatch.test.ts` und `ChallengeSystem.botReward.test.ts` —
+  `start_bot_match` war zuvor von keinem einzigen Test beruehrt.
 
 ### Hinzugefuegt
 

@@ -152,9 +152,11 @@ isiHunt/
 │   │   ├── ChallengeSystem.ts  Duell-Zustand: Seed, Talent-Drafts, Punktstaende, Sieger
 │   │   ├── TalentAllocationSystem.ts  Wiederverwendbare Plus-/Minus-Rangrechnung
 │   │   ├── ChallengeSystem.test.ts
+│   │   ├── ChallengeSystem.botReward.test.ts Bot-Praemie je nach Anmeldestatus
 │   │   ├── CloudSystem.ts      Bestenliste und Spielstand ueber Supabase
 │   │   ├── CloudSystem.test.ts Backend nicht eingerichtet
 │   │   ├── CloudSystem.configured.test.ts  eingerichtet: Anmelde- und Netzfehler
+│   │   ├── CloudSystem.botMatch.test.ts  Wiederholung von start_bot_match
 │   │   ├── NetworkDuelSystem.ts Netzwerk-Duell: Lobby, Einladungen, Raum, Talentphase, Realtime
 │   │   ├── NetworkDuelSystem.test.ts
 │   │   ├── SpawnSystem.ts      Wann und wo etwas erscheint
@@ -688,6 +690,62 @@ Login an. Der spätere native Capacitor-/TestFlight-Weg kann dieselbe
 Profil-ID verwenden; Apple-Login ist dabei eine spätere Ergänzung, nicht die
 Voraussetzung für die erste Web-Version.
 
+### 8.3 Die Outbox: was verworfen werden darf und was nicht
+
+Zwischen Rundenende und bestaetigter Serverbuchung liegt eine lokale
+Warteschlange — fuer Laufereignisse (`isihunt.progress-events.v2.<konto>`),
+Bot-Siege (`isihunt.bot-victories.v1.<konto>`) und Duellergebnisse
+(`isihunt.duel-results.v1.<konto>`). Beide Audits vom 2026-09-05 haben dort
+Fehler gefunden, und alle folgten demselben Muster: **Ein Eintrag wurde
+verworfen, obwohl der Fehler voruebergehend war.**
+
+Daraus sind drei Regeln geworden.
+
+**1. Die Klassifikation ist eine Allowlist, keine Heuristik.** Nur namentlich
+bekannte fachliche Ablehnungen duerfen einen Eintrag austragen
+(`PERMANENT_REJECTIONS`, `PERMANENT_DUEL_RESULT_REJECTIONS`,
+`PERMANENT_BOT_VICTORY_REJECTIONS`). Jede unbekannte Meldung gilt als
+wiederholbar.
+
+Der Grund ist eine Eigenheit des Supabase/PostgREST-SDK: **Es meldet auch
+reine Transportfehler als aufgeloeste Antwort mit gesetztem `error`.** Ein
+Funkloch kommt als `TypeError: Failed to fetch` an, nicht als abgelehnte
+Promise. Wer `response.error` als "der Server hat inhaltlich abgelehnt" liest,
+verwirft genau dann, wenn er wiederholen muesste. Genau daran ging im Reaudit
+ein Duellergebnis unwiederbringlich verloren.
+
+Die Faustregel: **Ein faelschlich behaltener Eintrag kostet einen Retry, ein
+faelschlich verworfener kostet den Fortschritt.** Im Zweifel behalten.
+
+Zeitabhaengige Antworten sind deshalb nie permanent — Cooldowns
+(`Bot-Duell noch nicht beendet`) ebenso wenig wie Zustandsfehler
+(`Duell noch nicht gestartet`, das ein Rundenende ausloesen kann, welches den
+noch nicht committeten Raumstart ueberholt).
+
+**2. Eine permanente Ablehnung wird quarantaeniert, nicht geloescht — und sie
+haelt die Schlange nicht auf.** Bliebe sie vorn liegen, kaeme kein einziger
+spaeterer Eintrag mehr durch, und `hasPendingData()` sperrte dauerhaft die
+Abmeldung. Sie wandert deshalb in einen `.rejected.`-Schluessel: fuer den
+Server wertlos, fuer die Fehlersuche die einzige Spur.
+
+**3. Jede Warteschlange braucht ein Ende.** Auch ohne permanente Ablehnung
+muss sie aufgeben koennen — sonst blockiert ein Eintrag, dessen Claim _immer_
+voruebergehend scheitert (geloeschtes Konto, defektes Profil), das Konto fuer
+immer. Bei den Bot-Siegen zaehlt `BOT_VICTORY_MAX_FAILED_ATTEMPTS`
+aufeinanderfolgende erfolglose Durchlaeufe; ein Erfolg setzt zurueck.
+
+**Was der Server dazu beitraegt.** Serverseitige Aufraeumregeln duerfen keine
+Frist verwenden, wenn der Client unbefristete Nachlieferung verspricht — sonst
+verfaellt ein offline erspielter Anspruch durch blossen Zeitablauf. Phase 2.50
+begrenzt offene Bot-Matches deshalb nach Anzahl (ADR-0024). Wer eine
+Aufraeumregel schreibt, prueft zuerst, welche Zusage die Gegenseite macht.
+
+**Und ein Speicherfehler ist kein Grund, den Bildschirm haengen zu lassen.**
+Ein Browser mit blockierten Cookies laesst schon den Zugriff auf
+`window.localStorage` mit `SecurityError` scheitern. Persistenz laeuft deshalb
+in `GameScene.endRun()` in einem eigenen `try`, und der Wechsel zum
+Ergebnisbildschirm steht **ausserhalb** davon.
+
 ### Die GRANT-Falle
 
 Supabase-Tabellen brauchen **zwei** Ebenen, die man leicht verwechselt:
@@ -876,6 +934,8 @@ genau der ist die Stelle, an der Tests unbemerkt voneinander abhaengig werden.
 | `CloudSystem.configured.test.ts`        | "wirft nie" **mit** Backend: Anmelde-Guard und echter Netzausfall |
 | `serviceWorker.test.ts`                 | Offline-Shell und Updatepruefung (siehe unten)                    |
 | `NetworkDuelSystem.resultRetry.test.ts` | Wiederholung des Duellergebnisses bei Transportfehlern            |
+| `CloudSystem.botMatch.test.ts`          | Wiederholung von `start_bot_match` samt Abbruch bei Ablehnung     |
+| `ChallengeSystem.botReward.test.ts`     | Bot-Siegpraemie je nach Anmeldestatus und Match-ID                |
 
 **Der Service Worker wird als Quelltext getestet.** `serviceWorker.test.ts`
 laedt `scripts/sw-template.txt` mit denselben Platzhaltern, die
@@ -890,6 +950,26 @@ komplett ungetestet — zwei Fehler standen dort direkt nebeneinander.
 `@/config/backend` fest auf "nicht konfiguriert", damit kein Test versehentlich
 gegen die Produktionsdatenbank spricht. Der Retry-Test braucht das Gegenteil,
 naemlich einen konfigurierten Doppelgaenger, der Fehlversuche zaehlt.
+
+Aus demselben Grund gibt es seit dem Reaudit vom 2026-09-05 zwei weitere
+eigenstaendige Dateien: `CloudSystem.botMatch.test.ts` braucht einen zaehlbaren
+RPC (beide vorhandenen CloudSystem-Suiten lassen jeden Aufruf am echten
+Netzfehler scheitern), und `ChallengeSystem.botReward.test.ts` braucht einen
+steuerbaren Anmeldestatus (die vorhandene Suite laedt `AuthSystem` bewusst
+ungemockt). **`start_bot_match` war bis dahin von keinem einzigen Test
+beruehrt** — das war die eigentliche Luecke hinter dem Befund.
+
+**Zwei Fallen, die beim Reaudit Zeit gekostet haben:**
+
+1. **Ein Storage-Spy muss im `afterEach` zurueckgesetzt werden, nicht am
+   Testende.** Faellt eine Assertion vorher um, bleibt der Spy stehen und
+   vergiftet jeden folgenden Test derselben Datei. Die Folgefehler sehen dann
+   aus wie echte Regressionen an ganz anderer Stelle.
+2. **Ein `enqueue`-Aufruf, der selbst einen `flush()` startet, macht
+   "zwei Eintraege in einem Durchlauf" untestbar.** `flush()` fuehrt parallele
+   Auftraege zusammen; der zweite Eintrag landet dann im bereits laufenden
+   Promise. Wer die Schleife selbst pruefen will, schreibt die Eintraege
+   direkt in den Speicher.
 
 ### Statische Gates neben den Tests
 
@@ -920,6 +1000,21 @@ Funktionsrumpf, und zwar nur in der **jeweils letzten** Definition einer
 Funktion: Migrationen sind ein Verlauf, aeltere Dateien duerfen den Fehler
 historisch enthalten. Ein echter Integrationstest gegen PostgreSQL bleibt das
 nicht — er ersetzt nur die billigste Haelfte davon.
+
+**Seit dem Reaudit vom 2026-09-05 haelt `sql:check` ausserdem eine
+Entscheidung fest.** Phase 2.50 begrenzt offene Bot-Matches nach _Anzahl_,
+nicht nach Alter (ADR-0024). Taucht in dieser Datei wieder ein
+`started_at < now() - interval` auf, bricht das Gate ab. Das ist ein anderer
+Gate-Typ als die uebrigen: keine Fehlersuche, sondern eine **festgeschriebene
+Architekturentscheidung**. Eine Altersgrenze laesst einen offline gewonnenen
+Bot-Sieg durch blossen Zeitablauf verfallen — der Fehler ist verlockend, weil
+er wie eine harmlose Aufraeumregel aussieht, und ohne diese Regel kaeme er beim
+naechsten Anlass zurueck. Gegengeprueft: mit wieder eingebauter Altersgrenze
+liefert `node scripts/check-sql-contract.mjs` Exit-Code 1.
+
+Wo eine Entscheidung teuer erkauft und leicht rueckgaengig zu machen ist,
+gehoert sie so in ein Gate — ein ADR allein wird beim naechsten Refactoring
+nicht gelesen.
 
 **`scene:guards`** schliesst eine Luecke aus dem Audit vom 2026-08-23: Waehrend
 eines Netzaufrufs bleibt der Zurueck-Knopf bedienbar. Verlaesst der Spieler die
@@ -1126,6 +1221,37 @@ Daraus der Helfer `switchScene()`, den alle Suiten benutzen: **Ein Test darf
 Scenes nur so wechseln, wie das Spiel es tut.** Sonst prueft er einen Zustand,
 den es im Spiel nie gibt. Der Pruefschritt selbst ist geblieben und gruen — er
 faengt jetzt einen echten Regress, falls das Aufraeumen einmal ausfaellt.
+
+#### Der fuenfte: eine Suite, die den Fehler gar nicht ausloesen konnte
+
+Beim Reaudit vom 2026-09-05 entstand eine achte Suite `storage`. Sie sollte
+belegen, dass der Ergebnisbildschirm auch bei gesperrtem `localStorage`
+erscheint — sie sperrte ihn nach dem Rundenstart per `Object.defineProperty`
+und wartete auf den Szenenwechsel.
+
+Sie lief gruen. **Und sie blieb gruen, als der Fix testweise zurueckgenommen
+wurde.** Damit war sie wertlos und wurde wieder entfernt.
+
+Der Grund: `ProgressSyncSystem.enqueueRun()` prueft `AuthSystem.isSignedIn()`
+in seiner **ersten Zeile**, also vor jedem Speicherzugriff. Der Playtest laeuft
+ohne Konto — die fehlerausloesende Zeile wird nie erreicht. Ein angemeldeter
+Zustand liesse sich nur ueber eine Testbruecke im Produktivcode faelschen,
+also genau die Konstruktion, die oben schon einmal zu einem jahrelang gruenen
+Scheintest gefuehrt hat.
+
+Zwei Lehren:
+
+1. **Bevor eine Suite gebaut wird, gehoert geprueft, ob sie die Fehler-
+   bedingung ueberhaupt herstellen kann.** Sonst entsteht Abdeckung, die
+   keine ist — und die schlimmer ist als eine offen benannte Luecke, weil sie
+   die Suche beendet.
+2. **Eine neue Suite ist erst fertig, wenn sie ohne den Fix rot ist.** Gruen
+   allein beweist nichts.
+
+Die Luecke ist damit offen und benannt: Der Szenenwechsel bei gesperrtem
+Speicher **und** angemeldetem Konto bleibt aus der Aufrufreihenfolge
+abgeleitet. Schliessen laesst er sich nur auf einem echten Geraet mit
+blockierten Cookies.
 
 ### 9.4 iOS: Engine und Mindestversion
 
