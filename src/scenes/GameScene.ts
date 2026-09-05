@@ -717,7 +717,7 @@ export class GameScene extends Phaser.Scene {
         // gebucht werden: sonst loescht sie der naechste Profilabgleich wieder
         // (AUDIT_2026-09-05, Befund 6).
         const reward = ChallengeSystem.awardBotVictory();
-        if (reward) ProgressSyncSystem.enqueueBotVictory(reward.matchId);
+        if (reward?.matchId) ProgressSyncSystem.enqueueBotVictory(reward.matchId);
       }
       if (this.mode === 'daily') {
         const progression = ProgressionSystem.applyRun(stats);

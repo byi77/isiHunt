@@ -30,6 +30,7 @@ import * as DebugSystem from '@/systems/DebugSystem';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
+import * as NetworkDuelSystem from '@/systems/NetworkDuelSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
 import { decideSyncGate, hasVisibleChange } from '@/systems/SyncGateSystem';
@@ -364,6 +365,7 @@ export class MenuScene extends Phaser.Scene {
       // lesen. Ein Remote-Stand wird nur übernommen, wenn er weiter ist; eine
       // noch nicht gesendete Outbox bleibt dadurch erhalten.
       await ProgressSyncSystem.flush();
+      await NetworkDuelSystem.flushPendingRoundResults();
       // Alte anonyme Ranglisteneintraege werden beim Menuebesuch mit dem
       // Loginprofil zusammengefuehrt, damit ein sichtbarer Name nicht doppelt
       // auftaucht. Der vorhandene Profilstand bleibt dabei unveraendert.

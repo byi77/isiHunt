@@ -31,7 +31,9 @@ import {
 import { getWorld } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
+import * as AuthSystem from '@/systems/AuthSystem';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
+import * as CloudSystem from '@/systems/CloudSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { Depth } from '@/ui/depth';
 import { createTalentDraftView, type TalentDraftView } from '@/ui/talentDraft';
@@ -451,13 +453,32 @@ export class ChallengeScene extends Phaser.Scene {
       GAME_WIDTH / 2,
       GAME_HEIGHT - 250,
       'REMATCH',
-      () => {
-        ChallengeSystem.rematch();
-        this.scene.restart();
-      },
+      () => void this.startRematch(),
       { width: 460, accent: world.accent, fontSize: FontSize.large },
     );
     this.buildBackToMenu('ZUM MENÜ');
+  }
+
+  private async startRematch(): Promise<void> {
+    const current = ChallengeSystem.getState();
+    if (!current) return;
+    let botMatchId: string | undefined;
+    if (current.kind === 'bot' && AuthSystem.isSignedIn()) {
+      const started = await CloudSystem.startBotMatch();
+      if (started.ok) botMatchId = started.value;
+    }
+    if (!this.scene.isActive()) return;
+    if (current.kind === 'bot') {
+      ChallengeSystem.startBot(
+        current.worldId,
+        current.botDifficulty,
+        current.duelTalentDrafts,
+        botMatchId,
+      );
+    } else {
+      ChallengeSystem.rematch();
+    }
+    this.scene.restart();
   }
 
   // --- Gemeinsame Bausteine ---------------------------------------------------

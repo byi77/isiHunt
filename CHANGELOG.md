@@ -9,6 +9,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Behoben
+
+- Duell-Ergebnisse werden persistent nachgesendet, Fortschritts-Outboxes sind
+  zwischen Tabs verlustfrei, Bot-Siege brauchen eine serverseitige Challenge,
+  und Migrations-/Performance-Gates pruefen den aktuellen Stand.
+
 ### Hinzugefuegt
 
 - **Ein zweiter Rechner ist in wenigen Handgriffen arbeitsfaehig.** Node, Git

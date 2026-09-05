@@ -237,6 +237,7 @@ export function startBot(
   worldId: string,
   difficulty: BotDifficulty = CHALLENGE_BOT_DEFAULT_DIFFICULTY,
   suggestedDrafts?: DuelTalentDrafts,
+  botMatchId?: string,
 ): ChallengeState {
   state = {
     seed: createSeed(),
@@ -244,6 +245,7 @@ export function startBot(
     rounds: [],
     kind: 'bot',
     botDifficulty: difficulty,
+    botMatchId,
     playerCount: CHALLENGE_DEFAULT_PLAYER_COUNT,
     duelTalentDrafts: copyDuelTalentDrafts(suggestedDrafts, CHALLENGE_DEFAULT_PLAYER_COUNT),
   };
@@ -404,6 +406,7 @@ export function rematch(): ChallengeState {
       state.worldId,
       state.botDifficulty ?? CHALLENGE_BOT_DEFAULT_DIFFICULTY,
       state.duelTalentDrafts,
+      state.botMatchId,
     );
   }
   if (state?.kind === 'duel-online') {
@@ -469,20 +472,7 @@ export interface BotVictoryReward {
    * Der Server erkennt ueber sie einen wiederholten Aufruf als denselben Sieg
    * und bucht nicht doppelt (AUDIT_2026-09-05, Befund 6).
    */
-  matchId: string;
-}
-
-/**
- * Kennung fuer genau ein Bot-Duell.
- *
- * Dieselbe Erzeugung wie fuer Laufereignisse in `ProgressSyncSystem` - der
- * Server erwartet eine UUID-foermige ID.
- */
-function createMatchId(): string {
-  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
+  matchId?: string;
 }
 
 /** Gutschrift des Bot-Siegbonus, exakt einmal pro abgeschlossenem Duell. */
@@ -498,7 +488,7 @@ export function awardBotVictory(): BotVictoryReward | null {
   state.botVictoryReward = {
     coins: progression.coinsGained,
     xp: progression.xpGained,
-    matchId: createMatchId(),
+    ...(state.botMatchId ? { matchId: state.botMatchId } : {}),
   };
   return { ...state.botVictoryReward };
 }

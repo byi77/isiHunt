@@ -12,6 +12,7 @@ const LEGACY_OUTBOX_KEY = 'isihunt.progress-events';
 const LEGACY_OUTBOX_QUARANTINE_KEY = 'isihunt.progress-events.unbound.v1';
 const INVALID_OUTBOX_KEY_PREFIX = 'isihunt.progress-events.invalid.v1.';
 const REJECTED_OUTBOX_KEY_PREFIX = 'isihunt.progress-events.rejected.v1.';
+const EVENT_OUTBOX_KEY_SEPARATOR = '.event.';
 const BOT_VICTORY_KEY_PREFIX = 'isihunt.bot-victories.v1.';
 /** Mehr als ein paar unbestaetigte Bot-Siege deuten auf einen Defekt hin. */
 const BOT_VICTORY_MAX_PENDING = 16;
@@ -20,6 +21,17 @@ const OUTBOX_MAX_BYTES = 256 * 1024;
 let flushPromise: Promise<void> | null = null;
 let retryTimer: ReturnType<typeof setTimeout> | null = null;
 let retryAttempt = 0;
+let lastQueuedAt = 0;
+
+interface StoredProgressEvent {
+  event: ProgressEvent;
+  queuedAt: number;
+}
+
+function nextQueuedAt(): number {
+  lastQueuedAt = Math.max(Date.now(), lastQueuedAt + 1);
+  return lastQueuedAt;
+}
 
 /**
  * Bricht eine laufende Wiederholungskette ab.
@@ -61,6 +73,14 @@ function createEventId(): string {
 
 function accountOutboxKey(accountId: string): string {
   return `${OUTBOX_KEY_PREFIX}${accountId}`;
+}
+
+function eventOutboxPrefix(accountId: string): string {
+  return `${accountOutboxKey(accountId)}${EVENT_OUTBOX_KEY_SEPARATOR}`;
+}
+
+function eventOutboxKey(accountId: string, eventId: string): string {
+  return `${eventOutboxPrefix(accountId)}${eventId}`;
 }
 
 function invalidOutboxKey(accountId: string): string {
@@ -266,45 +286,101 @@ function quarantineRejectedEvents(accountId: string, events: ProgressEvent[]): v
   }
 }
 
-function readOutbox(accountId: string | null): ProgressEvent[] {
-  quarantineLegacyOutbox();
-  if (!accountId) return [];
-  try {
-    const raw = window.localStorage.getItem(accountOutboxKey(accountId));
-    if (!raw) return [];
-    const parsed: unknown = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    const valid = parsed.filter(isProgressEvent);
-    if (valid.length !== parsed.length) {
-      quarantineInvalidEvents(
-        accountId,
-        parsed.filter((event) => !isProgressEvent(event)),
-      );
-      writeOutbox(accountId, valid);
-    }
-    return valid;
-  } catch {
-    return [];
+function storageKeysWithPrefix(prefix: string): string[] {
+  const keys: string[] = [];
+  for (let index = 0; index < window.localStorage.length; index += 1) {
+    const key = window.localStorage.key(index);
+    if (key?.startsWith(prefix)) keys.push(key);
   }
+  return keys;
 }
 
-function writeOutbox(accountId: string, events: ProgressEvent[]): boolean {
-  if (events.length > OUTBOX_MAX_EVENTS) {
-    console.warn('[ProgressSyncSystem] Outbox-Limit erreicht.');
-    return false;
-  }
+function storeProgressEvent(
+  accountId: string,
+  event: ProgressEvent,
+  queuedAt = Date.now(),
+): boolean {
   try {
-    const serialized = JSON.stringify(events);
+    const serialized = JSON.stringify({ event, queuedAt } satisfies StoredProgressEvent);
     if (serialized.length > OUTBOX_MAX_BYTES) {
-      console.warn('[ProgressSyncSystem] Outbox zu gross.');
+      console.warn('[ProgressSyncSystem] Outbox-Ereignis zu gross.');
       return false;
     }
-    window.localStorage.setItem(accountOutboxKey(accountId), serialized);
+    window.localStorage.setItem(eventOutboxKey(accountId, event.eventId), serialized);
     return true;
   } catch (error) {
     console.warn('[ProgressSyncSystem] Outbox nicht speicherbar.', error);
     return false;
   }
+}
+
+/**
+ * Migriert die alte Array-Outbox einmalig in einzelne Schluessel.
+ *
+ * Ein Array erzwingt bei zwei Tabs ein Read-Modify-Write-Rennen: ein Tab kann
+ * waehrend des Schreibens des anderen einen neuen Run verlieren. Einzelne
+ * Event-Schluessel werden dagegen nur angehaengt bzw. geloescht; ein anderer
+ * Tab kann keinen bestehenden Eintrag mehr ueberschreiben.
+ */
+function migrateArrayOutbox(accountId: string): void {
+  try {
+    const raw = window.localStorage.getItem(accountOutboxKey(accountId));
+    if (!raw) return;
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) {
+      window.localStorage.removeItem(accountOutboxKey(accountId));
+      return;
+    }
+    const valid = parsed.filter(isProgressEvent);
+    const invalid = parsed.filter((event) => !isProgressEvent(event));
+    if (invalid.length > 0) quarantineInvalidEvents(accountId, invalid);
+    valid.forEach((event) => storeProgressEvent(accountId, event, nextQueuedAt()));
+    window.localStorage.removeItem(accountOutboxKey(accountId));
+  } catch {
+    // Ein defekter oder nicht beschreibbarer Speicher darf den Spielfluss nicht
+    // blockieren; der naechste Zugriff versucht die Migration erneut.
+  }
+}
+
+function readOutbox(accountId: string | null): ProgressEvent[] {
+  quarantineLegacyOutbox();
+  if (!accountId) return [];
+  migrateArrayOutbox(accountId);
+
+  const entries: Array<{ event: ProgressEvent; queuedAt: number; key: string }> = [];
+  for (const key of storageKeysWithPrefix(eventOutboxPrefix(accountId))) {
+    try {
+      const parsed: unknown = JSON.parse(window.localStorage.getItem(key) ?? 'null');
+      const value = parsed as Partial<StoredProgressEvent>;
+      if (
+        !value ||
+        !isProgressEvent(value.event) ||
+        typeof value.queuedAt !== 'number' ||
+        !Number.isFinite(value.queuedAt)
+      ) {
+        window.localStorage.removeItem(key);
+        continue;
+      }
+      entries.push({ event: value.event, queuedAt: value.queuedAt, key });
+    } catch {
+      window.localStorage.removeItem(key);
+    }
+  }
+
+  const seen = new Set<string>();
+  return entries
+    .sort(
+      (left, right) =>
+        left.queuedAt - right.queuedAt ||
+        left.event.createdAt.localeCompare(right.event.createdAt) ||
+        left.key.localeCompare(right.key),
+    )
+    .map(({ event }) => event)
+    .filter((event) => {
+      if (seen.has(event.eventId)) return false;
+      seen.add(event.eventId);
+      return true;
+    });
 }
 
 /** Legt einen Run lokal ab, bevor der Netzwerkversuch startet. */
@@ -338,7 +414,11 @@ export function enqueueRun(
     console.warn('[ProgressSyncSystem] Neuer Run wegen voller Outbox verworfen.');
     return null;
   }
-  return writeOutbox(accountId, [...pending, event]) ? eventId : null;
+  if (JSON.stringify([...pending, event]).length > OUTBOX_MAX_BYTES) {
+    console.warn('[ProgressSyncSystem] Neuer Run wegen zu grosser Outbox verworfen.');
+    return null;
+  }
+  return storeProgressEvent(accountId, event, nextQueuedAt()) ? eventId : null;
 }
 
 /**
@@ -350,9 +430,15 @@ export function enqueueRun(
  * (AUDIT_2026-09-05, Befund 3).
  */
 function dropSettledEvents(accountId: string, settledIds: Set<string>): ProgressEvent[] {
-  const current = readOutbox(accountId).filter((event) => !settledIds.has(event.eventId));
-  writeOutbox(accountId, current);
-  return current;
+  const current = readOutbox(accountId);
+  for (const eventId of settledIds) {
+    try {
+      window.localStorage.removeItem(eventOutboxKey(accountId, eventId));
+    } catch {
+      // Ein Speicherfehler laesst den Eintrag fuer den naechsten Versuch liegen.
+    }
+  }
+  return current.filter((event) => !settledIds.has(event.eventId));
 }
 
 /** Überträgt wartende Runs in Reihenfolge; Fehler bleiben in der Outbox. */
@@ -497,7 +583,18 @@ export function flush(): Promise<void> {
 export function clearOutbox(): void {
   const accountId = AuthSystem.currentUserId();
   if (accountId) {
-    writeOutbox(accountId, []);
+    for (const key of storageKeysWithPrefix(eventOutboxPrefix(accountId))) {
+      try {
+        window.localStorage.removeItem(key);
+      } catch {
+        // Ein Speicherfehler darf den Wartungs-Reset nicht zum Absturz bringen.
+      }
+    }
+    try {
+      window.localStorage.removeItem(accountOutboxKey(accountId));
+    } catch {
+      // Die alte Array-Outbox wird beim naechsten Zugriff erneut migriert.
+    }
     // Auch die Bot-Siege: der Server hat den Fortschritt gerade geloescht,
     // eine spaetere Gutschrift wuerde den Reset teilweise rueckgaengig machen.
     writeBotVictories(accountId, []);

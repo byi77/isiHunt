@@ -155,6 +155,8 @@ export interface ChallengeState {
   /** Spielart: klassisches Duell, Tageslauf, Bot-Gegner oder Netzwerk-Duell. */
   kind?: ChallengeKind;
   botDifficulty?: BotDifficulty;
+  /** Vom Server ausgestellte Kennung eines gestarteten Bot-Duells. */
+  botMatchId?: string;
   dailyKey?: string;
   dailyCompleted?: boolean;
   dailyRewardCoins?: number;
@@ -169,7 +171,8 @@ export interface ChallengeState {
     coins: number;
     xp: number;
     /** Kennung für die serverseitige Gutschrift; verhindert Doppelbuchung. */
-    matchId: string;
+    /** Serverkennung; fehlt bei einem offline gestarteten Gastduell. */
+    matchId?: string;
   };
   /** Serverseitige Generation des Netzwerk-Duells, wichtig fuer Rematches. */
   duelMatchNumber?: number;

@@ -46,9 +46,104 @@ import {
 } from '@/config/onlineDuel';
 import * as CloudSystem from '@/systems/CloudSystem';
 import type { CloudResult } from '@/systems/CloudSystem';
+import * as AuthSystem from '@/systems/AuthSystem';
 import * as DebugSystem from '@/systems/DebugSystem';
 
 const DUEL_ROOM_CODE_LENGTH = 6;
+const DUEL_RESULT_OUTBOX_PREFIX = 'isihunt.duel-results.v1.';
+const DUEL_RESULT_OUTBOX_MAX = 8;
+
+interface PendingDuelResult {
+  code: string;
+  participantToken: string;
+  result: DuelRoundResult;
+  queuedAt: number;
+}
+
+let pendingDuelFlush: Promise<void> | null = null;
+
+function duelResultOutboxKey(accountId: string | null): string {
+  return `${DUEL_RESULT_OUTBOX_PREFIX}${accountId ?? 'anonymous'}`;
+}
+
+function pendingDuelResultId(item: Pick<PendingDuelResult, 'code' | 'participantToken'>): string {
+  return `${item.code}\u0000${item.participantToken}`;
+}
+
+function validDuelResult(value: unknown): value is DuelRoundResult {
+  if (!value || typeof value !== 'object') return false;
+  const record = value as Record<string, unknown>;
+  const integer = (entry: unknown, min: number, max: number): boolean =>
+    typeof entry === 'number' && Number.isInteger(entry) && entry >= min && entry <= max;
+  return (
+    integer(record.score, 0, 10_000_000) &&
+    integer(record.bestCombo, 0, 10_000) &&
+    integer(record.totalCollected, 0, 632) &&
+    (record.durationMs === undefined || integer(record.durationMs, 60_000, 120_000)) &&
+    (record.collected === undefined ||
+      (record.collected !== null &&
+        typeof record.collected === 'object' &&
+        !Array.isArray(record.collected)))
+  );
+}
+
+function readPendingDuelResults(accountId = AuthSystem.currentUserId()): PendingDuelResult[] {
+  try {
+    const raw = window.localStorage.getItem(duelResultOutboxKey(accountId));
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((entry): entry is PendingDuelResult => {
+        if (!entry || typeof entry !== 'object') return false;
+        const value = entry as Partial<PendingDuelResult>;
+        return (
+          typeof value.code === 'string' &&
+          /^[0-9A-HJKMNP-Z]{6}$/.test(value.code) &&
+          typeof value.participantToken === 'string' &&
+          value.participantToken.length >= 1 &&
+          value.participantToken.length <= 128 &&
+          validDuelResult(value.result) &&
+          typeof value.queuedAt === 'number' &&
+          Number.isFinite(value.queuedAt)
+        );
+      })
+      .slice(-DUEL_RESULT_OUTBOX_MAX);
+  } catch {
+    return [];
+  }
+}
+
+function writePendingDuelResults(accountId: string | null, entries: PendingDuelResult[]): boolean {
+  try {
+    if (entries.length === 0) window.localStorage.removeItem(duelResultOutboxKey(accountId));
+    else window.localStorage.setItem(duelResultOutboxKey(accountId), JSON.stringify(entries));
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function queueDuelResult(code: string, participantToken: string, result: DuelRoundResult): boolean {
+  const accountId = AuthSystem.currentUserId();
+  const pending = readPendingDuelResults(accountId);
+  const id = pendingDuelResultId({ code, participantToken });
+  const next = pending.filter((entry) => pendingDuelResultId(entry) !== id);
+  if (next.length >= DUEL_RESULT_OUTBOX_MAX) return false;
+  next.push({ code, participantToken, result, queuedAt: Date.now() });
+  return writePendingDuelResults(accountId, next);
+}
+
+function removeQueuedDuelResult(item: PendingDuelResult, accountId: string | null): void {
+  const pending = readPendingDuelResults(accountId).filter(
+    (entry) => pendingDuelResultId(entry) !== pendingDuelResultId(item),
+  );
+  writePendingDuelResults(accountId, pending);
+}
+
+function isRetryableDuelResultError(error: string): boolean {
+  return error === 'Kein Online-Dienst eingerichtet' || error.startsWith('Ergebnis abgeben:');
+}
 
 // --- Ergebnistypen ------------------------------------------------------------
 
@@ -726,9 +821,8 @@ function parsePlayerResults(
  * Beschleuniger fuer den Fall, dass beide fast gleichzeitig fertig werden;
  * die Tabelle ist die Quelle, auf die man sich verlassen kann.
  */
-export async function submitRoundResult(
+async function submitRoundResultWithRetry(
   code: string,
-  _isHost: boolean,
   result: DuelRoundResult,
   participantToken = '',
 ): Promise<CloudResult<true>> {
@@ -768,6 +862,50 @@ export async function submitRoundResult(
     lastError = response.error;
   }
   return { ok: false, error: lastError };
+}
+
+/**
+ * Gibt ein Rundenergebnis ab und legt es vor dem ersten Netzversuch dauerhaft
+ * ab. Ein Reload waehrend des Ergebnisbildschirms kann den Upload dadurch nicht
+ * mehr verlieren; die MenuScene leert die Warteschlange beim naechsten Start.
+ */
+export async function submitRoundResult(
+  code: string,
+  _isHost: boolean,
+  result: DuelRoundResult,
+  participantToken = '',
+): Promise<CloudResult<true>> {
+  const accountId = AuthSystem.currentUserId();
+  queueDuelResult(code, participantToken, result);
+  const response = await submitRoundResultWithRetry(code, result, participantToken);
+  if (response.ok || !isRetryableDuelResultError(response.error)) {
+    removeQueuedDuelResult({ code, participantToken, result, queuedAt: 0 }, accountId);
+  }
+  return response;
+}
+
+/**
+ * Wiederholt Ergebnisse, die vor einem App-Neustart noch nicht bestaetigt
+ * waren. Gleichzeitige Aufrufe werden im Modul zusammengefuehrt; die
+ * serverseitige Speicherung ist idempotent, falls zwei Tabs denselben Eintrag
+ * trotzdem nahezu gleichzeitig abgeben.
+ */
+export function flushPendingRoundResults(): Promise<void> {
+  pendingDuelFlush ??= (async () => {
+    const accountId = AuthSystem.currentUserId();
+    for (const item of readPendingDuelResults(accountId)) {
+      const response = await submitRoundResultWithRetry(
+        item.code,
+        item.result,
+        item.participantToken,
+      );
+      if (!response.ok && isRetryableDuelResultError(response.error)) break;
+      removeQueuedDuelResult(item, accountId);
+    }
+  })().finally(() => {
+    pendingDuelFlush = null;
+  });
+  return pendingDuelFlush;
 }
 
 /**

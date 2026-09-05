@@ -376,10 +376,7 @@ export class OnlineDuelScene extends Phaser.Scene {
         GAME_WIDTH / 2,
         this.statusPage.contentY(800),
         'VS BOT',
-        () => {
-          ChallengeSystem.startBot(this.world.id);
-          this.scene.start(SceneKey.Challenge);
-        },
+        () => void this.startBotChallenge(),
         { width: 440, height: 82, accent: Palette.goldHex, fontSize: FontSize.large },
       ).container,
     );
@@ -396,6 +393,17 @@ export class OnlineDuelScene extends Phaser.Scene {
 
     this.buildBackToMenu('ABBRECHEN');
     this.subscribeToDuelLobby();
+  }
+
+  private async startBotChallenge(): Promise<void> {
+    let botMatchId: string | undefined;
+    if (AuthSystem.isSignedIn()) {
+      const started = await CloudSystem.startBotMatch();
+      if (started.ok) botMatchId = started.value;
+    }
+    if (!this.scene.isActive()) return;
+    ChallengeSystem.startBot(this.world.id, undefined, undefined, botMatchId);
+    this.scene.start(SceneKey.Challenge);
   }
 
   private async subscribeToDuelLobby(): Promise<void> {

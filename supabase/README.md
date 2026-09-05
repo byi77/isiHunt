@@ -4,9 +4,9 @@ Diese Dateien beschreiben den Serverteil von isiHunt: Tabellen, Zugriffsregeln
 und die RPC-Funktionen, über die das Spiel mit der Datenbank spricht.
 
 **Warum es diese Datei gibt.** `docs/ARCHITECTURE.md` nannte lange nur
-`schema.sql` — tatsächlich liegen hier 40 geordnete Migrationen, die
+`schema.sql` — tatsächlich liegen hier 45 geordnete Migrationen, die
 aufeinander aufbauen. Wer die Datenbank neu aufsetzen muss, findet hier die
-verbindliche Reihenfolge und den aktuellen Live-Nachweis.
+verbindliche Reihenfolge und den aktuellen Verifikationsnachweis.
 
 ## Reihenfolge
 
@@ -57,14 +57,19 @@ Auf einer leeren Datenbank in dieser Reihenfolge einspielen:
 | 38  | `phase_2_42_duel_initial_talent_draft.sql`   | Talentauswahl vor dem ersten Duellstart, serverseitige Ready-Sperre |
 | 39  | `phase_2_43_duel_room_leave.sql`             | Duellraum beim bewussten Verlassen sofort freigeben                 |
 | 40  | `phase_2_44_duel_leaderboard.sql`            | Mehrspieler-Rangliste fuer 2 bis 4 Teilnehmer mit Elo-Wertung       |
+| 41  | `phase_2_45_fix_cosmetic_sync_ambiguity.sql` | Kosmetik-Sync ohne SQL-Namenskonflikt                               |
+| 42  | `phase_2_46_duel_result_grace.sql`           | Abschlussfenster fuer Ergebnisse nach dem Verlassen                 |
+| 43  | `phase_2_47_bot_victory_bonus.sql`           | Idempotente serverseitige Bot-Siegpraemie                           |
+| 44  | `phase_2_48_balance_config_resync.sql`       | Balance-Konfiguration mit dem Client synchronisieren                |
+| 45  | `phase_2_49_bot_match_challenge.sql`         | Bot-Sieg an einen serverseitig gestarteten Lauf binden              |
 
-## Aktueller Live-Stand
+## Aktueller Sollstand
 
-Am 2026-08-30 wurde der verknuepfte Supabase-Stand mit
-`supabase/verify_migration_state.sql` geprueft. Der Marker steht auf
-`schema_version = 42`, und die Pruefung findet unter anderem
-`start_duel_talent_draft`, `set_duel_start_time`, `get_duel_room` und
-`submit_duel_talent_draft` in der erwarteten Signatur. Phase 2.42 erzwingt:
+Der verknuepfte Supabase-Stand wird mit
+`supabase/verify_migration_state.sql` geprueft. Nach den aktuellen Phasen muss
+der Marker auf `schema_version = 49` stehen. Die Pruefung findet unter anderem
+`sync_profile_cosmetics`, `duel_result_slot`, `start_bot_match` und
+`claim_bot_victory_bonus` in der erwarteten Signatur.
 
 - Der Host startet die Talentphase erst ab zwei Teilnehmern.
 - Jeder Teilnehmer bestaetigt seinen temporaeren Talent-Build.
@@ -74,11 +79,11 @@ Am 2026-08-30 wurde der verknuepfte Supabase-Stand mit
   Clients freigegeben; die produktive Einladungsliste bleibt an die Anmeldung
   gebunden.
 
-Die neuen Phasen 2.43 und 2.44 sind vorbereitet und muessen fuer den Fix des
-Leave-Problems sowie die Duell-Rangliste noch in dieser Reihenfolge ausgefuehrt
-werden. Danach erwartet `verify_migration_state.sql` den Marker
-`schema_version = 44`. Die Duell-Rangliste umfasst 2-, 3- und 4-Spieler-Matches;
-anonyme oder nicht vollstaendig beendete Raeume werden nicht gewertet.
+Die Phasen 2.45 bis 2.49 muessen in dieser Reihenfolge ausgefuehrt werden.
+Phase 2.48 korrigiert nur die Balance-Funktion und veraendert den Marker nicht;
+Phase 2.49 setzt ihn anschliessend auf 49. Die Duell-Rangliste umfasst 2-, 3-
+und 4-Spieler-Matches; anonyme oder nicht vollstaendig beendete Raeume werden
+nicht gewertet.
 
 Der Nachweis wird erneut ausgefuehrt mit:
 

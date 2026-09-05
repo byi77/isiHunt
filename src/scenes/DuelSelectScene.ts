@@ -6,7 +6,9 @@ import { CHALLENGE_BOT_DEFAULT_DIFFICULTY } from '@/config/challenge';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { DEFAULT_WORLD_ID, getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
+import * as AuthSystem from '@/systems/AuthSystem';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
+import * as CloudSystem from '@/systems/CloudSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
@@ -75,17 +77,12 @@ export class DuelSelectScene extends Phaser.Scene {
       { width: 430, height: 92, accent: 0x38bdf8, fontSize: FontSize.large },
     );
 
-    createButton(
-      this,
-      GAME_WIDTH / 2,
-      700,
-      'VS BOT',
-      () => {
-        ChallengeSystem.startBot(world.id, CHALLENGE_BOT_DEFAULT_DIFFICULTY);
-        this.scene.start(SceneKey.Challenge);
-      },
-      { width: 430, height: 92, accent: Palette.goldHex, fontSize: FontSize.large },
-    );
+    createButton(this, GAME_WIDTH / 2, 700, 'VS BOT', () => void this.startBotChallenge(world.id), {
+      width: 430,
+      height: 92,
+      accent: Palette.goldHex,
+      fontSize: FontSize.large,
+    });
 
     createButton(
       this,
@@ -95,5 +92,16 @@ export class DuelSelectScene extends Phaser.Scene {
       () => this.scene.start(SceneKey.Menu),
       { width: 300, height: 72, accent: 0x9aa3bd, fontSize: FontSize.small },
     );
+  }
+
+  private async startBotChallenge(worldId: string): Promise<void> {
+    let botMatchId: string | undefined;
+    if (AuthSystem.isSignedIn()) {
+      const started = await CloudSystem.startBotMatch();
+      if (started.ok) botMatchId = started.value;
+    }
+    if (!this.scene.isActive()) return;
+    ChallengeSystem.startBot(worldId, CHALLENGE_BOT_DEFAULT_DIFFICULTY, undefined, botMatchId);
+    this.scene.start(SceneKey.Challenge);
   }
 }

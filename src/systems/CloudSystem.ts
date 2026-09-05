@@ -1294,13 +1294,25 @@ export async function claimDailyBonus(
   return { ok: true, value: normalizeProfileProgress(result.value.data) };
 }
 
+/** Startet ein serverseitig registriertes Bot-Duell. */
+export async function startBotMatch(): Promise<CloudResult<string>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const result = await withTimeout(authenticated.value.rpc('start_bot_match'), 'Bot-Duell starten');
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+  return typeof result.value.data === 'string'
+    ? { ok: true, value: result.value.data }
+    : { ok: false, error: 'Ungueltige Bot-Duell-Antwort' };
+}
+
 /**
  * Laesst den Server die Praemie fuer einen gewonnenen Bot-Kampf gutschreiben.
  *
- * Die Betraege stehen bewusst nicht im Aufruf: der Server rechnet sie aus
- * seiner eigenen `balance_config()`. Uebergeben wird nur die Match-ID, ueber
- * die er einen wiederholten Aufruf als denselben Sieg erkennt
- * (AUDIT_2026-09-05, Befund 6).
+ * Die Match-ID wird jetzt ausschliesslich vom `start_bot_match`-RPC ausgegeben.
+ * Der Server akzeptiert damit keine frei erfundene ID mehr und prueft zusaetzlich
+ * das serverseitige Mindestalter des gestarteten Duells.
  */
 export async function claimBotVictoryBonus(
   matchId: string,

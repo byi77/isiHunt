@@ -35,10 +35,12 @@ const round = { score: 100, bestCombo: 3, totalCollected: 20 };
 
 beforeEach(() => {
   rpc.mockReset();
+  window.localStorage.clear();
   vi.useFakeTimers();
 });
 
 afterEach(() => {
+  window.localStorage.clear();
   vi.useRealTimers();
 });
 
@@ -88,5 +90,26 @@ describe('submitRoundResult - Wiederholung nach Transportfehler', () => {
 
     expect(result.ok).toBe(false);
     expect(rpc).toHaveBeenCalledTimes(1);
+    expect(window.localStorage.getItem('isihunt.duel-results.v1.anonymous')).toBeNull();
+  });
+
+  it('laedt ein nach App-Neustart offenes Ergebnis aus der Outbox nach', async () => {
+    rpc.mockRejectedValue(new Error('Network request failed'));
+    await runWithTimers(
+      NetworkDuelSystem.submitRoundResult(
+        'ABC123',
+        true,
+        { ...round, durationMs: 90_000 },
+        '0123456789abcdef0123456789abcdef',
+      ),
+    );
+
+    expect(window.localStorage.getItem('isihunt.duel-results.v1.anonymous')).not.toBeNull();
+
+    rpc.mockResolvedValue({ data: true, error: null });
+    await NetworkDuelSystem.flushPendingRoundResults();
+
+    expect(rpc).toHaveBeenCalledTimes(5);
+    expect(window.localStorage.getItem('isihunt.duel-results.v1.anonymous')).toBeNull();
   });
 });

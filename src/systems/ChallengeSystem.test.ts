@@ -306,6 +306,13 @@ describe('Bot-Duell', () => {
     expect(ChallengeSystem.awardBotVictory()).toEqual(reward);
   });
 
+  it('uebernimmt fuer die Serverbuchung nur eine ausgestellte Match-ID', () => {
+    ChallengeSystem.startBot(DEFAULT_WORLD_ID, 'easy', undefined, 'server-match-1');
+    ChallengeSystem.submitRound(createRun(1000));
+
+    expect(ChallengeSystem.awardBotVictory()?.matchId).toBe('server-match-1');
+  });
+
   it('wechselt bei einem Rematch die Schwierigkeit nicht, aber den Seed', () => {
     ChallengeSystem.startBot(DEFAULT_WORLD_ID, 'hard');
     const firstSeed = ChallengeSystem.getState()!.seed;

@@ -12,7 +12,7 @@ const SAVE_KEY = 'isihunt.save.v1';
 
 function makeSave() {
   return {
-    version: 8,
+    version: 9,
     level: 1,
     xp: 0,
     talentPoints: 0,
@@ -121,9 +121,17 @@ try {
     window.isiHunt.scene.start('Game', { mode: 'solo', worldId: 'silberhain' });
   });
   await page.waitForFunction(
+    () => window.isiHunt?.scene?.getScene('Game')?.scene?.isActive() === true,
+    undefined,
+    { timeout: 25_000, polling: 250 },
+  );
+  await page.waitForFunction(
     () => window.isiHunt?.scene?.getScene('Game')?.phase === 'running',
     undefined,
-    { timeout: 25_000 },
+    // Phaser's mobile emulation can suspend requestAnimationFrame while the
+    // countdown scene is being promoted. Interval polling keeps this gate
+    // independent of that browser scheduling detail.
+    { timeout: 25_000, polling: 250 },
   );
 
   let result;

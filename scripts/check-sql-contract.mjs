@@ -62,6 +62,14 @@ const duelLeaderboardMigration = readFileSync(
   resolve(sqlDir, 'phase_2_44_duel_leaderboard.sql'),
   'utf8',
 );
+const balanceResyncMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_48_balance_config_resync.sql'),
+  'utf8',
+);
+const botMatchChallengeMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_49_bot_match_challenge.sql'),
+  'utf8',
+);
 const verification = readFileSync(resolve(sqlDir, 'verify_security_hardening.sql'), 'utf8');
 const migrationVerification = readFileSync(resolve(sqlDir, 'verify_migration_state.sql'), 'utf8');
 
@@ -245,6 +253,11 @@ requireText(botVictoryMigration, 'claim_bot_victory_bonus', 'Serverseitige Bot-S
 requireText(botVictoryMigration, 'bot_victory_claims', 'Doppelbuchungsschutz fuer Bot-Siege');
 requireText(botVictoryMigration, 'schema_version = 46', 'Migrationsguard Phase 2.47');
 requireText(botVictoryMigration, 'schema_version = 47', 'Migrationsmarker Phase 2.47');
+requireText(balanceResyncMigration, 'botVictoryRuns', 'Balance-Sync Phase 2.48');
+requireText(balanceResyncMigration, 'begin;', 'Transaktion Phase 2.48');
+requireText(botMatchChallengeMigration, 'start_bot_match', 'Serverseitiger Bot-Laufstart');
+requireText(botMatchChallengeMigration, 'schema_version = 47', 'Migrationsguard Phase 2.49');
+requireText(botMatchChallengeMigration, 'schema_version = 49', 'Migrationsmarker Phase 2.49');
 
 /*
  * AUDIT_2026-09-05, Befund 1: In phase_2_30 hiess eine PL/pgSQL-Variable wie
@@ -306,7 +319,7 @@ for (const [functionName, { file, body }] of latestDefinition) {
 }
 
 const migrationFiles = readdirSync(sqlDir).filter((name) =>
-  /^phase_2_(2[89]|3[0-9]|4[0-7])_.*\.sql$/.test(name),
+  /^phase_2_(2[89]|3[0-9]|4[0-9])_.*\.sql$/.test(name),
 );
 for (const file of migrationFiles) {
   const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();
@@ -319,6 +332,7 @@ requireText(verification, 'daily_key', 'Live-Verifikation Tagesbonus');
 requireText(verification, 'upsert_save', 'Live-Verifikation Save-CAS');
 requireText(verification, 'duel_rooms', 'Live-Verifikation Duell');
 requireText(migrationVerification, 'schema_version', 'Live-Verifikation Migrationsmarker');
+requireText(migrationVerification, 'schema_version = 49', 'Live-Verifikation Phase 2.49');
 
 if (failures.length > 0) {
   console.error('SQL-Vertragspruefung fehlgeschlagen:');

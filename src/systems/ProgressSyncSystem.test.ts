@@ -85,9 +85,20 @@ function createRun(overrides: Partial<RunStats> = {}): RunStats {
  * `pendingCount()` liefert nur die Anzahl - fuer die Reihenfolge nach einem
  * Teilfehlschlag braucht es die Ereignisse selbst.
  */
-function readOutbox(): ProgressEvent[] {
-  const raw = window.localStorage.getItem(`isihunt.progress-events.v2.${signedInUserId}`);
-  return raw ? (JSON.parse(raw) as ProgressEvent[]) : [];
+function readOutbox(accountId = signedInUserId): ProgressEvent[] {
+  const eventPrefix = `isihunt.progress-events.v2.${accountId}.event.`;
+  const events: Array<{ event: ProgressEvent; queuedAt: number }> = [];
+  for (let index = 0; index < window.localStorage.length; index += 1) {
+    const key = window.localStorage.key(index);
+    if (!key?.startsWith(eventPrefix)) continue;
+    const raw = JSON.parse(window.localStorage.getItem(key)!);
+    events.push(raw);
+  }
+  if (events.length > 0) {
+    return events.sort((left, right) => left.queuedAt - right.queuedAt).map((entry) => entry.event);
+  }
+  const legacy = window.localStorage.getItem(`isihunt.progress-events.v2.${accountId}`);
+  return legacy ? (JSON.parse(legacy) as ProgressEvent[]) : [];
 }
 
 function createProgression(overrides: Partial<ProgressionResult> = {}): ProgressionResult {
@@ -405,12 +416,8 @@ describe('Account-Bindung', () => {
 
     expect(first).not.toBeNull();
     expect(second).not.toBeNull();
-    expect(
-      JSON.parse(window.localStorage.getItem('isihunt.progress-events.v2.user-a')!),
-    ).toHaveLength(1);
-    expect(
-      JSON.parse(window.localStorage.getItem('isihunt.progress-events.v2.user-b')!),
-    ).toHaveLength(1);
+    expect(readOutbox('user-a')).toHaveLength(1);
+    expect(readOutbox('user-b')).toHaveLength(1);
     expect(ProgressSyncSystem.pendingCount()).toBe(1);
   });
 
