@@ -65,6 +65,23 @@ export const BACKEND_TIMEOUT_MS = 5000;
 export const SYNC_RETRY_DELAYS_MS = [5000, 15000, 60000];
 
 /**
+ * Wartezeiten fuer die Wiederholung eines Duell-Rundenergebnisses.
+ *
+ * Ein Duellergebnis kann nicht wie ein Solo-Run in eine Outbox wandern und
+ * spaeter nachreisen: die Rangliste wertet ein Match erst, wenn ALLE
+ * Teilnehmerergebnisse in der Datenbank stehen, und das Abschlussfenster
+ * (`duel_result_grace()`, phase_2_46) ist begrenzt. Ein einzelnes Funkloch
+ * beim Rundenende loeschte das Ergebnis frueher endgueltig
+ * (AUDIT_2026-09-05, Befund 4).
+ *
+ * Deutlich kuerzer als `SYNC_RETRY_DELAYS_MS`, weil der Spieler auf dem
+ * Ergebnisbildschirm wartet: die Summe bleibt unter zehn Sekunden. Ein
+ * erneutes Senden ist gefahrlos, weil der Server das erste Ergebnis behaelt
+ * (`coalesce(result, p_result)`).
+ */
+export const DUEL_RESULT_RETRY_DELAYS_MS = [800, 2000, 5000];
+
+/**
  * Wie weit ein Tagesschluessel vom heutigen Tag abweichen darf, damit der
  * Tagesbonus noch eingeloest werden kann.
  *

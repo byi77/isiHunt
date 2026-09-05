@@ -92,6 +92,76 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   gemeinsame Startzeit. Der Server erzwingt diesen Ablauf fuer zwei bis vier
   Spieler.
 
+### Behoben
+
+_Alle zehn Befunde aus `docs/AUDIT_2026-09-05.md`. Dort steht bei jedem Punkt,
+was genau geaendert wurde und was bewusst offen bleibt._
+
+- **Der geraeteuebergreifende Abgleich von Shopbesitz funktioniert wieder.**
+  Die Datenbankfunktion `sync_profile_cosmetics` brach bei **jedem** Profil mit
+  einem SQL-Fehler ab, weil eine interne Variable genauso hiess wie eine
+  Ergebnisspalte. Wer auf zwei Geraeten spielte, sah seine gekauften Schiffe
+  und Farben deshalb nicht ueberall. _(Migration 2.45)_
+
+- **Ein alter Tageslauf blockiert nicht mehr den gesamten Fortschritt.** Lehnte
+  der Server einen Offline-Lauf dauerhaft ab — etwa weil sein Datum zu weit
+  zurueckliegt —, blieb er vorn in der Warteschlange stehen und **kein
+  einziger** spaeterer Run wurde mehr uebertragen. Solche Laeufe wandern jetzt
+  beiseite, alles danach geht normal hoch. Voruebergehende Netzfehler werden
+  weiterhin wiederholt.
+
+- **Ein Run, der waehrend eines laufenden Uploads endet, geht nicht mehr
+  verloren.** Er wurde beim Abschluss des vorherigen Uploads ueberschrieben und
+  verschwand ohne Spur. Jetzt wird er im selben Durchgang mit uebertragen.
+
+- **Ein Funkloch am Rundenende kostet nicht mehr das Duellergebnis.** Der
+  Upload wird bis zu dreimal wiederholt. Klappt es endgueltig nicht, steht das
+  im Debug-Protokoll, statt still zu verschwinden.
+
+- **Wer nach seiner Runde zurueck ins Menue geht, sperrt die Mitspieler nicht
+  mehr aus.** Bisher schloss das den ganzen Raum: Wer noch spielte, konnte sein
+  Ergebnis nicht mehr abgeben und das Duell fehlte in der Rangliste. Bei
+  unterschiedlichen Ausdauer-Talenten passierte das auch ohne jeden Netzfehler.
+  Ergebnisse werden jetzt bis zu zehn Minuten nach Rundenstart angenommen.
+  _(Migration 2.46)_
+
+- **Die Praemie fuer einen Bot-Sieg bleibt erhalten.** Sie wurde nur lokal
+  gutgeschrieben, und der naechste Abgleich mit dem Server loeschte sie wieder.
+  Jetzt bucht der Server sie selbst — auch dann, wenn der Sieg offline
+  errungen wurde. _(Migration 2.47)_
+
+- **Eine offene App erkennt einen neuen Deploy wieder.** Die Updatepruefung
+  wurde vom Offline-Cache mit der eigenen, alten Version beantwortet.
+
+- **Eine Serverstoerung macht die App nicht mehr offline unbrauchbar.** Eine
+  Fehlerseite (HTTP 503/404) ersetzte den gespeicherten Startbildschirm; beim
+  naechsten Start ohne Netz erschien dann sie statt des Spiels.
+
+- **Ein Run enthaelt bei jeder Bildrate gleich viele Relikte.** Ein
+  Rundungsfehler im Spawn-Takt liess auf schnellen Geraeten mehr erscheinen als
+  auf langsamen.
+
+- **Beide Duellanten sehen wieder exakt dieselbe Runde.** Das Spuersinn-Talent
+  verschob nicht nur die Seltenheit, sondern auch Position und Zeitpunkt aller
+  folgenden Relikte; zusaetzlich trieben sie bei beiden Spielern in
+  verschiedene Richtungen.
+
+### Geaendert
+
+- **Der Service Worker und die Duell-Ergebnisabgabe sind jetzt getestet.**
+  Beide waren komplett ungedeckt — der Worker laeuft weder in einer Scene noch
+  im Browser-Playtest. Die Testsuite waechst von 531 auf 550 Tests; jeder neue
+  Test wurde gegen den alten Code gegengeprueft und musste dort rot werden.
+
+- **`npm run sql:check` erkennt eine ganze Fehlerklasse mehr.** Variablen, die
+  genauso heissen wie eine Ergebnisspalte, brechen zur Laufzeit ab, waren fuer
+  das Gate aber unsichtbar. Genau daran ging der Kosmetik-Fehler oben
+  monatelang vorbei.
+
+- **`playtest-shots/` ist vom Lint ausgenommen.** Der Ordner ist
+  git-ignoriert; ein liegengebliebenes Reproduktionsskript haette die CI rot
+  gemacht.
+
 ### Geaendert
 
 - **Online-Duell-Verbindung repariert.** Beide Spieler teilen jetzt den

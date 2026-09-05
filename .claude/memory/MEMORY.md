@@ -1,2 +1,3 @@
 - [Doku nur auf Nachfrage](docs-nur-auf-nachfrage.md) — Markdown-Doku erst nach Task-Ende aktualisieren, vorher immer fragen
 - [Playtest immer mit --watch](playtest-immer-mit-watch.md) — isiHunt-Tests nie headless starten, der Nutzer will zusehen
+- [Denken auf Deutsch](denken-auf-deutsch.md) — Denkbloecke auf Deutsch, nicht nur die Antworten

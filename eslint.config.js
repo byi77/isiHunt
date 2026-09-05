@@ -2,7 +2,11 @@ import js from '@eslint/js';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
-  { ignores: ['dist/**', 'node_modules/**', 'public/**'] },
+  // `playtest-shots/` ist git-ignoriert und enthaelt Screenshots sowie
+  // wegwerfbare Reproduktionsskripte aus Audits. Ohne diesen Eintrag machte
+  // ein liegengebliebenes Skript den Lint rot, obwohl es nie ausgeliefert
+  // wird (bemerkt 2026-09-05).
+  { ignores: ['dist/**', 'node_modules/**', 'public/**', 'playtest-shots/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

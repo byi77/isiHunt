@@ -217,8 +217,96 @@ requireText(duelLeaderboardMigration, 'get_duel_leaderboard', 'Duellranglisten-R
 requireText(duelLeaderboardMigration, 'schema_version = 43', 'Migrationsguard Phase 2.44');
 requireText(duelLeaderboardMigration, 'schema_version = 44', 'Migrationsmarker Phase 2.44');
 
+const cosmeticFixMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_45_fix_cosmetic_sync_ambiguity.sql'),
+  'utf8',
+);
+const duelResultGraceMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_46_duel_result_grace.sql'),
+  'utf8',
+);
+const botVictoryMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_47_bot_victory_bonus.sql'),
+  'utf8',
+);
+
+requireText(cosmeticFixMigration, 'cosmetic_id', 'Kosmetik-Schleifenvariable ohne Namenskonflikt');
+requireText(cosmeticFixMigration, 'schema_version = 44', 'Migrationsguard Phase 2.45');
+requireText(cosmeticFixMigration, 'schema_version = 45', 'Migrationsmarker Phase 2.45');
+requireText(
+  duelResultGraceMigration,
+  'duel_result_slot',
+  'Ergebnisannahme getrennt vom Lobby-Ablauf',
+);
+requireText(duelResultGraceMigration, 'duel_result_grace', 'Abschlussfenster fuer Duellergebnisse');
+requireText(duelResultGraceMigration, 'schema_version = 45', 'Migrationsguard Phase 2.46');
+requireText(duelResultGraceMigration, 'schema_version = 46', 'Migrationsmarker Phase 2.46');
+requireText(botVictoryMigration, 'claim_bot_victory_bonus', 'Serverseitige Bot-Siegpraemie');
+requireText(botVictoryMigration, 'bot_victory_claims', 'Doppelbuchungsschutz fuer Bot-Siege');
+requireText(botVictoryMigration, 'schema_version = 46', 'Migrationsguard Phase 2.47');
+requireText(botVictoryMigration, 'schema_version = 47', 'Migrationsmarker Phase 2.47');
+
+/*
+ * AUDIT_2026-09-05, Befund 1: In phase_2_30 hiess eine PL/pgSQL-Variable wie
+ * die Ergebnisspalte von `jsonb_array_elements_text`. PostgreSQL bricht das
+ * zur Laufzeit mit 42702 ab - die Funktion war fuer JEDES Profil unaufrufbar,
+ * und dieses Gate blieb trotzdem gruen, weil es nur Textfragmente sucht.
+ *
+ * Diese Pruefung ist die kleinstmoegliche Abhilfe ohne Datenbank: Eine
+ * `declare`-Variable, die genauso heisst wie eine unqualifizierte
+ * Ergebnisspalte im selben Rumpf, ist immer ein Fehler. Sie ersetzt keinen
+ * echten Integrationstest gegen PostgreSQL - siehe
+ * docs/ARCHITECTURE.md 9.2.
+ */
+const AMBIGUOUS_COLUMN_NAMES = ['value', 'key', 'id', 'name'];
+
+/*
+ * Geprueft wird nur die JEWEILS LETZTE Definition einer Funktion.
+ *
+ * Migrationen sind ein Verlauf: `sync_profile_cosmetics` trug diesen Fehler
+ * von Phase 2.15 bis 2.30 und wird in 2.45 korrigiert. Die alten Dateien
+ * bleiben unveraendert - was zaehlt, ist die Definition, die am Ende in der
+ * Datenbank steht.
+ */
+const latestDefinition = new Map();
+const migrationOrder = readdirSync(sqlDir)
+  .filter((name) => name.endsWith('.sql'))
+  .sort((a, b) => {
+    const phase = (name) => {
+      const match = /^phase_2_(\d+)_/.exec(name);
+      return match ? Number(match[1]) : -1;
+    };
+    return phase(a) - phase(b) || a.localeCompare(b);
+  });
+
+for (const file of migrationOrder) {
+  const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();
+  // Jeden Funktionsrumpf einzeln fassen: eine Datei definiert oft mehrere.
+  const pattern = /create or replace function\s+(public\.[a-z_]+)\s*\(([\s\S]*?)\n\$\$;/g;
+  let match;
+  while ((match = pattern.exec(content)) !== null) {
+    latestDefinition.set(match[1], { file, body: match[2] });
+  }
+}
+
+for (const [functionName, { file, body }] of latestDefinition) {
+  for (const name of AMBIGUOUS_COLUMN_NAMES) {
+    const declared = new RegExp(
+      String.raw`^\s*${name}\s+(text|jsonb|integer|bigint|numeric)\b`,
+      'm',
+    );
+    const usedAsColumn = new RegExp(String.raw`select\s+${name}\s+from\s+jsonb_`, 'm');
+    if (declared.test(body) && usedAsColumn.test(body)) {
+      failures.push(
+        `${file}: ${functionName} - Variable "${name}" kollidiert mit einer ` +
+          'Ergebnisspalte (PostgreSQL 42702)',
+      );
+    }
+  }
+}
+
 const migrationFiles = readdirSync(sqlDir).filter((name) =>
-  /^phase_2_(2[89]|30|31|32|33|34|35|36|37|38|39|40|41|42|43|44)_.*\.sql$/.test(name),
+  /^phase_2_(2[89]|3[0-9]|4[0-7])_.*\.sql$/.test(name),
 );
 for (const file of migrationFiles) {
   const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();

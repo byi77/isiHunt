@@ -865,15 +865,31 @@ Progression laeuft dadurch gegen die echte Persistenz statt gegen eine Attrappe
 — eine Attrappe haette den Modul-Cache in `SaveSystem` nicht mit abgebildet, und
 genau der ist die Stelle, an der Tests unbemerkt voneinander abhaengig werden.
 
-| Datei                            | Deckt ab                                                          |
-| -------------------------------- | ----------------------------------------------------------------- |
-| `ScoreSystem.test.ts`            | Multiplikatorstufen, Combo-Zerfall, Rundung, Run-Statistik        |
-| `ProgressionSystem.test.ts`      | XP-Kurve, mehrfache Aufstiege, Maximalstufe, Welten, Erfolge      |
-| `ChallengeSystem.test.ts`        | Seed-Vergabe, Rundenwechsel, Sieger und Gleichstand               |
-| `SaveSystem.test.ts`             | Migration: Persistenz, Schreibfehler, fehlendes `version`-Feld    |
-| `ProgressSyncSystem.test.ts`     | Outbox: Guards, Tagesbonus, Retry, Teilfehlschlag mit mehreren    |
-| `CloudSystem.test.ts`            | reine Funktionen; "wirft nie" **ohne** eingerichtetes Backend     |
-| `CloudSystem.configured.test.ts` | "wirft nie" **mit** Backend: Anmelde-Guard und echter Netzausfall |
+| Datei                                   | Deckt ab                                                          |
+| --------------------------------------- | ----------------------------------------------------------------- |
+| `ScoreSystem.test.ts`                   | Multiplikatorstufen, Combo-Zerfall, Rundung, Run-Statistik        |
+| `ProgressionSystem.test.ts`             | XP-Kurve, mehrfache Aufstiege, Maximalstufe, Welten, Erfolge      |
+| `ChallengeSystem.test.ts`               | Seed-Vergabe, Rundenwechsel, Sieger und Gleichstand               |
+| `SaveSystem.test.ts`                    | Migration: Persistenz, Schreibfehler, fehlendes `version`-Feld    |
+| `ProgressSyncSystem.test.ts`            | Outbox: Guards, Tagesbonus, Retry, Teilfehlschlag mit mehreren    |
+| `CloudSystem.test.ts`                   | reine Funktionen; "wirft nie" **ohne** eingerichtetes Backend     |
+| `CloudSystem.configured.test.ts`        | "wirft nie" **mit** Backend: Anmelde-Guard und echter Netzausfall |
+| `serviceWorker.test.ts`                 | Offline-Shell und Updatepruefung (siehe unten)                    |
+| `NetworkDuelSystem.resultRetry.test.ts` | Wiederholung des Duellergebnisses bei Transportfehlern            |
+
+**Der Service Worker wird als Quelltext getestet.** `serviceWorker.test.ts`
+laedt `scripts/sw-template.txt` mit denselben Platzhaltern, die
+`vite.config.ts` beim Build einsetzt, und fuehrt sie in einem `vm`-Kontext mit
+nachgebauten `caches`, `fetch` und `self` aus. Der Grund steht in
+`docs/AUDIT_2026-09-05.md`: Der Worker laeuft weder in einer Scene noch im
+Browser-Playtest (dort zaehlt die Seite, nicht der Worker) und war deshalb
+komplett ungetestet — zwei Fehler standen dort direkt nebeneinander.
+
+**`NetworkDuelSystem.resultRetry.test.ts` liegt bewusst neben
+`NetworkDuelSystem.test.ts`** statt darin: die aeltere Datei mockt
+`@/config/backend` fest auf "nicht konfiguriert", damit kein Test versehentlich
+gegen die Produktionsdatenbank spricht. Der Retry-Test braucht das Gegenteil,
+naemlich einen konfigurierten Doppelgaenger, der Fehlversuche zaehlt.
 
 ### Statische Gates neben den Tests
 
@@ -893,6 +909,17 @@ Release-Gates als Ganzes auf, statt die Schritte einzeln aufzuzaehlen. Die CI ta
 2026-08-23 und war dadurch schwaecher als der lokale `pre-push`-Hook: Die
 beiden Gates kamen spaeter zur Kette dazu und fehlten in der Liste. Wer
 `verify` erweitert, erweitert damit jetzt automatisch auch die CI.
+
+**`sql:check` prueft seit dem Audit vom 2026-09-05 auch Namenskonflikte.** In
+`sync_profile_cosmetics` hiess eine PL/pgSQL-Variable genauso wie die
+Ergebnisspalte von `jsonb_array_elements_text`. PostgreSQL bricht das zur
+Laufzeit mit `42702` ab — die Funktion war fuer **jedes** Profil unaufrufbar,
+und das Gate blieb gruen, weil es nur Textfragmente suchte. Es vergleicht jetzt
+zusaetzlich `declare`-Variablen mit unqualifizierten Ergebnisspalten im selben
+Funktionsrumpf, und zwar nur in der **jeweils letzten** Definition einer
+Funktion: Migrationen sind ein Verlauf, aeltere Dateien duerfen den Fehler
+historisch enthalten. Ein echter Integrationstest gegen PostgreSQL bleibt das
+nicht — er ersetzt nur die billigste Haelfte davon.
 
 **`scene:guards`** schliesst eine Luecke aus dem Audit vom 2026-08-23: Waehrend
 eines Netzaufrufs bleibt der Zurueck-Knopf bedienbar. Verlaesst der Spieler die

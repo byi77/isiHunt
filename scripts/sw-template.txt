@@ -10,6 +10,14 @@
 const CACHE_NAME = __ISIHUNT_CACHE_NAME__;
 const PRECACHE_URLS = __ISIHUNT_PRECACHE_URLS__;
 
+/*
+ * Das Versionsmanifest beantwortet die Frage "gibt es einen neuen Deploy?".
+ * Aus dem Cache beantwortet es immer die eigene, alte Version - die Antwort
+ * waere damit strukturell nutzlos. Es bleibt deshalb komplett aus Precache
+ * und Cache-first-Zweig heraus (AUDIT_2026-09-05, Befund 7).
+ */
+const VERSION_MANIFEST_PATH = new URL('./version.json', self.location).pathname;
+
 function cachedResponse(request) {
   const url = new URL(request.url);
   return caches.match(`${url.origin}${url.pathname}`, { ignoreSearch: true });
@@ -50,6 +58,13 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request, { cache: 'no-store' })
         .then((response) => {
+          // Nur eine erfolgreiche Antwort darf die App-Shell ersetzen. Ein
+          // HTTP 503/404 ist fuer `fetch` kein Fehler, landete hier also
+          // frueher im Cache - der naechste Offline-Start zeigte dann die
+          // Fehlerseite statt der App (AUDIT_2026-09-05, Befund 10).
+          if (!response.ok) {
+            return cachedResponse(request).then((cached) => cached ?? response);
+          }
           const copy = response.clone();
           void caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
           return response;
@@ -60,6 +75,11 @@ self.addEventListener('fetch', (event) => {
           ),
         ),
     );
+    return;
+  }
+
+  if (url.pathname === VERSION_MANIFEST_PATH) {
+    event.respondWith(fetch(request, { cache: 'no-store' }));
     return;
   }
 

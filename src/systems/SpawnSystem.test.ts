@@ -160,3 +160,103 @@ describe('SpawnSystem - Phase-5-Schwierigkeitsprofil', () => {
     expect(scales[scales.length - 1]).toBeGreaterThanOrEqual(WORLD_LIFETIME_SCALE_FLOOR);
   });
 });
+
+/*
+ * Regressionstests zu AUDIT_2026-09-05, Befund 8 und 9.
+ *
+ * `FakeRng` oben liefert konstante Werte und kann deshalb weder einen
+ * Bildratenunterschied noch einen verschobenen Zufallsverbrauch zeigen -
+ * genau daran ging beides ungesehen durch. Dieser Generator ist
+ * deterministisch UND zaehlt, wie oft er gezogen wurde.
+ */
+class CountingRng {
+  draws = 0;
+  private seed = 12345;
+
+  private next(): number {
+    this.draws += 1;
+    this.seed = (Math.imul(this.seed, 1664525) + 1013904223) >>> 0;
+    return this.seed / 4294967296;
+  }
+
+  frac(): number {
+    return this.next();
+  }
+
+  realInRange(min: number, max: number): number {
+    return min + (max - min) * this.next();
+  }
+
+  between(min: number, max: number): number {
+    return Math.floor(min + (max - min + 1) * this.next());
+  }
+}
+
+function countingSpawner(rng: CountingRng, promotionChance = 0): SpawnSystem {
+  return new SpawnSystem(
+    rng as never,
+    { left: 60, right: 660, top: 170, bottom: 1160, centerX: 360, centerY: 665 } as never,
+    'none',
+    'none',
+    1,
+    true,
+    promotionChance,
+  );
+}
+
+describe('AUDIT_2026-09-05 Befund 8: Bildratenunabhaengigkeit', () => {
+  it('spawnt bei 30, 60 und 120 fps gleich oft', () => {
+    // 89 statt 90 Sekunden: ein Spawn, der auf 89,99 s faellt, liegt je nach
+    // Frame-Raster knapp innerhalb oder ausserhalb der Runde. Dieser
+    // Randeffekt der Laufgrenze ist gewollt und nicht der gesuchte Drift.
+    const counts = [30, 60, 120].map((fps) => {
+      const system = countingSpawner(new CountingRng());
+      const deltaMs = 1000 / fps;
+      const frames = Math.round((fps * 89000) / 1000);
+      let spawns = 0;
+      for (let frame = 0; frame < frames; frame++) {
+        if (system.update(deltaMs, frame / frames, 0, 360, 665)) spawns += 1;
+      }
+      return spawns;
+    });
+
+    // Frueher setzte update() den Timer auf ein volles Intervall und warf den
+    // negativen Rest weg - grosse Deltas verloren mehr Zeit als kleine.
+    expect(new Set(counts).size).toBe(1);
+  });
+});
+
+describe('AUDIT_2026-09-05 Befund 9: gleicher Zufallsverbrauch', () => {
+  it('zieht mit und ohne Spuersinn gleich viele Zufallszahlen', () => {
+    const without = new CountingRng();
+    const with_ = new CountingRng();
+    countingSpawner(without, 0).update(1_000, 0, 0, 360, 665);
+    countingSpawner(with_, 0.03).update(1_000, 0, 0, 360, 665);
+
+    // Frueher sparte die Kurzschlussauswertung bei Chance 0 eine Ziehung -
+    // danach liefen die Generatoren beider Duellanten auseinander.
+    expect(with_.draws).toBe(without.draws);
+  });
+
+  it('laesst Spuersinn die Positionen der Folgespawns unveraendert', () => {
+    const plain = countingSpawner(new CountingRng(), 0);
+    const prospector = countingSpawner(new CountingRng(), 0.03);
+
+    for (let index = 0; index < 5; index++) {
+      const a = plain.update(1_000, 0, 0, 360, 665);
+      const b = prospector.update(1_000, 0, 0, 360, 665);
+      // Nur die Seltenheit darf sich unterscheiden, nie die Position.
+      expect({ x: b?.x, y: b?.y }).toEqual({ x: a?.x, y: a?.y });
+    }
+  });
+
+  it('gibt jedem Spawn eine Driftrichtung aus dem geteilten Generator mit', () => {
+    // Ohne diesen Wert zog `Collectible` den Winkel aus `Math.random()` und
+    // dieselben Relikte trieben bei beiden Spielern verschieden.
+    const first = countingSpawner(new CountingRng()).update(1_000, 0, 0, 360, 665);
+    const second = countingSpawner(new CountingRng()).update(1_000, 0, 0, 360, 665);
+
+    expect(first?.driftAngle).toBeTypeOf('number');
+    expect(second?.driftAngle).toBe(first?.driftAngle);
+  });
+});

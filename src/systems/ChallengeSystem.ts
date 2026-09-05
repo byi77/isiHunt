@@ -463,6 +463,26 @@ export function submitRound(stats: RunStats): void {
 export interface BotVictoryReward {
   coins: number;
   xp: number;
+  /**
+   * Kennung dieses Bot-Duells fuer die serverseitige Gutschrift.
+   *
+   * Der Server erkennt ueber sie einen wiederholten Aufruf als denselben Sieg
+   * und bucht nicht doppelt (AUDIT_2026-09-05, Befund 6).
+   */
+  matchId: string;
+}
+
+/**
+ * Kennung fuer genau ein Bot-Duell.
+ *
+ * Dieselbe Erzeugung wie fuer Laufereignisse in `ProgressSyncSystem` - der
+ * Server erwartet eine UUID-foermige ID.
+ */
+function createMatchId(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
 /** Gutschrift des Bot-Siegbonus, exakt einmal pro abgeschlossenem Duell. */
@@ -478,6 +498,7 @@ export function awardBotVictory(): BotVictoryReward | null {
   state.botVictoryReward = {
     coins: progression.coinsGained,
     xp: progression.xpGained,
+    matchId: createMatchId(),
   };
   return { ...state.botVictoryReward };
 }

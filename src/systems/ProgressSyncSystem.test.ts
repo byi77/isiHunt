@@ -29,10 +29,12 @@ vi.mock('@/systems/AuthSystem', () => ({
 
 const submitProgressEvent = vi.fn();
 const claimDailyBonus = vi.fn();
+const claimBotVictoryBonus = vi.fn();
 
 vi.mock('@/systems/CloudSystem', () => ({
   submitProgressEvent: (...args: unknown[]) => submitProgressEvent(...args),
   claimDailyBonus: (...args: unknown[]) => claimDailyBonus(...args),
+  claimBotVictoryBonus: (...args: unknown[]) => claimBotVictoryBonus(...args),
 }));
 
 let SaveSystem: typeof SaveSystemModule;
@@ -44,6 +46,7 @@ beforeEach(async () => {
   signedInUserId = 'user-1';
   submitProgressEvent.mockReset();
   claimDailyBonus.mockReset();
+  claimBotVictoryBonus.mockReset();
 
   // Feste Zeit: Der Tagesbonus verfaellt jetzt, wenn sein Schluessel mehr als
   // einen Tag vom heutigen abweicht (`DAILY_KEY_TOLERANCE_MS`). Ohne diese
@@ -422,5 +425,127 @@ describe('Account-Bindung', () => {
     expect(ProgressSyncSystem.pendingCount()).toBe(0);
     expect(window.localStorage.getItem('isihunt.progress-events.v2.user-new')).toBeNull();
     expect(window.localStorage.getItem('isihunt.progress-events.unbound.v1')).not.toBeNull();
+  });
+});
+
+/*
+ * Regressionstests zu AUDIT_2026-09-05.
+ *
+ * Alle drei Faelle waren vor dem Audit gruen abgedeckt - die Luecke war
+ * nicht "kein Test", sondern "kein Test mit gleichzeitigen Ereignissen bzw.
+ * mit einer dauerhaften Ablehnung".
+ */
+describe('AUDIT_2026-09-05 Befund 3: Nebenlaeufigkeit beim Upload', () => {
+  it('behaelt einen waehrend des Uploads angehaengten Run', async () => {
+    signedIn = true;
+    ProgressSyncSystem.enqueueRun(createRun({ score: 1 }), createProgression());
+
+    // Der Upload von A bleibt offen, waehrend B in die Outbox kommt.
+    let finishFirst!: (value: unknown) => void;
+    submitProgressEvent.mockImplementationOnce(
+      () =>
+        new Promise((resolve) => {
+          finishFirst = resolve;
+        }),
+    );
+    submitProgressEvent.mockResolvedValue({ ok: true });
+
+    const flushing = ProgressSyncSystem.flush();
+    const second = ProgressSyncSystem.enqueueRun(createRun({ score: 2 }), createProgression());
+    finishFirst({ ok: true });
+    await flushing;
+
+    // Frueher schrieb flushPending den Schnappschuss von vor dem await
+    // zurueck - B verschwand ungesendet und ohne Spur.
+    const seen = submitProgressEvent.mock.calls.map(([event]) => (event as ProgressEvent).eventId);
+    expect(seen).toContain(second);
+    expect(ProgressSyncSystem.pendingCount()).toBe(0);
+  });
+});
+
+describe('AUDIT_2026-09-05 Befund 2: dauerhaft abgelehnte Ereignisse', () => {
+  it('blockiert spaetere Runs nicht hinter einem abgelaufenen Tageslauf', async () => {
+    signedIn = true;
+    ProgressSyncSystem.enqueueRun(createRun({ score: 1 }), createProgression(), '2026-08-10');
+    const solo = ProgressSyncSystem.enqueueRun(createRun({ score: 2 }), createProgression());
+
+    // Genau die Meldung, die `submit_progress_event` fuer ein zu altes
+    // Datum wirft (phase_2_28_integrity_hardening.sql).
+    submitProgressEvent.mockImplementation((event: ProgressEvent) =>
+      event.dailyKey
+        ? Promise.resolve({ ok: false, error: 'Ungueltiger Tageslauf' })
+        : Promise.resolve({ ok: true }),
+    );
+
+    await ProgressSyncSystem.flush();
+
+    const seen = submitProgressEvent.mock.calls.map(([event]) => (event as ProgressEvent).eventId);
+    expect(seen).toContain(solo);
+    expect(ProgressSyncSystem.pendingCount()).toBe(0);
+    // Der abgelehnte Lauf ist nicht spurlos weg, sondern nachvollziehbar.
+    expect(
+      window.localStorage.getItem('isihunt.progress-events.rejected.v1.user-1'),
+    ).not.toBeNull();
+  });
+
+  it('haelt einen voruebergehenden Fehler weiterhin in der Outbox', async () => {
+    signedIn = true;
+    const first = ProgressSyncSystem.enqueueRun(createRun({ score: 1 }), createProgression());
+    const second = ProgressSyncSystem.enqueueRun(createRun({ score: 2 }), createProgression());
+    submitProgressEvent.mockResolvedValue({ ok: false, error: 'Zeitüberschreitung' });
+
+    await ProgressSyncSystem.flush();
+
+    // Gegenprobe zum Test darueber: ein Netzfehler darf NICHTS verwerfen.
+    expect(submitProgressEvent).toHaveBeenCalledTimes(1);
+    expect(readOutbox().map((event) => event.eventId)).toEqual([first, second]);
+    expect(window.localStorage.getItem('isihunt.progress-events.rejected.v1.user-1')).toBeNull();
+  });
+
+  it('wiederholt einen Cooldown-Fehler, statt den Lauf zu verwerfen', async () => {
+    signedIn = true;
+    const only = ProgressSyncSystem.enqueueRun(createRun({ score: 1 }), createProgression());
+    // Der Cooldown-Trigger aus phase_2_29 ist zeitabhaengig - ein spaeterer
+    // Versuch geht durch. Er darf deshalb nicht als dauerhaft gelten.
+    submitProgressEvent.mockResolvedValue({
+      ok: false,
+      error: 'Fortschrittslauf zu schnell eingereicht',
+    });
+
+    await ProgressSyncSystem.flush();
+
+    expect(readOutbox().map((event) => event.eventId)).toEqual([only]);
+  });
+});
+
+describe('AUDIT_2026-09-05 Befund 6: Bot-Siegpraemie', () => {
+  it('meldet einen Bot-Sieg als ausstehende Daten und laedt ihn hoch', async () => {
+    signedIn = true;
+    claimBotVictoryBonus.mockResolvedValue({ ok: true, value: null });
+
+    expect(ProgressSyncSystem.enqueueBotVictory('11111111-1111-4111-8111-111111111111')).toBe(true);
+    expect(ProgressSyncSystem.hasPendingData()).toBe(true);
+
+    await ProgressSyncSystem.flush();
+
+    expect(claimBotVictoryBonus).toHaveBeenCalledWith('11111111-1111-4111-8111-111111111111');
+    expect(ProgressSyncSystem.hasPendingData()).toBe(false);
+  });
+
+  it('behaelt den Bot-Sieg, wenn der Upload scheitert', async () => {
+    signedIn = true;
+    claimBotVictoryBonus.mockResolvedValue({ ok: false, error: 'Zeitüberschreitung' });
+
+    ProgressSyncSystem.enqueueBotVictory('22222222-2222-4222-8222-222222222222');
+    await ProgressSyncSystem.flush();
+
+    expect(ProgressSyncSystem.hasPendingData()).toBe(true);
+  });
+
+  it('merkt ohne Anmeldung nichts vor', () => {
+    signedIn = false;
+    expect(ProgressSyncSystem.enqueueBotVictory('33333333-3333-4333-8333-333333333333')).toBe(
+      false,
+    );
   });
 });

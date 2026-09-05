@@ -59,12 +59,16 @@ function offlineServiceWorker(): Plugin {
     name: 'isihunt-offline-service-worker',
     apply: 'build',
     generateBundle(_options, bundle) {
+      // `version.json` beantwortet die Updatepruefung und darf deshalb nie
+      // aus dem Cache kommen - sonst meldet eine offene App ewig ihre eigene
+      // alte Version (AUDIT_2026-09-05, Befund 7). Der Service Worker haelt
+      // denselben Pfad zusaetzlich aus dem Cache-first-Zweig heraus.
       const precacheUrls = [
         './',
         './index.html',
         ...Object.keys(bundle).map((fileName) => `./${fileName}`),
         ...publicFiles(publicRoot).map((fileName) => `./${fileName}`),
-      ];
+      ].filter((url) => url !== './version.json');
       const source = readFileSync(templatePath, 'utf8')
         .replace('__ISIHUNT_CACHE_NAME__', JSON.stringify(`isihunt-app-shell-${version}`))
         .replace('__ISIHUNT_PRECACHE_URLS__', JSON.stringify([...new Set(precacheUrls)], null, 2));

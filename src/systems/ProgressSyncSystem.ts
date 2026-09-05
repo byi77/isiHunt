@@ -11,6 +11,10 @@ const OUTBOX_KEY_PREFIX = 'isihunt.progress-events.v2.';
 const LEGACY_OUTBOX_KEY = 'isihunt.progress-events';
 const LEGACY_OUTBOX_QUARANTINE_KEY = 'isihunt.progress-events.unbound.v1';
 const INVALID_OUTBOX_KEY_PREFIX = 'isihunt.progress-events.invalid.v1.';
+const REJECTED_OUTBOX_KEY_PREFIX = 'isihunt.progress-events.rejected.v1.';
+const BOT_VICTORY_KEY_PREFIX = 'isihunt.bot-victories.v1.';
+/** Mehr als ein paar unbestaetigte Bot-Siege deuten auf einen Defekt hin. */
+const BOT_VICTORY_MAX_PENDING = 16;
 const OUTBOX_MAX_EVENTS = 64;
 const OUTBOX_MAX_BYTES = 256 * 1024;
 let flushPromise: Promise<void> | null = null;
@@ -61,6 +65,90 @@ function accountOutboxKey(accountId: string): string {
 
 function invalidOutboxKey(accountId: string): string {
   return `${INVALID_OUTBOX_KEY_PREFIX}${accountId}`;
+}
+
+function rejectedOutboxKey(accountId: string): string {
+  return `${REJECTED_OUTBOX_KEY_PREFIX}${accountId}`;
+}
+
+function botVictoryKey(accountId: string): string {
+  return `${BOT_VICTORY_KEY_PREFIX}${accountId}`;
+}
+
+/**
+ * Match-IDs gewonnener Bot-Duelle, die der Server noch nicht bestaetigt hat.
+ *
+ * Bewusst neben der Outbox und nicht in `SaveData`: ein Bot-Sieg ist kein
+ * Laufereignis (er hat weder Score noch Welt) und braucht keine
+ * Save-Migration. Die IDs sind der einzige Inhalt - die Betraege rechnet der
+ * Server (AUDIT_2026-09-05, Befund 6).
+ */
+function readBotVictories(accountId: string): string[] {
+  try {
+    const raw = window.localStorage.getItem(botVictoryKey(accountId));
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (id): id is string => typeof id === 'string' && /^[0-9a-f-]{16,64}$/i.test(id),
+    );
+  } catch {
+    return [];
+  }
+}
+
+function writeBotVictories(accountId: string, matchIds: string[]): void {
+  try {
+    window.localStorage.setItem(botVictoryKey(accountId), JSON.stringify(matchIds));
+  } catch {
+    // Ein privater Browsermodus darf den Spielfluss nicht blockieren.
+  }
+}
+
+/**
+ * Merkt einen gewonnenen Bot-Kampf zum Hochladen vor.
+ *
+ * Gibt `false` zurueck, wenn nichts vorgemerkt wurde (nicht angemeldet,
+ * Testprofil oder Warteschlange voll) - der lokale Spielstand bleibt dann die
+ * einzige Quelle, wie vor dieser Aenderung.
+ */
+export function enqueueBotVictory(matchId: string): boolean {
+  if (!AuthSystem.isSignedIn() || SaveSystem.isTestProfileActive()) return false;
+  const accountId = AuthSystem.currentUserId();
+  if (!accountId) return false;
+
+  const pending = readBotVictories(accountId);
+  if (pending.includes(matchId)) return true;
+  if (pending.length >= BOT_VICTORY_MAX_PENDING) {
+    console.warn('[ProgressSyncSystem] Bot-Sieg wegen voller Warteschlange verworfen.');
+    return false;
+  }
+  writeBotVictories(accountId, [...pending, matchId]);
+  void flush();
+  return true;
+}
+
+/**
+ * Laedt vorgemerkte Bot-Siege hoch.
+ *
+ * Erst nach der Outbox: der Server ist die Quelle fuer Level und Coins, und
+ * jeder bestaetigte Bonus ueberschreibt den lokalen Stand. Kaeme er vor den
+ * Laufereignissen, waere der Zwischenstand kurzzeitig falsch.
+ */
+async function flushBotVictories(accountId: string): Promise<void> {
+  for (const matchId of readBotVictories(accountId)) {
+    if (!AuthSystem.isSignedIn() || AuthSystem.currentUserId() !== accountId) return;
+    const result = await CloudSystem.claimBotVictoryBonus(matchId);
+    if (AuthSystem.currentUserId() !== accountId) return;
+    // Nur bei Erfolg austragen. Ein Netzfehler laesst die ID stehen; der
+    // Server erkennt einen erneuten Aufruf ueber dieselbe Match-ID.
+    if (!result.ok) return;
+    writeBotVictories(
+      accountId,
+      readBotVictories(accountId).filter((id) => id !== matchId),
+    );
+    if (result.value) SaveSystem.adoptProfileProgress(result.value.data);
+  }
 }
 
 /** Alte globale Events duerfen niemals still einem neuen Login gehoeren. */
@@ -125,6 +213,53 @@ function quarantineInvalidEvents(accountId: string, events: unknown[]): void {
     window.localStorage.setItem(
       invalidOutboxKey(accountId),
       JSON.stringify(events).slice(0, OUTBOX_MAX_BYTES),
+    );
+  } catch {
+    // Quarantene ist nur Diagnosehilfe und darf den Spielfluss nicht blockieren.
+  }
+}
+
+/**
+ * Fachliche Ablehnungen, die sich beim naechsten Versuch identisch
+ * wiederholen. Nur diese duerfen ein Ereignis aus der Outbox nehmen.
+ *
+ * Bewusst kurz gehalten: beide Meldungen stammen woertlich aus
+ * `submit_progress_event` (phase_2_28_integrity_hardening.sql, Zeilen 54 und
+ * 63) und haengen allein am Inhalt des Ereignisses - erneutes Senden aendert
+ * daran nichts.
+ *
+ * Nicht in dieser Liste steht 'Fortschrittslauf zu schnell eingereicht': der
+ * Cooldown-Trigger aus phase_2_29 ist zeitabhaengig, ein spaeterer Versuch
+ * geht durch. Ebenso wenig Netz- und Zeitfehler. Im Zweifel wird wiederholt,
+ * nicht verworfen - ein faelschlich behaltener Run kostet einen Retry, ein
+ * faelschlich verworfener kostet den Fortschritt.
+ */
+const PERMANENT_REJECTIONS = [
+  'Ungueltiger Tageslauf',
+  'Ereignis-ID bereits mit anderem Lauf-Typ verwendet',
+] as const;
+
+function isPermanentRejection(error: string): boolean {
+  return PERMANENT_REJECTIONS.some((reason) => error.includes(reason));
+}
+
+/**
+ * Legt dauerhaft abgelehnte Ereignisse beiseite, statt sie stumm zu loeschen.
+ *
+ * Sie sind fuer den Server wertlos, aber fuer die Fehlersuche wertvoll: ohne
+ * diese Ablage waere nicht mehr nachvollziehbar, welcher Lauf verlorenging.
+ */
+function quarantineRejectedEvents(accountId: string, events: ProgressEvent[]): void {
+  try {
+    const previous: unknown = JSON.parse(
+      window.localStorage.getItem(rejectedOutboxKey(accountId)) ?? '[]',
+    );
+    const merged = [...(Array.isArray(previous) ? previous : []), ...events].slice(
+      -OUTBOX_MAX_EVENTS,
+    );
+    window.localStorage.setItem(
+      rejectedOutboxKey(accountId),
+      JSON.stringify(merged).slice(0, OUTBOX_MAX_BYTES),
     );
   } catch {
     // Quarantene ist nur Diagnosehilfe und darf den Spielfluss nicht blockieren.
@@ -206,6 +341,20 @@ export function enqueueRun(
   return writeOutbox(accountId, [...pending, event]) ? eventId : null;
 }
 
+/**
+ * Entfernt erledigte Ereignisse aus dem *aktuellen* Stand der Outbox.
+ *
+ * Nicht aus dem Schnappschuss vom Schleifenbeginn: waehrend eines `await`
+ * darf `enqueueRun` neue Runs anhaengen. Frueher wurde der alte Schnappschuss
+ * zurueckgeschrieben und der dazwischen beendete Run verschwand ungesendet
+ * (AUDIT_2026-09-05, Befund 3).
+ */
+function dropSettledEvents(accountId: string, settledIds: Set<string>): ProgressEvent[] {
+  const current = readOutbox(accountId).filter((event) => !settledIds.has(event.eventId));
+  writeOutbox(accountId, current);
+  return current;
+}
+
 /** Überträgt wartende Runs in Reihenfolge; Fehler bleiben in der Outbox. */
 async function flushPending(): Promise<void> {
   if (!AuthSystem.isSignedIn() || SaveSystem.isTestProfileActive()) {
@@ -217,10 +366,13 @@ async function flushPending(): Promise<void> {
   if (!accountId) return;
 
   const pending = readOutbox(accountId);
-  const remaining: ProgressEvent[] = [];
+  // Erledigt heisst: vom Server angenommen ODER dauerhaft abgelehnt. Beides
+  // faellt aus der Outbox; nur ein voruebergehender Fehler haelt sie an.
+  const settledIds = new Set<string>();
+  const rejected: ProgressEvent[] = [];
+  let blocked = false;
 
-  for (let index = 0; index < pending.length; index++) {
-    const event = pending[index]!;
+  for (const event of pending) {
     // Ein Sign-in-Wechsel waehrend eines await darf weder Events des alten
     // Kontos an das neue Konto senden noch dessen lokalen Stand uebernehmen.
     if (
@@ -228,26 +380,55 @@ async function flushPending(): Promise<void> {
       AuthSystem.currentUserId() !== accountId ||
       SaveSystem.isTestProfileActive()
     ) {
-      writeOutbox(accountId, pending.slice(index));
-      return;
+      blocked = true;
+      break;
     }
     const result = await CloudSystem.submitProgressEvent(event);
     if (AuthSystem.currentUserId() !== accountId) {
-      writeOutbox(accountId, pending.slice(index));
-      return;
-    }
-    if (!result.ok) {
-      remaining.push(event);
-      remaining.push(...pending.slice(index + 1));
+      blocked = true;
       break;
     }
+    if (!result.ok) {
+      // Ein Netzfehler betrifft alle folgenden Events genauso - abbrechen und
+      // spaeter erneut versuchen. Eine dauerhafte fachliche Ablehnung dagegen
+      // wiederholt sich bei jedem Versuch identisch: bliebe sie vorn in der
+      // Outbox liegen, kaeme kein einziger spaeterer Run mehr durch
+      // (AUDIT_2026-09-05, Befund 2). Sie wandert deshalb in die Quarantaene.
+      if (!isPermanentRejection(result.error)) {
+        blocked = true;
+        break;
+      }
+      console.warn('[ProgressSyncSystem] Ereignis dauerhaft abgelehnt.', result.error);
+      settledIds.add(event.eventId);
+      rejected.push(event);
+      continue;
+    }
+    settledIds.add(event.eventId);
     // Der Server ist die Quelle fuer XP, Coins, Level und validierte
     // Achievements. Der lokale Stand bleibt bis dahin nur UI-optimistisch;
     // nach jedem erfolgreichen Event wird die autoritative Antwort uebernommen.
     if (result.value) SaveSystem.adoptProfileProgress(result.value.data);
   }
 
-  writeOutbox(accountId, remaining);
+  if (rejected.length > 0) quarantineRejectedEvents(accountId, rejected);
+  const remaining = dropSettledEvents(accountId, settledIds);
+
+  if (blocked) {
+    if (remaining.length > 0) scheduleRetry();
+    return;
+  }
+
+  // Waehrend der Schleife angehaengte Runs (`enqueueRun` darf das jederzeit)
+  // stehen noch nicht im abgearbeiteten Schnappschuss. Sie gehen sofort
+  // hinterher, statt bis zum naechsten Ausloeser zu warten - der Spieler ist
+  // dann laengst im Menue und erwartet einen leeren Stapel.
+  if (remaining.length > 0 && settledIds.size > 0) {
+    const beforeRetry = remaining.length;
+    await flushPending();
+    // Nur wenn der Nachlauf etwas bewegt hat, ist hier schon alles erledigt;
+    // sonst uebernimmt der reguelaere Retry weiter unten.
+    if (readOutbox(accountId).length < beforeRetry) return;
+  }
 
   if (remaining.length > 0) {
     scheduleRetry();
@@ -257,6 +438,13 @@ async function flushPending(): Promise<void> {
     return;
   }
   cancelRetry();
+
+  await flushBotVictories(accountId);
+  if (!AuthSystem.isSignedIn() || AuthSystem.currentUserId() !== accountId) return;
+  if (readBotVictories(accountId).length > 0) {
+    scheduleRetry();
+    return;
+  }
 
   const local = SaveSystem.load();
   if (!AuthSystem.isSignedIn() || AuthSystem.currentUserId() !== accountId) return;
@@ -308,7 +496,12 @@ export function flush(): Promise<void> {
  */
 export function clearOutbox(): void {
   const accountId = AuthSystem.currentUserId();
-  if (accountId) writeOutbox(accountId, []);
+  if (accountId) {
+    writeOutbox(accountId, []);
+    // Auch die Bot-Siege: der Server hat den Fortschritt gerade geloescht,
+    // eine spaetere Gutschrift wuerde den Reset teilweise rueckgaengig machen.
+    writeBotVictories(accountId, []);
+  }
   cancelRetry();
 }
 
@@ -319,5 +512,10 @@ export function pendingCount(): number {
 /** Ob neben dem sichtbaren Spielstand noch lokale Daten zum Upload warten. */
 export function hasPendingData(): boolean {
   const local = SaveSystem.load();
-  return pendingCount() > 0 || (Boolean(local.pendingDailyKey) && local.pendingDailyCoins > 0);
+  const accountId = AuthSystem.currentUserId();
+  return (
+    pendingCount() > 0 ||
+    (Boolean(local.pendingDailyKey) && local.pendingDailyCoins > 0) ||
+    (accountId !== null && readBotVictories(accountId).length > 0)
+  );
 }

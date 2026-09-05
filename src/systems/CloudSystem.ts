@@ -1294,6 +1294,29 @@ export async function claimDailyBonus(
   return { ok: true, value: normalizeProfileProgress(result.value.data) };
 }
 
+/**
+ * Laesst den Server die Praemie fuer einen gewonnenen Bot-Kampf gutschreiben.
+ *
+ * Die Betraege stehen bewusst nicht im Aufruf: der Server rechnet sie aus
+ * seiner eigenen `balance_config()`. Uebergeben wird nur die Match-ID, ueber
+ * die er einen wiederholten Aufruf als denselben Sieg erkennt
+ * (AUDIT_2026-09-05, Befund 6).
+ */
+export async function claimBotVictoryBonus(
+  matchId: string,
+): Promise<CloudResult<RemoteProfileProgress | null>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const result = await withTimeout(
+    authenticated.value.rpc('claim_bot_victory_bonus', { p_match_id: matchId }),
+    'Bot-Sieg synchronisieren',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+  return { ok: true, value: normalizeProfileProgress(result.value.data) };
+}
+
 /** Beansprucht den kleinen Login-Bonus; der Server erlaubt ihn nur einmal je Tag. */
 export async function claimDailyLoginBonus(
   _dailyKey?: string,

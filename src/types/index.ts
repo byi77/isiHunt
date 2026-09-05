@@ -168,6 +168,8 @@ export interface ChallengeState {
   botVictoryReward?: {
     coins: number;
     xp: number;
+    /** Kennung für die serverseitige Gutschrift; verhindert Doppelbuchung. */
+    matchId: string;
   };
   /** Serverseitige Generation des Netzwerk-Duells, wichtig fuer Rematches. */
   duelMatchNumber?: number;

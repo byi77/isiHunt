@@ -26,7 +26,11 @@
 
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 
-import { BACKEND_TIMEOUT_MS, SYNC_CODE_ALPHABET } from '@/config/backend';
+import {
+  BACKEND_TIMEOUT_MS,
+  DUEL_RESULT_RETRY_DELAYS_MS,
+  SYNC_CODE_ALPHABET,
+} from '@/config/backend';
 import {
   CHALLENGE_DEFAULT_PLAYER_COUNT,
   CHALLENGE_MAX_PLAYER_COUNT,
@@ -731,17 +735,39 @@ export async function submitRoundResult(
   const supabase = CloudSystem.getSupabaseClient();
   if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
 
-  const response = await withTimeout(
-    supabase.rpc('submit_duel_result', {
-      p_code: code,
-      p_participant_token: participantToken,
-      p_result: result,
-    }),
-    'Ergebnis abgeben',
-  );
-  if (!response.ok) return response;
-  if (response.value.error) return { ok: false, error: response.value.error.message };
-  return { ok: true, value: true };
+  // Ein einzelner Fehlversuch darf das Ergebnis nicht kosten. Frueher wurde
+  // der Aufruf mit `void` gestartet und ein Funkloch beim Rundenende loeschte
+  // das Ergebnis endgueltig - die Rangliste wertete das Match nie, obwohl der
+  // Ergebnisbildschirm ueber den Broadcast bereits fertig aussah
+  // (AUDIT_2026-09-05, Befund 4). Wiederholen ist gefahrlos: der Server
+  // behaelt das erste Ergebnis (`coalesce(result, p_result)`).
+  let lastError = 'Ergebnis konnte nicht abgegeben werden';
+  for (let attempt = 0; attempt <= DUEL_RESULT_RETRY_DELAYS_MS.length; attempt++) {
+    if (attempt > 0) {
+      const delay = DUEL_RESULT_RETRY_DELAYS_MS[attempt - 1] ?? 0;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+
+    const response = await withTimeout(
+      supabase.rpc('submit_duel_result', {
+        p_code: code,
+        p_participant_token: participantToken,
+        p_result: result,
+      }),
+      'Ergebnis abgeben',
+    );
+
+    if (response.ok) {
+      const rpcError = response.value.error;
+      if (!rpcError) return { ok: true, value: true };
+      // Eine fachliche Ablehnung (unplausibles Ergebnis, abgelaufenes
+      // Fenster) faellt beim naechsten Versuch identisch aus - nur
+      // Transportfehler werden wiederholt.
+      return { ok: false, error: rpcError.message };
+    }
+    lastError = response.error;
+  }
+  return { ok: false, error: lastError };
 }
 
 /**

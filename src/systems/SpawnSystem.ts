@@ -62,6 +62,15 @@ export interface SpawnRequest {
   driftMultiplier?: number;
   blinking?: boolean;
   obstacleMode?: Exclude<ObstacleMode, 'none'>;
+  /**
+   * Driftrichtung in Radiant, aus dem geteilten Generator gezogen.
+   *
+   * Frueher zog `Collectible` sie selbst aus `Phaser.Math.FloatBetween`, das
+   * intern `Math.random()` verwendet und den Raum-Seed nicht kennt - im Duell
+   * trieben dieselben Relikte dadurch in verschiedene Richtungen
+   * (AUDIT_2026-09-05, Befund 9).
+   */
+  driftAngle: number;
 }
 
 /** Hinderniswahrscheinlichkeit aus Welt, Schwierigkeit und Run-Fortschritt. */
@@ -122,7 +131,13 @@ export class SpawnSystem {
 
     const ramp = Phaser.Math.Linear(1, SPAWN_RAMP_FACTOR, Phaser.Math.Clamp(runProgress, 0, 1));
     // Streuung, damit das Spawn-Muster nicht metronomisch wirkt.
-    this.timerMs =
+    //
+    // `+=` statt `=`: Der Timer steht hier auf einem negativen Rest - dem
+    // Teil des Frames, der ueber die Faelligkeit hinausging. Wurde er
+    // verworfen, hing die Anzahl der Spawns pro Run an der Bildrate, weil
+    // grosse Deltas mehr Zeit wegwarfen als kleine (AUDIT_2026-09-05,
+    // Befund 8). Der Rest wird deshalb auf das neue Intervall angerechnet.
+    this.timerMs +=
       SPAWN_INTERVAL_MS *
       ramp *
       this.rng.realInRange(SPAWN_INTERVAL_JITTER_MIN, SPAWN_INTERVAL_JITTER_MAX);
@@ -131,6 +146,10 @@ export class SpawnSystem {
     // auch wenn der Spawn gleich verworfen wird.
     const position = this.findPosition(playerX, playerY);
     const rarity = this.rollWorldRarity();
+
+    // Immer gezogen, auch fuer Hindernisse, die nicht driften: der Verbrauch
+    // muss unabhaengig vom Ausgang gleich bleiben.
+    const driftAngle = this.rng.realInRange(0, Math.PI * 2);
 
     // Der Zufallsverbrauch ist immer gleich, auch wenn das Feld voll ist.
     // Hindernisse erscheinen anfangs selten und werden gegen Ende etwas
@@ -153,6 +172,7 @@ export class SpawnSystem {
         y: position.y,
         kind: 'obstacle',
         rarity,
+        driftAngle,
         obstacleMode: this.obstacleMode === 'none' ? undefined : this.obstacleMode,
       };
     }
@@ -163,6 +183,7 @@ export class SpawnSystem {
       y: position.y,
       kind: 'collectible',
       rarity,
+      driftAngle,
       lifetimeScale:
         (this.modifier === 'rare_bonus'
           ? WORLD_RARE_LIFETIME_SCALE
@@ -177,7 +198,13 @@ export class SpawnSystem {
   /** Erzwingt einen Spawn - fuer Debug-Tasten und spaetere Ereignisse. */
   forceSpawn(rarity: RarityDef, playerX: number, playerY: number): SpawnRequest {
     const position = this.findPosition(playerX, playerY);
-    return { x: position.x, y: position.y, kind: 'collectible', rarity };
+    return {
+      x: position.x,
+      y: position.y,
+      kind: 'collectible',
+      rarity,
+      driftAngle: this.rng.realInRange(0, Math.PI * 2),
+    };
   }
 
   private rollWorldRarity(): RarityDef {
@@ -187,7 +214,13 @@ export class SpawnSystem {
       (this.modifier === 'rare_bonus' ? WORLD_RARE_PROMOTION_CHANCE : 0) +
         Math.max(0, this.rarityPromotionChance),
     );
-    if (promotionChance <= 0 || this.rng.frac() >= promotionChance) return rarity;
+    // Die Zufallszahl wird IMMER gezogen, auch bei Chance 0. Sonst
+    // verschiebt schon ein einzelner Spuersinn-Rang den gesamten weiteren
+    // Zufallsverbrauch: der naechste Spawn laege an anderen Koordinaten und
+    // die beiden Duellanten spielten verschiedene Runden
+    // (AUDIT_2026-09-05, Befund 9).
+    const promotionRoll = this.rng.frac();
+    if (promotionChance <= 0 || promotionRoll >= promotionChance) return rarity;
 
     // Weltbonus und Spürsinn fördern jeweils nur um eine Stufe. So bleibt die
     // sichtbare Staffelung erhalten und ein Talent erzeugt keine direkte

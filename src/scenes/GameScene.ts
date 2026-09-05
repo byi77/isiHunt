@@ -47,6 +47,7 @@ import { DebugKeys } from '@/input/DebugKeys';
 import { InputController } from '@/input/InputController';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
+import * as DebugSystem from '@/systems/DebugSystem';
 import * as NetworkDuelSystem from '@/systems/NetworkDuelSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
@@ -459,7 +460,12 @@ export class GameScene extends Phaser.Scene {
     x: number,
     y: number,
     rarity: RarityDef,
-    options: { lifetimeScale?: number; driftMultiplier?: number; blinking?: boolean } = {},
+    options: {
+      lifetimeScale?: number;
+      driftMultiplier?: number;
+      blinking?: boolean;
+      driftAngle?: number;
+    } = {},
   ): void {
     this.collectibles.push(
       new Collectible(
@@ -706,7 +712,13 @@ export class GameScene extends Phaser.Scene {
     // fuer Fairness, der fertig gespielte Lauf ist trotzdem echter Fortschritt.
     if (this.mode !== 'solo' && this.challenge?.kind !== 'duel-online') {
       ChallengeSystem.submitRound(stats);
-      if (this.challenge?.kind === 'bot') ChallengeSystem.awardBotVictory();
+      if (this.challenge?.kind === 'bot') {
+        // Die Praemie wird lokal sofort sichtbar, muss aber auch serverseitig
+        // gebucht werden: sonst loescht sie der naechste Profilabgleich wieder
+        // (AUDIT_2026-09-05, Befund 6).
+        const reward = ChallengeSystem.awardBotVictory();
+        if (reward) ProgressSyncSystem.enqueueBotVictory(reward.matchId);
+      }
       if (this.mode === 'daily') {
         const progression = ProgressionSystem.applyRun(stats);
         const eventId = ProgressSyncSystem.enqueueRun(
@@ -754,12 +766,24 @@ export class GameScene extends Phaser.Scene {
       NetworkDuelSystem.broadcastRoundResult(playerIndex, round);
       const roomCode = this.challenge.online?.roomCode ?? '';
       if (roomCode) {
+        // `submitRoundResult` wiederholt Transportfehler selbst. Scheitert es
+        // endgueltig, wertet die Rangliste dieses Match nicht - das gehoert
+        // sichtbar ins Debug-Protokoll und nicht stillschweigend verworfen
+        // (AUDIT_2026-09-05, Befund 4).
         void NetworkDuelSystem.submitRoundResult(
           roomCode,
           playerIndex === 0,
           round,
           this.challenge.online?.participantToken ?? '',
-        );
+        ).then((submitted) => {
+          if (submitted.ok) return;
+          DebugSystem.pushLogEntry({
+            timestamp: Date.now(),
+            kind: 'error',
+            label: 'duel:result-lost',
+            detail: `Ergebnis nicht gespeichert: ${submitted.error}`,
+          });
+        });
       }
 
       this.time.delayedCall(450, () => {

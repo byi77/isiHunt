@@ -28,6 +28,12 @@ export interface CollectibleOptions {
   lifetimeScale?: number;
   driftMultiplier?: number;
   blinking?: boolean;
+  /**
+   * Driftrichtung in Radiant. Kommt aus dem geteilten Zufallsgenerator des
+   * `SpawnSystem`, damit beide Duellanten dieselbe Bewegung sehen
+   * (AUDIT_2026-09-05, Befund 9).
+   */
+  driftAngle?: number;
 }
 
 export class Collectible extends Phaser.GameObjects.Container {
@@ -99,8 +105,10 @@ export class Collectible extends Phaser.GameObjects.Container {
     this.setDepth(Depth.Collectible);
     scene.add.existing(this);
 
-    // Zufaellige Driftrichtung mit der seltenheitsabhaengigen Geschwindigkeit.
-    const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+    // Driftrichtung mit der seltenheitsabhaengigen Geschwindigkeit. Der Winkel
+    // kommt vom Aufrufer; der Rueckfall auf `FloatBetween` gilt nur fuer
+    // Aufrufe ohne Spawn-Plan (Debug-Tasten).
+    const angle = options.driftAngle ?? Phaser.Math.FloatBetween(0, Math.PI * 2);
     this.velocity = new Phaser.Math.Vector2(
       Math.cos(angle) * rarity.driftSpeed * driftMultiplier,
       Math.sin(angle) * rarity.driftSpeed * driftMultiplier,
