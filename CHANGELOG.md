@@ -162,6 +162,12 @@ was genau geaendert wurde und was bewusst offen bleibt._
   git-ignoriert; ein liegengebliebenes Reproduktionsskript haette die CI rot
   gemacht.
 
+- **Die Praemienwerte auf dem Server sind wieder aktuell.** Die
+  Datenbankfunktion `balance_config()` kannte den Wert fuer den Bot-Sieg nicht,
+  weil die zugehoerige Migration nach ihrer Ergaenzung nie erneut eingespielt
+  wurde — der frisch gebaute Bonus haette 0 Muenzen gutgeschrieben. Aufgefallen
+  beim Einspielen, behoben mit Migration 2.48.
+
 ### Geaendert
 
 - **Online-Duell-Verbindung repariert.** Beide Spieler teilen jetzt den
