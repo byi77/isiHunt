@@ -11,14 +11,22 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
-- **Ein zweiter Rechner ist in vier Handgriffen arbeitsfaehig.** Node, Git und
-  VS Code installieren, das Repo nach `C:\Git\isiHunt` klonen, Claude Code
+- **Ein zweiter Rechner ist in wenigen Handgriffen arbeitsfaehig.** Node, Git
+  und VS Code installieren, das Repo nach `C:\Git\isiHunt` klonen, Claude Code
   anmelden — dann erledigt der Skill **`/start`** den Rest: Git-Hooks,
   `npm ci`, die Playwright-Browser `chromium` und `webkit`, die globale
   Claude-Konfiguration, die Erinnerungen und die `.env`. Zum Schluss faehrt er
   `npm run verify` als Nachweis, dass es wirklich laeuft.
 
-  Dahinter steht `scripts/setup-workstation.mjs` (`npm run setup`). Es ist
+  Der Ablauf laeuft in **zwei Laeufen mit einem Sitzungsneustart dazwischen**:
+  Der erste spielt nur die globale Claude-Konfiguration ein und haelt an, der
+  zweite macht den Rest. Grund ist `bypassPermissions` in der globalen
+  `settings.json` — ohne sie waere jeder Schritt einzeln zu bestaetigen, und
+  die Arbeitsregeln aus der globalen `CLAUDE.md` griffen erst hinterher. Ein
+  Neustart ist ohnehin faellig; die Aufteilung nutzt ihn.
+
+  Dahinter steht `scripts/setup-workstation.mjs` (`npm run setup:global` und
+  `npm run setup`). Es ist
   **wiederholbar** — was schon sitzt, wird nicht angefasst —, weshalb
   `npm run setup:check` auch als Diagnose taugt, wenn spaeter etwas klemmt.
   Vorhandene Dateien in `~/.claude` werden nie ueberschrieben: Auf einem

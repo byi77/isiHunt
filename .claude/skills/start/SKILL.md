@@ -8,6 +8,9 @@ description: >
   pruefen, ob alles laeuft. Verwenden, wenn der Nutzer /start schreibt, das
   Repo frisch geklont hat oder sagt, dass er auf einem neuen Rechner
   anfaengt - auch bei "einrichten", "aufsetzen", "hier zum ersten Mal".
+  WICHTIG: Auf einem neuen Rechner laeuft /start ZWEIMAL - der erste Lauf
+  spielt die globale Claude-Konfiguration ein und haelt an, danach muss die
+  Sitzung neu gestartet werden, dann macht der zweite Lauf den Rest.
 ---
 
 # /start — Arbeitskopie einrichten
@@ -18,8 +21,31 @@ Skill laesst sich jederzeit erneut fahren, etwa um zu pruefen, ob noch alles
 steht.
 
 Die Arbeit erledigt `scripts/setup-workstation.mjs`. Dieser Skill fuehrt darum
-herum, was ein Skript nicht kann: fehlende Werkzeuge nachinstallieren, nach
-den Supabase-Schluesseln fragen und das Ergebnis einordnen.
+herum, was ein Skript nicht kann: fehlende Werkzeuge nachinstallieren, den
+Sitzungsneustart zwischen den beiden Phasen veranlassen, nach den
+Supabase-Schluesseln fragen und das Ergebnis einordnen.
+
+## Der Ablauf in zwei Phasen
+
+Die Einrichtung braucht **zwei Laeufe mit einem Sitzungsneustart dazwischen**:
+
+```
+/start  (1. Lauf)   -> globale Claude-Konfiguration nach ~/.claude, dann STOPP
+[Sitzung neu starten]
+/start  (2. Lauf)   -> alles uebrige, ohne Rueckfragen
+```
+
+**Warum.** In `.claude/global/settings.json` steht `bypassPermissions`. Solange
+sie nicht in `~/.claude` liegt, muss jeder einzelne Schritt bestaetigt werden —
+acht Rueckfragen fuer einen Vorgang, dem der Nutzer mit `/start` bereits
+zugestimmt hat. Ebenso greift die globale `CLAUDE.md` mit den Arbeitsregeln
+erst nach einem Neustart; ohne die Aufteilung liefe der laengere Teil der
+Einrichtung ohne sie.
+
+Ein Neustart ist ohnehin faellig. Die Aufteilung nutzt ihn.
+
+**Welcher Lauf gerade dran ist, sagt das Skript** — nicht raten, sondern
+Schritt 1 fahren und die Ausgabe lesen.
 
 ## Schritt 1 — Bestandsaufnahme
 
@@ -48,29 +74,60 @@ winget install --id GitHub.cli --accept-source-agreements --accept-package-agree
 unter Node 20 bricht der Testlauf mit `markAsUncloneable is not a function` ab.
 Meldet Schritt 1 eine zu alte Version, ist das der Grund.
 
-**Nach der Installation ist eine neue Shell noetig**, damit der PATH stimmt.
-Das dem Nutzer sagen und ihn bitten, `/start` danach erneut zu fahren —
-weiterarbeiten in derselben Shell scheitert an genau diesem PATH.
+**Danach muss die Shell neu geoeffnet werden**, sonst kennt sie die neuen
+Befehle nicht — `winget` aendert den PATH, eine laufende Sitzung erbt ihn
+nicht. Bei einer Neuinstallation von Node heisst das: **VS Code komplett
+schliessen und neu oeffnen**, nicht nur eine neue Konsole. Das dem Nutzer sagen
+und ihn bitten, danach erneut `/start` zu fahren; Weiterarbeiten scheitert an
+genau diesem PATH.
 
 VS Code und die Erweiterungen gehoeren nicht hierher: Wenn `/start` laeuft,
 laeuft Claude Code bereits.
 
-## Schritt 3 — Einrichten
+## Schritt 3a — Phase 1: globale Konfiguration
+
+```bash
+npm run setup:global
+```
+
+Spielt `CLAUDE.md`, `settings.json` und die beiden globalen Skills nach
+`~/.claude` — und **nichts sonst**.
+
+Der Exit-Code sagt, wie es weitergeht:
+
+| Code | Bedeutet                            | Dann                                         |
+| ---- | ----------------------------------- | -------------------------------------------- |
+| 2    | etwas eingespielt, Neustart faellig | **hier anhalten**, Nutzer um Neustart bitten |
+| 0    | sass schon                          | direkt zu Schritt 3b                         |
+
+**Bei Code 2 endet der Lauf.** Dem Nutzer sagen — und dabei klar machen, dass
+`/start` beim ersten Mal zweimal laeuft, damit der zweite Aufruf nicht wie ein
+Fehler wirkt:
+
+> **Phase 1 von 2 ist fertig** — `/start` laeuft auf einem neuen Rechner
+> zweimal.
+>
+> 1. Claude-Sitzung neu starten
+> 2. erneut `/start` sagen
+>
+> Der zweite Lauf richtet den Rest ein und braucht keine Rueckfragen mehr.
+
+Nicht weitermachen und nicht ueberreden. Die Rueckfragen, die dann kaemen, sind
+genau das, was die Aufteilung vermeidet.
+
+## Schritt 3b — Phase 2: der Rest
 
 ```bash
 npm run setup
 ```
 
-Das Skript ist der eigentliche Kern. Es faehrt der Reihe nach:
-
-| Schritt               | Tut                                                                   |
-| --------------------- | --------------------------------------------------------------------- |
-| Git-Hooks             | `git config core.hooksPath .githooks`                                 |
-| Abhaengigkeiten       | `npm ci`, wenn `node_modules` fehlt                                   |
-| Playwright            | `chromium` und `webkit` nachinstallieren                              |
-| Globale Claude-Config | `.claude/global/` → `~/.claude/` (CLAUDE.md, settings.json, 2 Skills) |
-| Claude-Erinnerungen   | `memory:load` — Repo → `~/.claude/projects/<slug>/memory/`            |
-| `.env`                | aus `.env.example` anlegen                                            |
+| Schritt             | Tut                                                        |
+| ------------------- | ---------------------------------------------------------- |
+| Git-Hooks           | `git config core.hooksPath .githooks`                      |
+| Abhaengigkeiten     | `npm ci`, wenn `node_modules` fehlt                        |
+| Playwright          | `chromium` und `webkit` nachinstallieren                   |
+| Claude-Erinnerungen | `memory:load` — Repo → `~/.claude/projects/<slug>/memory/` |
+| `.env`              | aus `.env.example` anlegen                                 |
 
 Braucht beim ersten Mal mehrere Minuten (`npm ci` und zwei Browser-Downloads) —
 Timeout auf **900000 ms** setzen.
@@ -83,7 +140,7 @@ es will.
 
 ## Schritt 4 — Supabase-Zugangsdaten
 
-Meldet Schritt 3 `.env ... enthaelt noch Platzhalter`, den Nutzer nach den
+Meldet Schritt 3b `.env ... enthaelt noch Platzhalter`, den Nutzer nach den
 beiden Werten fragen:
 
 ```
@@ -148,9 +205,8 @@ npm run playtest -- --sim --watch # Browser-Playtest
 /finish                           # fertige Arbeit ausliefern
 ```
 
-**Auf Claude Code hinweisen, wenn die globale Konfiguration neu eingespielt
-wurde:** Sie greift erst nach einem Neustart der Sitzung. Bis dahin laeuft
-Claude ohne die globalen Arbeitsanweisungen und ohne die beiden Skills.
+Der Neustart liegt bei diesem Ablauf zwischen den Phasen (Schritt 3a), nicht
+am Ende — wer hier ankommt, arbeitet bereits mit der globalen Konfiguration.
 
 ## Was dieser Skill nicht kann
 

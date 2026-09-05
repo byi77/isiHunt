@@ -1285,6 +1285,14 @@ Verworfen wurden zwei Alternativen:
 - Vorhandene Dateien in `~/.claude` werden nie ueberschrieben. Auf einem
   Rechner, auf dem schon gearbeitet wurde, meldet das Setup-Skript stattdessen,
   dass der Stand abweicht.
+- **Die Einrichtung braucht zwei Laeufe mit einem Sitzungsneustart dazwischen.**
+  Die globale `settings.json` traegt `bypassPermissions`, die globale
+  `CLAUDE.md` die Arbeitsregeln — beides greift erst nach einem Neustart.
+  Liefe die Einrichtung in einem Zug, waere jeder Schritt einzeln zu
+  bestaetigen, und ihr laengerer Teil liefe ohne die Regeln, die gerade erst
+  eingespielt wurden. `npm run setup:global` bricht deshalb nach der
+  Konfiguration mit Exit-Code 2 ab. Der Preis: Wer den Neustart vergisst,
+  landet wieder bei den Rueckfragen.
 - Die versionierte `settings.json` ist die bereinigte Fassung — ohne die
   historisch gewachsene `permissions.allow`-Liste, die Pfade zu einem anderen
   Repository enthaelt und durch `"defaultMode": "bypassPermissions"` ohnehin

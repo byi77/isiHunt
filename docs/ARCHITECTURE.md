@@ -1213,10 +1213,24 @@ versioniert unter `.claude/`.
 und sind nach dem Klonen da. Das ist der Grund, warum `/start` und `/finish`
 dort stehen und nicht unter `~/.claude/skills/`.
 
-`npm run setup` (bzw. `/start`) richtet den Rest ein: Git-Hooks, `npm ci`,
-Playwright-Browser, globale Konfiguration, Erinnerungen, `.env`. Das Skript ist
-**wiederholbar** — was schon sitzt, wird nicht angefasst —, weshalb
-`npm run setup:check` auch als Diagnose taugt, wenn spaeter etwas klemmt.
+`/start` richtet den Rest ein, in **zwei Laeufen mit einem Sitzungsneustart
+dazwischen**:
+
+| Lauf | Befehl                 | Tut                                               |
+| ---- | ---------------------- | ------------------------------------------------- |
+| 1    | `npm run setup:global` | nur `~/.claude` fuellen, dann Abbruch mit Exit 2  |
+| 2    | `npm run setup`        | Hooks, `npm ci`, Playwright, Erinnerungen, `.env` |
+
+Der Grund ist die Reihenfolge, nicht die Bequemlichkeit: In
+`.claude/global/settings.json` steht `bypassPermissions`, und die globale
+`CLAUDE.md` traegt die Arbeitsregeln. Beides greift erst nach einem Neustart.
+Liefe alles in einem Zug, muesste jeder Schritt einzeln bestaetigt werden — und
+der laengere Teil der Einrichtung liefe ohne die Regeln, die gerade erst
+eingespielt wurden. Ein Neustart ist ohnehin faellig; die Aufteilung nutzt ihn.
+
+Das Skript ist **wiederholbar** — was schon sitzt, wird nicht angefasst —,
+weshalb `npm run setup:check` auch als Diagnose taugt, wenn spaeter etwas
+klemmt.
 
 Die vollstaendige Anleitung fuer einen neuen Rechner steht in
 `SETUP_NEUER_RECHNER.md`.

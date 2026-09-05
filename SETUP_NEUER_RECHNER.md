@@ -8,11 +8,18 @@ Aufgenommen am **2026-09-03** vom Hauptrechner (Windows 11, ARM64).
 Alles darin ist ausgelesen, nicht erinnert. Was nicht geprueft werden konnte,
 ist im Anhang als solches benannt.
 
+> **Das Wichtigste zuerst: `/start` laeuft beim ersten Mal ZWEIMAL.**
+> Der erste Lauf spielt die globale Claude-Konfiguration ein und haelt an.
+> Dann die Claude-Sitzung neu starten und `/start` erneut sagen — der zweite
+> Lauf macht den Rest. Warum, steht unten im Kasten "Warum zweimal?".
+
 ---
 
-## Der kurze Weg: vier Handgriffe, dann `/start`
+## Der kurze Weg
 
-Wer nicht alles lesen will — das hier genuegt:
+Wer nicht alles lesen will — das hier genuegt.
+
+**1. In einer PowerShell:**
 
 ```powershell
 winget install OpenJS.NodeJS.LTS
@@ -21,17 +28,28 @@ winget install Microsoft.VisualStudioCode
 git clone https://github.com/byi77/isiHunt.git C:\Git\isiHunt
 ```
 
-Dann VS Code oeffnen, die Erweiterung `anthropic.claude-code` installieren,
-anmelden, den Ordner `C:\Git\isiHunt` oeffnen und in Claude Code sagen:
+**2. PowerShell neu oeffnen.** `winget` aendert den PATH, die laufende Sitzung
+erbt ihn nicht — ohne diesen Schritt findet der naechste kein `npm`.
 
-```
-/start
+```powershell
+code C:\Git\isiHunt
 ```
 
-Der Skill erledigt den Rest: Git-Hooks, Abhaengigkeiten, Playwright-Browser,
-globale Claude-Konfiguration, Erinnerungen, `.env` — und prueft am Ende mit
-`npm run verify`, ob es wirklich laeuft. Fehlende Werkzeuge installiert er
-selbst nach.
+**3. In VS Code:** Erweiterung `anthropic.claude-code` installieren, anmelden.
+
+**4. `/start` sagen.** Der Skill spielt die globale Claude-Konfiguration ein
+und haelt an.
+
+**5. Claude-Sitzung neu starten, dann noch einmal `/start`.** Jetzt laeuft der
+Rest ohne Rueckfragen durch: Git-Hooks, Abhaengigkeiten, Playwright-Browser,
+Erinnerungen, `.env` — und zum Schluss `npm run verify` als Nachweis.
+
+> **Warum zweimal?** In der globalen `settings.json` steht
+> `bypassPermissions`. Solange sie nicht in `~/.claude` liegt, muss jeder
+> Schritt einzeln bestaetigt werden — acht Rueckfragen fuer etwas, dem man mit
+> `/start` schon zugestimmt hat. Und die globalen Arbeitsregeln aus
+> `CLAUDE.md` greifen ebenfalls erst nach einem Neustart. Der Neustart ist
+> ohnehin faellig; die Aufteilung nutzt ihn.
 
 **Der Rest dieses Dokuments erklaert, was `/start` tut** — als Nachschlagewerk,
 wenn etwas klemmt oder von Hand gemacht werden soll.
@@ -699,9 +717,12 @@ jeder Claude-Code-Sitzung automatisch geladen.
 
 ```
 [ ] Node 24, Git, VS Code installiert
+[ ] PowerShell nach der Installation NEU geoeffnet (PATH!)
+[ ] Repo nach C:\Git\isiHunt geklont, Ordner in VS Code geoeffnet
 [ ] Claude-Code-Erweiterung installiert und angemeldet
-[ ] Repo nach C:\Git\isiHunt geklont
-[ ] /start gefahren
+[ ] /start (1. Lauf) - globale Konfiguration eingespielt
+[ ] Claude-Sitzung neu gestartet
+[ ] /start (2. Lauf) - Rest eingerichtet
 [ ] npm run setup:check meldet nichts Offenes
 [ ] npm run verify ist gruen
 [ ] gh auth login          (nur fuer PR-Arbeit)

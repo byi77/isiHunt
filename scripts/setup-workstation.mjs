@@ -13,12 +13,31 @@
  * Das Skript ist **wiederholbar**: Was schon sitzt, wird nicht angefasst.
  * Zweimal fahren aendert nichts.
  *
+ * ## Zwei Phasen, und warum
+ *
+ * Die Einrichtung laeuft in zwei Laeufen mit einem Sitzungsneustart dazwischen:
+ *
+ *     npm run setup:global    nur ~/.claude fuellen  -> Neustart noetig
+ *     npm run setup           alles uebrige
+ *
+ * Grund: In `.claude/global/settings.json` steht `bypassPermissions`. Solange
+ * die Datei nicht in `~/.claude` liegt, fragt Claude vor jedem Schritt der
+ * Einrichtung nach - acht Bestaetigungen fuer einen Vorgang, dem der Nutzer
+ * mit `/start` bereits zugestimmt hat. Ebenso greift die globale `CLAUDE.md`
+ * (Arbeitsregeln, Shell-Praeferenz) erst nach einem Neustart: Der laengere
+ * Teil der Einrichtung liefe sonst ohne sie.
+ *
+ * Ein Neustart ist ohnehin faellig, damit die Konfiguration greift. Die
+ * Aufteilung nutzt ihn, statt ihn hinterher nachzuschieben.
+ *
  * ## Aufruf
  *
- *     npm run setup           einrichten
+ *     npm run setup:global    Phase 1 - nur die globale Claude-Konfiguration
+ *     npm run setup           Phase 2 - alles uebrige
  *     npm run setup:check     nur pruefen, nichts schreiben
  *
  * Exit-Code 0 = alles sitzt. 1 = es fehlt etwas (bei `--check`).
+ * Exit-Code 2 = Phase 1 hat etwas eingespielt, Sitzungsneustart noetig.
  */
 
 import { execSync } from 'node:child_process';
@@ -29,8 +48,12 @@ import { homedir } from 'node:os';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const NUR_PRUEFEN = process.argv.includes('--check');
+const NUR_GLOBAL = process.argv.includes('--global');
 const claudeHeim = join(homedir(), '.claude');
 const globalImRepo = join(root, '.claude', 'global');
+
+/** Wurde in Phase 1 etwas nach ~/.claude geschrieben? Dann ist ein Neustart faellig. */
+let neustartNoetig = false;
 
 /** Sammelt, was am Ende berichtet wird. */
 const erledigt = [];
@@ -68,6 +91,26 @@ function vorhanden(programm) {
   return ausgabe(`${programm} --version`) !== null;
 }
 
+/** Gibt aus, was eingerichtet wurde, was schon sass und was offen blieb. */
+function bericht() {
+  console.log('\n' + '='.repeat(60));
+
+  if (erledigt.length) {
+    console.log('\nEingerichtet:');
+    for (const z of erledigt) console.log(`  + ${z}`);
+  }
+  if (uebersprungen.length) {
+    console.log('\nSass schon:');
+    for (const z of uebersprungen) console.log(`  . ${z}`);
+  }
+  if (offen.length) {
+    console.log('\nOffen:');
+    for (const z of offen) console.log(`  ! ${z}`);
+  }
+
+  console.log('');
+}
+
 console.log(NUR_PRUEFEN ? '=== Pruefung ===\n' : '=== Einrichtung ===\n');
 
 // --- 1. Werkzeuge --------------------------------------------------------
@@ -97,64 +140,12 @@ if (nodeHaupt < 22) {
   melde('fehlt', `Node ${nodeVersion} ist zu alt`, 'mindestens 22.22.2, empfohlen 24');
 }
 
-// --- 2. Git-Hooks --------------------------------------------------------
+// --- 2. Globale Claude-Konfiguration -------------------------------------
 //
-// Der Schritt, der am ehesten vergessen wird: `.git/hooks` wird nicht
-// mitgeklont. Ohne ihn zaehlt keine Version hoch und kein verify laeuft vor
-// dem Push.
-const hooksPfad = ausgabe('git config core.hooksPath');
-if (hooksPfad === '.githooks') {
-  melde('ok', 'Git-Hooks aktiv');
-} else if (NUR_PRUEFEN) {
-  melde('fehlt', 'Git-Hooks nicht aktiv', 'git config core.hooksPath .githooks');
-} else if (fahre('git config core.hooksPath .githooks', { leise: true })) {
-  melde('neu', 'Git-Hooks aktiviert');
-} else {
-  melde('fehlt', 'Git-Hooks liessen sich nicht aktivieren');
-}
-
-// --- 3. Abhaengigkeiten --------------------------------------------------
-const habenModule = existsSync(join(root, 'node_modules', 'phaser'));
-if (habenModule) {
-  melde('ok', 'Abhaengigkeiten installiert');
-} else if (NUR_PRUEFEN) {
-  melde('fehlt', 'node_modules fehlt', 'npm ci');
-} else {
-  console.log('\nAbhaengigkeiten installieren (npm ci) ...\n');
-  if (fahre('npm ci')) melde('neu', 'Abhaengigkeiten installiert');
-  else melde('fehlt', 'npm ci fehlgeschlagen');
-}
-
-// --- 4. Playwright-Browser -----------------------------------------------
-//
-// chromium fuer die meisten Suiten, webkit fuer die ios-Suite. Ohne webkit
-// bricht `npm run playtest -- --only=ios` ab.
-const browserHeim =
-  process.env.PLAYWRIGHT_BROWSERS_PATH ?? join(homedir(), 'AppData', 'Local', 'ms-playwright');
-
-for (const [name, praefix] of [
-  ['chromium', 'chromium-'],
-  ['webkit', 'webkit-'],
-]) {
-  let da = false;
-  try {
-    da = existsSync(browserHeim) && readdirSync(browserHeim).some((d) => d.startsWith(praefix));
-  } catch {
-    da = false;
-  }
-
-  if (da) {
-    melde('ok', `Playwright ${name} vorhanden`);
-  } else if (NUR_PRUEFEN) {
-    melde('fehlt', `Playwright ${name} fehlt`, `npx playwright install ${name}`);
-  } else {
-    console.log(`\nPlaywright ${name} installieren ...\n`);
-    if (fahre(`npx playwright install ${name}`)) melde('neu', `Playwright ${name} installiert`);
-    else melde('fehlt', `Playwright ${name} liess sich nicht installieren`);
-  }
-}
-
-// --- 5. Globale Claude-Konfiguration -------------------------------------
+// Kommt vor allem anderen: Sie enthaelt `bypassPermissions`, ohne das jeder
+// folgende Schritt einzeln bestaetigt werden muesste, und die globalen
+// Arbeitsanweisungen. Beides greift erst nach einem Sitzungsneustart - deshalb
+// bricht `--global` danach ab.
 //
 // Liegt versioniert unter .claude/global/ und wird nach ~/.claude gespiegelt.
 // Eine bereits vorhandene Datei wird NICHT ueberschrieben: Auf dem
@@ -188,6 +179,7 @@ for (const [datei, was] of globaleDateien) {
   mkdirSync(claudeHeim, { recursive: true });
   copyFileSync(quelle, ziel);
   melde('neu', `~/.claude/${datei} eingespielt`);
+  neustartNoetig = true;
 }
 
 // Die beiden globalen Skills. Fehlende werden ergaenzt, vorhandene bleiben.
@@ -205,7 +197,88 @@ if (existsSync(skillsQuelle)) {
       mkdirSync(skillsZiel, { recursive: true });
       cpSync(join(skillsQuelle, skill), ziel, { recursive: true });
       melde('neu', `Skill ${skill} eingespielt`);
+      neustartNoetig = true;
     }
+  }
+}
+
+// --- Phase 1 endet hier ---------------------------------------------------
+//
+// `--global` spielt nur die Konfiguration ein. Alles Weitere braucht die neue
+// Sitzung, sonst laeuft es ohne die eben eingespielten Regeln und mit einer
+// Rueckfrage je Schritt.
+if (NUR_GLOBAL) {
+  bericht();
+
+  if (neustartNoetig) {
+    console.log('  PHASE 1 VON 2 FERTIG - /start laeuft beim ersten Mal zweimal.');
+    console.log('');
+    console.log('  Jetzt:  1. Claude-Sitzung neu starten');
+    console.log('          2. erneut /start sagen');
+    console.log('');
+    console.log('  Der zweite Lauf macht den Rest und braucht keine Rueckfragen mehr.');
+    console.log('  Ohne den Neustart greift die eben eingespielte Konfiguration nicht.');
+    process.exit(2);
+  }
+
+  console.log('Die globale Konfiguration sass schon. Weiter mit: npm run setup');
+  process.exit(0);
+}
+
+// --- 3. Git-Hooks --------------------------------------------------------
+//
+// Der Schritt, der am ehesten vergessen wird: `.git/hooks` wird nicht
+// mitgeklont. Ohne ihn zaehlt keine Version hoch und kein verify laeuft vor
+// dem Push.
+const hooksPfad = ausgabe('git config core.hooksPath');
+if (hooksPfad === '.githooks') {
+  melde('ok', 'Git-Hooks aktiv');
+} else if (NUR_PRUEFEN) {
+  melde('fehlt', 'Git-Hooks nicht aktiv', 'git config core.hooksPath .githooks');
+} else if (fahre('git config core.hooksPath .githooks', { leise: true })) {
+  melde('neu', 'Git-Hooks aktiviert');
+} else {
+  melde('fehlt', 'Git-Hooks liessen sich nicht aktivieren');
+}
+
+// --- 4. Abhaengigkeiten --------------------------------------------------
+const habenModule = existsSync(join(root, 'node_modules', 'phaser'));
+if (habenModule) {
+  melde('ok', 'Abhaengigkeiten installiert');
+} else if (NUR_PRUEFEN) {
+  melde('fehlt', 'node_modules fehlt', 'npm ci');
+} else {
+  console.log('\nAbhaengigkeiten installieren (npm ci) ...\n');
+  if (fahre('npm ci')) melde('neu', 'Abhaengigkeiten installiert');
+  else melde('fehlt', 'npm ci fehlgeschlagen');
+}
+
+// --- 5. Playwright-Browser -----------------------------------------------
+//
+// chromium fuer die meisten Suiten, webkit fuer die ios-Suite. Ohne webkit
+// bricht `npm run playtest -- --only=ios` ab.
+const browserHeim =
+  process.env.PLAYWRIGHT_BROWSERS_PATH ?? join(homedir(), 'AppData', 'Local', 'ms-playwright');
+
+for (const [name, praefix] of [
+  ['chromium', 'chromium-'],
+  ['webkit', 'webkit-'],
+]) {
+  let da = false;
+  try {
+    da = existsSync(browserHeim) && readdirSync(browserHeim).some((d) => d.startsWith(praefix));
+  } catch {
+    da = false;
+  }
+
+  if (da) {
+    melde('ok', `Playwright ${name} vorhanden`);
+  } else if (NUR_PRUEFEN) {
+    melde('fehlt', `Playwright ${name} fehlt`, `npx playwright install ${name}`);
+  } else {
+    console.log(`\nPlaywright ${name} installieren ...\n`);
+    if (fahre(`npx playwright install ${name}`)) melde('neu', `Playwright ${name} installiert`);
+    else melde('fehlt', `Playwright ${name} liess sich nicht installieren`);
   }
 }
 
@@ -246,24 +319,7 @@ if (existsSync(envPfad)) {
 }
 
 // --- Bericht -------------------------------------------------------------
-console.log('\n' + '='.repeat(60));
-
-if (erledigt.length) {
-  console.log('\nEingerichtet:');
-  for (const z of erledigt) console.log(`  + ${z}`);
-}
-
-if (uebersprungen.length) {
-  console.log('\nSass schon:');
-  for (const z of uebersprungen) console.log(`  . ${z}`);
-}
-
-if (offen.length) {
-  console.log('\nOffen:');
-  for (const z of offen) console.log(`  ! ${z}`);
-}
-
-console.log('');
+bericht();
 
 if (offen.length === 0) {
   console.log('Alles eingerichtet. Naechster Schritt: npm run verify');

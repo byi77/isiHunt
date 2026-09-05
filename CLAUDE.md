@@ -142,8 +142,9 @@ npm run test:watch    # laeuft mit
 ### Die beiden Skills
 
 ```
-/start     Arbeitskopie einrichten - Hooks, npm ci, Playwright-Browser,
-           globale Claude-Konfiguration, Erinnerungen, .env, dann verify
+/start     Arbeitskopie einrichten - in zwei Laeufen mit Sitzungsneustart
+           dazwischen: erst die globale Claude-Konfiguration, dann Hooks,
+           npm ci, Playwright-Browser, Erinnerungen, .env und verify
 /finish    Arbeitseinheit ausliefern - memory:save, verify, commit, push,
            deploy:wait, Versionsnummer melden
 ```
@@ -152,7 +153,8 @@ Beide liegen versioniert unter `.claude/skills/` und sind nach dem Klonen
 sofort da. Von Hand fahrbar sind sie ueber ihre Skripte:
 
 ```bash
-npm run setup          # was /start tut
+npm run setup:global   # was /start im 1. Lauf tut (dann Sitzungsneustart)
+npm run setup          # was /start im 2. Lauf tut
 npm run setup:check    # nur pruefen, nichts schreiben - taugt als Diagnose
 npm run memory:save    # Erinnerungen -> Repo (vor dem Commit)
 npm run memory:load    # Erinnerungen <- Repo (nach dem Klonen)
