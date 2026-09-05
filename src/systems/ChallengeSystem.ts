@@ -36,6 +36,7 @@ import {
 import { DAILY_KEY_TOLERANCE_MS } from '@/config/backend';
 import { sanitizePlayerName } from '@/config/playerName';
 import type { TalentRanks } from '@/config/talents';
+import * as AuthSystem from '@/systems/AuthSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import { changeTalentRank, normalizeTalentRanks } from '@/systems/TalentAllocationSystem';
@@ -473,6 +474,17 @@ export interface BotVictoryReward {
    * und bucht nicht doppelt (AUDIT_2026-09-05, Befund 6).
    */
   matchId?: string;
+  /**
+   * Die Gutschrift steht nur lokal und ueberlebt den naechsten Profilabgleich
+   * nicht.
+   *
+   * Tritt genau dann auf, wenn ein angemeldeter Spieler gewinnt, dessen
+   * `start_bot_match`-Aufruf beim Start fehlgeschlagen ist: ohne Match-ID gibt
+   * es keine serverseitige Berechtigung, und der Server ist die Quelle fuer
+   * Coins und XP. Die Oberflaeche muss das benennen, statt eine gesicherte
+   * Praemie zu versprechen (AUDIT_2026-09-05_REAUDIT, Befund 4).
+   */
+  localOnly?: boolean;
 }
 
 /** Gutschrift des Bot-Siegbonus, exakt einmal pro abgeschlossenem Duell. */
@@ -485,10 +497,15 @@ export function awardBotVictory(): BotVictoryReward | null {
     BOT_VICTORY_BONUS_COINS,
     BOT_VICTORY_BONUS_XP,
   );
+  // Ein nicht angemeldeter Spieler behaelt seine lokale Gutschrift dauerhaft -
+  // es gibt keinen Serverstand, der sie ueberschreiben koennte. Nur der
+  // angemeldete Spieler ohne Match-ID verliert sie beim naechsten Abgleich.
+  const localOnly = AuthSystem.isSignedIn() && !state.botMatchId;
   state.botVictoryReward = {
     coins: progression.coinsGained,
     xp: progression.xpGained,
     ...(state.botMatchId ? { matchId: state.botMatchId } : {}),
+    ...(localOnly ? { localOnly: true } : {}),
   };
   return { ...state.botVictoryReward };
 }

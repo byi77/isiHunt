@@ -62,14 +62,16 @@ Auf einer leeren Datenbank in dieser Reihenfolge einspielen:
 | 43  | `phase_2_47_bot_victory_bonus.sql`           | Idempotente serverseitige Bot-Siegpraemie                           |
 | 44  | `phase_2_48_balance_config_resync.sql`       | Balance-Konfiguration mit dem Client synchronisieren                |
 | 45  | `phase_2_49_bot_match_challenge.sql`         | Bot-Sieg an einen serverseitig gestarteten Lauf binden              |
+| 46  | `phase_2_50_bot_match_retention.sql`         | Offene Bot-Matches nach Anzahl statt nach Alter begrenzen           |
 
 ## Aktueller Sollstand
 
 Der verknuepfte Supabase-Stand wird mit
 `supabase/verify_migration_state.sql` geprueft. Nach den aktuellen Phasen muss
-der Marker auf `schema_version = 49` stehen. Die Pruefung findet unter anderem
-`sync_profile_cosmetics`, `duel_result_slot`, `start_bot_match` und
-`claim_bot_victory_bonus` in der erwarteten Signatur.
+der Marker auf `schema_version = 50` stehen. Die Pruefung findet unter anderem
+`sync_profile_cosmetics`, `duel_result_slot`, `start_bot_match`,
+`claim_bot_victory_bonus`, `bot_match_retention_count` und
+`prune_bot_victory_claims` in der erwarteten Signatur.
 
 - Der Host startet die Talentphase erst ab zwei Teilnehmern.
 - Jeder Teilnehmer bestaetigt seinen temporaeren Talent-Build.
@@ -79,9 +81,15 @@ der Marker auf `schema_version = 49` stehen. Die Pruefung findet unter anderem
   Clients freigegeben; die produktive Einladungsliste bleibt an die Anmeldung
   gebunden.
 
-Die Phasen 2.45 bis 2.49 muessen in dieser Reihenfolge ausgefuehrt werden.
+Die Phasen 2.45 bis 2.50 muessen in dieser Reihenfolge ausgefuehrt werden.
 Phase 2.48 korrigiert nur die Balance-Funktion und veraendert den Marker nicht;
-Phase 2.49 setzt ihn anschliessend auf 49. Die Duell-Rangliste umfasst 2-, 3-
+Phase 2.49 setzt ihn anschliessend auf 49 und Phase 2.50 auf 50.
+
+Phase 2.50 begrenzt offene Bot-Matches nach **Anzahl** statt nach Alter. Das
+ist kein Detail, sondern eine Entscheidung mit eigenem ADR-0024: eine
+Altersgrenze laesst einen offline gewonnenen Bot-Sieg durch blossen
+Zeitablauf verfallen. `scripts/check-sql-contract.mjs` bricht ab, wenn in
+dieser Datei wieder ein `started_at < now() - interval` auftaucht. Die Duell-Rangliste umfasst 2-, 3-
 und 4-Spieler-Matches; anonyme oder nicht vollstaendig beendete Raeume werden
 nicht gewertet.
 

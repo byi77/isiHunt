@@ -70,6 +70,10 @@ const botMatchChallengeMigration = readFileSync(
   resolve(sqlDir, 'phase_2_49_bot_match_challenge.sql'),
   'utf8',
 );
+const botMatchRetentionMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_50_bot_match_retention.sql'),
+  'utf8',
+);
 const verification = readFileSync(resolve(sqlDir, 'verify_security_hardening.sql'), 'utf8');
 const migrationVerification = readFileSync(resolve(sqlDir, 'verify_migration_state.sql'), 'utf8');
 
@@ -258,6 +262,21 @@ requireText(balanceResyncMigration, 'begin;', 'Transaktion Phase 2.48');
 requireText(botMatchChallengeMigration, 'start_bot_match', 'Serverseitiger Bot-Laufstart');
 requireText(botMatchChallengeMigration, 'schema_version = 47', 'Migrationsguard Phase 2.49');
 requireText(botMatchChallengeMigration, 'schema_version = 49', 'Migrationsmarker Phase 2.49');
+requireText(
+  botMatchRetentionMigration,
+  'bot_match_retention_count',
+  'Anzahl-Grenze fuer offene Bot-Matches',
+);
+// AUDIT_2026-09-05_REAUDIT, Befund 3: Phase 2.50 raeumt bewusst NACH Anzahl
+// auf. Eine wieder eingefuehrte Altersgrenze wuerde einen offline gewonnenen
+// Bot-Sieg erneut durch blossen Zeitablauf verfallen lassen.
+if (/started_at\s*<\s*now\(\)\s*-\s*interval/.test(botMatchRetentionMigration)) {
+  failures.push(
+    'Phase 2.50: offene Bot-Matches duerfen nicht nach Alter geloescht werden (nur nach Anzahl)',
+  );
+}
+requireText(botMatchRetentionMigration, 'schema_version = 49', 'Migrationsguard Phase 2.50');
+requireText(botMatchRetentionMigration, 'schema_version = 50', 'Migrationsmarker Phase 2.50');
 
 /*
  * AUDIT_2026-09-05, Befund 1: In phase_2_30 hiess eine PL/pgSQL-Variable wie
@@ -319,7 +338,7 @@ for (const [functionName, { file, body }] of latestDefinition) {
 }
 
 const migrationFiles = readdirSync(sqlDir).filter((name) =>
-  /^phase_2_(2[89]|3[0-9]|4[0-9])_.*\.sql$/.test(name),
+  /^phase_2_(2[89]|3[0-9]|4[0-9]|5[0-9])_.*\.sql$/.test(name),
 );
 for (const file of migrationFiles) {
   const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();
@@ -332,7 +351,7 @@ requireText(verification, 'daily_key', 'Live-Verifikation Tagesbonus');
 requireText(verification, 'upsert_save', 'Live-Verifikation Save-CAS');
 requireText(verification, 'duel_rooms', 'Live-Verifikation Duell');
 requireText(migrationVerification, 'schema_version', 'Live-Verifikation Migrationsmarker');
-requireText(migrationVerification, 'schema_version = 49', 'Live-Verifikation Phase 2.49');
+requireText(migrationVerification, 'schema_version = 50', 'Live-Verifikation Phase 2.50');
 
 if (failures.length > 0) {
   console.error('SQL-Vertragspruefung fehlgeschlagen:');

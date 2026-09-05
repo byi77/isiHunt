@@ -141,8 +141,57 @@ function removeQueuedDuelResult(item: PendingDuelResult, accountId: string | nul
   writePendingDuelResults(accountId, pending);
 }
 
+/**
+ * Fachliche Ablehnungen von `submit_duel_result`, die allein am Inhalt des
+ * abgegebenen Ergebnisses haengen (phase_2_46_duel_result_grace.sql, Zeilen
+ * 124-171). Sie fallen bei jedem weiteren Versuch identisch aus; nur diese
+ * duerfen ein Ergebnis aus der Outbox nehmen.
+ *
+ * Bewusst NICHT in dieser Liste: 'Duell-Teilnehmer nicht autorisiert', 'Duell
+ * nicht gefunden oder abgelaufen' und 'Duell noch nicht gestartet'. Sie sind
+ * zeit- bzw. zustandsabhaengig - ein Rundenende kann den noch nicht
+ * committeten Raumstart ueberholen. Im Zweifel wird wiederholt: ein
+ * faelschlich behaltenes Ergebnis kostet einen Retry, ein faelschlich
+ * verworfenes kostet die Wertung des ganzen Matches
+ * (AUDIT_2026-09-05_REAUDIT, Befund 1).
+ */
+const PERMANENT_DUEL_RESULT_REJECTIONS = [
+  'Ungueltiges Ergebnisformat',
+  'Ergebnis zu gross',
+  'Ergebnis unvollstaendig',
+  'Ergebnis ausserhalb des Wertebereichs',
+  'Ungueltige Rundendauer',
+  'Ergebnis nicht plausibel',
+  'Ungueltige Reliktstatistik',
+  'Reliktstatistik passt nicht zum Ergebnis',
+] as const;
+
+/**
+ * Ob eine RPC-Fehlermeldung eine dauerhafte fachliche Ablehnung ist.
+ *
+ * Das installierte PostgREST-SDK liefert auch reine Transportfehler als
+ * *aufgeloeste* Antwort mit gesetztem `error` - ein Funkloch kommt als
+ * `TypeError: Failed to fetch` mit Status 0 an, nicht als abgelehnte Promise.
+ * Frueher galt jedes `response.value.error` als fachliche Ablehnung; das
+ * Ergebnis wurde daraufhin aus der Outbox entfernt und war unwiederbringlich
+ * verloren (AUDIT_2026-09-05_REAUDIT, Befund 1). Deshalb entscheidet jetzt
+ * eine Allowlist der tatsaechlichen SQL-Meldungen, nicht die blosse Existenz
+ * eines Fehlers.
+ */
+function isPermanentDuelResultRejection(message: string): boolean {
+  return PERMANENT_DUEL_RESULT_REJECTIONS.some((reason) => message.includes(reason));
+}
+
+/**
+ * Ob ein fehlgeschlagener Abgabeversuch spaeter wiederholt werden soll.
+ *
+ * Umgekehrte Logik zur Allowlist: alles, was keine belegte fachliche
+ * Ablehnung ist, bleibt in der Outbox. 'Kein Online-Dienst eingerichtet'
+ * gehoert ausdruecklich dazu - der Dienst kann beim naechsten Start
+ * konfiguriert sein.
+ */
 function isRetryableDuelResultError(error: string): boolean {
-  return error === 'Kein Online-Dienst eingerichtet' || error.startsWith('Ergebnis abgeben:');
+  return !isPermanentDuelResultRejection(error);
 }
 
 // --- Ergebnistypen ------------------------------------------------------------
@@ -854,10 +903,16 @@ async function submitRoundResultWithRetry(
     if (response.ok) {
       const rpcError = response.value.error;
       if (!rpcError) return { ok: true, value: true };
-      // Eine fachliche Ablehnung (unplausibles Ergebnis, abgelaufenes
-      // Fenster) faellt beim naechsten Versuch identisch aus - nur
-      // Transportfehler werden wiederholt.
-      return { ok: false, error: rpcError.message };
+      // Eine fachliche Ablehnung (unplausibles Ergebnis, falsches Format)
+      // faellt beim naechsten Versuch identisch aus und bricht sofort ab.
+      // Jede andere Fehlerantwort wird dagegen wiederholt: das SDK meldet
+      // auch ein Funkloch als aufgeloeste Antwort mit gesetztem `error`
+      // (AUDIT_2026-09-05_REAUDIT, Befund 1).
+      if (isPermanentDuelResultRejection(rpcError.message)) {
+        return { ok: false, error: rpcError.message };
+      }
+      lastError = `Ergebnis abgeben: ${rpcError.message}`;
+      continue;
     }
     lastError = response.error;
   }

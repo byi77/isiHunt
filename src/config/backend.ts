@@ -82,6 +82,45 @@ export const SYNC_RETRY_DELAYS_MS = [5000, 15000, 60000];
 export const DUEL_RESULT_RETRY_DELAYS_MS = [800, 2000, 5000];
 
 /**
+ * Wartezeiten fuer die Wiederholung von `start_bot_match`.
+ *
+ * Ohne serverseitige Match-ID gibt es fuer einen Bot-Sieg keine
+ * nachlieferbare Berechtigung: die Praemie wird lokal gutgeschrieben und vom
+ * naechsten Profilabgleich wieder geloescht
+ * (AUDIT_2026-09-05_REAUDIT, Befund 4). Ein einzelnes Funkloch beim
+ * Duellstart darf das nicht ausloesen.
+ *
+ * Kurz gehalten, weil der Spieler auf den Duellstart wartet. Ein erneuter
+ * Aufruf ist gefahrlos: `start_bot_match()` gibt innerhalb von 80 Sekunden
+ * denselben offenen Datensatz zurueck, statt einen zweiten anzulegen
+ * (phase_2_49_bot_match_challenge.sql).
+ */
+export const BOT_MATCH_START_RETRY_DELAYS_MS = [400, 1200];
+
+/**
+ * Wie oft ein vorgemerkter Bot-Sieg vergeblich angelaufen werden darf, bevor
+ * er aufgegeben wird.
+ *
+ * Ohne diese Grenze bliebe ein Sieg, dessen Claim *immer* mit einem
+ * voruebergehenden Fehler antwortet (geloeschtes Konto, dauerhaft defektes
+ * Profil), fuer immer in der Warteschlange stehen und sperrte ueber
+ * `hasPendingData()` die Abmeldung - dieselbe Klasse von Blockade wie in
+ * AUDIT_2026-09-05_REAUDIT, Befund 3, nur mit einer anderen Ursache.
+ *
+ * Gezaehlt werden *aufeinanderfolgende* erfolglose Durchlaeufe, nicht
+ * einzelne Aufrufe: ein erfolgreicher Claim setzt den Zaehler zurueck. Bei
+ * `SYNC_RETRY_DELAYS_MS` mit maximal 60 Sekunden Abstand entspricht die Zahl
+ * mehreren Stunden echter Wiederholung - deutlich mehr als jedes normale
+ * Funkloch und immer noch endlich.
+ *
+ * Bewusst ein Zaehler und kein Verfallsdatum je Eintrag: die Warteschlange
+ * speichert reine Match-IDs. Ein Zeitstempel je Eintrag braeuchte einen
+ * Formatwechsel samt Migration - Aufwand und Fehlerquelle fuer denselben
+ * Effekt.
+ */
+export const BOT_VICTORY_MAX_FAILED_ATTEMPTS = 240;
+
+/**
  * Wie weit ein Tagesschluessel vom heutigen Tag abweichen darf, damit der
  * Tagesbonus noch eingeloest werden kann.
  *

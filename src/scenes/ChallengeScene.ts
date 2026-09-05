@@ -378,22 +378,37 @@ export class ChallengeScene extends Phaser.Scene {
       const infoY = compactCards
         ? firstCardY + (state.rounds.length - 1) * cardStep + cardHeight / 2 + 28
         : 846;
+      // Eine nur lokal gebuchte Praemie darf nicht wie eine gesicherte
+      // aussehen: der naechste Profilabgleich ersetzt sie durch den
+      // Serverstand (AUDIT_2026-09-05_REAUDIT, Befund 4).
+      const reward = state.botVictoryReward;
       this.add
         .text(
           GAME_WIDTH / 2,
           infoY,
-          state.botVictoryReward
-            ? `BOT BESIEGT  +${state.botVictoryReward.coins} COINS  |  +${state.botVictoryReward.xp} XP`
+          reward
+            ? `BOT BESIEGT  +${reward.coins} COINS  |  +${reward.xp} XP`
             : gap === 0
               ? 'Kein Punkt Unterschied.'
               : `Abstand: ${gap.toLocaleString('de-DE')} Punkte`,
           textStyle(
             FontSize.small,
-            state.botVictoryReward ? Palette.gold : Palette.inkDim,
-            state.botVictoryReward ? { fontStyle: 'bold' } : undefined,
+            reward ? (reward.localOnly ? Palette.inkDim : Palette.gold) : Palette.inkDim,
+            reward && !reward.localOnly ? { fontStyle: 'bold' } : undefined,
           ),
         )
         .setOrigin(0.5);
+
+      if (reward?.localOnly) {
+        this.add
+          .text(
+            GAME_WIDTH / 2,
+            infoY + 30,
+            'Nur auf diesem Gerät - nicht im Konto gesichert.',
+            textStyle(FontSize.tiny, Palette.inkDim),
+          )
+          .setOrigin(0.5);
+      }
     }
 
     this.buildResultButtons(world);

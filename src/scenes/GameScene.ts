@@ -711,23 +711,31 @@ export class GameScene extends Phaser.Scene {
     // Der Tageslauf ist die bewusste Ausnahme: gleiche Ausgangswerte sorgen
     // fuer Fairness, der fertig gespielte Lauf ist trotzdem echter Fortschritt.
     if (this.mode !== 'solo' && this.challenge?.kind !== 'duel-online') {
-      ChallengeSystem.submitRound(stats);
-      if (this.challenge?.kind === 'bot') {
-        // Die Praemie wird lokal sofort sichtbar, muss aber auch serverseitig
-        // gebucht werden: sonst loescht sie der naechste Profilabgleich wieder
-        // (AUDIT_2026-09-05, Befund 6).
-        const reward = ChallengeSystem.awardBotVictory();
-        if (reward?.matchId) ProgressSyncSystem.enqueueBotVictory(reward.matchId);
-      }
-      if (this.mode === 'daily') {
-        const progression = ProgressionSystem.applyRun(stats);
-        const eventId = ProgressSyncSystem.enqueueRun(
-          stats,
-          progression,
-          this.challenge?.dailyKey ?? null,
-        );
-        ChallengeSystem.completeDaily(stats, eventId);
-        void ProgressSyncSystem.flush();
+      // Der Wechsel zum Ergebnisbildschirm haengt bewusst an keiner
+      // Persistenz. Ein gesperrter localStorage liess frueher schon
+      // `enqueueRun()` werfen und der Spieler blieb im leeren Spielfeld
+      // haengen (AUDIT_2026-09-05_REAUDIT, Befund 5).
+      try {
+        ChallengeSystem.submitRound(stats);
+        if (this.challenge?.kind === 'bot') {
+          // Die Praemie wird lokal sofort sichtbar, muss aber auch serverseitig
+          // gebucht werden: sonst loescht sie der naechste Profilabgleich wieder
+          // (AUDIT_2026-09-05, Befund 6).
+          const reward = ChallengeSystem.awardBotVictory();
+          if (reward?.matchId) ProgressSyncSystem.enqueueBotVictory(reward.matchId);
+        }
+        if (this.mode === 'daily') {
+          const progression = ProgressionSystem.applyRun(stats);
+          const eventId = ProgressSyncSystem.enqueueRun(
+            stats,
+            progression,
+            this.challenge?.dailyKey ?? null,
+          );
+          ChallengeSystem.completeDaily(stats, eventId);
+          void ProgressSyncSystem.flush();
+        }
+      } catch (error) {
+        console.warn('[GameScene] Rundenergebnis nicht vollstaendig gesichert.', error);
       }
 
       this.time.delayedCall(450, () => {

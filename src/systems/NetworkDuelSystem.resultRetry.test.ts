@@ -93,6 +93,74 @@ describe('submitRoundResult - Wiederholung nach Transportfehler', () => {
     expect(window.localStorage.getItem('isihunt.duel-results.v1.anonymous')).toBeNull();
   });
 
+  it('behaelt das Ergebnis, wenn das SDK ein Funkloch als Fehlerantwort meldet', async () => {
+    // Das installierte PostgREST-SDK loest die Promise auf und legt den
+    // Transportfehler in `error` - ein Funkloch kommt als
+    // `TypeError: Failed to fetch` mit Status 0 an, nicht als Rejection.
+    // Frueher galt jedes `error` als fachliche Ablehnung: nach genau einem
+    // Aufruf war der Outbox-Eintrag geloescht und das Ergebnis fuer immer fort
+    // (AUDIT_2026-09-05_REAUDIT, Befund 1).
+    rpc.mockResolvedValue({ data: null, error: { message: 'TypeError: Failed to fetch' } });
+
+    const result = await runWithTimers(
+      NetworkDuelSystem.submitRoundResult('ABC123', true, round, 'token'),
+    );
+
+    expect(result.ok).toBe(false);
+    // Erstversuch plus drei Wiederholungen - nicht ein einziger Aufruf.
+    expect(rpc).toHaveBeenCalledTimes(4);
+    expect(window.localStorage.getItem('isihunt.duel-results.v1.anonymous')).not.toBeNull();
+  });
+
+  it('gibt nach einem SDK-Funkloch beim naechsten Versuch trotzdem ab', async () => {
+    rpc
+      .mockResolvedValueOnce({ data: null, error: { message: 'TypeError: Failed to fetch' } })
+      .mockResolvedValue({ data: true, error: null });
+
+    const result = await runWithTimers(
+      NetworkDuelSystem.submitRoundResult('ABC123', true, round, 'token'),
+    );
+
+    expect(result.ok).toBe(true);
+    expect(rpc).toHaveBeenCalledTimes(2);
+    expect(window.localStorage.getItem('isihunt.duel-results.v1.anonymous')).toBeNull();
+  });
+
+  it('behaelt ein Ergebnis, dessen Raum den Start noch nicht committet hat', async () => {
+    // Zeit-/Zustandsabhaengig: das Rundenende kann den Raumstart ueberholen.
+    // Ein spaeterer Versuch geht durch, also darf der Eintrag nicht fallen.
+    rpc.mockResolvedValue({ data: null, error: { message: 'Duell noch nicht gestartet' } });
+
+    const result = await runWithTimers(
+      NetworkDuelSystem.submitRoundResult('ABC123', true, round, 'token'),
+    );
+
+    expect(result.ok).toBe(false);
+    expect(rpc).toHaveBeenCalledTimes(4);
+    expect(window.localStorage.getItem('isihunt.duel-results.v1.anonymous')).not.toBeNull();
+  });
+
+  it('haelt einen SDK-Transportfehler auch in der Outbox-Nachlieferung fest', async () => {
+    rpc.mockResolvedValue({ data: null, error: { message: 'TypeError: Failed to fetch' } });
+    await runWithTimers(
+      NetworkDuelSystem.submitRoundResult(
+        'ABC123',
+        true,
+        { ...round, durationMs: 90_000 },
+        '0123456789abcdef0123456789abcdef',
+      ),
+    );
+    expect(window.localStorage.getItem('isihunt.duel-results.v1.anonymous')).not.toBeNull();
+
+    rpc.mockReset();
+    rpc.mockResolvedValue({ data: null, error: { message: 'TypeError: Failed to fetch' } });
+    await runWithTimers(NetworkDuelSystem.flushPendingRoundResults());
+
+    // Der Eintrag muss den Neustart-Flush ueberleben, sonst hilft die Outbox
+    // genau in dem Fall nicht, fuer den sie gebaut wurde.
+    expect(window.localStorage.getItem('isihunt.duel-results.v1.anonymous')).not.toBeNull();
+  });
+
   it('laedt ein nach App-Neustart offenes Ergebnis aus der Outbox nach', async () => {
     rpc.mockRejectedValue(new Error('Network request failed'));
     await runWithTimers(

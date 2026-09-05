@@ -1297,3 +1297,89 @@ Verworfen wurden zwei Alternativen:
   historisch gewachsene `permissions.allow`-Liste, die Pfade zu einem anderen
   Repository enthaelt und durch `"defaultMode": "bypassPermissions"` ohnehin
   wirkungslos ist.
+
+---
+
+## ADR-0024 — Offene Bot-Matches werden nach Anzahl begrenzt, nicht nach Alter
+
+**Datum:** 2026-09-05 · **Status:** Angenommen
+
+### Kontext
+
+Phase 2.49 bindet jeden Bot-Siegbonus an eine serverseitig ausgestellte
+Match-ID: `start_bot_match()` legt eine Zeile in `bot_victory_matches` an,
+`claim_bot_victory_bonus()` bucht die Prämie und löscht sie wieder. Damit die
+Tabelle nicht unbegrenzt wächst — jedes **verlorene** Duell hinterlässt eine
+Karteileiche, weil nur der Sieg aufräumt — löschte `start_bot_match()` bei
+jedem Aufruf alle offenen Matches des Kontos, die älter als einen Tag waren.
+
+Die Client-Outbox (`ProgressSyncSystem`) verspricht dagegen, einen offline
+gewonnenen Bot-Sieg **beliebig lange** nachzuliefern. Sie speichert reine
+Match-IDs ohne Verfallsdatum.
+
+Diese beiden Zusagen widersprechen sich (AUDIT_2026-09-05_REAUDIT, Befund 3):
+
+```
+Tag 1  Spieler gewinnt offline, die Match-ID wartet lokal.
+Tag 2  Derselbe Spieler startet ein neues Duell -> der delete entfernt
+       den Datensatz von gestern.
+Tag 2  Das Netz kommt zurueck -> 'Bot-Duell nicht gestartet', dauerhaft.
+```
+
+Der Audit nannte als Auslöser "ein zweites Gerät desselben Kontos". Beim
+Beheben zeigte sich, dass das die seltenere Variante ist: Der Löschlauf
+gehört zum **eigenen** Duellstart. Ein Gerät, das über 24 Stunden keine
+Verbindung bekommt (Urlaub, Flugmodus, defektes WLAN), reicht aus.
+
+### Entscheidung
+
+**Die Grenze ist eine Anzahl, kein Alter.** `start_bot_match()` behält pro
+Konto die `bot_match_retention_count()` jüngsten offenen Matches (24) und
+löscht ältere — unabhängig davon, wie alt sie sind
+(`supabase/phase_2_50_bot_match_retention.sql`).
+
+Dieselbe Grenze gilt für `bot_victory_claims`, das bisher überhaupt nicht
+aufgeräumt wurde.
+
+Ergänzend gibt der Client nach `BOT_VICTORY_MAX_FAILED_ATTEMPTS` (240)
+aufeinanderfolgenden erfolglosen Durchläufen auf und legt die Einträge in die
+Quarantäne — als Sicherheitsnetz gegen eine Warteschlange, die aus anderen
+Gründen nie leer wird.
+
+### Begruendung
+
+- **Eine Frist hat immer ein Fenster, das ein Offline-Gerät verpassen kann.**
+  Eine Anzahl hat keines. Das ist der eigentliche Punkt: Der Nachzügler ist
+  jetzt strukturell sicher, nicht nur wahrscheinlich sicher.
+- **Die Anzahl deckelt härter als jede Frist.** 24 Zeilen pro Konto sind eine
+  Obergrenze; "ein Tag" ist keine — wer an einem Tag 200 Duelle spielt, hat
+  200 Zeilen.
+- **24 ist bewusst grösser als `BOT_VICTORY_MAX_PENDING = 16`** im Client. Der
+  Client reiht nie mehr als 16 Siege ein; der Puffer deckt die dazwischen
+  liegenden verlorenen Duelle mit ab.
+- **Das Aufräumen der Claim-Nachweise hebelt die Doppelbuchungssperre nicht
+  aus.** Ein gelöschter Nachweis erlaubt eine zweite Buchung nur, wenn die
+  zugehörige Zeile in `bot_victory_matches` noch existiert — die löscht
+  `claim_bot_victory_bonus()` aber beim Buchen. Die Match-Tabelle trägt die
+  Sperre; der Claim-Nachweis ist nur ihre schnelle Abkürzung.
+
+Verworfene Alternativen:
+
+- **Die Frist auf 30 Tage verlängern.** Billig, verschiebt das Problem aber
+  nur und lässt die Tabelle dreissigfach wachsen. Es gäbe weiterhin keine
+  belastbare Zusage.
+- **Verfallsdatum je Eintrag im Client.** Ehrlich, kostet aber echten
+  Fortschritt: der Sieg verfällt, statt gerettet zu werden. Ausserdem
+  bräuchte die Warteschlange einen Formatwechsel samt Migration — Aufwand und
+  Fehlerquelle für einen Fall, den die Anzahl-Grenze bereits ausschliesst.
+
+### Folgen
+
+- `npm run balance:check` und der SQL-Vertrag sind um eine Regel erweitert:
+  Taucht in Phase 2.50 wieder ein `started_at < now() - interval` auf, bricht
+  `scripts/check-sql-contract.mjs` ab. Die Entscheidung ist damit gegen einen
+  stillen Rückfall gesichert.
+- Der Datenbank-Sollstand steigt auf **50**. `verify_migration_state.sql`
+  prüft ihn.
+- Ein Konto, das unter 2.49 bereits Überhänge angesammelt hat, wird beim
+  Einspielen einmalig auf dieselbe Grenze gebracht.

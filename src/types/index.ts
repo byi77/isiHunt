@@ -170,9 +170,10 @@ export interface ChallengeState {
   botVictoryReward?: {
     coins: number;
     xp: number;
-    /** Kennung für die serverseitige Gutschrift; verhindert Doppelbuchung. */
-    /** Serverkennung; fehlt bei einem offline gestarteten Gastduell. */
+    /** Serverkennung für die Gutschrift; verhindert Doppelbuchung. Fehlt bei einem offline gestarteten Duell. */
     matchId?: string;
+    /** Nur lokal gebucht: ein angemeldeter Spieler ohne Serverkennung verliert die Prämie beim nächsten Abgleich. */
+    localOnly?: boolean;
   };
   /** Serverseitige Generation des Netzwerk-Duells, wichtig fuer Rematches. */
   duelMatchNumber?: number;

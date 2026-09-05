@@ -52,6 +52,8 @@ vi.mock('@/config/backend', () => ({
   // Kurz halten: Die Funktionen sollen am Netzfehler scheitern, nicht am
   // Zeitlimit - sonst dauert die Suite unnoetig lange.
   BACKEND_TIMEOUT_MS: 300,
+  // Ebenso kurz: geprueft wird die Anzahl der Versuche, nicht die Wartezeit.
+  BOT_MATCH_START_RETRY_DELAYS_MS: [1, 1],
 }));
 
 let CloudSystem: typeof CloudSystemModule;

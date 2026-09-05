@@ -1,6 +1,6 @@
 /** Offline-Outbox für Fortschrittsereignisse eines angemeldeten Profils. */
 
-import { SYNC_RETRY_DELAYS_MS } from '@/config/backend';
+import { BOT_VICTORY_MAX_FAILED_ATTEMPTS, SYNC_RETRY_DELAYS_MS } from '@/config/backend';
 import * as AuthSystem from '@/systems/AuthSystem';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
@@ -14,6 +14,8 @@ const INVALID_OUTBOX_KEY_PREFIX = 'isihunt.progress-events.invalid.v1.';
 const REJECTED_OUTBOX_KEY_PREFIX = 'isihunt.progress-events.rejected.v1.';
 const EVENT_OUTBOX_KEY_SEPARATOR = '.event.';
 const BOT_VICTORY_KEY_PREFIX = 'isihunt.bot-victories.v1.';
+const REJECTED_BOT_VICTORY_KEY_PREFIX = 'isihunt.bot-victories.rejected.v1.';
+const BOT_VICTORY_ATTEMPTS_KEY_PREFIX = 'isihunt.bot-victories.attempts.v1.';
 /** Mehr als ein paar unbestaetigte Bot-Siege deuten auf einen Defekt hin. */
 const BOT_VICTORY_MAX_PENDING = 16;
 const OUTBOX_MAX_EVENTS = 64;
@@ -95,6 +97,39 @@ function botVictoryKey(accountId: string): string {
   return `${BOT_VICTORY_KEY_PREFIX}${accountId}`;
 }
 
+function rejectedBotVictoryKey(accountId: string): string {
+  return `${REJECTED_BOT_VICTORY_KEY_PREFIX}${accountId}`;
+}
+
+function botVictoryAttemptsKey(accountId: string): string {
+  return `${BOT_VICTORY_ATTEMPTS_KEY_PREFIX}${accountId}`;
+}
+
+/**
+ * Zaehlt die aufeinanderfolgenden Durchlaeufe, in denen kein einziger
+ * vorgemerkter Bot-Sieg gebucht werden konnte.
+ *
+ * Ein erfolgreicher Claim setzt zurueck; erst `BOT_VICTORY_MAX_FAILED_ATTEMPTS`
+ * erfolglose Durchlaeufe in Folge geben die Warteschlange auf.
+ */
+function readBotVictoryAttempts(accountId: string): number {
+  try {
+    const raw = Number(window.localStorage.getItem(botVictoryAttemptsKey(accountId)));
+    return Number.isInteger(raw) && raw > 0 ? raw : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function writeBotVictoryAttempts(accountId: string, attempts: number): void {
+  try {
+    if (attempts <= 0) window.localStorage.removeItem(botVictoryAttemptsKey(accountId));
+    else window.localStorage.setItem(botVictoryAttemptsKey(accountId), String(attempts));
+  } catch {
+    // Ein privater Browsermodus darf den Spielfluss nicht blockieren.
+  }
+}
+
 /**
  * Match-IDs gewonnener Bot-Duelle, die der Server noch nicht bestaetigt hat.
  *
@@ -149,25 +184,122 @@ export function enqueueBotVictory(matchId: string): boolean {
 }
 
 /**
+ * Fachliche Ablehnungen von `claim_bot_victory_bonus`, die sich bei jedem
+ * weiteren Versuch identisch wiederholen
+ * (phase_2_49_bot_match_challenge.sql, Zeilen 98 und 113).
+ *
+ * 'Bot-Duell nicht gestartet' entsteht auch ohne Zutun des Spielers: der
+ * Server raeumt beim Start eines neuen Bot-Matches offene Match-IDs auf, die
+ * aelter als einen Tag sind. Startet ein zweites Geraet desselben Kontos ein
+ * Duell, waehrend das erste seinen Sieg noch offline haelt, ist dessen ID
+ * danach fort.
+ *
+ * Bewusst NICHT hier: 'Bot-Duell noch nicht beendet' und 'Bot-Duell zu
+ * schnell eingereicht' (beides zeitabhaengige Cooldowns, ein spaeterer
+ * Versuch geht durch) sowie 'Profilstand noch nicht angelegt' (der Stand
+ * entsteht beim naechsten Abgleich).
+ */
+const PERMANENT_BOT_VICTORY_REJECTIONS = [
+  'Bot-Duell nicht gestartet',
+  'Ungueltiges Bot-Duell',
+] as const;
+
+function isPermanentBotVictoryRejection(error: string): boolean {
+  return PERMANENT_BOT_VICTORY_REJECTIONS.some((reason) => error.includes(reason));
+}
+
+/**
  * Laedt vorgemerkte Bot-Siege hoch.
  *
  * Erst nach der Outbox: der Server ist die Quelle fuer Level und Coins, und
  * jeder bestaetigte Bonus ueberschreibt den lokalen Stand. Kaeme er vor den
  * Laufereignissen, waere der Zwischenstand kurzzeitig falsch.
+ *
+ * Gibt `true` zurueck, wenn alle Eintraege abgearbeitet sind - also nichts
+ * mehr wartet, wofuer sich ein Retry lohnt.
  */
-async function flushBotVictories(accountId: string): Promise<void> {
+async function flushBotVictories(accountId: string): Promise<boolean> {
+  const quarantined: string[] = [];
+  let booked = false;
+
+  // Eine Warteschlange, die auch nach sehr vielen Anlaeufen nichts mehr
+  // loswird, gibt auf: sonst sperrt sie ueber `hasPendingData()` dauerhaft die
+  // Abmeldung. Die Eintraege wandern in dieselbe Quarantaene wie eine
+  // fachliche Ablehnung, statt still zu verschwinden.
+  if (readBotVictoryAttempts(accountId) >= BOT_VICTORY_MAX_FAILED_ATTEMPTS) {
+    const abandoned = readBotVictories(accountId);
+    if (abandoned.length > 0) {
+      console.warn(
+        `[ProgressSyncSystem] ${abandoned.length} Bot-Sieg(e) nach ${BOT_VICTORY_MAX_FAILED_ATTEMPTS} erfolglosen Anlaeufen aufgegeben.`,
+      );
+      quarantineRejectedBotVictories(accountId, abandoned);
+      writeBotVictories(accountId, []);
+    }
+    writeBotVictoryAttempts(accountId, 0);
+    return true;
+  }
+
   for (const matchId of readBotVictories(accountId)) {
-    if (!AuthSystem.isSignedIn() || AuthSystem.currentUserId() !== accountId) return;
+    if (!AuthSystem.isSignedIn() || AuthSystem.currentUserId() !== accountId) return false;
     const result = await CloudSystem.claimBotVictoryBonus(matchId);
-    if (AuthSystem.currentUserId() !== accountId) return;
-    // Nur bei Erfolg austragen. Ein Netzfehler laesst die ID stehen; der
-    // Server erkennt einen erneuten Aufruf ueber dieselbe Match-ID.
-    if (!result.ok) return;
+    if (AuthSystem.currentUserId() !== accountId) return false;
+
+    if (!result.ok) {
+      // Eine dauerhafte Ablehnung bliebe sonst fuer immer vorn in der
+      // Warteschlange stehen: kein folgender Bot-Sieg und kein Tagesbonus
+      // kaeme mehr durch, und `hasPendingData()` sperrte dauerhaft die
+      // Abmeldung (AUDIT_2026-09-05_REAUDIT, Befund 3). Sie wandert deshalb
+      // in die Quarantaene, und die Schleife arbeitet weiter.
+      if (isPermanentBotVictoryRejection(result.error)) {
+        console.warn('[ProgressSyncSystem] Bot-Sieg dauerhaft abgelehnt.', result.error);
+        quarantined.push(matchId);
+        writeBotVictories(
+          accountId,
+          readBotVictories(accountId).filter((id) => id !== matchId),
+        );
+        continue;
+      }
+      // Ein Netzfehler laesst die ID stehen; der Server erkennt einen
+      // erneuten Aufruf ueber dieselbe Match-ID.
+      if (quarantined.length > 0) quarantineRejectedBotVictories(accountId, quarantined);
+      // Nur ein Durchlauf ganz ohne Buchung zaehlt als Fehlversuch. Kam
+      // wenigstens ein Sieg durch, ist die Verbindung nachweislich in
+      // Ordnung und der Zaehler faengt von vorn an.
+      writeBotVictoryAttempts(accountId, booked ? 0 : readBotVictoryAttempts(accountId) + 1);
+      return false;
+    }
+
+    booked = true;
     writeBotVictories(
       accountId,
       readBotVictories(accountId).filter((id) => id !== matchId),
     );
     if (result.value) SaveSystem.adoptProfileProgress(result.value.data);
+  }
+
+  if (quarantined.length > 0) quarantineRejectedBotVictories(accountId, quarantined);
+  writeBotVictoryAttempts(accountId, 0);
+  return true;
+}
+
+/**
+ * Legt dauerhaft abgelehnte Bot-Siege beiseite, statt sie stumm zu loeschen.
+ *
+ * Wie bei den Laufereignissen: fuer den Server wertlos, fuer die Fehlersuche
+ * wertvoll - ohne diese Ablage waere nicht mehr nachvollziehbar, welche
+ * Praemie verlorenging.
+ */
+function quarantineRejectedBotVictories(accountId: string, matchIds: string[]): void {
+  try {
+    const previous: unknown = JSON.parse(
+      window.localStorage.getItem(rejectedBotVictoryKey(accountId)) ?? '[]',
+    );
+    const merged = [...(Array.isArray(previous) ? previous : []), ...matchIds].slice(
+      -BOT_VICTORY_MAX_PENDING,
+    );
+    window.localStorage.setItem(rejectedBotVictoryKey(accountId), JSON.stringify(merged));
+  } catch {
+    // Quarantene ist nur Diagnosehilfe und darf den Spielfluss nicht blockieren.
   }
 }
 
@@ -286,11 +418,28 @@ function quarantineRejectedEvents(accountId: string, events: ProgressEvent[]): v
   }
 }
 
+/**
+ * Zaehlt Outbox-Schluessel auf, ohne bei gesperrtem Speicher zu werfen.
+ *
+ * Ein Browser im privaten Modus oder mit blockierten Cookies laesst schon den
+ * Zugriff auf `window.localStorage` mit einem `SecurityError` scheitern - noch
+ * vor jedem `getItem`. Ohne dieses `try` entkam die Exception aus
+ * `pendingCount()` und `enqueueRun()` und riss am Ende eines Tageslaufs den
+ * Wechsel zum Ergebnisbildschirm mit (AUDIT_2026-09-05_REAUDIT, Befund 5).
+ * `SaveSystem` behandelt denselben Fall bereits defensiv; die Outbox tut es
+ * jetzt auch.
+ */
 function storageKeysWithPrefix(prefix: string): string[] {
   const keys: string[] = [];
-  for (let index = 0; index < window.localStorage.length; index += 1) {
-    const key = window.localStorage.key(index);
-    if (key?.startsWith(prefix)) keys.push(key);
+  try {
+    const storage = window.localStorage;
+    for (let index = 0; index < storage.length; index += 1) {
+      const key = storage.key(index);
+      if (key?.startsWith(prefix)) keys.push(key);
+    }
+  } catch (error) {
+    console.warn('[ProgressSyncSystem] Outbox nicht lesbar.', error);
+    return [];
   }
   return keys;
 }
@@ -321,33 +470,68 @@ function storeProgressEvent(
  * waehrend des Schreibens des anderen einen neuen Run verlieren. Einzelne
  * Event-Schluessel werden dagegen nur angehaengt bzw. geloescht; ein anderer
  * Tab kann keinen bestehenden Eintrag mehr ueberschreiben.
+ *
+ * Gibt die Runs zurueck, die *nicht* uebernommen werden konnten. Sie stehen
+ * weiterhin nur im alten Format und muessen von `readOutbox()` trotzdem
+ * mitgezaehlt und gesendet werden - sonst waere ein Run bei vollem
+ * localStorage zwar nicht geloescht, aber unsichtbar
+ * (AUDIT_2026-09-05_REAUDIT, Befund 2).
  */
-function migrateArrayOutbox(accountId: string): void {
+function migrateArrayOutbox(accountId: string): ProgressEvent[] {
   try {
     const raw = window.localStorage.getItem(accountOutboxKey(accountId));
-    if (!raw) return;
+    if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
     if (!Array.isArray(parsed)) {
       window.localStorage.removeItem(accountOutboxKey(accountId));
-      return;
+      return [];
     }
     const valid = parsed.filter(isProgressEvent);
     const invalid = parsed.filter((event) => !isProgressEvent(event));
     if (invalid.length > 0) quarantineInvalidEvents(accountId, invalid);
-    valid.forEach((event) => storeProgressEvent(accountId, event, nextQueuedAt()));
-    window.localStorage.removeItem(accountOutboxKey(accountId));
+
+    // Erst kopieren, dann pruefen: `storeProgressEvent()` faengt Schreibfehler
+    // selbst ab und meldet sie nur ueber den Rueckgabewert. Wurde dieser
+    // ignoriert, loeschte die Migration bei vollem localStorage das Original,
+    // obwohl die Kopie fehlschlug - die Runs fehlten danach in beiden Formaten.
+    const failed = valid.filter((event) => !storeProgressEvent(accountId, event, nextQueuedAt()));
+    if (failed.length === 0) {
+      window.localStorage.removeItem(accountOutboxKey(accountId));
+      return [];
+    }
+
+    console.warn(
+      `[ProgressSyncSystem] Outbox-Migration unvollstaendig: ${failed.length} von ${valid.length} Runs nicht uebernommen.`,
+    );
+    // Nur die noch nicht uebernommenen Runs bleiben im alten Format stehen.
+    // Ein erneuter Versuch beim naechsten Zugriff zieht sie nach, ohne die
+    // bereits kopierten ein zweites Mal einzureihen.
+    try {
+      window.localStorage.setItem(accountOutboxKey(accountId), JSON.stringify(failed));
+    } catch {
+      // Selbst das Verkleinern schlug fehl - dann bleibt der vollstaendige
+      // Originalschluessel unangetastet liegen. Doppelte Eintraege sind
+      // unschaedlich: `readOutbox()` entdupliziert ueber die Event-ID.
+    }
+    return failed;
   } catch {
     // Ein defekter oder nicht beschreibbarer Speicher darf den Spielfluss nicht
     // blockieren; der naechste Zugriff versucht die Migration erneut.
+    return [];
   }
 }
 
 function readOutbox(accountId: string | null): ProgressEvent[] {
   quarantineLegacyOutbox();
   if (!accountId) return [];
-  migrateArrayOutbox(accountId);
+  const unmigrated = migrateArrayOutbox(accountId);
 
   const entries: Array<{ event: ProgressEvent; queuedAt: number; key: string }> = [];
+  // Nicht uebernommene Runs stehen noch im alten Array. Sie zuerst einreihen:
+  // sie sind aelter als alles, was seither ueber einzelne Schluessel kam.
+  unmigrated.forEach((event, index) => {
+    entries.push({ event, queuedAt: index, key: accountOutboxKey(accountId) });
+  });
   for (const key of storageKeysWithPrefix(eventOutboxPrefix(accountId))) {
     try {
       const parsed: unknown = JSON.parse(window.localStorage.getItem(key) ?? 'null');
@@ -363,7 +547,12 @@ function readOutbox(accountId: string | null): ProgressEvent[] {
       }
       entries.push({ event: value.event, queuedAt: value.queuedAt, key });
     } catch {
-      window.localStorage.removeItem(key);
+      try {
+        window.localStorage.removeItem(key);
+      } catch {
+        // Auch das Aufraeumen darf die Aufzaehlung nicht abbrechen; der
+        // defekte Eintrag wird beim naechsten Zugriff erneut uebersprungen.
+      }
     }
   }
 
@@ -438,7 +627,32 @@ function dropSettledEvents(accountId: string, settledIds: Set<string>): Progress
       // Ein Speicherfehler laesst den Eintrag fuer den naechsten Versuch liegen.
     }
   }
+  dropSettledFromArrayOutbox(accountId, settledIds);
   return current.filter((event) => !settledIds.has(event.eventId));
+}
+
+/**
+ * Traegt erledigte Runs auch aus einer nicht migrierten Array-Outbox aus.
+ *
+ * Bei vollem localStorage bleiben Runs im alten Format liegen (siehe
+ * `migrateArrayOutbox`). Ohne diesen Schritt wuerden sie nach erfolgreichem
+ * Upload bei jedem Abgleich erneut gesendet - der Server ist zwar ueber die
+ * Event-ID idempotent, der Stapel leerte sich aber nie.
+ */
+function dropSettledFromArrayOutbox(accountId: string, settledIds: Set<string>): void {
+  try {
+    const raw = window.localStorage.getItem(accountOutboxKey(accountId));
+    if (!raw) return;
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return;
+    const remaining = parsed
+      .filter(isProgressEvent)
+      .filter((event) => !settledIds.has(event.eventId));
+    if (remaining.length === 0) window.localStorage.removeItem(accountOutboxKey(accountId));
+    else window.localStorage.setItem(accountOutboxKey(accountId), JSON.stringify(remaining));
+  } catch {
+    // Ein Speicherfehler laesst den Eintrag fuer den naechsten Versuch liegen.
+  }
 }
 
 /** Überträgt wartende Runs in Reihenfolge; Fehler bleiben in der Outbox. */
@@ -525,9 +739,12 @@ async function flushPending(): Promise<void> {
   }
   cancelRetry();
 
-  await flushBotVictories(accountId);
+  const botVictoriesDone = await flushBotVictories(accountId);
   if (!AuthSystem.isSignedIn() || AuthSystem.currentUserId() !== accountId) return;
-  if (readBotVictories(accountId).length > 0) {
+  // Nur ein *offener* Rest haelt den Tagesbonus zurueck. Dauerhaft abgelehnte
+  // Eintraege sind ausgetragen und blockieren ihn nicht mehr
+  // (AUDIT_2026-09-05_REAUDIT, Befund 3).
+  if (!botVictoriesDone && readBotVictories(accountId).length > 0) {
     scheduleRetry();
     return;
   }
@@ -549,7 +766,28 @@ async function flushPending(): Promise<void> {
 
   const daily = await CloudSystem.claimDailyBonus(local.pendingDailyKey, local.pendingDailyEventId);
   if (AuthSystem.currentUserId() !== accountId) return;
-  if (!daily.ok || !daily.value) return;
+  if (!daily.ok) {
+    // Eine dauerhafte fachliche Ablehnung wiederholt sich identisch; sie
+    // wandert aus dem lokalen Stand, damit sie nicht bei jedem Abgleich einen
+    // aussichtslosen Aufruf ausloest.
+    if (isPermanentRejection(daily.error)) {
+      console.warn('[ProgressSyncSystem] Tagesbonus dauerhaft abgelehnt.', daily.error);
+      clearPendingDaily();
+      return;
+    }
+    // Alles andere ist voruebergehend - und ohne diesen Retry blieb der Bonus
+    // bis zum naechsten zufaelligen Ausloeser liegen und verfiel nach Ablauf
+    // des Datumsfensters (AUDIT_2026-09-05_REAUDIT, Befund 6). Die Run-Outbox
+    // ist an dieser Stelle leer, ihr Retry-Timer wurde oben abgebrochen.
+    scheduleRetry();
+    return;
+  }
+  // Ohne Nutzdaten ist nicht entscheidbar, ob der Server gebucht hat. Den
+  // lokalen Stand stehen lassen: der Claim ist serverseitig idempotent.
+  if (!daily.value) {
+    scheduleRetry();
+    return;
+  }
 
   SaveSystem.adoptProfileProgress(daily.value.data);
   clearPendingDaily();
@@ -598,6 +836,7 @@ export function clearOutbox(): void {
     // Auch die Bot-Siege: der Server hat den Fortschritt gerade geloescht,
     // eine spaetere Gutschrift wuerde den Reset teilweise rueckgaengig machen.
     writeBotVictories(accountId, []);
+    writeBotVictoryAttempts(accountId, 0);
   }
   cancelRetry();
 }

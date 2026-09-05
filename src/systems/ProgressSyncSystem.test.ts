@@ -13,6 +13,7 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { BOT_VICTORY_MAX_FAILED_ATTEMPTS } from '@/config/backend';
 import { emptyRarityCounts } from '@/config/rarities';
 import { DEFAULT_WORLD_ID } from '@/config/worlds';
 import type * as ProgressSyncSystemModule from '@/systems/ProgressSyncSystem';
@@ -63,6 +64,9 @@ beforeEach(async () => {
 afterEach(() => {
   ProgressSyncSystem.cancelRetry();
   vi.useRealTimers();
+  // Ohne das vergiftet ein Storage-Spy aus einem fehlgeschlagenen Test alle
+  // folgenden - die Ursache sieht dann wie ein echter Regressionsfehler aus.
+  vi.restoreAllMocks();
 });
 
 function createRun(overrides: Partial<RunStats> = {}): RunStats {
@@ -554,5 +558,280 @@ describe('AUDIT_2026-09-05 Befund 6: Bot-Siegpraemie', () => {
     expect(ProgressSyncSystem.enqueueBotVictory('33333333-3333-4333-8333-333333333333')).toBe(
       false,
     );
+  });
+});
+
+describe('AUDIT_2026-09-05_REAUDIT Befund 2: Outbox-Migration unter Schreibfehlern', () => {
+  /**
+   * Laesst ausschliesslich das Schreiben neuer Event-Schluessel scheitern.
+   *
+   * Genau dieser Fall trat bei vollem localStorage auf: das Original belegte
+   * noch Platz, die zusaetzliche Kopie passte nicht mehr hinein.
+   */
+  function failWritesForEventKeys(): () => void {
+    const original = window.localStorage.setItem.bind(window.localStorage);
+    const spy = vi
+      .spyOn(Storage.prototype, 'setItem')
+      .mockImplementation((key: string, value: string) => {
+        if (key.includes('.event.')) throw new DOMException('voll', 'QuotaExceededError');
+        original(key, value);
+      });
+    return () => spy.mockRestore();
+  }
+
+  it('behaelt das Original, wenn die Kopie in Einzelschluessel scheitert', () => {
+    signedIn = true;
+    const event: ProgressEvent = {
+      eventId: '44444444-4444-4444-8444-444444444444',
+      worldId: DEFAULT_WORLD_ID,
+      score: 500,
+      bestCombo: 7,
+      xpGained: 60,
+      durationMs: 90_000,
+      coinsGained: 20,
+      talentPointsGained: 0,
+      collected: emptyRarityCounts(),
+      unlockedAchievementIds: [],
+      dailyKey: null,
+      createdAt: '2026-08-17T11:00:00.000Z',
+    };
+    window.localStorage.setItem(
+      `isihunt.progress-events.v2.${signedInUserId}`,
+      JSON.stringify([event]),
+    );
+
+    const restoreWrites = failWritesForEventKeys();
+
+    // Frueher loeschte die Migration hier das Array trotz fehlgeschlagener
+    // Kopie - der Run fehlte danach in beiden Formaten.
+    expect(ProgressSyncSystem.pendingCount()).toBe(1);
+
+    // Ab hier darf wieder geschrieben werden: geprueft wird, dass der Run den
+    // Fehlversuch ueberlebt hat und beim naechsten Zugriff nachgezogen wird.
+    restoreWrites();
+    expect(readOutbox()).toHaveLength(1);
+    expect(readOutbox()[0]?.eventId).toBe(event.eventId);
+  });
+
+  it('raeumt den Originalschluessel weg, sobald die Kopie gelingt', () => {
+    signedIn = true;
+    const event: ProgressEvent = {
+      eventId: '55555555-5555-4555-8555-555555555555',
+      worldId: DEFAULT_WORLD_ID,
+      score: 300,
+      bestCombo: 4,
+      xpGained: 40,
+      durationMs: 90_000,
+      coinsGained: 12,
+      talentPointsGained: 0,
+      collected: emptyRarityCounts(),
+      unlockedAchievementIds: [],
+      dailyKey: null,
+      createdAt: '2026-08-17T11:30:00.000Z',
+    };
+    window.localStorage.setItem(
+      `isihunt.progress-events.v2.${signedInUserId}`,
+      JSON.stringify([event]),
+    );
+
+    expect(ProgressSyncSystem.pendingCount()).toBe(1);
+    expect(window.localStorage.getItem(`isihunt.progress-events.v2.${signedInUserId}`)).toBeNull();
+  });
+});
+
+describe('AUDIT_2026-09-05_REAUDIT Befund 3: dauerhaft abgelehnter Bot-Sieg', () => {
+  it('blockiert mit einer permanenten Ablehnung nicht die folgenden Eintraege', async () => {
+    signedIn = true;
+    // Der Server raeumt offene Match-IDs auf, die aelter als einen Tag sind;
+    // ein zweites Geraet desselben Kontos kann das ausloesen, waehrend das
+    // erste seinen Sieg noch offline haelt.
+    claimBotVictoryBonus.mockImplementation((matchId: string) =>
+      matchId === '66666666-6666-4666-8666-666666666666'
+        ? Promise.resolve({ ok: false, error: 'Bot-Duell nicht gestartet' })
+        : Promise.resolve({ ok: true, value: null }),
+    );
+
+    // Beide Siege liegen vor dem ersten Netzversuch in der Warteschlange - so
+    // sieht es nach einem Offline-Abend aus. `enqueueBotVictory()` startet
+    // selbst schon einen Flush, deshalb wird er hier abgewartet, bevor der
+    // zweite Eintrag dazukommt.
+    ProgressSyncSystem.enqueueBotVictory('66666666-6666-4666-8666-666666666666');
+    ProgressSyncSystem.enqueueBotVictory('77777777-7777-4777-8777-777777777777');
+    await ProgressSyncSystem.flush();
+    await ProgressSyncSystem.flush();
+
+    // Frueher brach die Schleife bei der ersten Ablehnung ab: der zweite Sieg
+    // wurde nie gesendet und `hasPendingData()` sperrte dauerhaft die Abmeldung.
+    expect(claimBotVictoryBonus).toHaveBeenCalledWith('77777777-7777-4777-8777-777777777777');
+    // Weder der abgelehnte noch der gebuchte Eintrag darf die Abmeldung sperren.
+    expect(ProgressSyncSystem.hasPendingData()).toBe(false);
+  });
+
+  it('arbeitet in EINEM Durchlauf hinter der Ablehnung weiter', async () => {
+    signedIn = true;
+    // Direkt in den Speicher, damit kein `enqueueBotVictory()`-Flush
+    // dazwischenfunkt: geprueft wird genau die Schleife in `flushBotVictories`.
+    window.localStorage.setItem(
+      `isihunt.bot-victories.v1.${signedInUserId}`,
+      JSON.stringify([
+        'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+      ]),
+    );
+    claimBotVictoryBonus.mockImplementation((matchId: string) =>
+      matchId === 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+        ? Promise.resolve({ ok: false, error: 'Bot-Duell nicht gestartet' })
+        : Promise.resolve({ ok: true, value: null }),
+    );
+
+    await ProgressSyncSystem.flush();
+
+    expect(claimBotVictoryBonus).toHaveBeenCalledTimes(2);
+    expect(claimBotVictoryBonus).toHaveBeenLastCalledWith('cccccccc-cccc-4ccc-8ccc-cccccccccccc');
+    expect(ProgressSyncSystem.hasPendingData()).toBe(false);
+  });
+
+  it('legt die dauerhafte Ablehnung sichtbar beiseite, statt sie zu loeschen', async () => {
+    signedIn = true;
+    claimBotVictoryBonus.mockResolvedValue({ ok: false, error: 'Bot-Duell nicht gestartet' });
+
+    ProgressSyncSystem.enqueueBotVictory('88888888-8888-4888-8888-888888888888');
+    await ProgressSyncSystem.flush();
+
+    const quarantined: unknown = JSON.parse(
+      window.localStorage.getItem(`isihunt.bot-victories.rejected.v1.${signedInUserId}`) ?? '[]',
+    );
+    expect(quarantined).toEqual(['88888888-8888-4888-8888-888888888888']);
+  });
+
+  it('wiederholt einen zeitabhaengigen Cooldown weiterhin', async () => {
+    signedIn = true;
+    // 'Bot-Duell noch nicht beendet' haengt an der Uhr, nicht am Inhalt - ein
+    // spaeterer Versuch geht durch und darf die ID nicht kosten.
+    claimBotVictoryBonus.mockResolvedValue({ ok: false, error: 'Bot-Duell noch nicht beendet' });
+
+    ProgressSyncSystem.enqueueBotVictory('99999999-9999-4999-8999-999999999999');
+    await ProgressSyncSystem.flush();
+
+    expect(ProgressSyncSystem.hasPendingData()).toBe(true);
+  });
+});
+
+describe('Bot-Siege: Aufgeben nach dauerhaft erfolglosen Anlaeufen', () => {
+  const attemptsKey = () => `isihunt.bot-victories.attempts.v1.${signedInUserId}`;
+
+  it('zaehlt nur Durchlaeufe ganz ohne Buchung als Fehlversuch', async () => {
+    signedIn = true;
+    window.localStorage.setItem(
+      `isihunt.bot-victories.v1.${signedInUserId}`,
+      JSON.stringify(['dddddddd-dddd-4ddd-8ddd-dddddddddddd']),
+    );
+    claimBotVictoryBonus.mockResolvedValue({ ok: false, error: 'Zeitüberschreitung' });
+
+    await ProgressSyncSystem.flush();
+
+    expect(window.localStorage.getItem(attemptsKey())).toBe('1');
+  });
+
+  it('setzt den Zaehler zurueck, sobald ein Sieg durchkommt', async () => {
+    signedIn = true;
+    window.localStorage.setItem(attemptsKey(), '17');
+    window.localStorage.setItem(
+      `isihunt.bot-victories.v1.${signedInUserId}`,
+      JSON.stringify(['eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee']),
+    );
+    claimBotVictoryBonus.mockResolvedValue({ ok: true, value: null });
+
+    await ProgressSyncSystem.flush();
+
+    // Eine nachweislich funktionierende Verbindung darf den Zaehler nicht
+    // weiter Richtung Aufgabe treiben.
+    expect(window.localStorage.getItem(attemptsKey())).toBeNull();
+  });
+
+  it('gibt die Warteschlange nach der Obergrenze auf und quarantaeniert sie', async () => {
+    signedIn = true;
+    // Ein Sieg, dessen Claim IMMER voruebergehend scheitert (geloeschtes
+    // Konto, defektes Profil), sperrte sonst dauerhaft die Abmeldung.
+    window.localStorage.setItem(attemptsKey(), String(BOT_VICTORY_MAX_FAILED_ATTEMPTS));
+    window.localStorage.setItem(
+      `isihunt.bot-victories.v1.${signedInUserId}`,
+      JSON.stringify(['ffffffff-ffff-4fff-8fff-ffffffffffff']),
+    );
+    claimBotVictoryBonus.mockResolvedValue({ ok: false, error: 'Zeitüberschreitung' });
+
+    await ProgressSyncSystem.flush();
+
+    expect(claimBotVictoryBonus).not.toHaveBeenCalled();
+    expect(ProgressSyncSystem.hasPendingData()).toBe(false);
+    // Aufgeben heisst beiseitelegen, nicht stumm loeschen.
+    const quarantined: unknown = JSON.parse(
+      window.localStorage.getItem(`isihunt.bot-victories.rejected.v1.${signedInUserId}`) ?? '[]',
+    );
+    expect(quarantined).toEqual(['ffffffff-ffff-4fff-8fff-ffffffffffff']);
+  });
+});
+
+describe('AUDIT_2026-09-05_REAUDIT Befund 5: gesperrter localStorage', () => {
+  it('wirft beim Zaehlen nicht, wenn der Speicher den Zugriff verweigert', () => {
+    signedIn = true;
+    vi.spyOn(Storage.prototype, 'key').mockImplementation(() => {
+      throw new DOMException('gesperrt', 'SecurityError');
+    });
+
+    // Frueher entkam die Exception bis in den Aufrufer und riss am Ende eines
+    // Tageslaufs den Wechsel zum Ergebnisbildschirm mit.
+    expect(() => ProgressSyncSystem.pendingCount()).not.toThrow();
+    expect(ProgressSyncSystem.pendingCount()).toBe(0);
+  });
+
+  it('wirft beim Einreihen nicht, wenn der Speicher den Zugriff verweigert', () => {
+    signedIn = true;
+    vi.spyOn(Storage.prototype, 'key').mockImplementation(() => {
+      throw new DOMException('gesperrt', 'SecurityError');
+    });
+
+    expect(() => ProgressSyncSystem.enqueueRun(createRun(), createProgression())).not.toThrow();
+  });
+});
+
+describe('AUDIT_2026-09-05_REAUDIT Befund 6: Retry fuer den Tagesbonus', () => {
+  /** Legt einen aktuellen Tagesbonus ohne wartende Runs ab. */
+  function queuePendingDaily(): void {
+    SaveSystem.update((data) => {
+      data.pendingDailyKey = '2026-08-17';
+      data.pendingDailyEventId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+      data.pendingDailyCoins = 40;
+      data.pendingDailyScore = 900;
+    });
+  }
+
+  it('plant nach einem voruebergehenden Claim-Fehler einen neuen Versuch', async () => {
+    signedIn = true;
+    queuePendingDaily();
+    claimDailyBonus.mockResolvedValueOnce({ ok: false, error: 'Zeitüberschreitung' });
+
+    await ProgressSyncSystem.flush();
+    expect(claimDailyBonus).toHaveBeenCalledTimes(1);
+    expect(ProgressSyncSystem.hasPendingData()).toBe(true);
+
+    // Ohne den Retry blieb der Bonus bis zum naechsten zufaelligen Ausloeser
+    // liegen und verfiel nach Ablauf des Datumsfensters.
+    claimDailyBonus.mockResolvedValue({ ok: true, value: { data: SaveSystem.load() } });
+    await vi.advanceTimersByTimeAsync(120_000);
+
+    expect(claimDailyBonus.mock.calls.length).toBeGreaterThan(1);
+    expect(SaveSystem.load().pendingDailyKey).toBeNull();
+  });
+
+  it('verwirft eine dauerhafte Ablehnung, statt ewig zu wiederholen', async () => {
+    signedIn = true;
+    queuePendingDaily();
+    claimDailyBonus.mockResolvedValue({ ok: false, error: 'Ungueltiger Tageslauf' });
+
+    await ProgressSyncSystem.flush();
+
+    expect(claimDailyBonus).toHaveBeenCalledTimes(1);
+    expect(SaveSystem.load().pendingDailyKey).toBeNull();
   });
 });

@@ -25,6 +25,7 @@ import {
   BACKEND_ANON_KEY,
   BACKEND_TIMEOUT_MS,
   BACKEND_URL,
+  BOT_MATCH_START_RETRY_DELAYS_MS,
   isBackendConfigured,
   LEADERBOARD_LIMIT,
   SYNC_CODE_ALPHABET,
@@ -1294,17 +1295,48 @@ export async function claimDailyBonus(
   return { ok: true, value: normalizeProfileProgress(result.value.data) };
 }
 
-/** Startet ein serverseitig registriertes Bot-Duell. */
+/**
+ * Startet ein serverseitig registriertes Bot-Duell.
+ *
+ * Wiederholt einen Fehlversuch, weil ohne Match-ID keine nachlieferbare
+ * Berechtigung fuer die Siegpraemie existiert: sie waere nur lokal gebucht und
+ * verschwaende beim naechsten Profilabgleich
+ * (AUDIT_2026-09-05_REAUDIT, Befund 4). Der Server gibt innerhalb von 80
+ * Sekunden denselben offenen Datensatz zurueck, ein Retry erzeugt also keine
+ * Karteileiche.
+ *
+ * 'Anmeldung erforderlich' wird nicht wiederholt - die einzige fachliche
+ * Ablehnung des RPC faellt beim naechsten Versuch identisch aus.
+ */
 export async function startBotMatch(): Promise<CloudResult<string>> {
   const authenticated = await requireAuthenticatedClient();
   if (!authenticated.ok) return authenticated;
 
-  const result = await withTimeout(authenticated.value.rpc('start_bot_match'), 'Bot-Duell starten');
-  if (!result.ok) return result;
-  if (result.value.error) return { ok: false, error: result.value.error.message };
-  return typeof result.value.data === 'string'
-    ? { ok: true, value: result.value.data }
-    : { ok: false, error: 'Ungueltige Bot-Duell-Antwort' };
+  let lastError = 'Bot-Duell konnte nicht gestartet werden';
+  for (let attempt = 0; attempt <= BOT_MATCH_START_RETRY_DELAYS_MS.length; attempt++) {
+    if (attempt > 0) {
+      const delay = BOT_MATCH_START_RETRY_DELAYS_MS[attempt - 1] ?? 0;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+
+    const result = await withTimeout(
+      authenticated.value.rpc('start_bot_match'),
+      'Bot-Duell starten',
+    );
+    if (!result.ok) {
+      lastError = result.error;
+      continue;
+    }
+    if (result.value.error) {
+      const message = result.value.error.message;
+      if (message.includes('Anmeldung erforderlich')) return { ok: false, error: message };
+      lastError = message;
+      continue;
+    }
+    if (typeof result.value.data === 'string') return { ok: true, value: result.value.data };
+    lastError = 'Ungueltige Bot-Duell-Antwort';
+  }
+  return { ok: false, error: lastError };
 }
 
 /**
