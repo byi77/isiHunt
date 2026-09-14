@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="568" viewBox="0 0 320 568" role="img" aria-labelledby="title desc">
+  <title id="title">isiHunt – Spiel – Designentwurf</title>
+  <desc id="desc">Statischer Entwurf zur Abstimmung, keine implementierte Spielansicht. Modell, Planeten, Zahlen und Zustände sind illustrative Platzhalter.</desc>
+  <defs>
+    <linearGradient id="space" x2="0" y2="1"><stop stop-color="#0b1721"/><stop offset="1" stop-color="#060b14"/></linearGradient>
+    <radialGradient id="nebula"><stop stop-color="#2a7b70" stop-opacity=".28"/><stop offset="1" stop-color="#102025" stop-opacity="0"/></radialGradient>
+    <radialGradient id="planet" cx=".27" cy=".2" r=".8"><stop stop-color="#b7e6c3"/><stop offset=".24" stop-color="#5a9f8b"/><stop offset=".55" stop-color="#275958"/><stop offset=".85" stop-color="#10282f"/><stop offset="1" stop-color="#071219"/></radialGradient>
+    <radialGradient id="atmosphere"><stop offset=".72" stop-color="#94f5dc" stop-opacity="0"/><stop offset=".83" stop-color="#94f5dc" stop-opacity=".06"/><stop offset=".87" stop-color="#94f5dc" stop-opacity=".38"/><stop offset=".89" stop-color="#94f5dc" stop-opacity=".08"/><stop offset="1" stop-color="#94f5dc" stop-opacity="0"/></radialGradient>
+    <linearGradient id="hull" x2="1" y2="1"><stop stop-color="#f0f7f7"/><stop offset=".48" stop-color="#98aeb9"/><stop offset="1" stop-color="#314858"/></linearGradient>
+    <linearGradient id="button" x2="1" y2="1"><stop stop-color="#ffe3a4"/><stop offset="1" stop-color="#dfb564"/></linearGradient>
+    <linearGradient id="trail" x2="0" y2="1"><stop stop-color="#b3f9f2" stop-opacity=".85"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></linearGradient>
+    <clipPath id="sphere"><circle r="100"/></clipPath>
+    <g id="planet-art"><circle r="115" fill="url(#atmosphere)"/><circle r="100" fill="url(#planet)"/>
+      <g clip-path="url(#sphere)" fill="none" stroke="#b8dfc4" opacity=".2">
+        <path d="M-97-28 Q-50-85-8-60 T84-34 M-104-9 Q-45-56 0-28 T106-12 M-102 20 Q-52-12-12 5 T105 33" stroke-width="7"/>
+        <path d="M-90 60 Q-35 25 13 48 T98 67" stroke-width="12"/>
+      </g><path d="M-94 32 A100 100 0 0 1 30-95" fill="none" stroke="#d3f9de" stroke-width="1.4" opacity=".72"/>
+    </g>
+    <g id="ship-art">
+      <path d="M-13 21 Q-7 45 0 58 Q7 44 13 21Z" fill="url(#trail)"/>
+      <path d="M0-45 13-8 43 23 17 16 11 29-11 29-17 16-43 23-13-8Z" fill="url(#hull)" stroke="#bcced5" stroke-width="1"/>
+      <path d="M0-45 0 24-11 29-13-8Z" fill="#d6e2e6"/>
+      <path d="M0-25 6-5 0 7-6-5Z" fill="#62c6dd" stroke="#193746"/>
+      <path d="M-34 18-14 6 M34 18 14 6" stroke="#ffd479" stroke-width="2"/>
+      <path d="M-10 25H-3 M3 25H10" stroke="#c6fffa" stroke-width="4"/>
+    </g>
+  </defs><g font-family="'Trebuchet MS', 'Segoe UI', sans-serif"><rect width="320" height="568" fill="url(#space)"/>
+    <ellipse cx="243.2" cy="176.08" rx="288" ry="227.20000000000002" fill="url(#nebula)"/>
+    <circle cx="23" cy="77" r="1.1" fill="#dae8ed" opacity="0.45"/><circle cx="160" cy="288" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="297" cy="499" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="114" cy="187" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="251" cy="398" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="68" cy="86" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="205" cy="297" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="22" cy="508" r="1.1" fill="#dae8ed" opacity="0.18"/><circle cx="159" cy="196" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="296" cy="407" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="113" cy="95" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="250" cy="306" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="67" cy="517" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="204" cy="205" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="21" cy="416" r="1.1" fill="#dae8ed" opacity="0.18"/><circle cx="158" cy="104" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="295" cy="315" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="112" cy="526" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="249" cy="214" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="66" cy="425" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="203" cy="113" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="20" cy="324" r="1.1" fill="#dae8ed" opacity="0.45"/><circle cx="157" cy="535" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="294" cy="223" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="111" cy="434" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="248" cy="122" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="65" cy="333" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="202" cy="544" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="19" cy="232" r="1.1" fill="#dae8ed" opacity="0.18"/><circle cx="156" cy="443" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="293" cy="131" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="110" cy="342" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="247" cy="553" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="64" cy="241" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="201" cy="452" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="18" cy="140" r="1.1" fill="#dae8ed" opacity="0.18"/><circle cx="155" cy="351" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="292" cy="39" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="109" cy="250" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="246" cy="461" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="63" cy="149" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="200" cy="360" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="17" cy="48" r="1.1" fill="#dae8ed" opacity="0.45"/><circle cx="154" cy="259" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="291" cy="470" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="108" cy="158" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="245" cy="369" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="62" cy="57" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="199" cy="268" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="16" cy="479" r="1.1" fill="#dae8ed" opacity="0.18"/><circle cx="153" cy="167" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="290" cy="378" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="107" cy="66" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="244" cy="277" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="61" cy="488" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="198" cy="176" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="15" cy="387" r="1.1" fill="#dae8ed" opacity="0.18"/><circle cx="152" cy="75" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="289" cy="286" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="106" cy="497" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="243" cy="185" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="60" cy="396" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="197" cy="84" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="14" cy="295" r="1.1" fill="#dae8ed" opacity="0.45"/><circle cx="151" cy="506" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="288" cy="194" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="105" cy="405" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="242" cy="93" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="59" cy="304" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="196" cy="515" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="13" cy="203" r="1.1" fill="#dae8ed" opacity="0.18"/><circle cx="150" cy="414" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="287" cy="102" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="104" cy="313" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="241" cy="524" r="0.6" fill="#dae8ed" opacity="0.18"/><rect width="320" height="24" fill="#090e1a"/>
+    <text x="160" y="16" fill="#b8c0d9" font-size="10" text-anchor="middle">J A G E   D A S   L I C H T</text>
+    <g id="hud" data-layout="panel"><rect x="14" y="36" width="292" height="98" rx="14" fill="#101c29" stroke="#2b3d4b"/>
+      <text x="28" y="57" fill="#b8c0d9" font-size="11" letter-spacing="1">PUNKTE</text>
+      <text x="28" y="88" fill="#f4f1e8" font-size="28" font-weight="700">2.450</text>
+      <text x="170" y="57" fill="#b8c0d9" font-size="11" text-anchor="middle" letter-spacing="1">ZEIT</text>
+      <text x="170" y="88" fill="#f4f1e8" font-size="23" text-anchor="middle" font-weight="700">0:58</text>
+      <text x="292" y="57" fill="#b8c0d9" font-size="11" text-anchor="end" letter-spacing="1">COMBO</text>
+      <text x="292" y="88" fill="#ffd479" font-size="23" text-anchor="end" font-weight="700">×3</text>
+      <rect x="28" y="104" width="264" height="4" rx="2" fill="#273740"/>
+      <rect x="28" y="104" width="168.96" height="4" rx="2" fill="#a6cac5"/>
+      <text x="28" y="125" fill="#b8c0d9" font-size="12" >Sternenweide</text>
+      <text x="292" y="125" fill="#b8c0d9" font-size="12" text-anchor="end">Serie 12</text>
+    </g>
+    <use href="#planet-art" opacity=".12" transform="translate(278.4,277.82) scale(1.35)"/>
+    <g transform="translate(76.8,216.8)"><circle r="26" fill="none" stroke="#0070dd" stroke-width="2"/><use href="#planet-art" transform="scale(.22)"/><text x="0" y="42" fill="#66b3ff" font-size="13" text-anchor="middle">◆</text></g>
+    <g transform="translate(224,189.68)"><ellipse rx="35" ry="10" transform="rotate(-25)" fill="none" stroke="#ff8000" stroke-width="1.5"/><use href="#planet-art" transform="scale(.2)"/><path d="M-32 13 Q4 22 31-15" fill="none" stroke="#ff8000" stroke-width="2"/><text x="0" y="40" fill="#ff8000" font-size="14" text-anchor="middle">★</text></g>
+    <g transform="translate(240,386.29999999999995)"><circle r="21" fill="none" stroke="#ffffff" stroke-opacity=".6"/><use href="#planet-art" transform="scale(.18)"/></g>
+    <path d="M96 328.67 Q115.19999999999999 379.52 160 352.4" fill="none" stroke="#ffd479" stroke-opacity=".45" stroke-dasharray="2 9"/>
+    <ellipse cx="96" cy="328.67" rx="23" ry="10" fill="none" stroke="#ffd479" stroke-opacity=".45"/>
+    <circle cx="160" cy="352.4" r="32" fill="none" stroke="#a3d7ca" stroke-opacity=".55"/>
+    <use href="#ship-art" transform="translate(160,352.4) rotate(12) scale(0.46)"/>
+    <text x="99.2" y="304.94" fill="#ffd479" font-size="18" text-anchor="middle" font-weight="700">+45</text>
+    <g id="pause" data-layout="button">
+    <rect x="256" y="506" width="48" height="48" rx="12" fill="#131f2b" stroke="#344753"/>
+    <text x="280" y="537" fill="#f4f1e8" font-size="20" text-anchor="middle" font-weight="700">Ⅱ</text>
+  </g></g></svg>

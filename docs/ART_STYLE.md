@@ -2,6 +2,12 @@
 
 **Stand:** 2026-08-30 · Produktstand siehe `package.json`/`version.json`
 
+**Laufende Designarbeit (14.09.2026):** Das geplante Grafik-Update mit 2,5D-Effekten
+und 3D-Hangar wird im [Grafik-Update-Plan](GRAFIK_UPDATE_PLAN.md) geführt.
+[Erste Entwürfe und Messungen](design/2026-09-14/README.md) liegen zur Durchsicht vor.
+Die dort vorgeschlagenen Farben und Layouts sind noch nicht ins Spiel übernommen;
+der folgende Leitfaden beschreibt weiterhin die bestehende Gestaltung.
+
 ---
 
 ## 1. Leitbild

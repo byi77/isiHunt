@@ -5,6 +5,12 @@
 Dieses Dokument beschreibt, **wie** der Code aufgebaut ist und **warum**.
 Entscheidungen mit Alternativen stehen in [DECISIONS.md](DECISIONS.md).
 
+Die laufende Vorbereitung des Grafik-Updates ist unter
+[GRAFIK_UPDATE_PLAN.md](GRAFIK_UPDATE_PLAN.md) dokumentiert. Statische Entwürfe,
+Referenzaufnahmen und deren Geometrieauswertung liegen in
+[`docs/design/2026-09-14/`](design/2026-09-14/README.md). Diese Dateien sind
+Dokumentationsartefakte und werden nicht in die Spiel-Runtime eingebunden.
+
 ---
 
 ## 1. Leitprinzip

@@ -1,0 +1,80 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="390" height="844" viewBox="0 0 390 844" role="img" aria-labelledby="title desc">
+  <title id="title">isiHunt – Menü – Designentwurf</title>
+  <desc id="desc">Statischer Entwurf zur Abstimmung, keine implementierte Spielansicht. Modell, Planeten, Zahlen und Zustände sind illustrative Platzhalter.</desc>
+  <defs>
+    <linearGradient id="space" x2="0" y2="1"><stop stop-color="#0b1721"/><stop offset="1" stop-color="#060b14"/></linearGradient>
+    <radialGradient id="nebula"><stop stop-color="#2a7b70" stop-opacity=".28"/><stop offset="1" stop-color="#102025" stop-opacity="0"/></radialGradient>
+    <radialGradient id="planet" cx=".27" cy=".2" r=".8"><stop stop-color="#b7e6c3"/><stop offset=".24" stop-color="#5a9f8b"/><stop offset=".55" stop-color="#275958"/><stop offset=".85" stop-color="#10282f"/><stop offset="1" stop-color="#071219"/></radialGradient>
+    <radialGradient id="atmosphere"><stop offset=".72" stop-color="#94f5dc" stop-opacity="0"/><stop offset=".83" stop-color="#94f5dc" stop-opacity=".06"/><stop offset=".87" stop-color="#94f5dc" stop-opacity=".38"/><stop offset=".89" stop-color="#94f5dc" stop-opacity=".08"/><stop offset="1" stop-color="#94f5dc" stop-opacity="0"/></radialGradient>
+    <linearGradient id="hull" x2="1" y2="1"><stop stop-color="#f0f7f7"/><stop offset=".48" stop-color="#98aeb9"/><stop offset="1" stop-color="#314858"/></linearGradient>
+    <linearGradient id="button" x2="1" y2="1"><stop stop-color="#ffe3a4"/><stop offset="1" stop-color="#dfb564"/></linearGradient>
+    <linearGradient id="trail" x2="0" y2="1"><stop stop-color="#b3f9f2" stop-opacity=".85"/><stop offset="1" stop-color="#7dd3fc" stop-opacity="0"/></linearGradient>
+    <clipPath id="sphere"><circle r="100"/></clipPath>
+    <g id="planet-art"><circle r="115" fill="url(#atmosphere)"/><circle r="100" fill="url(#planet)"/>
+      <g clip-path="url(#sphere)" fill="none" stroke="#b8dfc4" opacity=".2">
+        <path d="M-97-28 Q-50-85-8-60 T84-34 M-104-9 Q-45-56 0-28 T106-12 M-102 20 Q-52-12-12 5 T105 33" stroke-width="7"/>
+        <path d="M-90 60 Q-35 25 13 48 T98 67" stroke-width="12"/>
+      </g><path d="M-94 32 A100 100 0 0 1 30-95" fill="none" stroke="#d3f9de" stroke-width="1.4" opacity=".72"/>
+    </g>
+    <g id="ship-art">
+      <path d="M-13 21 Q-7 45 0 58 Q7 44 13 21Z" fill="url(#trail)"/>
+      <path d="M0-45 13-8 43 23 17 16 11 29-11 29-17 16-43 23-13-8Z" fill="url(#hull)" stroke="#bcced5" stroke-width="1"/>
+      <path d="M0-45 0 24-11 29-13-8Z" fill="#d6e2e6"/>
+      <path d="M0-25 6-5 0 7-6-5Z" fill="#62c6dd" stroke="#193746"/>
+      <path d="M-34 18-14 6 M34 18 14 6" stroke="#ffd479" stroke-width="2"/>
+      <path d="M-10 25H-3 M3 25H10" stroke="#c6fffa" stroke-width="4"/>
+    </g>
+  </defs><g font-family="'Trebuchet MS', 'Segoe UI', sans-serif"><rect width="390" height="844" fill="url(#space)"/>
+    <ellipse cx="296.4" cy="261.64" rx="351" ry="337.6" fill="url(#nebula)"/>
+    <circle cx="23" cy="77" r="1.1" fill="#dae8ed" opacity="0.45"/><circle cx="160" cy="288" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="297" cy="499" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="44" cy="710" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="181" cy="122" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="318" cy="333" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="65" cy="544" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="202" cy="755" r="1.1" fill="#dae8ed" opacity="0.18"/><circle cx="339" cy="167" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="86" cy="378" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="223" cy="589" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="360" cy="800" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="107" cy="212" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="244" cy="423" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="381" cy="634" r="1.1" fill="#dae8ed" opacity="0.18"/><circle cx="128" cy="46" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="265" cy="257" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="12" cy="468" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="149" cy="679" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="286" cy="91" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="33" cy="302" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="170" cy="513" r="1.1" fill="#dae8ed" opacity="0.45"/><circle cx="307" cy="724" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="54" cy="136" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="191" cy="347" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="328" cy="558" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="75" cy="769" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="212" cy="181" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="349" cy="392" r="1.1" fill="#dae8ed" opacity="0.18"/><circle cx="96" cy="603" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="233" cy="814" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="370" cy="226" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="117" cy="437" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="254" cy="648" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="1" cy="60" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="138" cy="271" r="1.1" fill="#dae8ed" opacity="0.18"/><circle cx="275" cy="482" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="22" cy="693" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="159" cy="105" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="296" cy="316" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="43" cy="527" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="180" cy="738" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="317" cy="150" r="1.1" fill="#dae8ed" opacity="0.45"/><circle cx="64" cy="361" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="201" cy="572" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="338" cy="783" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="85" cy="195" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="222" cy="406" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="359" cy="617" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="106" cy="828" r="1.1" fill="#dae8ed" opacity="0.18"/><circle cx="243" cy="240" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="380" cy="451" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="127" cy="662" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="264" cy="74" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="11" cy="285" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="148" cy="496" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="285" cy="707" r="1.1" fill="#dae8ed" opacity="0.18"/><circle cx="32" cy="119" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="169" cy="330" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="306" cy="541" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="53" cy="752" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="190" cy="164" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="327" cy="375" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="74" cy="586" r="1.1" fill="#dae8ed" opacity="0.45"/><circle cx="211" cy="797" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="348" cy="209" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="95" cy="420" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="232" cy="631" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="369" cy="43" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="116" cy="254" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="253" cy="465" r="1.1" fill="#dae8ed" opacity="0.18"/><circle cx="0" cy="676" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="137" cy="88" r="0.6" fill="#dae8ed" opacity="0.45"/><circle cx="274" cy="299" r="0.6" fill="#dae8ed" opacity="0.18"/><circle cx="21" cy="510" r="0.6" fill="#dae8ed" opacity="0.18"/><rect width="390" height="32" fill="#090e1a"/>
+    <text x="195" y="20" fill="#b8c0d9" font-size="10" text-anchor="middle">J A G E   D A S   L I C H T</text>
+    <text x="22" y="77" fill="#f4f1e8" font-size="34" font-weight="700" font-style="italic">isiHunt</text>
+    <g id="fullscreen" data-layout="button">
+    <rect x="320" y="42" width="48" height="44" rx="12" fill="#131f2b" stroke="#344753"/>
+    <text x="344" y="72.05" fill="#f4f1e8" font-size="23" text-anchor="middle" font-weight="700">⛶</text>
+  </g>
+    <g id="profile" data-layout="panel"><rect x="22" y="105" width="346" height="58" rx="12" fill="#13212c" stroke="#2b424b"/>
+      <text x="36" y="126" fill="#f4f1e8" font-size="14" font-weight="700">GAST</text>
+      <text x="36" y="144" fill="#b8c0d9" font-size="12" >Level 1 · Lokal gespeichert</text>
+      <text x="353" y="127" fill="#ffd479" font-size="14" text-anchor="end">Profil ›</text>
+      <text x="353" y="145" fill="#b8c0d9" font-size="12" text-anchor="end">0 Coins</text>
+    </g>
+    <use href="#planet-art" transform="translate(195,286) scale(1.06)"/>
+    <ellipse cx="195" cy="381" rx="102" ry="20" fill="none" stroke="#8eb9b4" stroke-opacity=".24"/>
+    <use href="#ship-art" transform="translate(195,371) scale(0.8)"/>
+    <text x="195" y="457" fill="#f4f1e8" font-size="29" text-anchor="middle" font-weight="700">Sternenweide</text>
+    <text x="195" y="482" fill="#b8c0d9" font-size="12" text-anchor="middle">Ruhige Nebel. Deine erste Lichtjagd.</text>
+    <text x="195" y="500" fill="#ffd479" font-size="11" text-anchor="middle">●  ○  ○  ···</text>
+    <g id="jagd" data-layout="button">
+    <rect x="22" y="515" width="346" height="56" rx="12" fill="url(#button)" stroke="#ffe2a3"/>
+    <text x="195" y="549.65" fill="#15202a" font-size="19" text-anchor="middle" font-weight="700">JAGD STARTEN  ›</text>
+  </g>
+    <g id="tageslauf" data-layout="button">
+    <rect x="22" y="581" width="168" height="48" rx="12" fill="#131f2b" stroke="#344753"/>
+    <text x="106" y="609.9" fill="#f4f1e8" font-size="14" text-anchor="middle" font-weight="700">Tageslauf</text>
+  </g>
+    <g id="duell" data-layout="button">
+    <rect x="200" y="581" width="168" height="48" rx="12" fill="#131f2b" stroke="#344753"/>
+    <text x="284" y="609.9" fill="#f4f1e8" font-size="14" text-anchor="middle" font-weight="700">Duell</text>
+  </g>
+    <g id="erfolge" data-layout="button">
+    <rect x="22" y="639" width="108.66666666666667" height="48" rx="12" fill="#131f2b" stroke="#344753"/>
+    <text x="76.33333333333334" y="667.55" fill="#f4f1e8" font-size="13" text-anchor="middle" font-weight="700">Erfolge</text>
+  </g>
+    <g id="talente" data-layout="button">
+    <rect x="140.66666666666669" y="639" width="108.66666666666667" height="48" rx="12" fill="#131f2b" stroke="#344753"/>
+    <text x="195.00000000000003" y="667.55" fill="#f4f1e8" font-size="13" text-anchor="middle" font-weight="700">Talente</text>
+  </g>
+    <g id="rangliste" data-layout="button">
+    <rect x="259.33333333333337" y="639" width="108.66666666666667" height="48" rx="12" fill="#131f2b" stroke="#344753"/>
+    <text x="313.6666666666667" y="667.55" fill="#f4f1e8" font-size="13" text-anchor="middle" font-weight="700">Rangliste</text>
+  </g>
+    <g id="settings" data-layout="button">
+    <rect x="22" y="697" width="168" height="48" rx="12" fill="#131f2b" stroke="#344753"/>
+    <text x="106" y="725.55" fill="#f4f1e8" font-size="13" text-anchor="middle" font-weight="700">Einstellungen</text>
+  </g>
+    <g id="shop" data-layout="button">
+    <rect x="200" y="697" width="168" height="48" rx="12" fill="#131f2b" stroke="#344753"/>
+    <text x="284" y="725.9" fill="#f4f1e8" font-size="14" text-anchor="middle" font-weight="700">Shop</text>
+  </g>
+    <text x="195" y="809" fill="#b8c0d9" font-size="11" text-anchor="middle" letter-spacing="1.3">STERNENWEIDE  /  LEVEL 1</text></g></svg>

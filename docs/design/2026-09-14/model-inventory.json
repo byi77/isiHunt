@@ -1,0 +1,56 @@
+﻿[
+  {
+    "File": "ship1.obj",
+    "Bytes": 10669,
+    "Vertices": 141,
+    "Faces": 133
+  },
+  {
+    "File": "ship2.obj",
+    "Bytes": 12829,
+    "Vertices": 189,
+    "Faces": 178
+  },
+  {
+    "File": "ship3.obj",
+    "Bytes": 13512,
+    "Vertices": 206,
+    "Faces": 199
+  },
+  {
+    "File": "ship4.obj",
+    "Bytes": 17299,
+    "Vertices": 244,
+    "Faces": 235
+  },
+  {
+    "File": "ship5.obj",
+    "Bytes": 16729,
+    "Vertices": 256,
+    "Faces": 229
+  },
+  {
+    "File": "ship6.obj",
+    "Bytes": 26023,
+    "Vertices": 352,
+    "Faces": 324
+  },
+  {
+    "File": "ship7.obj",
+    "Bytes": 20694,
+    "Vertices": 276,
+    "Faces": 267
+  },
+  {
+    "File": "ship8.obj",
+    "Bytes": 9554,
+    "Vertices": 128,
+    "Faces": 127
+  },
+  {
+    "File": "ship9.obj",
+    "Bytes": 11755,
+    "Vertices": 156,
+    "Faces": 143
+  }
+]

@@ -1,0 +1,26 @@
+[
+  {
+    "name": "concept-menu-320x568",
+    "measuredTexts": 18,
+    "measuredButtons": 9,
+    "issues": []
+  },
+  {
+    "name": "concept-menu-390x844",
+    "measuredTexts": 19,
+    "measuredButtons": 9,
+    "issues": []
+  },
+  {
+    "name": "concept-game-320x568",
+    "measuredTexts": 13,
+    "measuredButtons": 1,
+    "issues": []
+  },
+  {
+    "name": "concept-game-390x844",
+    "measuredTexts": 13,
+    "measuredButtons": 1,
+    "issues": []
+  }
+]
