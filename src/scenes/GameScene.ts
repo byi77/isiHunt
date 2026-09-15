@@ -56,7 +56,7 @@ import type { PerformanceReport } from '@/systems/PerformanceSystem';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
-import { ScoreSystem, trailTierForSeries } from '@/systems/ScoreSystem';
+import { agilityForSeries, ScoreSystem, trailTierForSeries } from '@/systems/ScoreSystem';
 import { SpawnSystem } from '@/systems/SpawnSystem';
 import { Depth } from '@/ui/depth';
 import { shipAuraAssetId, shipAuraIndex, shipHullTint, shipTint } from '@/config/shop';
@@ -391,8 +391,11 @@ export class GameScene extends Phaser.Scene {
   private updateCombo(deltaMs: number): void {
     const { comboReset } = this.scoring.update(deltaMs);
     if (comboReset) {
-      eventBus.emitEvent(GameEvent.ComboChanged, { combo: 0, multiplier: 1 });
+      eventBus.emitEvent(GameEvent.ComboChanged, { combo: 0, multiplier: 1, speedFactor: 1 });
       this.player.setSeriesTrail(null);
+      // Mit der Serie faellt auch ihr Beweglichkeitsbonus - die Blende im
+      // Player laesst ihn auslaufen, statt ihn abzuschneiden.
+      this.player.setSeriesAgility(agilityForSeries(0));
     }
   }
 
@@ -568,9 +571,12 @@ export class GameScene extends Phaser.Scene {
     });
 
     eventBus.emitEvent(GameEvent.ScoreChanged, { score: this.scoring.currentScore });
+    const agility = agilityForSeries(outcome.combo);
+    this.player.setSeriesAgility(agility);
     eventBus.emitEvent(GameEvent.ComboChanged, {
       combo: outcome.combo,
       multiplier: outcome.multiplier,
+      speedFactor: agility.speedFactor,
     });
   }
 

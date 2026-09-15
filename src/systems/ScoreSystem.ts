@@ -20,6 +20,8 @@
 import {
   COMBO_MULTIPLIER_PER_EXTRA_SERIES,
   COMBO_TIERS,
+  PLAYER_ACCEL_RESPONSE,
+  SERIES_AGILITY_TIERS,
   SERIES_RAISING_MIN_RARITY_INDEX,
   SERIES_TRAIL_TIERS,
 } from '@/config/GameConfig';
@@ -77,6 +79,36 @@ export function multiplierForComboWithTalent(combo: number, seriesMultiplierBonu
  */
 export function raritySteigertSerie(id: RarityId): boolean {
   return RARITY_IDS.indexOf(id) >= SERIES_RAISING_MIN_RARITY_INDEX;
+}
+
+/** Tempo- und Reaktionsbonus, den eine laufende Serie gerade traegt. */
+export interface SeriesAgility {
+  /** Faktor auf `moveSpeed` - 1 heisst unveraendert. */
+  readonly speedFactor: number;
+  /** Reaktionsschaerfe der Bewegung, Grundwert `PLAYER_ACCEL_RESPONSE`. */
+  readonly accelResponse: number;
+}
+
+const KEINE_BEWEGLICHKEIT: SeriesAgility = {
+  speedFactor: 1,
+  accelResponse: PLAYER_ACCEL_RESPONSE,
+};
+
+/**
+ * Welchen Beweglichkeitsbonus traegt diese Serie?
+ *
+ * Reine Funktion ohne Phaser (Regel 6), damit die Stufung testbar bleibt -
+ * die Bewegung selbst ist es mangels Canvas nicht. Begruendung der Werte bei
+ * `SERIES_AGILITY_TIERS`.
+ */
+export function agilityForSeries(series: number): SeriesAgility {
+  let treffer = KEINE_BEWEGLICHKEIT;
+  for (const tier of SERIES_AGILITY_TIERS) {
+    if (series >= tier.minCombo) {
+      treffer = { speedFactor: 1 + tier.speedBonus, accelResponse: tier.accelResponse };
+    }
+  }
+  return treffer;
 }
 
 /**

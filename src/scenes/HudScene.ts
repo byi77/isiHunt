@@ -80,6 +80,11 @@ export class HudScene extends Phaser.Scene {
   private localPlayerIndex = 0;
   private playerCount = 2;
   private multiplierText!: Phaser.GameObjects.Text;
+  /**
+   * Beweglichkeitsbonus der Serie. Unsichtbar, solange die Serie keinen
+   * traegt - eine dauerhafte "+0 %"-Zeile waere nur Rauschen.
+   */
+  private agilityText!: Phaser.GameObjects.Text;
   /** Eigener Stand, gespiegelt fuer den Abstandsvergleich in der Gegnerzeile. */
   private lastOwnScore = 0;
   private timerBar!: BarHandle;
@@ -88,6 +93,8 @@ export class HudScene extends Phaser.Scene {
   private hasOvertaken = false;
   private mode: RunMode = 'solo';
   private lastComboMultiplier = 1;
+  /** Zuletzt angezeigte Beweglichkeitsstufe in Prozent. */
+  private lastAgilityPercent = 0;
   /** Alle Teile des Pause-Bildschirms - zusammen ein- und ausgeblendet. */
   private pauseOverlay: Phaser.GameObjects.GameObject[] = [];
 
@@ -109,6 +116,7 @@ export class HudScene extends Phaser.Scene {
     this.opponentActivities.clear();
     this.lastOwnScore = 0;
     this.lastComboMultiplier = 1;
+    this.lastAgilityPercent = 0;
     this.pauseOverlay = [];
 
     // Dunkle Kappe hinter der Kopfzeile: der Punktestand muss auch dann lesbar
@@ -152,6 +160,16 @@ export class HudScene extends Phaser.Scene {
         textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
       )
       .setOrigin(1, 0);
+
+    this.agilityText = this.add
+      .text(
+        DUEL_STATS_X,
+        DUEL_STATS_Y + DUEL_STATS_GAP * 2,
+        '',
+        textStyle(FontSize.tiny, Palette.success, { fontStyle: 'bold' }),
+      )
+      .setOrigin(1, 0)
+      .setAlpha(0);
 
     this.add
       .text(
@@ -451,14 +469,17 @@ export class HudScene extends Phaser.Scene {
   private readonly onCombo = ({
     combo,
     multiplier,
+    speedFactor,
   }: {
     combo: number;
     multiplier: number;
+    speedFactor: number;
   }): void => {
     this.comboText.setText(`SERIE ${Math.max(0, combo)}`);
     this.multiplierText.setText(
       `×${multiplier.toLocaleString('de-DE', { maximumFractionDigits: 2 })}`,
     );
+    this.updateAgility(speedFactor);
 
     if (combo < 2) {
       this.lastComboMultiplier = 1;
@@ -472,6 +493,36 @@ export class HudScene extends Phaser.Scene {
     this.lastComboMultiplier = multiplier;
     this.showMultiplierBurst(multiplier);
   };
+
+  /**
+   * Zeigt den Beweglichkeitsbonus der Serie an.
+   *
+   * Nur beim Stufenwechsel animieren, nicht bei jedem Fang: Innerhalb einer
+   * Stufe aendert sich der Wert nicht, und ein Aufblitzen bei jedem Relikt
+   * wuerde die Stufe unlesbar machen.
+   */
+  private updateAgility(speedFactor: number): void {
+    const prozent = Math.round((speedFactor - 1) * 100);
+    if (prozent <= 0) {
+      this.lastAgilityPercent = 0;
+      this.tweens.killTweensOf(this.agilityText);
+      this.agilityText.setAlpha(0);
+      return;
+    }
+
+    this.agilityText.setText(`+${prozent}% BEWEGLICHKEIT`);
+    if (prozent === this.lastAgilityPercent) return;
+
+    this.lastAgilityPercent = prozent;
+    this.tweens.killTweensOf(this.agilityText);
+    this.agilityText.setAlpha(1).setScale(1.25);
+    this.tweens.add({
+      targets: this.agilityText,
+      scale: 1,
+      duration: 220,
+      ease: 'Back.Out',
+    });
+  }
 
   private showMultiplierBurst(multiplier: number): void {
     const label = `×${multiplier.toLocaleString('de-DE', { maximumFractionDigits: 2 })}`;

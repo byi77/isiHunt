@@ -22,7 +22,13 @@
       { "minCombo": 11, "multiplier": 4.5 },
       { "minCombo": 16, "multiplier": 6 }
     ],
-    "comboMultiplierPerExtraSeries": 0.25
+    "comboMultiplierPerExtraSeries": 0.25,
+    "seriesAgilityTiers": [
+      { "minCombo": 5, "speedBonus": 0.04, "accelResponse": 15.5 },
+      { "minCombo": 10, "speedBonus": 0.08, "accelResponse": 17 },
+      { "minCombo": 20, "speedBonus": 0.12, "accelResponse": 19 },
+      { "minCombo": 35, "speedBonus": 0.15, "accelResponse": 21 }
+    ]
   },
   "worlds": {
     "silberhain": { "scoreMultiplier": 1, "xpMultiplier": 1 },

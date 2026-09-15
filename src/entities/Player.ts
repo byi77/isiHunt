@@ -14,6 +14,7 @@ import {
   PLAYER_ACCEL_RESPONSE,
   PLAYER_BASE_COLLECT_RADIUS,
   PLAYER_TRAIL_MIN_SPEED,
+  SERIES_AGILITY_BLEND_MS,
   SERIES_TRAIL_BASE_ALPHA,
   SERIES_TRAIL_BASE_FREQUENCY_MS,
   SERIES_TRAIL_BASE_LIFESPAN_MS,
@@ -43,6 +44,7 @@ import {
   TALENT_SPEED_STREAK_WIDTH,
 } from '@/config/GameConfig';
 import { talentMaxRank, type PlayerStats, type TalentId } from '@/config/talents';
+import type { SeriesAgility } from '@/systems/ScoreSystem';
 import { Depth } from '@/ui/depth';
 import { auraAssetForId, type Ego3DAsset } from '@/ui/egoAssets';
 import {
@@ -98,6 +100,15 @@ export class Player extends Phaser.GameObjects.Container {
   private slowRemainingMs = 0;
   private slowFactor = 1;
   private inertiaFactor = 1;
+  /**
+   * Beweglichkeit aus der laufenden Serie - Ziel und aktuell geblendeter Wert.
+   *
+   * Zwei Felder statt einem, weil der Bonus nicht springen darf: `move()`
+   * zieht `seriesAgility` ueber `SERIES_AGILITY_BLEND_MS` an `seriesZiel`
+   * heran. Begruendung bei `SERIES_AGILITY_TIERS`.
+   */
+  private seriesZiel: SeriesAgility = { speedFactor: 1, accelResponse: PLAYER_ACCEL_RESPONSE };
+  private seriesAgility: SeriesAgility = { speedFactor: 1, accelResponse: PLAYER_ACCEL_RESPONSE };
   /** Weltfarbe - die Spur faellt darauf zurueck, wenn keine Serie laeuft. */
   private accentColor: number;
   private seriesTier: SeriesTrailTier | null = null;
@@ -422,6 +433,17 @@ export class Player extends Phaser.GameObjects.Container {
     this.threeDPreview.update(deltaMs);
   }
 
+  /**
+   * Setzt das Beweglichkeitsziel der laufenden Serie.
+   *
+   * Nur das Ziel, nicht der wirksame Wert: Die Blende in `move()` holt ihn
+   * ein. Sonst risse ein Serienabbruch die Reaktionsschaerfe mitten in der
+   * Bewegung von 21 auf 14 - das liest sich als Ruckler, nicht als Verlust.
+   */
+  setSeriesAgility(agility: SeriesAgility): void {
+    this.seriesZiel = agility;
+  }
+
   applySlow(durationMs: number, factor = 0.55): void {
     this.slowRemainingMs = Math.max(this.slowRemainingMs, durationMs);
     this.slowFactor = Math.min(this.slowFactor, Phaser.Math.Clamp(factor, 0.3, 1));
@@ -435,13 +457,29 @@ export class Player extends Phaser.GameObjects.Container {
   move(dtSec: number, direction: Phaser.Math.Vector2, bounds: Phaser.Geom.Rectangle): void {
     this.slowRemainingMs = Math.max(0, this.slowRemainingMs - dtSec * 1000);
     if (this.slowRemainingMs === 0) this.slowFactor = 1;
-    const desiredSpeed = this.stats.moveSpeed * this.slowFactor;
+    // Exponentiell blenden, damit die Annaeherung frameratenunabhaengig ist -
+    // derselbe Grund wie bei der Geschwindigkeit weiter unten.
+    const blend = 1 - Math.exp((-dtSec * 1000 * 5) / SERIES_AGILITY_BLEND_MS);
+    this.seriesAgility = {
+      speedFactor: Phaser.Math.Linear(
+        this.seriesAgility.speedFactor,
+        this.seriesZiel.speedFactor,
+        blend,
+      ),
+      accelResponse: Phaser.Math.Linear(
+        this.seriesAgility.accelResponse,
+        this.seriesZiel.accelResponse,
+        blend,
+      ),
+    };
+
+    const desiredSpeed = this.stats.moveSpeed * this.slowFactor * this.seriesAgility.speedFactor;
     const desiredX = direction.x * desiredSpeed;
     const desiredY = direction.y * desiredSpeed;
 
     // Exponentielle Annaeherung ist frameratenunabhaengig - anders als ein
     // fester Lerp-Faktor, der bei 120 Hz doppelt so schnell reagieren wuerde.
-    const t = 1 - Math.exp(-PLAYER_ACCEL_RESPONSE * this.inertiaFactor * dtSec);
+    const t = 1 - Math.exp(-this.seriesAgility.accelResponse * this.inertiaFactor * dtSec);
     this.velocity.x += (desiredX - this.velocity.x) * t;
     this.velocity.y += (desiredY - this.velocity.y) * t;
 

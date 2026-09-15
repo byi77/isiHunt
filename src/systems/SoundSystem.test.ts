@@ -385,7 +385,7 @@ describe('scheduleTone - Regression: Tonhaufen beim spaeten Aufwachen', () => {
       x: 0,
       y: 0,
     });
-    eventBus.emitEvent(GameEvent.ComboChanged, { combo: 5, multiplier: 1 });
+    eventBus.emitEvent(GameEvent.ComboChanged, { combo: 5, multiplier: 1, speedFactor: 1 });
 
     expect(startSpy).not.toHaveBeenCalled();
     expect(capturedInstance.state).toBe('suspended');

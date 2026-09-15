@@ -56,7 +56,12 @@ export const GameEvent = {
 
 export interface GameEventPayloads {
   [GameEvent.ScoreChanged]: { score: number };
-  [GameEvent.ComboChanged]: { combo: number; multiplier: number };
+  [GameEvent.ComboChanged]: {
+    combo: number;
+    multiplier: number;
+    /** Tempobonus der Serie als Faktor - 1 heisst keiner. Siehe SERIES_AGILITY_TIERS. */
+    speedFactor: number;
+  };
   [GameEvent.TimerChanged]: { remainingMs: number; totalMs: number };
   [GameEvent.Collected]: {
     rarityId: RarityId;

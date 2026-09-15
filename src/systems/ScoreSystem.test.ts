@@ -12,6 +12,9 @@ import {
   COMBO_GRACE_MS,
   COMBO_MULTIPLIER_PER_EXTRA_SERIES,
   COMBO_TIERS,
+  PLAYER_ACCEL_RESPONSE,
+  PLAYER_BASE_SPEED,
+  SERIES_AGILITY_TIERS,
   SERIES_TRAIL_BASE_ALPHA,
   SERIES_TRAIL_BASE_FREQUENCY_MS,
   SERIES_TRAIL_BASE_LIFESPAN_MS,
@@ -22,9 +25,10 @@ import {
   SERIES_TRAIL_TIERS,
 } from '@/config/GameConfig';
 import { RARITY_BY_ID } from '@/config/rarities';
-import { resolveStats } from '@/config/talents';
+import { resolveStats, talentMaxRank } from '@/config/talents';
 import { WORLDS } from '@/config/worlds';
 import {
+  agilityForSeries,
   multiplierForCombo,
   multiplierForComboWithTalent,
   ScoreSystem,
@@ -423,5 +427,55 @@ describe('ScoreSystem - Talent x Welt Multiplikator-Produkt', () => {
     }
 
     expect(system.toRunStats('meadow').xpGained).toBe(expectedXp);
+  });
+});
+
+describe('agilityForSeries', () => {
+  it('gibt ohne Serie den Grundzustand', () => {
+    expect(agilityForSeries(0)).toEqual({
+      speedFactor: 1,
+      accelResponse: PLAYER_ACCEL_RESPONSE,
+    });
+  });
+
+  it('bleibt unter der ersten Stufe im Grundzustand', () => {
+    const erste = SERIES_AGILITY_TIERS[0]!;
+    expect(agilityForSeries(erste.minCombo - 1).speedFactor).toBe(1);
+    expect(agilityForSeries(erste.minCombo - 1).accelResponse).toBe(PLAYER_ACCEL_RESPONSE);
+  });
+
+  it('trifft jede Stufe genau an ihrer Schwelle', () => {
+    for (const tier of SERIES_AGILITY_TIERS) {
+      const agility = agilityForSeries(tier.minCombo);
+      expect(agility.speedFactor).toBeCloseTo(1 + tier.speedBonus);
+      expect(agility.accelResponse).toBe(tier.accelResponse);
+    }
+  });
+
+  it('steigt ueber die Stufen hinweg monoton', () => {
+    let vorheriges = agilityForSeries(0);
+    for (let serie = 1; serie <= 60; serie += 1) {
+      const aktuell = agilityForSeries(serie);
+      expect(aktuell.speedFactor).toBeGreaterThanOrEqual(vorheriges.speedFactor);
+      expect(aktuell.accelResponse).toBeGreaterThanOrEqual(vorheriges.accelResponse);
+      vorheriges = aktuell;
+    }
+  });
+
+  it('deckelt auf der letzten Stufe - eine laengere Serie gibt nicht mehr', () => {
+    const letzte = SERIES_AGILITY_TIERS[SERIES_AGILITY_TIERS.length - 1]!;
+    expect(agilityForSeries(letzte.minCombo + 200)).toEqual(agilityForSeries(letzte.minCombo));
+  });
+
+  /**
+   * Der Serienbonus darf das Talent "Flinkheit" nicht entwerten: Wer ihn
+   * geschenkt bekommt, soll trotzdem weniger Tempo haben als wer das Talent
+   * ausbaut. Sonst waere der Talentpunkt verschwendet.
+   */
+  it('bleibt schwaecher als das voll ausgebaute Flinkheits-Talent', () => {
+    const letzte = SERIES_AGILITY_TIERS[SERIES_AGILITY_TIERS.length - 1]!;
+    const talentTempo = resolveStats({ swiftness: talentMaxRank('swiftness') }).moveSpeed;
+    const serienTempo = PLAYER_BASE_SPEED * agilityForSeries(letzte.minCombo).speedFactor;
+    expect(serienTempo).toBeLessThan(talentTempo);
   });
 });

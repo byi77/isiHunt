@@ -251,6 +251,41 @@ export const COMBO_TIERS = Balance.COMBO_TIERS;
 export const COMBO_MULTIPLIER_PER_EXTRA_SERIES = Balance.COMBO_MULTIPLIER_PER_EXTRA_SERIES;
 
 /**
+ * Beweglichkeitsbonus aus der laufenden Serie.
+ *
+ * **Warum nicht nur Tempo.** Die Steuerung folgt dem Finger und bremst
+ * innerhalb von `POINTER_THROTTLE_DISTANCE` ab. Die Figur erreicht ihr Ziel
+ * also ohnehin; mehr `moveSpeed` aendert nur das Verhalten nahe am Finger und
+ * macht die Figur dort schwerer zu treffen. Genau im Moment einer hohen Serie
+ * waere das eine Bestrafung statt einer Belohnung.
+ *
+ * Haupttraeger ist deshalb `accelResponse` - die Reaktionsschaerfe aus
+ * `PLAYER_ACCEL_RESPONSE` (Grundwert 14). Hoeher heisst: die Figur klebt
+ * direkter am Finger und zieht weniger nach. Das fuehlt sich nach Flow an und
+ * verbessert die Zielgenauigkeit, statt sie zu zerstoeren. Der
+ * `speedBonus` kommt als spuerbare Beigabe dazu.
+ *
+ * **Deckel bei +15 %.** Das Talent "Flinkheit" gibt voll ausgebaut +26,25 %
+ * und bleibt damit die staerkere Tempoquelle - der Serienbonus entwertet es
+ * nicht. Beides zusammen ergibt rund +45 %, erreichbar aber nur bei Serie 35
+ * und ausgebautem Talent.
+ *
+ * Die Stufen folgen bewusst denselben Schwellen wie `SERIES_TRAIL_TIERS`,
+ * damit die sichtbare und die spuerbare Belohnung im selben Takt kommen.
+ */
+export const SERIES_AGILITY_TIERS = Balance.SERIES_AGILITY_TIERS;
+
+/**
+ * Wie lange der Beweglichkeitsbonus aus- bzw. einblendet.
+ *
+ * Nicht hart auf den Grundwert springen: Ein abrupter Wechsel der
+ * Reaktionsschaerfe mitten in der Bewegung liest sich als Ruckler, nicht als
+ * Verlust. Ueber diese Spanne geblendet bleibt er spuerbar ("die Kraft
+ * verpufft"), ohne die Bewegung zu brechen.
+ */
+export const SERIES_AGILITY_BLEND_MS = 250;
+
+/**
  * Ab welcher Seltenheit ein Fang die Serie **steigert**.
  *
  * Darunter (schlicht, gewoehnlich - die weissen und grauen Relikte) haelt der

@@ -177,6 +177,7 @@ export const COINS_PER_EXTRA_TALENT_POINT = 10;
 export const COMBO_TIERS = BALANCE.score.comboTiers;
 export const COMBO_MULTIPLIER_PER_EXTRA_SERIES = BALANCE.score.comboMultiplierPerExtraSeries;
 export const SERIES_RAISING_MIN_RARITY_INDEX = BALANCE.score.seriesRaisingMinRarityIndex;
+export const SERIES_AGILITY_TIERS = BALANCE.score.seriesAgilityTiers;
 export const WORLD_REWARDS = BALANCE.worlds;
 
 /** Gesamtzahl der verteilbaren Talentraenge im aktuellen Talentbaum. */
