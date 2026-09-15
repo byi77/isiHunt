@@ -1,0 +1,280 @@
+{
+  "capturedAt": "2026-09-15T17:23:02.719Z",
+  "viewport": {
+    "width": 430,
+    "height": 932
+  },
+  "canvas": {
+    "x": 0,
+    "y": 32,
+    "width": 429.9895935058594,
+    "height": 900,
+    "top": 32,
+    "right": 429.9895935058594,
+    "bottom": 932,
+    "left": 0
+  },
+  "scenes": [
+    "WorldInfo"
+  ],
+  "texts": [
+    {
+      "scene": "WorldInfo",
+      "text": "Sternenweide",
+      "rect": {
+        "left": 137.35778681437174,
+        "top": 49.61778367617784,
+        "right": 292.6318066914876,
+        "bottom": 75.89515593895155,
+        "width": 155.27401987711588,
+        "height": 26.27737226277371
+      }
+    },
+    {
+      "scene": "WorldInfo",
+      "text": "Ruhige Nebelbahnen mit jungen Sternen und sanften Lichtströmen.",
+      "rect": {
+        "left": 64.79704291025797,
+        "top": 89.03384207033841,
+        "right": 365.19255059560135,
+        "bottom": 116.50564034505639,
+        "width": 300.3955076853434,
+        "height": 27.471798274717983
+      }
+    },
+    {
+      "scene": "WorldInfo",
+      "text": "⚡ BESONDERHEIT",
+      "rect": {
+        "left": 156.46843541463215,
+        "top": 142.48440610484406,
+        "right": 273.52115809122716,
+        "bottom": 156.22030524220304,
+        "width": 117.05272267659501,
+        "height": 13.735899137358984
+      }
+    },
+    {
+      "scene": "WorldInfo",
+      "text": "Keine - die Lernzone.",
+      "rect": {
+        "left": 154.67681210835772,
+        "top": 163.3868613138686,
+        "right": 275.3127813975016,
+        "bottom": 177.12276045122758,
+        "width": 120.6359692891439,
+        "height": 13.735899137358984
+      }
+    },
+    {
+      "scene": "WorldInfo",
+      "text": "💥 HINDERNISSE",
+      "rect": {
+        "left": 159.7530781428019,
+        "top": 222.51094890510947,
+        "right": 270.23651536305744,
+        "bottom": 236.24684804246846,
+        "width": 110.48343722025552,
+        "height": 13.735899137358984
+      }
+    },
+    {
+      "scene": "WorldInfo",
+      "text": "Keine Hindernisse in dieser Welt.",
+      "rect": {
+        "left": 122.12898871103921,
+        "top": 243.413404114134,
+        "right": 307.8606047948201,
+        "bottom": 257.14930325149305,
+        "width": 185.73161608378092,
+        "height": 13.735899137359041
+      }
+    },
+    {
+      "scene": "WorldInfo",
+      "text": "🎁 BELOHNUNG",
+      "rect": {
+        "left": 161.8433053334554,
+        "top": 302.5374917053749,
+        "right": 268.14628817240396,
+        "bottom": 316.2733908427339,
+        "width": 106.30298283894857,
+        "height": 13.735899137358956
+      }
+    },
+    {
+      "scene": "WorldInfo",
+      "text": "Keine zusaetzliche Belohnung - die Lernzone.",
+      "rect": {
+        "left": 87.19233423868815,
+        "top": 323.43994691439946,
+        "right": 342.79725926717117,
+        "bottom": 337.1758460517584,
+        "width": 255.60492502848302,
+        "height": 13.735899137358956
+      }
+    },
+    {
+      "scene": "WorldInfo",
+      "text": "TAGESLAUF STARTEN",
+      "rect": {
+        "left": 116.15691102345784,
+        "top": 818.5295288652952,
+        "right": 313.8326824824015,
+        "bottom": 840.6264100862641,
+        "width": 197.67577145894364,
+        "height": 22.09688122096884
+      }
+    },
+    {
+      "scene": "WorldInfo",
+      "text": "‹  ZURÜCK",
+      "rect": {
+        "left": 185.13440831502277,
+        "top": 880.0424684804246,
+        "right": 244.85518519083658,
+        "bottom": 893.7783676177836,
+        "width": 59.72077687581381,
+        "height": 13.735899137358956
+      }
+    }
+  ],
+  "buttons": [
+    {
+      "scene": "WorldInfo",
+      "label": "TAGESLAUF STARTEN",
+      "enabled": true,
+      "rect": {
+        "left": 77.63700993855794,
+        "top": 802.1061712010617,
+        "right": 352.3525835673014,
+        "bottom": 857.0497677504976,
+        "width": 274.71557362874347,
+        "height": 54.94359654943594
+      }
+    },
+    {
+      "scene": "WorldInfo",
+      "label": "‹  ZURÜCK",
+      "enabled": true,
+      "rect": {
+        "left": 125.41363143920897,
+        "top": 865.4107498341074,
+        "right": 304.5759620666504,
+        "bottom": 908.4100862641008,
+        "width": 179.1623306274414,
+        "height": 42.99933642999338
+      }
+    }
+  ],
+  "images": [
+    {
+      "scene": "WorldInfo",
+      "texture": "asset-planet-sternenweide",
+      "rect": {
+        "left": 6.091519241333009,
+        "top": 194.5912408759124,
+        "right": 131.505150680542,
+        "bottom": 320.0059721300597,
+        "width": 125.41363143920898,
+        "height": 125.41473125414731
+      }
+    },
+    {
+      "scene": "WorldInfo",
+      "texture": "asset-planet-sternenweide",
+      "rect": {
+        "left": 329.8378506851196,
+        "top": 648.9449236894492,
+        "right": 392.54466640472407,
+        "bottom": 711.6522893165228,
+        "width": 62.70681571960449,
+        "height": 62.707365627073614
+      }
+    },
+    {
+      "scene": "WorldInfo",
+      "texture": "tex-glow",
+      "rect": {
+        "left": -193.4953170776367,
+        "top": -80.20139349701395,
+        "right": 623.484910583496,
+        "bottom": 684.798606502986,
+        "width": 816.9802276611327,
+        "height": 765
+      }
+    },
+    {
+      "scene": "WorldInfo",
+      "texture": "tex-glow",
+      "rect": {
+        "left": -116.09719024658203,
+        "top": -17.198407431984066,
+        "right": 270.8934439086914,
+        "bottom": 369.7956204379562,
+        "width": 386.9906341552734,
+        "height": 386.9940278699403
+      }
+    },
+    {
+      "scene": "WorldInfo",
+      "texture": "tex-glow",
+      "rect": {
+        "left": 111.79729431152346,
+        "top": 80.30258792302587,
+        "right": 627.7848065185547,
+        "bottom": 596.2946250829463,
+        "width": 515.9875122070312,
+        "height": 515.9920371599204
+      }
+    },
+    {
+      "scene": "WorldInfo",
+      "texture": "tex-glow",
+      "rect": {
+        "left": -193.4953170776367,
+        "top": 267.80358327803583,
+        "right": 451.4890731811523,
+        "bottom": 912.7936297279363,
+        "width": 644.9843902587891,
+        "height": 644.9900464499004
+      }
+    },
+    {
+      "scene": "WorldInfo",
+      "texture": "tex-glow",
+      "rect": {
+        "left": 90.29781463623046,
+        "top": 560.8022561380226,
+        "right": 563.2863674926757,
+        "bottom": 1033.7949568679496,
+        "width": 472.98855285644527,
+        "height": 472.99270072992704
+      }
+    },
+    {
+      "scene": "WorldInfo",
+      "texture": "tex-vignette",
+      "rect": {
+        "left": -107.49739837646483,
+        "top": -35.20139349701391,
+        "right": 537.4869918823242,
+        "bottom": 999.798606502986,
+        "width": 644.9843902587891,
+        "height": 1035
+      }
+    }
+  ],
+  "domCanvases": [
+    {
+      "x": 0,
+      "y": 32,
+      "width": 429.9895935058594,
+      "height": 900,
+      "top": 32,
+      "right": 429.9895935058594,
+      "bottom": 932,
+      "left": 0
+    }
+  ]
+}

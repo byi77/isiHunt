@@ -118,12 +118,19 @@ export function createButton(
   y: number,
   label: string,
   onClick: () => void,
-  options: { width?: number; height?: number; accent?: number; fontSize?: number } = {},
+  options: {
+    width?: number;
+    height?: number;
+    accent?: number;
+    fontSize?: number;
+    variant?: 'primary' | 'secondary';
+  } = {},
 ): ButtonHandle {
   const target = ensureTouchTarget(options.width ?? 380, options.height ?? 92);
   const width = target.width;
   const height = target.height;
   const accent = options.accent ?? Palette.goldHex;
+  const primary = options.variant === 'primary';
 
   // Buttons liegen immer über normalen Texten und Statusanzeigen. Dadurch
   // kann eine Meldung niemals die sichtbare Schaltfläche oder deren
@@ -134,31 +141,31 @@ export function createButton(
   /** Liegt ein Finger auf diesem Knopf? Siehe `pointerout` weiter unten. */
   let isPressed = false;
 
-  // Weicher Schein hinter dem Knopf - hebt ihn vom Hintergrund ab, ohne eine
-  // harte Kante zu brauchen.
-  const halo = scene.add
-    .image(0, 0, TextureKey.Glow)
-    .setDisplaySize(width * BUTTON_HALO_SCALE_X, height * BUTTON_HALO_SCALE_Y)
-    .setTint(accent)
-    .setAlpha(0.5)
-    .setBlendMode(Phaser.BlendModes.ADD);
-
-  const bg = scene.add
-    .image(0, 0, TextureKey.Pixel)
-    .setDisplaySize(width, height)
-    .setTint(accent)
-    .setAlpha(0.16);
+  const radius = Math.min(height / 4, 22);
+  const bg = scene.add.graphics();
+  const paintBackground = (highlighted: boolean): void => {
+    bg.clear();
+    bg.fillStyle(primary ? accent : highlighted ? Palette.buttonHover : Palette.buttonSurface);
+    bg.fillRoundedRect(-width / 2, -height / 2, width, height, radius);
+  };
+  paintBackground(false);
 
   const border = scene.add.graphics();
-  border.lineStyle(3, accent, 0.9);
-  border.strokeRoundedRect(-width / 2, -height / 2, width, height, 14);
+  border.lineStyle(
+    1.5,
+    primary ? accent : (options.accent ?? Palette.panelBorder),
+    primary || options.accent === undefined ? 1 : 0.5,
+  );
+  border.strokeRoundedRect(-width / 2, -height / 2, width, height, radius);
 
   const text = scene.add
     .text(
       0,
       0,
       label,
-      textStyle(options.fontSize ?? FontSize.body, Palette.ink, { fontStyle: 'bold' }),
+      textStyle(options.fontSize ?? FontSize.body, primary ? Palette.buttonInk : Palette.ink, {
+        fontStyle: 'bold',
+      }),
     )
     .setOrigin(0.5);
 
@@ -166,10 +173,18 @@ export function createButton(
   // Nur sie wird beim Druecken gestaucht - der Container selbst behaelt seine
   // Groesse, und damit behaelt die Trefferflaeche sie auch. Warum das noetig
   // ist, steht bei `press` weiter unten.
-  const visuals = scene.add.container(0, 0, [halo, bg, border, text]);
+  const fitLabel = (): void => {
+    const requested = options.fontSize ?? FontSize.body;
+    text.setFontSize(requested);
+    if (text.width > width - 24)
+      text.setFontSize(Math.floor((requested * (width - 24)) / text.width));
+  };
+  fitLabel();
+  const visuals = scene.add.container(0, 0, [bg, border, text]);
 
   container.add(visuals);
   container.setSize(width, height);
+  container.setData('uiButton', { label, width, height });
 
   const hitWidth = width * (1 + (BUTTON_HALO_SCALE_X - 1) * HIT_AREA_PADDING_X);
   const hitHeight = height * (1 + (BUTTON_HALO_SCALE_Y - 1) * HIT_AREA_PADDING_Y);
@@ -227,11 +242,11 @@ export function createButton(
    * mittig antippt.
    */
   const press = (pressed: boolean) => {
-    bg.setAlpha(pressed ? 0.42 : 0.16);
-    visuals.setScale(pressed ? 0.96 : 1);
+    paintBackground(pressed);
+    visuals.setScale(pressed ? 0.98 : 1);
   };
 
-  container.on('pointerover', () => enabled && bg.setAlpha(0.3));
+  container.on('pointerover', () => enabled && paintBackground(true));
 
   container.on('pointerdown', () => {
     if (!enabled) return;
@@ -279,6 +294,8 @@ export function createButton(
     },
     setLabel(value: string) {
       text.setText(value);
+      fitLabel();
+      container.setData('uiButton', { label: value, width, height });
     },
   };
 }
@@ -666,11 +683,11 @@ export function createPanel(
   const radius = options.radius ?? 18;
 
   const fill = scene.add.graphics();
-  fill.fillStyle(Palette.panel, options.alpha ?? 0.55);
+  fill.fillStyle(Palette.panel, options.alpha ?? 0.88);
   fill.fillRoundedRect(-width / 2, -height / 2, width, height, radius);
 
   const border = scene.add.graphics();
-  border.lineStyle(1.5, accent, 0.35);
+  border.lineStyle(1.5, accent, 0.22);
   border.strokeRoundedRect(-width / 2, -height / 2, width, height, radius);
 
   container.add([fill, border]);

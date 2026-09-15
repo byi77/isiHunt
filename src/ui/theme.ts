@@ -9,7 +9,11 @@ export const Palette = {
   /** Dunkler Grundton unter allen Welten. */
   backdrop: 0x0b1020,
   /** Panel-Hintergrund fuer Menue und Ergebnis. */
-  panel: 0x101733,
+  panel: 0x13212c,
+  panelBorder: 0x344753,
+  buttonSurface: 0x172734,
+  buttonHover: 0x213847,
+  buttonInk: '#15202a',
   ink: '#f4f1e8',
   inkDim: '#b8c0d9',
   gold: '#ffd479',

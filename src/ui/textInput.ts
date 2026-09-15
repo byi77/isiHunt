@@ -89,7 +89,7 @@ export function createTextInput(
     height: '72px',
     boxSizing: 'border-box',
     padding: '0 20px',
-    background: 'rgba(16, 23, 51, 0.92)',
+    background: toCss(Palette.panel),
     border: `2px solid ${toCss(accent)}`,
     borderRadius: '14px',
     color: Palette.ink,

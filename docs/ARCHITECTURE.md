@@ -11,6 +11,18 @@ Referenzaufnahmen und deren Geometrieauswertung liegen in
 [`docs/design/2026-09-14/`](design/2026-09-14/README.md). Diese Dateien sind
 Dokumentationsartefakte und werden nicht in die Spiel-Runtime eingebunden.
 
+Punkt 2 ergänzt `src/ui/menuLayout.ts` für die reine Umrechnung von CSS-Maßen
+in Spielkoordinaten und `src/ui/MenuView.ts` für die Darstellung des Hauptmenüs.
+`MenuScene` behält Synchronisierung, Navigation und die Speicherung der Weltenauswahl.
+Die View meldet Aktionen über Callbacks und greift nicht auf Scenes oder Speichersysteme zu.
+
+`src/ui/menuLayout.test.ts` prüft die Mindesthöhe und Abstände einschließlich
+Installationshinweis und sicherem unteren Rand. Das opt-in Werkzeug
+`src/ui/layoutAudit.ts` wird nur im Debug-Build mit `?layoutAudit` geladen.
+Es zeigt über eine DOM-Bedienleiste die tatsächlichen Renderer-Rechtecke und
+rechteckigen Button-Trefferflächen in CSS-Pixeln; es verändert keine Spielstände.
+Aufnahmen und Auswertung: [Punkt 2](design/2026-09-15/README.md).
+
 ---
 
 ## 1. Leitprinzip

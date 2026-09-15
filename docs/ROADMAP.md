@@ -5,6 +5,14 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 
 ## Bereits spielbar
 
+### Grafik-Update — Punkt 2 umgesetzt
+
+- [x] Hauptmenü und gemeinsamer Button-/Panelstil, CSS-basierte Menüabstände.
+- [x] Profilbeschriftung vom Namensfeld getrennt; lange Namen im Menü begrenzt.
+- [ ] Abschließende Prüfung auf echten Mobilgeräten einschließlich iOS.
+
+Arbeitsstand, Nachweise und nächste Etappe: [Grafik-Update-Plan](GRAFIK_UPDATE_PLAN.md).
+
 ### M0 — Fundament ✅
 
 Das Browser-Spiel, Touch- und Tastatursteuerung, Persistenz, Tests, Build und

@@ -20,8 +20,7 @@ import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { Depth } from '@/ui/depth';
-import { shipTint } from '@/config/shop';
-import { playerTextureForShape, TextureKey } from '@/ui/textures';
+import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   attachVerticalScroll,
@@ -76,15 +75,11 @@ export class TalentScene extends Phaser.Scene {
         textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
       )
       .setOrigin(0.5);
-    this.add
-      .image(92, walletY, playerTextureForShape(save.shipShape))
-      .setTint(shipTint(save, world.accent))
-      .setScale(0.26);
 
-    const rowTop = sections.next(96);
-    // Die Karten berühren sich knapp; so bleibt die Reset-Aktion auch vor dem
-    // ersten Scrollen oberhalb der festen Zurück-Zone.
-    const rowStep = 96;
+    const rowTop = sections.next(112);
+    // Drei Beschreibungszeilen brauchen Platz; die vorhandene Scrollfläche
+    // hält die übrigen Talente und die Reset-Aktion erreichbar.
+    const rowStep = 128;
     const content = this.add.container(0, 0);
     TALENTS.forEach((talent, index) =>
       this.buildTalentRow(talent.id, rowTop + index * rowStep, world.accent, content),
@@ -124,11 +119,34 @@ export class TalentScene extends Phaser.Scene {
     content.add(this.feedbackText);
 
     const contentBottom = resetY + 105;
+    const listTop = rowTop - rowStep / 2;
+    const clip = this.add.graphics().setVisible(false);
+    clip.fillStyle(0xffffff).fillRect(0, listTop, GAME_WIDTH, layout.contentBottom - listTop);
+    const mask = clip.createGeometryMask();
+    content.setMask(mask);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => mask.destroy());
+    const buttons = content.list
+      .filter(
+        (object): object is Phaser.GameObjects.Container =>
+          object instanceof Phaser.GameObjects.Container && object.input !== null,
+      )
+      .map((button) => ({ button, enabled: button.input!.enabled }));
+    // Masken begrenzen nur das Bild. Auch unsichtbare Trefferflächen müssen
+    // oberhalb der Liste und unter der festen Zurück-Zone gesperrt bleiben.
+    const positionContent = (offset: number): void => {
+      content.setY(-offset);
+      for (const { button, enabled } of buttons) {
+        const top = button.y - offset - button.height / 2;
+        const bottom = top + button.height;
+        button.input!.enabled = enabled && top >= listTop && bottom <= layout.contentBottom;
+      }
+    };
+    positionContent(0);
     attachVerticalScroll(this, {
       maxScroll: Math.max(0, contentBottom - layout.contentBottom),
-      dragZoneTop: 36,
+      dragZoneTop: listTop,
       dragZoneBottom: layout.contentBottom,
-      onOffsetChange: (offset) => content.setY(-offset),
+      onOffsetChange: positionContent,
     });
   }
 
@@ -142,7 +160,7 @@ export class TalentScene extends Phaser.Scene {
     const save = SaveSystem.load();
     const rank = save.talents[id] ?? 0;
     content.add(
-      createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 100, 96, accent, {
+      createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 100, 128, accent, {
         alpha: 0.5,
         radius: 14,
       }),
@@ -151,7 +169,7 @@ export class TalentScene extends Phaser.Scene {
       this.add
         .text(
           66,
-          y - 24,
+          y - 42,
           talent.name,
           textStyle(FontSize.body, toCss(accent), { fontStyle: 'bold' }),
         )
@@ -159,15 +177,15 @@ export class TalentScene extends Phaser.Scene {
     );
     content.add(
       this.add
-        .text(66, y + 10, talent.description, textStyle(FontSize.tiny, Palette.inkDim))
-        .setOrigin(0, 0.5)
-        .setWordWrapWidth(315),
+        .text(66, y - 12, talent.description, textStyle(FontSize.tiny, Palette.inkDim))
+        .setOrigin(0, 0)
+        .setWordWrapWidth(230),
     );
     content.add(
       this.add
         .text(
           405,
-          y - 20,
+          y - 38,
           'RANG ' + rank + '/' + talent.maxRank,
           textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }),
         )
@@ -175,28 +193,30 @@ export class TalentScene extends Phaser.Scene {
     );
     content.add(
       this.add
-        .text(405, y + 12, talent.perRank, textStyle(FontSize.tiny, Palette.gold))
-        .setOrigin(0.5),
+        .text(405, y - 10, talent.perRank, textStyle(FontSize.tiny, Palette.gold))
+        .setWordWrapWidth(180)
+        .setAlign('center')
+        .setOrigin(0.5, 0),
     );
     // Rang-Pips machen den Ausbau sofort sichtbar: Jeder Kauf fuellt einen
     // weiteren Abschnitt, statt nur die kleine Zahl im Rangtext zu veraendern.
-    const pipStartX = 466;
+    const pipStartX = 378;
     for (let pip = 0; pip < talent.maxRank; pip += 1) {
       content.add(
         this.add
-          .rectangle(pipStartX + pip * 11, y + 13, 8, 16, pip < rank ? Palette.goldHex : 0x66708c)
+          .rectangle(pipStartX + pip * 11, y + 48, 8, 8, pip < rank ? Palette.goldHex : 0x66708c)
           .setAlpha(pip < rank ? 1 : 0.34)
           .setStrokeStyle(1, accent, 0.55),
       );
     }
     const purchaseButton = createButton(
       this,
-      605,
+      590,
       y,
       rank >= talent.maxRank ? 'MAX' : '1 PUNKT',
       () => void this.purchase(id),
       {
-        width: 150,
+        width: 140,
         height: 58,
         accent: rank >= talent.maxRank ? 0x778099 : accent,
         fontSize: FontSize.tiny,

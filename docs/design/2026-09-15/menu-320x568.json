@@ -1,0 +1,555 @@
+{
+  "capturedAt": "2026-09-15T06:42:25.864Z",
+  "viewport": {
+    "width": 320,
+    "height": 568
+  },
+  "canvas": {
+    "x": 9,
+    "y": 32,
+    "width": 301.5,
+    "height": 536,
+    "top": 32,
+    "right": 310.5,
+    "bottom": 568,
+    "left": 9
+  },
+  "scenes": [
+    "Menu"
+  ],
+  "texts": [
+    {
+      "scene": "Menu",
+      "text": "⛶",
+      "rect": {
+        "left": 264.4499980926514,
+        "top": 46.437501430511475,
+        "right": 284.5499980926514,
+        "bottom": 71.56250143051147,
+        "width": 20.099999999999966,
+        "height": 25.125
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "GAST  ·  Level 1",
+      "rect": {
+        "left": 35,
+        "top": 98.253125,
+        "right": 137.59375,
+        "bottom": 113.74687499999999,
+        "width": 102.59375,
+        "height": 15.493749999999991
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "0 Coins · Lokal gespeichert",
+      "rect": {
+        "left": 35,
+        "top": 119.50937499999999,
+        "right": 181.5625,
+        "bottom": 132.490625,
+        "width": 146.5625,
+        "height": 12.981250000000003
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Profil ›",
+      "rect": {
+        "left": 233.562508392334,
+        "top": 108.88125019073486,
+        "right": 275.437508392334,
+        "bottom": 123.11875019073487,
+        "width": 41.875,
+        "height": 14.237500000000011
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "↑",
+      "rect": {
+        "left": 39.55624871253967,
+        "top": 185.48687782287598,
+        "right": 50.44374871253967,
+        "bottom": 210.193127822876,
+        "width": 10.887500000000003,
+        "height": 24.70625000000001
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "↓",
+      "rect": {
+        "left": 269.0562480926514,
+        "top": 185.48687782287598,
+        "right": 279.9437480926514,
+        "bottom": 210.193127822876,
+        "width": 10.887499999999989,
+        "height": 24.70625000000001
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Sternenweide  ⓘ",
+      "rect": {
+        "left": 78.30312500000001,
+        "top": 272.9031127929687,
+        "right": 241.196875,
+        "bottom": 295.09686279296875,
+        "width": 162.89375,
+        "height": 22.193750000000023
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Nächste: Eisring · Level 3",
+      "rect": {
+        "left": 90.65625,
+        "top": 308.509375,
+        "right": 228.84375,
+        "bottom": 321.49062499999997,
+        "width": 138.1875,
+        "height": 12.981249999999989
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "JAGD STARTEN",
+      "rect": {
+        "left": 100.70625,
+        "top": 348.78749313354496,
+        "right": 218.79375000000002,
+        "bottom": 367.2124931335449,
+        "width": 118.08750000000002,
+        "height": 18.424999999999955
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Tageslauf",
+      "rect": {
+        "left": 58.93437204360962,
+        "top": 406.25313529968264,
+        "right": 118.81562204360962,
+        "bottom": 421.7468852996826,
+        "width": 59.88125,
+        "height": 15.493749999999977
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Duell",
+      "rect": {
+        "left": 213.87499656677247,
+        "top": 406.25313529968264,
+        "right": 247.37499656677247,
+        "bottom": 421.7468852996826,
+        "width": 33.5,
+        "height": 15.493749999999977
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Erfolge",
+      "rect": {
+        "left": 43.6843731880188,
+        "top": 460.88122482299804,
+        "right": 86.8156231880188,
+        "bottom": 475.11872482299805,
+        "width": 43.13125,
+        "height": 14.237500000000011
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Talente",
+      "rect": {
+        "left": 137.13750000000002,
+        "top": 460.88122482299804,
+        "right": 182.3625,
+        "bottom": 475.11872482299805,
+        "width": 45.224999999999994,
+        "height": 14.237500000000011
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Rangliste",
+      "rect": {
+        "left": 226.61249542236328,
+        "top": 460.88122482299804,
+        "right": 281.8874954223633,
+        "bottom": 475.11872482299805,
+        "width": 55.275000000000034,
+        "height": 14.237500000000011
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Einstellungen",
+      "rect": {
+        "left": 47.83749704360962,
+        "top": 514.8812660217286,
+        "right": 129.91249704360962,
+        "bottom": 529.1187660217286,
+        "width": 82.07499999999999,
+        "height": 14.237499999999955
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Shop",
+      "rect": {
+        "left": 214.92187156677247,
+        "top": 514.2531410217285,
+        "right": 246.32812156677247,
+        "bottom": 529.7468910217285,
+        "width": 31.40625,
+        "height": 15.493749999999977
+      }
+    }
+  ],
+  "buttons": [
+    {
+      "scene": "Menu",
+      "label": "⛶",
+      "enabled": true,
+      "rect": {
+        "left": 252.49999809265137,
+        "top": 37.000001430511475,
+        "right": 296.49999809265137,
+        "bottom": 81.00000143051147,
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "scene": "Menu",
+      "label": "Profil ›",
+      "enabled": true,
+      "rect": {
+        "left": 216.50000839233397,
+        "top": 94.00000019073487,
+        "right": 292.500008392334,
+        "bottom": 138.00000019073485,
+        "width": 76.00000000000003,
+        "height": 43.999999999999986
+      }
+    },
+    {
+      "scene": "Menu",
+      "label": "↑",
+      "enabled": false,
+      "rect": {
+        "left": 22.999998712539675,
+        "top": 175.84000282287596,
+        "right": 66.99999871253968,
+        "bottom": 219.840002822876,
+        "width": 44,
+        "height": 44.00000000000003
+      }
+    },
+    {
+      "scene": "Menu",
+      "label": "↓",
+      "enabled": false,
+      "rect": {
+        "left": 252.49999809265137,
+        "top": 175.84000282287596,
+        "right": 296.49999809265137,
+        "bottom": 219.840002822876,
+        "width": 44,
+        "height": 44.00000000000003
+      }
+    },
+    {
+      "scene": "Menu",
+      "label": "Sternenweide  ⓘ",
+      "enabled": true,
+      "rect": {
+        "left": 23.00000000000001,
+        "top": 261.99998779296874,
+        "right": 296.5,
+        "bottom": 305.9999877929688,
+        "width": 273.5,
+        "height": 44.00000000000006
+      }
+    },
+    {
+      "scene": "Menu",
+      "label": "JAGD STARTEN",
+      "enabled": true,
+      "rect": {
+        "left": 23.00000000000001,
+        "top": 333.99999313354493,
+        "right": 296.5,
+        "bottom": 381.99999313354493,
+        "width": 273.5,
+        "height": 48
+      }
+    },
+    {
+      "scene": "Menu",
+      "label": "Tageslauf",
+      "enabled": true,
+      "rect": {
+        "left": 22.99999704360962,
+        "top": 392.00001029968263,
+        "right": 154.74999704360962,
+        "bottom": 436.00001029968263,
+        "width": 131.75,
+        "height": 44
+      }
+    },
+    {
+      "scene": "Menu",
+      "label": "Duell",
+      "enabled": true,
+      "rect": {
+        "left": 164.74999656677247,
+        "top": 392.00001029968263,
+        "right": 296.49999656677244,
+        "bottom": 436.00001029968263,
+        "width": 131.74999999999997,
+        "height": 44
+      }
+    },
+    {
+      "scene": "Menu",
+      "label": "Erfolge",
+      "enabled": true,
+      "rect": {
+        "left": 22.9999981880188,
+        "top": 445.99997482299807,
+        "right": 107.49999818801881,
+        "bottom": 489.99997482299807,
+        "width": 84.5,
+        "height": 44
+      }
+    },
+    {
+      "scene": "Menu",
+      "label": "Talente",
+      "enabled": true,
+      "rect": {
+        "left": 117.5,
+        "top": 445.99997482299807,
+        "right": 202,
+        "bottom": 489.99997482299807,
+        "width": 84.5,
+        "height": 44
+      }
+    },
+    {
+      "scene": "Menu",
+      "label": "Rangliste",
+      "enabled": false,
+      "rect": {
+        "left": 211.9999954223633,
+        "top": 445.99997482299807,
+        "right": 296.49999542236327,
+        "bottom": 489.99997482299807,
+        "width": 84.49999999999997,
+        "height": 44
+      }
+    },
+    {
+      "scene": "Menu",
+      "label": "Einstellungen",
+      "enabled": true,
+      "rect": {
+        "left": 22.99999704360962,
+        "top": 500.0000160217285,
+        "right": 154.74999704360962,
+        "bottom": 544.0000160217286,
+        "width": 131.75,
+        "height": 44.00000000000006
+      }
+    },
+    {
+      "scene": "Menu",
+      "label": "Shop",
+      "enabled": true,
+      "rect": {
+        "left": 164.74999656677247,
+        "top": 500.0000160217285,
+        "right": 296.49999656677244,
+        "bottom": 544.0000160217286,
+        "width": 131.74999999999997,
+        "height": 44.00000000000006
+      }
+    }
+  ],
+  "images": [
+    {
+      "scene": "Menu",
+      "texture": "asset-planet-sternenweide",
+      "rect": {
+        "left": 13.271250000000002,
+        "top": 122.03125,
+        "right": 101.20875,
+        "bottom": 209.96875,
+        "width": 87.9375,
+        "height": 87.9375
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "asset-planet-sternenweide",
+      "rect": {
+        "left": 240.275625,
+        "top": 395.93562499999996,
+        "right": 284.244375,
+        "bottom": 439.90437499999996,
+        "width": 43.96875,
+        "height": 43.96875
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "rect": {
+        "left": -126.67500000000001,
+        "top": -35,
+        "right": 446.175,
+        "bottom": 420.6,
+        "width": 572.85,
+        "height": 455.6
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "rect": {
+        "left": -72.405,
+        "top": -17.915,
+        "right": 198.94500000000002,
+        "bottom": 253.43499999999997,
+        "width": 271.35,
+        "height": 271.34999999999997
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "rect": {
+        "left": 87.39000000000001,
+        "top": 33.34000000000002,
+        "right": 449.19000000000005,
+        "bottom": 395.14000000000004,
+        "width": 361.80000000000007,
+        "height": 361.8
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "rect": {
+        "left": -126.67500000000001,
+        "top": 138.195,
+        "right": 325.575,
+        "bottom": 590.4449999999999,
+        "width": 452.25,
+        "height": 452.24999999999994
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "rect": {
+        "left": 72.315,
+        "top": 321.77500000000003,
+        "right": 403.96500000000003,
+        "bottom": 653.4250000000001,
+        "width": 331.65000000000003,
+        "height": 331.65000000000003
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-vignette",
+      "rect": {
+        "left": -66.375,
+        "top": -8.200000000000003,
+        "right": 385.875,
+        "bottom": 608.2,
+        "width": 452.25,
+        "height": 616.4000000000001
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "asset-isihunt-logo",
+      "rect": {
+        "left": 23.00000000000001,
+        "top": 34,
+        "right": 111.88888888888887,
+        "bottom": 84,
+        "width": 88.88888888888886,
+        "height": 50
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "rect": {
+        "left": 103.64200000000001,
+        "top": 141.73200000000003,
+        "right": 215.858,
+        "bottom": 253.94800000000004,
+        "width": 112.216,
+        "height": 112.21600000000001
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "asset-planet-sternenweide",
+      "rect": {
+        "left": 116.59000000000002,
+        "top": 154.68,
+        "right": 202.91,
+        "bottom": 241,
+        "width": 86.31999999999998,
+        "height": 86.32
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-player-halo",
+      "rect": {
+        "left": 133.854,
+        "top": 192.83019777944088,
+        "right": 185.646,
+        "bottom": 244.62219777944088,
+        "width": 51.79199999999997,
+        "height": 51.792
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-ship-0",
+      "rect": {
+        "left": 142.48600000000002,
+        "top": 201.46219777944088,
+        "right": 177.014,
+        "bottom": 235.99019777944088,
+        "width": 34.52799999999999,
+        "height": 34.52799999999999
+      }
+    }
+  ],
+  "domCanvases": [
+    {
+      "x": 9,
+      "y": 32,
+      "width": 301.5,
+      "height": 536,
+      "top": 32,
+      "right": 310.5,
+      "bottom": 568,
+      "left": 9
+    }
+  ]
+}

@@ -1,0 +1,342 @@
+{
+  "capturedAt": "2026-09-15T17:21:54.220Z",
+  "viewport": {
+    "width": 430,
+    "height": 932
+  },
+  "canvas": {
+    "x": 0,
+    "y": 32,
+    "width": 429.9895935058594,
+    "height": 900,
+    "top": 32,
+    "right": 429.9895935058594,
+    "bottom": 932,
+    "left": 0
+  },
+  "scenes": [
+    "Settings"
+  ],
+  "texts": [
+    {
+      "scene": "Settings",
+      "text": "PROFIL & GERÄTE",
+      "rect": {
+        "left": 144.82288392384845,
+        "top": 75.29794293297942,
+        "right": 285.16670958201087,
+        "bottom": 92.01990710019906,
+        "width": 140.34382565816242,
+        "height": 16.72196416721964
+      }
+    },
+    {
+      "scene": "Settings",
+      "text": "Name, Level, Statistik und Mehrgeräte-Anmeldung an einem Ort.",
+      "rect": {
+        "left": 31.95061562856038,
+        "top": 115.6098208360982,
+        "right": 398.038977877299,
+        "bottom": 129.3457199734572,
+        "width": 366.0883622487386,
+        "height": 13.735899137358999
+      }
+    },
+    {
+      "scene": "Settings",
+      "text": "PROFIL ÖFFNEN",
+      "rect": {
+        "left": 168.4125907897949,
+        "top": 190.26144658261444,
+        "right": 261.57700271606444,
+        "bottom": 203.99734571997345,
+        "width": 93.16441192626954,
+        "height": 13.735899137359013
+      }
+    },
+    {
+      "scene": "Settings",
+      "text": "FEEDBACK",
+      "rect": {
+        "left": 173.19025293986002,
+        "top": 282.5308560053086,
+        "right": 256.79934056599933,
+        "bottom": 299.2528201725282,
+        "width": 83.60908762613931,
+        "height": 16.721964167219596
+      }
+    },
+    {
+      "scene": "Settings",
+      "text": "TON: AN",
+      "rect": {
+        "left": 184.53720054626464,
+        "top": 332.09953550099533,
+        "right": 245.4523929595947,
+        "bottom": 348.821499668215,
+        "width": 60.91519241333006,
+        "height": 16.721964167219653
+      }
+    },
+    {
+      "scene": "Settings",
+      "text": "LAUTSTÄRKE: IPHONE-TASTEN",
+      "rect": {
+        "left": 132.28152077992755,
+        "top": 358.6755142667551,
+        "right": 297.7080727259318,
+        "bottom": 370.02256138022557,
+        "width": 165.42655194600425,
+        "height": 11.347047113470467
+      }
+    },
+    {
+      "scene": "Settings",
+      "text": "HAPTIK: AN",
+      "rect": {
+        "left": 173.19025293986002,
+        "top": 390.02919708029196,
+        "right": 256.79934056599933,
+        "bottom": 406.75116124751156,
+        "width": 83.60908762613931,
+        "height": 16.721964167219596
+      }
+    },
+    {
+      "scene": "Settings",
+      "text": "VIBRATION: GERAETEHAPTIK",
+      "rect": {
+        "left": 136.46197516123453,
+        "top": 418.39681486396813,
+        "right": 293.5276183446248,
+        "bottom": 429.7438619774386,
+        "width": 157.06564318339025,
+        "height": 11.347047113470467
+      }
+    },
+    {
+      "scene": "Settings",
+      "text": "IMPRESSUM",
+      "rect": {
+        "left": 169.00979855855306,
+        "top": 493.3470471134704,
+        "right": 260.9797949473063,
+        "bottom": 510.06901128069006,
+        "width": 91.96999638875323,
+        "height": 16.721964167219653
+      }
+    },
+    {
+      "scene": "Settings",
+      "text": "PROGRAMMIERT VON  YAVUZ ISIK",
+      "rect": {
+        "left": 119.74015763600666,
+        "top": 527.686794956868,
+        "right": 310.2494358698527,
+        "bottom": 541.4226940942269,
+        "width": 190.50927823384603,
+        "height": 13.735899137358956
+      }
+    },
+    {
+      "scene": "Settings",
+      "text": "BESONDERER DANK AN EMRE UND SIMAY\nFür eure aussergewöhnliche Unterstützung bei der Planung,\nmit Vorschlägen und Ideen, beim Testen und Bugfixen.\nEure Neugier und ehrlichen Rückmeldungen machen isiHunt\nmutiger, schöner und immer ein bisschen besser.",
+      "rect": {
+        "left": 46.88080984751383,
+        "top": 565.311214333112,
+        "right": 383.1087836583455,
+        "bottom": 641.1572660915726,
+        "width": 336.22797381083166,
+        "height": 75.84605175846059
+      }
+    },
+    {
+      "scene": "Settings",
+      "text": "Dein Spielstand wird automatisch lokal gespeichert.",
+      "rect": {
+        "left": 96.74765853881836,
+        "top": 657.2820172528201,
+        "right": 333.241934967041,
+        "bottom": 668.6290643662905,
+        "width": 236.49427642822263,
+        "height": 11.347047113470467
+      }
+    },
+    {
+      "scene": "Settings",
+      "text": "‹  ZURÜCK",
+      "rect": {
+        "left": 58.22775745391845,
+        "top": 876.4591904445919,
+        "right": 106.60158672332763,
+        "bottom": 887.8062375580623,
+        "width": 48.37382926940918,
+        "height": 11.347047113470467
+      }
+    }
+  ],
+  "buttons": [
+    {
+      "scene": "Settings",
+      "label": "PROFIL ÖFFNEN",
+      "enabled": true,
+      "rect": {
+        "left": 77.63700993855794,
+        "top": 174.435301924353,
+        "right": 352.3525835673014,
+        "bottom": 219.82349037823488,
+        "width": 274.71557362874347,
+        "height": 45.38818845388187
+      }
+    },
+    {
+      "scene": "Settings",
+      "label": "TON: AN",
+      "enabled": true,
+      "rect": {
+        "left": 107.49739837646483,
+        "top": 321.349701393497,
+        "right": 322.49219512939453,
+        "bottom": 359.5713337757133,
+        "width": 214.9947967529297,
+        "height": 38.221632382216285
+      }
+    },
+    {
+      "scene": "Settings",
+      "label": "HAPTIK: AN",
+      "enabled": true,
+      "rect": {
+        "left": 107.49739837646483,
+        "top": 379.2793629727936,
+        "right": 322.49219512939453,
+        "bottom": 417.50099535500993,
+        "width": 214.9947967529297,
+        "height": 38.22163238221634
+      }
+    },
+    {
+      "scene": "Settings",
+      "label": "‹  ZURÜCK",
+      "enabled": true,
+      "rect": {
+        "left": 23.88831075032552,
+        "top": 864.2163238221632,
+        "right": 140.94103342692057,
+        "bottom": 900.049104180491,
+        "width": 117.05272267659505,
+        "height": 35.832780358327796
+      }
+    }
+  ],
+  "images": [
+    {
+      "scene": "Settings",
+      "texture": "asset-planet-sternenweide",
+      "rect": {
+        "left": 6.091519241333009,
+        "top": 194.5912408759124,
+        "right": 131.505150680542,
+        "bottom": 320.0059721300597,
+        "width": 125.41363143920898,
+        "height": 125.41473125414731
+      }
+    },
+    {
+      "scene": "Settings",
+      "texture": "asset-planet-sternenweide",
+      "rect": {
+        "left": 329.8378506851196,
+        "top": 648.9449236894492,
+        "right": 392.54466640472407,
+        "bottom": 711.6522893165228,
+        "width": 62.70681571960449,
+        "height": 62.707365627073614
+      }
+    },
+    {
+      "scene": "Settings",
+      "texture": "tex-glow",
+      "rect": {
+        "left": -193.4953170776367,
+        "top": -80.20139349701395,
+        "right": 623.484910583496,
+        "bottom": 684.798606502986,
+        "width": 816.9802276611327,
+        "height": 765
+      }
+    },
+    {
+      "scene": "Settings",
+      "texture": "tex-glow",
+      "rect": {
+        "left": -116.09719024658203,
+        "top": -17.198407431984066,
+        "right": 270.8934439086914,
+        "bottom": 369.7956204379562,
+        "width": 386.9906341552734,
+        "height": 386.9940278699403
+      }
+    },
+    {
+      "scene": "Settings",
+      "texture": "tex-glow",
+      "rect": {
+        "left": 111.79729431152346,
+        "top": 80.30258792302587,
+        "right": 627.7848065185547,
+        "bottom": 596.2946250829463,
+        "width": 515.9875122070312,
+        "height": 515.9920371599204
+      }
+    },
+    {
+      "scene": "Settings",
+      "texture": "tex-glow",
+      "rect": {
+        "left": -193.4953170776367,
+        "top": 267.80358327803583,
+        "right": 451.4890731811523,
+        "bottom": 912.7936297279363,
+        "width": 644.9843902587891,
+        "height": 644.9900464499004
+      }
+    },
+    {
+      "scene": "Settings",
+      "texture": "tex-glow",
+      "rect": {
+        "left": 90.29781463623046,
+        "top": 560.8022561380226,
+        "right": 563.2863674926757,
+        "bottom": 1033.7949568679496,
+        "width": 472.98855285644527,
+        "height": 472.99270072992704
+      }
+    },
+    {
+      "scene": "Settings",
+      "texture": "tex-vignette",
+      "rect": {
+        "left": -107.49739837646483,
+        "top": -35.20139349701391,
+        "right": 537.4869918823242,
+        "bottom": 999.798606502986,
+        "width": 644.9843902587891,
+        "height": 1035
+      }
+    }
+  ],
+  "domCanvases": [
+    {
+      "x": 0,
+      "y": 32,
+      "width": 429.9895935058594,
+      "height": 900,
+      "top": 32,
+      "right": 429.9895935058594,
+      "bottom": 932,
+      "left": 0
+    }
+  ]
+}

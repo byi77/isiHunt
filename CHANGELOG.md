@@ -9,6 +9,20 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Geändert
+
+- Grafik-Update, Punkt 2: Hauptmenü mit kompaktem Profilblock, großer
+  Planetenansicht und goldener Hauptaktion. Buttonhöhen werden dort in
+  tatsächlichen Bildschirm-Pixeln berechnet; lange Namen werden gekürzt,
+  während das Level sichtbar bleibt. Gemeinsame Buttons und Panels erhalten
+  ruhigere Flächen. Der Eingabehinweis im Profil verdeckt das Namensfeld nicht mehr.
+- Opt-in-Layoutprüfung im Entwicklungsbuild und zehn Tests für Menüabstände;
+  Screenshots und Prüfumfang stehen in `docs/design/2026-09-15/README.md`.
+- Talentkarten: mehr Platz für Beschreibungen und separate Spalten für Rang,
+  Bonus und Kauf. Die Rangmarkierungen liegen unter dem Bonus; die vorhandene
+  Scrollfunktion hält die unteren Talente und das Zurücksetzen erreichbar.
+  Die Liste ist auf ihren sichtbaren Bereich begrenzt, einschließlich Trefferflächen.
+
 ### Behoben
 
 - **Alle sechs Befunde des Reaudits vom 2026-09-05** (`docs/AUDIT_2026-09-05_REAUDIT.md`).

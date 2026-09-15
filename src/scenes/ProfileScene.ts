@@ -109,7 +109,7 @@ export class ProfileScene extends Phaser.Scene {
 
     addContent(
       this.add
-        .text(GAME_WIDTH / 2, profileY + 40, 'DEIN NAME', textStyle(FontSize.tiny, Palette.inkDim))
+        .text(GAME_WIDTH / 2, profileY + 26, 'DEIN NAME', textStyle(FontSize.tiny, Palette.inkDim))
         .setOrigin(0.5)
         .setLetterSpacing(5),
     );
@@ -118,7 +118,7 @@ export class ProfileScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          profileY + 68,
+          profileY + 48,
           'NUR BUCHSTABEN UND ZAHLEN · MAX. 4 ZAHLEN',
           textStyle(12, Palette.inkDim),
         )

@@ -5,8 +5,18 @@
 **Laufende Designarbeit (14.09.2026):** Das geplante Grafik-Update mit 2,5D-Effekten
 und 3D-Hangar wird im [Grafik-Update-Plan](GRAFIK_UPDATE_PLAN.md) geführt.
 [Erste Entwürfe und Messungen](design/2026-09-14/README.md) liegen zur Durchsicht vor.
-Die dort vorgeschlagenen Farben und Layouts sind noch nicht ins Spiel übernommen;
-der folgende Leitfaden beschreibt weiterhin die bestehende Gestaltung.
+Seit 15.09.2026 wird Punkt 2 umgesetzt: gemeinsamer ruhiger Button-/Panelstil
+und ein anhand von CSS-Pixeln berechnetes Hauptmenü. Der folgende ältere
+Leitfaden wird durch diese konkrete Festlegung ergänzt:
+
+- Panels verwenden `#13212c`, Buttons `#172734` mit Kontur `#344753`.
+- Eine explizite primäre Aktion erhält Gold mit dunkler Beschriftung; normale
+  Buttons erhalten keinen ausgedehnten Halo mehr. Ihre Trefferflächen bleiben stabil.
+- Im Hauptmenü werden die Buttonhöhen vor der Umrechnung in Phaser-Koordinaten
+  auf mindestens 44 CSS-Pixel ausgelegt. Auf kurzen Displays schrumpft zuerst die Kulisse.
+- Das vorhandene Logo, die vorhandenen Planeten und die ausgerüstete Schiffsform
+  bleiben die Assets dieser Etappe. Neuer Hangar und räumliche Spielfeld-Effekte folgen später.
+- Profilzeilen bekommen feste Textgrenzen mit Auslassung statt Überlaufen in den Nachbarbutton.
 
 ---
 
@@ -65,7 +75,7 @@ Seltenheitsfarben klar unterscheiden.
 | Zweck               | Wert      |
 | ------------------- | --------- |
 | Grundton            | `#0b1020` |
-| Panel               | `#101733` |
+| Panel               | `#13212c` |
 | Text                | `#f4f1e8` |
 | Text gedaempft      | `#b8c0d9` |
 | Hervorhebung / Gold | `#ffd479` |

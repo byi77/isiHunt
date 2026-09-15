@@ -1,0 +1,244 @@
+{
+  "capturedAt": "2026-09-15T17:23:52.938Z",
+  "viewport": {
+    "width": 430,
+    "height": 932
+  },
+  "canvas": {
+    "x": 0,
+    "y": 32,
+    "width": 429.9895935058594,
+    "height": 900,
+    "top": 32,
+    "right": 429.9895935058594,
+    "bottom": 932,
+    "left": 0
+  },
+  "scenes": [
+    "OnlineDuel"
+  ],
+  "texts": [
+    {
+      "scene": "OnlineDuel",
+      "text": "ODER SOLO SPIELEN",
+      "rect": {
+        "left": 150.79496161142984,
+        "top": 331.8009289980093,
+        "right": 279.1946318944295,
+        "bottom": 343.14797611147975,
+        "width": 128.39967028299967,
+        "height": 11.347047113470467
+      }
+    },
+    {
+      "scene": "OnlineDuel",
+      "text": "VS BOT",
+      "rect": {
+        "left": 180.9539539337158,
+        "top": 386.14731254147307,
+        "right": 249.03563957214354,
+        "bottom": 408.2441937624419,
+        "width": 68.08168563842773,
+        "height": 22.09688122096884
+      }
+    },
+    {
+      "scene": "OnlineDuel",
+      "text": "ABBRECHEN",
+      "rect": {
+        "left": 180.0581422805786,
+        "top": 841.8208360982082,
+        "right": 249.93145122528074,
+        "bottom": 855.5567352355673,
+        "width": 69.87330894470213,
+        "height": 13.73589913735907
+      }
+    },
+    {
+      "scene": "OnlineDuel",
+      "text": "DUELL",
+      "rect": {
+        "left": 176.77349955240885,
+        "top": -4.131386861313864,
+        "right": 253.2160939534505,
+        "bottom": 22.145985401459853,
+        "width": 76.44259440104165,
+        "height": 26.277372262773717
+      }
+    },
+    {
+      "scene": "OnlineDuel",
+      "text": "Lade einen duellbereiten Spieler direkt ein.",
+      "rect": {
+        "left": 91.3727886199951,
+        "top": 39.16655607166556,
+        "right": 338.6168048858642,
+        "bottom": 52.90245520902455,
+        "width": 247.2440162658691,
+        "height": 13.735899137358992
+      }
+    },
+    {
+      "scene": "OnlineDuel",
+      "text": "DUELLBEREITE SPIELER",
+      "rect": {
+        "left": 147.211714998881,
+        "top": 73.8049104180491,
+        "right": 282.7778785069783,
+        "bottom": 87.54080955540809,
+        "width": 135.5661635080973,
+        "height": 13.735899137358984
+      }
+    },
+    {
+      "scene": "OnlineDuel",
+      "text": "Spielername fuer Einladungen fehlt.",
+      "rect": {
+        "left": 232.31382204691567,
+        "top": 876.4591904445919,
+        "right": 397.7403739929199,
+        "bottom": 887.8062375580623,
+        "width": 165.42655194600422,
+        "height": 11.347047113470467
+      }
+    }
+  ],
+  "buttons": [
+    {
+      "scene": "OnlineDuel",
+      "label": "VS BOT",
+      "enabled": true,
+      "rect": {
+        "left": 83.60908762613931,
+        "top": 372.71001990710016,
+        "right": 346.38050587972003,
+        "bottom": 421.6814863968148,
+        "width": 262.7714182535807,
+        "height": 48.97146648971466
+      }
+    },
+    {
+      "scene": "OnlineDuel",
+      "label": "ABBRECHEN",
+      "enabled": true,
+      "rect": {
+        "left": 125.41363143920897,
+        "top": 827.1891174518911,
+        "right": 304.5759620666504,
+        "bottom": 870.1884538818845,
+        "width": 179.1623306274414,
+        "height": 42.99933642999338
+      }
+    }
+  ],
+  "images": [
+    {
+      "scene": "OnlineDuel",
+      "texture": "asset-planet-sternenweide",
+      "rect": {
+        "left": 6.091519241333009,
+        "top": 194.5912408759124,
+        "right": 131.505150680542,
+        "bottom": 320.0059721300597,
+        "width": 125.41363143920898,
+        "height": 125.41473125414731
+      }
+    },
+    {
+      "scene": "OnlineDuel",
+      "texture": "asset-planet-sternenweide",
+      "rect": {
+        "left": 329.8378506851196,
+        "top": 648.9449236894492,
+        "right": 392.54466640472407,
+        "bottom": 711.6522893165228,
+        "width": 62.70681571960449,
+        "height": 62.707365627073614
+      }
+    },
+    {
+      "scene": "OnlineDuel",
+      "texture": "tex-glow",
+      "rect": {
+        "left": -193.4953170776367,
+        "top": -80.20139349701395,
+        "right": 623.484910583496,
+        "bottom": 684.798606502986,
+        "width": 816.9802276611327,
+        "height": 765
+      }
+    },
+    {
+      "scene": "OnlineDuel",
+      "texture": "tex-glow",
+      "rect": {
+        "left": -116.09719024658203,
+        "top": -17.198407431984066,
+        "right": 270.8934439086914,
+        "bottom": 369.7956204379562,
+        "width": 386.9906341552734,
+        "height": 386.9940278699403
+      }
+    },
+    {
+      "scene": "OnlineDuel",
+      "texture": "tex-glow",
+      "rect": {
+        "left": 111.79729431152346,
+        "top": 80.30258792302587,
+        "right": 627.7848065185547,
+        "bottom": 596.2946250829463,
+        "width": 515.9875122070312,
+        "height": 515.9920371599204
+      }
+    },
+    {
+      "scene": "OnlineDuel",
+      "texture": "tex-glow",
+      "rect": {
+        "left": -193.4953170776367,
+        "top": 267.80358327803583,
+        "right": 451.4890731811523,
+        "bottom": 912.7936297279363,
+        "width": 644.9843902587891,
+        "height": 644.9900464499004
+      }
+    },
+    {
+      "scene": "OnlineDuel",
+      "texture": "tex-glow",
+      "rect": {
+        "left": 90.29781463623046,
+        "top": 560.8022561380226,
+        "right": 563.2863674926757,
+        "bottom": 1033.7949568679496,
+        "width": 472.98855285644527,
+        "height": 472.99270072992704
+      }
+    },
+    {
+      "scene": "OnlineDuel",
+      "texture": "tex-vignette",
+      "rect": {
+        "left": -107.49739837646483,
+        "top": -35.20139349701391,
+        "right": 537.4869918823242,
+        "bottom": 999.798606502986,
+        "width": 644.9843902587891,
+        "height": 1035
+      }
+    }
+  ],
+  "domCanvases": [
+    {
+      "x": 0,
+      "y": 32,
+      "width": 429.9895935058594,
+      "height": 900,
+      "top": 32,
+      "right": 429.9895935058594,
+      "bottom": 932,
+      "left": 0
+    }
+  ]
+}

@@ -1,12 +1,15 @@
 # isiHunt: Grafik-Update und 3D-Effekte
 
-Stand: 14. September 2026
+Stand: 15. September 2026
 
-Status: Schritt 1 in Arbeit. Bestandsaufnahme und vier geprüfte Designentwürfe
-liegen vor; die grafischen Änderungen sind noch nicht ins Spiel integriert.
+Status: Punkt 2 umgesetzt; Commit, Push und Deployment am 15. September beauftragt.
+Das neue Hauptmenü und der gemeinsame Button-/Panelstil
+sind implementiert; der konkrete Prüfumfang und verbleibende Geräteprüfungen stehen
+im [Arbeitsbericht vom 15. September](design/2026-09-15/README.md).
 
 Aktueller Arbeitsstand mit Bildern, Messungen und technischen Befunden:
-[Bestandsaufnahme und Entwürfe vom 14. September 2026](design/2026-09-14/README.md).
+[Umsetzung Punkt 2](design/2026-09-15/README.md).
+Die [Bestandsaufnahme und Entwürfe](design/2026-09-14/README.md) bleiben als Referenz erhalten.
 
 ## Gesprächskontext und Ziel
 
@@ -330,6 +333,42 @@ Wiederverwendung und offene Punkte stehen im verlinkten Arbeitsstand.
 
 ## Fortschritt und Wiedereinstieg
 
+### Aktive Etappe: 15. September 2026, Punkt 2
+
+- Vorheriger Zwischenstand: Commit `28562cf` gepusht; Deployment v0.1.315 bestätigt.
+- Der Nutzer hat die Fortsetzung mit Punkt 2 beauftragt; die Entwurfsrichtung wird umgesetzt.
+- Hauptmenü in `MenuView` ausgelagert; `MenuScene` behält Navigation, Sync und Persistenz.
+- Kompakter Profilblock, große vorhandene Planetentextur und ausgerüstete Schiffsform.
+- Einzelne goldene Hauptaktion; alle bisherigen Menüwege bleiben erhalten.
+- Gemeinsame Buttons/Paneloberflächen überarbeitet; bestehende Unterseiten übernehmen den Stil.
+- Menügrößen berücksichtigen CSS-Pixel und sicheren unteren Rand; Update-Hinweis ersetzt den Kopfbereich.
+- Abstand der untersten Menüreihe zur Versionsnummer bereits korrigiert.
+- Zusätzlicher Abstandstest hat einen möglichen Aura-/Welttitelkonflikt im kleinen Format
+  gefunden; die Schiffshöhe berücksichtigt jetzt ihre maximale animierte Ausdehnung.
+- Zehn Layouttests bestanden; Typprüfung und gezielte Lintprüfung bestanden.
+- Vollständiges `npm run verify`: 586 Tests in 40 Dateien, Typprüfung, Lint,
+  Formatprüfung, Projektprüfungen und Produktionsbuild erfolgreich.
+- Profil: Hinweis vom Eingabefeld getrennt; Level bleibt neben langen Namen sichtbar.
+- Talentseite: überlappende Beschreibungen, Bonus und Rangmarkierungen getrennt;
+  höhere Karten nutzen die bestehende Scrollfunktion. Reset-Zeile durch Scrollen erreicht.
+  Listenmaske verhindert das Überdecken der festen Überschrift; abgeschnittene
+  Button-Trefferflächen sind gesperrt.
+- Opt-in-Messwerkzeug unter `?layoutAudit` ergänzt: tatsächliche Text-/Bildrechtecke
+  und rechteckige Button-Trefferflächen aus dem Renderer. Produktionsbuild lädt es nicht.
+- Screenshots und Messungen dieser Etappe liegen unter `docs/design/2026-09-15/`.
+- Commit, Push und Deployment dieser Umsetzung am 15. September beauftragt.
+  Der Commit-Hook erhöht die Version; der Push startet die geprüfte Auslieferung.
+  Maßgeblich für deren Ergebnis sind Git-/CI-Historie und `npm run deploy:wait`.
+- Noch offen: echte iOS-/Android-Geräte, Live-Login-/Sync-Dialoge, alle freigeschalteten
+  Welten und eine belastbare Laufzeit-/Speicherbaseline. Diese Freigaben werden nicht
+  aus statischen Screenshots abgeleitet.
+
+**Nächster Einstieg:** Den Arbeitsbericht dieser Etappe und die dort gespeicherten
+Menüaufnahmen ansehen. Anschließend Punkt 3 (Welten und räumliche Planeten) einzeln
+bearbeiten und die offenen Geräteprüfungen weiterführen. Punkt 2 nicht erneut aufbauen.
+
+Die folgenden Notizen vom 14. September bleiben als Historie der Vorbereitung erhalten.
+
 ### Versionierung dieses Zwischenstands
 
 Am 14. September 2026 wurde Commit und Push dieses Dokumentations- und
@@ -362,7 +401,7 @@ Ergebnis nicht vorweg.
 - [ ] Schritt 8: Ergebnisse und Belohnungen umgesetzt und angesehen.
 - [ ] Abschließende Geräte-, Funktions- und Performanceprüfung abgeschlossen.
 
-### Letzter Stand: 14. September 2026
+### Historischer Stand: 14. September 2026
 
 Die Arbeit an Schritt 1 wurde begonnen. Unter `docs/design/2026-09-14/` liegen
 Referenzbilder, vier statische SVG-/PNG-Entwürfe, gemessene Geometrie, eine
