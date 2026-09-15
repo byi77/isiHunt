@@ -61,6 +61,7 @@ export class MenuScene extends Phaser.Scene {
   private selectedWorld!: WorldDef;
   private worldBackdrop!: Phaser.GameObjects.Container;
   private menuView: MenuView | null = null;
+  private worldPreview = false;
   private savePromptObjects: Phaser.GameObjects.GameObject[] = [];
   private syncPopupObjects: Phaser.GameObjects.GameObject[] = [];
   private loginBonusObjects: Phaser.GameObjects.GameObject[] = [];
@@ -88,6 +89,10 @@ export class MenuScene extends Phaser.Scene {
       unlocked.find((w) => w.id === save.lastWorldId) ??
       unlocked[unlocked.length - 1] ??
       WORLDS[0]!;
+    const previewIndex = new URLSearchParams(window.location.search).get('worldPreview');
+    this.worldPreview =
+      DEBUG_ENABLED && previewIndex !== null && WORLDS[Number(previewIndex)] !== undefined;
+    if (this.worldPreview) this.selectedWorld = WORLDS[Number(previewIndex)]!;
 
     this.worldBackdrop = createWorldBackdrop(
       this,
@@ -106,12 +111,17 @@ export class MenuScene extends Phaser.Scene {
       .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, Palette.backdrop, 0.62)
       .setOrigin(0)
       .setDepth(Depth.Backdrop + 1);
-    this.menuView = new MenuView(this, save, this.selectedWorld, {
-      onAction: (action) => this.handleMenuAction(action),
-      onWorldSelected: (world) => this.handleWorldSelection(world),
-      leaderboardAvailable: CloudSystem.isAvailable(),
-      signedIn: AuthSystem.isSignedIn(),
-    });
+    this.menuView = new MenuView(
+      this,
+      this.worldPreview ? { ...save, level: 100 } : save,
+      this.selectedWorld,
+      {
+        onAction: (action) => this.handleMenuAction(action),
+        onWorldSelected: (world) => this.handleWorldSelection(world),
+        leaderboardAvailable: CloudSystem.isAvailable(),
+        signedIn: AuthSystem.isSignedIn(),
+      },
+    );
 
     void this.showUpdateHintIfAny();
     void this.synchronizeData();
@@ -754,9 +764,11 @@ export class MenuScene extends Phaser.Scene {
 
   private handleWorldSelection(world: WorldDef): void {
     this.selectedWorld = world;
-    SaveSystem.update((data) => {
-      data.lastWorldId = world.id;
-    });
+    if (!this.worldPreview) {
+      SaveSystem.update((data) => {
+        data.lastWorldId = world.id;
+      });
+    }
     this.transitionWorldBackdrop(world);
     SoundSystem.playWorldSelect(world.spaceVariant);
   }

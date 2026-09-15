@@ -5,6 +5,15 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 
 ## Bereits spielbar
 
+### Grafik-Update — Punkt 3
+
+- [x] Zehn eigene Kugeloberflächen mit fester Beleuchtung und Atmosphärenrand.
+- [x] Ringe hinter/vor dem Planeten, Koronen und Monde; Kulissen mit geringem Kontrast.
+- [x] Oberflächenrotation im Menü, langsame Nebeldrift und stehende Sterne bei reduzierter Bewegung.
+- [ ] Echte Mobilgeräte- und Langzeitmessung der neuen Effekte.
+
+Prüfumfang und offene Punkte: [Grafik-Update-Plan](GRAFIK_UPDATE_PLAN.md).
+
 ### Grafik-Update — Punkt 2 umgesetzt
 
 - [x] Hauptmenü und gemeinsamer Button-/Panelstil, CSS-basierte Menüabstände.

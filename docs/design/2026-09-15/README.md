@@ -3,7 +3,7 @@
 Stand: 15. September 2026. Umsetzung auf Basis v0.1.315;
 Commit, Push und Deployment anschließend vom Nutzer beauftragt. Die Aufnahmen
 zeigen den Entwicklungsstand vor dem Versionssprung des Commit-Hooks.
-Auslieferungsergebnis: Git-/CI-Historie und `npm run deploy:wait`.
+Auslieferung bestätigt: Commit `2350294`, v0.1.316 live und GitHub-Deployment erfolgreich.
 
 ## Was umgesetzt wurde
 

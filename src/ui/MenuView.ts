@@ -10,6 +10,7 @@ import type { SaveData } from '@/types';
 import { Depth } from '@/ui/depth';
 import { auraAssetForId } from '@/ui/egoAssets';
 import { calculateMenuLayout } from '@/ui/menuLayout';
+import { createSpatialPlanet } from '@/ui/spatialPlanet';
 import type { MenuLayout } from '@/ui/menuLayout';
 import {
   AURA_FRAME_RUHE,
@@ -336,23 +337,18 @@ export class MenuView {
       worldTitleY,
       worldSubtitleY,
     } = this.layout;
-    const textures = [
-      TextureKey.PlanetSternenweide,
-      TextureKey.PlanetEisring,
-      TextureKey.PlanetGlutnebel,
-      TextureKey.PlanetNullsektor,
-      TextureKey.PlanetSonnenkrone,
-    ];
-    const planetKey = textures[this.world.spaceVariant % textures.length] ?? textures[0]!;
     const glow = this.scene.add
       .image(GAME_WIDTH / 2, planetY, TextureKey.Glow)
       .setDisplaySize(planetSize * 1.3, planetSize * 1.3)
       .setTint(this.world.accent)
       .setAlpha(0.16);
-    const planet = this.scene.add
-      .image(GAME_WIDTH / 2, planetY, planetKey)
-      .setDisplaySize(planetSize, planetSize)
-      .setAlpha(0.96);
+    const planet = createSpatialPlanet(
+      this.scene,
+      GAME_WIDTH / 2,
+      planetY,
+      planetSize,
+      this.world.spaceVariant,
+    );
     this.root.add([glow, planet]);
     this.hero = this.scene.add.container(0, 0);
     this.root.add(this.hero);

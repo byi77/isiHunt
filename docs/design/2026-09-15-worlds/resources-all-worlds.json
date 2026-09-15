@@ -1,0 +1,100 @@
+{
+  "textures": [
+    {
+      "key": "world-sphere-1-1",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "key": "world-sphere-1-24",
+      "width": 1024,
+      "height": 384
+    },
+    {
+      "key": "world-sphere-2-1",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "key": "world-sphere-2-24",
+      "width": 1024,
+      "height": 384
+    },
+    {
+      "key": "world-sphere-3-1",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "key": "world-sphere-3-24",
+      "width": 1024,
+      "height": 384
+    },
+    {
+      "key": "world-sphere-4-1",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "key": "world-sphere-4-24",
+      "width": 1024,
+      "height": 384
+    },
+    {
+      "key": "world-sphere-5-1",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "key": "world-sphere-5-24",
+      "width": 1024,
+      "height": 384
+    },
+    {
+      "key": "world-sphere-6-1",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "key": "world-sphere-6-24",
+      "width": 1024,
+      "height": 384
+    },
+    {
+      "key": "world-sphere-7-1",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "key": "world-sphere-7-24",
+      "width": 1024,
+      "height": 384
+    },
+    {
+      "key": "world-sphere-8-1",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "key": "world-sphere-8-24",
+      "width": 1024,
+      "height": 384
+    },
+    {
+      "key": "world-sphere-9-1",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "key": "world-sphere-9-24",
+      "width": 1024,
+      "height": 384
+    }
+  ],
+  "listeners": [
+    {
+      "scene": "Menu",
+      "count": 5
+    }
+  ]
+}

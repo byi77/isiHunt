@@ -1,0 +1,14 @@
+[
+  {
+    "scene": "Game",
+    "report": {
+      "startupMs": 2100,
+      "frameCount": 583,
+      "frameP95Ms": 16.719999999999708,
+      "frameOverBudgetRatio": 0,
+      "peakDynamicObjects": 10,
+      "peakParticleGroups": 2,
+      "passed": true
+    }
+  }
+]

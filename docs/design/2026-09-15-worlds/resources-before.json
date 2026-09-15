@@ -1,0 +1,20 @@
+{
+  "textures": [
+    {
+      "key": "world-sphere-1-1",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "key": "world-sphere-1-24",
+      "width": 1024,
+      "height": 384
+    }
+  ],
+  "listeners": [
+    {
+      "scene": "Menu",
+      "count": 5
+    }
+  ]
+}

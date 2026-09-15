@@ -2,13 +2,13 @@
 
 Stand: 15. September 2026
 
-Status: Punkt 2 umgesetzt; Commit, Push und Deployment am 15. September beauftragt.
-Das neue Hauptmenü und der gemeinsame Button-/Panelstil
-sind implementiert; der konkrete Prüfumfang und verbleibende Geräteprüfungen stehen
-im [Arbeitsbericht vom 15. September](design/2026-09-15/README.md).
+Status: Punkt 3 lokal umgesetzt und geprüft. Punkt 2 mit Commit `2350294`
+als v0.1.316 live bestätigt. Der konkrete Prüfumfang und verbleibende Geräteprüfungen
+stehen im [Arbeitsbericht zu den Welten](design/2026-09-15-worlds/README.md).
 
 Aktueller Arbeitsstand mit Bildern, Messungen und technischen Befunden:
-[Umsetzung Punkt 2](design/2026-09-15/README.md).
+[Umsetzung Punkt 3](design/2026-09-15-worlds/README.md).
+Vorherige Etappe: [Punkt 2](design/2026-09-15/README.md).
 Die [Bestandsaufnahme und Entwürfe](design/2026-09-14/README.md) bleiben als Referenz erhalten.
 
 ## Gesprächskontext und Ziel
@@ -333,7 +333,28 @@ Wiederverwendung und offene Punkte stehen im verlinkten Arbeitsstand.
 
 ## Fortschritt und Wiedereinstieg
 
-### Aktive Etappe: 15. September 2026, Punkt 2
+### Aktive Etappe: Punkt 3 — Welten und räumliche Planeten
+
+- Deployment von Punkt 2 erfolgreich; Live-Bundle v0.1.316 geprüft.
+- Beispielwelt Eisring: Kugelbeleuchtung, langsame Oberflächenrotation und geteilter Ring.
+- Anschließend zehn unterschiedliche Oberflächen und Weltmerkmale; keine Änderung an Regeln.
+- Effektbudget: wiederverwendete Texturen, wenige feste Ebenen,
+  statische Alternative bei reduzierter Bewegung und schwachen Geräten.
+- Menü-Geometrie bleibt verbindlich; gesamte Planetenausdehnung inklusive Ring
+  wird innerhalb des bisherigen Planetenbereichs gehalten.
+- Zehn Weltansichten bei 390 × 844 und Eisring zusätzlich bei 320 × 568 geprüft;
+  elf Menü-Messungen ohne Text-/Button-/Planetenkonflikte. Eisring-Spielfeld angesehen.
+- 16 Weltwechsel: unverändert 5 Aktualisierungslistener; Texturcache auf dem Rückweg stabil.
+- `npm run verify` bestanden: 588 Tests in 41 Dateien, Typen, Lint, Format,
+  Projektprüfungen und Produktionsbuild.
+- Erste Laufzeit-Stichprobe: 583 Frames, P95 16,72 ms, keine Frames über Budget,
+  Start 2,1 s. Keine Langzeit- oder Mobilgerätefreigabe daraus ableiten.
+- Offen bleiben echte Mobilgeräte, OS-Umschaltung auf reduzierte Bewegung,
+  Geräte mit wenig Speicher und belastbare Langzeit-/GPU-Speichermessungen.
+- Noch kein Commit/Push dieser Etappe. Nächster Gestaltungspunkt: Punkt 4,
+  Schiffe, Flugbewegung und räumliche Aura. Bericht und Messungen nicht erneut erstellen.
+
+### Abgeschlossene Umsetzung: 15. September 2026, Punkt 2
 
 - Vorheriger Zwischenstand: Commit `28562cf` gepusht; Deployment v0.1.315 bestätigt.
 - Der Nutzer hat die Fortsetzung mit Punkt 2 beauftragt; die Entwurfsrichtung wird umgesetzt.

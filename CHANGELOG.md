@@ -11,6 +11,14 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geändert
 
+- Grafik-Update, Punkt 3: zehn eigene Planetendarstellungen mit Kugelbeleuchtung,
+  langsamer Oberflächenrotation, Atmosphärenrand und weltabhängigen Ringen,
+  Koronen oder Monden. Hintergrundplaneten übernehmen die Darstellung mit
+  geringem Kontrast; Nebelschichten bewegen sich langsam gegeneinander.
+  Bei reduzierter Bewegung bleiben Sterne sichtbar und stehen still.
+- Planetentexturen werden wiederverwendet; statische Alternative bei reduziertem
+  Bewegungswunsch oder gemeldeten Geräten mit höchstens 2 GB Speicher.
+
 - Grafik-Update, Punkt 2: Hauptmenü mit kompaktem Profilblock, großer
   Planetenansicht und goldener Hauptaktion. Buttonhöhen werden dort in
   tatsächlichen Bildschirm-Pixeln berechnet; lange Namen werden gekürzt,

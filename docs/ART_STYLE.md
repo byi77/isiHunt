@@ -18,6 +18,15 @@ Leitfaden wird durch diese konkrete Festlegung ergänzt:
   bleiben die Assets dieser Etappe. Neuer Hangar und räumliche Spielfeld-Effekte folgen später.
 - Profilzeilen bekommen feste Textgrenzen mit Auslassung statt Überlaufen in den Nachbarbutton.
 
+Punkt 3: Große Kulissenplaneten bekommen eine feste Lichtquelle links oben,
+eine dunkle Nachtseite und einen schmalen Atmosphärenrand. Die Oberfläche
+wandert unabhängig vom Licht. Ringe werden hinter und vor der Kugel gezeichnet.
+Sternenweide: Kontinente; Eisring: Eis und Splitterring; Glutnebel: Gasbänder;
+Nullsektor: dunkler Kern mit Riss; Sonnenkrone: Korona; Mondschmiede: Krater
+und Monde; Kristallbruch: Facetten; Sturmgrenze: Wirbel; Lichtkern: helle
+Konvektionszellen; Horizonttor: Doppelring. Kulissen bleiben kontrastarm und
+ohne Sammelmarkierung; Seltenheitsfarben und Sammelobjekte bleiben unverändert.
+
 ---
 
 ## 1. Leitbild

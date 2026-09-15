@@ -23,6 +23,17 @@ Es zeigt über eine DOM-Bedienleiste die tatsächlichen Renderer-Rechtecke und
 rechteckigen Button-Trefferflächen in CSS-Pixeln; es verändert keine Spielstände.
 Aufnahmen und Auswertung: [Punkt 2](design/2026-09-15/README.md).
 
+Punkt 3 ergänzt `config/worldVisuals.ts` (rein visuelle Weltprofile),
+`ui/planetSurface.ts` (deterministische Kugeloberflächen) und
+`ui/spatialPlanet.ts` (Phaser-Ansicht mit geteilten Ringen und fester Beleuchtung).
+Texturen werden pro Welt wiederverwendet. Bewegung bleibt in der Ansicht;
+Listener werden beim Zerstören der Ansicht entfernt. Weltregeln bleiben in `worlds.ts`.
+Ein Entwicklungsbuild kann mit `?worldPreview=0` bis `9` die Welten im Hauptmenü
+ansehen, ohne sie im Spielstand freizuschalten oder die Weltenauswahl zu speichern.
+Die Menüansicht zeigt dafür ein virtuelles Level 100. Die Option existiert nicht
+im Produktionsverhalten. `?layoutAudit` erfasst außerdem Atlasgrößen, aktuelle
+Bildframes und Listenerzahlen für die Ressourcenprüfung.
+
 ---
 
 ## 1. Leitprinzip

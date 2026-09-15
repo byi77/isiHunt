@@ -23,6 +23,7 @@ import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import * as SoundSystem from '@/systems/SoundSystem';
 import { ensureTouchTarget, prefersReducedMotion } from '@/systems/AccessibilitySystem';
+import { createSpatialPlanet } from '@/ui/spatialPlanet';
 
 export interface ButtonHandle {
   container: Phaser.GameObjects.Container;
@@ -779,23 +780,17 @@ export function createWorldBackdrop(
       { x: 0.9, y: 0.82, size: 115, alpha: 0.08 },
     ],
   ];
-  const planetTextures: readonly string[] = [
-    TextureKey.PlanetSternenweide,
-    TextureKey.PlanetEisring,
-    TextureKey.PlanetGlutnebel,
-    TextureKey.PlanetNullsektor,
-    TextureKey.PlanetSonnenkrone,
-  ];
   const planets = planetLayouts[spaceVariant % planetLayouts.length] ?? planetLayouts[0]!;
-  const planetTexture =
-    planetTextures[spaceVariant % planetTextures.length] ?? TextureKey.PlanetSternenweide;
   for (const planet of planets) {
     backdrop.add(
-      scene.add
-        .image(width * planet.x, height * planet.y, planetTexture)
-        .setDisplaySize(planet.size, planet.size)
-        .setAlpha(planet.alpha)
-        .setBlendMode(Phaser.BlendModes.NORMAL),
+      createSpatialPlanet(
+        scene,
+        width * (spaceVariant >= 5 ? 1 - planet.x : planet.x),
+        height * planet.y,
+        planet.size,
+        spaceVariant,
+        false,
+      ).setAlpha(planet.alpha),
     );
   }
 
@@ -851,14 +846,25 @@ export function createWorldBackdrop(
   const clouds = cloudLayouts[spaceVariant % cloudLayouts.length] ?? cloudLayouts[0]!;
 
   for (const cloud of clouds) {
-    backdrop.add(
-      scene.add
-        .image(width * cloud.x, height * cloud.y, TextureKey.Glow)
-        .setDisplaySize(width * cloud.scale, width * cloud.scale)
-        .setTint(accent)
-        .setAlpha(cloud.alpha)
-        .setBlendMode(Phaser.BlendModes.ADD),
-    );
+    const image = scene.add
+      .image(width * (spaceVariant >= 5 ? 1 - cloud.x : cloud.x), height * cloud.y, TextureKey.Glow)
+      .setDisplaySize(width * cloud.scale, width * cloud.scale)
+      .setTint(accent)
+      .setAlpha(cloud.alpha * 0.75)
+      .setBlendMode(Phaser.BlendModes.ADD);
+    backdrop.add(image);
+    if (!prefersReducedMotion()) {
+      const drift = scene.tweens.add({
+        targets: image,
+        x: image.x + width * 0.035,
+        y: image.y - height * 0.018,
+        duration: 28_000 + spaceVariant * 1_500,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.InOut',
+      });
+      backdrop.once(Phaser.GameObjects.Events.DESTROY, () => drift.remove());
+    }
   }
 
   return backdrop;
@@ -879,7 +885,7 @@ export function createDriftLayers(
 ): void {
   const starTints = [0xffffff, 0xc4ecff, 0xffd7b0, 0xe8d1ff, 0xfff1b8] as const;
   const starTint = starTints[spaceVariant % starTints.length] ?? 0xffffff;
-  if (prefersReducedMotion()) return;
+  const reduced = prefersReducedMotion();
   const layers: readonly {
     count: number;
     scale: number;
@@ -894,11 +900,17 @@ export function createDriftLayers(
   for (const layer of layers) {
     for (let i = 0; i < layer.count; i++) {
       const dot = scene.add
-        .image(Phaser.Math.Between(0, width), Phaser.Math.Between(0, height), TextureKey.Spark)
+        .image(
+          (((i * 137 + spaceVariant * 43) % 997) / 997) * width,
+          (((i * 271 + spaceVariant * 83) % 991) / 991) * height,
+          TextureKey.Spark,
+        )
         .setScale(layer.scale)
         .setAlpha(layer.alpha)
         .setTint(starTint)
         .setDepth(layer.depth);
+
+      if (reduced) continue;
 
       // Jeder Punkt bekommt eine eigene Dauer - sonst bewegt sich die Ebene
       // als Block und der Effekt kippt ins Kuenstliche.

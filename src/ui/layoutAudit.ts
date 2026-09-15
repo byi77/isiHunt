@@ -72,7 +72,28 @@ export function installLayoutAudit(game: Phaser.Game): void {
             images.push({
               scene: scene.scene.key,
               texture: object.texture.key,
+              frame: object.frame.name,
               rect: screenBox(object.getBounds(), object.scrollFactorX, object.scrollFactorY),
+            });
+          }
+          if (
+            object instanceof Phaser.GameObjects.Container &&
+            inheritedAlpha * object.alpha >= 0.5 &&
+            object.getData('layoutRole') === 'worldPlanet'
+          ) {
+            const matrix = object.getWorldTransformMatrix();
+            const center = matrix.transformPoint(0, 0);
+            images.push({
+              scene: scene.scene.key,
+              texture: 'world-planet-envelope',
+              rect: screenBox(
+                new Phaser.Geom.Rectangle(
+                  center.x - object.width / 2,
+                  center.y - object.height / 2,
+                  object.width,
+                  object.height,
+                ),
+              ),
             });
           }
           if (
@@ -113,9 +134,29 @@ export function installLayoutAudit(game: Phaser.Game): void {
         viewport: { width: innerWidth, height: innerHeight },
         canvas: canvas.toJSON(),
         scenes: scenes.map((scene) => scene.scene.key),
+        performance: scenes
+          .map((scene) => ({
+            scene: scene.scene.key,
+            report:
+              (
+                scene as Phaser.Scene & { getPerformanceReport?: () => unknown }
+              ).getPerformanceReport?.() ?? null,
+          }))
+          .filter((entry) => entry.report !== null),
         texts,
         buttons,
         images,
+        planetTextures: game.textures
+          .getTextureKeys()
+          .filter((key) => key.startsWith('world-sphere-'))
+          .map((key) => {
+            const source = game.textures.get(key).source[0]!;
+            return { key, width: source.width, height: source.height };
+          }),
+        updateListeners: scenes.map((scene) => ({
+          scene: scene.scene.key,
+          count: scene.events.listenerCount(Phaser.Scenes.Events.UPDATE),
+        })),
         domCanvases: [...document.querySelectorAll('canvas')].map((element) =>
           element.getBoundingClientRect().toJSON(),
         ),
