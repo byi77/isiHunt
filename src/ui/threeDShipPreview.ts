@@ -1,4 +1,14 @@
-import type { Group, Mesh, Object3D, OrthographicCamera, Scene, WebGLRenderer } from 'three';
+import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
+import type { ShipFlightPose } from '@/ui/shipFlight';
+import type {
+  Group,
+  Mesh,
+  LineLoop,
+  Object3D,
+  OrthographicCamera,
+  Scene,
+  WebGLRenderer,
+} from 'three';
 import type { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js';
 import type * as ThreeRuntime from 'three';
 
@@ -30,6 +40,9 @@ export class ThreeDShipPreview {
   private requestedTint = 0xffffff;
   private loadGeneration = 0;
   private rotation = 0;
+  private flightPose: ShipFlightPose | null = null;
+  private orbit: LineLoop | null = null;
+  private auraVisible = false;
   private ready = false;
   private failed = false;
   private destroyed = false;
@@ -102,11 +115,22 @@ export class ThreeDShipPreview {
     this.loadModel(asset);
   }
 
+  setFlightPose(pose: ShipFlightPose): void {
+    this.flightPose = pose;
+  }
+
+  setAuraVisible(visible: boolean): void {
+    this.auraVisible = visible;
+    if (this.orbit) this.orbit.visible = visible;
+  }
+
   update(deltaMs: number): void {
     if (!this.ready || this.model === null) return;
-    this.rotation += deltaMs / 5000;
-    this.model.rotation.y = this.rotation;
-    this.model.rotation.x = 0;
+    if (!prefersReducedMotion()) this.rotation += Math.max(0, deltaMs) / 5000;
+    const pose = prefersReducedMotion() ? { bank: 0, pitch: 0 } : this.flightPose;
+    this.model.rotation.y = pose ? -pose.bank : this.rotation;
+    this.model.rotation.x = pose?.pitch ?? 0;
+    this.model.rotation.z = pose ? pose.bank * 0.6 : 0;
     this.render();
   }
 
@@ -114,6 +138,14 @@ export class ThreeDShipPreview {
     this.destroyed = true;
     this.loadGeneration += 1;
     this.removeModel();
+    if (this.orbit) {
+      this.orbit.geometry.dispose();
+      const materials = Array.isArray(this.orbit.material)
+        ? this.orbit.material
+        : [this.orbit.material];
+      for (const material of materials) material.dispose();
+      this.orbit = null;
+    }
     this.renderer?.dispose();
     this.renderer = null;
     this.scene = null;
@@ -183,6 +215,21 @@ export class ThreeDShipPreview {
       rimLight.position.set(-3, 1, -2);
       scene.add(rimLight);
 
+      // Depth testing lets the mesh hide the rear half of the decorative orbit.
+      const orbitPoints = Array.from({ length: 96 }, (_, i) => {
+        const angle = (i / 96) * Math.PI * 2;
+        return new THREE.Vector3(
+          Math.cos(angle) * 0.95,
+          Math.sin(angle) * 0.35,
+          Math.sin(angle) * 0.31,
+        );
+      });
+      this.orbit = new THREE.LineLoop(
+        new THREE.BufferGeometry().setFromPoints(orbitPoints),
+        new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.65 }),
+      );
+      this.orbit.visible = this.auraVisible;
+      scene.add(this.orbit);
       this.runtime = THREE;
       this.renderer = renderer;
       this.scene = scene;
@@ -217,11 +264,13 @@ export class ThreeDShipPreview {
           return;
         }
 
-        this.model = model;
         this.fitModel(model);
         this.applyTint(model, this.requestedTint);
-        model.rotation.x = 0;
-        this.scene?.add(model);
+        // Rotate around the fitted centre, not the OBJ export origin.
+        const pivot = new this.runtime!.Group();
+        pivot.add(model);
+        this.model = pivot;
+        this.scene?.add(pivot);
         this.canvas.style.display = 'block';
         this.onAvailabilityChange(true);
         this.render();

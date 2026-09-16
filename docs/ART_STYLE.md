@@ -1,5 +1,16 @@
 # Art Style Guide — isiHunt
 
+**Grafik-Update Punkt 4, 16.09.2026:** Raumjäger behalten ihre stabilen Silhouetten
+und Skin-IDs. Cockpits und Innenflächen erhalten neutrale Schatten (`#536579`),
+damit sie auch über einem weißen Rumpf sichtbar und weiterhin einfärbbar bleiben.
+Pfeil erhält abgesetzte Flügelpaneele und Triebwerksfassungen. Andere Figurtypen
+werden nicht pauschal mit einem Cockpit übermalt. Flugneigung: maximal 0,32 rad
+seitlich und 0,18 rad Beschleunigungsimpuls, exponentiell geglättet. Der 2D-Pfad
+übersetzt den Impuls in Rumpfstauchung; der 3D-Pfad kippt das Modell.
+Eine ausgerüstete Aura erhält einen dünnen elliptischen Ring, hinten schwächer,
+vorne heller. Der separate Sammelkreis bleibt unverformt. Reduzierte Bewegung
+setzt die Flugpose auf neutral und hält Overlay-Frames sowie 3D-Drehung an.
+
 **Stand:** 2026-08-30 · Produktstand siehe `package.json`/`version.json`
 
 **Laufende Designarbeit (14.09.2026):** Das geplante Grafik-Update mit 2,5D-Effekten

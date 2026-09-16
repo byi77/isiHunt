@@ -5,6 +5,16 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 
 ## Bereits spielbar
 
+### Grafik-Update — Punkt 4 lokal umgesetzt
+
+- [x] Kontrastreichere Raumjäger, weiche Flugneigung und Partikelursprung am Heck.
+- [x] Dekorativer Aura-Ring vor/hinter dem Rumpf; gemeinsamer 2D-Stil und 3D-Tiefentest.
+- [x] Zentrierte 3D-Drehung und kombinierte Shop-Anprobe über Reiter hinweg.
+- [x] Menü-/Shop-Sichtprüfung und 599 erfolgreiche Tests einschließlich Flugpose.
+- [ ] Echte Mobilgeräte und vollständige Skin-/Aura-Kombinationsprüfung.
+
+Details und Aufnahmen: [Punkt 4](design/2026-09-16-ships/README.md).
+
 ### Grafik-Update — Punkt 3
 
 - [x] Zehn eigene Kugeloberflächen mit fester Beleuchtung und Atmosphärenrand.

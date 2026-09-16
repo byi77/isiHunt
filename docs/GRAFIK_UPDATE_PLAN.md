@@ -1,13 +1,16 @@
 # isiHunt: Grafik-Update und 3D-Effekte
 
-Stand: 15. September 2026
+Stand: 16. September 2026
 
-Status: Punkt 3 lokal umgesetzt und geprüft. Punkt 2 mit Commit `2350294`
+Status: Punkt 4 lokal umgesetzt und geprüft: Schiffe, Flugbewegung und räumliche Aura.
+Punkt 3 ist mit `9f12730` committed. Die Serienbeweglichkeit aus `cc1c6dc` bleibt erhalten.
+Punkt 2 mit Commit `2350294`
 als v0.1.316 live bestätigt. Der konkrete Prüfumfang und verbleibende Geräteprüfungen
 stehen im [Arbeitsbericht zu den Welten](design/2026-09-15-worlds/README.md).
 
 Aktueller Arbeitsstand mit Bildern, Messungen und technischen Befunden:
-[Umsetzung Punkt 3](design/2026-09-15-worlds/README.md).
+[Umsetzung Punkt 4](design/2026-09-16-ships/README.md).
+Vorherige Welten-Etappe: [Punkt 3](design/2026-09-15-worlds/README.md).
 Vorherige Etappe: [Punkt 2](design/2026-09-15/README.md).
 Die [Bestandsaufnahme und Entwürfe](design/2026-09-14/README.md) bleiben als Referenz erhalten.
 
@@ -333,7 +336,20 @@ Wiederverwendung und offene Punkte stehen im verlinkten Arbeitsstand.
 
 ## Fortschritt und Wiedereinstieg
 
-### Aktive Etappe: Punkt 3 — Welten und räumliche Planeten
+### Aktuelle Etappe: Punkt 4 — lokal abgeschlossen, 16. September 2026
+
+- Kontrastreichere Raumjäger, weiche begrenzte Flugpose, Heckpartikel und räumliche Aura.
+- Gemeinsame 2D-Bögen in Menü/Shop/Spiel; tiefengeprüfter Ring und zentrierter Pivot in 3D.
+- Kombinierte Shop-Anprobe bleibt beim Reiterwechsel erhalten.
+- Steuerung, Serienbeweglichkeit, Sammelradius und Save-Format unverändert.
+- Menü bei 320 × 568 und 390 × 844 vermessen; aktive Buttons mindestens 44 CSS-px.
+- Shop mit 2D-/3D-Darstellung und Aura angesehen, laufende Jagd mit Richtungswechsel geprüft.
+- `npm run verify` erfolgreich: 599 Tests in 42 Dateien und Produktionsbuild.
+- [Arbeitsbericht, Bilder und Messungen](design/2026-09-16-ships/README.md).
+- Noch kein Commit/Push/Deploy dieser Etappe. Nächster Gestaltungspunkt: Punkt 5 (Spielanzeige).
+- Echte Geräte, OS-Bewegungseinstellung und vollständige Skin-/Aura-Kombinationen bleiben offen.
+
+### Abgeschlossene Umsetzung: Punkt 3 — Welten und räumliche Planeten
 
 - Deployment von Punkt 2 erfolgreich; Live-Bundle v0.1.316 geprüft.
 - Beispielwelt Eisring: Kugelbeleuchtung, langsame Oberflächenrotation und geteilter Ring.
@@ -351,8 +367,7 @@ Wiederverwendung und offene Punkte stehen im verlinkten Arbeitsstand.
   Start 2,1 s. Keine Langzeit- oder Mobilgerätefreigabe daraus ableiten.
 - Offen bleiben echte Mobilgeräte, OS-Umschaltung auf reduzierte Bewegung,
   Geräte mit wenig Speicher und belastbare Langzeit-/GPU-Speichermessungen.
-- Noch kein Commit/Push dieser Etappe. Nächster Gestaltungspunkt: Punkt 4,
-  Schiffe, Flugbewegung und räumliche Aura. Bericht und Messungen nicht erneut erstellen.
+- Inzwischen committed mit `9f12730`. Bericht und Messungen nicht erneut erstellen.
 
 ### Abgeschlossene Umsetzung: 15. September 2026, Punkt 2
 
@@ -415,7 +430,7 @@ Ergebnis nicht vorweg.
 - [ ] Schritt 1: Stil und technische Grundlagen abgestimmt.
 - [ ] Schritt 2: Hauptmenü und gemeinsame Oberfläche umgesetzt und angesehen.
 - [ ] Schritt 3: Welten und räumliche Planeten umgesetzt und angesehen.
-- [ ] Schritt 4: Schiffe und Flugbewegung umgesetzt und angesehen.
+- [x] Schritt 4: Schiffe und Flugbewegung lokal umgesetzt und angesehen; Geräteprüfung offen.
 - [ ] Schritt 5: Spielanzeige umgesetzt und angesehen.
 - [ ] Schritt 6: Sammel-Effekte umgesetzt und angesehen.
 - [ ] Schritt 7: 3D-Hangar umgesetzt und angesehen.

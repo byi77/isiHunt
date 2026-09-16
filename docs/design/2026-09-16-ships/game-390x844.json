@@ -1,0 +1,524 @@
+{
+  "capturedAt": "2026-09-16T16:39:38.692Z",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "canvas": {
+    "x": 0,
+    "y": 32,
+    "width": 390,
+    "height": 811.9583740234375,
+    "top": 32,
+    "right": 390,
+    "bottom": 843.9583740234375,
+    "left": 0
+  },
+  "scenes": [
+    "Game",
+    "Hud"
+  ],
+  "performance": [
+    {
+      "scene": "Game",
+      "report": {
+        "startupMs": 27398.29999999702,
+        "frameCount": 61,
+        "frameP95Ms": 46.550000000001454,
+        "frameOverBudgetRatio": 1,
+        "peakDynamicObjects": 4,
+        "peakParticleGroups": 2,
+        "passed": false
+      }
+    }
+  ],
+  "texts": [
+    {
+      "scene": "Hud",
+      "text": "STERNENWEIDE",
+      "rect": {
+        "left": 145.70833333333331,
+        "top": 50.68750093649673,
+        "right": 244.29166666666666,
+        "bottom": 60.97916811891521,
+        "width": 98.58333333333334,
+        "height": 10.291667182418479
+      }
+    },
+    {
+      "scene": "Hud",
+      "text": "0",
+      "rect": {
+        "left": 184.16666666666666,
+        "top": 65.85416836321872,
+        "right": 205.83333333333331,
+        "bottom": 105.93750370526966,
+        "width": 21.666666666666657,
+        "height": 40.083335342050944
+      }
+    },
+    {
+      "scene": "Hud",
+      "text": "SERIE 0",
+      "rect": {
+        "left": 308.75,
+        "top": 73.4375020765797,
+        "right": 357.5,
+        "bottom": 88.60416950330168,
+        "width": 48.75,
+        "height": 15.166667426721972
+      }
+    },
+    {
+      "scene": "Hud",
+      "text": "×1",
+      "rect": {
+        "left": 340.7083333333333,
+        "top": 90.77083627854768,
+        "right": 357.5,
+        "bottom": 105.93750370526966,
+        "width": 16.791666666666686,
+        "height": 15.166667426721986
+      }
+    },
+    {
+      "scene": "Hud",
+      "text": "87",
+      "rect": {
+        "left": 345.04166666666663,
+        "top": 53.93750109936572,
+        "right": 357.5,
+        "bottom": 66.39583505703021,
+        "width": 12.458333333333371,
+        "height": 12.458333957664493
+      }
+    },
+    {
+      "scene": "Hud",
+      "text": "II",
+      "rect": {
+        "left": 336.91666666666663,
+        "top": 806.583372150444,
+        "right": 343.41666666666663,
+        "bottom": 819.0417061081085,
+        "width": 6.5,
+        "height": 12.458333957664536
+      }
+    }
+  ],
+  "buttons": [
+    {
+      "scene": "Hud",
+      "label": "II",
+      "enabled": true,
+      "rect": {
+        "left": 314.16666666666663,
+        "top": 796.5625383149313,
+        "right": 366.16666666666663,
+        "bottom": 829.0625399436212,
+        "width": 52,
+        "height": 32.500001628689915
+      }
+    }
+  ],
+  "images": [
+    {
+      "scene": "Game",
+      "texture": "world-sphere-0-1",
+      "frame": 0,
+      "rect": {
+        "left": 13.487498346964518,
+        "top": 186.34792440158674,
+        "right": 111.31249834696452,
+        "bottom": 284.17292930394353,
+        "width": 97.825,
+        "height": 97.8250049023568
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "world-sphere-0-1",
+      "frame": 0,
+      "rect": {
+        "left": 303.1437433878581,
+        "top": 592.4246272873329,
+        "right": 352.05624338785805,
+        "bottom": 641.3371297385114,
+        "width": 48.912499999999966,
+        "height": 48.91250245117851
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": -175.5,
+        "top": -69.22396340602391,
+        "right": 565.5,
+        "bottom": 620.9406545138979,
+        "width": 741,
+        "height": 690.1646179199219
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": -104.01761901862385,
+        "top": -14.688899309566843,
+        "right": 246.9823809813761,
+        "bottom": 336.3111182802847,
+        "width": 350.99999999999994,
+        "height": 351.00001758985155
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": 102.68238098137614,
+        "top": 72.96360508300998,
+        "right": 570.6823809813761,
+        "bottom": 540.9636285361454,
+        "width": 468,
+        "height": 468.00002345313544
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": -174.21761901862385,
+        "top": 241.81194687793058,
+        "right": 410.78238098137615,
+        "bottom": 826.8119761943499,
+        "width": 585,
+        "height": 585.0000293164193
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": 83.1823809813761,
+        "top": 506.56237681217704,
+        "right": 512.1823809813761,
+        "bottom": 935.5623983108846,
+        "width": 429,
+        "height": 429.0000214987076
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": 221.5165074666341,
+        "top": 720.1281574500291,
+        "right": 325.5165074666341,
+        "bottom": 824.128162661837,
+        "width": 104,
+        "height": 104.00000521180789
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "asset-planet-sternenweide",
+      "frame": "__BASE",
+      "rect": {
+        "left": 251.6957276883429,
+        "top": 750.3073791841255,
+        "right": 295.3372872449253,
+        "bottom": 793.9489409277406,
+        "width": 43.641559556582365,
+        "height": 43.64156174361517
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "tex-rays",
+      "frame": "__BASE",
+      "rect": {
+        "left": 306.6962816719514,
+        "top": 561.4524931005207,
+        "right": 390.43519822713705,
+        "bottom": 645.1914138521596,
+        "width": 83.73891655518565,
+        "height": 83.73892075163894
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": 300.2669279257456,
+        "top": 555.0231390321172,
+        "right": 396.8645519733429,
+        "bottom": 651.620767920563,
+        "width": 96.59762404759726,
+        "height": 96.5976288884458
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "asset-planet-sternenweide",
+      "frame": "__BASE",
+      "rect": {
+        "left": 327.35418436921293,
+        "top": 582.1103968330227,
+        "right": 369.7772955298756,
+        "bottom": 624.5335101196575,
+        "width": 42.42311116066264,
+        "height": 42.423113286634816
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": 275.82933553059894,
+        "top": 436.9367497239642,
+        "right": 379.82933553059894,
+        "bottom": 540.9367549357721,
+        "width": 104,
+        "height": 104.00000521180789
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "asset-planet-sternenweide",
+      "frame": "__BASE",
+      "rect": {
+        "left": 309.9137312972135,
+        "top": 471.0211471986684,
+        "right": 345.7449397639844,
+        "bottom": 506.8523574610679,
+        "width": 35.83120846677093,
+        "height": 35.83121026239951
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": 5.826669057210286,
+        "top": 413.94742209483695,
+        "right": 109.82666905721028,
+        "bottom": 517.9474273066448,
+        "width": 104,
+        "height": 104.00000521180789
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "asset-planet-sternenweide",
+      "frame": "__BASE",
+      "rect": {
+        "left": 36.324182103326024,
+        "top": 444.44493666929094,
+        "right": 79.32915601109454,
+        "bottom": 487.44991273219085,
+        "width": 43.004973907768516,
+        "height": 43.004976062899914
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "tex-rays",
+      "frame": "__BASE",
+      "rect": {
+        "left": 46.01688414230809,
+        "top": 207.17484491170214,
+        "right": 147.30054063186182,
+        "bottom": 308.4585064769381,
+        "width": 101.28365648955372,
+        "height": 101.28366156523597
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": 30.792045720418294,
+        "top": 191.9500057268418,
+        "right": 162.52537905375164,
+        "bottom": 323.68334566179846,
+        "width": 131.73333333333335,
+        "height": 131.73333993495666
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "asset-planet-sternenweide",
+      "frame": "__BASE",
+      "rect": {
+        "left": 67.9659445650538,
+        "top": 229.1239064343929,
+        "right": 125.3514802091161,
+        "bottom": 286.50944495424733,
+        "width": 57.3855356440623,
+        "height": 57.385538519854435
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": 118.43923187255858,
+        "top": 137.25798180683194,
+        "right": 222.43923187255857,
+        "bottom": 241.25798701863982,
+        "width": 103.99999999999999,
+        "height": 104.00000521180789
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "asset-planet-sternenweide",
+      "frame": "__BASE",
+      "rect": {
+        "left": 151.40075357119122,
+        "top": 170.21950515728304,
+        "right": 189.47771017392594,
+        "bottom": 208.29646366818875,
+        "width": 38.076956602734725,
+        "height": 38.07695851090571
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": 129.11863521689608,
+        "top": 373.8613929798824,
+        "right": 283.35474582558436,
+        "bottom": 528.0975113178877,
+        "width": 154.23611060868828,
+        "height": 154.23611833800527
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "tex-player-halo",
+      "frame": "__BASE",
+      "rect": {
+        "left": 169.13631164668962,
+        "top": 413.8790714151033,
+        "right": 243.33706939579082,
+        "bottom": 488.0798328826669,
+        "width": 74.2007577491012,
+        "height": 74.20076146756361
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "tex-ship-0",
+      "frame": "__BASE",
+      "rect": {
+        "left": 178.66146572765692,
+        "top": 423.18892072477877,
+        "right": 233.81191531482352,
+        "bottom": 478.7699835729914,
+        "width": 55.150449587166605,
+        "height": 55.58106284821264
+      }
+    },
+    {
+      "scene": "Game",
+      "texture": "tex-vignette",
+      "frame": "__BASE",
+      "rect": {
+        "left": -97.5,
+        "top": -28.626044704852042,
+        "right": 487.49999999999994,
+        "bottom": 905.126085422101,
+        "width": 585,
+        "height": 933.752130126953
+      }
+    },
+    {
+      "scene": "Hud",
+      "texture": "tex-pixel",
+      "frame": "__BASE",
+      "rect": {
+        "left": 32.5,
+        "top": 43.10416722313573,
+        "right": 357.5,
+        "bottom": 47.43750077362773,
+        "width": 325,
+        "height": 4.333333550492
+      }
+    },
+    {
+      "scene": "Hud",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": 32.5,
+        "top": 34.43750012215175,
+        "right": 345.30358055555484,
+        "bottom": 56.10416787461172,
+        "width": 312.80358055555484,
+        "height": 21.666667752459972
+      }
+    },
+    {
+      "scene": "Hud",
+      "texture": "tex-pixel",
+      "frame": "__BASE",
+      "rect": {
+        "left": 32.5,
+        "top": 43.10416722313573,
+        "right": 345.30358055555484,
+        "bottom": 47.43750077362773,
+        "width": 312.80358055555484,
+        "height": 4.333333550492
+      }
+    }
+  ],
+  "planetTextures": [
+    {
+      "key": "world-sphere-0-1",
+      "width": 128,
+      "height": 128
+    },
+    {
+      "key": "world-sphere-0-24",
+      "width": 1024,
+      "height": 384
+    }
+  ],
+  "updateListeners": [
+    {
+      "scene": "Game",
+      "count": 4
+    },
+    {
+      "scene": "Hud",
+      "count": 4
+    }
+  ],
+  "domCanvases": [
+    {
+      "x": 0,
+      "y": 32,
+      "width": 390,
+      "height": 811.9583740234375,
+      "top": 32,
+      "right": 390,
+      "bottom": 843.9583740234375,
+      "left": 0
+    }
+  ]
+}

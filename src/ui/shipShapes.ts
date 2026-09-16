@@ -55,6 +55,19 @@ const C = S / 2;
  */
 const v = (x: number, y: number): { x: number; y: number } => ({ x, y });
 
+/** Neutral shading stays tintable, unlike white alpha painted over white hulls. */
+function cockpit(g: G, points: [number, number][]): void {
+  g.fillStyle(0x536579, 1);
+  g.fillPoints(
+    points.map(([x, y]) => v(x, y)),
+    true,
+  );
+  g.lineStyle(1.5, 0xffffff, 0.8);
+  const first = points[0];
+  const last = points[points.length - 1];
+  if (first && last) g.lineBetween(first[0], first[1], last[0], last[1]);
+}
+
 /** Vollflaechig, in der Grundhelligkeit. */
 function voll(g: G, punkte: [number, number][]): void {
   g.fillStyle(0xffffff, 1);
@@ -508,12 +521,25 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [12, 78],
       [32, 38],
     ]);
-    akzent(g, [
+    cockpit(g, [
       [C, 18],
       [55, 48],
       [41, 48],
     ]);
-    duesen(g, 35, 61, 76, 91);
+    cockpit(g, [
+      [31, 47],
+      [39, 58],
+      [22, 69],
+    ]);
+    cockpit(g, [
+      [65, 47],
+      [57, 58],
+      [74, 69],
+    ]);
+    g.fillStyle(0x536579, 1);
+    g.fillRoundedRect(31, 69, 8, 9, 2);
+    g.fillRoundedRect(57, 69, 8, 9, 2);
+    duesen(g, 35, 61, 78, 91);
   },
   /** 1 Delta - breites Dreieck, satte Flaeche. */
   (g) => {
@@ -523,7 +549,7 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [C, 66],
       [8, 82],
     ]);
-    akzent(g, [
+    cockpit(g, [
       [C, 20],
       [66, 74],
       [30, 74],
@@ -542,7 +568,7 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [4, 84],
       [40, 44],
     ]);
-    g.fillStyle(0xffffff, 0.55);
+    g.fillStyle(0x536579, 1);
     g.fillEllipse(C, 40, 18, 34);
     duesen(g, 40, 56, 72, 90);
   },
@@ -557,7 +583,7 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
     ]);
     g.lineStyle(5, 0xffffff, 0.9);
     g.strokeCircle(C, 46, 30);
-    akzent(g, [
+    cockpit(g, [
       [C, 20],
       [54, 42],
       [42, 42],
@@ -587,7 +613,7 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
   /** 5 Stern - sechs Zacken, radialsymmetrisch. */
   (g) => {
     stern(g, C, C, 42, 17, 6);
-    g.fillStyle(0xffffff, 0.5);
+    g.fillStyle(0x536579, 1);
     g.fillCircle(C, C, 12);
   },
   /** 6 Krone - breite Basis mit drei Zinnen. */
@@ -603,7 +629,7 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [82, 80],
       [14, 80],
     ]);
-    g.fillStyle(0xffffff, 0.55);
+    g.fillStyle(0x536579, 1);
     g.fillRect(28, 50, 40, 16);
     duesen(g, 32, 64, 78, 92);
   },
@@ -632,7 +658,7 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [C - 5, 84],
       [C - 6, 40],
     ]);
-    akzent(g, [
+    cockpit(g, [
       [C, 22],
       [C + 4, 38],
       [C - 4, 38],
@@ -655,7 +681,7 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
     g.fillStyle(0xffffff, 1);
     g.fillCircle(C, C, 17);
     g.fillRect(26, 44, 44, 8);
-    g.fillStyle(0xffffff, 0.45);
+    g.fillStyle(0x536579, 1);
     g.fillCircle(C, C, 10);
   },
   /** 9 Keilkreuzer - langer Keil, breites Heck. */
@@ -665,7 +691,7 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [78, 82],
       [18, 82],
     ]);
-    g.fillStyle(0xffffff, 0.5);
+    g.fillStyle(0x536579, 1);
     g.fillRect(34, 60, 28, 14);
     duesen(g, 32, 64, 80, 92);
   },
@@ -679,7 +705,7 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [C + 6, 8],
       [C - 6, 8],
     ]);
-    g.fillStyle(0xffffff, 0.45);
+    g.fillStyle(0x536579, 1);
     g.fillEllipse(C, 54, 34, 24);
   },
   /** 11 Sonde - Kugel mit drei Auslegern, ohne Vorne und Hinten. */
@@ -691,7 +717,7 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       g.lineStyle(7, 0xffffff, 0.9);
       g.lineBetween(C, C, C + Math.cos(w) * 40, C + Math.sin(w) * 40);
     }
-    g.fillStyle(0xffffff, 0.4);
+    g.fillStyle(0x536579, 1);
     g.fillCircle(C, C, 11);
   },
   /** 12 Trichter - weit geoeffneter Einlass, schmales Heck. */
@@ -704,7 +730,7 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [34, 88],
       [34, 60],
     ]);
-    g.fillStyle(0xffffff, 0.45);
+    g.fillStyle(0x536579, 1);
     g.fillRect(30, 20, 36, 12);
   },
 

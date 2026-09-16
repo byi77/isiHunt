@@ -56,6 +56,8 @@ import {
 import { TextureKey } from '@/ui/textures';
 import type { TextureKeyValue } from '@/ui/textures';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
+import { shipFlightPose, shipExhaustOffset, type ShipFlightPose } from '@/ui/shipFlight';
+import { ShipOrbit } from '@/ui/shipOrbit';
 import { ThreeDShipPreview } from '@/ui/threeDShipPreview';
 
 /**
@@ -149,7 +151,8 @@ export class Player extends Phaser.GameObjects.Container {
    */
   private ruheScale = 1;
   /** Neigung aus der Bewegung, getrennt von der Drehung der Aura. */
-  private neigung = 0;
+  private flightPose: ShipFlightPose = { bank: 0, pitch: 0 };
+  private readonly orbit: ShipOrbit;
   /**
    * Solange > 0, gehoert der Schein dem Fangimpuls, nicht der Aura.
    *
@@ -207,7 +210,9 @@ export class Player extends Phaser.GameObjects.Container {
     this.core = scene.add.image(0, 0, textureKey).setTint(hullColor);
     this.hullColor = hullColor;
 
-    this.add([this.aura, this.halo, this.core]);
+    this.orbit = new ShipOrbit(scene);
+    this.orbit.update(false);
+    this.add([this.aura, this.halo, this.orbit.back, this.core, this.orbit.front]);
     this.setDepth(Depth.Player);
     scene.add.existing(this);
 
@@ -430,6 +435,7 @@ export class Player extends Phaser.GameObjects.Container {
   updateThreeD(deltaMs: number): void {
     if (this.threeDPreview === null) return;
     this.threeDPreviewDom?.setPosition(this.x, this.y);
+    this.threeDPreview.setFlightPose(this.flightPose);
     this.threeDPreview.update(deltaMs);
   }
 
@@ -479,6 +485,9 @@ export class Player extends Phaser.GameObjects.Container {
 
     // Exponentielle Annaeherung ist frameratenunabhaengig - anders als ein
     // fester Lerp-Faktor, der bei 120 Hz doppelt so schnell reagieren wuerde.
+    const previousSpeed = this.velocity.length();
+    const previousX = this.x;
+    const previousY = this.y;
     const t = 1 - Math.exp(-this.seriesAgility.accelResponse * this.inertiaFactor * dtSec);
     this.velocity.x += (desiredX - this.velocity.x) * t;
     this.velocity.y += (desiredY - this.velocity.y) * t;
@@ -489,28 +498,27 @@ export class Player extends Phaser.GameObjects.Container {
     // Spur nur bei echter Bewegung - im Stillstand wuerde sie sich zu einem
     // Fleck unter der Figur aufstauen.
     const speed = this.velocity.length();
-    this.trail.setPosition(this.x, this.y);
-    this.trail.emitting = speed > PLAYER_TRAIL_MIN_SPEED;
+    const moved = Math.hypot(this.x - previousX, this.y - previousY);
+    this.trail.emitting = speed > PLAYER_TRAIL_MIN_SPEED && moved > 0.01;
     this.drawSpeedStreaks(speed);
 
     this.trackTrail(dtSec * 1000, speed);
 
-    this.halo.rotation += dtSec * 1.2;
-    // Leichte Neigung in Bewegungsrichtung - reine Spielgefuehl-Politur.
-    //
-    // Auf ein eigenes Feld statt direkt auf `core.rotation`: Die Aura addiert
-    // ihre Drehung darauf, und wer beide auf dasselbe Attribut schreibt,
-    // ueberschreibt den jeweils anderen.
-    this.neigung = Phaser.Math.Linear(
-      this.neigung,
-      (this.velocity.x / this.stats.moveSpeed) * 0.4,
-      1 - Math.exp(-8 * dtSec),
+    if (!prefersReducedMotion()) this.halo.rotation += dtSec * 1.2;
+    this.flightPose = shipFlightPose(
+      this.flightPose,
+      this.velocity.x / this.stats.moveSpeed,
+      dtSec > 0 ? (speed - previousSpeed) / (dtSec * this.stats.moveSpeed * 4) : 0,
+      dtSec,
+      prefersReducedMotion(),
     );
 
     this.auraLaeuft = true;
     this.auraMs += dtSec * 1000;
     this.pulseRestMs = Math.max(0, this.pulseRestMs - dtSec * 1000);
     this.applyAura();
+    const exhaust = shipExhaustOffset(this.core.rotation, this.core.scaleY);
+    this.trail.setPosition(this.x + exhaust.x, this.y + exhaust.y);
   }
 
   /**
@@ -547,27 +555,34 @@ export class Player extends Phaser.GameObjects.Container {
         : prefersReducedMotion()
           ? stehendesBild(this.auraAnimation)
           : this.auraAnimation(this.auraMs);
+    const active = this.auraAnimation !== null;
+    this.orbit.update(active && this.core.visible, this.flightPose.bank);
+    this.threeDPreview?.setAuraVisible(active);
     if (frame === null) {
       this.aura
         .setBlendMode(Phaser.BlendModes.NORMAL)
         .setTexture(TextureKey.Glow)
         .setScale(2.1 * this.ruheScale);
-      this.core.setScale(this.ruheScale);
-      this.core.rotation = this.neigung;
+      this.core.setScale(this.ruheScale, this.ruheScale * (1 - this.flightPose.pitch));
+      this.core.rotation = this.flightPose.bank;
       this.core.setAlpha(1);
       this.core.setTint(this.hullColor);
       return;
     }
 
-    this.core.setScale(this.ruheScale * frame.scaleX, this.ruheScale * frame.scaleY);
-    this.core.rotation = this.neigung + frame.rotation;
+    this.core.setScale(
+      this.ruheScale * frame.scaleX,
+      this.ruheScale * frame.scaleY * (1 - this.flightPose.pitch),
+    );
+    this.core.rotation = this.flightPose.bank + frame.rotation;
     this.core.setAlpha(frame.alpha);
     this.core.setTint(applyTintShift(this.hullColor, frame.tint));
 
     const auraAsset = auraAssetForId(this.auraAssetId);
     if (auraAsset !== undefined) {
-      const frameIndex =
-        Math.floor(this.auraMs / auraAsset.frameDurationMs) % auraAsset.frameTextureKeys.length;
+      const frameIndex = prefersReducedMotion()
+        ? 0
+        : Math.floor(this.auraMs / auraAsset.frameDurationMs) % auraAsset.frameTextureKeys.length;
       const textureKey = auraAsset.frameTextureKeys[frameIndex] ?? auraAsset.frameTextureKeys[0];
       this.aura.setBlendMode(Phaser.BlendModes.ADD);
       if (textureKey !== undefined) this.aura.setTexture(textureKey);

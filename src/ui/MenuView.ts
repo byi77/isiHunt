@@ -1,3 +1,4 @@
+import { ShipOrbit } from '@/ui/shipOrbit';
 import Phaser from 'phaser';
 
 import { GAME_WIDTH } from '@/config/GameConfig';
@@ -49,6 +50,7 @@ interface MenuCallbacks {
 export class MenuView {
   private root!: Phaser.GameObjects.Container;
   private hero!: Phaser.GameObjects.Container;
+  private orbit: ShipOrbit | null = null;
   private ship: Phaser.GameObjects.Image | null = null;
   private halo: Phaser.GameObjects.Image | null = null;
   private aura: Phaser.GameObjects.Image | null = null;
@@ -128,6 +130,7 @@ export class MenuView {
         .setAlpha(frame.alpha);
     }
     this.halo?.setTint(tint);
+    this.orbit?.update(index !== null);
     if (this.aura) {
       const asset = auraAssetForId(shipAuraAssetId(this.save));
       if (asset) {
@@ -152,11 +155,13 @@ export class MenuView {
     this.scene.input.off('pointerupoutside', this.onPointerUp);
     this.root.destroy(true);
     this.ship = this.halo = this.aura = null;
+    this.orbit = null;
   }
 
   private build(): void {
     this.root?.destroy(true);
     this.ship = this.halo = this.aura = null;
+    this.orbit = null;
     this.pointerStart = null;
     const canvas = this.scene.game.canvas.getBoundingClientRect();
     const safeBottom =
@@ -366,7 +371,8 @@ export class MenuView {
       shipY,
       playerTextureForShape(getShipShape(this.save.shipShape).id),
     );
-    this.hero.add(this.ship);
+    this.orbit = new ShipOrbit(this.scene, GAME_WIDTH / 2, shipY, shipSize);
+    this.hero.add([this.orbit.back, this.ship, this.orbit.front]);
     const selectedIndex = WORLDS.indexOf(this.world);
     const previous = this.button(
       margin + 22 * unit,

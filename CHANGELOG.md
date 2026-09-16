@@ -9,6 +9,16 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Grafik-Update Punkt 4
+
+- Raumjäger mit kontrastreicheren Cockpits und Innenflächen; Pfeil mit Flügelpaneelen
+  und Triebwerksfassungen. Weiche Kurvenlage und Beschleunigungsneigung in 2D/3D,
+  Partikelschweif am Heck und keine Emission bei Stillstand an der Spielfeldgrenze.
+- Räumlicher Aura-Ring vor/hinter dem Rumpf in Menü, Shop und Spiel; zentrierter
+  Drehpunkt für 3D-Modelle. Reduzierte Bewegung hält Neigung und Overlay-Frames an.
+- Shop behält die Anprobe beim Reiterwechsel für kombinierte Schiff-/Farb-/Aura-Vorschauen.
+- Steuerung, Serienbeweglichkeit, Sammelradius und Spielstandformat bleiben unverändert.
+
 ### Geändert
 
 - Grafik-Update, Punkt 3: zehn eigene Planetendarstellungen mit Kugelbeleuchtung,

@@ -5,6 +5,15 @@
 Dieses Dokument beschreibt, **wie** der Code aufgebaut ist und **warum**.
 Entscheidungen mit Alternativen stehen in [DECISIONS.md](DECISIONS.md).
 
+Grafik-Update Punkt 4 (16.09.2026): `ui/shipFlight.ts` berechnet ausschließlich
+die geglättete, begrenzte Darstellungsneigung und den lokalen Heckversatz.
+`Player` gibt Geschwindigkeit/Beschleunigung hinein; es gibt keinen Rückweg in
+Steuerung oder Sammelgeometrie. `ui/shipOrbit.ts` stellt zwei statische Bögen
+vor/hinter dem Rumpf bereit, gemeinsam für Menü, Shop und Spielfigur.
+Die Besitzer-Scene bzw. der Container zerstört diese Graphics ohne zusätzliche Listener.
+`ThreeDShipPreview` verwendet einen zentrierten Modell-Pivot und einen eigenen
+tiefengeprüften 3D-Ring. Im Spiel erhält es die Flugpose; im Shop dreht es langsam.
+
 Die laufende Vorbereitung des Grafik-Updates ist unter
 [GRAFIK_UPDATE_PLAN.md](GRAFIK_UPDATE_PLAN.md) dokumentiert. Statische Entwürfe,
 Referenzaufnahmen und deren Geometrieauswertung liegen in

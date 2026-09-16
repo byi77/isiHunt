@@ -1,3 +1,4 @@
+import { ShipOrbit } from '@/ui/shipOrbit';
 /**
  * Der Laden: Schiffsformen, Farben und Auren gegen Muenzen.
  *
@@ -126,6 +127,7 @@ export class ShopScene extends Phaser.Scene {
     animIndex: number | null;
     grundfarbe: number;
   }[] = [];
+  private orbit!: ShipOrbit;
   private vorschauBild!: Phaser.GameObjects.Image;
   private vorschauHalo!: Phaser.GameObjects.Image;
   private vorschauName!: Phaser.GameObjects.Text;
@@ -249,11 +251,14 @@ export class ShopScene extends Phaser.Scene {
       .setAlpha(0.75)
       .setDepth(KOPF_DEPTH);
 
+    this.orbit = new ShipOrbit(this, GAME_WIDTH / 2, y - 30, 82);
+    this.orbit.back.setDepth(KOPF_DEPTH);
     this.vorschauBild = this.add
       .image(GAME_WIDTH / 2, y - 30, TextureKey.PlayerCore)
       .setScale(0.85)
       .setDepth(KOPF_DEPTH);
 
+    this.orbit.front.setDepth(KOPF_DEPTH + 0.1);
     this.vorschau3dDom = this.add
       .dom(GAME_WIDTH / 2, y - 58, 'div', {
         width: `${VORSCHAU_3D_BREITE}px`,
@@ -393,11 +398,14 @@ export class ShopScene extends Phaser.Scene {
           ? stehendesBild(animation)
           : animation(timeMs);
 
+    this.orbit.update(index !== null && this.vorschauBild.visible);
+    this.vorschau3d.setAuraVisible(index !== null);
     const auraAsset = auraAssetForId(auraDefinition.assetId);
     if (auraAsset !== undefined) {
       this.vorschauHalo.setBlendMode(Phaser.BlendModes.ADD);
-      const frameIndex =
-        Math.floor(timeMs / auraAsset.frameDurationMs) % auraAsset.frameTextureKeys.length;
+      const frameIndex = prefersReducedMotion()
+        ? 0
+        : Math.floor(timeMs / auraAsset.frameDurationMs) % auraAsset.frameTextureKeys.length;
       const textureKey = auraAsset.frameTextureKeys[frameIndex] ?? auraAsset.frameTextureKeys[0];
       if (textureKey !== undefined) this.vorschauHalo.setTexture(textureKey);
       this.vorschauHalo.setScale(
@@ -445,7 +453,12 @@ export class ShopScene extends Phaser.Scene {
           if (aktiv) return;
           // Neustart statt Teil-Neuaufbau: Die Scene ist klein, und ein
           // vollstaendiger Aufbau kann keinen alten Zustand mitschleppen.
-          this.scene.restart({ tab: eintrag.id });
+          this.scene.restart({
+            tab: eintrag.id,
+            anprobeShape: this.anprobeShape ?? undefined,
+            anprobeColor: this.anprobeColor ?? undefined,
+            anprobeAura: this.anprobeAura ?? undefined,
+          });
         },
         {
           width: breite,
