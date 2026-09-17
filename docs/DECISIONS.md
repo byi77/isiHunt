@@ -1383,3 +1383,79 @@ Verworfene Alternativen:
   prüft ihn.
 - Ein Konto, das unter 2.49 bereits Überhänge angesammelt hat, wird beim
   Einspielen einmalig auf dieselbe Grenze gebracht.
+
+---
+
+## ADR-0025 — Der Shop ist ein DOM-Overlay, nicht mehr Canvas
+
+**Datum:** 2026-09-17 · **Status:** Angenommen
+
+### Kontext
+
+Der Shop war bis v0.1.321 vollstaendig in Phaser gezeichnet: `ShopScene.ts`
+umfasste 826 Zeilen, in denen Liste, Bloecke, Knoepfe, Scrollen und Textumbruch
+von Hand aus Rechtecken und `Text`-Objekten aufgebaut waren.
+
+Der Bildschirm ist der textlastigste des Spiels. Er zeigt neun Schiffe, Farben
+und Auren mit Namen, Beschreibung, Preis, Besitzstand und Levelhinweis — Inhalte
+also, deren Hoehe vom Text abhaengt und die auf 320 Pixeln anders brechen als auf
+430. Genau das ist in Phaser Handarbeit: Ein Canvas kennt keinen Textfluss, kein
+`overflow`, keine Zeilenhoehe. Jede dieser Eigenschaften war nachgebaut.
+
+Dieselbe Schwierigkeit hat das Projekt bereits zweimal geloest, indem es die
+Zahlen in echte Bildschirm-Pixel umrechnete statt in logische: im Hauptmenue
+(Punkt 2, `menuLayout.ts`) und im HUD (Punkt 5, `hudLayout.ts`). Beides half,
+beseitigte aber nur die Skalierung — nicht den fehlenden Textfluss.
+
+### Entscheidung
+
+**Die Shop-Bedienung ist DOM mit eigenem Stylesheet** (`ui/HangarView.ts`,
+`ui/hangar.css`, 187 Zeilen). Der Canvas bleibt darunter und zeigt weiterhin die
+3D-Vorschau; das Overlay folgt seinen Grenzen.
+
+**Die Regeln bleiben, wo sie waren.** `HangarView` kennt ausschliesslich
+Callbacks (`act`, `seen`, `back`) und fasst keinen Spielstand an. Kauf und
+Ausruesten laufen unveraendert ueber `ProgressionSystem` und `SaveSystem`;
+`ShopScene.ts` schrumpft auf 64 Zeilen reiner Vermittlung.
+
+**Die Ausnahme ist benannt und begrenzt.** Sie gilt fuer diesen einen
+Bildschirm. Ein zweiter bekommt sie nicht ohne eigenen ADR.
+
+### Begruendung
+
+- **Der Browser kann Textfluss, Phaser nicht.** Umbruch, Scrollen mit
+  `overscroll-behavior`, Mindesthoehen von 44 CSS-Pixeln und ein Layout, das
+  sich an den Inhalt anpasst, sind im DOM Eigenschaften statt Rechnungen. Der
+  Umbau entfernt 802 Zeilen aus `ShopScene.ts` (826 -> 64) und fuegt 187 Zeilen
+  CSS hinzu.
+- **Der Praezedenzfall besteht bereits.** `textInput.ts`, `debugOverlay.ts` und
+  `threeDShipPreview.ts` legen laengst DOM ueber den Canvas. Neu ist der Umfang,
+  nicht das Prinzip.
+- **Die Trennung aus Regel 3 bleibt unberuehrt.** Die Darstellung wechselt die
+  Technik, die Regeln nicht. Was `ProgressionSystem` entscheidet, entscheidet es
+  weiterhin allein; die View stellt dar und meldet Absichten.
+- **Das Aufraeumen haengt an einem Punkt.** Alle Listener tragen das Signal eines
+  `AbortController`; `destroy()` bricht ihn ab, entfernt den Knoten und raeumt
+  die 3D-Vorschau ab. Ein `IntersectionObserver` haelt die Vorschau an, solange
+  sie nicht sichtbar ist.
+
+Verworfene Alternativen:
+
+- **In Phaser bleiben und weiter nachbauen.** Haette die 826 Zeilen erhalten und
+  bei jedem neuen Kosmetikeintrag erneut Handarbeit verlangt. Der Textfluss
+  bleibt dabei das, was er ist: nachgerechnet statt vorhanden.
+- **Den Shop auf feste Textlaengen zwingen.** Billig, verlagert die Kosten aber
+  in die Inhalte: Jeder neue Name muesste in ein Zeichenbudget passen. Das
+  begrenzt das Spiel, um ein Werkzeugproblem zu umgehen.
+
+### Folgen
+
+- **Zwei Techniken fuer Oberflaeche im Projekt.** Wer den Shop aendert, arbeitet
+  in CSS; wer das HUD aendert, in Phaser. Das ist der Preis dieser Entscheidung
+  und der Grund, warum sie auf einen Bildschirm begrenzt bleibt.
+- **Der Playtest deckt DOM nicht gleich gut ab.** `controls` und `layout` messen
+  Phaser-Objekte. Fuer den Hangar wurden `ios` (echtes WebKit) und `progress`
+  zusaetzlich gefahren; die Layoutpruefung der DOM-Seite steht im Arbeitsbericht
+  `docs/design/2026-09-17-hangar/`.
+- **Offen:** echte Mobilgeraete, OS-seitige Bewegungsreduktion und eine
+  GPU-/Speicher-Langzeitpruefung. In `docs/ROADMAP.md` als offen vermerkt.

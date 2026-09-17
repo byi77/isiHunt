@@ -27,8 +27,8 @@ import type { Ego3DAsset } from '@/ui/egoAssets';
 export class ThreeDShipPreview {
   private readonly host: HTMLElement;
   private readonly canvas: HTMLCanvasElement;
-  private readonly width: number;
-  private readonly height: number;
+  private width: number;
+  private height: number;
   private readonly onAvailabilityChange: (available: boolean) => void;
   private runtime: typeof ThreeRuntime | null = null;
   private renderer: WebGLRenderer | null = null;
@@ -47,12 +47,25 @@ export class ThreeDShipPreview {
   private failed = false;
   private destroyed = false;
   private initialization: Promise<void> | null = null;
+  private platform: Group | null = null;
+  private engine: Mesh | null = null;
+  private yaw = 0;
+  private tilt = 0;
+  private elapsed = 0;
+  private appearance = { scaleX: 1, scaleY: 1, rotation: 0, alpha: 1 };
+  private readonly contextLost = (event: Event): void => {
+    event.preventDefault();
+    this.failed = true;
+    this.canvas.style.display = 'none';
+    this.onAvailabilityChange(false);
+  };
 
   constructor(
     host: HTMLElement,
     width = 260,
     height = 180,
     onAvailabilityChange: (available: boolean) => void = () => undefined,
+    private readonly hangar = false,
   ) {
     this.host = host;
     this.canvas = document.createElement('canvas');
@@ -72,6 +85,37 @@ export class ThreeDShipPreview {
     this.canvas.style.pointerEvents = 'none';
     this.canvas.style.background = 'transparent';
     this.canvas.style.display = 'none';
+    this.canvas.addEventListener('webglcontextlost', this.contextLost);
+  }
+
+  rotateBy(dx: number, dy: number): void {
+    this.yaw += dx * 0.012;
+    this.tilt = Math.max(-0.45, Math.min(0.45, this.tilt + dy * 0.006));
+  }
+
+  resetRotation(): void {
+    this.yaw = 0;
+    this.tilt = 0;
+  }
+
+  resize(width: number, height: number): void {
+    if (width === this.width && height === this.height) return;
+    this.width = Math.max(1, width);
+    this.height = Math.max(1, height);
+    this.host.style.width = this.canvas.style.width = `${this.width}px`;
+    this.host.style.height = this.canvas.style.height = `${this.height}px`;
+    this.renderer?.setSize(this.width, this.height, false);
+    if (this.camera) {
+      const viewHeight = this.hangar ? 2.8 : 2.2;
+      this.camera.left = (-viewHeight * this.width) / this.height / 2;
+      this.camera.right = -this.camera.left;
+      this.camera.updateProjectionMatrix();
+    }
+  }
+
+  setAppearance(tint: number, frame: typeof this.appearance): void {
+    this.appearance = frame;
+    if (this.model) this.applyTint(this.model, tint);
   }
 
   setModel(asset: Ego3DAsset | undefined, tint: number): void {
@@ -125,7 +169,17 @@ export class ThreeDShipPreview {
   }
 
   update(deltaMs: number): void {
-    if (!this.ready || this.model === null) return;
+    if (this.failed || !this.ready || this.model === null) return;
+    if (this.hangar) {
+      this.elapsed += Math.max(0, deltaMs);
+      const frame = this.appearance;
+      this.model.rotation.set(this.tilt, this.yaw + frame.rotation, 0);
+      this.model.scale.set(frame.scaleX, 1, frame.scaleY);
+      this.model.position.y =
+        0.12 + (prefersReducedMotion() ? 0 : Math.sin(this.elapsed / 1300) * 0.035);
+      this.render();
+      return;
+    }
     if (!prefersReducedMotion()) this.rotation += Math.max(0, deltaMs) / 5000;
     const pose = prefersReducedMotion() ? { bank: 0, pitch: 0 } : this.flightPose;
     this.model.rotation.y = pose ? -pose.bank : this.rotation;
@@ -135,9 +189,13 @@ export class ThreeDShipPreview {
   }
 
   destroy(): void {
+    if (this.destroyed) return;
     this.destroyed = true;
+    this.canvas.removeEventListener('webglcontextlost', this.contextLost);
     this.loadGeneration += 1;
     this.removeModel();
+    if (this.platform) this.disposeObject(this.platform);
+    this.platform = null;
     if (this.orbit) {
       this.orbit.geometry.dispose();
       const materials = Array.isArray(this.orbit.material)
@@ -147,6 +205,7 @@ export class ThreeDShipPreview {
       this.orbit = null;
     }
     this.renderer?.dispose();
+    this.renderer?.forceContextLoss();
     this.renderer = null;
     this.scene = null;
     this.camera = null;
@@ -192,7 +251,7 @@ export class ThreeDShipPreview {
       // als klare Draufsicht gelesen werden. Damit bleibt die Silhouette bei
       // jedem Modellwechsel gleich gross und die langen Orbital-01-bis-03-
       // Rumpfflaechen verschwinden nicht durch eine schräge Perspektive.
-      const viewHeight = 2.2;
+      const viewHeight = this.hangar ? 2.8 : 2.2;
       const viewWidth = viewHeight * (this.width / this.height);
       const camera = new THREE.OrthographicCamera(
         -viewWidth / 2,
@@ -202,8 +261,8 @@ export class ThreeDShipPreview {
         0.01,
         100,
       );
-      camera.position.set(0, 4, 0);
-      camera.up.set(0, 0, -1);
+      camera.position.set(0, 4, this.hangar ? 4 : 0);
+      camera.up.set(0, this.hangar ? 1 : 0, this.hangar ? 0 : -1);
       camera.lookAt(0, 0, 0);
       scene.add(new THREE.AmbientLight(0xffffff, 1.5));
 
@@ -214,6 +273,24 @@ export class ThreeDShipPreview {
       const rimLight = new THREE.DirectionalLight(0x80aaff, 1.2);
       rimLight.position.set(-3, 1, -2);
       scene.add(rimLight);
+
+      if (this.hangar) {
+        this.platform = new THREE.Group();
+        const deck = new THREE.Mesh(
+          new THREE.CylinderGeometry(1.02, 1.12, 0.13, 64),
+          new THREE.MeshStandardMaterial({ color: 0x172734, metalness: 0.65, roughness: 0.35 }),
+        );
+        deck.position.y = -0.55;
+        this.platform.add(deck);
+        const rim = new THREE.Mesh(
+          new THREE.TorusGeometry(1.02, 0.018, 8, 64),
+          new THREE.MeshBasicMaterial({ color: 0xffd479 }),
+        );
+        rim.rotation.x = Math.PI / 2;
+        rim.position.y = -0.48;
+        this.platform.add(rim);
+        scene.add(this.platform);
+      }
 
       // Depth testing lets the mesh hide the rear half of the decorative orbit.
       const orbitPoints = Array.from({ length: 96 }, (_, i) => {
@@ -229,6 +306,10 @@ export class ThreeDShipPreview {
         new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.65 }),
       );
       this.orbit.visible = this.auraVisible;
+      if (this.hangar) {
+        this.orbit.rotation.x = Math.PI / 2;
+        this.orbit.position.y = 0.08;
+      }
       scene.add(this.orbit);
       this.runtime = THREE;
       this.renderer = renderer;
@@ -269,6 +350,19 @@ export class ThreeDShipPreview {
         // Rotate around the fitted centre, not the OBJ export origin.
         const pivot = new this.runtime!.Group();
         pivot.add(model);
+        if (this.hangar) {
+          this.engine = new this.runtime!.Mesh(
+            new this.runtime!.SphereGeometry(0.1, 12, 8),
+            new this.runtime!.MeshBasicMaterial({
+              color: 0x9bdcff,
+              transparent: true,
+              opacity: 0.8,
+            }),
+          );
+          this.engine.position.set(0, 0, 0.72);
+          this.engine.scale.set(0.6, 0.5, 2.2);
+          pivot.add(this.engine);
+        }
         this.model = pivot;
         this.scene?.add(pivot);
         this.canvas.style.display = 'block';
@@ -309,6 +403,16 @@ export class ThreeDShipPreview {
       const originalMaterial = mesh.material;
       const materials = Array.isArray(originalMaterial) ? originalMaterial : [originalMaterial];
       const tintedMaterials = materials.map((material) => {
+        if (material instanceof this.runtime!.MeshStandardMaterial) {
+          material.color.setHex(tint);
+          material.emissive.setHex(tint);
+          if (this.hangar) {
+            material.transparent = true;
+            material.opacity = this.appearance.alpha;
+          }
+          return material;
+        }
+        if (mesh === this.engine) return material;
         material.dispose();
         return new this.runtime!.MeshStandardMaterial({
           color: tint,
@@ -337,6 +441,7 @@ export class ThreeDShipPreview {
     this.scene?.remove(this.model);
     this.disposeObject(this.model);
     this.model = null;
+    this.engine = null;
   }
 
   private disposeObject(object: Object3D): void {

@@ -1,0 +1,384 @@
+{
+  "canvasCount": 2,
+  "elements": [
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 66,
+        "height": 22,
+        "left": 16,
+        "right": 123.84375,
+        "top": 44,
+        "width": 107.84375
+      },
+      "rect": {
+        "bottom": 66,
+        "height": 22,
+        "left": 16,
+        "right": 123.84375,
+        "top": 44,
+        "width": 107.84375
+      },
+      "tag": "H1",
+      "text": "Dein Hangar"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 63.33333587646485,
+        "height": 16.666667938232422,
+        "left": 329.2395935058594,
+        "right": 374.0000114440918,
+        "top": 46.66666793823242,
+        "width": 44.76041793823242
+      },
+      "rect": {
+        "bottom": 63.33333587646485,
+        "height": 16.666667938232422,
+        "left": 329.2395935058594,
+        "right": 374.0000114440918,
+        "top": 46.66666793823242,
+        "width": 44.76041793823242
+      },
+      "tag": "SPAN",
+      "text": "0 Coins"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 316.59375,
+        "height": 19.59375,
+        "left": 16,
+        "right": 374,
+        "top": 297,
+        "width": 358
+      },
+      "rect": {
+        "bottom": 316.59375,
+        "height": 19.59375,
+        "left": 16,
+        "right": 374,
+        "top": 297,
+        "width": 358
+      },
+      "tag": "P",
+      "text": "2D-Vorschau · Ziehen zum Drehen"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 368.59375,
+        "height": 44,
+        "left": 16,
+        "right": 191,
+        "top": 324.59375,
+        "width": 175
+      },
+      "rect": {
+        "bottom": 368.59375,
+        "height": 44,
+        "left": 16,
+        "right": 191,
+        "top": 324.59375,
+        "width": 175
+      },
+      "tag": "BUTTON",
+      "text": "Ansicht zentrieren"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 368.59375,
+        "height": 44,
+        "left": 199,
+        "right": 374,
+        "top": 324.59375,
+        "width": 175
+      },
+      "rect": {
+        "bottom": 368.59375,
+        "height": 44,
+        "left": 199,
+        "right": 374,
+        "top": 324.59375,
+        "width": 175
+      },
+      "tag": "BUTTON",
+      "text": "2D / 3D"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 400.3854179382324,
+        "height": 23.791667938232425,
+        "left": 16,
+        "right": 374,
+        "top": 376.59375,
+        "width": 358
+      },
+      "rect": {
+        "bottom": 400.3854179382324,
+        "height": 23.791667938232425,
+        "left": 16,
+        "right": 374,
+        "top": 376.59375,
+        "width": 358
+      },
+      "tag": "P",
+      "text": "Anprobe · Orbital-09 · Weltfarbe · Keine"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 427.9791870117187,
+        "height": 19.59375,
+        "left": 16,
+        "right": 374,
+        "top": 408.3854370117187,
+        "width": 358
+      },
+      "rect": {
+        "bottom": 427.9791870117187,
+        "height": 19.59375,
+        "left": 16,
+        "right": 374,
+        "top": 408.3854370117187,
+        "width": 358
+      },
+      "tag": "P",
+      "text": "Orbital-09: NICHT IM BESITZ · 2800 Coins fehlen"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 483.9791870117187,
+        "height": 44,
+        "left": 16,
+        "right": 130,
+        "top": 439.9791870117187,
+        "width": 114
+      },
+      "rect": {
+        "bottom": 483.9791870117187,
+        "height": 44,
+        "left": 16,
+        "right": 130,
+        "top": 439.9791870117187,
+        "width": 114
+      },
+      "tag": "BUTTON",
+      "text": "Schiffe"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 483.9791870117187,
+        "height": 44,
+        "left": 138,
+        "right": 252,
+        "top": 439.9791870117187,
+        "width": 114
+      },
+      "rect": {
+        "bottom": 483.9791870117187,
+        "height": 44,
+        "left": 138,
+        "right": 252,
+        "top": 439.9791870117187,
+        "width": 114
+      },
+      "tag": "BUTTON",
+      "text": "Farben"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 483.9791870117187,
+        "height": 44,
+        "left": 260,
+        "right": 374,
+        "top": 439.9791870117187,
+        "width": 114
+      },
+      "rect": {
+        "bottom": 483.9791870117187,
+        "height": 44,
+        "left": 260,
+        "right": 374,
+        "top": 439.9791870117187,
+        "width": 114
+      },
+      "tag": "BUTTON",
+      "text": "Auren"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 512.6458549499512,
+        "height": 16.666667938232422,
+        "left": 16,
+        "right": 374,
+        "top": 495.9791870117187,
+        "width": 358
+      },
+      "rect": {
+        "bottom": 512.6458549499512,
+        "height": 16.666667938232422,
+        "left": 16,
+        "right": 374,
+        "top": 495.9791870117187,
+        "width": 358
+      },
+      "tag": "LABEL",
+      "text": "Auswahl zum Anprobieren"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 561.6458740234375,
+        "height": 44,
+        "left": 16,
+        "right": 374,
+        "top": 517.6458740234375,
+        "width": 358
+      },
+      "rect": {
+        "bottom": 561.6458740234375,
+        "height": 44,
+        "left": 16,
+        "right": 374,
+        "top": 517.6458740234375,
+        "width": 358
+      },
+      "tag": "SELECT",
+      "text": "Orbital-09"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 594.2396240234375,
+        "height": 19.59375,
+        "left": 16,
+        "right": 374,
+        "top": 574.6458740234375,
+        "width": 358
+      },
+      "rect": {
+        "bottom": 594.2396240234375,
+        "height": 19.59375,
+        "left": 16,
+        "right": 374,
+        "top": 574.6458740234375,
+        "width": 358
+      },
+      "tag": "P",
+      "text": "Low-Poly-3D-Modell aus dem CC0-Schiffspack."
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 646.2396240234375,
+        "height": 44,
+        "left": 16,
+        "right": 374,
+        "top": 602.2396240234375,
+        "width": 358
+      },
+      "rect": {
+        "bottom": 646.2396240234375,
+        "height": 44,
+        "left": 16,
+        "right": 374,
+        "top": 602.2396240234375,
+        "width": 358
+      },
+      "tag": "SUMMARY",
+      "text": "Meine Sammlung"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 693.4271240234375,
+        "height": 39.1875,
+        "left": 16,
+        "right": 374,
+        "top": 654.2396240234375,
+        "width": 358
+      },
+      "rect": {
+        "bottom": 693.4271240234375,
+        "height": 39.1875,
+        "left": 16,
+        "right": 374,
+        "top": 654.2396240234375,
+        "width": 358
+      },
+      "tag": "P",
+      "text": "FORMEN 1/110  ·  FARBEN 1/30  ·  AUREN 1/10. NEU SEIT BESUCH: 0  ·  ZULETZT GEKAUFT: —"
+    },
+    {
+      "disabled": true,
+      "full": {
+        "bottom": 765.9583740234375,
+        "height": 44,
+        "left": 16,
+        "right": 374,
+        "top": 721.9583740234375,
+        "width": 358
+      },
+      "rect": {
+        "bottom": 765.9583740234375,
+        "height": 44,
+        "left": 16,
+        "right": 374,
+        "top": 721.9583740234375,
+        "width": 358
+      },
+      "tag": "BUTTON",
+      "text": "Kaufen · 2.800 Coins"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 817.9583740234375,
+        "height": 44,
+        "left": 16,
+        "right": 374,
+        "top": 773.9583740234375,
+        "width": 358
+      },
+      "rect": {
+        "bottom": 817.9583740234375,
+        "height": 44,
+        "left": 16,
+        "right": 374,
+        "top": 773.9583740234375,
+        "width": 358
+      },
+      "tag": "BUTTON",
+      "text": "Zum Menue"
+    }
+  ],
+  "errors": [],
+  "hangarCount": 1,
+  "preview": {
+    "bottom": 287,
+    "height": 211,
+    "left": 16,
+    "right": 374,
+    "top": 76,
+    "width": 358
+  },
+  "root": {
+    "bottom": 843.9583740234375,
+    "height": 811.9583740234375,
+    "left": 0,
+    "right": 390,
+    "top": 32,
+    "width": 390
+  },
+  "viewport": {
+    "height": 844,
+    "width": 390
+  }
+}

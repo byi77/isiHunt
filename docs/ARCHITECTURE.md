@@ -1,5 +1,15 @@
 # Architektur — isiHunt
 
+Grafik-Update Punkt 7: `ui/HangarView.ts` und `ui/hangar.css` bilden die native,
+responsive Shop-Bedienung ab. `ShopScene` vermittelt unveränderte Kauf-/Ausrüstregeln.
+Der DOM-Bereich folgt den Canvas-Grenzen; eigene Listener hängen an einem
+AbortController. Die bestehende `ThreeDShipPreview` besitzt einen optionalen
+Hangarmodus mit schräger Kamera, Plattform und manueller Rotation. Der Spielmodus
+behält seine Draufsicht. Updates kommen von Phaser, ohne zweiten Animationsloop.
+`scripts/generate-ship-previews.mjs` erzeugt neun SVG-Draufsichten aus den vorhandenen
+OBJ-Flächen. `egoAssets.ts` verbindet sie über `previewUrl` mit den Modellen;
+der Hangar verwendet sie als passende 2D-Alternative.
+
 Grafik-Update Punkt 8: `ui/ResultView.ts` zeigt einen festen Ergebniskopf und
 44-CSS-Pixel-Aktionen um einen maskierten Detailbereich. Die View baut bei Resize
 nur Darstellung neu auf und entfernt Input-/Resize-Listener beim Shutdown.

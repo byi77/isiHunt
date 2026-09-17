@@ -1,0 +1,57 @@
+[
+  {
+    "cycle": 1,
+    "opened": {
+      "canvases": 2,
+      "hangars": 1
+    },
+    "closed": {
+      "canvases": 1,
+      "hangars": 0
+    }
+  },
+  {
+    "cycle": 2,
+    "opened": {
+      "canvases": 2,
+      "hangars": 1
+    },
+    "closed": {
+      "canvases": 1,
+      "hangars": 0
+    }
+  },
+  {
+    "cycle": 3,
+    "opened": {
+      "canvases": 2,
+      "hangars": 1
+    },
+    "closed": {
+      "canvases": 1,
+      "hangars": 0
+    }
+  },
+  {
+    "cycle": 4,
+    "opened": {
+      "canvases": 2,
+      "hangars": 1
+    },
+    "closed": {
+      "canvases": 1,
+      "hangars": 0
+    }
+  },
+  {
+    "cycle": 5,
+    "opened": {
+      "canvases": 2,
+      "hangars": 1
+    },
+    "closed": {
+      "canvases": 1,
+      "hangars": 0
+    }
+  }
+]

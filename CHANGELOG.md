@@ -9,6 +9,15 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Grafik-Update Punkt 7
+
+- Shop als 3D-Hangar: neun drehbare Schiffe über beleuchteter Plattform,
+  Farben und Auren zur Anprobe sowie sichtbares Triebwerkslicht.
+- Native scrollbare Auswahl, klare Besitz-/Level-/Coinhinweise und feste Aktionen
+  mit mindestens 44 CSS-Pixeln Höhe; Anprobieren löst keinen Kauf aus.
+- Aus den vorhandenen OBJ-Modellen erzeugte 2D-Silhouetten als Alternative;
+  bedarfsgeladenes 3D und Bereinigung beim Verlassen.
+
 ### Grafik-Update Punkt 8
 
 - Ergebnisse fuer Solo, Tageslauf und Duelle mit grosser Punktzahl, eigenen

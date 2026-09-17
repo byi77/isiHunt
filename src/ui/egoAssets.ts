@@ -29,6 +29,7 @@ export interface EgoAuraAsset {
 }
 
 export interface Ego3DAsset {
+  readonly previewUrl?: string;
   readonly id: string;
   readonly modelUrl: string;
   readonly format: 'obj';
@@ -113,6 +114,7 @@ const CC0_THREE_D_ASSETS: readonly Ego3DAsset[] = Array.from({ length: 9 }, (_, 
   return {
     id: `cc0-3d-ship-${number}`,
     modelUrl: `./assets/ego3d/cc0-spaceships/ship${number}.obj`,
+    previewUrl: `./assets/ego3d/cc0-spaceships/ship${number}-preview.svg`,
     format: 'obj' as const,
   };
 });

@@ -1,0 +1,321 @@
+{
+  "canvasCount": 2,
+  "elements": [
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 40,
+        "height": 22,
+        "left": 16,
+        "right": 123.84375,
+        "top": 18,
+        "width": 107.84375
+      },
+      "rect": {
+        "bottom": 40,
+        "height": 8,
+        "left": 16,
+        "right": 123.84375,
+        "top": 32,
+        "width": 107.84375
+      },
+      "tag": "H1",
+      "text": "Dein Hangar"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 37.33333587646485,
+        "height": 16.666667938232422,
+        "left": 243.90625,
+        "right": 288.6666679382324,
+        "top": 20.666667938232425,
+        "width": 44.76041793823242
+      },
+      "rect": {
+        "bottom": 37.33333587646485,
+        "height": 5.333335876464844,
+        "left": 243.90625,
+        "right": 288.6666679382324,
+        "top": 32,
+        "width": 44.76041793823242
+      },
+      "tag": "SPAN",
+      "text": "0 Coins"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 239.59375,
+        "height": 19.59375,
+        "left": 16,
+        "right": 288.66668701171875,
+        "top": 220,
+        "width": 272.66668701171875
+      },
+      "rect": {
+        "bottom": 239.59375,
+        "height": 19.59375,
+        "left": 16,
+        "right": 288.66668701171875,
+        "top": 220,
+        "width": 272.66668701171875
+      },
+      "tag": "P",
+      "text": "2D-Vorschau · Ziehen zum Drehen"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 291.59375,
+        "height": 44,
+        "left": 16,
+        "right": 148.33334350585938,
+        "top": 247.59375,
+        "width": 132.33334350585938
+      },
+      "rect": {
+        "bottom": 291.59375,
+        "height": 44,
+        "left": 16,
+        "right": 148.33334350585938,
+        "top": 247.59375,
+        "width": 132.33334350585938
+      },
+      "tag": "BUTTON",
+      "text": "Ansicht zentrieren"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 291.59375,
+        "height": 44,
+        "left": 156.33334350585938,
+        "right": 288.66668701171875,
+        "top": 247.59375,
+        "width": 132.33334350585938
+      },
+      "rect": {
+        "bottom": 291.59375,
+        "height": 44,
+        "left": 156.33334350585938,
+        "right": 288.66668701171875,
+        "top": 247.59375,
+        "width": 132.33334350585938
+      },
+      "tag": "BUTTON",
+      "text": "2D / 3D"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 347.17708587646484,
+        "height": 47.58333587646485,
+        "left": 16,
+        "right": 288.66668701171875,
+        "top": 299.59375,
+        "width": 272.66668701171875
+      },
+      "rect": {
+        "bottom": 347.17708587646484,
+        "height": 47.58333587646485,
+        "left": 16,
+        "right": 288.66668701171875,
+        "top": 299.59375,
+        "width": 272.66668701171875
+      },
+      "tag": "P",
+      "text": "Anprobe · Orbital-01 · Weltfarbe · Prismaflut"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 394.3645935058594,
+        "height": 39.1875,
+        "left": 16,
+        "right": 288.66668701171875,
+        "top": 355.1770935058594,
+        "width": 272.66668701171875
+      },
+      "rect": {
+        "bottom": 394.3645935058594,
+        "height": 39.1875,
+        "left": 16,
+        "right": 288.66668701171875,
+        "top": 355.1770935058594,
+        "width": 272.66668701171875
+      },
+      "tag": "P",
+      "text": "Prismaflut: NICHT IM BESITZ · ab Level 50 · 25000 Coins fehlen"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 450.3645935058594,
+        "height": 44,
+        "left": 16,
+        "right": 101.55208587646484,
+        "top": 406.3645935058594,
+        "width": 85.55208587646484
+      },
+      "rect": {
+        "bottom": 450.3645935058594,
+        "height": 44,
+        "left": 16,
+        "right": 101.55208587646484,
+        "top": 406.3645935058594,
+        "width": 85.55208587646484
+      },
+      "tag": "BUTTON",
+      "text": "Schiffe"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 450.3645935058594,
+        "height": 44,
+        "left": 109.55208587646484,
+        "right": 195.1041717529297,
+        "top": 406.3645935058594,
+        "width": 85.55208587646484
+      },
+      "rect": {
+        "bottom": 450.3645935058594,
+        "height": 44,
+        "left": 109.55208587646484,
+        "right": 195.1041717529297,
+        "top": 406.3645935058594,
+        "width": 85.55208587646484
+      },
+      "tag": "BUTTON",
+      "text": "Farben"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 450.3645935058594,
+        "height": 44,
+        "left": 203.1041717529297,
+        "right": 288.65625762939453,
+        "top": 406.3645935058594,
+        "width": 85.55208587646484
+      },
+      "rect": {
+        "bottom": 450.3645935058594,
+        "height": 44,
+        "left": 203.1041717529297,
+        "right": 288.65625762939453,
+        "top": 406.3645935058594,
+        "width": 85.55208587646484
+      },
+      "tag": "BUTTON",
+      "text": "Auren"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 479.0312614440918,
+        "height": 16.666667938232422,
+        "left": 16,
+        "right": 288.66668701171875,
+        "top": 462.3645935058594,
+        "width": 272.66668701171875
+      },
+      "rect": {
+        "bottom": 479.0312614440918,
+        "height": 16.666667938232422,
+        "left": 16,
+        "right": 288.66668701171875,
+        "top": 462.3645935058594,
+        "width": 272.66668701171875
+      },
+      "tag": "LABEL",
+      "text": "Auswahl zum Anprobieren"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 528.03125,
+        "height": 44,
+        "left": 16,
+        "right": 288.66668701171875,
+        "top": 484.03125,
+        "width": 272.66668701171875
+      },
+      "rect": {
+        "bottom": 507.3333435058594,
+        "height": 23.302093505859375,
+        "left": 16,
+        "right": 288.66668701171875,
+        "top": 484.03125,
+        "width": 272.66668701171875
+      },
+      "tag": "SELECT",
+      "text": "Prismaflut"
+    },
+    {
+      "disabled": true,
+      "full": {
+        "bottom": 562,
+        "height": 44,
+        "left": 16,
+        "right": 304,
+        "top": 518,
+        "width": 288
+      },
+      "rect": {
+        "bottom": 562,
+        "height": 44,
+        "left": 16,
+        "right": 304,
+        "top": 518,
+        "width": 288
+      },
+      "tag": "BUTTON",
+      "text": "Ab Level 50"
+    },
+    {
+      "disabled": false,
+      "full": {
+        "bottom": 614,
+        "height": 44,
+        "left": 16,
+        "right": 304,
+        "top": 570,
+        "width": 288
+      },
+      "rect": {
+        "bottom": 614,
+        "height": 44,
+        "left": 16,
+        "right": 304,
+        "top": 570,
+        "width": 288
+      },
+      "tag": "BUTTON",
+      "text": "Zum Menue"
+    }
+  ],
+  "errors": [],
+  "hangarCount": 1,
+  "preview": {
+    "bottom": 210,
+    "height": 160,
+    "left": 16,
+    "right": 288.66668701171875,
+    "top": 50,
+    "width": 272.66668701171875
+  },
+  "root": {
+    "bottom": 640,
+    "height": 608,
+    "left": 0,
+    "right": 320,
+    "top": 32,
+    "width": 320
+  },
+  "viewport": {
+    "height": 640,
+    "width": 320
+  }
+}

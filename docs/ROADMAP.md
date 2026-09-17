@@ -5,6 +5,15 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 
 ## Bereits spielbar
 
+### Grafik-Update - Punkt 7 lokal umgesetzt
+
+- [x] Drehbarer 3D-Hangar mit Plattform, neun Modellen, Farben, Auren und Triebwerkslicht.
+- [x] Passende 2D-Silhouetten, scrollbare Auswahl und feste Aktionen ab 44 CSS-Pixeln.
+- [x] Layouts bei 320/390/430 Pixeln und fünf Öffnen-/Schließen-Zyklen geprüft; 611 Tests bestanden.
+- [ ] Echte Mobilgeräte, OS-Bewegungsreduktion und GPU-/Speicher-Langzeitprüfung.
+
+Details: [Punkt 7](design/2026-09-17-hangar/README.md).
+
 ### Grafik-Update - Punkt 8 lokal umgesetzt
 
 - [x] Gemeinsame Ergebnisansicht mit festem Kopf, 44-CSS-Pixel-Aktionen und scrollbar allen Belohnungen.
@@ -12,7 +21,7 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 - [x] Kleine/grosse Formate, Mehrfachbelohnungen, vier Spieler und lokale Bot-Praemien geprueft; 611 Tests bestanden.
 - [ ] Echte Mobilgeraete, reduzierte Bewegung auf OS-Ebene und Live-Netzwerkduell.
 
-Details: [Punkt 8](design/2026-09-17-results/README.md). Punkt 7 bleibt offen.
+Details: [Punkt 8](design/2026-09-17-results/README.md).
 
 
 ### Grafik-Update — Punkt 6 lokal umgesetzt

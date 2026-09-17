@@ -1,5 +1,14 @@
 # Art Style Guide — isiHunt
 
+Grafik-Update Punkt 7: Der Hangar nutzt eine schräge orthografische Kamera,
+eine dunkle Plattform mit goldener Leuchtkante und einen kleinen Triebwerksschweif.
+Manuelles Drehen ersetzt die automatische Shop-Rotation; nur das Schweben bewegt
+sich leicht. Reduzierte Bewegung friert Schweben und Aura auf ihr bestehendes
+Ruhebild ein; manuelles Drehen bleibt möglich. Rumpffarbe und Aura kommen aus
+den vorhandenen Kosmetikdefinitionen. Weltfarbe zeigt einen hellen Rumpf.
+Native Bedienelemente bleiben mindestens 44 CSS-Pixel hoch; Details scrollen,
+Kauf-/Ausrüstaktion und Rückweg bleiben fest erreichbar.
+
 Grafik-Update Punkt 8: grosse feste Punktzahl, eigener Rekordhinweis, dunkle
 Belohnungskarten mit goldenen Ueberschriften. XP-Fortschritt erscheint sofort;
 220 ms Deckkraft-Einblendung ohne Skalierung, bei reduzierter Bewegung statisch.
