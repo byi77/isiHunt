@@ -2,7 +2,8 @@
 
 Stand: 17. September 2026
 
-Status: Punkt 7 (3D-Hangar) ist lokal umgesetzt und im Browser geprüft.
+Status: Punkt 7 (3D-Hangar) ist mit `b821357` committed und als v0.1.322 live bestätigt.
+Technische Nachprüfung: [Abschlussprüfung](design/2026-09-17-audit/README.md).
 Prüfumfang und offene Gerätechecks: [Punkt 7](design/2026-09-17-hangar/README.md).
 Punkt 8 ist mit `22c2e99` committed (v0.1.321).
 Punkte 5 und 6 sind mit `953ae9e` committed (v0.1.320).
@@ -460,9 +461,9 @@ Ergebnis nicht vorweg.
 - [x] Ersten Abstandskonflikt zwischen Schiffsschweif und Welttitel im Entwurf korrigiert.
 - [x] Ausgangsbuild einschließlich Typprüfung erfolgreich; Chunkgrößen dokumentiert.
 - [ ] Belastbare Laufzeit-/Speicherbaseline mit durchgehend aktivem Spiel nachholen.
-- [ ] Schritt 1: Stil und technische Grundlagen abgestimmt.
-- [ ] Schritt 2: Hauptmenü und gemeinsame Oberfläche umgesetzt und angesehen.
-- [ ] Schritt 3: Welten und räumliche Planeten umgesetzt und angesehen.
+- [x] Schritt 1: Stil und technische Aufteilung umgesetzt; belastbare Speicher-/Laufzeitbaseline separat offen.
+- [x] Schritt 2: Hauptmenü und gemeinsame Oberfläche umgesetzt und angesehen (`2350294`); Geräteprüfung offen.
+- [x] Schritt 3: Welten und räumliche Planeten umgesetzt und angesehen (`9f12730`); Geräteprüfung offen.
 - [x] Schritt 4: Schiffe und Flugbewegung lokal umgesetzt und angesehen; Geräteprüfung offen.
 - [x] Schritt 5: Spielanzeige lokal umgesetzt und angesehen; Geräte-/Langzeitprüfung offen.
 - [x] Schritt 6: Sammel-Effekte lokal umgesetzt und angesehen; Gerätetests offen.

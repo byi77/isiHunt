@@ -1,6 +1,10 @@
 # Punkt 3: Welten, plastische Planeten und Hintergrundtiefe
 
 Stand: 15. September 2026. Lokale Umsetzung auf Basis v0.1.316.
+Statusnachtrag vom 17. September: Diese Etappe ist mit `9f12730` committed.
+Die folgenden Prüfungen und damaligen nächsten Schritte sind der historische
+Etappenbericht; den aktuellen Stand führt die
+[Abschlussprüfung](../2026-09-17-audit/README.md).
 Punkt 2 wurde mit Commit `2350294` erfolgreich ausgeliefert; Live-Version und
 GitHub-Deployment wurden vor Beginn dieser Etappe bestätigt.
 

@@ -1,8 +1,9 @@
 # Punkt 7: 3D-Hangar
 
 Stand: 17. September 2026. Ausgangsversion **0.1.321**, Commit `22c2e99`.
-Die Umsetzung ist lokal; keine Veröffentlichung beauftragt. Punkt 8 ist bereits
-committed. Der Nutzer hat danach ausdrücklich die Fortsetzung mit Punkt 7 gewünscht.
+Umgesetzt mit Commit `b821357`, Version **0.1.322**. Bei der technischen
+Nachprüfung am 17. September wurde dieselbe Version live bestätigt.
+Die Ausgangsversion oben bezeichnet den Beginn dieser Etappe.
 
 ## Ziel und Aufbau
 
@@ -81,5 +82,6 @@ provoziert. Browsermessungen belegen keine Freigabe auf allen Mobilgeräten.
 
 Nächster Einstieg: diesen Bericht und `docs/GRAFIK_UPDATE_PLAN.md` lesen;
 offene Gerätechecks durchführen und Rückmeldungen zum Hangar einarbeiten.
-Punkte 1–8 sind damit lokal umgesetzt; Commit, Push und Deployment dieser Etappe
-sind noch nicht erfolgt.
+Punkte 1–8 sind umgesetzt. Der Hangar ist inzwischen committed und live;
+Prüfgrenzen und weitere Ergebnisse stehen in der
+[technischen Abschlussprüfung](../2026-09-17-audit/README.md).

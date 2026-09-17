@@ -5,7 +5,7 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 
 ## Bereits spielbar
 
-### Grafik-Update - Punkt 7 lokal umgesetzt
+### Grafik-Update - Punkt 7 live in v0.1.322
 
 - [x] Drehbarer 3D-Hangar mit Plattform, neun Modellen, Farben, Auren und Triebwerkslicht.
 - [x] Passende 2D-Silhouetten, scrollbare Auswahl und feste Aktionen ab 44 CSS-Pixeln.
@@ -13,6 +13,7 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 - [ ] Echte Mobilgeräte, OS-Bewegungsreduktion und GPU-/Speicher-Langzeitprüfung.
 
 Details: [Punkt 7](design/2026-09-17-hangar/README.md).
+Technische Nachprüfung: [Abschlussbericht](design/2026-09-17-audit/README.md).
 
 ### Grafik-Update - Punkt 8 lokal umgesetzt
 
