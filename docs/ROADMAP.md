@@ -5,6 +5,25 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 
 ## Bereits spielbar
 
+### Grafik-Update — Punkt 6 lokal umgesetzt
+
+- [x] Gebogene Lichtsplitter, geneigte Ringe und nicht allein farbgebundene Seltenheitshinweise.
+- [x] Acht aktive Fangdarstellungen, maximal 700 ms; ruhige Alternative und vollständige Bereinigung.
+- [x] HUD-/Randabstände und 50-Fang-Budget geprüft; 609 Tests bestanden.
+- [ ] Schwache Mobilgeräte, hörbare Audio-Latenz und Langzeitprüfung.
+
+Details: [Punkt 6](design/2026-09-16-collection/README.md).
+
+### Grafik-Update — Punkt 5 lokal umgesetzt
+
+- [x] Feste HUD-Spalten, eigene Gegnerzeilen und ruhige Unterlage auf allen Welten.
+- [x] Stabile Textgrenzen bei Punkte-/Serienfeedback; Talentdetails in der Pauseansicht.
+- [x] Pause- und Dialogbuttons mindestens 44 CSS-Pixel; Inhalt und Größenwechsel berücksichtigt.
+- [x] Zehn Weltansichten sowie korrigierte Textabstände in drei Formaten geprüft; 603 Tests bestanden.
+- [ ] Echte Geräte, vollständige Runde unter realer Last und Live-Netzwerkduell prüfen.
+
+Details: [Punkt 5](design/2026-09-16-hud/README.md).
+
 ### Grafik-Update — Punkt 4 lokal umgesetzt
 
 - [x] Kontrastreichere Raumjäger, weiche Flugneigung und Partikelursprung am Heck.

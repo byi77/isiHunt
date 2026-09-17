@@ -26,7 +26,6 @@ import {
   PLAYFIELD_PADDING_BOTTOM,
   PLAYFIELD_PADDING_TOP,
   PLAYFIELD_PADDING_X,
-  RARITY_IMPACT_MIN_POINTS,
   RUN_DURATION_MS,
   WORLD_BRAKE_DURATION_MS,
   WORLD_BRAKE_FACTOR,
@@ -35,7 +34,7 @@ import {
 } from '@/config/GameConfig';
 import { XP_GLOBAL_MULTIPLIER } from '@/config/balance';
 import type { RarityDef } from '@/config/rarities';
-import { resolveStats, talentMaxRank } from '@/config/talents';
+import { resolveStats } from '@/config/talents';
 import type { PlayerStats } from '@/config/talents';
 import { getWorld } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
@@ -58,19 +57,19 @@ import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { agilityForSeries, ScoreSystem, trailTierForSeries } from '@/systems/ScoreSystem';
 import { SpawnSystem } from '@/systems/SpawnSystem';
+import { CollectionEffects } from '@/ui/CollectionEffects';
+import type { HudScene } from '@/scenes/HudScene';
 import { Depth } from '@/ui/depth';
 import { shipAuraAssetId, shipAuraIndex, shipHullTint, shipTint } from '@/config/shop';
 import { threeDAssetForId } from '@/ui/egoAssets';
 import { planetTextureForVariant, playerTextureForShape } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import {
-  burst,
   createAmbientMotes,
   createDriftLayers,
   createVignette,
   createWorldBackdrop,
   floatingScore,
-  shockwave,
 } from '@/ui/widgets';
 import type { ChallengeState, RunMode } from '@/types';
 
@@ -114,6 +113,7 @@ export class GameScene extends Phaser.Scene {
   private world!: WorldDef;
   private stats!: PlayerStats;
   private player!: Player;
+  private collectionEffects!: CollectionEffects;
   private input_!: InputController;
   private spawner!: SpawnSystem;
   private scoring!: ScoreSystem;
@@ -235,6 +235,20 @@ export class GameScene extends Phaser.Scene {
       versteckeKosmetik ? 0xffffff : shipHullTint(save),
       versteckeKosmetik ? undefined : threeDAssetForId(save.shipShape),
     );
+    this.collectionEffects = new CollectionEffects(
+      this,
+      () => ({ x: this.player.x, y: this.player.y }),
+      () => {
+        const unit = GAME_WIDTH / Math.max(1, this.game.canvas.getBoundingClientRect().width);
+        const hud = this.scene.get(SceneKey.Hud) as HudScene;
+        return {
+          left: 12 * unit,
+          right: GAME_WIDTH - 12 * unit,
+          top: Math.max(this.playfield.top, hud.collectionSafeTop + 12 * unit),
+          bottom: GAME_HEIGHT - 76 * unit,
+        };
+      },
+    );
     // Aus demselben Grund wie die Farbe: Im Duell traegt niemand eine Aura.
     // Eine flackernde Figur neben einer ruhigen waere auf einen Blick
     // zuzuordnen - der Vergleich soll am Spiel haengen, nicht am Guthaben.
@@ -351,6 +365,7 @@ export class GameScene extends Phaser.Scene {
   };
 
   update(_time: number, delta: number): void {
+    this.collectionEffects.update(delta);
     if (this.phase === 'ended') return;
 
     const dtSec = delta / 1000;
@@ -532,31 +547,16 @@ export class GameScene extends Phaser.Scene {
     const outcome = this.scoring.registerCollect(orb.rarity);
     this.collectibles.splice(index, 1);
 
-    orb.collect(() => orb.destroy());
-
-    const isImpact = orb.rarity.points >= RARITY_IMPACT_MIN_POINTS;
-
-    burst(this, orb.x, orb.y, orb.rarity.color, isImpact ? 26 : 12);
-    shockwave(this, orb.x, orb.y, orb.rarity.color, isImpact ? 1.5 : 0.85);
-    floatingScore(this, orb.x, orb.y, `+${outcome.awardedPoints}`, orb.rarity.color, {
-      bonus: outcome.streakBonus,
-      bonusMultiplier: outcome.multiplier,
-      intensity: this.stats.talentRanks.fortune / talentMaxRank('fortune'),
-    });
-    if (this.stats.talentRanks.insight > 0) {
-      floatingScore(this, orb.x, orb.y + 30, `+${outcome.xpGained} XP`, 0x7ee787, {
-        kind: 'xp',
-        intensity: this.stats.talentRanks.insight / talentMaxRank('insight'),
-      });
-    }
+    this.collectionEffects.add(
+      { x: orb.x, y: orb.y },
+      orb.rarity,
+      outcome.awardedPoints,
+      outcome.streakBonus ? outcome.multiplier : undefined,
+      this.stats.talentRanks.insight > 0 ? outcome.xpGained : undefined,
+    );
+    // The bounded effect layer owns the visual tail; no orphaned orb tween.
     this.player.pulse(orb.rarity.color);
     this.player.setSeriesTrail(trailTierForSeries(outcome.combo));
-
-    // Kamera-Ruckler skaliert mit dem Wert - Legendaeres soll sich fett anfuehlen.
-    if (isImpact && !prefersReducedMotion()) {
-      this.cameras.main.shake(180, 0.006);
-      this.cameras.main.flash(140, 255, 255, 255, false);
-    }
 
     eventBus.emitEvent(GameEvent.Collected, {
       rarityId: orb.rarity.id,
@@ -578,6 +578,7 @@ export class GameScene extends Phaser.Scene {
       multiplier: outcome.multiplier,
       speedFactor: agility.speedFactor,
     });
+    orb.destroy();
   }
 
   private miss(orb: Collectible, index: number): void {
@@ -1015,6 +1016,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private cleanup(): void {
+    this.collectionEffects?.destroy();
     if (this.liveBroadcastTimer) {
       this.liveBroadcastTimer.remove();
       this.liveBroadcastTimer = null;

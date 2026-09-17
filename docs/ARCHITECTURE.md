@@ -5,6 +5,22 @@
 Dieses Dokument beschreibt, **wie** der Code aufgebaut ist und **warum**.
 Entscheidungen mit Alternativen stehen in [DECISIONS.md](DECISIONS.md).
 
+Grafik-Update Punkt 6: `ui/CollectionEffects.ts` besitzt die begrenzte Fangdarstellung
+pro GameScene. `config/collectionVisuals.ts` definiert rein visuelle Budgets;
+`ui/collectionMotion.ts` berechnet Kurven und kollisionsfreie Textpositionen ohne Phaser.
+Ein Graphics-Objekt zeichnet alle Ringe/Splitter; ein zweites dient als Maske.
+`GameScene.update()` liefert delta, `cleanup()` zerstört alle Ressourcen.
+`HudScene.collectionSafeTop` liefert ausschließlich eine Darstellungsgrenze.
+`ui/collectionPreview.ts` ergänzt die Dev-HUD-Vorschau um prüfbare Zeitphasen.
+
+Grafik-Update Punkt 5: `ui/hudLayout.ts` rechnet die HUD-Spalten, Zusatzzeilen
+und 44-CSS-Pixel-Touchflächen in den logischen Phaser-Raum um. `HudScene`
+positioniert vorhandene Werte bei Größenänderungen neu, ohne die Runde
+zurückzusetzen; der Resize-Listener wird beim Shutdown entfernt. Punkte-/Combo-
+Feedback verändert die Deckkraft statt der Textgrenzen. `ui/hudPreview.ts`
+ist eine ausschließlich per Dev-Parameter aktivierte Darstellung mit Testwerten,
+ohne GameScene, Spielstandzugriff oder Netzwerk; Produktionsbuilds enthalten sie nicht.
+
 Grafik-Update Punkt 4 (16.09.2026): `ui/shipFlight.ts` berechnet ausschließlich
 die geglättete, begrenzte Darstellungsneigung und den lokalen Heckversatz.
 `Player` gibt Geschwindigkeit/Beschleunigung hinein; es gibt keinen Rückweg in

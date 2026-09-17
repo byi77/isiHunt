@@ -15,30 +15,12 @@ import { eventBus, GameEvent } from '@/core/EventBus';
 import { SceneKey } from '@/scenes/SceneKey';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
-import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
-import type { BarHandle } from '@/ui/widgets';
-import { burst, createBar, createButton, createPanel } from '@/ui/widgets';
+import { FontSize, Palette, textStyle } from '@/ui/theme';
+import { calculateHudLayout } from '@/ui/hudLayout';
+import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
+import type { BarHandle, ButtonHandle } from '@/ui/widgets';
+import { createBar, createButton, createPanel } from '@/ui/widgets';
 import type { RunMode } from '@/types';
-
-/**
- * Layout-Koordinaten fuer die kompakten Laufzeitinformationen.
- *
- * Die Gegenstaende stehen links unterhalb der Timerleiste, Serie und
- * Multiplikator rechts darunter. Bei einer Mehrspieler-Lobby bekommt jeder
- * weitere Spieler eine eigene Zeile.
- */
-const DUEL_OPPONENT_X = 60;
-const DUEL_OPPONENT_Y = 48;
-
-/**
- * Zeilenabstand zwischen den Live-Staenden der Gegner.
- */
-const DUEL_LINE_HEIGHT = 30;
-
-/** Rechte obere Ecke fuer Serie und Multiplikator. */
-const DUEL_STATS_X = GAME_WIDTH - 60;
-const DUEL_STATS_Y = 76;
-const DUEL_STATS_GAP = 32;
 
 export interface HudSceneData {
   worldId: string;
@@ -66,6 +48,14 @@ export interface HudSceneData {
 }
 
 export class HudScene extends Phaser.Scene {
+  private layout!: ReturnType<typeof calculateHudLayout>;
+  private plate!: Phaser.GameObjects.Graphics;
+  private scoreCaption!: Phaser.GameObjects.Text;
+  private timeCaption!: Phaser.GameObjects.Text;
+  private talentSummary = '';
+  private talentText!: Phaser.GameObjects.Text;
+  private pauseButton!: ButtonHandle;
+  private pauseReason: 'manual' | 'interrupted' = 'manual';
   private scoreText!: Phaser.GameObjects.Text;
   private comboText!: Phaser.GameObjects.Text;
   private multiplierBurstText!: Phaser.GameObjects.Text;
@@ -102,12 +92,18 @@ export class HudScene extends Phaser.Scene {
     super({ key: SceneKey.Hud, active: false });
   }
 
+  /** Presentation-only exclusion zone; never changes spawn or collision bounds. */
+  get collectionSafeTop(): number {
+    return this.layout?.headerHeight ?? 0;
+  }
+
   create(data: HudSceneData): void {
     const world = getWorld(data.worldId);
     this.accent = world.accent;
     this.scoreToBeat = data.scoreToBeat ?? null;
     this.hasOvertaken = false;
     this.mode = data.mode ?? 'solo';
+    this.talentSummary = data.talentSummary ?? '';
     this.opponentLabels = data.opponentLabels ? [...data.opponentLabels] : [];
     this.localPlayerIndex = Number.isInteger(data.localPlayerIndex) ? data.localPlayerIndex! : 0;
     this.playerCount = Math.max(2, Math.min(4, Math.floor(data.playerCount ?? 2)));
@@ -118,16 +114,15 @@ export class HudScene extends Phaser.Scene {
     this.lastComboMultiplier = 1;
     this.lastAgilityPercent = 0;
     this.pauseOverlay = [];
+    this.targetText = null;
 
-    // Dunkle Kappe hinter der Kopfzeile: der Punktestand muss auch dann lesbar
-    // bleiben, wenn gerade ein helles Relikt darunter treibt.
-    this.add
-      .image(GAME_WIDTH / 2, 0, TextureKey.Glow)
-      .setDisplaySize(GAME_WIDTH * 1.6, 300)
-      .setTint(0x000000)
-      .setAlpha(0.55)
-      .setOrigin(0.5, 0.35)
-      .setDepth(Depth.Backdrop);
+    this.plate = this.add.graphics().setDepth(Depth.Backdrop);
+    this.scoreCaption = this.add
+      .text(0, 0, 'PUNKTE', textStyle(FontSize.tiny, Palette.inkDim))
+      .setOrigin(0.5, 0);
+    this.timeCaption = this.add
+      .text(0, 0, 'ZEIT', textStyle(FontSize.tiny, Palette.inkDim))
+      .setOrigin(0.5, 0);
 
     this.worldText = this.add
       .text(
@@ -137,7 +132,7 @@ export class HudScene extends Phaser.Scene {
         textStyle(FontSize.tiny, data.playerLabel ? Palette.gold : Palette.inkDim),
       )
       .setOrigin(0.5, 0);
-    this.worldText.setLetterSpacing(6);
+    this.worldText.setLetterSpacing(1);
 
     this.scoreText = this.add
       .text(GAME_WIDTH / 2, 62, '0', textStyle(FontSize.title, Palette.ink, { fontStyle: 'bold' }))
@@ -145,17 +140,17 @@ export class HudScene extends Phaser.Scene {
 
     this.comboText = this.add
       .text(
-        DUEL_STATS_X,
-        DUEL_STATS_Y,
+        GAME_WIDTH - 60,
+        76,
         'SERIE 0',
-        textStyle(FontSize.body, toCss(this.accent), { fontStyle: 'bold' }),
+        textStyle(FontSize.body, Palette.inkDim, { fontStyle: 'bold' }),
       )
       .setOrigin(1, 0);
 
     this.multiplierText = this.add
       .text(
-        DUEL_STATS_X,
-        DUEL_STATS_Y + DUEL_STATS_GAP,
+        GAME_WIDTH - 60,
+        76 + 32,
         '×1',
         textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
       )
@@ -163,19 +158,19 @@ export class HudScene extends Phaser.Scene {
 
     this.agilityText = this.add
       .text(
-        DUEL_STATS_X,
-        DUEL_STATS_Y + DUEL_STATS_GAP * 2,
+        GAME_WIDTH - 60,
+        76 + 32 * 2,
         '',
         textStyle(FontSize.tiny, Palette.success, { fontStyle: 'bold' }),
       )
       .setOrigin(1, 0)
       .setAlpha(0);
 
-    this.add
+    this.talentText = this.add
       .text(
         GAME_WIDTH / 2,
         168,
-        data.talentSummary ?? '',
+        this.talentSummary ? 'TALENTE AKTIV - DETAILS IN PAUSE' : '',
         textStyle(FontSize.tiny, Palette.gold, {
           fontStyle: 'bold',
           stroke: '#000000',
@@ -189,12 +184,7 @@ export class HudScene extends Phaser.Scene {
       .setAlpha(data.talentSummary ? 1 : 0);
 
     this.multiplierBurstText = this.add
-      .text(
-        GAME_WIDTH / 2,
-        250,
-        '',
-        textStyle(FontSize.title, toCss(this.accent), { fontStyle: 'bold' }),
-      )
+      .text(GAME_WIDTH / 2, 250, '', textStyle(FontSize.title, Palette.gold, { fontStyle: 'bold' }))
       .setOrigin(0.5)
       .setDepth(Depth.Overlay)
       .setAlpha(0);
@@ -202,14 +192,12 @@ export class HudScene extends Phaser.Scene {
     this.timerBar = createBar(this, 60, 24, GAME_WIDTH - 120, 8, this.accent);
     this.timerBar.setRatio(1);
 
-    // Live-Spielstand ohne Panel-Unterlage - braucht den hellen Standardton,
-    // nicht den gedaempften: er muss auf jedem der zehn Welt-Hintergruende
-    // lesbar bleiben, nicht nur auf dunklen Panels.
+    // Zahlen bleiben hell; die Unterlage haelt wechselnde Welten ruhig.
     this.timerText = this.add
       .text(
         GAME_WIDTH - 60,
         40,
-        String(Math.ceil(data.durationMs / 1000)),
+        `${Math.ceil(data.durationMs / 1000)}s`,
         textStyle(FontSize.small, Palette.ink),
       )
       .setOrigin(1, 0);
@@ -236,8 +224,8 @@ export class HudScene extends Phaser.Scene {
         if (playerIndex === this.localPlayerIndex) continue;
         const text = this.add
           .text(
-            DUEL_OPPONENT_X,
-            DUEL_OPPONENT_Y + this.opponentLiveTexts.size * DUEL_LINE_HEIGHT,
+            60,
+            48 + this.opponentLiveTexts.size * 30,
             '',
             textStyle(FontSize.small, Palette.inkDim),
           )
@@ -247,7 +235,8 @@ export class HudScene extends Phaser.Scene {
       }
     }
 
-    this.buildPauseButton();
+    this.relayout();
+    this.scale.on(Phaser.Scale.Events.RESIZE, this.relayout);
 
     this.registerEvents();
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.unregisterEvents());
@@ -264,12 +253,90 @@ export class HudScene extends Phaser.Scene {
    * (PLAYFIELD_PADDING_BOTTOM haelt die unteren 120 px frei).
    */
   private buildPauseButton(): void {
-    createButton(this, GAME_WIDTH - 92, GAME_HEIGHT - 58, 'II', () => this.requestPause(), {
-      width: 96,
-      height: 60,
-      accent: 0x9aa3bd,
-      fontSize: FontSize.small,
-    }).container.setDepth(Depth.Overlay);
+    this.pauseButton?.container.destroy();
+    const l = this.layout;
+    this.pauseButton = createButton(this, l.pauseX, l.pauseY, 'II', () => this.requestPause(), {
+      width: l.pauseSize,
+      height: l.pauseSize,
+      fontSize: l.font(16),
+    });
+    this.pauseButton.container.setDepth(Depth.Overlay);
+  }
+
+  /** Reflow existing values; resizing must never reset a live run. */
+  private readonly relayout = (): void => {
+    const canvas = this.game.canvas.getBoundingClientRect();
+    const safeBottom =
+      document.getElementById('safe-bottom')?.getBoundingClientRect().bottom ?? window.innerHeight;
+    const rows =
+      this.opponentLiveTexts.size + (this.targetText ? 1 : 0) + (this.talentText.text ? 1 : 0);
+    const l = (this.layout = calculateHudLayout(
+      canvas.width,
+      canvas.height,
+      rows,
+      Math.max(0, canvas.bottom - safeBottom),
+    ));
+    const place = (
+      text: Phaser.GameObjects.Text,
+      x: number,
+      y: number,
+      font: number,
+      width: number,
+    ) => {
+      this.tweens.killTweensOf(text);
+      text
+        .setScale(1)
+        .setOrigin(0.5, 0)
+        .setPosition(x, y * l.unit)
+        .setFontSize(l.font(font));
+      this.fit(text, width);
+    };
+    place(this.worldText, GAME_WIDTH / 2, 3, 10, l.width);
+    place(this.scoreCaption, l.scoreX, 20, 10, l.columnWidth);
+    place(this.timeCaption, l.timeX, 20, 10, l.columnWidth);
+    place(this.scoreText, l.scoreX, 33, 24, l.columnWidth);
+    place(this.timerText, l.timeX, 33, 24, l.columnWidth);
+    place(this.comboText, l.comboX, 20, 10, l.columnWidth);
+    place(this.multiplierText, l.comboX, 33, 24, l.columnWidth);
+    place(this.agilityText, l.comboX, 62, 9, l.columnWidth);
+    this.timerBar.container
+      .setPosition(l.margin, 76 * l.unit)
+      .setScale(l.width / (GAME_WIDTH - 120), l.unit * 0.375);
+    let row = 0;
+    for (const text of [this.targetText, ...this.opponentLiveTexts.values(), this.talentText]) {
+      if (!text || (text === this.talentText && !text.text)) continue;
+      text
+        .setWordWrapWidth(0)
+        .setOrigin(0, 0)
+        .setPosition(l.margin, l.rowY(row++))
+        .setFontSize(l.font(11));
+      this.fit(text, l.width);
+    }
+    this.plate.clear().fillStyle(Palette.panel, 0.94);
+    this.plate.fillRoundedRect(l.margin / 2, 0, GAME_WIDTH - l.margin, l.headerHeight, 12 * l.unit);
+    this.multiplierBurstText.setFontSize(l.font(19));
+    this.buildPauseButton();
+    if (this.pauseOverlay.length) {
+      this.hidePauseOverlay();
+      this.showPauseOverlay(this.pauseReason);
+    }
+  };
+
+  private fit(text: Phaser.GameObjects.Text, width: number): void {
+    if (text.width > width)
+      text.setFontSize(
+        Math.floor((Number.parseFloat(String(text.style.fontSize)) * width) / text.width),
+      );
+  }
+
+  /** Alpha feedback keeps all measured text bounds stable, even during bursts. */
+  private emphasize(text: Phaser.GameObjects.Text): void {
+    this.tweens.killTweensOf(text);
+    text.setAlpha(1).setScale(1);
+    if (!prefersReducedMotion()) {
+      text.setAlpha(0.65);
+      this.tweens.add({ targets: text, alpha: 1, duration: 160 });
+    }
   }
 
   private requestPause(): void {
@@ -287,116 +354,75 @@ export class HudScene extends Phaser.Scene {
    * gebeten wurde.
    */
   private showPauseOverlay(reason: 'manual' | 'interrupted' = 'manual'): void {
+    this.pauseReason = reason;
+    const u = this.layout.unit;
     const cx = GAME_WIDTH / 2;
-    const cy = GAME_HEIGHT / 2;
-
+    const width = GAME_WIDTH - 64 * u;
     const shade = this.add
-      .image(cx, cy, TextureKey.Pixel)
+      .image(cx, GAME_HEIGHT / 2, TextureKey.Pixel)
       .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
       .setTint(0x000000)
       .setAlpha(0.72)
       .setDepth(Depth.Overlay)
-      // Faengt Tipps ab, die sonst neben den Knoepfen ins Spielfeld gingen.
       .setInteractive();
-
-    const panel = createPanel(this, cx, cy - 20, GAME_WIDTH - 140, 440, Palette.goldHex, {
-      alpha: 0.85,
-    });
-    panel.setDepth(Depth.Overlay);
-
-    // Wer selbst auf Pause getippt hat, weiss warum. Wer aus einem Anruf
-    // zurueckkommt, sieht sonst nur einen stehenden Bildschirm - genau das
-    // wirkte im Test wie ein Absturz.
-    const title = this.add
-      .text(
-        cx,
-        cy - 190,
-        reason === 'interrupted' ? 'ANGEHALTEN' : 'PAUSE',
-        textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
-      )
-      .setOrigin(0.5)
-      .setDepth(Depth.Overlay);
-    title.setLetterSpacing(6);
-
-    this.pauseOverlay.push(shade, panel, title);
-
-    if (reason === 'interrupted' && this.mode !== 'challenge') {
-      const why = this.add
-        .text(
-          cx,
-          cy - 130,
-          'Die App war kurz im Hintergrund.',
-          textStyle(FontSize.small, Palette.inkDim),
-        )
-        .setOrigin(0.5)
-        .setDepth(Depth.Overlay);
-      this.pauseOverlay.push(why);
-    }
-
-    // Im Duell gibt es kein Fortsetzen: Wer pausiert, waehrend ein legendaeres
-    // Relikt erscheint, koennte in Ruhe zielen - das bricht die Fairness
-    // (config/challenge.ts). Aussteigen darf man trotzdem.
-    //
-    // Bei einer Unterbrechung ist der Text ein anderer: "laesst sich nicht
-    // pausieren" waere dort eine Antwort auf eine Frage, die der Spieler nie
-    // gestellt hat - er hat nicht getippt, sein Geraet hat entschieden.
-    if (this.mode === 'challenge') {
-      const note = this.add
-        .text(
-          cx,
-          cy - 90,
-          reason === 'interrupted'
-            ? 'Die App war kurz im Hintergrund.\nIm Duell läuft der Durchgang weiter.'
-            : 'Im Duell lässt sich nicht pausieren.\nDer Durchgang läuft weiter.',
-          textStyle(FontSize.small, Palette.inkDim),
-        )
-        .setOrigin(0.5)
+    const content = this.add.container(cx, 0).setDepth(Depth.Overlay + 1);
+    let y = 0;
+    const paragraph = (value: string, size: number, color: string) => {
+      const text = this.add
+        .text(0, y, value, textStyle(this.layout.font(size), color))
+        .setOrigin(0.5, 0)
         .setAlign('center')
-        .setLineSpacing(6)
-        .setDepth(Depth.Overlay);
-      this.pauseOverlay.push(note);
+        .setWordWrapWidth(width)
+        .setLineSpacing(2 * u);
+      content.add(text);
+      y += text.height + 14 * u;
+    };
+    paragraph(reason === 'interrupted' ? 'ANGEHALTEN' : 'PAUSE', 22, Palette.gold);
+    if (this.mode === 'challenge') {
+      paragraph(
+        reason === 'interrupted'
+          ? 'Die App war kurz im Hintergrund. Im Duell läuft der Durchgang weiter.'
+          : 'Im Duell lässt sich nicht pausieren. Der Durchgang läuft weiter.',
+        12,
+        Palette.inkDim,
+      );
+    } else {
+      if (reason === 'interrupted')
+        paragraph('Die App war kurz im Hintergrund.', 12, Palette.inkDim);
+      if (this.talentSummary) paragraph(this.talentSummary, 11, Palette.inkDim);
     }
-
-    // Im Duell laeuft die Simulation weiter, es gibt also nichts fortzusetzen -
-    // der Bildschirm wird nur wieder zugeklappt. Ein `PauseRequested` wuerde
-    // dort ein zweites `RunPaused` ausloesen und das Overlay verdoppeln.
     const resume = createButton(
       this,
-      cx,
-      cy + 10,
+      0,
+      y + 22 * u,
       this.mode === 'challenge' ? 'ZURÜCK INS SPIEL' : 'WEITER',
       () => (this.mode === 'challenge' ? this.closeDuelPause() : this.requestPause()),
-      {
-        width: 400,
-        height: 88,
-        accent: Palette.goldHex,
-        fontSize: FontSize.body,
-      },
+      { width, height: 44 * u, fontSize: this.layout.font(14), variant: 'primary' },
     );
-    resume.container.setDepth(Depth.Overlay);
-    this.pauseOverlay.push(resume.container);
-
+    content.add(resume.container);
+    y += 56 * u;
     const quit = createButton(
       this,
-      cx,
-      cy + 118,
+      0,
+      y + 22 * u,
       this.mode === 'challenge' ? 'DUELL ABBRECHEN' : 'RUN VERLASSEN',
       () => eventBus.emitEvent(GameEvent.AbortRequested, undefined),
-      { width: 400, height: 76, accent: 0x9aa3bd, fontSize: FontSize.small },
+      { width, height: 44 * u, fontSize: this.layout.font(12) },
     );
-    quit.container.setDepth(Depth.Overlay);
-    this.pauseOverlay.push(quit.container);
-
-    const warning = this.add
-      .text(
-        cx,
-        cy + 180,
-        'Ein abgebrochener Run wird nicht gewertet.',
-        textStyle(FontSize.tiny, Palette.danger),
-      )
-      .setOrigin(0.5)
-      .setDepth(Depth.Overlay);
-    this.pauseOverlay.push(warning);
+    content.add(quit.container);
+    y += 58 * u;
+    paragraph('Ein abgebrochener Run wird nicht gewertet.', 10, Palette.danger);
+    content.y = (GAME_HEIGHT - y) / 2;
+    const panel = createPanel(
+      this,
+      cx,
+      GAME_HEIGHT / 2,
+      width + 28 * u,
+      y + 28 * u,
+      Palette.goldHex,
+      { alpha: 0.98 },
+    ).setDepth(Depth.Overlay);
+    this.pauseOverlay.push(shade, panel, content);
   }
 
   /**
@@ -428,9 +454,10 @@ export class HudScene extends Phaser.Scene {
       if (text.alpha > 0) this.renderOpponentLive(playerIndex);
     }
     this.scoreText.setText(score.toLocaleString('de-DE'));
-    // Kurzer Pop bei jeder Aenderung - macht Punktzuwachs spuerbar.
-    this.scoreText.setScale(1.12);
-    this.tweens.add({ targets: this.scoreText, scale: 1, duration: 180, ease: 'Quad.Out' });
+    // Kurzes Feedback ohne wandernde Textgrenzen.
+    this.scoreText.setFontSize(this.layout.font(24));
+    this.fit(this.scoreText, this.layout.columnWidth);
+    this.emphasize(this.scoreText);
 
     this.checkOvertake(score);
   };
@@ -443,27 +470,10 @@ export class HudScene extends Phaser.Scene {
 
     this.targetText?.setText('IN FÜHRUNG').setColor(Palette.gold);
 
-    const banner = this.add
-      .text(
-        GAME_WIDTH / 2,
-        210,
-        'ÜBERHOLT!',
-        textStyle(FontSize.large, Palette.gold, { fontStyle: 'bold' }),
-      )
-      .setOrigin(0.5)
-      .setAlpha(0)
-      .setDepth(Depth.Overlay);
-
-    this.tweens.add({
-      targets: banner,
-      alpha: { from: 0, to: 1 },
-      scale: { from: 0.7, to: 1 },
-      duration: 240,
-      ease: 'Back.Out',
-      yoyo: true,
-      hold: 700,
-      onComplete: () => banner.destroy(),
-    });
+    if (this.targetText) {
+      this.fit(this.targetText, this.layout.width);
+      this.emphasize(this.targetText);
+    }
   }
 
   private readonly onCombo = ({
@@ -479,6 +489,8 @@ export class HudScene extends Phaser.Scene {
     this.multiplierText.setText(
       `×${multiplier.toLocaleString('de-DE', { maximumFractionDigits: 2 })}`,
     );
+    this.fit(this.comboText, this.layout.columnWidth);
+    this.fit(this.multiplierText, this.layout.columnWidth);
     this.updateAgility(speedFactor);
 
     if (combo < 2) {
@@ -486,8 +498,7 @@ export class HudScene extends Phaser.Scene {
       return;
     }
 
-    this.comboText.setScale(1.2);
-    this.tweens.add({ targets: this.comboText, scale: 1, duration: 200, ease: 'Back.Out' });
+    this.emphasize(this.comboText);
 
     if (multiplier <= this.lastComboMultiplier) return;
     this.lastComboMultiplier = multiplier;
@@ -510,18 +521,13 @@ export class HudScene extends Phaser.Scene {
       return;
     }
 
-    this.agilityText.setText(`+${prozent}% BEWEGLICHKEIT`);
+    this.agilityText.setText(`+${prozent}% TEMPO`);
     if (prozent === this.lastAgilityPercent) return;
 
     this.lastAgilityPercent = prozent;
     this.tweens.killTweensOf(this.agilityText);
-    this.agilityText.setAlpha(1).setScale(1.25);
-    this.tweens.add({
-      targets: this.agilityText,
-      scale: 1,
-      duration: 220,
-      ease: 'Back.Out',
-    });
+    this.fit(this.agilityText, this.layout.columnWidth);
+    this.emphasize(this.agilityText);
   }
 
   private showMultiplierBurst(multiplier: number): void {
@@ -529,19 +535,18 @@ export class HudScene extends Phaser.Scene {
     this.tweens.killTweensOf(this.multiplierBurstText);
     this.multiplierBurstText
       .setText(label)
-      .setPosition(GAME_WIDTH / 2, 250)
-      .setScale(0.45)
-      .setAlpha(0);
-    burst(this, GAME_WIDTH / 2, 250, this.accent, 28);
+      .setPosition(GAME_WIDTH / 2, this.layout.headerHeight + 18 * this.layout.unit)
+      .setScale(1)
+      .setAlpha(1);
+    if (prefersReducedMotion()) {
+      this.multiplierBurstText.setAlpha(0);
+      return;
+    }
     this.tweens.add({
       targets: this.multiplierBurstText,
-      alpha: { from: 0, to: 1 },
-      scale: { from: 0.45, to: 1.25 },
-      duration: 210,
-      ease: 'Back.Out',
-      yoyo: true,
-      hold: 420,
-      onComplete: () => this.multiplierBurstText.setAlpha(0),
+      alpha: 0,
+      duration: 260,
+      delay: 180,
     });
   }
 
@@ -553,7 +558,7 @@ export class HudScene extends Phaser.Scene {
     totalMs: number;
   }): void => {
     const seconds = Math.ceil(remainingMs / 1000);
-    this.timerText.setText(String(seconds));
+    this.timerText.setText(`${seconds}s`);
     this.timerBar.setRatio(remainingMs / totalMs);
 
     // Letzte 10 Sekunden rot - klare Warnung ohne zusaetzliches UI-Element.
@@ -623,7 +628,11 @@ export class HudScene extends Phaser.Scene {
     if (!text) return;
     const activity = this.opponentActivities.get(playerIndex) ?? 'playing';
     const opponentScore = this.opponentScores.get(playerIndex) ?? 0;
-    const displayName = this.opponentLabels[playerIndex]?.trim() || `Spieler ${playerIndex + 1}`;
+    const fullName = this.opponentLabels[playerIndex]?.trim() || `Spieler ${playerIndex + 1}`;
+    const displayName =
+      Array.from(fullName).length > 14
+        ? Array.from(fullName).slice(0, 13).join('') + '\u2026'
+        : fullName;
     const points = opponentScore.toLocaleString('de-DE');
     const diff = opponentScore - this.lastOwnScore;
 
@@ -631,19 +640,20 @@ export class HudScene extends Phaser.Scene {
       activity === 'left'
         ? `${displayName} ausgestiegen`
         : activity === 'gone'
-          ? `${displayName} ${points} · Verbindung weg`
+          ? `${displayName} ${points} · offline`
           : activity === 'finished'
             ? `${displayName} ${points} · fertig`
             : activity === 'away'
-              ? `${displayName} ${points} · schaut gerade nicht hin`
-              : `${displayName} ${points}${diff === 0 ? '' : diff > 0 ? ` · ${diff} vorn` : ` · ${-diff} zurueck`}`;
+              ? `${displayName} ${points} · abwesend`
+              : `${displayName} ${points}${diff === 0 ? '' : diff > 0 ? ` · ${diff} vorn` : ` · ${-diff} hinten`}`;
 
     // Aussteiger und Verbindungsverlust in Warnfarbe, alles andere gedaempft:
     // die Zeile soll beim Spielen nicht um Aufmerksamkeit konkurrieren,
     // ausser wenn sich etwas Endgueltiges geaendert hat.
     const color = activity === 'left' || activity === 'gone' ? Palette.danger : Palette.inkDim;
 
-    text.setText(lineLabel).setColor(color).setAlpha(1);
+    text.setText(lineLabel).setColor(color).setAlpha(1).setFontSize(this.layout.font(11));
+    this.fit(text, this.layout.width);
   }
 
   private registerEvents(): void {
@@ -662,6 +672,7 @@ export class HudScene extends Phaser.Scene {
    * doppelt feuern und auf zerstoerte Text-Objekte zugreifen.
    */
   private unregisterEvents(): void {
+    this.scale.off(Phaser.Scale.Events.RESIZE, this.relayout);
     eventBus.offEvent(GameEvent.ScoreChanged, this.onScore);
     eventBus.offEvent(GameEvent.ComboChanged, this.onCombo);
     eventBus.offEvent(GameEvent.TimerChanged, this.onTimer);

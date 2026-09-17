@@ -1,0 +1,47 @@
+[
+  {
+    "file": "duel-final-320x568.json",
+    "textOverlaps": [],
+    "pauseHeight": 44.00027378594257,
+    "canvas": {
+      "x": 31,
+      "y": 32,
+      "width": 256.0833435058594,
+      "height": 536,
+      "top": 32,
+      "right": 287.0833435058594,
+      "bottom": 568,
+      "left": 31
+    }
+  },
+  {
+    "file": "duel-final-390x844.json",
+    "textOverlaps": [],
+    "pauseHeight": 44.00018505932212,
+    "canvas": {
+      "x": 1,
+      "y": 32,
+      "width": 387.94793701171875,
+      "height": 812,
+      "top": 32,
+      "right": 388.94793701171875,
+      "bottom": 844,
+      "left": 1
+    }
+  },
+  {
+    "file": "duel-final-430x932.json",
+    "textOverlaps": [],
+    "pauseHeight": 44.000385858034065,
+    "canvas": {
+      "x": 0,
+      "y": 32,
+      "width": 429.9895935058594,
+      "height": 900,
+      "top": 32,
+      "right": 429.9895935058594,
+      "bottom": 932,
+      "left": 0
+    }
+  }
+]

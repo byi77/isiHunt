@@ -9,6 +9,25 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Grafik-Update Punkt 6
+
+- Gekrümmte Lichtsplitter zum Schiff und geneigte Energieringe beim Fang;
+  seltene Fänge unterscheiden sich durch zusätzliche Ringe, Splitter und Symbole.
+- Festes Budget von acht Fängen und 700 ms; gemeinsame Punkte-/Bonus-/XP-Blöcke
+  mit Platzprüfung. HUD und Fußbereich bleiben von Fangdekoration ausgespart.
+- Statische Alternative für reduzierte Bewegung; keine Fang-Vollbildblitze oder
+  zusätzlichen Relikt-Explosionen. Höchstens ein Fangimpuls am Schiff gleichzeitig.
+
+### Grafik-Update Punkt 5
+
+- HUD mit festen Bereichen für Punkte, Restzeit und Serie sowie gemeinsamer
+  dunkler Unterlage. Gegnerstände erhalten eigene Zeilen und begrenzte Namen.
+- Kurzes Deckkraftfeedback statt größer werdender Punkt-/Combotexte; reduzierte
+  Bewegung unterdrückt dekorative Animationen. Überholen markiert die Zielzeile.
+- Pauseflächen und Dialogbuttons mindestens 44 CSS-Pixel hoch; Pausefenster
+  passt sich an Inhalt und Bildschirmgröße an. Vollständige Talentdetails sind
+  dort lesbar, während die Jagd nur einen kompakten Hinweis zeigt.
+
 ### Grafik-Update Punkt 4
 
 - Raumjäger mit kontrastreicheren Cockpits und Innenflächen; Pfeil mit Flügelpaneelen

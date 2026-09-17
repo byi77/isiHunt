@@ -1,0 +1,26 @@
+[
+  {
+    "file": "burst-120ms-320x568.json",
+    "textConflicts": []
+  },
+  {
+    "file": "burst-expired-720ms-320x568.json",
+    "textConflicts": []
+  },
+  {
+    "file": "edge-320x568.json",
+    "textConflicts": []
+  },
+  {
+    "file": "quiet-320x568.json",
+    "textConflicts": []
+  },
+  {
+    "file": "six-120ms-390x844.json",
+    "textConflicts": []
+  },
+  {
+    "file": "six-240ms-390x844.json",
+    "textConflicts": []
+  }
+]

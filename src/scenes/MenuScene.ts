@@ -107,6 +107,18 @@ export class MenuScene extends Phaser.Scene {
     createAmbientMotes(this, GAME_WIDTH, GAME_HEIGHT, this.selectedWorld.accent);
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
 
+    if (DEBUG_ENABLED && new URLSearchParams(window.location.search).has('hudPreview')) {
+      void import('@/ui/hudPreview').then(({ installHudPreview }) => {
+        if (!this.scene.isActive()) return;
+        installHudPreview(
+          this,
+          this.selectedWorld.id,
+          new URLSearchParams(window.location.search).get('hudPreview') === 'duel',
+        );
+      });
+      return;
+    }
+
     this.add
       .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, Palette.backdrop, 0.62)
       .setOrigin(0)

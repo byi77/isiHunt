@@ -1,0 +1,432 @@
+{
+  "capturedAt": "2026-09-16T17:32:43.532Z",
+  "viewport": {
+    "width": 320,
+    "height": 568
+  },
+  "canvas": {
+    "x": 9,
+    "y": 32,
+    "width": 301.5,
+    "height": 536,
+    "top": 32,
+    "right": 310.5,
+    "bottom": 568,
+    "left": 9
+  },
+  "scenes": [
+    "Menu",
+    "Hud"
+  ],
+  "performance": [],
+  "texts": [
+    {
+      "scene": "Hud",
+      "text": "PUNKTE",
+      "rect": {
+        "left": 50.786458333333336,
+        "top": 52,
+        "right": 86.38020833333333,
+        "bottom": 62.8875,
+        "width": 35.59374999999999,
+        "height": 10.887500000000003
+      }
+    },
+    {
+      "scene": "Hud",
+      "text": "ZEIT",
+      "rect": {
+        "left": 149.90937499999998,
+        "top": 52,
+        "right": 169.590625,
+        "bottom": 62.8875,
+        "width": 19.681250000000006,
+        "height": 10.887500000000003
+      }
+    },
+    {
+      "scene": "Hud",
+      "text": "SONNENKRONE",
+      "rect": {
+        "left": 124.36562500000001,
+        "top": 35,
+        "right": 195.134375,
+        "bottom": 45.8875,
+        "width": 70.76875,
+        "height": 10.887500000000003
+      }
+    },
+    {
+      "scene": "Hud",
+      "text": "123.456.789",
+      "rect": {
+        "left": 28.17395833333333,
+        "top": 65,
+        "right": 108.99270833333334,
+        "bottom": 80.07499999999999,
+        "width": 80.81875000000001,
+        "height": 15.074999999999989
+      }
+    },
+    {
+      "scene": "Hud",
+      "text": "SERIE 999",
+      "rect": {
+        "left": 227.67604166666666,
+        "top": 52,
+        "right": 274.15729166666665,
+        "bottom": 62.8875,
+        "width": 46.48124999999999,
+        "height": 10.887500000000003
+      }
+    },
+    {
+      "scene": "Hud",
+      "text": "×12,5",
+      "rect": {
+        "left": 218.46354166666666,
+        "top": 65,
+        "right": 283.36979166666663,
+        "bottom": 90.96249999999999,
+        "width": 64.90624999999997,
+        "height": 25.96249999999999
+      }
+    },
+    {
+      "scene": "Hud",
+      "text": "+18% TEMPO",
+      "rect": {
+        "left": 224.53541666666666,
+        "top": 91,
+        "right": 277.29791666666665,
+        "bottom": 100.63125000000001,
+        "width": 52.76249999999999,
+        "height": 9.631250000000009
+      }
+    },
+    {
+      "scene": "Hud",
+      "text": "TALENTE AKTIV - DETAILS IN PAUSE",
+      "rect": {
+        "left": 23,
+        "top": 111,
+        "right": 202.64375,
+        "bottom": 124.4,
+        "width": 179.64375,
+        "height": 13.400000000000006
+      }
+    },
+    {
+      "scene": "Hud",
+      "text": "9s",
+      "rect": {
+        "left": 148.653125,
+        "top": 65,
+        "right": 170.84687499999998,
+        "bottom": 90.96249999999999,
+        "width": 22.193749999999994,
+        "height": 25.96249999999999
+      }
+    },
+    {
+      "scene": "Hud",
+      "text": "II",
+      "rect": {
+        "left": 269.8937480926514,
+        "top": 524.996900177002,
+        "right": 279.10624809265136,
+        "bottom": 543.003150177002,
+        "width": 9.212499999999977,
+        "height": 18.006250000000023
+      }
+    },
+    {
+      "scene": "Hud",
+      "text": "PAUSE",
+      "rect": {
+        "left": 129.60000000000002,
+        "top": 171.30937633514404,
+        "right": 189.9,
+        "bottom": 195.17812633514404,
+        "width": 60.29999999999998,
+        "height": 23.868750000000006
+      }
+    },
+    {
+      "scene": "Hud",
+      "text": "AKTIV · REICH R5 +24 · TEMPO R5 +18% · MAGNET R5 +35 · AUSDAUER R5 +10s · FOKUS R5 +100ms · SPÜRSINN R5 +12% · XP R5 +20% · PUNKTE R5 +20% · RESONANZ R5 +0,25x · SCHUTZFELD R5 -20%",
+      "rect": {
+        "left": 46.268750000000004,
+        "top": 209.17812633514407,
+        "right": 273.23125,
+        "bottom": 275.80312633514404,
+        "width": 226.96249999999998,
+        "height": 66.62499999999997
+      }
+    },
+    {
+      "scene": "Hud",
+      "text": "WEITER",
+      "rect": {
+        "left": 135.253125,
+        "top": 304.0562572479248,
+        "right": 184.24687500000002,
+        "bottom": 319.55000724792484,
+        "width": 48.993750000000006,
+        "height": 15.493750000000034
+      }
+    },
+    {
+      "scene": "Hud",
+      "text": "RUN VERLASSEN",
+      "rect": {
+        "left": 114.10625,
+        "top": 361.1031238555908,
+        "right": 205.39375,
+        "bottom": 374.50312385559084,
+        "width": 91.28750000000001,
+        "height": 13.400000000000034
+      }
+    },
+    {
+      "scene": "Hud",
+      "text": "Ein abgebrochener Run wird nicht gewertet.",
+      "rect": {
+        "left": 59.878125000000004,
+        "top": 403.80312633514404,
+        "right": 259.62187500000005,
+        "bottom": 414.69062633514403,
+        "width": 199.74375000000003,
+        "height": 10.887499999999989
+      }
+    }
+  ],
+  "buttons": [
+    {
+      "scene": "Hud",
+      "label": "II",
+      "enabled": true,
+      "rect": {
+        "left": 252.49999809265137,
+        "top": 512.0000251770019,
+        "right": 296.49999809265137,
+        "bottom": 556.0000251770019,
+        "width": 44,
+        "height": 44
+      }
+    },
+    {
+      "scene": "Hud",
+      "label": "WEITER",
+      "enabled": true,
+      "rect": {
+        "left": 41,
+        "top": 289.8031322479248,
+        "right": 278.5,
+        "bottom": 333.80313224792485,
+        "width": 237.5,
+        "height": 44.00000000000006
+      }
+    },
+    {
+      "scene": "Hud",
+      "label": "RUN VERLASSEN",
+      "enabled": true,
+      "rect": {
+        "left": 41,
+        "top": 345.8031238555908,
+        "right": 278.5,
+        "bottom": 389.80312385559085,
+        "width": 237.5,
+        "height": 44.00000000000006
+      }
+    }
+  ],
+  "images": [
+    {
+      "scene": "Menu",
+      "texture": "world-sphere-4-1",
+      "frame": 0,
+      "rect": {
+        "left": 9.251252555847168,
+        "top": 95.90125255584718,
+        "right": 117.28875255584717,
+        "bottom": 203.93875255584717,
+        "width": 108.0375,
+        "height": 108.0375
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "world-sphere-4-1",
+      "frame": 0,
+      "rect": {
+        "left": 259.6428125,
+        "top": 450.8128022766113,
+        "right": 301.05718750000005,
+        "bottom": 492.22717727661137,
+        "width": 41.414375000000064,
+        "height": 41.414375000000064
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": -126.67500000000001,
+        "top": -35,
+        "right": 446.175,
+        "bottom": 420.6,
+        "width": 572.85,
+        "height": 455.6
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": -152.1653502598557,
+        "top": -148.1878940481319,
+        "right": 315.15964974014435,
+        "bottom": 319.1371059518681,
+        "width": 467.32500000000005,
+        "height": 467.325
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": 110.1396497401443,
+        "top": 55.82710595186808,
+        "right": 426.7146497401443,
+        "bottom": 372.40210595186807,
+        "width": 316.575,
+        "height": 316.575
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": -105.4328502598557,
+        "top": 236.89460595186804,
+        "right": 256.3671497401443,
+        "bottom": 598.6946059518681,
+        "width": 361.8,
+        "height": 361.80000000000007
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": 27.227149740144334,
+        "top": 303.22460595186806,
+        "right": 449.32714974014425,
+        "bottom": 725.324605951868,
+        "width": 422.0999999999999,
+        "height": 422.0999999999999
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-vignette",
+      "frame": "__BASE",
+      "rect": {
+        "left": -66.375,
+        "top": -8.200000000000003,
+        "right": 385.875,
+        "bottom": 608.2,
+        "width": 452.25,
+        "height": 616.4000000000001
+      }
+    },
+    {
+      "scene": "Hud",
+      "texture": "tex-pixel",
+      "frame": "__BASE",
+      "rect": {
+        "left": 22.999999499320985,
+        "top": 102.49999737888575,
+        "right": 296.50000689029696,
+        "bottom": 105.49999747127295,
+        "width": 273.50000739097595,
+        "height": 3.0000000923871966
+      }
+    },
+    {
+      "scene": "Hud",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": 22.999999499320985,
+        "top": 96.49999719411134,
+        "right": 50.35000023841858,
+        "bottom": 111.49999765604734,
+        "width": 27.350000739097595,
+        "height": 15.000000461935997
+      }
+    },
+    {
+      "scene": "Hud",
+      "texture": "tex-pixel",
+      "frame": "__BASE",
+      "rect": {
+        "left": 22.999999499320985,
+        "top": 102.49999737888575,
+        "right": 50.35000023841858,
+        "bottom": 105.49999747127295,
+        "width": 27.350000739097595,
+        "height": 3.0000000923871966
+      }
+    },
+    {
+      "scene": "Hud",
+      "texture": "tex-pixel",
+      "frame": "__BASE",
+      "rect": {
+        "left": 9,
+        "top": 32,
+        "right": 310.5,
+        "bottom": 568,
+        "width": 301.5,
+        "height": 536
+      }
+    }
+  ],
+  "planetTextures": [
+    {
+      "key": "world-sphere-4-1",
+      "width": 128,
+      "height": 128
+    }
+  ],
+  "updateListeners": [
+    {
+      "scene": "Menu",
+      "count": 4
+    },
+    {
+      "scene": "Hud",
+      "count": 4
+    }
+  ],
+  "domCanvases": [
+    {
+      "x": 9,
+      "y": 32,
+      "width": 301.5,
+      "height": 536,
+      "top": 32,
+      "right": 310.5,
+      "bottom": 568,
+      "left": 9
+    }
+  ]
+}

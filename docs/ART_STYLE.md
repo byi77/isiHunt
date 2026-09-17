@@ -1,5 +1,24 @@
 # Art Style Guide — isiHunt
 
+**Grafik-Update Punkt 6, 17.09.2026:** Kurze, gebogene Lichtsplitter zum Schiff
+und geneigte Energieringe ersetzen Explosion und Vollbildblitz beim Fang.
+Normale Fänge bleiben klein; epische/legendäre Fänge bekommen zwei Ringe und
+mehr Splitter. Die bekannten Farben und Seltenheitssymbole bleiben erhalten.
+Weiße, dunkel konturierte Punkteblöcke enthalten Bonus und XP gemeinsam.
+Fangdarstellung maximal 700 ms, acht aktive Fänge, höchstens 56 Splitter.
+Reduzierte Bewegung zeigt statische kleine Ringe und Texte. Diese Festlegung
+ersetzt die ältere Fang-/Kamerablitzbeschreibung in der Animationstabelle unten.
+
+**Grafik-Update Punkt 5, 16.09.2026:** Das HUD verwendet drei feste Spalten
+für Punkte, Zeit und Serie/Multiplikator. Zahlen sind hell, Multiplikatoren gold,
+kritische Restzeit rot mit sichtbarer Sekundenangabe. Eine gemeinsame dunkle
+Unterlage (`Palette.panel`, 94 % Deckkraft) schützt den Kontrast auf allen Welten.
+Gegner bekommen eigene Zeilen; Namen werden gekürzt, Status bleibt als Text sichtbar.
+Kurzes Deckkraftfeedback ersetzt wachsende Zahlen. Lange Talentlisten stehen
+vollständig im Pausefenster; im HUD bleibt eine kompakte Hinweiszeile.
+Pause und Dialogbuttons sind mindestens 44 CSS-Pixel hoch. Dialoghöhe folgt dem
+Inhalt; sichere untere Bildschirmränder werden berücksichtigt.
+
 **Grafik-Update Punkt 4, 16.09.2026:** Raumjäger behalten ihre stabilen Silhouetten
 und Skin-IDs. Cockpits und Innenflächen erhalten neutrale Schatten (`#536579`),
 damit sie auch über einem weißen Rumpf sichtbar und weiterhin einfärbbar bleiben.

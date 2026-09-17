@@ -617,6 +617,8 @@ export class Player extends Phaser.GameObjects.Container {
 
   /** Kurzer visueller Impuls beim Einsammeln. */
   pulse(color: number): void {
+    // Dense capture bursts still own only one ship pulse.
+    this.scene.tweens.killTweensOf(this.aura);
     // Fuer diese Zeit haelt der Impuls den Schein - siehe `pulseRestMs`.
     this.pulseRestMs = PULSE_HOLD_MS;
     if (prefersReducedMotion()) {
