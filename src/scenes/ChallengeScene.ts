@@ -11,6 +11,8 @@
  */
 
 import Phaser from 'phaser';
+import { ResultView } from '@/ui/ResultView';
+import { challengeResultContent } from '@/ui/resultContent';
 
 import {
   CHALLENGE_DURATION_MS,
@@ -328,150 +330,35 @@ export class ChallengeScene extends Phaser.Scene {
   // --- Phase 3: Ergebnis ------------------------------------------------------
 
   private buildResult(state: ChallengeState, world: WorldDef): void {
-    if (ChallengeSystem.kind() === 'daily') {
-      const round = state.rounds[0];
-      this.buildHeading('TAGESLAUF GESCHAFFT', 'Morgen wartet der nächste Lauf auf dich.');
-      if (round) this.buildResultCard(round, 0, world, false);
-      this.add
-        .text(
-          GAME_WIDTH / 2,
-          700,
-          `TAGESBONUS  +${state.dailyRewardCoins ?? 0} COINS  ·  +${state.dailyRewardXp ?? 0} XP`,
-          textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
-        )
-        .setOrigin(0.5);
-      this.buildResultButtons(world);
-      return;
-    }
-
-    const winner = ChallengeSystem.winnerIndex();
-
-    this.buildHeading(
-      winner === null
-        ? 'UNENTSCHIEDEN'
-        : `${ChallengeSystem.playerLabel(winner).toUpperCase()} GEWINNT`,
-      winner === null ? 'Punktgleich - das muss wiederholt werden.' : 'Gut gejagt.',
-    );
-
-    const playerCount = state.playerCount ?? 2;
-    const compactCards = playerCount > 2;
-    const firstCardY = compactCards ? 400 : 470;
-    const cardHeight = compactCards ? 122 : 158;
-    const cardStep = compactCards ? 150 : 190;
-
-    state.rounds.forEach((round, index) => {
-      const isWinner = winner === index;
-      this.buildResultCard(
-        round,
-        index,
-        world,
-        isWinner,
-        firstCardY + index * cardStep,
-        cardHeight,
-      );
-    });
-
-    // Der Abstand bleibt auch bei drei oder vier Spielern sichtbar.
-    const scores = state.rounds.map((round) => round.score);
-    if (scores.length > 1) {
-      const gap = Math.max(...scores) - Math.min(...scores);
-      const infoY = compactCards
-        ? firstCardY + (state.rounds.length - 1) * cardStep + cardHeight / 2 + 28
-        : 846;
-      // Eine nur lokal gebuchte Praemie darf nicht wie eine gesicherte
-      // aussehen: der naechste Profilabgleich ersetzt sie durch den
-      // Serverstand (AUDIT_2026-09-05_REAUDIT, Befund 4).
-      const reward = state.botVictoryReward;
-      this.add
-        .text(
-          GAME_WIDTH / 2,
-          infoY,
-          reward
-            ? `BOT BESIEGT  +${reward.coins} COINS  |  +${reward.xp} XP`
-            : gap === 0
-              ? 'Kein Punkt Unterschied.'
-              : `Abstand: ${gap.toLocaleString('de-DE')} Punkte`,
-          textStyle(
-            FontSize.small,
-            reward ? (reward.localOnly ? Palette.inkDim : Palette.gold) : Palette.inkDim,
-            reward && !reward.localOnly ? { fontStyle: 'bold' } : undefined,
-          ),
-        )
-        .setOrigin(0.5);
-
-      if (reward?.localOnly) {
-        this.add
-          .text(
-            GAME_WIDTH / 2,
-            infoY + 30,
-            'Nur auf diesem Gerät - nicht im Konto gesichert.',
-            textStyle(FontSize.tiny, Palette.inkDim),
-          )
-          .setOrigin(0.5);
-      }
-    }
-
-    this.buildResultButtons(world);
-  }
-
-  private buildResultCard(
-    round: ChallengeState['rounds'][number],
-    index: number,
-    world: WorldDef,
-    isWinner: boolean,
-    y = 470 + index * 190,
-    height = 158,
-  ): void {
-    const color = isWinner ? Palette.goldHex : world.accent;
-    createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, height, color, {
-      alpha: isWinner ? 0.75 : 0.45,
-    });
-    this.add
-      .text(
-        104,
-        y - 44,
-        ChallengeSystem.playerLabel(index),
-        textStyle(FontSize.body, isWinner ? Palette.gold : Palette.ink, { fontStyle: 'bold' }),
-      )
-      .setOrigin(0, 0.5);
-    if (isWinner) {
-      this.add
-        .text(GAME_WIDTH - 104, y - 44, 'SIEG', textStyle(FontSize.tiny, Palette.gold))
-        .setOrigin(1, 0.5)
-        .setLetterSpacing(4);
-    }
-    this.add
-      .text(
-        104,
-        y + 18,
-        round.score.toLocaleString('de-DE'),
-        textStyle(FontSize.heading, Palette.ink, { fontStyle: 'bold' }),
-      )
-      .setOrigin(0, 0.5);
-    this.add
-      .text(
-        GAME_WIDTH - 104,
-        y + 24,
-        `${relics(round.totalCollected)}  ·  Kette ${round.bestCombo}`,
-        textStyle(FontSize.tiny, Palette.inkDim),
-      )
-      .setOrigin(1, 0.5);
-  }
-
-  private buildResultButtons(world: WorldDef): void {
-    if (ChallengeSystem.kind() === 'daily') {
-      this.buildBackToMenu('ZURÜCK ZUM MENÜ');
-      return;
-    }
-    createButton(
+    const daily = ChallengeSystem.kind() === 'daily';
+    new ResultView(
       this,
-      GAME_WIDTH / 2,
-      GAME_HEIGHT - 250,
-      'REMATCH',
-      () => void this.startRematch(),
-      { width: 460, accent: world.accent, fontSize: FontSize.large },
+      challengeResultContent(
+        state,
+        state.rounds.map((_, index) => ChallengeSystem.playerLabel(index)),
+        ChallengeSystem.winnerIndex(),
+      ),
+      world.accent,
+      [
+        ...(!daily
+          ? [
+              {
+                label: 'REMATCH',
+                run: () => {
+                  void this.startRematch();
+                },
+              },
+            ]
+          : []),
+        {
+          label: 'ZUM MENUE',
+          run: () => {
+            ChallengeSystem.clear();
+            this.scene.start(SceneKey.Menu);
+          },
+        },
+      ],
     );
-    this.buildBackToMenu('ZUM MENÜ');
   }
 
   private async startRematch(): Promise<void> {

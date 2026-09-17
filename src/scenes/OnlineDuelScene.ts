@@ -12,6 +12,8 @@
  */
 
 import Phaser from 'phaser';
+import { ResultView } from '@/ui/ResultView';
+import { challengeResultContent } from '@/ui/resultContent';
 
 import { DUEL_TALENT_DRAFT_DURATION_MS, DUEL_TALENT_POINT_BUDGET } from '@/config/challenge';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
@@ -49,11 +51,6 @@ import {
 } from '@/ui/widgets';
 import type { ButtonHandle, StatusPageHandle } from '@/ui/widgets';
 
-/** "1 Relikt" statt "1 Relikte" - deckungsgleich mit ChallengeScene. */
-function relics(count: number): string {
-  return `${count} ${count === 1 ? 'Relikt' : 'Relikte'}`;
-}
-
 interface OnlineDuelSceneData {
   /** 'result' nach Rueckkehr aus GameScene; 'rematch' nach Server-Reset. */
   phase?: 'result' | 'rematch';
@@ -63,6 +60,7 @@ interface OnlineDuelSceneData {
 
 export class OnlineDuelScene extends Phaser.Scene {
   private busy = false;
+  private resultView: ResultView | null = null;
   private statusText!: Phaser.GameObjects.Text;
   private statusPage!: StatusPageHandle;
   private contentOffset = 0;
@@ -1278,50 +1276,31 @@ export class OnlineDuelScene extends Phaser.Scene {
       if (!complete) this.awaitOpponentResult();
     }
 
-    this.buildHeading(
-      !complete
-        ? 'WARTE AUF ERGEBNIS'
-        : winner === null
-          ? 'UNENTSCHIEDEN'
-          : `${ChallengeSystem.playerLabel(winner).toUpperCase()} GEWINNT`,
-      !complete
-        ? 'Die anderen Spieler spielen noch ihre Runde.'
-        : winner === null
-          ? 'Punktgleich - das muss wiederholt werden.'
-          : 'Gut gejagt.',
-    );
-
     if (complete && state) {
-      state.rounds.forEach((round, index) => {
-        this.buildResultCard(round, index, winner === index);
-      });
-
-      if ((state.playerCount ?? 2) === 2) {
-        this.keep(
-          createButton(
-            this,
-            GAME_WIDTH / 2,
-            this.statusPage.contentY(930),
-            'REMATCH',
-            () => this.enterRematchDraft(),
-            { width: 460, accent: this.world.accent, fontSize: FontSize.large },
-          ).container,
-        );
-      } else {
-        this.keep(
-          this.add
-            .text(
-              GAME_WIDTH / 2,
-              this.statusPage.contentY(930),
-              'Fuer ein neues Mehrspieler-Duell eine neue Lobby erstellen.',
-              textStyle(FontSize.small, Palette.inkDim),
-            )
-            .setOrigin(0.5)
-            .setWordWrapWidth(GAME_WIDTH - 120)
-            .setAlign('center'),
-        );
-      }
+      const content = challengeResultContent(
+        state,
+        state.rounds.map((_, index) => ChallengeSystem.playerLabel(index)),
+        winner,
+      );
+      const rematch = (state.playerCount ?? 2) === 2;
+      if (!rematch)
+        content.sections.push({
+          title: 'NAECHSTES DUELL',
+          lines: ['Fuer ein neues Mehrspieler-Duell eine neue Lobby erstellen.'],
+        });
+      this.statusText.setVisible(false);
+      this.resultView = new ResultView(this, content, this.world.accent, [
+        ...(rematch ? [{ label: 'REMATCH', run: () => this.enterRematchDraft() }] : []),
+        {
+          label: 'ZUM MENUE',
+          run: () => {
+            void this.leaveDuelAndReturn(() => this.stopResultPolling());
+          },
+        },
+      ]);
+      return;
     }
+    this.buildHeading('WARTE AUF ERGEBNIS', 'Die anderen Spieler spielen noch ihre Runde.');
 
     this.buildBackToMenu('ZUM MENÜ', () => {
       this.stopResultPolling();
@@ -1510,59 +1489,6 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.buildResult();
   }
 
-  private buildResultCard(
-    round: { score: number; bestCombo: number; totalCollected: number },
-    index: number,
-    isWinner: boolean,
-  ): void {
-    const playerCount = ChallengeSystem.getState()?.playerCount ?? 2;
-    const compact = playerCount > 2;
-    const y = this.statusPage.contentY((compact ? 350 : 420) + index * (compact ? 135 : 190));
-    const cardHeight = compact ? 116 : 170;
-    const color = isWinner ? Palette.goldHex : this.world.accent;
-    this.keep(
-      createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, cardHeight, color, {
-        alpha: isWinner ? 0.75 : 0.45,
-      }),
-    );
-    this.keep(
-      this.add
-        .text(
-          104,
-          y - (compact ? 32 : 50),
-          ChallengeSystem.playerLabel(index),
-          textStyle(
-            compact ? FontSize.small : FontSize.body,
-            isWinner ? Palette.gold : Palette.ink,
-            {
-              fontStyle: 'bold',
-            },
-          ),
-        )
-        .setOrigin(0, 0.5),
-    );
-    this.keep(
-      this.add
-        .text(
-          104,
-          y + (compact ? 4 : 5),
-          round.score.toLocaleString('de-DE'),
-          textStyle(compact ? FontSize.body : FontSize.heading, Palette.ink, { fontStyle: 'bold' }),
-        )
-        .setOrigin(0, 0.5),
-    );
-    this.keep(
-      this.add
-        .text(
-          104,
-          y + (compact ? 37 : 54),
-          `${relics(round.totalCollected)}  ·  Kette ${round.bestCombo}`,
-          textStyle(FontSize.tiny, Palette.inkDim),
-        )
-        .setOrigin(0, 0.5),
-    );
-  }
-
   // --- Hilfen -----------------------------------------------------------------
 
   private buildBackToMenu(label: string, onBeforeMenu?: () => void): void {
@@ -1590,7 +1516,8 @@ export class OnlineDuelScene extends Phaser.Scene {
   private async leaveDuelAndReturn(onBeforeMenu?: () => void): Promise<void> {
     if (this.busy) return;
     this.busy = true;
-    this.statusPage.setStatus('Duell wird verlassen ...', Palette.inkDim);
+    if (this.resultView) this.resultView.setPending('Duell wird verlassen ...');
+    else this.statusPage.setStatus('Duell wird verlassen ...', Palette.inkDim);
 
     if (this.roomCode && this.participantToken) {
       await NetworkDuelSystem.leaveRoom(this.roomCode, this.participantToken);
@@ -1672,6 +1599,9 @@ export class OnlineDuelScene extends Phaser.Scene {
   }
 
   private clearTransient(): void {
+    this.resultView?.destroy();
+    this.resultView = null;
+    this.statusText?.setVisible(true);
     if (this.talentDraftTimer) {
       this.talentDraftTimer.remove();
       this.talentDraftTimer = null;

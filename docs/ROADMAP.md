@@ -5,6 +5,16 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 
 ## Bereits spielbar
 
+### Grafik-Update - Punkt 8 lokal umgesetzt
+
+- [x] Gemeinsame Ergebnisansicht mit festem Kopf, 44-CSS-Pixel-Aktionen und scrollbar allen Belohnungen.
+- [x] Rekorde, Levelaufstieg, Talentpunkte und Freischaltungen getrennt hervorgehoben.
+- [x] Kleine/grosse Formate, Mehrfachbelohnungen, vier Spieler und lokale Bot-Praemien geprueft; 611 Tests bestanden.
+- [ ] Echte Mobilgeraete, reduzierte Bewegung auf OS-Ebene und Live-Netzwerkduell.
+
+Details: [Punkt 8](design/2026-09-17-results/README.md). Punkt 7 bleibt offen.
+
+
 ### Grafik-Update — Punkt 6 lokal umgesetzt
 
 - [x] Gebogene Lichtsplitter, geneigte Ringe und nicht allein farbgebundene Seltenheitshinweise.

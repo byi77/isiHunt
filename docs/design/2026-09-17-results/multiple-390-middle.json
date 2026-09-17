@@ -1,0 +1,496 @@
+{
+  "capturedAt": "2026-09-17T07:32:28.488Z",
+  "viewport": {
+    "width": 390,
+    "height": 844
+  },
+  "canvas": {
+    "x": 0,
+    "y": 32,
+    "width": 390,
+    "height": 811.9583740234375,
+    "top": 32,
+    "right": 390,
+    "bottom": 843.9583740234375,
+    "left": 0
+  },
+  "scenes": [
+    "Menu"
+  ],
+  "performance": [],
+  "texts": [
+    {
+      "scene": "Menu",
+      "text": "RUN BEENDET",
+      "rect": {
+        "left": 16,
+        "top": 46.270834048495274,
+        "right": 94,
+        "bottom": 59.81250139378275,
+        "width": 78,
+        "height": 13.541667345287479
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "123.456.789",
+      "rect": {
+        "left": 16,
+        "top": 65.81250169446398,
+        "right": 268.41666666666663,
+        "bottom": 111.85417066844143,
+        "width": 252.41666666666663,
+        "height": 46.04166897397745
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "NEUER BESTWERT",
+      "rect": {
+        "left": 16,
+        "top": 115.85417086889558,
+        "right": 132.45833333333334,
+        "bottom": 131.02083829561758,
+        "width": 116.45833333333334,
+        "height": 15.166667426722
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Level 50 · 42 Relikte · beste Kette 28 · max x3",
+      "rect": {
+        "left": 16,
+        "top": 136.02083854618525,
+        "right": 266.25,
+        "bottom": 149.02083919766125,
+        "width": 250.25,
+        "height": 13.000000651476
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "NEUE WELT",
+      "rect": {
+        "left": 28,
+        "top": 189.18753585166965,
+        "right": 102.74999999999999,
+        "bottom": 204.35420327839162,
+        "width": 74.74999999999999,
+        "height": 15.166667426721972
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Sonnenkrone",
+      "rect": {
+        "left": 28,
+        "top": 212.35420367929993,
+        "right": 108.16666666666666,
+        "bottom": 227.5208711060219,
+        "width": 80.16666666666666,
+        "height": 15.166667426721972
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "NEUE OPTIK IM SHOP",
+      "rect": {
+        "left": 28,
+        "top": 261.5208677236189,
+        "right": 163.95833333333331,
+        "bottom": 276.68753515034086,
+        "width": 135.95833333333331,
+        "height": 15.166667426721972
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Prismaflut",
+      "rect": {
+        "left": 28,
+        "top": 284.6875355512492,
+        "right": 91.91666666666666,
+        "bottom": 299.85420297797117,
+        "width": 63.91666666666666,
+        "height": 15.166667426721972
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Jetzt zum Kauf verfuegbar",
+      "rect": {
+        "left": 28,
+        "top": 306.85420332876595,
+        "right": 195.37499999999997,
+        "bottom": 322.02087075548786,
+        "width": 167.37499999999997,
+        "height": 15.166667426721915
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "ERFOLG FREIGESCHALTET",
+      "rect": {
+        "left": 28,
+        "top": 356.0208444849002,
+        "right": 195.91666666666666,
+        "bottom": 371.18751191162215,
+        "width": 167.91666666666666,
+        "height": 15.166667426721972
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Die erste Jagd",
+      "rect": {
+        "left": 28,
+        "top": 379.18751231253043,
+        "right": 117.91666666666666,
+        "bottom": 394.3541797392524,
+        "width": 89.91666666666666,
+        "height": 15.166667426721972
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "20 Coins in der Gesamtsumme enthalten",
+      "rect": {
+        "left": 28,
+        "top": 401.3541800900472,
+        "right": 282.0416666666667,
+        "bottom": 416.52084751676915,
+        "width": 254.04166666666669,
+        "height": 15.166667426721972
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "ERFOLG FREIGESCHALTET",
+      "rect": {
+        "left": 28,
+        "top": 450.5208543068927,
+        "right": 195.91666666666666,
+        "bottom": 465.6875217336147,
+        "width": 167.91666666666666,
+        "height": 15.166667426721972
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Im Flow",
+      "rect": {
+        "left": 28,
+        "top": 473.68752213452296,
+        "right": 77.29166666666666,
+        "bottom": 488.85418956124494,
+        "width": 49.29166666666666,
+        "height": 15.166667426721972
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "20 Coins in der Gesamtsumme enthalten",
+      "rect": {
+        "left": 28,
+        "top": 495.8541899120397,
+        "right": 282.0416666666667,
+        "bottom": 511.0208573387617,
+        "width": 254.04166666666669,
+        "height": 15.166667426721972
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "ERFOLG FREIGESCHALTET",
+      "rect": {
+        "left": 28,
+        "top": 545.0208641288853,
+        "right": 195.91666666666666,
+        "bottom": 560.1875315556073,
+        "width": 167.91666666666666,
+        "height": 15.166667426722029
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Unaufhaltsam",
+      "rect": {
+        "left": 28,
+        "top": 568.1875319565155,
+        "right": 114.66666666666666,
+        "bottom": 583.3541993832375,
+        "width": 86.66666666666666,
+        "height": 15.166667426722029
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "35 Coins in der Gesamtsumme enthalten",
+      "rect": {
+        "left": 28,
+        "top": 590.3541997340322,
+        "right": 282.0416666666667,
+        "bottom": 605.5208671607543,
+        "width": 254.04166666666669,
+        "height": 15.166667426722029
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "ERFOLG FREIGESCHALTET",
+      "rect": {
+        "left": 28,
+        "top": 639.5208739508778,
+        "right": 195.91666666666666,
+        "bottom": 654.6875413775998,
+        "width": 167.91666666666666,
+        "height": 15.166667426722029
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Trance",
+      "rect": {
+        "left": 28,
+        "top": 662.687541778508,
+        "right": 69.70833333333331,
+        "bottom": 677.8542092052301,
+        "width": 41.708333333333314,
+        "height": 15.166667426722029
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "50 Coins in der Gesamtsumme enthalten",
+      "rect": {
+        "left": 28,
+        "top": 684.8542095560248,
+        "right": 282.0416666666667,
+        "bottom": 696.2291999535397,
+        "width": 254.04166666666669,
+        "height": 11.374990397514921
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Weitere Details · nach oben wischen",
+      "rect": {
+        "left": 16,
+        "top": 701.2292002041074,
+        "right": 195.83333333333331,
+        "bottom": 713.687534161772,
+        "width": 179.83333333333331,
+        "height": 12.458333957664536
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "NOCHMAL",
+      "rect": {
+        "left": 158.16666666666666,
+        "top": 735.2917171698896,
+        "right": 231.83333333333331,
+        "bottom": 753.1667180656691,
+        "width": 73.66666666666666,
+        "height": 17.87500089577952
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "ZUM MENUE",
+      "rect": {
+        "left": 150.85416666666666,
+        "top": 787.2917197757936,
+        "right": 239.14583333333331,
+        "bottom": 805.166720671573,
+        "width": 88.29166666666666,
+        "height": 17.875000895779408
+      }
+    }
+  ],
+  "buttons": [
+    {
+      "scene": "Menu",
+      "label": "NOCHMAL",
+      "enabled": true,
+      "rect": {
+        "left": 16.000000000000004,
+        "top": 722.2292165152816,
+        "right": 373.99999999999994,
+        "bottom": 766.2292187202771,
+        "width": 357.99999999999994,
+        "height": 44.00000220499555
+      }
+    },
+    {
+      "scene": "Menu",
+      "label": "ZUM MENUE",
+      "enabled": true,
+      "rect": {
+        "left": 16.000000000000004,
+        "top": 774.2292191211856,
+        "right": 373.99999999999994,
+        "bottom": 818.2292213261811,
+        "width": 357.99999999999994,
+        "height": 44.00000220499555
+      }
+    }
+  ],
+  "images": [
+    {
+      "scene": "Menu",
+      "texture": "world-sphere-0-1",
+      "frame": 0,
+      "rect": {
+        "left": 13.487498346964518,
+        "top": 186.34792440158674,
+        "right": 111.31249834696452,
+        "bottom": 284.17292930394353,
+        "width": 97.825,
+        "height": 97.8250049023568
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "world-sphere-0-1",
+      "frame": 0,
+      "rect": {
+        "left": 303.1437433878581,
+        "top": 592.4246272873329,
+        "right": 352.05624338785805,
+        "bottom": 641.3371297385114,
+        "width": 48.912499999999966,
+        "height": 48.91250245117851
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": -175.5,
+        "top": -69.22396340602391,
+        "right": 565.5,
+        "bottom": 620.9406545138979,
+        "width": 741,
+        "height": 690.1646179199219
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": -105.25986870080924,
+        "top": -13.35880476177119,
+        "right": 245.74013129919072,
+        "bottom": 337.64121282808037,
+        "width": 350.99999999999994,
+        "height": 351.00001758985155
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": 101.44013129919075,
+        "top": 74.29369963080563,
+        "right": 569.4401312991907,
+        "bottom": 542.2937230839411,
+        "width": 468,
+        "height": 468.0000234531355
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": -175.4598687008092,
+        "top": 243.14204142572618,
+        "right": 409.5401312991907,
+        "bottom": 828.1420707421454,
+        "width": 584.9999999999999,
+        "height": 585.0000293164192
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": 81.94013129919072,
+        "top": 507.89247135997266,
+        "right": 510.94013129919074,
+        "bottom": 936.8924928586802,
+        "width": 429,
+        "height": 429.0000214987075
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-vignette",
+      "frame": "__BASE",
+      "rect": {
+        "left": -97.5,
+        "top": -28.626044704852042,
+        "right": 487.49999999999994,
+        "bottom": 905.126085422101,
+        "width": 585,
+        "height": 933.752130126953
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-pixel",
+      "frame": "__BASE",
+      "rect": {
+        "left": 27.99999936421712,
+        "top": -233.81248788948824,
+        "right": 361.9999993642171,
+        "bottom": -227.81248758880702,
+        "width": 334,
+        "height": 6.000000300681222
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-pixel",
+      "frame": "__BASE",
+      "rect": {
+        "left": 27.99999936421712,
+        "top": -233.81248788948824,
+        "right": 27.99999936421712,
+        "bottom": -227.81248758880702,
+        "width": 0,
+        "height": 6.000000300681222
+      }
+    }
+  ],
+  "planetTextures": [
+    {
+      "key": "world-sphere-0-1",
+      "width": 128,
+      "height": 128
+    }
+  ],
+  "updateListeners": [
+    {
+      "scene": "Menu",
+      "count": 4
+    }
+  ],
+  "domCanvases": [
+    {
+      "x": 0,
+      "y": 32,
+      "width": 390,
+      "height": 811.9583740234375,
+      "top": 32,
+      "right": 390,
+      "bottom": 843.9583740234375,
+      "left": 0
+    }
+  ]
+}

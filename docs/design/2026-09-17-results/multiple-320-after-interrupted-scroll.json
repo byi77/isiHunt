@@ -1,0 +1,388 @@
+{
+  "capturedAt": "2026-09-17T07:29:21.133Z",
+  "viewport": {
+    "width": 320,
+    "height": 568
+  },
+  "canvas": {
+    "x": 9,
+    "y": 32,
+    "width": 301.5,
+    "height": 536,
+    "top": 32,
+    "right": 310.5,
+    "bottom": 568,
+    "left": 9
+  },
+  "scenes": [
+    "Menu"
+  ],
+  "performance": [],
+  "texts": [
+    {
+      "scene": "Menu",
+      "text": "RUN BEENDET",
+      "rect": {
+        "left": 25,
+        "top": 46,
+        "right": 102.8875,
+        "bottom": 59.4,
+        "width": 77.8875,
+        "height": 13.399999999999999
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "123.456.789",
+      "rect": {
+        "left": 25,
+        "top": 65.4,
+        "right": 277.50625,
+        "bottom": 111.4625,
+        "width": 252.50625000000002,
+        "height": 46.0625
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "NEUER BESTWERT",
+      "rect": {
+        "left": 25,
+        "top": 115.4625,
+        "right": 141.83125,
+        "bottom": 130.95625,
+        "width": 116.83125000000001,
+        "height": 15.493750000000006
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Level 50 · 42 Relikte · beste Kette 28 · max x3",
+      "rect": {
+        "left": 25,
+        "top": 135.95625,
+        "right": 274.99375,
+        "bottom": 148.9375,
+        "width": 249.99374999999998,
+        "height": 12.981249999999989
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "+680 XP · +1.500 Coins",
+      "rect": {
+        "left": 37,
+        "top": 172.9375057220459,
+        "right": 189.84375,
+        "bottom": 188.4312557220459,
+        "width": 152.84375,
+        "height": 15.493750000000006
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Kontostand: 123.456 Coins",
+      "rect": {
+        "left": 37,
+        "top": 214.4312557220459,
+        "right": 202.825,
+        "bottom": 229.50625572204592,
+        "width": 165.825,
+        "height": 15.075000000000017
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "0 / 5493 XP bis zum naechsten Level",
+      "rect": {
+        "left": 37,
+        "top": 236.5062557220459,
+        "right": 266.89375,
+        "bottom": 251.58125572204588,
+        "width": 229.89375,
+        "height": 15.074999999999989
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "LEVEL-UP · Stufe 50",
+      "rect": {
+        "left": 37,
+        "top": 285.58125572204597,
+        "right": 168.4875,
+        "bottom": 301.07500572204594,
+        "width": 131.4875,
+        "height": 15.493749999999977
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "49 Stufen aufgestiegen",
+      "rect": {
+        "left": 37,
+        "top": 309.0750057220459,
+        "right": 180.63125,
+        "bottom": 324.1500057220459,
+        "width": 143.63125,
+        "height": 15.074999999999989
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "980 Level-Coins in der Gesamtsumme enthalten",
+      "rect": {
+        "left": 37,
+        "top": 331.15000572204593,
+        "right": 271.91875000000005,
+        "bottom": 361.3000057220459,
+        "width": 234.91875000000005,
+        "height": 30.149999999999977
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "+49 Talentpunkte",
+      "rect": {
+        "left": 37,
+        "top": 368.30000572204597,
+        "right": 145.45625,
+        "bottom": 383.37500572204596,
+        "width": 108.45625000000001,
+        "height": 15.074999999999989
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "NEUE WELT",
+      "rect": {
+        "left": 37,
+        "top": 417.37499732971196,
+        "right": 111.95625,
+        "bottom": 420.00000000000006,
+        "width": 74.95625,
+        "height": 2.6250026702880973
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "Weitere Details · nach oben wischen",
+      "rect": {
+        "left": 25,
+        "top": 425.00000000000006,
+        "right": 204.64375,
+        "bottom": 436.725,
+        "width": 179.64375,
+        "height": 11.724999999999966
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "NOCHMAL",
+      "rect": {
+        "left": 122.9,
+        "top": 458.99684982299806,
+        "right": 196.6,
+        "bottom": 477.0030998229981,
+        "width": 73.69999999999999,
+        "height": 18.006250000000023
+      }
+    },
+    {
+      "scene": "Menu",
+      "text": "ZUM MENUE",
+      "rect": {
+        "left": 115.571875,
+        "top": 510.99688949584964,
+        "right": 203.928125,
+        "bottom": 529.0031394958496,
+        "width": 88.35624999999999,
+        "height": 18.006249999999966
+      }
+    }
+  ],
+  "buttons": [
+    {
+      "scene": "Menu",
+      "label": "NOCHMAL",
+      "enabled": true,
+      "rect": {
+        "left": 25,
+        "top": 445.99997482299807,
+        "right": 294.5,
+        "bottom": 489.99997482299807,
+        "width": 269.5,
+        "height": 44
+      }
+    },
+    {
+      "scene": "Menu",
+      "label": "ZUM MENUE",
+      "enabled": true,
+      "rect": {
+        "left": 25,
+        "top": 498.0000144958496,
+        "right": 294.5,
+        "bottom": 542.0000144958497,
+        "width": 269.5,
+        "height": 44.00000000000006
+      }
+    }
+  ],
+  "images": [
+    {
+      "scene": "Menu",
+      "texture": "world-sphere-0-1",
+      "frame": 0,
+      "rect": {
+        "left": 19.426873722076415,
+        "top": 128.186875,
+        "right": 95.05312372207642,
+        "bottom": 203.813125,
+        "width": 75.62625,
+        "height": 75.62625000000003
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "world-sphere-0-1",
+      "frame": 0,
+      "rect": {
+        "left": 243.3534323883057,
+        "top": 399.01342727661137,
+        "right": 281.16655738830565,
+        "bottom": 436.8265522766113,
+        "width": 37.81312499999996,
+        "height": 37.81312499999996
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": -126.67500000000001,
+        "top": -35,
+        "right": 446.175,
+        "bottom": 420.6,
+        "width": 572.85,
+        "height": 455.6
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": -72.40241505091196,
+        "top": -17.91736338202336,
+        "right": 198.94758494908805,
+        "bottom": 253.43263661797664,
+        "width": 271.35,
+        "height": 271.35
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": 87.39258494908808,
+        "top": 33.337636617976656,
+        "right": 449.19258494908803,
+        "bottom": 395.1376366179766,
+        "width": 361.79999999999995,
+        "height": 361.79999999999995
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": -126.67241505091195,
+        "top": 138.1926366179767,
+        "right": 325.5775849490881,
+        "bottom": 590.4426366179766,
+        "width": 452.25,
+        "height": 452.24999999999994
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-glow",
+      "frame": "__BASE",
+      "rect": {
+        "left": 72.31758494908804,
+        "top": 321.7726366179766,
+        "right": 403.9675849490881,
+        "bottom": 653.4226366179767,
+        "width": 331.6500000000001,
+        "height": 331.65000000000003
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-vignette",
+      "frame": "__BASE",
+      "rect": {
+        "left": -66.375,
+        "top": -8.200000000000003,
+        "right": 385.875,
+        "bottom": 608.2,
+        "width": 452.25,
+        "height": 616.4000000000001
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-pixel",
+      "frame": "__BASE",
+      "rect": {
+        "left": 36.99999899864197,
+        "top": 196.4312604904175,
+        "right": 282.49999899864196,
+        "bottom": 202.4312604904175,
+        "width": 245.5,
+        "height": 6
+      }
+    },
+    {
+      "scene": "Menu",
+      "texture": "tex-pixel",
+      "frame": "__BASE",
+      "rect": {
+        "left": 36.99999899864197,
+        "top": 196.4312604904175,
+        "right": 36.99999899864197,
+        "bottom": 202.4312604904175,
+        "width": 0,
+        "height": 6
+      }
+    }
+  ],
+  "planetTextures": [
+    {
+      "key": "world-sphere-0-1",
+      "width": 128,
+      "height": 128
+    }
+  ],
+  "updateListeners": [
+    {
+      "scene": "Menu",
+      "count": 4
+    }
+  ],
+  "domCanvases": [
+    {
+      "x": 9,
+      "y": 32,
+      "width": 301.5,
+      "height": 536,
+      "top": 32,
+      "right": 310.5,
+      "bottom": 568,
+      "left": 9
+    }
+  ]
+}

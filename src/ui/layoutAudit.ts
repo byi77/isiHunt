@@ -57,16 +57,29 @@ export function installLayoutAudit(game: Phaser.Game): void {
         const bottom = canvas.top + Math.max(...corners.map((p) => p.y)) * sy;
         return { left, top, right, bottom, width: right - left, height: bottom - top };
       };
-      const walk = (objects: Phaser.GameObjects.GameObject[], inheritedAlpha = 1): void => {
+      const walk = (
+        objects: Phaser.GameObjects.GameObject[],
+        inheritedAlpha = 1,
+        clip?: Phaser.Geom.Rectangle,
+      ): void => {
         for (const object of objects) {
           const item = object as Phaser.GameObjects.Container;
           if (!item.visible || !item.active || inheritedAlpha * item.alpha < 0.05) continue;
+          // Die View liefert dieselbe Weltgeometrie wie ihre rechteckige Maske.
+          const ownClip = item.data?.get('layoutClipRect') as Phaser.Geom.Rectangle | undefined;
+          const effectiveClip =
+            ownClip && clip ? Phaser.Geom.Rectangle.Intersection(ownClip, clip) : (ownClip ?? clip);
           if (object instanceof Phaser.GameObjects.Text) {
-            texts.push({
-              scene: scene.scene.key,
-              text: object.text,
-              rect: screenBox(object.getBounds(), object.scrollFactorX, object.scrollFactorY),
-            });
+            const fullBounds = object.getBounds();
+            const bounds = effectiveClip
+              ? Phaser.Geom.Rectangle.Intersection(fullBounds, effectiveClip)
+              : fullBounds;
+            if (bounds.width > 0 && bounds.height > 0)
+              texts.push({
+                scene: scene.scene.key,
+                text: object.text,
+                rect: screenBox(bounds, object.scrollFactorX, object.scrollFactorY),
+              });
           }
           if (object instanceof Phaser.GameObjects.Image && object.depth >= 0) {
             images.push({
@@ -123,7 +136,7 @@ export function installLayoutAudit(game: Phaser.Game): void {
             });
           }
           if (object instanceof Phaser.GameObjects.Container)
-            walk(object.list, inheritedAlpha * object.alpha);
+            walk(object.list, inheritedAlpha * object.alpha, effectiveClip);
         }
       };
       walk(scene.children.list);

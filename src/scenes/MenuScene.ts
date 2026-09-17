@@ -80,6 +80,13 @@ export class MenuScene extends Phaser.Scene {
   }
 
   create(): void {
+    const resultPreview = new URLSearchParams(window.location.search).get('resultPreview');
+    if (DEBUG_ENABLED && resultPreview !== null) {
+      void import('@/ui/resultPreview').then(({ installResultPreview }) => {
+        if (this.scene.isActive()) installResultPreview(this, resultPreview);
+      });
+      return;
+    }
     SafeAreaSystem.showMenuTicker();
     const save = SaveSystem.load();
     // Das Hauptmenü bleibt auch ohne Name, Konto oder Auth-Session erreichbar.

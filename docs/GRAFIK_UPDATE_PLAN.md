@@ -2,8 +2,10 @@
 
 Stand: 17. September 2026
 
-Status: Punkt 6 lokal umgesetzt und geprüft: räumliche Sammel-Effekte mit festem Budget.
-Punkt 5 ist lokal umgesetzt und geprüft; seine noch uncommitteten Änderungen bleiben erhalten.
+Status: Punkt 8 (Ergebnisse und Belohnungen) ist lokal umgesetzt und im Browser geprueft.
+Punkt 7 (3D-Hangar) bleibt auf Wunsch der Reihenfolge nach offen.
+Punkte 5 und 6 sind mit `953ae9e` committed (v0.1.320).
+Arbeitsbericht: [Punkt 8](design/2026-09-17-results/README.md).
 Punkt 4 ist mit `d2d0d23` committed (v0.1.319).
 Punkt 3 ist mit `9f12730` committed. Die Serienbeweglichkeit aus `cc1c6dc` bleibt erhalten.
 Punkt 2 mit Commit `2350294`
@@ -11,7 +13,8 @@ als v0.1.316 live bestätigt. Der konkrete Prüfumfang und verbleibende Gerätep
 stehen im [Arbeitsbericht zu den Welten](design/2026-09-15-worlds/README.md).
 
 Aktueller Arbeitsstand mit Bildern, Messungen und technischen Befunden:
-[Umsetzung Punkt 6](design/2026-09-16-collection/README.md).
+[Umsetzung Punkt 8](design/2026-09-17-results/README.md).
+Vorherige Sammel-Etappe: [Punkt 6](design/2026-09-16-collection/README.md).
 Vorherige HUD-Etappe: [Punkt 5](design/2026-09-16-hud/README.md).
 Vorherige Schiffs-Etappe: [Punkt 4](design/2026-09-16-ships/README.md).
 Vorherige Welten-Etappe: [Punkt 3](design/2026-09-15-worlds/README.md).
@@ -462,7 +465,7 @@ Ergebnis nicht vorweg.
 - [x] Schritt 5: Spielanzeige lokal umgesetzt und angesehen; Geräte-/Langzeitprüfung offen.
 - [x] Schritt 6: Sammel-Effekte lokal umgesetzt und angesehen; Gerätetests offen.
 - [ ] Schritt 7: 3D-Hangar umgesetzt und angesehen.
-- [ ] Schritt 8: Ergebnisse und Belohnungen umgesetzt und angesehen.
+- [x] Schritt 8: Ergebnisse und Belohnungen lokal umgesetzt und angesehen; Geraete-/Live-Netzwerkpruefung offen.
 - [ ] Abschließende Geräte-, Funktions- und Performanceprüfung abgeschlossen.
 
 ### Historischer Stand: 14. September 2026

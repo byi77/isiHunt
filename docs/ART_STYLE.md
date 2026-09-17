@@ -1,5 +1,10 @@
 # Art Style Guide — isiHunt
 
+Grafik-Update Punkt 8: grosse feste Punktzahl, eigener Rekordhinweis, dunkle
+Belohnungskarten mit goldenen Ueberschriften. XP-Fortschritt erscheint sofort;
+220 ms Deckkraft-Einblendung ohne Skalierung, bei reduzierter Bewegung statisch.
+Details scrollen unter einer Maske; die goldene Hauptaktion bleibt fest erreichbar.
+
 **Grafik-Update Punkt 6, 17.09.2026:** Kurze, gebogene Lichtsplitter zum Schiff
 und geneigte Energieringe ersetzen Explosion und Vollbildblitz beim Fang.
 Normale Fänge bleiben klein; epische/legendäre Fänge bekommen zwei Ringe und

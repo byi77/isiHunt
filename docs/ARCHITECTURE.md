@@ -1,5 +1,13 @@
 # Architektur — isiHunt
 
+Grafik-Update Punkt 8: `ui/ResultView.ts` zeigt einen festen Ergebniskopf und
+44-CSS-Pixel-Aktionen um einen maskierten Detailbereich. Die View baut bei Resize
+nur Darstellung neu auf und entfernt Input-/Resize-Listener beim Shutdown.
+`ui/resultContent.ts` bereitet Solo-, Tageslauf- und Duellwerte ohne Mutationen auf;
+ResultScene behaelt die bestehenden einmaligen Sync-Aufrufe. `ui/resultPreview.ts`
+bietet ausschliesslich im Dev-Build pruefbare Daten ohne Spielstand/Netzwerk.
+`layoutAudit` beruecksichtigt fuer Texte deklarierte rechteckige Maskengrenzen.
+
 **Stand:** 2026-08-30 · gilt fuer den Stand aus `package.json`/`version.json`
 
 Dieses Dokument beschreibt, **wie** der Code aufgebaut ist und **warum**.

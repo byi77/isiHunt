@@ -9,6 +9,16 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Grafik-Update Punkt 8
+
+- Ergebnisse fuer Solo, Tageslauf und Duelle mit grosser Punktzahl, eigenen
+  Belohnungskarten und fest erreichbaren, mindestens 44 CSS-Pixel hohen Aktionen.
+- Vollstaendige Freischaltungen im scrollbar maskierten Detailbereich statt
+  gekuerzter Listen; lange Namen und Texte bestimmen ihre Kartenhoehe.
+- Coin-Gesamtsumme, XP und Fortschritt klar getrennt von enthaltenen Boni;
+  Shop-Verfuegbarkeit und nur lokale Bot-Praemien bleiben eindeutig bezeichnet.
+- Kurze Einblendung ohne Textskalierung; statisch bei reduzierter Bewegung.
+
 ### Grafik-Update Punkt 6
 
 - Gekrümmte Lichtsplitter zum Schiff und geneigte Energieringe beim Fang;

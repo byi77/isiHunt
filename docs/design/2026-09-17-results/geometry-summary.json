@@ -1,0 +1,134 @@
+[
+  {
+    "file": "actual-result-320.json",
+    "viewport": {
+      "width": 320,
+      "height": 568
+    },
+    "visibleTexts": 14,
+    "buttons": 2,
+    "minButtonHeight": 44,
+    "errors": []
+  },
+  {
+    "file": "bot-320.json",
+    "viewport": {
+      "width": 320,
+      "height": 568
+    },
+    "visibleTexts": 15,
+    "buttons": 2,
+    "minButtonHeight": 44,
+    "errors": []
+  },
+  {
+    "file": "daily-430.json",
+    "viewport": {
+      "width": 430,
+      "height": 932
+    },
+    "visibleTexts": 12,
+    "buttons": 1,
+    "minButtonHeight": 44.00038585803418,
+    "errors": []
+  },
+  {
+    "file": "daily-resize-320.json",
+    "viewport": {
+      "width": 320,
+      "height": 568
+    },
+    "visibleTexts": 12,
+    "buttons": 1,
+    "minButtonHeight": 44.000273785942454,
+    "errors": []
+  },
+  {
+    "file": "duel-390-top.json",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "visibleTexts": 21,
+    "buttons": 2,
+    "minButtonHeight": 44.00000220499555,
+    "errors": []
+  },
+  {
+    "file": "level-430.json",
+    "viewport": {
+      "width": 430,
+      "height": 932
+    },
+    "visibleTexts": 23,
+    "buttons": 2,
+    "minButtonHeight": 44.00038585803418,
+    "errors": []
+  },
+  {
+    "file": "multiple-320-after-interrupted-scroll.json",
+    "viewport": {
+      "width": 320,
+      "height": 568
+    },
+    "visibleTexts": 15,
+    "buttons": 2,
+    "minButtonHeight": 44,
+    "errors": []
+  },
+  {
+    "file": "multiple-320-top.json",
+    "viewport": {
+      "width": 320,
+      "height": 568
+    },
+    "visibleTexts": 15,
+    "buttons": 2,
+    "minButtonHeight": 44,
+    "errors": []
+  },
+  {
+    "file": "multiple-390-bottom.json",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "visibleTexts": 26,
+    "buttons": 2,
+    "minButtonHeight": 44.00000220499555,
+    "errors": []
+  },
+  {
+    "file": "multiple-390-middle.json",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "visibleTexts": 24,
+    "buttons": 2,
+    "minButtonHeight": 44.00000220499555,
+    "errors": []
+  },
+  {
+    "file": "normal-320.json",
+    "viewport": {
+      "width": 320,
+      "height": 568
+    },
+    "visibleTexts": 14,
+    "buttons": 2,
+    "minButtonHeight": 44,
+    "errors": []
+  },
+  {
+    "file": "record-390.json",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "visibleTexts": 20,
+    "buttons": 2,
+    "minButtonHeight": 44.00000220499555,
+    "errors": []
+  }
+]
