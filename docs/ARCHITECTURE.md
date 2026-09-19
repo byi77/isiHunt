@@ -1204,13 +1204,13 @@ wartet, laeuft sonst in einen Timeout. Der Haken wird in
 ausgelieferten Bundle ist der Zweig wegoptimiert, die Anmeldepflicht laesst
 sich also nicht per URL umgehen.
 
-| Skript                 | Haken | Warum                                                     |
-| ---------------------- | ----- | --------------------------------------------------------- |
-| `playtest.mjs`         | ja    | wartet in fast jeder Suite auf `Menu`                      |
-| `performance-check.mjs`| ja    | wartet auf `Menu`, bevor es `Game` startet                 |
-| `production-check.mjs` | nein  | prueft Canvas, Titel, Version — soll den echten Stand sehen |
-| `smoke-test.mjs`       | nein  | prueft nur auf Konsolenfehler                              |
-| `duel2g-playtest.mjs`  | nein  | behandelt `Account` bereits als moeglichen Startbildschirm  |
+| Skript                  | Haken | Warum                                                       |
+| ----------------------- | ----- | ----------------------------------------------------------- |
+| `playtest.mjs`          | ja    | wartet in fast jeder Suite auf `Menu`                       |
+| `performance-check.mjs` | ja    | wartet auf `Menu`, bevor es `Game` startet                  |
+| `production-check.mjs`  | nein  | prueft Canvas, Titel, Version — soll den echten Stand sehen |
+| `smoke-test.mjs`        | nein  | prueft nur auf Konsolenfehler                               |
+| `duel2g-playtest.mjs`   | nein  | behandelt `Account` bereits als moeglichen Startbildschirm  |
 
 Das ist die Stelle, an der eine neue Einstiegsbedingung zuerst weh tut: Die
 Unit-Tests bleiben gruen, weil sie `BootScene` gar nicht laden — beim Umbau
@@ -1593,9 +1593,9 @@ genau fuer das gebaut, was _vor_ einem Fehler geschah.
 
 Dieselbe Falle ist zweimal zugeschnappt:
 
-| Wann       | Ereignis             | Folge                                                                                                     |
-| ---------- | -------------------- | --------------------------------------------------------------------------------------------------------- |
-| 2026-08-19 | `TimerChanged`       | App-Start, Login und Cloud-Fehler aus jedem waehrend eines Runs erzeugten Bericht verdraengt              |
+| Wann       | Ereignis             | Folge                                                                                                      |
+| ---------- | -------------------- | ---------------------------------------------------------------------------------------------------------- |
+| 2026-08-19 | `TimerChanged`       | App-Start, Login und Cloud-Fehler aus jedem waehrend eines Runs erzeugten Bericht verdraengt               |
 | 2026-09-19 | `ComboWindowChanged` | Ein fehlender Bestwert war nicht diagnostizierbar: Der Bericht reichte nur 13 s vor das Rundenende zurueck |
 
 Das zweite Mal passierte, weil `ComboWindowChanged` nach dem ersten Befund
@@ -1618,6 +1618,42 @@ Eintrag ist keine. Ebenso die fachliche Ablehnung durch `submit_best_score`:
 Sie steckt in einer **erfolgreichen** HTTP-Antwort, und `withTimeout` hatte
 dafuer bereits `ok` protokolliert — im Bericht war ein abgelehnter Bestwert
 dadurch nicht von einem angenommenen zu unterscheiden.
+
+## 9.8 `create or replace function` verwirft die Rechte
+
+PostgreSQL vergibt einer ersetzten Funktion wieder die Standardrechte. Jedes
+frueher gesetzte `grant` und `revoke` ist danach weg. Wer eine Funktion nur
+inhaltlich anfasst, veraendert damit unbeabsichtigt, wer sie aufrufen darf —
+und das faellt nirgends auf, weil die Migration sauber durchlaeuft.
+
+**Was das im September 2026 gekostet hat.** Phase 2.52 ersetzte
+`submit_progress_event`, um die Abschlusspraemie einzubauen. Damit war das
+`revoke ... from authenticated` aus Phase 2.28 aufgehoben, und die eigene
+Rechtezeile am Ende der Migration entzog der internen Fassung den Zugriff, den
+ihr oeffentlicher Wrapper braucht. Ergebnis: **Vier Tage lang kam kein
+einziger Run mehr im Konto an** — XP, Coins und Level liefen nur noch lokal.
+
+Gemeldet wurde etwas ganz anderes: "Die Rangliste uebernimmt keine Rekorde."
+Denn ohne Laufereignis findet der Trigger
+`enforce_authenticated_score_evidence` (Phase 2.31) keinen Beleg und lehnt
+jeden Bestwert ab. Die Ursache lag zwei Ebenen unter dem Symptom.
+
+**Warum es so lange gedauert hat.** Drei Diagnoserunden gingen fuer Dinge
+drauf, die es nicht waren: die Plausibilitaetsdecke (falsch gerechnet mit dem
+Referenzwert von 133 Faengen statt der echten ~245), der Cooldown aus Phase
+2.29 (alle Abstaende lagen darueber), eine vermutete Signaturaenderung (der
+11-Parameter-Wrapper ist Absicht, kein Fehler). Entschieden hat am Ende eine
+einzige Abfrage auf `profile_progress_events`: Das juengste Ereignis war vier
+Tage alt, obwohl jede serverseitige Pruefung die neuen Runs durchgelassen
+haette.
+
+**Die Lehre ist nicht "mehr aufpassen".** Ein Gate, das jedes
+`create or replace` ohne begleitende Rechtezeile meldet, wurde gebaut und
+wieder verworfen: Es fand 29 Treffer, davon 28 historisch und folgenlos. Ein
+Gate, das bei jedem Lauf 29-mal schreit, wird ignoriert — das ist schlechter
+als keins. Was bleibt, ist die Regel: **Wer eine Funktion ersetzt, nimmt ihre
+`grant`/`revoke`-Zeilen mit in dieselbe Migration.** Die Rechtezeilen gehoeren
+zur Funktionsdefinition, nicht zur Migration, die sie einmal eingefuehrt hat.
 
 ## 10. Grenzen der aktuellen Architektur
 

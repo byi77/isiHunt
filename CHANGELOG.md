@@ -62,6 +62,23 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Seit v0.1.339 kam kein Run mehr im Konto an.** Die Praemien-Migration
+  ersetzte `submit_progress_event`, und weil `create or replace` in PostgreSQL
+  die Ausfuehrungsrechte auf den Standard zurueckstellt, war das
+  `revoke ... from authenticated` aus Phase 2.28 aufgehoben und die
+  anschliessende Rechtezeile entzog der Funktion den Zugriff, den ihr
+  oeffentlicher Wrapper braucht. Betroffen war nicht nur die Bestenliste,
+  sondern der gesamte Serverfortschritt: XP, Coins und Level liefen seither
+  nur noch lokal. Sichtbar wurde es erst an der Rangliste, weil der Trigger
+  `enforce_authenticated_score_evidence` ohne Laufereignis keinen Beleg findet
+  und jeden Bestwert mit "Bestwert braucht ein bestaetigtes Laufereignis"
+  ablehnt. Phase 2.53 stellt den Zustand von Phase 2.28 wieder her.
+- **Ein unzustellbarer Bestwert legte die ganze Warteschlange still.** Fehlte
+  der Laufbeleg, blieb der Wert liegen und wurde bei jedem Menuestart erneut
+  abgelehnt - und verdraengte dabei ueber den Vergleich "hoeherer Score
+  gewinnt" jeden spaeteren, niedrigeren Bestwert. Nach fuenf vergeblichen
+  Versuchen raeumt er jetzt das Feld: Ein Bestwert ist ersetzbar, eine tote
+  Warteschlange nicht.
 - **Ein Bestwert ging verloren, wenn der Fortschritts-Abgleich vorher warf.**
   Der Upload zur Bestenliste hing an `flush().then(...)`, ohne `catch` - und
   `flush()` kann werfen, weil `adoptProfileProgress()` dort ungeschuetzt

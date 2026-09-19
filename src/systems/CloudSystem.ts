@@ -84,6 +84,13 @@ interface PendingLeaderboardScore {
   durationMs: number;
   collected: Record<string, number>;
   recordedAt: string;
+  /**
+   * Wie oft dieser Bestwert schon am fehlenden Laufbeleg gescheitert ist.
+   *
+   * Aeltere Eintraege kennen das Feld nicht; `readPendingLeaderboardScore`
+   * liest es deshalb als 0. Siehe `BELEG_FEHLT`.
+   */
+  belegVersuche?: number;
 }
 
 const PENDING_LEADERBOARD_SCORE_PREFIX = 'isihunt.pending-leaderboard-score.v2.';
@@ -821,6 +828,30 @@ const PERMANENTE_BESTWERT_ABLEHNUNGEN = [
   'Ungueltiges Spielerprofil',
 ] as const;
 
+/**
+ * Ablehnungen, die sich von selbst erledigen koennen - also wiederholt
+ * werden, aber nicht ewig.
+ *
+ * "Bestwert braucht ein bestaetigtes Laufereignis" faellt, wenn das
+ * zugehoerige Laufereignis noch in der Outbox haengt: Der naechste
+ * erfolgreiche Abgleich liefert den Beleg nach, und derselbe Bestwert geht
+ * dann durch. Genau das ist im September 2026 schiefgelaufen - eine
+ * kaputte Rechtevergabe liess die Laufereignisse tagelang scheitern, und
+ * ein Bestwert von 128310 wurde bei jedem Menuestart erneut abgelehnt.
+ *
+ * Schlimmer als die Wiederholung war die Nebenwirkung: Ueber den Vergleich
+ * "hoeherer Score gewinnt" in `savePendingLeaderboardScore` verdraengte
+ * dieser eine Eintrag jeden spaeteren, niedrigeren Bestwert aus der
+ * Warteschlange. Ein einzelner unzustellbarer Wert legte die ganze
+ * Bestenliste still.
+ *
+ * Deshalb wird hier gezaehlt statt geraten: Nach `MAX_BELEG_VERSUCHE`
+ * vergeblichen Anlaeufen raeumt der Eintrag das Feld. Ein Bestwert ist
+ * ersetzbar - der naechste gute Run liefert einen neuen.
+ */
+const BELEG_FEHLT = 'Bestwert braucht ein bestaetigtes Laufereignis';
+const MAX_BELEG_VERSUCHE = 5;
+
 function istDauerhafteAblehnung(error: string): boolean {
   return PERMANENTE_BESTWERT_ABLEHNUNGEN.some((grund) => error.includes(grund));
 }
@@ -875,6 +906,19 @@ export async function submitScoreSafely(
       // ueber `savePendingLeaderboardScore` auch jeden spaeteren Bestwert mit
       // weniger Punkten aus der Warteschlange.
       clearPendingLeaderboardScore(playerId);
+    } else if (result.error.includes(BELEG_FEHLT)) {
+      const versuche = (readPendingLeaderboardScore(playerId)?.belegVersuche ?? 0) + 1;
+      if (versuche >= MAX_BELEG_VERSUCHE) {
+        DebugSystem.pushProtectedLogEntry({
+          timestamp: Date.now(),
+          kind: 'error',
+          label: 'cloud:Bestwert aufgegeben',
+          detail: `${versuche} Versuche ohne Laufbeleg, ${score} Punkte verworfen`,
+        });
+        clearPendingLeaderboardScore(playerId);
+      } else {
+        savePendingLeaderboardScore({ ...pending, belegVersuche: versuche });
+      }
     } else {
       savePendingLeaderboardScore(pending);
     }

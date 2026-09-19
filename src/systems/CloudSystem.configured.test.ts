@@ -355,6 +355,26 @@ describe('Bestwert: Ablehnung gehoert nicht in die Warteschlange', () => {
     expect(CloudSystem.hasPendingLeaderboardScore('spieler-id')).toBe(false);
   });
 
+  /**
+   * Der Fall vom September 2026: Eine kaputte Rechtevergabe liess die
+   * Laufereignisse tagelang scheitern. Der Bestwert wartete dann zurecht auf
+   * seinen Beleg - aber eben unbegrenzt, und verdraengte dabei jeden
+   * spaeteren, niedrigeren Wert. Nach einigen Versuchen muss er das Feld
+   * raeumen; ein Bestwert ist ersetzbar, eine tote Warteschlange nicht.
+   */
+  it('gibt einen Bestwert ohne Laufbeleg nach mehreren Versuchen auf', async () => {
+    antworteMit('Bestwert braucht ein bestaetigtes Laufereignis');
+
+    for (let i = 0; i < 4; i += 1) {
+      await einreichen(128_310);
+      expect(CloudSystem.hasPendingLeaderboardScore('spieler-id')).toBe(true);
+    }
+
+    // Der fuenfte Versuch raeumt auf.
+    await einreichen(128_310);
+    expect(CloudSystem.hasPendingLeaderboardScore('spieler-id')).toBe(false);
+  });
+
   it('laesst einen abgelehnten Score keinen spaeteren niedrigeren blockieren', async () => {
     antworteMit('Punktestand nicht plausibel');
     await einreichen(120_000);
