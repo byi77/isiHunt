@@ -58,19 +58,14 @@ import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { agilityForSeries, ScoreSystem, trailTierForSeries } from '@/systems/ScoreSystem';
 import { SpawnSystem } from '@/systems/SpawnSystem';
 import { CollectionEffects } from '@/ui/CollectionEffects';
+import { GameBackdrop } from '@/ui/GameBackdrop';
 import type { HudScene } from '@/scenes/HudScene';
 import { Depth } from '@/ui/depth';
 import { shipAuraAssetId, shipAuraIndex, shipHullTint, shipTint } from '@/config/shop';
 import { threeDAssetForId } from '@/ui/egoAssets';
 import { planetTextureForVariant, playerTextureForShape } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
-import {
-  createAmbientMotes,
-  createDriftLayers,
-  createVignette,
-  createWorldBackdrop,
-  floatingScore,
-} from '@/ui/widgets';
+import { createVignette, floatingScore } from '@/ui/widgets';
 import type { ActiveTalentLine, ChallengeState, RunMode } from '@/types';
 
 export interface GameSceneData {
@@ -133,6 +128,7 @@ export class GameScene extends Phaser.Scene {
   private stats!: PlayerStats;
   private player!: Player;
   private collectionEffects!: CollectionEffects;
+  private backdrop!: GameBackdrop;
   private input_!: InputController;
   private spawner!: SpawnSystem;
   private scoring!: ScoreSystem;
@@ -233,17 +229,7 @@ export class GameScene extends Phaser.Scene {
       GAME_HEIGHT - PLAYFIELD_PADDING_TOP - PLAYFIELD_PADDING_BOTTOM,
     );
 
-    createWorldBackdrop(
-      this,
-      GAME_WIDTH,
-      GAME_HEIGHT,
-      this.world.bgTop,
-      this.world.bgBottom,
-      this.world.accent,
-      this.world.spaceVariant,
-    );
-    createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, this.world.spaceVariant);
-    createAmbientMotes(this, GAME_WIDTH, GAME_HEIGHT, this.world.accent);
+    this.backdrop = new GameBackdrop(this, GAME_WIDTH, GAME_HEIGHT, this.world);
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
 
     this.player = new Player(
@@ -396,6 +382,7 @@ export class GameScene extends Phaser.Scene {
   };
 
   update(_time: number, delta: number): void {
+    this.backdrop.update(delta, this.player.x, this.player.y);
     this.collectionEffects.update(delta);
     if (this.phase === 'ended') return;
 
@@ -1060,6 +1047,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private cleanup(): void {
+    this.backdrop?.destroy();
     this.collectionEffects?.destroy();
     if (this.liveBroadcastTimer) {
       this.liveBroadcastTimer.remove();

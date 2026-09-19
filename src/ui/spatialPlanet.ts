@@ -3,10 +3,9 @@ import { PLANET_RENDER, worldVisual } from '@/config/worldVisuals';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import { planetFrame } from './planetSurface';
 
-function atlas(scene: Phaser.Scene, variant: number, frames: number): string {
-  const key = `world-sphere-${variant}-${frames}`;
+function atlas(scene: Phaser.Scene, variant: number, frames: number, size: number): string {
+  const key = `world-sphere-${variant}-${frames}-${size}`;
   if (scene.textures.exists(key)) return key;
-  const size = PLANET_RENDER.resolution;
   const columns = Math.min(frames, 8);
   const texture = scene.textures.createCanvas(
     key,
@@ -34,6 +33,7 @@ export function createSpatialPlanet(
   diameter: number,
   variant: number,
   animated = true,
+  resolution: number = PLANET_RENDER.resolution,
 ): Phaser.GameObjects.Container {
   const visual = worldVisual(variant);
   const lowMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
@@ -41,7 +41,7 @@ export function createSpatialPlanet(
     animated && !prefersReducedMotion() && !(lowMemory && lowMemory <= 2)
       ? PLANET_RENDER.frames
       : 1;
-  const key = atlas(scene, variant, frames);
+  const key = atlas(scene, variant, frames, resolution);
   const root = scene.add.container(x, y).setSize(diameter, diameter);
   root.setData('layoutRole', 'worldPlanet');
   const ringed = ['ice', 'rift', 'gate', 'moons'].includes(visual.ring);

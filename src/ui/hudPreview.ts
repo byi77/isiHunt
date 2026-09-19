@@ -2,9 +2,24 @@ import type Phaser from 'phaser';
 import { eventBus, GameEvent } from '@/core/EventBus';
 import { SceneKey } from '@/scenes/SceneKey';
 import { installLayoutAudit } from './layoutAudit';
+import { GameBackdrop } from './GameBackdrop';
+import { getWorld } from '@/config/worlds';
+import { GAME_WIDTH, GAME_HEIGHT } from '@/config/GameConfig';
 
 /** Explicit development-only visual fixture: no GameScene, saves or network. */
 export function installHudPreview(scene: Phaser.Scene, worldId: string, duel: boolean): void {
+  if (new URLSearchParams(window.location.search).has('playfieldPreview')) {
+    scene.children.removeAll(true);
+    scene.tweens.killAll();
+    const backdrop = new GameBackdrop(scene, GAME_WIDTH, GAME_HEIGHT, getWorld(worldId));
+    const update = (_time: number, delta: number) =>
+      backdrop.update(delta, scene.input.activePointer.x, scene.input.activePointer.y);
+    scene.events.on('update', update);
+    scene.events.once('shutdown', () => {
+      scene.events.off('update', update);
+      backdrop.destroy();
+    });
+  }
   installLayoutAudit(scene.game);
   if (new URLSearchParams(window.location.search).has('collectionPreview')) {
     void import('./collectionPreview').then(({ installCollectionPreview }) => {

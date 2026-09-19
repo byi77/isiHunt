@@ -5,6 +5,9 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 
 ## Bereits spielbar
 
+- [x] Eigene Spielfeldkulisse mit strukturierten Weltennebeln, drei
+  Sternlagen, sanfter Parallaxe und hochaufgeloestem Randplaneten.
+
 ### Grafik-Update - Punkt 7 live in v0.1.322
 
 - [x] Drehbarer 3D-Hangar mit Plattform, neun Modellen, Farben, Auren und Triebwerkslicht.

@@ -38,6 +38,9 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- **Mehr Tiefe im Spielfeld:** dunkler Raum, strukturierte Weltennebel,
+  drei feine Sternlagen mit sanfter Parallaxe und ein angeschnittener
+  Kulissenplanet. Reduzierte Bewegung bleibt statisch.
 - Fang-Anzeigen zeigen kompakt die Punkte in Seltenheitsfarbe. Mit dem
   Einsicht-Talent stehen gesammelte XP als laufende Summe im HUD.
 - **Gefangene Punkte schlagen ein und dehnen sich aus.** Die Zahl schnellt

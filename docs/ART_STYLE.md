@@ -1,5 +1,12 @@
 # Art Style Guide — isiHunt
 
+**Spielfeld, 19.09.2026:** Die Jagd bekommt eine eigene tiefblaue, dunkle
+Raumkulisse. Strukturierte Nebelbaender greifen die Weltfarben auf, drei
+feine Sternlagen reagieren mit sanfter Parallaxe auf die Schiffsposition.
+Ein grosser angeschnittener Kulissenplanet am Rand vermittelt Massstab.
+Die Spielfeldmitte bleibt ruhig; Kulisse hat keine Sammelmarkierungen.
+Reduzierte Bewegung stellt Sterne und Nebel statisch dar.
+
 **Fang-Anzeigen, 19.09.2026:** Die Punktzahl steht in der Seltenheitsfarbe;
 ab epischen Relikten bleibt das Seltenheitssymbol sichtbar. Glückstreffer
 zeigen eine grössere goldene Zahl mit x3-Hinweis und stärkerer Ausdehnung.

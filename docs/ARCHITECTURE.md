@@ -1,5 +1,17 @@
 # Architektur — isiHunt
 
+Die Run-Kulisse liegt in `ui/GameBackdrop.ts`; `config/playfieldVisuals.ts`
+begrenzt Texturaufloesung, Sternzahlen und Bewegung. Nebel werden einmal pro
+Welt auf Canvas gerastert und als Textur wiederverwendet. Drei statisch
+gezeichnete Graphics-Ebenen verschieben sich per Delta und Schiffsposition;
+es entstehen keine eigenen Timer, Tweens oder Frame-Listener. GameScene
+aktualisiert die Ansicht und zerstoert sie beim Shutdown. Die vorhandene
+Menuekulisse und die Spielgeometrie bleiben unabhaengig davon.
+`?skipAuth=1&hudPreview&playfieldPreview&collectionPreview&worldPreview=0`
+zeigt die Kulisse mit HUD und Schiff ohne laufende Simulation; `worldPreview`
+waehlt 0 bis 9. Dieser Pfad ist wie die bestehende HUD-Vorschau nur im Dev-Build
+aktiv. Der grosse Randplanet nutzt ein statisches 256-Pixel-Bild pro Welt.
+
 Grafik-Update Punkt 7: `ui/HangarView.ts` und `ui/hangar.css` bilden die native,
 responsive Shop-Bedienung ab. `ShopScene` vermittelt unveränderte Kauf-/Ausrüstregeln.
 Der DOM-Bereich folgt den Canvas-Grenzen; eigene Listener hängen an einem
