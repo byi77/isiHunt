@@ -14,6 +14,7 @@ import { SHIP_DRAWINGS, SHIP_TEXTURE_SIZE } from '@/ui/shipShapes';
 
 export const TextureKey = {
   Orb: 'tex-orb',
+  RelicLight: 'tex-relic-light',
   Glow: 'tex-glow',
   Spark: 'tex-spark',
   Shard: 'tex-shard',
@@ -45,6 +46,7 @@ export type TextureKeyValue = (typeof TextureKey)[keyof typeof TextureKey];
 export function createTextures(scene: Phaser.Scene): void {
   createPixel(scene);
   createOrb(scene);
+  createRelicLight(scene);
   createGlow(scene);
   createSpark(scene);
   createShard(scene);
@@ -130,6 +132,24 @@ export function planetTextureForVariant(spaceVariant: number): TextureKeyValue {
     TextureKey.PlanetSonnenkrone,
   ];
   return planets[spaceVariant % planets.length] ?? TextureKey.PlanetSternenweide;
+}
+
+/** Feste Lichtquelle fuer rotierende Reliktoberflaechen, einmal fuer alle Welten. */
+function createRelicLight(scene: Phaser.Scene): void {
+  if (scene.textures.exists(TextureKey.RelicLight)) return;
+  const texture = scene.textures.createCanvas(TextureKey.RelicLight, 128, 128)!;
+  const context = texture.getContext();
+  context.beginPath();
+  context.arc(64, 64, 63, 0, Math.PI * 2);
+  context.clip();
+  const shade = context.createLinearGradient(18, 15, 112, 110);
+  shade.addColorStop(0, 'rgba(255,255,255,0.16)');
+  shade.addColorStop(0.38, 'rgba(0,0,0,0)');
+  shade.addColorStop(0.7, 'rgba(3,8,18,0.2)');
+  shade.addColorStop(1, 'rgba(3,8,18,0.72)');
+  context.fillStyle = shade;
+  context.fillRect(0, 0, 128, 128);
+  texture.refresh();
 }
 
 function withGraphics(

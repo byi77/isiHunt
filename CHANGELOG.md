@@ -38,6 +38,9 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- **Relikte mit klarer Kontur und mehr Tiefe:** fester Lichteinfall, schattige
+  Nachtseite, dezenterer Glow und ein bis sechs sichtbare Seltenheitsmarken.
+  Reduzierte Bewegung stoppt Oberflaechenrotation und Strahlenbewegung.
 - **Plastischere Schiffe:** beleuchtete Rumpffacetten, kontrastreichere Cockpits,
   weissblauer Triebwerkskern und tempoabhaengiger Schweif. 3D-Schiffe zeigen
   staerkere Licht-/Schattenunterschiede im Spiel.

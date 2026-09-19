@@ -15,7 +15,7 @@ import {
   TALENT_MAGNET_ORB_STREAK_LENGTH,
   TALENT_MAGNET_ORB_STREAK_WIDTH,
 } from '@/config/GameConfig';
-import type { RarityDef } from '@/config/rarities';
+import { RARITY_IDS, type RarityDef } from '@/config/rarities';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
 import type { TextureKeyValue } from '@/ui/textures';
@@ -76,8 +76,8 @@ export class Collectible extends Phaser.GameObjects.Container {
     this.glow = scene.add
       .image(0, 0, TextureKey.Glow)
       .setTint(rarity.color)
-      .setScale(effectScale * 1.5)
-      .setAlpha(0.9)
+      .setScale(effectScale * 1.25)
+      .setAlpha(0.65)
       .setBlendMode(Phaser.BlendModes.ADD);
 
     // Strahlenkranz nur ab "selten": Bekaeme ihn jedes Relikt, wuerde er
@@ -102,6 +102,27 @@ export class Collectible extends Phaser.GameObjects.Container {
     this.magnetVisual.setVisible(false);
 
     this.add(this.rays ? [this.rays, this.glow, this.orb] : [this.glow, this.orb]);
+    // Licht bleibt links oben, waehrend die Oberflaeche darunter rotiert.
+    const lighting = scene.add
+      .image(0, 0, TextureKey.RelicLight)
+      .setDisplaySize(this.radius * 2, this.radius * 2);
+    const contour = scene.add.graphics();
+    contour.lineStyle(2, rarity.color, 0.95);
+    contour.strokeCircle(0, 0, this.radius + 1.5);
+    contour.lineStyle(1.5, 0xf0f7ff, 0.72);
+    contour.beginPath();
+    contour.arc(0, 0, this.radius - 1, Math.PI * 1.05, Math.PI * 1.58);
+    contour.strokePath();
+    // Anzahl statt Farbe allein: sechs feste Rangmarken fuer sechs Seltenheiten.
+    const rank = RARITY_IDS.indexOf(rarity.id);
+    for (let i = 0; i <= rank; i++) {
+      const angle = Math.PI / 2 + (i - rank / 2) * 0.19;
+      const x = Math.cos(angle) * (this.radius + 7);
+      const y = Math.sin(angle) * (this.radius + 7);
+      contour.fillStyle(rarity.color, 0.95);
+      contour.fillCircle(x, y, rank >= 4 ? 2 : 1.5);
+    }
+    this.add([lighting, contour]);
     this.setDepth(Depth.Collectible);
     scene.add.existing(this);
 
@@ -123,18 +144,6 @@ export class Collectible extends Phaser.GameObjects.Container {
         scale: 1,
         duration: 220,
         ease: 'Back.Out',
-      });
-    }
-
-    // Seltene Relikte pulsieren staerker - sie sollen ins Auge springen.
-    if (rarity.points >= RARITY_RAYS_MIN_POINTS && !prefersReducedMotion()) {
-      scene.tweens.add({
-        targets: this.glow,
-        alpha: { from: 0.55, to: 1 },
-        duration: 420,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.InOut',
       });
     }
   }
@@ -200,10 +209,17 @@ export class Collectible extends Phaser.GameObjects.Container {
 
     // Ein beschleunigtes Drehen macht den Sog auch dann lesbar, wenn die
     // eigentliche Distanz pro Frame auf kleinen Displays kaum auffaellt.
-    this.orb.rotation += dtSec * (0.8 + magnetInfluence * 3.2);
+    if (!prefersReducedMotion()) {
+      this.orb.rotation += dtSec * (0.25 + magnetInfluence * 2);
+      if (this.rays) {
+        this.rays.rotation -= dtSec * 0.22;
+        this.glow.setAlpha(0.65 + Math.sin(this.ageMs / 280) * 0.12);
+      }
+    } else {
+      this.glow.setAlpha(0.65);
+    }
     // Gegenlaeufig zum Relikt - die Bewegung bleibt dadurch lesbar, statt sich
     // zu einer einzigen drehenden Scheibe zu vermischen.
-    if (this.rays) this.rays.rotation -= dtSec * 0.35;
 
     const remaining = this.lifetimeMs - this.ageMs;
     if (remaining <= FADE_OUT_MS) {

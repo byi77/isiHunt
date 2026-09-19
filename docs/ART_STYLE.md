@@ -1,5 +1,11 @@
 # Art Style Guide — isiHunt
 
+**Relikte, 19.09.2026:** Ein schmaler Seltenheitsrand ersetzt den dominanten
+Lichtnebel. Eine feste Lichtkante links oben und eine schattige Nachtseite
+geben den rotierenden Oberflaechen Tiefe. Ein bis sechs kleine Rangmarken
+unter dem Relikt ergaenzen die unveraenderten Seltenheitsfarben. Oberflaeche
+und Strahlen drehen langsamer; reduzierte Bewegung friert diese Dekoration ein.
+
 **Schiffe, 19.09.2026:** Die 2D-Ruempfe erhalten eine feste Beleuchtung von
 links oben, eine helle Rumpffacette und dunklere Heckflaechen. Cockpits tragen
 eine klare Glasreflexion. Ein weissblauer Triebwerkskern mit schmalem,

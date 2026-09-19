@@ -3,6 +3,7 @@ import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { RARITIES } from '@/config/rarities';
 import { CollectionEffects } from './CollectionEffects';
 import { TextureKey } from './textures';
+import { Collectible } from '@/entities/Collectible';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 
 /** Static-time visual fixture: inspect flight phases without changing a save. */
@@ -58,6 +59,22 @@ export function installCollectionPreview(scene: Phaser.Scene): void {
     label.textContent = `${count} Fänge · ${elapsed} ms`;
   };
   button('6 Seltenheiten', () => fill(6));
+  let relics: Collectible[] = [];
+  button('Relikte ansehen', () => {
+    relics.forEach((relic) => relic.destroy());
+    relics = RARITIES.map((rarity, i) => {
+      const relic = new Collectible(
+        scene,
+        160 + (i % 3) * 200,
+        300 + Math.floor(i / 3) * 180,
+        rarity,
+        TextureKey.PlanetSternenweide,
+        { driftAngle: 0 },
+      );
+      scene.tweens.killTweensOf(relic);
+      return relic.setScale(1);
+    });
+  });
   button('50 Fänge', () => fill(50));
   button('Ruhige Variante', () => {
     quiet = true;
@@ -81,5 +98,6 @@ export function installCollectionPreview(scene: Phaser.Scene): void {
     controls.remove();
     effects.destroy();
     ship.destroy();
+    relics.forEach((relic) => relic.destroy());
   });
 }
