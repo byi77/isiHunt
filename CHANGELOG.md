@@ -9,6 +9,19 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Behoben
+
+- **Abmelden fuehrte zurueck ins Menue** statt zur Anmeldung. Wer sich im
+  Profil abmeldete, sah "GAST" und konnte normal weiterspielen - genau der
+  Zustand, den die Anmeldepflicht ausschliessen soll. Die Pruefung steht jetzt
+  auch im Menue selbst, nicht nur beim Start (ADR-0026).
+- **"RUN VERLASSEN" wirkte wirkungslos.** Der Knopf sitzt im Pausenbildschirm,
+  und eine pausierte Scene meldet `isActive() === false`; ein Guard im
+  Abbruchpfad stieg deshalb aus, bevor aufgeraeumt wurde. Das HUD blieb
+  mitsamt seinem unsichtbaren, klickfangenden Pause-Schatten ueber dem Menue
+  liegen. Das Gate `scene:guards` kennt jetzt den passenden Guard fuer
+  pausierte Scenes.
+
 ### Geaendert
 
 - **Gespielt wird nur noch angemeldet.** Der Gastmodus entfaellt ersatzlos:

@@ -23,6 +23,7 @@ import { SceneKey } from '@/scenes/SceneKey';
 import type { WorldInfoMode } from '@/scenes/WorldInfoScene';
 import { Depth } from '@/ui/depth';
 import { installDebugOverlay, removeDebugOverlay } from '@/ui/debugOverlay';
+import { mayEnterGame } from '@/systems/AuthGate';
 import * as AuthSystem from '@/systems/AuthSystem';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
@@ -87,10 +88,19 @@ export class MenuScene extends Phaser.Scene {
       });
       return;
     }
+    // Zweiter Waechter neben `BootScene.entryScene()` (ADR-0026). Der Start
+    // ist nicht der einzige Weg hierher: Abmelden, ein Rundenende und jeder
+    // Ruecksprung aus einem Untermenue landen ebenfalls im Menue, und eine
+    // Session kann waehrenddessen ablaufen. Der Bildschirm, von dem aus
+    // gespielt wird, prueft deshalb selbst - sonst entsteht genau der
+    // gemeldete Zustand: abgemeldet, Anzeige "GAST", Spielen trotzdem
+    // moeglich (2026-09-19).
+    if (!mayEnterGame()) {
+      this.scene.start(SceneKey.Account, { firstStart: true });
+      return;
+    }
     SafeAreaSystem.showMenuTicker();
     const save = SaveSystem.load();
-    // Das Hauptmenü bleibt auch ohne Name, Konto oder Auth-Session erreichbar.
-    // Der Name wird unten nur für die Anzeige auf "GAST" zurückgestellt.
     const unlocked = WORLDS.filter((w) => w.unlockLevel <= save.level);
     this.selectedWorld =
       unlocked.find((w) => w.id === save.lastWorldId) ??

@@ -1510,6 +1510,15 @@ setzt ihn selbst.
   selbst Netz braucht. Laeuft die Session im Funkloch ab, kommt auch der
   rechtmaessige Kontoinhaber bis zur naechsten Verbindung nicht mehr ins Spiel.
   Eine dichte Regel wurde einem bequemen Sonderfall vorgezogen.
+- **Die Pruefung steht an zwei Stellen, nicht nur am Start.** Der erste Entwurf
+  sicherte allein `BootScene` ab und liess damit genau die Luecke offen, die
+  gemeldet wurde: Wer sich im Profil abmeldete, landete im Menue, sah "GAST"
+  und konnte weiterspielen. Der Start ist eben nicht der einzige Weg ins
+  Menue - Abmelden, Rundenende und jeder Ruecksprung aus einem Untermenue
+  fuehren ebenfalls dorthin, und eine Session kann dazwischen ablaufen.
+  Deshalb prueft `MenuScene.create()` selbst, und die gemeinsame Bedingung
+  liegt in `systems/AuthGate.ts` - zwei Waechter duerfen nicht zwei Meinungen
+  haben, insbesondere nicht ueber die Testausnahme.
 - `AccountScene` ist wieder erreichbar. Ihr `firstStart`-Zweig war seit der
   Zusammenlegung der Profilbildschirme (2026-08-18) toter Code — niemand setzte
   das Flag. Er wird reaktiviert statt neu gebaut.

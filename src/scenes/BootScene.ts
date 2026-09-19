@@ -7,9 +7,10 @@
 
 import Phaser from 'phaser';
 
-import { APP_VERSION, DEBUG_ENABLED } from '@/config/GameConfig';
+import { APP_VERSION } from '@/config/GameConfig';
 import { SceneKey } from '@/scenes/SceneKey';
 import type { SceneKeyValue } from '@/scenes/SceneKey';
+import { mayEnterGame } from '@/systems/AuthGate';
 import * as AuthSystem from '@/systems/AuthSystem';
 import { createTextures, TextureKey } from '@/ui/textures';
 
@@ -102,15 +103,7 @@ export class BootScene extends Phaser.Scene {
    * schliessen soll.
    */
   private entryScene(): SceneKeyValue {
-    if (AuthSystem.isSignedIn()) return SceneKey.Menu;
-    // Der Browser-Playtest hat keine Supabase-Session und wuerde sonst in
-    // jeder Suite an der Anmeldung haengen bleiben. Der Haken existiert nur
-    // im Dev-Build - im ausgelieferten Bundle ist dieser Zweig wegoptimiert,
-    // die Sperre laesst sich also nicht per URL umgehen.
-    if (DEBUG_ENABLED && new URLSearchParams(window.location.search).has('skipAuth')) {
-      return SceneKey.Menu;
-    }
-    return SceneKey.Account;
+    return mayEnterGame() ? SceneKey.Menu : SceneKey.Account;
   }
 
   private waitForAuthOrStartupFallback(): Promise<void> {

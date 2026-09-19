@@ -609,6 +609,11 @@ export class ProfileScene extends Phaser.Scene {
     SaveSystem.clearLocalProfile();
     this.busy = false;
     if (!this.scene.isActive()) return;
-    this.scene.start(SceneKey.Menu);
+    // Zur Anmeldung, nicht ins Menue: Seit ADR-0026 wird nur angemeldet
+    // gespielt, und das gilt nicht nur fuer den App-Start. Der Weg ins Menue
+    // liess hier genau den Zustand entstehen, den die Sperre ausschliessen
+    // soll - abgemeldet, Anzeige "GAST", Spielen trotzdem moeglich (gemeldet
+    // 2026-09-19).
+    this.scene.start(SceneKey.Account, { firstStart: true });
   }
 }

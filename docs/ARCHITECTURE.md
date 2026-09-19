@@ -214,6 +214,8 @@ isiHunt/
 │   │   ├── LevelUpPresentationSystem.test.ts
 │   │   ├── AuthSystem.ts       Alias/PIN-Anmeldung, Sitzungspflege (Phase 2.6)
 │   │   ├── AuthSystem.test.ts
+│   │   ├── AuthGate.ts         Darf hier gespielt werden? (ADR-0026) - eine
+│   │   │                       Antwort fuer BootScene und MenuScene
 │   │   ├── ProgressSyncSystem.ts Offline-Outbox fuer angemeldete Profile
 │   │   ├── ProgressSyncSystem.test.ts
 │   │   ├── SyncStatusSystem.ts Sichtbarer Sync-Status im Menue

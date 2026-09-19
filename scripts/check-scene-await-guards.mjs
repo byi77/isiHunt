@@ -59,8 +59,23 @@ const root = fileURLToPath(new URL('../src/scenes/', import.meta.url));
 const UI_ZUGRIFF =
   /\b(?:setText|setLabel|setColor|setEnabled|setVisible)\s*\(|\bthis\.scene\.(?:start|restart|launch|stop)\s*\(|\bthis\.add\.[a-zA-Z]+\s*\(/;
 
-/** Die Absicherung selbst - in beiden gebraeuchlichen Schreibweisen. */
-const GUARD = /this\.scene\.isActive\s*\(\)|!this\.scene\.isActive\s*\(\)/;
+/**
+ * Die Absicherung selbst - in beiden gebraeuchlichen Schreibweisen.
+ *
+ * `manager.getScene(...)` gilt ebenfalls als Guard. Der Grund steht in
+ * `GameScene.abortRun()`: Eine **pausierte** Scene meldet `isActive() ===
+ * false`, lebt aber weiter. Wer den Abbruch aus dem Pausenbildschirm heraus
+ * absichern will, darf deshalb nicht nach `isActive()` fragen - der Guard
+ * traefe immer zu und uebersprunge genau den Code, der aufraeumen soll
+ * (gemessen 2026-09-19: HUD blieb mit interaktivem Overlay ueber dem Menue
+ * stehen, "RUN VERLASSEN" wirkte tot).
+ *
+ * `getScene()` liefert `undefined`, sobald die Scene wirklich weg ist, und
+ * beantwortet damit die Frage, die dieses Gate eigentlich stellt: Sind die
+ * Phaser-Objekte noch da?
+ */
+const GUARD =
+  /this\.scene\.isActive\s*\(\)|!this\.scene\.isActive\s*\(\)|this\.scene\.manager\.getScene\s*\(/;
 
 const dateien = [];
 for (const name of readdirSync(root)) {
@@ -159,6 +174,9 @@ if (verstoesse.length > 0) {
     'verlassen - danach sind ihre Phaser-Objekte zerstoert. Vor dem Zugriff einfuegen:',
   );
   console.error('\n    if (!this.scene.isActive()) return;\n');
+  console.error('Wird die Stelle aus einem Pausenbildschirm heraus erreicht, ist `isActive()`');
+  console.error('die falsche Frage - eine pausierte Scene meldet `false`, lebt aber. Dann:\n');
+  console.error('    if (!this.scene.manager.getScene(SceneKey.X)) return;\n');
   process.exit(1);
 }
 

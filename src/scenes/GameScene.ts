@@ -921,7 +921,18 @@ export class GameScene extends Phaser.Scene {
     if (onlineRoom?.roomCode && onlineRoom.participantToken) {
       await NetworkDuelSystem.leaveRoom(onlineRoom.roomCode, onlineRoom.participantToken);
     }
-    if (!this.scene.isActive()) return;
+    // Gemessen am 2026-09-19: Eine **pausierte** Scene meldet `isActive()
+    // === false`. Der Abbruch wird aber fast immer genau aus dem
+    // Pausenbildschirm heraus ausgeloest - im Solo-Modus haelt `togglePause()`
+    // die Scene vorher an. Der frueher hier stehende Guard
+    // `if (!this.scene.isActive()) return;` stieg deshalb regelmaessig aus und
+    // uebersprang Resume, Stop und Start: Das HUD blieb mitsamt seinem
+    // interaktiven Pause-Schatten ueber dem Menue liegen und verschluckte
+    // jeden Tipp. Fuer den Spieler sah es aus, als tue "RUN VERLASSEN" nichts.
+    //
+    // `isDestroyed()` fragt, was der Guard eigentlich meinte: Ist diese Scene
+    // noch da? Pausiert ist sie es, zerstoert nicht.
+    if (!this.scene.manager.getScene(SceneKey.Game)) return;
     if (onlineRoom) {
       NetworkDuelSystem.unsubscribeFromRoom();
       NetworkDuelSystem.unsubscribeFromDuelLobby();
