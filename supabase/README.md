@@ -107,6 +107,35 @@ Testdaten-Reset. Das Skript bricht ohne ausdrückliches Opt-in ab. Nur wenn
 dieser Reset wirklich gewollt ist, vorher in derselben SQL-Editor-Sitzung
 ausführen: `set app.isihunt_allow_test_reset = 'on';`.
 
+## Korrektur des Lauf-Uploads: Phase 2.54
+
+Nach Phase 2.51 folgen `phase_2_52_run_bonus.sql`,
+`phase_2_53_progress_grants.sql` und `phase_2_54_progress_event_jsonb.sql`.
+Der aktuelle Zielstand ist **54**; die oben beschriebenen Marker 50 und 51
+beziehen sich auf die historischen Phasen.
+
+Phase 2.52 schrieb ein SQL-Array (`text[]`) in die JSONB-Spalte
+`profile_progress_events.achievement_ids`. PostgreSQL bricht den kompletten
+RPC mit SQLSTATE `42804` ab. Ohne Laufbeleg lehnt anschliessend der
+Ranglisten-Trigger den Bestwert ab. Die Rechtekorrektur aus Phase 2.53
+behebt diesen Fehler nicht. Ihre historische Ursachenbeschreibung ist
+unzutreffend: `CREATE OR REPLACE FUNCTION` behaelt Rechte und Eigentuemer bei
+([PostgreSQL-Dokumentation](https://www.postgresql.org/docs/16/sql-createfunction.html)).
+
+Phase 2.54 speichert wieder die serverseitig berechneten Belohnungen und
+wandelt die validierten Achievement-IDs mit `to_jsonb` um. Der Laufbeleg und
+der Profilfortschritt bleiben atomar; der interne Importer bleibt gesperrt.
+Die Migration ersetzt keine historischen Spielstaende und rekonstruiert
+keine verlorenen Runs. Noch im Browser vorgemerkte Laufereignisse koennen
+nach der Migration erneut synchronisiert werden.
+
+Nachweis gegen die verknuepfte Datenbank, vollstaendig zurueckgerollt:
+Der Report-Lauf mit 81.210 Punkten, Kette 69 und 207 Relikten scheiterte
+vorher mit `42804`. Mit Phase 2.54 wurden Laufbeleg, 3.216 XP, Level 60 und
+Ranglisteneintrag angenommen. Erneutes Senden derselben Ereignis-ID erzeugte
+keine zweite Buchung; ein erfundenes Achievement wurde nicht uebernommen.
+Dieser Test installiert die Migration nicht dauerhaft.
+
 ## Wiederholbarkeit und Migrationshistorie
 
 Die historischen Umbenennungen in `phase_2_24` und `phase_2_26` sind

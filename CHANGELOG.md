@@ -62,6 +62,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Lauf-Uploads und Ranglisteneintraege nach Phase 2.52.** Phase 2.54
+  wandelt validierte Achievement-IDs in JSONB um; der bisherige Typfehler
+  brach den gesamten Fortschritts-Upload ab und liess den Laufbeleg fuer
+  die Rangliste fehlen. SQL-Ablehnungen des Uploads bleiben jetzt mit
+  Fehlercode und Ereignis-ID im geschuetzten Debug-Report sichtbar.
+
 - **Seit v0.1.339 kam kein Run mehr im Konto an.** Die Praemien-Migration
   ersetzte `submit_progress_event`, und weil `create or replace` in PostgreSQL
   die Ausfuehrungsrechte auf den Standard zurueckstellt, war das

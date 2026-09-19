@@ -106,6 +106,29 @@ describe('isAvailable bei eingerichtetem Backend', () => {
   });
 });
 
+it('haelt den SQL-Fehler eines Laufereignisses im geschuetzten Debug-Report fest', async () => {
+  signIn();
+  const message = 'column "achievement_ids" is of type jsonb but expression is of type text[]';
+  vi.spyOn(CloudSystem.getSupabaseClient()!, 'rpc').mockResolvedValue({
+    data: null,
+    error: { code: '42804', message },
+  } as never);
+  const debug = await import('@/systems/DebugSystem');
+  debug.clearLogBuffer();
+
+  await expect(CloudSystem.submitProgressEvent(createProgressEvent())).resolves.toEqual({
+    ok: false,
+    error: message,
+  });
+  expect(debug.getProtectedLogBuffer()).toContainEqual(
+    expect.objectContaining({
+      kind: 'error',
+      label: 'cloud:Laufereignis abgelehnt',
+      detail: expect.stringContaining(`42804: ${message}`),
+    }),
+  );
+});
+
 /**
  * Ebene 2: eingerichtet, aber niemand angemeldet.
  *

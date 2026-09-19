@@ -1492,7 +1492,18 @@ export async function submitProgressEvent(
     'Fortschritt synchronisieren',
   );
   if (!result.ok) return result;
-  if (result.value.error) return { ok: false, error: result.value.error.message };
+  if (result.value.error) {
+    // Eine beantwortete HTTP-Anfrage bestaetigt noch keinen Lauf. SQL-Fehler
+    // muessen den Ringpuffer ueberdauern, sonst bleibt nur der Folgefehler
+    // beim Bestwert sichtbar und die eigentliche Ursache geht verloren.
+    DebugSystem.pushProtectedLogEntry({
+      timestamp: Date.now(),
+      kind: 'error',
+      label: 'cloud:Laufereignis abgelehnt',
+      detail: `${result.value.error.code ?? 'RPC'}: ${result.value.error.message} (Ereignis ${event.eventId}, Punkte ${event.score}, Kette ${event.bestCombo})`,
+    });
+    return { ok: false, error: result.value.error.message };
+  }
   return { ok: true, value: normalizeProfileProgress(result.value.data) };
 }
 

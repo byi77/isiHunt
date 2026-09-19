@@ -389,7 +389,18 @@ requireText(verification, 'daily_key', 'Live-Verifikation Tagesbonus');
 requireText(verification, 'upsert_save', 'Live-Verifikation Save-CAS');
 requireText(verification, 'duel_rooms', 'Live-Verifikation Duell');
 requireText(migrationVerification, 'schema_version', 'Live-Verifikation Migrationsmarker');
-requireText(migrationVerification, 'schema_version = 53', 'Live-Verifikation Phase 2.53');
+requireText(migrationVerification, 'schema_version = 54', 'Live-Verifikation Phase 2.54');
+const progressEventJsonbMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_54_progress_event_jsonb.sql'),
+  'utf8',
+);
+requireText(progressEventJsonbMigration, 'to_jsonb(valid_achievement_ids)', 'Laufbeleg als JSONB');
+requireText(progressEventJsonbMigration, 'schema_version = 54', 'Migrationsmarker Phase 2.54');
+requireText(
+  progressEventJsonbMigration,
+  'from public, anon, authenticated',
+  'Interner Fortschrittsimport bleibt gesperrt',
+);
 
 if (failures.length > 0) {
   console.error('SQL-Vertragspruefung fehlgeschlagen:');
