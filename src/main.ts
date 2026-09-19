@@ -187,11 +187,6 @@ AuthSystem.initialize();
  * geht nicht verloren - `RunStarted` steht mit seiner Dauer im Puffer, und
  * jeder Eintrag traegt einen Zeitstempel.
  */
-const FRAME_EREIGNISSE: ReadonlySet<string> = new Set<string>([
-  GameEvent.TimerChanged,
-  GameEvent.ComboWindowChanged,
-]);
-
 /**
  * Verdrahtet den rollierenden Debug-Ringpuffer, so frueh wie moeglich im
  * Lebenszyklus - er soll auch Ereignisse und Fehler festhalten, die vor dem
@@ -199,12 +194,22 @@ const FRAME_EREIGNISSE: ReadonlySet<string> = new Set<string>([
  * was VOR einem Bug geschah (nicht nur der Zustand danach).
  */
 function installDebugLogging(): void {
+  // Die Menge steht INNERHALB der Funktion, nicht daneben: `main.ts` ruft
+  // `installDebugLogging()` weit oben auf, waehrend eine Konstante auf
+  // Modulebene erst an ihrer Zeile initialisiert wird. Als `const` daneben
+  // startete die App gar nicht mehr ("Cannot access ... before
+  // initialization") - und `npm run verify` sah das nicht, weil dort nie ein
+  // Browser die Seite laedt. Erst `npm run smoke` faellt darueber.
+  const frameEreignisse: ReadonlySet<string> = new Set<string>([
+    GameEvent.TimerChanged,
+    GameEvent.ComboWindowChanged,
+  ]);
   DebugSystem.installConsoleCapture();
   DebugSystem.logAppStart({ standalone: isStandalone(), ios: isIos() });
 
   for (const key of Object.values(GameEvent)) {
-    // Frame-Ereignisse bleiben draussen (siehe FRAME_EREIGNISSE).
-    if (FRAME_EREIGNISSE.has(key)) continue;
+    // Frame-Ereignisse bleiben draussen (siehe `frameEreignisse` oben).
+    if (frameEreignisse.has(key)) continue;
 
     eventBus.onEvent(key, (payload) => {
       DebugSystem.pushLogEntry({

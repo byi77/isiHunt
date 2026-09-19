@@ -1600,9 +1600,16 @@ Dieselbe Falle ist zweimal zugeschnappt:
 
 Das zweite Mal passierte, weil `ComboWindowChanged` nach dem ersten Befund
 dazukam und die damalige `if`-Sonderbehandlung nicht mitbekam. Deshalb steht
-der Ausschluss jetzt als Menge `FRAME_EREIGNISSE` in `main.ts`: Ein neues
-Frame-Ereignis wird dort eingetragen, statt in einer Bedingungskette vergessen
-zu werden.
+der Ausschluss jetzt als Menge `frameEreignisse` in `installDebugLogging()`:
+Ein neues Frame-Ereignis wird dort eingetragen, statt in einer Bedingungskette
+vergessen zu werden.
+
+Die Menge liegt bewusst **in** der Funktion, nicht daneben. Als Konstante auf
+Modulebene stand sie hinter dem Aufruf von `installDebugLogging()`, den
+`main.ts` weit oben macht — die App startete dann gar nicht mehr ("Cannot
+access ... before initialization"). `npm run verify` bemerkte das nicht, weil
+dort nie ein Browser die Seite laedt; gefallen ist es erst in `npm run smoke`
+in den Release-Gates, die den Deploy daraufhin korrekt blockiert haben.
 
 **Was eine Runde ueberdauern muss, gehoert in den geschuetzten Puffer.** Der
 Bestwert-Upload schreibt dorthin, und zwar auf jedem Pfad — auch auf den
