@@ -14,19 +14,30 @@ Belohnungskarten mit goldenen Ueberschriften. XP-Fortschritt erscheint sofort;
 220 ms Deckkraft-Einblendung ohne Skalierung, bei reduzierter Bewegung statisch.
 Details scrollen unter einer Maske; die goldene Hauptaktion bleibt fest erreichbar.
 
-**Punkte-Druckwelle, 19.09.2026:** Eine gefangene Punktzahl schnellt aus 35 %
-ihrer Lesegröße hervor (55 ms, `Back.Out`), dehnt sich dann **durchgehend
-weiter** auf das 2,1-fache aus (Serienbonus: 2,7-fache) und verblasst dabei.
-Sie verschwindet groß, nicht klein — wie eine Rauchwolke, die sich auf dem Weg
-nach oben auflöst. Gemessen: 0,32 → 1,91 über rund 620 ms, sechsfaches
-Wachstum, 108 px Flughöhe.
+**Punkte-Druckwelle, 19.09.2026:** Eine Punktzahl schnellt hervor, dehnt sich
+**durchgehend weiter** aus und verblasst dabei — sie verschwindet groß, nicht
+klein, wie eine Rauchwolke, die sich auf dem Weg nach oben auflöst.
 
-Zwei verworfene Fassungen, weil beide „statisch" wirkten: ein gleichmäßiges
-Wachsen von 0,96 auf 1,0 (vier Prozent sind keine Bewegung), und ein
-Überschießen mit Rückkehr auf die Ausgangsgröße per `yoyo` — der Ausschlag war
-messbar, hob sich aber selbst auf. **Eine Bewegung wird gesehen, wenn sie sich
-summiert, nicht wenn sie groß ist.** Bei reduzierter Bewegung bleibt es beim
-statischen Text.
+Die Bewegung gibt es an **zwei** Stellen, mit gleicher Wirkung und
+unterschiedlicher Umsetzung:
+
+| Wo | Was | Umsetzung |
+| -- | --- | --------- |
+| `CollectionEffects` | Fänge (Planeten einsammeln) | pro Frame aus dem Alter gerechnet, ohne Tween — bis zu acht gleichzeitig |
+| `widgets.floatingScore` | Strafen, Hindernisse, XP | ein Tween je Anzeige |
+
+Gemessen beim Fang: 0,40 → 1,57 über 630 ms, 3,9-faches Wachstum, 46 px
+Aufstieg, Deckkraft 1,0 → 0,16. Der Aufschlag sitzt in den ersten 90 ms.
+
+**Drei Anläufe, weil zweimal die falsche Annahme getestet wurde.** Erst ein
+gleichmäßiges Wachsen von 0,96 auf 1,0 — vier Prozent sind keine Bewegung.
+Dann ein Überschießen mit Rückkehr auf die Ausgangsgröße per `yoyo`: messbar,
+aber es hob sich selbst auf. *Eine Bewegung wird gesehen, wenn sie sich
+summiert, nicht wenn sie groß ist.* Und beide Male an der falschen Stelle —
+die Fänge laufen über `CollectionEffects`, nicht über `floatingScore`. Ein
+Test hält die Bewegung jetzt fest (`CollectionEffects.test.ts`); der ältere
+Test dort prüfte nur den Zweig für reduzierte Bewegung und war deshalb blind
+dafür. Bei reduzierter Bewegung bleibt es beim statischen Text.
 
 **Talente in der Pause, 19.09.2026:** Die aktiven Verstärkungen stehen als
 zweispaltige Liste — Name und Rang links, Wirkung rechtsbündig grün. Vorher war

@@ -29,13 +29,13 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
-- **Gefangene Punkte schlagen ein und dehnen sich aus.** Die Zahl schnellt aus
-  35 Prozent ihrer Lesegroesse hervor, waechst dann durchgehend auf das
-  2,1-fache (Serienbonus: 2,7-fache) und verblasst dabei - sie verschwindet
-  gross, nicht klein. Gemessen: sechsfaches Wachstum ueber rund 620 ms.
-  Vorherige Versuche wirkten statisch, weil die Bewegung entweder zu klein war
-  (0,96 auf 1,0) oder auf die Ausgangsgroesse zurueckkehrte und sich damit
-  selbst aufhob.
+- **Gefangene Punkte schlagen ein und dehnen sich aus.** Die Zahl schnellt
+  hervor, waechst durchgehend weiter und verblasst dabei - sie verschwindet
+  gross, nicht klein. Gemessen beim Fang: 3,9-faches Wachstum ueber 630 ms,
+  46 px Aufstieg. Die Bewegung greift jetzt auch beim Einsammeln, nicht nur
+  bei Straf- und Hindernisanzeigen: Fänge laufen ueber `CollectionEffects`,
+  das die Zahl bis dahin unbewegt stehen liess. Ein Test haelt den Verlauf
+  fest.
 - **Die Talentdetails in der Pause sind eine zweispaltige Liste.** Name und
   Rang links, Wirkung rechtsbuendig, je Talent eine Zeile. Vorher standen bis
   zu zehn Eintraege als ein mit "·" verketteter Absatz, der mitten im Wort

@@ -12,6 +12,33 @@ import {
 import { Depth } from './depth';
 import { Palette, textStyle } from './theme';
 
+/*
+ * Die Druckwelle einer gefangenen Punktzahl.
+ *
+ * Keine Balancing-Werte, sondern die Form einer Bewegung - sie veraendern
+ * nichts am Spiel, nur daran, wie sich ein Fang anfuehlt. Die Budgets, die
+ * tatsaechlich begrenzen (Lebensdauer, Anzahl), stehen dagegen in
+ * `config/collectionVisuals.ts`.
+ *
+ * Dieselbe Bewegung wie in `widgets.ts` fuer Straf- und Hindernisanzeigen -
+ * absichtlich, damit ein Fang und ein Treffer dieselbe Sprache sprechen. Die
+ * Umsetzung unterscheidet sich trotzdem: Dort traegt ein Tween je Anzeige die
+ * Bewegung, hier rechnet ein gemeinsamer Takt sie fuer bis zu acht
+ * gleichzeitige Faenge aus dem Alter.
+ */
+
+/** Groesse zu Beginn, als Anteil der Lesegroesse. Der Anlauf des Schlags. */
+const LABEL_START = 0.4;
+
+/** Wie lange der Aufschlag auf Lesegroesse dauert. */
+const LABEL_HIT_MS = 70;
+
+/** Wie weit sich die Zahl bis zum Verschwinden zusaetzlich ausdehnt. */
+const LABEL_END_SCALE = 1.7;
+
+/** Wie weit sie dabei nach oben davonzieht. */
+const LABEL_RISE_PX = 46;
+
 interface Capture {
   origin: Point;
   color: number;
@@ -72,7 +99,12 @@ export class CollectionEffects {
         }),
       )
       .setDepth(Depth.FloatingScore)
-      .setWordWrapWidth(170 * unit);
+      .setWordWrapWidth(170 * unit)
+      // Um die Mitte skalieren, nicht um die linke obere Ecke: Sonst liefe die
+      // Zahl beim Aufreissen nach rechts unten weg, statt sich auszudehnen.
+      // Die Position wird unten entsprechend um die halbe Kastengroesse
+      // versetzt gesetzt.
+      .setOrigin(0.5);
     const capture: Capture = {
       origin: { ...origin },
       color: rarity.color,
@@ -131,10 +163,43 @@ export class CollectionEffects {
       capture.box = box;
       capture.label.setVisible(box !== null && !occupied.some((other) => boxesOverlap(box, other)));
       if (box) {
-        capture.label.setPosition(box.left + 4, box.top + 4);
-        capture.label.setAlpha(
-          capture.reduced ? 1 : Math.min(1, (V.lifetimeMs - capture.age) / 180),
-        );
+        // Der Kasten beschreibt die Flaeche, die dieses Label belegt; der
+        // Ursprung liegt in seiner Mitte (siehe `setOrigin` oben).
+        const mitteX = box.left + (box.right - box.left) / 2;
+        const mitteY = box.top + (box.bottom - box.top) / 2;
+        if (capture.reduced) {
+          capture.label.setPosition(mitteX, mitteY).setScale(1).setAlpha(1);
+        } else {
+          // Die Druckwelle: hervorschnellen, weiter aufreissen, verwehen.
+          //
+          // Vorher stand die Zahl still an ihrem Platz und wurde in den
+          // letzten 180 ms ausgeblendet - deshalb wirkte ein Fang statisch,
+          // waehrend die Strafanzeigen ueber `floatingScore` laengst eine
+          // Bewegung hatten (gemeldet 2026-09-19: "sehe ich bei den
+          // Strafpunkten, aber nicht beim Einsammeln").
+          //
+          // Bewusst ohne Tween: Diese Klasse verwaltet bis zu acht gleichzeitige
+          // Faenge ueber einen gemeinsamen Takt und kommt deshalb ohne
+          // Tween-Objekte je Fang aus. Der Verlauf wird aus dem Alter
+          // gerechnet, damit das so bleibt.
+          const t = Math.min(1, capture.age / V.lifetimeMs);
+          // Aufschlag: in den ersten Prozent der Lebenszeit auf Lesegroesse.
+          const schlag = Math.min(1, capture.age / LABEL_HIT_MS);
+          // Quadratisch abgebremst - schnell da, dann ruhig.
+          const anlauf = LABEL_START + (1 - LABEL_START) * (1 - (1 - schlag) * (1 - schlag));
+          // Danach dehnt es sich durchgehend weiter aus.
+          const dehnung = 1 + (LABEL_END_SCALE - 1) * t * t;
+          // Aufsteigen mit stark abgebremster Kurve: fast die ganze Strecke
+          // liegt im ersten Drittel - das ist der Teil, der als
+          // "weggeschleudert" gelesen wird.
+          const aufstieg = 1 - (1 - t) * (1 - t) * (1 - t);
+          capture.label
+            .setPosition(mitteX, mitteY - LABEL_RISE_PX * aufstieg)
+            .setScale(anlauf * dehnung);
+          // Verwehen laeuft ueber die ganze Ausdehnung statt nur am Ende: Das
+          // Verblassen IST der Effekt, nicht sein Abschluss.
+          capture.label.setAlpha(Math.min(1, (1 - t) * 1.6));
+        }
         occupied.push(box);
       }
       return true;
