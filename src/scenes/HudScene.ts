@@ -20,6 +20,7 @@ import { calculateHudLayout } from '@/ui/hudLayout';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import type { BarHandle, ButtonHandle } from '@/ui/widgets';
 import { createBar, createButton, createPanel } from '@/ui/widgets';
+import type { ActiveTalentLine } from '@/types';
 import type { RunMode } from '@/types';
 
 /**
@@ -49,8 +50,8 @@ export interface HudSceneData {
   playerLabel?: string | null;
   /** Im Duell ab Durchgang zwei: die Vorlage des Gegners. Sonst null. */
   scoreToBeat?: number | null;
-  /** Kompakte Anzeige der aktiven Talentverstaerkungen im laufenden Run. */
-  talentSummary?: string;
+  /** Die aktiven Talentverstaerkungen, je eine Zeile. Leer = keine aktiv. */
+  talentLines?: readonly ActiveTalentLine[];
   /** Anzeigenamen aller Spieler, indiziert nach dem Server-Slot. */
   opponentLabels?: (string | null)[];
   /** Eigener Server-Slot im Netzwerk-Duell. */
@@ -71,7 +72,7 @@ export class HudScene extends Phaser.Scene {
   private plate!: Phaser.GameObjects.Graphics;
   private scoreCaption!: Phaser.GameObjects.Text;
   private timeCaption!: Phaser.GameObjects.Text;
-  private talentSummary = '';
+  private talentLines: readonly ActiveTalentLine[] = [];
   private talentText!: Phaser.GameObjects.Text;
   private pauseButton!: ButtonHandle;
   private pauseReason: 'manual' | 'interrupted' = 'manual';
@@ -122,7 +123,7 @@ export class HudScene extends Phaser.Scene {
     this.scoreToBeat = data.scoreToBeat ?? null;
     this.hasOvertaken = false;
     this.mode = data.mode ?? 'solo';
-    this.talentSummary = data.talentSummary ?? '';
+    this.talentLines = data.talentLines ?? [];
     this.opponentLabels = data.opponentLabels ? [...data.opponentLabels] : [];
     this.localPlayerIndex = Number.isInteger(data.localPlayerIndex) ? data.localPlayerIndex! : 0;
     this.playerCount = Math.max(2, Math.min(4, Math.floor(data.playerCount ?? 2)));
@@ -189,7 +190,7 @@ export class HudScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         168,
-        this.talentSummary ? 'TALENTE AKTIV - DETAILS IN PAUSE' : '',
+        this.talentLines.length ? 'TALENTE AKTIV - DETAILS IN PAUSE' : '',
         textStyle(FontSize.tiny, Palette.gold, {
           fontStyle: 'bold',
           stroke: '#000000',
@@ -200,7 +201,7 @@ export class HudScene extends Phaser.Scene {
       .setAlign('center')
       .setWordWrapWidth(GAME_WIDTH - 90)
       .setLineSpacing(2)
-      .setAlpha(data.talentSummary ? 1 : 0);
+      .setAlpha(this.talentLines.length ? 1 : 0);
 
     this.multiplierBurstText = this.add
       .text(GAME_WIDTH / 2, 250, '', textStyle(FontSize.title, Palette.gold, { fontStyle: 'bold' }))
@@ -467,7 +468,10 @@ export class HudScene extends Phaser.Scene {
     } else {
       if (reason === 'interrupted')
         paragraph('Die App war kurz im Hintergrund.', 12, Palette.inkDim);
-      if (this.talentSummary) paragraph(this.talentSummary, 11, Palette.inkDim);
+      if (this.talentLines.length) {
+        paragraph('DEINE TALENTE', 12, Palette.gold);
+        y = this.buildTalentTable(content, y, width, u);
+      }
     }
     const resume = createButton(
       this,
@@ -501,6 +505,49 @@ export class HudScene extends Phaser.Scene {
       { alpha: 0.98 },
     ).setDepth(Depth.Overlay);
     this.pauseOverlay.push(shade, panel, content);
+  }
+
+  /**
+   * Die aktiven Talente als zweispaltige Liste.
+   *
+   * Name und Rang links, Wirkung rechts, je Talent eine Zeile. Vorher stand
+   * hier ein einziger Absatz, in dem zehn Eintraege mit "·" aneinanderhingen
+   * und mitten im Wort umbrachen - lesbar war das nur, wenn man ohnehin
+   * wusste, was drinsteht.
+   *
+   * Die Werte stehen rechtsbuendig untereinander: Zahlen vergleicht man
+   * senkrecht, und genau das ist die Frage in der Pause ("wo stehe ich
+   * eigentlich?"). Zeilenweise Texte statt eines Rasters, weil Phaser kein
+   * Tabellenlayout kennt und zwei Spalten es nicht brauchen.
+   *
+   * @returns die neue Unterkante, damit der Aufrufer weiterzaehlen kann.
+   */
+  private buildTalentTable(
+    content: Phaser.GameObjects.Container,
+    top: number,
+    width: number,
+    unit: number,
+  ): number {
+    const size = this.layout.font(11);
+    const zeilenHoehe = 17 * unit;
+    let y = top;
+    for (const line of this.talentLines) {
+      const name = this.add
+        .text(-width / 2, y, `${line.name}  R${line.rank}`, textStyle(size, Palette.ink))
+        .setOrigin(0, 0);
+      const effect = this.add
+        .text(width / 2, y, line.effect, textStyle(size, Palette.success, { fontStyle: 'bold' }))
+        .setOrigin(1, 0);
+      // Sicherheitsnetz fuer sehr schmale Geraete: Beruehren sich die
+      // Spalten, schrumpft der Name - die Wirkung ist die Information, die
+      // man sucht, und bleibt deshalb unangetastet.
+      const frei = width - effect.width - 12 * unit;
+      if (name.width > frei) this.fit(name, frei);
+      content.add(name);
+      content.add(effect);
+      y += zeilenHoehe;
+    }
+    return y + 8 * unit;
   }
 
   /**

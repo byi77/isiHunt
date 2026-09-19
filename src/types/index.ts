@@ -113,6 +113,24 @@ export interface RunStats {
  */
 export type RunMode = 'solo' | 'challenge' | 'daily' | 'bot';
 
+/**
+ * Eine aktive Talentverstaerkung, aufgeteilt in Name und Wirkung.
+ *
+ * Hier und nicht in einer Scene, weil zwei Scenes sie brauchen: `GameScene`
+ * rechnet sie aus den Werten aus, `HudScene` stellt sie dar. Die Aufteilung
+ * ist der Zweck der Struktur - als fertiger Satz liesse sich die Pausenliste
+ * nicht in zwei Spalten setzen, und genau daran scheiterte die vorige
+ * Fassung (ein Absatz aus zehn mit "·" verketteten Eintraegen).
+ */
+export interface ActiveTalentLine {
+  /** Talentname, bereits in Grossbuchstaben. */
+  readonly name: string;
+  /** Erreichter Rang. */
+  readonly rank: number;
+  /** Die Wirkung, fertig formatiert - etwa "+12" oder "-25%". */
+  readonly effect: string;
+}
+
 export type ChallengeKind = 'duel' | 'daily' | 'bot' | 'duel-online';
 export type BotDifficulty = 'easy' | 'normal' | 'hard';
 

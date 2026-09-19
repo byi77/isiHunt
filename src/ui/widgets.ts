@@ -1066,6 +1066,29 @@ export function shockwave(
 }
 
 /** Aufsteigende Punktzahl am Fangort. */
+/*
+ * Der Aufschlag einer gefangenen Punktzahl.
+ *
+ * Keine Balancing-Werte, sondern die Form einer Bewegung - deshalb hier und
+ * nicht in `config/`. Sie veraendern nichts am Spiel, nur daran, wie sich ein
+ * Fang anfuehlt.
+ */
+
+/** Wie weit die Zahl ueber ihre Ruhegroesse hinausschiesst. */
+const PUNCH_SCALE = 1.85;
+
+/** Ein Serienbonus schlaegt haerter ein - er ist der seltenere Moment. */
+const PUNCH_SCALE_BONUS = 2.3;
+
+/**
+ * Dauer des Ausschlags in eine Richtung; mit `yoyo` also das Doppelte.
+ *
+ * 90 ms sind rund fuenf Frames bei 60 Hz - kurz genug, dass es schlaegt statt
+ * zu wachsen, lang genug, dass es auf einem 60-Hz-Geraet nicht zwischen zwei
+ * Frames verschwindet.
+ */
+const PUNCH_MS = 90;
+
 export function floatingScore(
   scene: Phaser.Scene,
   x: number,
@@ -1101,10 +1124,11 @@ export function floatingScore(
     )
     .setOrigin(0.5)
     // Punktwerte muessen im mobilen Spielfeld auf einen Blick lesbar sein.
-    // Der Wert startet schon gross genug, bevor die Aufwaertsanimation ihn
-    // weiter hervorhebt - sonst war der erste Eindruck oft nur ein Flackern.
+    // Dies ist die RUHEgroesse, auf die der Aufschlag zurueckfaellt - er
+    // schiesst von hier aus ueber sie hinaus (siehe `PUNCH_SCALE`). Sie liegt
+    // deshalb tiefer als frueher, sonst stuende am Ende eine riesige Zahl.
     .setScale(
-      bonus ? 0.72 + intensity * 0.16 : isXp ? 0.72 + intensity * 0.1 : 0.96 + intensity * 0.14,
+      bonus ? 0.62 + intensity * 0.14 : isXp ? 0.6 + intensity * 0.08 : 0.72 + intensity * 0.12,
     )
     .setDepth(Depth.FloatingScore);
 
@@ -1133,13 +1157,45 @@ export function floatingScore(
     return;
   }
 
+  const ziele = bonusLabel ? [text, bonusLabel] : text;
+  const startScale = text.scale;
+
+  // Der Aufschlag: in zwei Frames ueber die Zielgroesse hinaus, dann zurueck.
+  //
+  // Vorher wuchs die Zahl von 0,96 auf 1,0 und schwebte davon - eine
+  // Bewegung, die so gleichmaessig ist, dass der Fang sich nicht vom
+  // Vorbeifliegen unterscheidet. Ein Einschlag braucht die Gegenbewegung:
+  // erst weit darueber hinaus, dann zurueckfallen. Das Auge liest die
+  // Rueckkehr als Wucht, nicht die Groesse selbst.
+  //
+  // `yoyo` statt zweier Tweens, damit exakt derselbe Wert wieder erreicht
+  // wird - eine zweite Animation mit eigenem Ziel weicht bei Framedrops ab
+  // und laesst die Zahl auf einer krummen Groesse stehen.
   scene.tweens.add({
-    targets: bonusLabel ? [text, bonusLabel] : text,
-    y: y - (bonus ? 105 : isXp ? 68 : 90),
-    scale: 1,
-    alpha: 0,
-    duration: bonus ? 980 : 820,
+    targets: ziele,
+    scale: startScale * (bonus ? PUNCH_SCALE_BONUS : PUNCH_SCALE),
+    duration: PUNCH_MS,
     ease: 'Quad.Out',
+    yoyo: true,
+  });
+
+  // Das Aufsteigen laeuft parallel und beginnt schnell, damit der Aufschlag
+  // nicht an Ort und Stelle passiert - der Wert soll vom Fang wegspringen.
+  scene.tweens.add({
+    targets: ziele,
+    y: y - (bonus ? 105 : isXp ? 68 : 90),
+    duration: bonus ? 980 : 820,
+    ease: 'Expo.Out',
+  });
+
+  // Ausblenden erst, nachdem der Aufschlag gelesen wurde. Liefe es von Anfang
+  // an mit, waere die Zahl genau im lautesten Moment schon halb verschwunden.
+  scene.tweens.add({
+    targets: ziele,
+    alpha: 0,
+    delay: bonus ? 380 : 300,
+    duration: bonus ? 600 : 520,
+    ease: 'Quad.In',
     onComplete: () => {
       text.destroy();
       bonusLabel?.destroy();

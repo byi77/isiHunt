@@ -29,6 +29,15 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- **Gefangene Punkte schlagen ein, statt still zu erscheinen.** Die Zahl
+  schiesst in 90 ms auf das 1,85-fache (Serienbonus: 2,3-fache) und faellt
+  darauf zurueck; das Ausblenden setzt erst danach ein. Vorher wuchs sie
+  gleichmaessig von 0,96 auf 1,0 - eine Bewegung, die sich vom Vorbeifliegen
+  nicht unterschied.
+- **Die Talentdetails in der Pause sind eine zweispaltige Liste.** Name und
+  Rang links, Wirkung rechtsbuendig, je Talent eine Zeile. Vorher standen bis
+  zu zehn Eintraege als ein mit "·" verketteter Absatz, der mitten im Wort
+  umbrach. Reichweite und Magnet zeigen jetzt gerundete Werte.
 - **Die HUD-Kopfzeile verdeckt kein Spielfeld mehr.** Statt einer fast
   deckenden Flaeche liegt sie auf einem nach unten auslaufenden Schleier; die
   Zahlen bleiben ueber eine Kontur lesbar. Der Zeitbalken sitzt jetzt ganz

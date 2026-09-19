@@ -14,6 +14,21 @@ Belohnungskarten mit goldenen Ueberschriften. XP-Fortschritt erscheint sofort;
 220 ms Deckkraft-Einblendung ohne Skalierung, bei reduzierter Bewegung statisch.
 Details scrollen unter einer Maske; die goldene Hauptaktion bleibt fest erreichbar.
 
+**Punkteaufschlag, 19.09.2026:** Eine gefangene Punktzahl schlägt ein, statt zu
+wachsen: Sie schießt in 90 ms auf das 1,85-fache ihrer Ruhegröße (Serienbonus:
+2,3-fache) und fällt in derselben Zeit darauf zurück. Das Auge liest die
+Rückkehr als Wucht — die Größe allein tut das nicht, weshalb die frühere
+gleichmäßige Aufwärtsbewegung von 0,96 auf 1,0 wie ein statisches Aufblenden
+wirkte. Das Ausblenden setzt erst nach 300 ms ein, damit die Zahl im lautesten
+Moment noch voll deckend steht. Bei reduzierter Bewegung bleibt es beim
+statischen Text.
+
+**Talente in der Pause, 19.09.2026:** Die aktiven Verstärkungen stehen als
+zweispaltige Liste — Name und Rang links, Wirkung rechtsbündig grün. Vorher war
+es ein einziger, mit „·" verketteter Absatz, der bei zehn Talenten mitten im
+Wort umbrach. Zahlen vergleicht man senkrecht; genau das ist die Frage in der
+Pause.
+
 **Grafik-Update Punkt 6, 17.09.2026:** Kurze, gebogene Lichtsplitter zum Schiff
 und geneigte Energieringe ersetzen Explosion und Vollbildblitz beim Fang.
 Normale Fänge bleiben klein; epische/legendäre Fänge bekommen zwei Ringe und
@@ -25,8 +40,12 @@ ersetzt die ältere Fang-/Kamerablitzbeschreibung in der Animationstabelle unten
 
 **Grafik-Update Punkt 5, 16.09.2026:** Das HUD verwendet drei feste Spalten
 für Punkte, Zeit und Serie/Multiplikator. Zahlen sind hell, Multiplikatoren gold,
-kritische Restzeit rot mit sichtbarer Sekundenangabe. Eine gemeinsame dunkle
-Unterlage (`Palette.panel`, 94 % Deckkraft) schützt den Kontrast auf allen Welten.
+kritische Restzeit rot mit sichtbarer Sekundenangabe. ~~Eine gemeinsame dunkle
+Unterlage (`Palette.panel`, 94 % Deckkraft) schützt den Kontrast auf allen
+Welten.~~ **Überholt am 19.09.2026:** Die Unterlage verdeckte das Spielfeld und
+ist einem nach unten auslaufenden Schleier gewichen (max. 55 % oben, 0 % unten);
+den Kontrast trägt jetzt eine Kontur an den Zahlen selbst. Der Zeitbalken sitzt
+am oberen Bildschirmrand statt unter den Zahlen.
 Gegner bekommen eigene Zeilen; Namen werden gekürzt, Status bleibt als Text sichtbar.
 Kurzes Deckkraftfeedback ersetzt wachsende Zahlen. Lange Talentlisten stehen
 vollständig im Pausefenster; im HUD bleibt eine kompakte Hinweiszeile.

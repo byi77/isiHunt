@@ -71,7 +71,7 @@ import {
   createWorldBackdrop,
   floatingScore,
 } from '@/ui/widgets';
-import type { ChallengeState, RunMode } from '@/types';
+import type { ActiveTalentLine, ChallengeState, RunMode } from '@/types';
 
 export interface GameSceneData {
   worldId: string;
@@ -81,9 +81,20 @@ export interface GameSceneData {
 
 type RunPhase = 'countdown' | 'running' | 'ended';
 
-/** Kompakte Live-Anzeige der tatsaechlich aktiven Talentverstaerkungen. */
-function activeTalentSummary(stats: PlayerStats): string {
-  const active: string[] = [];
+/**
+ * Die tatsaechlich aktiven Talentverstaerkungen, je eine Zeile.
+ *
+ * Getrennt nach Name und Wirkung statt als ein Fliesstext: Der
+ * Pausenbildschirm setzte die Liste frueher als einen einzigen, mit "·"
+ * verketteten Absatz - bei zehn Talenten ein Block aus umgebrochenen
+ * Bruchstuecken, in dem niemand einen einzelnen Wert fand (gemeldet
+ * 2026-09-19). Als zwei Spalten liest man die Zeile, die einen interessiert.
+ *
+ * Hier entstehen nur die Zahlen; wie daraus Text wird, entscheidet die
+ * Anzeige (`HudScene.buildTalentTable`).
+ */
+function activeTalentLines(stats: PlayerStats): ActiveTalentLine[] {
+  const active: ActiveTalentLine[] = [];
   const ranks = stats.talentRanks;
   const reach = stats.collectRadius - PLAYER_BASE_COLLECT_RADIUS;
   const speed = Math.round((stats.moveSpeed / PLAYER_BASE_SPEED - 1) * 100);
@@ -95,18 +106,26 @@ function activeTalentSummary(stats: PlayerStats): string {
   const resonance = stats.seriesMultiplierBonus.toFixed(2).replace('.', ',');
   const shield = Math.round(stats.obstacleResistance * 100);
 
-  if (reach > 0) active.push(`REICH R${ranks.reach} +${reach}`);
-  if (speed > 0) active.push(`TEMPO R${ranks.swiftness} +${speed}%`);
-  if (stats.magnetRadius > 0) active.push(`MAGNET R${ranks.magnetism} +${stats.magnetRadius}`);
-  if (run > 0) active.push(`AUSDAUER R${ranks.endurance} +${run}s`);
-  if (combo > 0) active.push(`FOKUS R${ranks.focus} +${combo}ms`);
-  if (promotion > 0) active.push(`SPÜRSINN R${ranks.prospector} +${promotion}%`);
-  if (xp > 0) active.push(`XP R${ranks.insight} +${xp}%`);
-  if (score > 0) active.push(`PUNKTE R${ranks.fortune} +${score}%`);
-  if (stats.seriesMultiplierBonus > 0) active.push(`RESONANZ R${ranks.resonance} +${resonance}x`);
-  if (shield > 0) active.push(`SCHUTZFELD R${ranks.shield} -${shield}%`);
+  const zeile = (name: string, rank: number, effect: string): void => {
+    active.push({ name, rank, effect });
+  };
 
-  return active.length > 0 ? `AKTIV · ${active.join(' · ')}` : '';
+  // Gerundet: Die Reichweite kommt aus einer Multiplikation und traegt
+  // Nachkommastellen, die niemanden interessieren - "+26,25" liest sich wie
+  // eine Praezision, die es nicht gibt.
+  if (reach > 0) zeile('REICHWEITE', ranks.reach, `+${Math.round(reach)}`);
+  if (speed > 0) zeile('TEMPO', ranks.swiftness, `+${speed}%`);
+  if (stats.magnetRadius > 0)
+    zeile('MAGNET', ranks.magnetism, `+${Math.round(stats.magnetRadius)}`);
+  if (run > 0) zeile('AUSDAUER', ranks.endurance, `+${run}s`);
+  if (combo > 0) zeile('FOKUS', ranks.focus, `+${combo}ms`);
+  if (promotion > 0) zeile('SPÜRSINN', ranks.prospector, `+${promotion}%`);
+  if (xp > 0) zeile('XP', ranks.insight, `+${xp}%`);
+  if (score > 0) zeile('PUNKTE', ranks.fortune, `+${score}%`);
+  if (stats.seriesMultiplierBonus > 0) zeile('RESONANZ', ranks.resonance, `+${resonance}x`);
+  if (shield > 0) zeile('SCHUTZFELD', ranks.shield, `-${shield}%`);
+
+  return active;
 }
 
 export class GameScene extends Phaser.Scene {
@@ -287,7 +306,7 @@ export class GameScene extends Phaser.Scene {
       durationMs: this.totalMs,
       playerLabel: isChallengeMode ? ChallengeSystem.playerLabel(this.playerIndex) : null,
       scoreToBeat: isChallengeMode ? ChallengeSystem.scoreToBeat() : null,
-      talentSummary: usesTalents ? activeTalentSummary(this.stats) : '',
+      talentLines: usesTalents ? activeTalentLines(this.stats) : [],
       showOpponentLive: challenge?.kind === 'duel-online',
       localPlayerIndex:
         challenge?.kind === 'duel-online' ? challenge.online?.localPlayerIndex : undefined,
