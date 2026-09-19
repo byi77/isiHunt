@@ -545,7 +545,12 @@ gehalten wird.
 hohen, schmalen Handys wird die zusaetzliche Hoehe als echte Spielflaeche
 genutzt; die Rundendauer bleibt unveraendert.
 
-- Oben **170 px** frei fuer das HUD.
+- Oben **170 px** frei fuer das HUD. Der Bereich ist seit 2026-09-19 nicht
+  mehr von einer deckenden Flaeche belegt: Die Kopfzeile liegt auf einem nach
+  unten auslaufenden Schleier, das Spielfeld ist bis unter die Zahlen
+  sichtbar. Der Abstand bleibt trotzdem frei von **Spawns** — ein Relikt, das
+  hinter der Punktzahl erscheint, waere schwer zu treffen. Was von unten
+  hereinfliegt, darf dagegen durch.
 - Unten **120 px** frei — dort liegt die Hand.
 - Seitlich je **60 px**.
 - Querformat wird nicht unterstuetzt; Manifest und Laufzeit fordern

@@ -29,6 +29,11 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- **Die HUD-Kopfzeile verdeckt kein Spielfeld mehr.** Statt einer fast
+  deckenden Flaeche liegt sie auf einem nach unten auslaufenden Schleier; die
+  Zahlen bleiben ueber eine Kontur lesbar. Der Zeitbalken sitzt jetzt ganz
+  oben am Bildschirmrand statt unter den Zahlen, wo er die Kante zum
+  Spielfeld bildete.
 - **Die Auswahl im Hangar ist eine blaetterbare Bildleiste statt eines
   Dropdowns.** Jeder Eintrag zeigt sich als Bild - Silhouette bei Schiffen,
   Farbflaeche bei Farben; ein Tipp wechselt die Vorschau sofort. Wischen quer

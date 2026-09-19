@@ -22,6 +22,25 @@ import type { BarHandle, ButtonHandle } from '@/ui/widgets';
 import { createBar, createButton, createPanel } from '@/ui/widgets';
 import type { RunMode } from '@/types';
 
+/**
+ * Deckkraft des Kopfschleiers an seiner staerksten Stelle, ganz oben.
+ *
+ * Keine Balancing-Zahl, sondern eine Ablesbarkeitsgrenze: Darunter flimmern
+ * die Zahlen auf hellen Welten wie Glutnebel, darueber wird aus dem Schleier
+ * wieder die Flaeche, die das Spielfeld verdeckt hat.
+ */
+const PLATE_MAX_ALPHA = 0.55;
+
+/**
+ * Kontur hinter den Kopfzahlen.
+ *
+ * Traegt die Lesbarkeit, seit der Untergrund nach unten auslaeuft: Eine
+ * Kontur wirkt auf jedem Untergrund, eine Flaeche nur auf dem, den sie
+ * verdeckt. Vier Pixel sind genug, um auf der hellsten Welt zu tragen, ohne
+ * dass die Ziffern fett wirken.
+ */
+const HUD_TEXT_STROKE = { stroke: '#0b1020', strokeThickness: 4 } as const;
+
 export interface HudSceneData {
   worldId: string;
   durationMs: number;
@@ -192,7 +211,7 @@ export class HudScene extends Phaser.Scene {
     this.timerBar = createBar(this, 60, 24, GAME_WIDTH - 120, 8, this.accent);
     this.timerBar.setRatio(1);
 
-    // Zahlen bleiben hell; die Unterlage haelt wechselnde Welten ruhig.
+    // Zahlen bleiben hell; die Kontur haelt wechselnde Welten ruhig.
     this.timerText = this.add
       .text(
         GAME_WIDTH - 60,
@@ -201,6 +220,23 @@ export class HudScene extends Phaser.Scene {
         textStyle(FontSize.small, Palette.ink),
       )
       .setOrigin(1, 0);
+
+    // Die Kopfzahlen stehen seit 2026-09-19 auf einem auslaufenden Schleier
+    // statt auf einer deckenden Flaeche (siehe `drawPlate`). Die Kontur ist
+    // das, was sie stattdessen lesbar haelt - auf Glutnebel ebenso wie auf
+    // Nullsektor. `talentText` hat seine eigene, staerkere: Es steht am
+    // weitesten unten, wo der Schleier praktisch nichts mehr traegt.
+    for (const text of [
+      this.worldText,
+      this.scoreCaption,
+      this.timeCaption,
+      this.scoreText,
+      this.timerText,
+      this.comboText,
+      this.multiplierText,
+      this.agilityText,
+    ])
+      text.setStroke(HUD_TEXT_STROKE.stroke, HUD_TEXT_STROKE.strokeThickness);
 
     // Im zweiten Duell-Durchgang steht links, was zu schlagen ist. Ohne diese
     // Zahl waere der zweite Spieler bis zum Ergebnisbildschirm blind.
@@ -291,16 +327,24 @@ export class HudScene extends Phaser.Scene {
         .setFontSize(l.font(font));
       this.fit(text, width);
     };
-    place(this.worldText, GAME_WIDTH / 2, 3, 10, l.width);
-    place(this.scoreCaption, l.scoreX, 20, 10, l.columnWidth);
-    place(this.timeCaption, l.timeX, 20, 10, l.columnWidth);
-    place(this.scoreText, l.scoreX, 33, 24, l.columnWidth);
-    place(this.timerText, l.timeX, 33, 24, l.columnWidth);
-    place(this.comboText, l.comboX, 20, 10, l.columnWidth);
-    place(this.multiplierText, l.comboX, 33, 24, l.columnWidth);
-    place(this.agilityText, l.comboX, 62, 9, l.columnWidth);
+    // Alle Zeilen um die Balkenhoehe nach unten - er liegt jetzt darueber.
+    place(this.worldText, GAME_WIDTH / 2, 9, 10, l.width);
+    place(this.scoreCaption, l.scoreX, 26, 10, l.columnWidth);
+    place(this.timeCaption, l.timeX, 26, 10, l.columnWidth);
+    place(this.scoreText, l.scoreX, 39, 24, l.columnWidth);
+    place(this.timerText, l.timeX, 39, 24, l.columnWidth);
+    place(this.comboText, l.comboX, 26, 10, l.columnWidth);
+    place(this.multiplierText, l.comboX, 39, 24, l.columnWidth);
+    place(this.agilityText, l.comboX, 68, 9, l.columnWidth);
+    // Der Zeitbalken sitzt ueber den Zahlen, nicht darunter.
+    //
+    // Unten lag er auf der Kante zum Spielfeld und zwang die Kopfflaeche
+    // dazu, bis dorthin undurchsichtig zu bleiben. Oben schliesst er den
+    // Bildschirmrand ab: Die Zeit ist die eine Angabe, die man im Blick
+    // behaelt, ohne hinzusehen - dort stoert sie am wenigsten und verdeckt
+    // nichts vom Feld.
     this.timerBar.container
-      .setPosition(l.margin, 76 * l.unit)
+      .setPosition(l.margin, 2 * l.unit)
       .setScale(l.width / (GAME_WIDTH - 120), l.unit * 0.375);
     let row = 0;
     for (const text of [this.targetText, ...this.opponentLiveTexts.values(), this.talentText]) {
@@ -312,8 +356,7 @@ export class HudScene extends Phaser.Scene {
         .setFontSize(l.font(11));
       this.fit(text, l.width);
     }
-    this.plate.clear().fillStyle(Palette.panel, 0.94);
-    this.plate.fillRoundedRect(l.margin / 2, 0, GAME_WIDTH - l.margin, l.headerHeight, 12 * l.unit);
+    this.drawPlate(l.headerHeight);
     this.multiplierBurstText.setFontSize(l.font(19));
     this.buildPauseButton();
     if (this.pauseOverlay.length) {
@@ -321,6 +364,41 @@ export class HudScene extends Phaser.Scene {
       this.showPauseOverlay(this.pauseReason);
     }
   };
+
+  /**
+   * Der Untergrund der Kopfzeile: ein nach unten auslaufender Schleier.
+   *
+   * Frueher war das eine abgerundete Flaeche mit 94 % Deckkraft. Sie verdeckte
+   * die obersten rund 170 Pixel des Spielfelds vollstaendig - auf einem
+   * Hochformat-Handy ein Achtel der Hoehe, in dem Relikte erscheinen und
+   * wieder verblassen konnten, ohne je sichtbar zu werden. Gemeldet
+   * 2026-09-19 ("bedeckt dort noch Spielfeld").
+   *
+   * Jetzt bleibt oben gerade so viel Deckung, dass die Zahlen lesbar sind, und
+   * sie laeuft nach unten auf Null aus: Die Kante zum Spielfeld verschwindet,
+   * statt es abzuschneiden. Den Rest der Lesbarkeit traegt die Kontur an den
+   * Texten selbst - sie wirkt auf jedem Untergrund, eine Flaeche nur auf dem,
+   * den sie verdeckt.
+   *
+   * Der Verlauf ist aus waagerechten Streifen gebaut, weil Phasers `Graphics`
+   * keinen Farbverlauf kennt. 16 Stufen sind bei dieser Hoehe nicht als
+   * Banding zu sehen und kosten einen Zeichenaufruf pro Stufe - nur beim
+   * Layout, nicht je Frame.
+   */
+  private drawPlate(height: number): void {
+    const stufen = 16;
+    this.plate.clear();
+    for (let i = 0; i < stufen; i++) {
+      const oben = (height * i) / stufen;
+      const hoehe = height / stufen + 1;
+      // Quadratisch auslaufend: oben traegt die Deckung die Zahlen, unten
+      // geht sie schneller gegen Null als ein linearer Verlauf - die Kante
+      // faellt dadurch nicht auf.
+      const anteil = 1 - i / stufen;
+      this.plate.fillStyle(Palette.panel, PLATE_MAX_ALPHA * anteil * anteil);
+      this.plate.fillRect(0, oben, GAME_WIDTH, hoehe);
+    }
+  }
 
   private fit(text: Phaser.GameObjects.Text, width: number): void {
     if (text.width > width)
