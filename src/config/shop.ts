@@ -19,6 +19,26 @@ import { balancedCoinCost } from './balance';
  * Wer die Formen bereits ueber sein Level freigeschaltet hatte, behaelt sie
  * (Migration in `SaveSystem`, SAVE_VERSION 8). Das Update nimmt niemandem
  * etwas weg.
+ *
+ * ## Warum der Laden 2026-09-19 von 111 auf 34 Formen gekuerzt wurde
+ *
+ * Der Bestand war ueber mehrere Etappen auf 111 Formen und 30 Farben
+ * gewachsen. Damit war er kein Angebot mehr, sondern ein Katalog: Wer den
+ * Laden oeffnete, scrollte an Zahnrad, Schluessel, Kompass und Rennwagen
+ * vorbei - Dingen, die mit einem Flugspiel nichts zu tun haben - und fand
+ * zwischen elf kaum unterscheidbaren Heldenfiguren nicht mehr heraus, wofuer
+ * er eigentlich sparte. Eine Kaufentscheidung braucht eine ueberschaubare
+ * Auswahl; 111 Eintraege verhindern sie.
+ *
+ * Gestrichen wurde nach zwei Regeln: thematische Fremdkoerper ganz, und von
+ * mehreren Varianten derselben Idee bleibt eine. Jede Kategorie ist weiter
+ * vertreten (Raumjaeger, Flugzeuge, Figuren, Tiere, Drohnen, 3D-Piloten).
+ *
+ * **Die entfernten Ids sind ersatzlos weg, auch gekaufte.** Das ist bewusst:
+ * Die Userbase wird vor dem Release zurueckgesetzt, ein Bestandsschutz haette
+ * also nur Code gekostet, den danach niemand mehr braucht. `getShipShape()`
+ * faengt eine unbekannte Id ohnehin mit dem Pfeil ab - ein alter Spielstand
+ * verliert die Form, nicht das Spiel.
  */
 
 /** Eine kaufbare Schiffsform. Die Reihenfolge ist die Anzeigereihenfolge. */
@@ -40,10 +60,9 @@ export interface ShipShapeDef {
 /**
  * Bewusst ein freier String statt einer Union.
  *
- * Bei dreissig und mehr Formen muesste jede Id an zwei Stellen gepflegt
- * werden. `getShipShape()` faengt Unbekanntes ohnehin mit dem Pfeil ab, und
- * ein Balance-Test prueft, dass jede Id genau einmal vorkommt und jeder
- * `skinIndex` eine Zeichnung hat.
+ * Jede Id muesste sonst an zwei Stellen gepflegt werden. `getShipShape()`
+ * faengt Unbekanntes ohnehin mit dem Pfeil ab, und ein Balance-Test prueft,
+ * dass jede Id genau einmal vorkommt und jeder `skinIndex` eine Zeichnung hat.
  */
 export type ShipShapeId = string;
 
@@ -86,39 +105,11 @@ const SHIP_SHAPES_REFERENCE: readonly ShipShapeDef[] = [
     skinIndex: 3,
   },
   {
-    id: 'twin',
-    name: 'Doppelrumpf',
-    description: 'Zwei Hälften, eine Brücke.',
-    cost: 900,
-    skinIndex: 4,
-  },
-  {
     id: 'star',
     name: 'Sternenkreuzer',
     description: 'Sechs Zacken, in jede Richtung gleich.',
     cost: 1_100,
     skinIndex: 5,
-  },
-  {
-    id: 'crown',
-    name: 'Krone',
-    description: 'Drei Zinnen auf breiter Basis.',
-    cost: 1_300,
-    skinIndex: 6,
-  },
-  {
-    id: 'quadwing',
-    name: 'Vierflügler',
-    description: 'Vier gespreizte Tragflächen um einen Spindelrumpf.',
-    cost: 1_500,
-    skinIndex: 7,
-  },
-  {
-    id: 'podfighter',
-    name: 'Kanzeljäger',
-    description: 'Kugelkanzel zwischen zwei senkrechten Flächen.',
-    cost: 1_700,
-    skinIndex: 8,
   },
   {
     id: 'wedge',
@@ -140,13 +131,6 @@ const SHIP_SHAPES_REFERENCE: readonly ShipShapeDef[] = [
     description: 'Kugel mit drei Auslegern. Kennt kein Vorne.',
     cost: 2_300,
     skinIndex: 11,
-  },
-  {
-    id: 'funnel',
-    name: 'Trichter',
-    description: 'Weit geöffneter Einlass, schmales Heck.',
-    cost: 2_500,
-    skinIndex: 12,
   },
 
   // --- Flugzeuge ---
@@ -276,483 +260,11 @@ const SHIP_SHAPES_REFERENCE: readonly ShipShapeDef[] = [
     skinIndex: 29,
   },
 
-  // --- Helden, Maerchengestalten und weitere Fluggeraete (Etappe 2+3) ---
+  // --- Externe CC0-Assets ---
   //
-  // Reihenfolge hier ist Anzeigereihenfolge; `skinIndex` verweist auf die
-  // Zeichnung in `ui/shipShapes.ts` und darf sich nie aendern - sonst traegt
-  // ein gekauftes Schiff ploetzlich eine andere Form.
-  {
-    id: 'heroine',
-    name: 'Heldin',
-    description: 'Ein Arm vorgestreckt, Umhang im Wind.',
-    cost: 2_000,
-    skinIndex: 30,
-  },
-  {
-    id: 'masked',
-    name: 'Maskenheld',
-    description: 'Maske über den Augen, beide Fäuste vorn.',
-    cost: 2_100,
-    skinIndex: 31,
-  },
-  {
-    id: 'caped_heroine',
-    name: 'Umhangheldin',
-    description: 'Weiter Umhang, Hände in die Hüften.',
-    cost: 2_200,
-    skinIndex: 32,
-  },
-  {
-    id: 'titan',
-    name: 'Kraftheld',
-    description: 'Massige Schultern, Arme durchgestreckt.',
-    cost: 2_300,
-    skinIndex: 33,
-  },
-  {
-    id: 'starlight',
-    name: 'Sternenheldin',
-    description: 'Ein Stern über der erhobenen Hand.',
-    cost: 2_600,
-    skinIndex: 34,
-  },
-  {
-    id: 'armored',
-    name: 'Panzerheld',
-    description: 'Breite Schultern, geschlossener Helm.',
-    cost: 2_400,
-    skinIndex: 35,
-  },
-  {
-    id: 'bolt',
-    name: 'Blitzheld',
-    description: 'Zackiger Umriss, nichts daran ist gerade.',
-    cost: 2_500,
-    skinIndex: 80,
-  },
-  {
-    id: 'shieldmaiden',
-    name: 'Schildheldin',
-    description: 'Runder Schild vor dem Körper.',
-    cost: 2_400,
-    skinIndex: 81,
-  },
-  {
-    id: 'archer',
-    name: 'Bogenschützin',
-    description: 'Gespannter Bogen quer vor dem Körper.',
-    cost: 2_300,
-    skinIndex: 82,
-  },
-  {
-    id: 'lancer',
-    name: 'Speerkämpfer',
-    description: 'Langer Speer, aufrechte Haltung.',
-    cost: 2_200,
-    skinIndex: 83,
-  },
-  {
-    id: 'princess',
-    name: 'Prinzessin',
-    description: 'Krone und weites Kleid.',
-    cost: 1_900,
-    skinIndex: 36,
-  },
-  {
-    id: 'fairy',
-    name: 'Fee',
-    description: 'Durchscheinende Flügel und ein Zauberstab.',
-    cost: 2_000,
-    skinIndex: 37,
-  },
-  {
-    id: 'sorceress',
-    name: 'Zauberin',
-    description: 'Spitzhut, langer Umhang, Sternenstab.',
-    cost: 2_400,
-    skinIndex: 38,
-  },
-  { id: 'queen', name: 'Königin', description: 'Krone und Zepter.', cost: 2_700, skinIndex: 39 },
-  {
-    id: 'wingfairy',
-    name: 'Flügelfee',
-    description: 'Federflügel statt Insektenflügeln.',
-    cost: 2_200,
-    skinIndex: 40,
-  },
-  {
-    id: 'nightfairy',
-    name: 'Nachtfee',
-    description: 'Fledermausflügel und Spitzhut.',
-    cost: 2_300,
-    skinIndex: 41,
-  },
-  {
-    id: 'mermaid',
-    name: 'Meerjungfrau',
-    description: 'Flosse statt Beinen.',
-    cost: 2_100,
-    skinIndex: 42,
-  },
-  {
-    id: 'knight',
-    name: 'Ritter',
-    description: 'Federbusch am Helm, Schwert erhoben.',
-    cost: 2_200,
-    skinIndex: 43,
-  },
-  {
-    id: 'dragon',
-    name: 'Drache',
-    description: 'Rückenzacken, Hautflügel, langer Schwanz.',
-    cost: 2_900,
-    skinIndex: 44,
-  },
-  {
-    id: 'unicorn',
-    name: 'Einhorn',
-    description: 'Horn und Federflügel.',
-    cost: 2_800,
-    skinIndex: 45,
-  },
-  {
-    id: 'ghost',
-    name: 'Geist',
-    description: 'Wehender Umriss ohne Beine.',
-    cost: 1_800,
-    skinIndex: 85,
-  },
-  {
-    id: 'kraken',
-    name: 'Krake',
-    description: 'Runder Kopf, acht Arme.',
-    cost: 2_000,
-    skinIndex: 86,
-  },
-  {
-    id: 'crescent',
-    name: 'Sichelmond',
-    description: 'Eine schmale Sichel, offen nach hinten.',
-    cost: 1_400,
-    skinIndex: 46,
-  },
-  {
-    id: 'manta',
-    name: 'Manta',
-    description: 'Sehr flach, weit ausladend.',
-    cost: 1_500,
-    skinIndex: 47,
-  },
-  {
-    id: 'spear',
-    name: 'Speerschiff',
-    description: 'Extrem schlank, lange Spitze.',
-    cost: 1_300,
-    skinIndex: 48,
-  },
-  {
-    id: 'beetle',
-    name: 'Käfer',
-    description: 'Runder Panzer mit zwei Fühlern.',
-    cost: 1_400,
-    skinIndex: 49,
-  },
-  {
-    id: 'anchor',
-    name: 'Anker',
-    description: 'Ring oben, ausladende Arme unten.',
-    cost: 1_600,
-    skinIndex: 50,
-  },
-  {
-    id: 'twindisc',
-    name: 'Zwillingsscheibe',
-    description: 'Zwei Scheiben nebeneinander.',
-    cost: 1_700,
-    skinIndex: 51,
-  },
-  {
-    id: 'comb',
-    name: 'Kamm',
-    description: 'Fünf senkrechte Finger auf einer Basis.',
-    cost: 1_500,
-    skinIndex: 52,
-  },
-  {
-    id: 'spiral',
-    name: 'Spirale',
-    description: 'Drei gedrehte Arme aus der Mitte.',
-    cost: 1_900,
-    skinIndex: 53,
-  },
-  {
-    id: 'cube',
-    name: 'Würfel',
-    description: 'Kantiger Block mit abgesetzten Ecken.',
-    cost: 1_600,
-    skinIndex: 54,
-  },
-  {
-    id: 'claw',
-    name: 'Greifklaue',
-    description: 'Drei nach innen gebogene Finger.',
-    cost: 1_800,
-    skinIndex: 55,
-  },
-  {
-    id: 'sail',
-    name: 'Segler',
-    description: 'Dreieckiges Segel an einem Mast.',
-    cost: 1_500,
-    skinIndex: 56,
-  },
-  {
-    id: 'torus',
-    name: 'Torus',
-    description: 'Ein dicker Ring, sonst nichts.',
-    cost: 1_700,
-    skinIndex: 57,
-  },
-  {
-    id: 'arrowhead',
-    name: 'Pfeilspitze',
-    description: 'Flach und breit, tiefe Kerbe.',
-    cost: 1_400,
-    skinIndex: 58,
-  },
-  {
-    id: 'tower',
-    name: 'Turm',
-    description: 'Schmal und hoch, drei Absätze.',
-    cost: 1_600,
-    skinIndex: 59,
-  },
-  {
-    id: 'crystal',
-    name: 'Kristall',
-    description: 'Facettierter Kegel.',
-    cost: 2_000,
-    skinIndex: 92,
-  },
-  {
-    id: 'pyramid',
-    name: 'Pyramide',
-    description: 'Dreieck mit sichtbarer Seitenfläche.',
-    cost: 1_500,
-    skinIndex: 93,
-  },
-  {
-    id: 'portal',
-    name: 'Portal',
-    description: 'Ring mit gezacktem Inneren.',
-    cost: 2_600,
-    skinIndex: 99,
-  },
-  {
-    id: 'deepkraken',
-    name: 'Tiefenkrake',
-    description: 'Spiralarme um eine Kugel.',
-    cost: 2_700,
-    skinIndex: 98,
-  },
-  {
-    id: 'seaplane',
-    name: 'Wasserflugzeug',
-    description: 'Schwimmer unter den Tragflächen.',
-    cost: 1_200,
-    skinIndex: 60,
-  },
-  {
-    id: 'helicopter',
-    name: 'Hubschrauber',
-    description: 'Rotor quer über der Kabine.',
-    cost: 1_400,
-    skinIndex: 61,
-  },
-  {
-    id: 'hangglider',
-    name: 'Deltaflieger',
-    description: 'Hängegleiter mit Pilot darunter.',
-    cost: 1_000,
-    skinIndex: 62,
-  },
-  {
-    id: 'zeppelin',
-    name: 'Zeppelin',
-    description: 'Langer Ballon mit Gondel.',
-    cost: 1_300,
-    skinIndex: 63,
-  },
-  {
-    id: 'balloon',
-    name: 'Heißluftballon',
-    description: 'Runder Ballon, Korb an Seilen.',
-    cost: 1_100,
-    skinIndex: 64,
-  },
-  {
-    id: 'paperplane',
-    name: 'Papierflieger',
-    description: 'Gefaltete Kanten, sichtbarer Knick.',
-    cost: 800,
-    skinIndex: 65,
-  },
-  {
-    id: 'racecar',
-    name: 'Rennwagen',
-    description: 'Flach, mit breitem Heckflügel.',
-    cost: 1_500,
-    skinIndex: 90,
-  },
-  {
-    id: 'submarine',
-    name: 'U-Boot',
-    description: 'Zigarrenform mit Turm.',
-    cost: 1_600,
-    skinIndex: 91,
-  },
-  {
-    id: 'butterfly',
-    name: 'Schmetterling',
-    description: 'Vier runde Flügel, schmaler Leib.',
-    cost: 1_300,
-    skinIndex: 66,
-  },
-  {
-    id: 'owl',
-    name: 'Eule',
-    description: 'Gedrungen, breiter Kopf, Federohren.',
-    cost: 1_400,
-    skinIndex: 67,
-  },
-  {
-    id: 'hummingbird',
-    name: 'Kolibri',
-    description: 'Langer Schnabel, schwirrende Flügel.',
-    cost: 1_500,
-    skinIndex: 68,
-  },
-  {
-    id: 'stork',
-    name: 'Storch',
-    description: 'Langer Hals, lange Beine.',
-    cost: 1_400,
-    skinIndex: 69,
-  },
-  {
-    id: 'ray',
-    name: 'Rochen',
-    description: 'Flacher Körper, dünner Schwanz.',
-    cost: 1_300,
-    skinIndex: 70,
-  },
-  {
-    id: 'jellyfish',
-    name: 'Qualle',
-    description: 'Runde Glocke mit Tentakeln.',
-    cost: 1_200,
-    skinIndex: 71,
-  },
-  {
-    id: 'wasp',
-    name: 'Wespe',
-    description: 'Gestreifter Hinterleib, schmale Taille.',
-    cost: 1_600,
-    skinIndex: 72,
-  },
-  {
-    id: 'octocopter',
-    name: 'Oktokopter',
-    description: 'Acht Rotoren, dichtes Muster.',
-    cost: 2_000,
-    skinIndex: 73,
-  },
-  {
-    id: 'tricopter',
-    name: 'Tricopter',
-    description: 'Drei Rotoren in Y-Form.',
-    cost: 1_300,
-    skinIndex: 74,
-  },
-  {
-    id: 'satellite',
-    name: 'Satellit',
-    description: 'Kern mit zwei Solarflächen.',
-    cost: 1_700,
-    skinIndex: 75,
-  },
-  {
-    id: 'telescope',
-    name: 'Teleskop',
-    description: 'Langes Rohr auf einem Dreibein.',
-    cost: 1_500,
-    skinIndex: 76,
-  },
-  { id: 'compass', name: 'Kompass', description: 'Ring mit Nadel.', cost: 1_400, skinIndex: 77 },
-  {
-    id: 'key',
-    name: 'Schlüssel',
-    description: 'Runder Griff, gezackter Bart.',
-    cost: 1_200,
-    skinIndex: 78,
-  },
-  {
-    id: 'gear',
-    name: 'Zahnrad',
-    description: 'Acht Zähne um eine Nabe.',
-    cost: 1_300,
-    skinIndex: 79,
-  },
-  {
-    id: 'robot',
-    name: 'Roboter',
-    description: 'Eckiger Kopf mit Antenne.',
-    cost: 1_900,
-    skinIndex: 84,
-  },
-  {
-    id: 'snowflake',
-    name: 'Schneeflocke',
-    description: 'Sechs verzweigte Arme.',
-    cost: 1_800,
-    skinIndex: 87,
-  },
-  {
-    id: 'flame',
-    name: 'Flamme',
-    description: 'Züngelnder Umriss, unten breit.',
-    cost: 1_700,
-    skinIndex: 88,
-  },
-  {
-    id: 'droplet',
-    name: 'Tropfen',
-    description: 'Runde Basis, spitz nach oben.',
-    cost: 1_000,
-    skinIndex: 89,
-  },
-  {
-    id: 'heart',
-    name: 'Herz',
-    description: 'Zwei Bögen oben, Spitze unten.',
-    cost: 1_200,
-    skinIndex: 94,
-  },
-  {
-    id: 'flower',
-    name: 'Blume',
-    description: 'Fünf Blüten um eine Mitte.',
-    cost: 1_300,
-    skinIndex: 95,
-  },
-  {
-    id: 'hourglass',
-    name: 'Sanduhr',
-    description: 'Zwei Dreiecke, Spitze an Spitze.',
-    cost: 1_500,
-    skinIndex: 96,
-  },
-  { id: 'eye', name: 'Auge', description: 'Mandelform mit Pupille.', cost: 1_600, skinIndex: 97 },
+  // Bleibt trotz der Ausduennung: ein eigens recherchiertes Sprite-Sheet, das
+  // `BootScene` ohnehin laedt - kein Fuellmaterial wie die gestrichenen
+  // prozeduralen Formen.
   {
     id: 'cc0-scout',
     name: 'CC0-Surveyor',
@@ -761,6 +273,8 @@ const SHIP_SHAPES_REFERENCE: readonly ShipShapeDef[] = [
     skinIndex: 100,
     assetId: 'cc0-scout',
   },
+
+  // --- 3D-Piloten (CC0) ---
   {
     id: 'cc0-3d-ship-1',
     name: 'Orbital-01',
@@ -871,43 +385,24 @@ const SHIP_COLORS_REFERENCE: readonly ShipColorDef[] = [
 
   // Warme Toene
   { id: 'gold', name: 'Gold', cost: 200, color: 0xffd479 },
-  { id: 'sand', name: 'Sand', cost: 200, color: 0xe8cfa0 },
-  { id: 'amber', name: 'Bernstein', cost: 200, color: 0xffb340 },
-  { id: 'peach', name: 'Pfirsich', cost: 250, color: 0xffb59e },
   { id: 'ember', name: 'Glut', cost: 300, color: 0xff7a3c },
   { id: 'crimson', name: 'Karmin', cost: 300, color: 0xff4d5e },
-  { id: 'rust', name: 'Rost', cost: 300, color: 0xc75b32 },
 
   // Kuehle Toene
   { id: 'ice', name: 'Eis', cost: 200, color: 0x8fe3ff },
-  { id: 'steel', name: 'Stahl', cost: 200, color: 0x9aa3bd },
   { id: 'azure', name: 'Azur', cost: 250, color: 0x4aa3ff },
   { id: 'teal', name: 'Petrol', cost: 250, color: 0x35d6c3 },
-  { id: 'mint', name: 'Minze', cost: 250, color: 0x9ff7d8 },
-  { id: 'deepsea', name: 'Tiefsee', cost: 300, color: 0x2f6df0 },
-  { id: 'midnight', name: 'Mitternacht', cost: 400, color: 0x5560c8 },
 
-  // Gruentoene
+  // Gruen, Violett, Rosa
   { id: 'forest', name: 'Waldgrün', cost: 250, color: 0x4faf5c },
-  { id: 'lime', name: 'Limette', cost: 250, color: 0xd4ff5c },
-  { id: 'toxic', name: 'Giftgrün', cost: 300, color: 0x9dff4f },
-
-  // Violett und Rosa
   { id: 'violet', name: 'Violett', cost: 350, color: 0xc084fc },
-  { id: 'orchid', name: 'Orchidee', cost: 350, color: 0xe07aff },
-  { id: 'rose', name: 'Rosé', cost: 350, color: 0xff8fc4 },
-  { id: 'magenta', name: 'Magenta', cost: 400, color: 0xff4fd8 },
+  { id: 'ruby', name: 'Rubin', cost: 700, color: 0xff2f5e },
 
   // Helle und dunkle Grundtoene
-  { id: 'ash', name: 'Asche', cost: 250, color: 0x6d7488 },
   { id: 'snow', name: 'Schnee', cost: 300, color: 0xffffff },
   { id: 'onyx', name: 'Onyx', cost: 500, color: 0x3a3f52 },
 
-  // Besondere - die teuersten, als Fernziel
-  { id: 'copper', name: 'Kupfer', cost: 600, color: 0xd98d52 },
-  { id: 'emerald', name: 'Smaragd', cost: 700, color: 0x2fd97a },
-  { id: 'sapphire', name: 'Saphir', cost: 700, color: 0x3d7bff },
-  { id: 'ruby', name: 'Rubin', cost: 700, color: 0xff2f5e },
+  // Das Fernziel unter den Farben
   { id: 'platinum', name: 'Platin', cost: 900, color: 0xe6f0ff },
 ];
 
@@ -996,7 +491,7 @@ const SHIP_AURAS_REFERENCE: readonly ShipAuraDef[] = [
   {
     id: 'prismasurge',
     name: 'Prismaflut',
-    description: 'Läuft durch alle Farben und blitzt dabei auf. Ab Stufe 50.',
+    description: 'LÃ¤uft durch alle Farben und blitzt dabei auf. Ab Stufe 50.',
     cost: 25_000,
     animIndex: 8,
     minLevel: 50,
@@ -1004,8 +499,8 @@ const SHIP_AURAS_REFERENCE: readonly ShipAuraDef[] = [
   },
   {
     id: 'wingbeat',
-    name: 'Flügelschlag',
-    description: 'Die Gestalt schlägt seitlich aus, wie Schwingen im Flug.',
+    name: 'FlÃ¼gelschlag',
+    description: 'Die Gestalt schlÃ¤gt seitlich aus, wie Schwingen im Flug.',
     cost: 4_000,
     animIndex: 0,
     minLevel: 0,
@@ -1013,7 +508,7 @@ const SHIP_AURAS_REFERENCE: readonly ShipAuraDef[] = [
   {
     id: 'heartbeat',
     name: 'Herzschlag',
-    description: 'Zwei schnelle Schläge, dann eine Pause. Etwas Lebendiges.',
+    description: 'Zwei schnelle SchlÃ¤ge, dann eine Pause. Etwas Lebendiges.',
     cost: 4_500,
     animIndex: 3,
     minLevel: 0,
@@ -1029,7 +524,7 @@ const SHIP_AURAS_REFERENCE: readonly ShipAuraDef[] = [
   {
     id: 'spin',
     name: 'Kreisel',
-    description: 'Dreht sich um die eigene Achse — mit Vorder- und Rückseite.',
+    description: 'Dreht sich um die eigene Achse â€” mit Vorder- und RÃ¼ckseite.',
     cost: 6_000,
     animIndex: 1,
     minLevel: 0,
@@ -1060,8 +555,8 @@ const SHIP_AURAS_REFERENCE: readonly ShipAuraDef[] = [
   },
   {
     id: 'singularity',
-    name: 'Singularität',
-    description: 'Sog bis fast zum Punkt, dann der Rücksprung.',
+    name: 'SingularitÃ¤t',
+    description: 'Sog bis fast zum Punkt, dann der RÃ¼cksprung.',
     cost: 10_000,
     animIndex: 7,
     minLevel: 0,

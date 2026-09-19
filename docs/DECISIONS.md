@@ -1087,7 +1087,13 @@ begrenzt. Duelle verwenden weiterhin keine Talentboni.
 
 ## ADR-0020 — Offline-Spiel ohne Pflichtkonto
 
-**Datum:** 2026-08-28 · **Status:** Angenommen
+**Datum:** 2026-08-28 · **Status:** Abgeloest durch ADR-0026 (2026-09-19)
+
+> **Nicht mehr gueltig.** Der hier beschriebene Gastmodus wurde am 2026-09-19
+> ersatzlos entfernt; gespielt wird nur noch angemeldet. Die Begruendung und
+> der dafuer bewusst in Kauf genommene Preis stehen in ADR-0026. Dieser
+> Eintrag bleibt stehen, weil er erklaert, warum der Gastmodus ueberhaupt
+> existierte — und damit, was die Umkehr kostet.
 
 ### Kontext
 
@@ -1459,3 +1465,60 @@ Verworfene Alternativen:
   `docs/design/2026-09-17-hangar/`.
 - **Offen:** echte Mobilgeraete, OS-seitige Bewegungsreduktion und eine
   GPU-/Speicher-Langzeitpruefung. In `docs/ROADMAP.md` als offen vermerkt.
+
+---
+
+## ADR-0026 — Gespielt wird nur angemeldet; der Gastmodus entfaellt
+
+**Datum:** 2026-09-19 · **Status:** Angenommen · **Loest ab:** ADR-0020
+
+### Kontext
+
+ADR-0020 hatte den Gastmodus eingefuehrt: Der Start fuehrte bedingungslos ins
+Menue, ein namenloser Spieler hiess dort `GAST` und sammelte Level, Muenzen und
+Erfolge rein lokal. Ein Login war jederzeit moeglich, aber nie noetig.
+
+In der Praxis entstand damit ein zweiter, unsichtbarer Fortschrittsstrang neben
+dem eigentlichen Konto. Aufgefallen ist das ueber einen konkreten Fall: Ein
+Mitbenutzer des Geraets spielte dauerhaft als Gast weiter, ohne dass dies
+beabsichtigt war. Technisch war das kein Fehler — `BootScene` prueft die
+Session schlicht nie —, aber das Verhalten war nicht gewollt.
+
+Hinzu kam die Zusammenfuehrung: Ein Gast, der sich spaeter anmeldet, bringt
+einen lokalen Stand mit, der gegen den Cloud-Stand abgewogen werden muss
+(`claimCloudProfile`, `isRemoteAhead`). Jede Zeile davon existiert nur, weil es
+Fortschritt ohne Konto geben darf.
+
+### Entscheidung
+
+`BootScene.entryScene()` entscheidet allein anhand der gueltigen Session:
+angemeldet fuehrt ins Menue, alles andere in die `AccountScene` mit
+`firstStart: true` (kein Zurueck-Knopf). Es gibt keinen Gastmodus und keinen
+Kulanzpfad mehr.
+
+Der bereits entworfene Mittelweg — ein `localStorage`-Merker "hier war schon
+einmal jemand angemeldet", der einen Offline-Wiedereinstieg erlaubt haette —
+wurde **bewusst verworfen**. Er waere genau der Spalt gewesen, den die Sperre
+schliessen soll, und haette zudem eine Sicherheitserwartung geweckt, die ein
+clientseitiger Merker nicht einloesen kann: Wer `localStorage` bearbeiten kann,
+setzt ihn selbst.
+
+### Konsequenzen
+
+- **Der Preis ist bekannt und angenommen:** Anmelden braucht Internet, und eine
+  Supabase-Session haelt offline nicht unbegrenzt, weil der Token-Refresh
+  selbst Netz braucht. Laeuft die Session im Funkloch ab, kommt auch der
+  rechtmaessige Kontoinhaber bis zur naechsten Verbindung nicht mehr ins Spiel.
+  Eine dichte Regel wurde einem bequemen Sonderfall vorgezogen.
+- `AccountScene` ist wieder erreichbar. Ihr `firstStart`-Zweig war seit der
+  Zusammenlegung der Profilbildschirme (2026-08-18) toter Code — niemand setzte
+  das Flag. Er wird reaktiviert statt neu gebaut.
+- Der Offline-Hinweis beim Erststart verspricht kein Spielen mehr, sondern
+  nennt Internet als Voraussetzung fuer das erste Profil.
+- `MenuView` zeigt weiterhin `save.playerName || 'GAST'`. Der Rueckfall bleibt
+  als Anzeigeschutz stehen, ist aber kein Zustand mehr, den man erreichen
+  koennen soll: Beim Erststart uebernimmt `syncProfile()` den Alias als
+  Spielernamen.
+- Die Zusammenfuehrungslogik fuer anonyme Staende bleibt vorerst bestehen. Sie
+  wird erst ueberfluessig, wenn keine Altstaende aus der Gastzeit mehr
+  existieren; die Userbase wird vor dem Release ohnehin zurueckgesetzt.

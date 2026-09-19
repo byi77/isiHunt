@@ -7,6 +7,7 @@ import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as AuthSystem from '@/systems/AuthSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
+import * as DebugSystem from '@/systems/DebugSystem';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
@@ -158,6 +159,7 @@ export class AccountScene extends Phaser.Scene {
       accent,
       onSubmit: () => void (isSignUp ? this.signUp() : this.signIn()),
     });
+    this.attachAliasDiagnostics(this.aliasInput);
     this.pinInput = createTextInput(this, GAME_WIDTH / 2, this.statusPage.contentY(420), {
       placeholder: isSignUp ? '6-stellige PIN' : 'Deine PIN',
       inputType: 'password',
@@ -211,6 +213,41 @@ export class AccountScene extends Phaser.Scene {
           ? 'Lege nur dann ein neues Profil an, wenn du noch keines hast.'
           : 'Gib deinen Namen und deine PIN ein. Dann tippe auf EINLOGGEN.\nNoch kein Profil? Tippe unten auf NEUES ANLEGEN.',
     );
+  }
+
+  /**
+   * DIAGNOSE (befristet): Welches Feld frisst das erste "a"?
+   *
+   * Dieses Alias-Feld normalisiert waehrend des Tippens gar nicht - erst
+   * `normalizeAlias()` beim Absenden. Findet der Verlust trotzdem hier statt,
+   * scheidet die Normalisierung als Ursache aus und es bleibt die Tastatur
+   * bzw. das DOM-Element selbst. Genau diese Unterscheidung ist der Zweck.
+   *
+   * Faellt nach der Messung auf dem Geraet ersatzlos weg.
+   */
+  private attachAliasDiagnostics(handle: TextInputHandle): void {
+    const node = handle.element.node as HTMLInputElement;
+    let composing = false;
+    node.addEventListener('compositionstart', () => {
+      composing = true;
+    });
+    node.addEventListener('compositionend', () => {
+      composing = false;
+    });
+    node.addEventListener('input', (event) => {
+      DebugSystem.pushProtectedLogEntry({
+        timestamp: Date.now(),
+        kind: 'event',
+        label: 'alias:input',
+        detail: JSON.stringify({
+          raw: node.value,
+          composing,
+          inputType: (event as InputEvent).inputType ?? null,
+          data: (event as InputEvent).data ?? null,
+          cursor: node.selectionStart,
+        }),
+      });
+    });
   }
 
   private async signIn(): Promise<void> {
@@ -283,11 +320,20 @@ export class AccountScene extends Phaser.Scene {
     await this.syncProfile();
   }
 
-  /** Registrierung und Login brauchen Internet; das Spiel selbst nicht. */
+  /**
+   * Registrierung und Login brauchen Internet.
+   *
+   * Beim Erststart heisst das: ohne Netz geht hier gar nichts, denn es gibt
+   * noch kein Profil, das offline weiterspielen koennte. Wer bereits einmal
+   * angemeldet war, landet ueber den Geraete-Merker ohnehin direkt im Menue
+   * und sieht diesen Bildschirm nicht (siehe `BootScene.entryScene`).
+   */
   private ensureAccountOnline(): boolean {
     if (navigator.onLine) return true;
     this.statusPage.setStatus(
-      'Zum Einloggen oder Registrieren brauchst du Internet. Spielen kannst du offline.',
+      this.firstStart
+        ? 'Für das erste Profil brauchst du Internet. Verbinde dein Gerät und versuche es dann noch einmal.'
+        : 'Zum Einloggen oder Registrieren brauchst du Internet.',
       Palette.gold,
     );
     return false;

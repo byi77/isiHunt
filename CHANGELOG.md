@@ -9,6 +9,20 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Geaendert
+
+- **Gespielt wird nur noch angemeldet.** Der Gastmodus entfaellt ersatzlos:
+  Ohne gueltige Sitzung fuehrt der Start in die Anmeldung statt ins Menue.
+  Damit gibt es keinen zweiten, rein lokalen Fortschrittsstrang mehr neben dem
+  Konto. Der Preis ist bewusst in Kauf genommen — wessen Sitzung ohne Netz
+  ablaeuft, kommt bis zur naechsten Verbindung nicht ins Spiel (ADR-0026,
+  loest ADR-0020 ab).
+- **Der Laden ist deutlich ausgeduennt:** 111 Schiffsformen auf 35, 30 Farben
+  auf 13. Gestrichen wurden thematische Fremdkoerper (Zahnrad, Schluessel,
+  Kompass, Rennwagen und aehnliche) sowie mehrfache Varianten derselben Idee;
+  jede Kategorie bleibt vertreten. Entfernte Eintraege verfallen auch dann,
+  wenn sie gekauft waren — ein unbekanntes Schiff faellt auf den Pfeil zurueck.
+
 ### Grafik-Update Punkt 7
 
 - Shop als 3D-Hangar: neun drehbare Schiffe über beleuchteter Plattform,

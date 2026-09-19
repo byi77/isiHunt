@@ -172,7 +172,8 @@ isiHunt/
 │   │   └── DebugKeys.ts        Nur im Dev-Build
 │   ├── scenes/
 │   │   ├── SceneKey.ts         Scene-Namen zentral
-│   │   ├── BootScene.ts        Texturen erzeugen
+│   │   ├── BootScene.ts        Texturen erzeugen; entscheidet ueber
+│   │   │                       Menue oder Anmeldung (ADR-0026)
 │   │   ├── MenuScene.ts        Name, Welten, Start, Duell
 │   │   ├── ProfileScene.ts     Zentrales Profil: Name, Level, Statistik,
 │   │   │                       Login/Abgleichen/Abmelden (2026-08-18
@@ -180,7 +181,8 @@ isiHunt/
 │   │   │                       AccountScene)
 │   │   ├── AccountScene.ts     Nur noch Login/Registrierung (Phase 2.6);
 │   │   │                       leitet bei bereits bestehender Sitzung zu
-│   │   │                       ProfileScene weiter
+│   │   │                       ProfileScene weiter. Pflichtstation beim
+│   │   │                       Start ohne Session (firstStart)
 │   │   ├── SettingsScene.ts    Ton, Spielstand-Aktionen; Profil-Knopf zeigt
 │   │   │                       auf ProfileScene
 │   │   ├── TalentScene.ts      Ehrliche Talentliste mit Rangkauf
@@ -275,8 +277,12 @@ Gameplay-Code und faellt bei WebGL-/Ladefehlern auf die 2D-Zeichnung zurueck.
 ## 3. Scene-Fluss
 
 ```
-BootScene          Texturen erzeugen, Ladehinweis entfernen
-    ↓
+BootScene          Texturen erzeugen, Ladehinweis entfernen,
+    │              auf die gespeicherte Auth-Session warten
+    │
+    ├── nicht angemeldet ──▶ AccountScene (firstStart, kein Zurueck)
+    │                             │ Login/Registrierung erfolgreich
+    ↓                             ↓
 MenuScene    ←──────────────────────┬──────────────────────────────┐
     │                               │                              │
     │ Solo                          │ Duell                        │
@@ -677,12 +683,23 @@ weg — nichts davon darf verhindern, dass man spielt. Ohne Zugangsdaten
 erscheinen die Online-Knoepfe gar nicht erst; ein Knopf, der zuverlaessig in
 eine Fehlermeldung fuehrt, ist schlimmer als keiner.
 
-Der normale Spielstart ist davon getrennt: `MenuScene` ist auch mit leerem
-Spielstand, ohne Konto und ohne Auth-Session erreichbar. Der lokale Gast wird
-als `GAST` angezeigt und spielt mit demselben `localStorage`-Spielstand wie ein
-angemeldetes Profil. Registrierung und Login bleiben die einzigen Aktionen,
-die eine Online-Verbindung voraussetzen; das Netzwerk-Duell ist als bewusst
-netzwerkgebundener Sondermodus davon ausgenommen.
+**Der Spielstart ist davon nicht ausgenommen (seit 2026-09-19).** Bis dahin
+war `MenuScene` auch ohne Konto und ohne Auth-Session erreichbar; ein
+namenloser Gast spielte als `GAST` mit demselben `localStorage`-Spielstand wie
+ein angemeldetes Profil. Dieser Gastmodus ist entfallen: `BootScene`
+entscheidet jetzt anhand von `AuthSystem.isSignedIn()`, ob der Start ins Menue
+oder in die `AccountScene` fuehrt (ADR-0026).
+
+Das ist die eine Stelle, an der der Grundsatz oben bewusst nicht gilt. Wer
+nicht angemeldet ist, spielt nicht — auch offline nicht, und auch dann nicht,
+wenn er ein gueltiges Konto besitzt, dessen Session gerade abgelaufen ist. Der
+Preis ist bekannt und in ADR-0026 begruendet; er wurde einer Regel mit
+Ausnahmen vorgezogen.
+
+Innerhalb des Spiels bleibt der Grundsatz unveraendert: Ist die Session einmal
+geladen, haelt kein Netzfehler das Spiel auf. Laufende Runden, Fortschritt und
+Persistenz funktionieren offline weiter; ausstehende Ereignisse gehen nach der
+Netzrueckkehr hoch.
 
 **Kein Konto, kein Passwort, keine E-Mail.** Ein Spielstand gehoert einer
 zufaelligen UUID, die nur lokal liegt. Fuer das zweite Geraet erzeugt das
@@ -1145,6 +1162,17 @@ Production-Builds.
 Kette, die Vitest nicht erreicht: Scene-Fluss, Navigation, Bedienelemente,
 Steuerung, Kollision, Punktevergabe, Layout und Persistenz. Rund 71 Schritte,
 etwa 25 Minuten.
+
+**Der Playtest haengt `?skipAuth=1` an jeden Seitenaufruf.** Seit ADR-0026
+fuehrt der Start ohne gueltige Supabase-Session in die `AccountScene` statt
+ins Menue; der Playtest hat keine Session und bliebe sonst in jeder Suite
+dort stehen. Der Haken wird in `BootScene.entryScene()` nur ausgewertet, wenn
+`DEBUG_ENABLED` gilt — im ausgelieferten Bundle ist der Zweig wegoptimiert,
+die Anmeldepflicht laesst sich also nicht per URL umgehen.
+
+Das ist die Stelle, an der eine neue Einstiegsbedingung zuerst weh tut: Die
+Unit-Tests bleiben gruen, weil sie `BootScene` gar nicht laden. Wer dort eine
+Bedingung ergaenzt, prueft deshalb zusaetzlich eine Browser-Suite.
 
 | Suite      | Deckt ab                                                             |
 | ---------- | -------------------------------------------------------------------- |

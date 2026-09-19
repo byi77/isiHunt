@@ -22,6 +22,7 @@ import { SceneKey } from '@/scenes/SceneKey';
 import type { RemoteSave } from '@/systems/CloudSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
 import * as AuthSystem from '@/systems/AuthSystem';
+import * as DebugSystem from '@/systems/DebugSystem';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
@@ -275,11 +276,45 @@ export class ProfileScene extends Phaser.Scene {
     addContent(input.element);
 
     input.setValue(CloudSystem.sanitizePlayerName(save.playerName));
-    input.element.node.addEventListener('input', () => {
+
+    // DIAGNOSE (befristet): Der Bericht "erstes 'a' laesst sich nicht
+    // eingeben" ueberlebte bereits einen Fixversuch. Bevor erneut geraten
+    // wird, protokolliert dieser Block jede Eingabe mitsamt dem Zustand, der
+    // die Ursache entscheiden kann: Laeuft gerade eine Composition (IME bzw.
+    // Autokorrektur der Handytastatur)? Weicht der bereinigte Wert ab, sodass
+    // eine Zuweisung an `value` erfolgt? Genau diese Kombination steht im
+    // Verdacht, den Composition-Puffer zu verwerfen.
+    //
+    // Nach der Messung auf dem Geraet faellt dieser Block ersatzlos weg.
+    let composing = false;
+    input.element.node.addEventListener('compositionstart', () => {
+      composing = true;
+    });
+    input.element.node.addEventListener('compositionend', () => {
+      composing = false;
+    });
+
+    input.element.node.addEventListener('input', (event) => {
       const inputElement = input.element.node as HTMLInputElement;
       const rawValue = input.getValue();
       const cursor = inputElement.selectionStart ?? rawValue.length;
       const cleanedValue = CloudSystem.sanitizePlayerName(rawValue);
+
+      DebugSystem.pushProtectedLogEntry({
+        timestamp: Date.now(),
+        kind: 'event',
+        label: 'name:input',
+        detail: JSON.stringify({
+          raw: rawValue,
+          cleaned: cleanedValue,
+          weichtAb: cleanedValue !== rawValue,
+          composing,
+          inputType: (event as InputEvent).inputType ?? null,
+          data: (event as InputEvent).data ?? null,
+          cursor,
+        }),
+      });
+
       if (cleanedValue !== rawValue) {
         const cleanedBeforeCursor = CloudSystem.sanitizePlayerName(rawValue.slice(0, cursor));
         input.setValue(cleanedValue);

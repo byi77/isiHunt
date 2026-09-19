@@ -453,15 +453,28 @@ Muenzen haben drei Senken im Laden. Alle drei sind rein kosmetisch — nichts
 davon macht schneller, groesser oder punktestaerker. Wer nichts kauft, ist
 nicht schwaecher, nur unauffaelliger.
 
-| Kategorie | Was sie aendert         | Preisspanne\*  | Gratis dabei |
-| --------- | ----------------------- | -------------- | ------------ |
-| Form      | Silhouette (Textur)     | 300 – 3 000    | Pfeil        |
-| Farbe     | Rumpf, Aura, Halo       | 200 – 900      | Weltfarbe    |
-| Aura      | Bewegung, den Run ueber | 4 000 – 25 000 | Keine        |
+| Kategorie | Was sie aendert         | Anzahl | Preisspanne\*  | Gratis dabei |
+| --------- | ----------------------- | ------ | -------------- | ------------ |
+| Form      | Silhouette (Textur)     | 35     | 300 – 2 800    | Pfeil        |
+| Farbe     | Rumpf, Aura, Halo       | 13     | 200 – 900      | Weltfarbe    |
+| Aura      | Bewegung, den Run ueber | 10     | 4 000 – 25 000 | Keine        |
 
 \* Referenzwerte. Die tatsaechlichen Preise skalieren mit der Einnahmenrate
 (`balancedCoinCost`), damit eine Aenderung an der Muenzquelle nicht jeden
 Preis einzeln nachziehen muss.
+
+**Warum der Laden klein bleibt.** Bis 2026-09-19 standen dort 111 Formen und
+30 Farben — gewachsen ueber mehrere Etappen, in denen jeweils "noch ein paar"
+dazukamen. Das Ergebnis war kein Angebot mehr, sondern ein Katalog: Wer ihn
+oeffnete, scrollte an Zahnrad, Schluessel, Kompass und Rennwagen vorbei und
+fand zwischen elf kaum unterscheidbaren Heldenfiguren nicht mehr heraus,
+wofuer er eigentlich sparte. Eine Kaufentscheidung braucht eine ueberschaubare
+Auswahl.
+
+Gekuerzt wurde nach zwei Regeln: thematische Fremdkoerper ganz, und von
+mehreren Varianten derselben Idee bleibt eine. Jede Kategorie ist weiter
+vertreten (Raumjaeger, Flugzeuge, Figuren, Tiere, Drohnen, 3D-Piloten). Wer
+neue Formen ergaenzt, ergaenzt sie gegen diese Regeln — nicht daneben.
 
 **Warum die Auren so viel teurer sind.** Ein Run bringt rund 50 Muenzen. Die
 teuerste Form entspricht damit etwa 60 Runden, die teuerste Aura rund 200. Das

@@ -70,7 +70,17 @@ const shotDir = resolve(positional[1] ?? 'playtest-shots');
 mkdirSync(shotDir, { recursive: true });
 
 const externalUrl = positional[0] && positional[0] !== '-' ? positional[0] : null;
-const url = externalUrl ?? `http://localhost:${PORT}/`;
+// `skipAuth` haengt an jedem Aufruf: Seit ADR-0026 fuehrt der Start ohne
+// gueltige Supabase-Session in die Anmeldung statt ins Menue. Der Playtest
+// hat keine Session und bliebe sonst in jeder Suite dort stehen. Den Haken
+// kennt nur der Dev-Build - im Production-Bundle ist er wegoptimiert.
+const url = withSkipAuth(externalUrl ?? `http://localhost:${PORT}/`);
+
+function withSkipAuth(base) {
+  const parsed = new URL(base);
+  parsed.searchParams.set('skipAuth', '1');
+  return parsed.toString();
+}
 
 const runSuite = (name) => !only || only.includes(name);
 
