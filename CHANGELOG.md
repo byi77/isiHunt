@@ -38,6 +38,9 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- **Plastischere Schiffe:** beleuchtete Rumpffacetten, kontrastreichere Cockpits,
+  weissblauer Triebwerkskern und tempoabhaengiger Schweif. 3D-Schiffe zeigen
+  staerkere Licht-/Schattenunterschiede im Spiel.
 - **Mehr Tiefe im Spielfeld:** dunkler Raum, strukturierte Weltennebel,
   drei feine Sternlagen mit sanfter Parallaxe und ein angeschnittener
   Kulissenplanet. Reduzierte Bewegung bleibt statisch.

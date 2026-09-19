@@ -69,12 +69,44 @@ export function shipTextureKey(skinIndex: number): string {
 function createShipTextures(scene: Phaser.Scene): void {
   SHIP_DRAWINGS.forEach((zeichnen, index) => {
     withGraphics(scene, shipTextureKey(index), SHIP_TEXTURE_SIZE, SHIP_TEXTURE_SIZE, zeichnen);
+    shadeShip(scene, shipTextureKey(index));
   });
   // Rueckfall unter dem alten Namen - `TextureKey.PlayerCore` wird an einigen
   // Stellen direkt verwendet.
   withGraphics(scene, TextureKey.PlayerCore, SHIP_TEXTURE_SIZE, SHIP_TEXTURE_SIZE, (g) =>
     SHIP_DRAWINGS[0]?.(g),
   );
+  shadeShip(scene, TextureKey.PlayerCore);
+}
+
+const shadedShipTextures = new WeakSet<Phaser.Textures.Texture>();
+
+/** Einmalige Rumpfbeleuchtung: die Silhouette und ihre Transparenz bleiben erhalten. */
+function shadeShip(scene: Phaser.Scene, key: string): void {
+  const texture = scene.textures.get(key);
+  if (shadedShipTextures.has(texture)) return;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = SHIP_TEXTURE_SIZE;
+  const context = canvas.getContext('2d')!;
+  context.drawImage(texture.getSourceImage() as HTMLCanvasElement, 0, 0);
+  context.globalCompositeOperation = 'source-atop';
+  const light = context.createLinearGradient(0, 0, SHIP_TEXTURE_SIZE, SHIP_TEXTURE_SIZE);
+  light.addColorStop(0, 'rgba(255,255,255,0.12)');
+  light.addColorStop(0.4, 'rgba(0,0,0,0.08)');
+  light.addColorStop(1, 'rgba(0,0,0,0.55)');
+  context.fillStyle = light;
+  context.fillRect(0, 0, SHIP_TEXTURE_SIZE, SHIP_TEXTURE_SIZE);
+  // Eine versetzte Lichtkante gibt der linken Rumpfhaelfte eine eigene Facette.
+  context.fillStyle = 'rgba(255,255,255,0.18)';
+  context.beginPath();
+  context.moveTo(0, 0);
+  context.lineTo(SHIP_TEXTURE_SIZE * 0.51, 0);
+  context.lineTo(SHIP_TEXTURE_SIZE * 0.43, SHIP_TEXTURE_SIZE);
+  context.lineTo(0, SHIP_TEXTURE_SIZE);
+  context.fill();
+  scene.textures.remove(key);
+  const shaded = scene.textures.addCanvas(key, canvas)!;
+  shadedShipTextures.add(shaded);
 }
 
 /**

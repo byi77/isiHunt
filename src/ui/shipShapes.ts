@@ -57,7 +57,7 @@ const v = (x: number, y: number): { x: number; y: number } => ({ x, y });
 
 /** Neutral shading stays tintable, unlike white alpha painted over white hulls. */
 function cockpit(g: G, points: [number, number][]): void {
-  g.fillStyle(0x536579, 1);
+  g.fillStyle(0x223747, 1);
   g.fillPoints(
     points.map(([x, y]) => v(x, y)),
     true,
@@ -66,6 +66,19 @@ function cockpit(g: G, points: [number, number][]): void {
   const first = points[0];
   const last = points[points.length - 1];
   if (first && last) g.lineBetween(first[0], first[1], last[0], last[1]);
+  if (points.length >= 3 && first) {
+    const next = points[1]!;
+    const end = points[points.length - 1]!;
+    g.fillStyle(0xd7efff, 0.48);
+    g.fillTriangle(
+      first[0],
+      first[1],
+      first[0] + (next[0] - first[0]) * 0.45,
+      first[1] + (next[1] - first[1]) * 0.45,
+      end[0],
+      end[1],
+    );
+  }
 }
 
 /** Vollflaechig, in der Grundhelligkeit. */

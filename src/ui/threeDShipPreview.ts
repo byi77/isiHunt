@@ -264,7 +264,7 @@ export class ThreeDShipPreview {
       camera.position.set(0, 4, this.hangar ? 4 : 0);
       camera.up.set(0, this.hangar ? 1 : 0, this.hangar ? 0 : -1);
       camera.lookAt(0, 0, 0);
-      scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+      scene.add(new THREE.AmbientLight(0xffffff, this.hangar ? 1.5 : 0.85));
 
       const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
       keyLight.position.set(2, 3, 4);

@@ -94,6 +94,8 @@ function talentRankRatio(stats: PlayerStats, id: TalentId): number {
 export class Player extends Phaser.GameObjects.Container {
   private readonly core: Phaser.GameObjects.Image;
   private readonly halo: Phaser.GameObjects.Image;
+  private readonly enginePlume: Phaser.GameObjects.Image;
+  private readonly engineCore: Phaser.GameObjects.Image;
   private readonly aura: Phaser.GameObjects.Image;
   private readonly threeDPreview: ThreeDShipPreview | null = null;
   private readonly threeDPreviewDom: Phaser.GameObjects.DOMElement | null = null;
@@ -212,7 +214,28 @@ export class Player extends Phaser.GameObjects.Container {
 
     this.orbit = new ShipOrbit(scene);
     this.orbit.update(false);
-    this.add([this.aura, this.halo, this.orbit.back, this.core, this.orbit.front]);
+    this.enginePlume = scene.add
+      .image(0, 34, TextureKey.Glow)
+      .setOrigin(0.5, 0.15)
+      .setTint(0x8edcff)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDisplaySize(18, 28)
+      .setAlpha(0.7);
+    this.engineCore = scene.add
+      .image(0, 34, TextureKey.Glow)
+      .setTint(0xe8f8ff)
+      .setBlendMode(Phaser.BlendModes.ADD)
+      .setDisplaySize(9, 14)
+      .setAlpha(0.9);
+    this.add([
+      this.aura,
+      this.halo,
+      this.orbit.back,
+      this.enginePlume,
+      this.engineCore,
+      this.core,
+      this.orbit.front,
+    ]);
     this.setDepth(Depth.Player);
     scene.add.existing(this);
 
@@ -518,6 +541,16 @@ export class Player extends Phaser.GameObjects.Container {
     this.pulseRestMs = Math.max(0, this.pulseRestMs - dtSec * 1000);
     this.applyAura();
     const exhaust = shipExhaustOffset(this.core.rotation, this.core.scaleY);
+    const thrust = prefersReducedMotion() ? 0 : Math.min(1, speed / this.stats.moveSpeed);
+    this.enginePlume
+      .setPosition(exhaust.x, exhaust.y)
+      .setRotation(this.core.rotation)
+      .setDisplaySize(18 + thrust * 6, 28 + thrust * 42)
+      .setAlpha(this.core.alpha * (0.65 + thrust * 0.2));
+    this.engineCore
+      .setPosition(exhaust.x, exhaust.y)
+      .setRotation(this.core.rotation)
+      .setAlpha(this.core.alpha * 0.9);
     this.trail.setPosition(this.x + exhaust.x, this.y + exhaust.y);
   }
 

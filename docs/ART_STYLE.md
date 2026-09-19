@@ -1,5 +1,12 @@
 # Art Style Guide — isiHunt
 
+**Schiffe, 19.09.2026:** Die 2D-Ruempfe erhalten eine feste Beleuchtung von
+links oben, eine helle Rumpffacette und dunklere Heckflaechen. Cockpits tragen
+eine klare Glasreflexion. Ein weissblauer Triebwerkskern mit schmalem,
+tempoabhaengigem Schweif sitzt am mitgeneigten Heck. Bei reduzierter Bewegung
+bleibt seine Laenge konstant. Die 3D-Spielansicht nutzt weniger Umgebungslicht,
+damit die vorhandene gerichtete Beleuchtung die Rumpfform deutlicher zeigt.
+
 **Spielfeld, 19.09.2026:** Die Jagd bekommt eine eigene tiefblaue, dunkle
 Raumkulisse. Strukturierte Nebelbaender greifen die Weltfarben auf, drei
 feine Sternlagen reagieren mit sanfter Parallaxe auf die Schiffsposition.
