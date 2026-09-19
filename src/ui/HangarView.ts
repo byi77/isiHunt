@@ -19,14 +19,47 @@ import { playerTextureForShape } from './textures';
 import { AURA_FRAME_RUHE, applyTintShift, SHIP_ANIMATIONS, stehendesBild } from './shipAnimations';
 import './hangar.css';
 
-/**
- * Mindeststrecke, ab der ein Ziehen auf der Vorschau als Blaettern zaehlt.
+/*
+ * Wann ein Ziehen ueber die Vorschau blaettert statt zu drehen.
  *
- * Kein Balancing-Wert, sondern eine Eigenschaft der Geste: Darunter liegt das
- * uebliche Zittern beim Drehen, und ein zu kleiner Wert liesse jeden Dreh in
- * einem Schiffswechsel enden. 48 CSS-Pixel sind rund ein Daumenbreit.
+ * Keine Balancing-Werte, sondern Eigenschaften der Geste - deshalb hier und
+ * nicht in `config/`. Alle sechs Bedingungen muessen zutreffen; jede einzelne
+ * waere fuer sich zu grosszuegig.
+ *
+ * Die Werte sind bewusst streng gewaehlt: Ein uebersehener Wisch kostet einen
+ * zweiten Versuch, ein faelschlich erkannter dagegen die begonnene Drehung.
+ * Im Zweifel wird gedreht.
  */
+
+/** Mindestabstand zwischen Anfang und Ende. Rund ein Daumenbreit. */
 const SWIPE_MIN_PX = 48;
+
+/**
+ * Mindesttempo. Der eigentliche Unterschied zwischen den Gesten.
+ *
+ * 1,2 px/ms sind 48 Pixel in 40 ms - ein Schnipser. Eine Drehung, bei der man
+ * dem Schiff mit den Augen folgt, liegt deutlich darunter; gemessen an einem
+ * bewusst gefuehrten Ziehen etwa um den Faktor drei.
+ */
+const SWIPE_MIN_SPEED_PX_PER_MS = 1.2;
+
+/**
+ * Laengstmoegliche Dauer.
+ *
+ * Zusaetzlich zum Tempo, weil ein sehr langer Wisch auch bei gemaechlichem
+ * Tempo den Schwellwert erreichen kann. Was ueber eine Viertelsekunde dauert,
+ * ist ein Ziehen.
+ */
+const SWIPE_MAX_MS = 260;
+
+/** Wie stark der Abstand waagerecht ueberwiegen muss (Ende gegen Anfang). */
+const SWIPE_AXIS_RATIO = 3;
+
+/** Wie flach der zurueckgelegte WEG bleiben muss - faengt den Drehbogen. */
+const SWIPE_PATH_RATIO = 0.45;
+
+/** Wie gerade der Weg sein muss: Strecke hoechstens so viel mal der Abstand. */
+const SWIPE_STRAIGHTNESS = 1.15;
 
 export type HangarTab = 'shapes' | 'colors' | 'auras';
 export interface HangarSelection {
@@ -70,10 +103,12 @@ export class HangarView {
   private elapsed = 0;
   private fallbackAngle = 0;
   private pointer: { id: number; x: number; y: number } | null = null;
-  /** Startpunkt der laufenden Geste auf der Vorschau - fuer Wischen vs. Drehen. */
-  private swipeStart: { x: number; y: number } | null = null;
+  /** Start der laufenden Geste auf der Vorschau - Ort und Zeit. */
+  private swipeStart: { x: number; y: number; t: number } | null = null;
   /** Zurueckgelegte Gesamtstrecke; trennt einen geraden Wisch vom Bogen. */
   private swipeDistance = 0;
+  /** Aufsummierte senkrechte Bewegung; faengt den Drehbogen, der flach endet. */
+  private swipeVertical = 0;
   private frameRequest = 0;
   private available = false;
   private previewVisible = true;
@@ -108,7 +143,10 @@ export class HangarView {
     previewArea.className = 'hangar-preview';
     previewArea.tabIndex = 0;
     previewArea.setAttribute('role', 'img');
-    previewArea.setAttribute('aria-label', 'Schiffsvorschau. Ziehen oder Pfeiltasten zum Drehen.');
+    previewArea.setAttribute(
+      'aria-label',
+      'Schiffsvorschau. Ziehen oder Pfeiltasten zum Drehen, schnelles Wischen zum Blättern.',
+    );
     this.host.className = 'hangar-3d';
     this.stage.className = 'hangar-stage';
     this.fallback.className = 'hangar-stage';
@@ -233,8 +271,8 @@ export class HangarView {
         this.available = available;
         this.fallback.style.display = available ? 'none' : 'grid';
         this.hint.textContent = available
-          ? '3D · Ziehen zum Drehen'
-          : '2D-Vorschau · Ziehen zum Drehen';
+          ? '3D · Ziehen zum Drehen, Wischen zum Blättern'
+          : '2D-Vorschau · Ziehen zum Drehen, Wischen zum Blättern';
       },
       true,
     );
@@ -242,8 +280,9 @@ export class HangarView {
       'pointerdown',
       (event) => {
         this.pointer = { id: event.pointerId, x: event.clientX, y: event.clientY };
-        this.swipeStart = { x: event.clientX, y: event.clientY };
+        this.swipeStart = { x: event.clientX, y: event.clientY, t: event.timeStamp };
         this.swipeDistance = 0;
+        this.swipeVertical = 0;
         previewArea.setPointerCapture(event.pointerId);
       },
       { signal: this.abort.signal },
@@ -255,20 +294,34 @@ export class HangarView {
         const dx = event.clientX - this.pointer.x,
           dy = event.clientY - this.pointer.y;
         this.swipeDistance += Math.hypot(dx, dy);
+        this.swipeVertical += Math.abs(dy);
         this.preview.rotateBy(dx, dy);
         this.fallbackAngle += dx * 0.012;
         this.pointer = { id: event.pointerId, x: event.clientX, y: event.clientY };
       },
       { signal: this.abort.signal },
     );
-    // Wischen quer ueber die Vorschau blaettert - dieselbe Flaeche, auf der
-    // auch gedreht wird.
+    // Ein schneller Schnipser quer ueber die Vorschau blaettert weiter.
     //
-    // Die beiden Gesten trennt die Richtung, nicht ein Modus: Ein Dreh ist
-    // kurz und oft senkrecht, ein Blaettern ist lang und waagerecht.
-    // Ausgewertet wird deshalb erst beim Loslassen, gegen die Gesamtstrecke -
-    // wer waehrend des Drehens einmal weit nach rechts faehrt, soll nicht
-    // versehentlich das Schiff wechseln.
+    // ## Warum Geschwindigkeit entscheidet und nicht die Strecke
+    //
+    // Der erste Entwurf (v0.1.327) trennte nur nach Richtung, Mindeststrecke
+    // und Geradlinigkeit - und war damit falsch konstruiert: Wer das Schiff
+    // einmal kraeftig herumdreht, erfuellt alle drei. Die Bedingungen
+    // beschrieben nicht "Blaettern statt Drehen", sondern "eine kraeftige
+    // waagerechte Drehung". Gemeldet als "springt beim Drehen weiter", und
+    // zwar zu Recht.
+    //
+    // Was die Gesten wirklich unterscheidet, ist das Tempo: Ein Dreh ist
+    // langsam und fuehrend - man sieht ja hin, waehrend sich das Schiff
+    // bewegt. Ein Wisch ist ein kurzer Schnipser, bei dem der Finger schon
+    // weg ist, bevor das Auge folgt. Ein langsames Ziehen dreht deshalb
+    // beliebig weit, ohne je zu blaettern.
+    //
+    // Zusaetzlich muss der Weg weitgehend waagerecht bleiben: Nicht nur der
+    // Abstand zwischen Anfang und Ende (den erfuellt auch ein Bogen), sondern
+    // die aufsummierte senkrechte Bewegung. Wer im Bogen dreht, sammelt dabei
+    // Hoehe - und blaettert nicht.
     previewArea.addEventListener(
       'pointerup',
       (event) => {
@@ -277,12 +330,21 @@ export class HangarView {
         if (!start) return;
         const dx = event.clientX - start.x;
         const dy = event.clientY - start.y;
-        const waagerecht = Math.abs(dx) > Math.abs(dy) * 1.6;
-        const weitGenug = Math.abs(dx) >= SWIPE_MIN_PX;
-        // Ein Bogen legt viel Strecke zurueck, endet aber nahe am Start. Wer
-        // gedreht hat, wischt nicht.
-        const gerade = this.swipeDistance <= Math.abs(dx) * 1.5;
-        if (waagerecht && weitGenug && gerade) this.step(dx < 0 ? 1 : -1);
+        const strecke = Math.abs(dx);
+        const dauer = Math.max(1, event.timeStamp - start.t);
+
+        const schnell = strecke / dauer >= SWIPE_MIN_SPEED_PX_PER_MS;
+        const kurzGenug = dauer <= SWIPE_MAX_MS;
+        const weitGenug = strecke >= SWIPE_MIN_PX;
+        const waagerecht = strecke > Math.abs(dy) * SWIPE_AXIS_RATIO;
+        // Der Weg selbst, nicht nur sein Ergebnis: Ein Bogen endet waagerecht,
+        // war es aber nie.
+        const flach = this.swipeVertical <= strecke * SWIPE_PATH_RATIO;
+        // Ein gerader Weg legt kaum mehr Strecke zurueck als den Abstand.
+        const gerade = this.swipeDistance <= strecke * SWIPE_STRAIGHTNESS;
+
+        if (schnell && kurzGenug && weitGenug && waagerecht && flach && gerade)
+          this.step(dx < 0 ? 1 : -1);
       },
       { signal: this.abort.signal },
     );

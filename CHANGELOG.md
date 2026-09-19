@@ -11,6 +11,11 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Drehen in der Hangar-Vorschau sprang zum naechsten Schiff.** Die Trennung
+  zwischen Drehen und Blaettern pruefte Richtung, Strecke und Geradlinigkeit -
+  Bedingungen, die eine kraeftige waagerechte Drehung allesamt erfuellt. Jetzt
+  entscheidet das Tempo: Ein Dreh ist langsam und fuehrend, ein Wisch ein
+  kurzer Schnipser. Langsames Ziehen dreht beliebig weit, ohne zu blaettern.
 - **Abmelden fuehrte zurueck ins Menue** statt zur Anmeldung. Wer sich im
   Profil abmeldete, sah "GAST" und konnte normal weiterspielen - genau der
   Zustand, den die Anmeldepflicht ausschliessen soll. Die Pruefung steht jetzt

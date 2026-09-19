@@ -1445,6 +1445,26 @@ Das ist zugleich die Begruendung dafuer, den Shop ueberhaupt ins DOM geholt zu
 haben: `scroll-snap-type`, `overflow-x` und `scrollIntoView` sind hier
 Eigenschaften, in Phaser waeren sie wieder Handarbeit gewesen.
 
+**Nachtrag 2026-09-19 (zweiter): Wischen und Drehen trennt das Tempo.** Der
+erste Entwurf der Wischgeste pruefte Richtung, Mindeststrecke und
+Geradlinigkeit — und war damit falsch konstruiert, nicht nur zu lasch
+eingestellt: Wer das Schiff einmal kraeftig herumdreht, erfuellt alle drei.
+Die Bedingungen beschrieben "eine kraeftige waagerechte Drehung", nicht
+"Blaettern statt Drehen". Gemeldet wurde es als Sprung beim Drehen, v0.1.327.
+
+Was die Gesten tatsaechlich unterscheidet, ist die Geschwindigkeit: Ein Dreh
+ist langsam und fuehrend, weil man hinsieht, waehrend sich das Schiff bewegt.
+Ein Wisch ist ein Schnipser, bei dem der Finger weg ist, bevor das Auge folgt.
+Ein langsames Ziehen dreht deshalb beliebig weit, ohne je zu blaettern.
+
+Dazu kommt die aufsummierte senkrechte Bewegung als eigenes Kriterium: Ein
+Drehbogen endet waagerecht, war es aber nie. Nur den Abstand zwischen Anfang
+und Ende zu messen, uebersieht genau das.
+
+**Die Schwellen sind absichtlich streng.** Ein uebersehener Wisch kostet einen
+zweiten Versuch, ein faelschlich erkannter dagegen die begonnene Drehung — im
+Zweifel wird gedreht.
+
 ### Begruendung
 
 - **Der Browser kann Textfluss, Phaser nicht.** Umbruch, Scrollen mit
