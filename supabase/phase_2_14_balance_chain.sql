@@ -213,6 +213,7 @@ as $$
       "fortuneScorePerRank": 0.05,
       "resonanceSeriesMultiplierPerRank": 0.05,
       "shieldObstacleResistancePerRank": 0.08,
+      "baseCritChance": 0.02,
       "luckCritChancePerRank": 0.02,
       "critMultiplier": 3,
       "maxRanks": {

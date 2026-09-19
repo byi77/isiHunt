@@ -10,7 +10,6 @@ import {
   type Point,
 } from './collectionMotion';
 import { Depth } from './depth';
-import { CRIT_MULTIPLIER } from '@/config/balance';
 import { textStyle } from './theme';
 
 /*
@@ -93,15 +92,13 @@ export class CollectionEffects {
     // Farbfehlsichtige bleibt das Symbol bei den seltenen Stufen erhalten -
     // genau dort, wo der Unterschied zaehlt.
     const zahl = `+${points.toLocaleString('de-DE')}`;
-    // Ein Gluecktreffer traegt seinen Namen: Ohne eigene Auszeichnung waere er
-    // nur eine groessere Zahl, und niemand wuesste, dass gerade etwas
-    // Besonderes passiert ist - derselbe Fehler, den das Spuersinn-Talent
-    // macht, das unbemerkt im Hintergrund wirkt (ADR-0027).
-    const text = crit
-      ? `×${CRIT_MULTIPLIER} ${zahl}`
-      : rank >= 4
-        ? `${rarityMarker(rarity.id)} ${zahl}`
-        : zahl;
+    // Beim Gluecktreffer steht hier nur die Zahl, obwohl er der groessere
+    // Moment ist: Seinen Namen traegt seit 2026-09-19 der Schriftzug im HUD.
+    // Ein zusaetzliches "x3" am Feld-Label waere dieselbe Auskunft ein
+    // zweites Mal, 200 Pixel weiter unten und im selben Augenblick.
+    // Groesse, Farbe und Ausdehnung bleiben ihm - sie sagen "hier war etwas
+    // Besonderes", ohne dass man zweimal dasselbe liest.
+    const text = crit ? zahl : rank >= 4 ? `${rarityMarker(rarity.id)} ${zahl}` : zahl;
     const label = this.scene.add
       .text(
         0,

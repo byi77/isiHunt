@@ -234,6 +234,7 @@ Bewegung ist Sprache — sie sagt dem Spieler, was passiert ist.
 | Figur in Bewegung          | Lichtspur ab 60 px/s                                               | 420 ms Nachleuchten      |
 | Seltenes Relikt liegt da   | Strahlenkranz dreht gegenlaeufig zum Relikt                        | endlos                   |
 | Vorlage im Duell ueberholt | _UEBERHOLT!_ blendet auf und wieder aus                            | 240 ms + 700 ms          |
+| Glueckstreffer             | _KRITISCH_ schlaegt ein, steht, reisst auf und verweht             | 90 + 110 + 220 ms        |
 
 **Zwei Schwellen steuern die Aufmerksamkeit**, beide in `GameConfig.ts`:
 
@@ -248,6 +249,32 @@ bedeuten.
 
 **Grenze:** Kein Effekt darf laenger als **800 ms** dauern. Bei einem Run von
 90 Sekunden ist alles Laengere im Weg.
+
+### Der Glueckstreffer-Schriftzug darf als einziger das Feld ueberlagern
+
+_KRITISCH_ steht gross auf 30 % der Bildhoehe, mitten im Spielfeld — eine
+Ausnahme von der Regel, dass Anzeigen sich aus dem Feld heraushalten. Sie ist
+begruendet: Der Glueckstreffer ist das einzige Ereignis, das rein zufaellig
+eintritt. Alles andere, was das Spiel meldet, hat der Spieler selbst getan und
+deshalb kommen sehen; der Glueckstreffer nicht. Wird er nur als groessere Zahl
+am Fangort angezeigt, verschwindet er zwischen den anderen Zahlen.
+
+Weil er ueberlagert, muss er kurz und selten sein — beides ist abgesichert:
+
+- **Kurz:** 420 ms insgesamt, die knappste Zeit, in der ein Wort lesbar
+  einschlaegt und wieder verschwindet.
+- **Selten:** mindestens 1,5 Sekunden Abstand zwischen zwei Schriftzuegen. Mit
+  Glueckstreffer auf Rang 5 faellt rechnerisch alle vier Sekunden ein Krit;
+  ohne diese Sperre stuende der Schriftzug fast dauernd im Bild. Punkte und
+  Feld-Anzeige bleiben in der Sperre unberuehrt — nur der Schriftzug entfaellt.
+- **Allein:** Der Serien-Multiplikator weicht fuer seine Dauer. Beide sind
+  gold und erscheinen an fast derselben Stelle; ein Krit faellt oft genau dann,
+  wenn die Serie eine Stufe steigt.
+
+Das Feld-Label traegt beim Glueckstreffer **nur noch die Zahl**. Groesse und
+Farbe sagen dort, dass etwas Besonderes passiert ist; der Name steht oben.
+Dieselbe Auskunft zweimal im selben Augenblick zwingt zum Lesen, waehrend das
+Spiel weiterlaeuft.
 
 ## 4.1 Ton
 

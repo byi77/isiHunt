@@ -218,6 +218,7 @@ describe('playCollected - Tier-Verzweigung', () => {
         multiplier: 1,
         sameRarityStreak: 1,
         streakBonus: false,
+        crit: false,
         x: 0,
         y: 0,
       });
@@ -239,6 +240,7 @@ describe('playCollected - Tier-Verzweigung', () => {
         multiplier: 1,
         sameRarityStreak: 1,
         streakBonus: false,
+        crit: false,
         x: 0,
         y: 0,
       });
@@ -262,6 +264,7 @@ describe('playCollected - Tier-Verzweigung', () => {
         multiplier: 1,
         sameRarityStreak: 1,
         streakBonus: false,
+        crit: false,
         x: 0,
         y: 0,
       });
@@ -295,6 +298,7 @@ describe('visibilitychange - Regression: Kontext blieb nach Rueckkehr stumm', ()
       multiplier: 1,
       sameRarityStreak: 1,
       streakBonus: false,
+      crit: false,
       x: 0,
       y: 0,
     });
@@ -382,6 +386,7 @@ describe('scheduleTone - Regression: Tonhaufen beim spaeten Aufwachen', () => {
       multiplier: 1,
       sameRarityStreak: 1,
       streakBonus: false,
+      crit: false,
       x: 0,
       y: 0,
     });
@@ -409,6 +414,7 @@ describe('scheduleTone - Regression: Tonhaufen beim spaeten Aufwachen', () => {
       multiplier: 1,
       sameRarityStreak: 1,
       streakBonus: false,
+      crit: false,
       x: 0,
       y: 0,
     });

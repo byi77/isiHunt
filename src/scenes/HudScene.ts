@@ -42,6 +42,38 @@ const PLATE_MAX_ALPHA = 0.55;
  */
 const HUD_TEXT_STROKE = { stroke: '#0b1020', strokeThickness: 4 } as const;
 
+/**
+ * Der Gluecktreffer-Schriftzug: Form einer Bewegung, kein Balancing-Wert.
+ *
+ * Die Zahlen beschreiben ausschliesslich, wie sich der Einschlag anfuehlt -
+ * an den Punkten aendert keine von ihnen etwas. Deshalb stehen sie hier und
+ * nicht in `config/` (dieselbe Trennung wie in `CollectionEffects`).
+ *
+ * `MIN_GAP_MS` ist die einzige, die etwas verhindert: Mit Gluecktreffer auf
+ * Rang 5 faellt rechnerisch alle vier Sekunden ein Krit, und ein
+ * bildschirmfuellender Schriftzug in dieser Dichte verdeckt mehr Spielfeld,
+ * als er Freude macht. Faellt ein Krit in die Sperre, bleiben Punkte und
+ * Feldanzeige unberuehrt - nur der grosse Schriftzug entfaellt.
+ */
+const CRIT_BURST = {
+  /** Anlaufgroesse - der Schriftzug kommt aus dem Nichts. */
+  startScale: 0.3,
+  /** Wie schnell er auf volle Groesse einschlaegt. */
+  hitMs: 90,
+  /** Volle Groesse, bewusst ueber 1: der Schlag ueberzeichnet. */
+  hitScale: 1.25,
+  /** Wie lange er dann steht, bevor er verweht. */
+  holdMs: 110,
+  /** Dauer des Verwehens. */
+  fadeMs: 220,
+  /** Wie weit er dabei noch aufreisst. */
+  endScale: 1.8,
+  /** Hoehe im Bild, als Anteil der Bildschirmhoehe. */
+  screenY: 0.3,
+  /** Mindestabstand zwischen zwei Schriftzuegen. */
+  minGapMs: 1500,
+} as const;
+
 export interface HudSceneData {
   worldId: string;
   durationMs: number;
@@ -79,6 +111,11 @@ export class HudScene extends Phaser.Scene {
   private scoreText!: Phaser.GameObjects.Text;
   private comboText!: Phaser.GameObjects.Text;
   private multiplierBurstText!: Phaser.GameObjects.Text;
+  /** Der Gluecktreffer-Schriftzug. Zwei Zeilen: Wort und Punktzahl. */
+  private critBurstText!: Phaser.GameObjects.Text;
+  private critBurstPointsText!: Phaser.GameObjects.Text;
+  /** Zeitpunkt des letzten Schriftzugs - traegt die Wiederholungssperre. */
+  private lastCritBurstAt = Number.NEGATIVE_INFINITY;
   private timerText!: Phaser.GameObjects.Text;
   private worldText!: Phaser.GameObjects.Text;
   private targetText: Phaser.GameObjects.Text | null = null;
@@ -136,6 +173,7 @@ export class HudScene extends Phaser.Scene {
     this.lastOwnScore = 0;
     this.lastComboMultiplier = 1;
     this.lastAgilityPercent = 0;
+    this.lastCritBurstAt = Number.NEGATIVE_INFINITY;
     this.xpTotal = 0;
     this.pauseOverlay = [];
     this.targetText = null;
@@ -223,6 +261,41 @@ export class HudScene extends Phaser.Scene {
       .text(GAME_WIDTH / 2, 250, '', textStyle(FontSize.title, Palette.gold, { fontStyle: 'bold' }))
       .setOrigin(0.5)
       .setDepth(Depth.Overlay)
+      .setAlpha(0);
+
+    // Wort und Punktzahl als zwei Objekte, nicht als ein zweizeiliger Text:
+    // Beide sollen gemeinsam skalieren, aber unterschiedlich gross und
+    // verschieden gefaerbt sein. Ein Text mit Zeilenumbruch kann das nicht.
+    this.critBurstText = this.add
+      .text(
+        GAME_WIDTH / 2,
+        0,
+        'KRITISCH',
+        textStyle(FontSize.title, Palette.gold, {
+          fontStyle: 'bold',
+          stroke: '#0b1020',
+          strokeThickness: 8,
+          align: 'center',
+        }),
+      )
+      .setOrigin(0.5)
+      .setDepth(Depth.Overlay + 2)
+      .setAlpha(0);
+    this.critBurstText.setLetterSpacing(2);
+    this.critBurstPointsText = this.add
+      .text(
+        GAME_WIDTH / 2,
+        0,
+        '',
+        textStyle(FontSize.body, Palette.ink, {
+          fontStyle: 'bold',
+          stroke: '#0b1020',
+          strokeThickness: 6,
+          align: 'center',
+        }),
+      )
+      .setOrigin(0.5)
+      .setDepth(Depth.Overlay + 2)
       .setAlpha(0);
 
     this.timerBar = createBar(this, 60, 24, GAME_WIDTH - 120, 8, this.accent);
@@ -378,6 +451,17 @@ export class HudScene extends Phaser.Scene {
     }
     this.drawPlate(l.headerHeight);
     this.multiplierBurstText.setFontSize(l.font(19));
+    // Bewusst gross: Der Schriftzug soll die obere Spielfeldhaelfte fuellen,
+    // nicht in ihr stehen. `fit` haelt ihn auf schmalen Geraeten im Bild.
+    //
+    // Ein Drehen des Geraets mitten im Einschlag bricht ihn ab, statt ihn
+    // auf die neue Groesse umzurechnen: Der ganze Effekt dauert 420 ms, und
+    // eine halb fertige Skalierung auf einem neu vermessenen Bildschirm
+    // saehe aus wie ein Darstellungsfehler.
+    this.tweens.killTweensOf([this.critBurstText, this.critBurstPointsText]);
+    this.critBurstText.setScale(1).setAlpha(0).setFontSize(l.font(38));
+    this.fit(this.critBurstText, l.width);
+    this.critBurstPointsText.setScale(1).setAlpha(0).setFontSize(l.font(16));
     this.buildPauseButton();
     if (this.pauseOverlay.length) {
       this.hidePauseOverlay();
@@ -621,14 +705,27 @@ export class HudScene extends Phaser.Scene {
   }
 
   /**
-   * Summiert die XP des Runs fuer die Anzeige links unten im Kopf.
+   * Was das HUD aus einem Fang macht: Gluecktreffer zeigen, XP summieren.
+   *
+   * Beides haengt am selben Ereignis und deshalb am selben Handler - ein
+   * zweiter Listener auf `Collected` waere ein zweites `offEvent`-Paar
+   * (Regel 4) fuer nichts.
    *
    * Nur eine Summe, keine Regel: Wie viel ein Fang bringt, entscheidet
    * `ProgressionSystem`; hier wird ausschliesslich addiert, was gemeldet
    * wurde. Fehlt `xpGained`, ist das Einsicht-Talent nicht gelernt - dann
    * bleibt die Zeile unsichtbar.
    */
-  private readonly onCollectedXp = ({ xpGained }: { xpGained?: number }): void => {
+  private readonly onCollected = ({
+    xpGained,
+    crit,
+    awardedPoints,
+  }: {
+    xpGained?: number;
+    crit: boolean;
+    awardedPoints: number;
+  }): void => {
+    if (crit) this.showCritBurst(awardedPoints);
     if (xpGained === undefined) return;
     this.xpTotal += xpGained;
     this.xpText.setText(`+${this.xpTotal.toLocaleString('de-DE')} XP`);
@@ -708,6 +805,74 @@ export class HudScene extends Phaser.Scene {
       alpha: 0,
       duration: 260,
       delay: 180,
+    });
+  }
+
+  /**
+   * Der Gluecktreffer-Schriftzug: schnell da, kurz stehen, aufreissend weg.
+   *
+   * Er liegt ueber dem Spielfeld, nicht in der Kopfzeile - ein Krit ist ein
+   * Ereignis im Spiel, keine Kennzahl. Die Hoehe (30 % des Bildes) haelt ihn
+   * klar unter dem HUD-Kopf und weit ueber dem Daumen, der unten steuert.
+   *
+   * Der Multiplikator-Burst weicht fuer seine Dauer: Ein Krit faellt oft
+   * genau dann, wenn auch die Serie eine Stufe steigt - beide uebereinander
+   * waeren zwei goldene Schriftzuege an fast derselben Stelle.
+   */
+  private showCritBurst(points: number): void {
+    // `this.time.now` statt `Date.now()`: Die Scene-Uhr steht in der Pause
+    // still, die Wanduhr laeuft weiter. Sonst waere die Sperre nach jeder
+    // Pause abgelaufen, egal wie kurz sie war.
+    const now = this.time.now;
+    if (now - this.lastCritBurstAt < CRIT_BURST.minGapMs) return;
+    this.lastCritBurstAt = now;
+
+    const u = this.layout.unit;
+    const y = GAME_HEIGHT * CRIT_BURST.screenY;
+    this.tweens.killTweensOf(this.multiplierBurstText);
+    this.multiplierBurstText.setAlpha(0);
+    this.tweens.killTweensOf([this.critBurstText, this.critBurstPointsText]);
+
+    this.critBurstPointsText.setText(`+${points.toLocaleString('de-DE')}`);
+    this.critBurstText.setPosition(GAME_WIDTH / 2, y).setAlpha(1);
+    this.critBurstPointsText
+      .setPosition(GAME_WIDTH / 2, y + 34 * u)
+      .setAlpha(1)
+      .setScale(1);
+
+    if (prefersReducedMotion()) {
+      // Ohne Bewegung bleibt die Auskunft, nicht der Schlag: stehen lassen
+      // und ruhig ausblenden. Dieselbe Linie wie beim Multiplikator-Burst.
+      this.critBurstText.setScale(1);
+      this.tweens.add({
+        targets: [this.critBurstText, this.critBurstPointsText],
+        alpha: 0,
+        duration: CRIT_BURST.fadeMs,
+        delay: CRIT_BURST.holdMs + CRIT_BURST.hitMs,
+      });
+      return;
+    }
+
+    const targets = [this.critBurstText, this.critBurstPointsText];
+    this.critBurstText.setScale(CRIT_BURST.startScale);
+    this.critBurstPointsText.setScale(CRIT_BURST.startScale);
+    // `Back.easeOut` schiesst ueber das Ziel hinaus und federt zurueck -
+    // das ist der Teil, der als Einschlag gelesen wird.
+    this.tweens.add({
+      targets,
+      scale: CRIT_BURST.hitScale,
+      duration: CRIT_BURST.hitMs,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        this.tweens.add({
+          targets,
+          scale: CRIT_BURST.endScale,
+          alpha: 0,
+          duration: CRIT_BURST.fadeMs,
+          delay: CRIT_BURST.holdMs,
+          ease: 'Quad.easeIn',
+        });
+      },
     });
   }
 
@@ -820,7 +985,7 @@ export class HudScene extends Phaser.Scene {
   private registerEvents(): void {
     eventBus.onEvent(GameEvent.ScoreChanged, this.onScore);
     eventBus.onEvent(GameEvent.ComboChanged, this.onCombo);
-    eventBus.onEvent(GameEvent.Collected, this.onCollectedXp);
+    eventBus.onEvent(GameEvent.Collected, this.onCollected);
     eventBus.onEvent(GameEvent.TimerChanged, this.onTimer);
     eventBus.onEvent(GameEvent.RunPaused, this.onPaused);
     eventBus.onEvent(GameEvent.RunResumed, this.onResumed);
@@ -837,7 +1002,7 @@ export class HudScene extends Phaser.Scene {
     this.scale.off(Phaser.Scale.Events.RESIZE, this.relayout);
     eventBus.offEvent(GameEvent.ScoreChanged, this.onScore);
     eventBus.offEvent(GameEvent.ComboChanged, this.onCombo);
-    eventBus.offEvent(GameEvent.Collected, this.onCollectedXp);
+    eventBus.offEvent(GameEvent.Collected, this.onCollected);
     eventBus.offEvent(GameEvent.TimerChanged, this.onTimer);
     eventBus.offEvent(GameEvent.RunPaused, this.onPaused);
     eventBus.offEvent(GameEvent.RunResumed, this.onResumed);

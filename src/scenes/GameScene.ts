@@ -586,6 +586,7 @@ export class GameScene extends Phaser.Scene {
       sameRarityStreak: outcome.sameRarityStreak,
       streakBonus: outcome.streakBonus,
       xpGained: this.stats.talentRanks.insight > 0 ? outcome.xpGained : undefined,
+      crit: outcome.crit,
       x: orb.x,
       y: orb.y,
     });

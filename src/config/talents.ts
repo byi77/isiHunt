@@ -109,7 +109,7 @@ export const TALENTS: readonly TalentDef[] = [
   {
     id: 'luck',
     name: 'Glückstreffer',
-    description: 'Manche Fänge bringen plötzlich das Dreifache.',
+    description: 'Lässt deutlich häufiger einen Fang das Dreifache bringen.',
     maxRank: BALANCE.talents.maxRanks.luck,
     perRank: '+2% Chance auf ×3',
   },
@@ -260,6 +260,10 @@ export function resolveStats(ranks: TalentRanks): PlayerStats {
     scoreMultiplier: 1 + fortuneBonus,
     seriesMultiplierBonus: resonanceBonus,
     obstacleResistance: shieldBonus,
-    critChance: luckBonus,
+    // Grundchance plus Talent, nicht nur das Talent: Den Gluecktreffer gibt
+    // es fuer jeden, das Talent vervielfacht ihn. Die Summe hier statt im
+    // ScoreSystem, damit es genau eine Stelle gibt, an der die Chance einer
+    // Figur entsteht - der Duell-Bot bekommt sie dadurch ohne Zutun mit.
+    critChance: BALANCE.talents.baseCritChance + luckBonus,
   };
 }

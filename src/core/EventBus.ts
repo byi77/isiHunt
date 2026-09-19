@@ -79,6 +79,12 @@ export interface GameEventPayloads {
      * gehoert in die Systeme (Regel 3), das HUD stellt nur dar.
      */
     xpGained?: number;
+    /**
+     * Der Fang war ein Gluecktreffer. Das HUD wirft darauf seinen
+     * Schriftzug - reine Darstellung, die Punkte stecken schon in
+     * `awardedPoints`.
+     */
+    crit: boolean;
     x: number;
     y: number;
   };

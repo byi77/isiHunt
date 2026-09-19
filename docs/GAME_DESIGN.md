@@ -343,7 +343,7 @@ Jagd noch die Score-Jagd ersetzen.
 | Gunst       | 5         | +5 % Punkte           |
 | Resonanz    | 3         | +0,05x Serienbonus    |
 | Schutzfeld  | 3         | -8 % Hinderniswirkung |
-| Glückstreffer | 5       | +2 % Chance auf dreifache Fangpunkte |
+| Glückstreffer | 5       | +2 % Chance auf dreifache Fangpunkte (zusätzlich zu 2 % Grundchance) |
 
 **Mathematisches Machtbudget:** Die Reichweite wird ueber die zweidimensionale
 Fangflaeche bewertet. Bei einem gewichteten Reliktradius von 31,49 px steigt
@@ -374,8 +374,19 @@ eine Seltenheitsstufe an und erzeugt keine direkte Orange-Garantie.
 
 Quelle: `src/config/balance-data.json`, aufgelöst in `src/config/talents.ts`.
 Glückstreffer vervielfacht die Fangpunkte inklusive Serien-, Welt- und
-Punktebonus vor der Rundung, ohne XP oder Serie zu erhöhen. Mit dem Capstone
-beträgt die Chance auf Rang 5 insgesamt 10,5 %.
+Punktebonus vor der Rundung, ohne XP oder Serie zu erhöhen.
+
+**Jede Figur trägt 2 % Grundchance**, auch ohne das Talent. Bei 183 erwarteten
+Fängen je Run sind das rund dreieinhalb Glückstreffer — genug, damit jeder
+Spieler den Effekt kennt. Vorher lag die Grundchance bei 0: Den Glückstreffer
+gab es ausschließlich für den, der ihn gelernt hatte, und wer ihn nicht hatte,
+konnte nicht vermissen, was er nie gesehen hat. Das Talent hebt die Chance mit
+dem Capstone auf Rang 5 auf insgesamt 12,5 % und damit auf gut das Sechsfache.
+
+Die Grundchance hebt den erwarteten Punktestand eines Runs um 4 %. Dieser
+Faktor steckt in `EXPECTED_SCORE_PER_RUN`, damit punktbasierte Schwellen — vor
+allem die Tagesziele — nicht gegen eine Bezugsgröße skalieren, die das Spiel
+gar nicht mehr liefert.
 
 Die elf Talente umfassen 46 Ränge. Bei einem Talentpunkt alle zwei Level
 werden bis Level 100 insgesamt 49 Punkte verdient; die drei Punkte über dem

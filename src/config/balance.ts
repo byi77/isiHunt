@@ -74,8 +74,25 @@ export const EXPECTED_COINS_PER_RUN =
     ((BALANCE.run.economyCatches * BALANCE.rarities.legendary.weight) / rarityWeightTotal) *
       BALANCE.economy.sources.rarity.legendaryCoinsPerCatch);
 
+/**
+ * Was der Basis-Gluecktreffer im Mittel auf jeden Fang aufschlaegt.
+ *
+ * Seit es eine Grundchance ohne Talent gibt, faellt der Ausreisser auch bei
+ * einer Figur ohne Gluecktreffer an - der erwartete Punktestand eines Runs
+ * liegt dadurch hoeher als die reine Seltenheitsrechnung. Ohne diesen Faktor
+ * skalierte `scoreForRuns` gegen eine Bezugsgroesse, die das Spiel gar nicht
+ * mehr liefert, und jede punktbasierte Belohnung waere zu billig.
+ *
+ * Nur die Grundchance zaehlt, nicht das Talent: Bezugsgroessen beschreiben
+ * die Figur ohne Talente, sonst haengt der Massstab an der Talentwahl.
+ */
+const CRIT_SCORE_FACTOR = 1 + BALANCE.talents.baseCritChance * (BALANCE.talents.critMultiplier - 1);
+
 export const EXPECTED_SCORE_PER_RUN =
-  EXPECTED_POINTS_PER_CATCH * BALANCE.run.economyCatches * BALANCE.run.referenceComboMultiplier;
+  EXPECTED_POINTS_PER_CATCH *
+  BALANCE.run.economyCatches *
+  BALANCE.run.referenceComboMultiplier *
+  CRIT_SCORE_FACTOR;
 
 const xpRunScale = EXPECTED_XP_PER_RUN / BASELINE_EXPECTED_XP_PER_RUN;
 const coinRunScale = EXPECTED_COINS_PER_RUN / BASELINE_EXPECTED_COINS_PER_RUN;
@@ -186,6 +203,17 @@ export const COMBO_MULTIPLIER_PER_EXTRA_SERIES = BALANCE.score.comboMultiplierPe
  * verspricht. Deshalb ist die Chance niedrig gehalten (2 % je Rang).
  */
 export const CRIT_MULTIPLIER = BALANCE.talents.critMultiplier;
+
+/**
+ * Die Gluecktreffer-Chance, die jeder Spieler ohne Talent schon hat.
+ *
+ * Vorher lag sie bei 0: Den Effekt gab es nur, wer Gluecktreffer gelernt
+ * hatte, und wer ihn nicht hatte, wusste nicht, dass es ihn gibt. Zwei
+ * Prozent auf `run.expectedCatches` Faenge sind rund dreieinhalb sichtbare
+ * Ausreisser je Run - genug, um den Effekt zu kennen und das Talent zu
+ * wollen, das ihn auf das Sechsfache hebt.
+ */
+export const BASE_CRIT_CHANCE = BALANCE.talents.baseCritChance;
 export const SERIES_RAISING_MIN_RARITY_INDEX = BALANCE.score.seriesRaisingMinRarityIndex;
 export const SERIES_AGILITY_TIERS = BALANCE.score.seriesAgilityTiers;
 export const WORLD_REWARDS = BALANCE.worlds;

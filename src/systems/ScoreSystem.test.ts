@@ -24,7 +24,7 @@ import {
   SERIES_TRAIL_GLOW_WIDTH_MULTIPLIER,
   SERIES_TRAIL_TIERS,
 } from '@/config/GameConfig';
-import { CRIT_MULTIPLIER } from '@/config/balance';
+import { BALANCE, CRIT_MULTIPLIER } from '@/config/balance';
 import { RARITY_BY_ID } from '@/config/rarities';
 import { resolveStats, talentMaxRank } from '@/config/talents';
 import { WORLDS } from '@/config/worlds';
@@ -42,9 +42,18 @@ const RARE = RARITY_BY_ID.rare;
 const UNCOMMON = RARITY_BY_ID.uncommon;
 const COMMON = RARITY_BY_ID.common;
 
-/** Ein System ohne Talent-Boni: Multiplikatoren neutral bei 1. */
+/**
+ * Ein System ohne Talent-Boni: Multiplikatoren neutral bei 1.
+ *
+ * Die Gluecktreffer-Chance steht ausdruecklich auf 0, obwohl jede Figur im
+ * Spiel eine Grundchance traegt (`BASE_CRIT_CHANCE`). Mit ihr wuerfelte jeder
+ * Test hier gegen `Math.random`, und ein Fang brachte gelegentlich das
+ * Dreifache - eine Punktzahl-Erwartung waere dann nur noch meistens wahr.
+ * Was der Gluecktreffer tut, pruefen die Tests weiter unten mit festem
+ * Wuerfel.
+ */
 function createSystem(scoreMultiplier = 1, xpMultiplier = 1): ScoreSystem {
-  return new ScoreSystem(COMBO_GRACE_MS, scoreMultiplier, xpMultiplier);
+  return new ScoreSystem(COMBO_GRACE_MS, scoreMultiplier, xpMultiplier, 0, 0);
 }
 
 describe('multiplierForCombo', () => {
@@ -130,7 +139,7 @@ describe('ScoreSystem - Fangen', () => {
   });
 
   it('belohnt Resonanz bei einer hohen Serie, ohne den ersten Fang zu veraendern', () => {
-    const system = new ScoreSystem(COMBO_GRACE_MS, 1, 1, 0.15);
+    const system = new ScoreSystem(COMBO_GRACE_MS, 1, 1, 0.15, 0);
     expect(system.registerCollect(LEGENDARY!).awardedPoints).toBe(LEGENDARY!.points);
 
     for (let i = 1; i < 15; i += 1) system.registerCollect(LEGENDARY!);
@@ -407,7 +416,7 @@ describe('ScoreSystem - Talent x Welt Multiplikator-Produkt', () => {
     const highestWorld = WORLDS[WORLDS.length - 1]!;
     const combinedScoreMultiplier = maxFortuneStats.scoreMultiplier * highestWorld.scoreMultiplier;
 
-    const system = new ScoreSystem(COMBO_GRACE_MS, combinedScoreMultiplier, 1);
+    const system = new ScoreSystem(COMBO_GRACE_MS, combinedScoreMultiplier, 1, 0, 0);
     const outcome = system.registerCollect(RARE!);
 
     expect(outcome.awardedPoints).toBe(Math.round(RARE!.points * combinedScoreMultiplier));
@@ -418,7 +427,7 @@ describe('ScoreSystem - Talent x Welt Multiplikator-Produkt', () => {
     const highestWorld = WORLDS[WORLDS.length - 1]!;
     const combinedXpMultiplier = maxInsightStats.xpMultiplier * highestWorld.xpMultiplier;
 
-    const system = new ScoreSystem(COMBO_GRACE_MS, 1, combinedXpMultiplier);
+    const system = new ScoreSystem(COMBO_GRACE_MS, 1, combinedXpMultiplier, 0, 0);
 
     let expectedXp = 0;
     for (let i = 0; i < 50; i++) {
@@ -496,13 +505,38 @@ describe('Gluecktreffer', () => {
     expect(outcome.awardedPoints).toBe(Math.round(RARE!.points * 2 * CRIT_MULTIPLIER));
   });
 
-  it('bleibt ohne Talent vollstaendig aus', () => {
-    // Auch bei einem Wuerfel, der immer 0 wirft: Ohne Talent kein Krit.
+  it('bleibt bei ausdruecklicher Chance 0 vollstaendig aus', () => {
+    // Nicht der Normalfall im Spiel - dort traegt jede Figur die
+    // Grundchance -, sondern der Weg, einen Lauf ohne jeden Ausreisser zu
+    // rechnen. Solange das trotz guenstigstem Wurf haelt, koennen die
+    // uebrigen Tests feste Punktzahlen erwarten.
     const system = new ScoreSystem(COMBO_GRACE_MS, 1, 1, 0, 0, () => 0);
     const outcome = system.registerCollect(RARE!);
 
     expect(outcome.crit).toBe(false);
     expect(outcome.awardedPoints).toBe(RARE!.points);
+  });
+
+  it('faellt auch ohne Talent, weil jede Figur die Grundchance traegt', () => {
+    // Der eigentliche Zweck der Grundchance: Wer das Talent nicht hat, soll
+    // den Effekt trotzdem kennen - sonst waere er nicht zu vermissen und das
+    // Talent nicht zu wollen. Der Wuerfel faellt auf 0, also muss die
+    // Grundchance allein reichen.
+    const system = new ScoreSystem(COMBO_GRACE_MS, 1, 1, 0, resolveStats({}).critChance, () => 0);
+
+    expect(system.registerCollect(RARE!).crit).toBe(true);
+  });
+
+  it('haelt die Grundchance so hoch, dass sie im Run mehrfach faellt', () => {
+    // Die Zahl ist als Erlebnis begruendet ("ein paar Mal pro Runde"), nicht
+    // als Balancing-Feinheit. Genau das prueft dieser Test: Bei den
+    // erwarteten Faengen eines Runs muessen mehrere Gluecktreffer
+    // zusammenkommen. Faellt die Chance versehentlich auf einen Zehntelwert,
+    // bleibt der Schriftzug ganze Runden lang aus - und niemand merkt es,
+    // weil nichts kaputt ist.
+    const erwarteteKrits = BALANCE.run.expectedCatches * resolveStats({}).critChance;
+
+    expect(erwarteteKrits).toBeGreaterThanOrEqual(3);
   });
 
   it('loest nicht aus, wenn der Wurf ueber der Chance liegt', () => {

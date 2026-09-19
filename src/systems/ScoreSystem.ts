@@ -17,7 +17,7 @@
  * gab nie etwas zu entscheiden.
  */
 
-import { CRIT_MULTIPLIER } from '@/config/balance';
+import { BASE_CRIT_CHANCE, CRIT_MULTIPLIER } from '@/config/balance';
 import {
   COMBO_MULTIPLIER_PER_EXTRA_SERIES,
   COMBO_TIERS,
@@ -146,8 +146,11 @@ export class ScoreSystem {
     private readonly scoreMultiplier: number,
     private readonly xpMultiplier: number,
     private readonly seriesMultiplierBonus = 0,
-    /** Wahrscheinlichkeit eines Gluecktreffers, 0 bis 1. Aus dem Talent. */
-    private readonly critChance = 0,
+    /**
+     * Wahrscheinlichkeit eines Gluecktreffers, 0 bis 1. Kommt fertig aus
+     * `resolveStats` - Grundchance und Talent sind dort schon summiert.
+     */
+    private readonly critChance = BASE_CRIT_CHANCE,
     /**
      * Der Wuerfel. Injizierbar, damit Tests den Zufall festlegen koennen -
      * ohne das waere ein Gluecktreffer nur statistisch pruefbar, und ein
@@ -202,6 +205,9 @@ export class ScoreSystem {
     // Er steigert die Serie nicht und wird von ihr nicht beeinflusst. Die
     // Serie misst Koennen; wer sie halten will, soll das mit der Hand tun und
     // nicht mit dem Wuerfel (vgl. ADR-0027).
+    // Die Chance traegt jede Figur, auch ohne Talent (`BASE_CRIT_CHANCE`).
+    // Der Guard bleibt trotzdem stehen: Tests setzen sie bewusst auf 0, um
+    // einen Lauf ohne jeden Ausreisser rechnen zu koennen.
     const crit = this.critChance > 0 && this.roll() < this.critChance;
     const awardedPoints = Math.round(
       rarity.points * multiplier * this.scoreMultiplier * (crit ? CRIT_MULTIPLIER : 1),

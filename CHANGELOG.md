@@ -12,8 +12,16 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 ### Hinzugefuegt
 
 - **Glueckstreffer** als elftes Talent: +2 % Chance pro Rang auf dreifache
-  Fangpunkte; Rang 5 erreicht durch den Capstone 10,5 %. Glueckstreffer
-  erscheinen als groessere goldene Punktzahl mit einem x3-Hinweis.
+  Fangpunkte. Jede Figur traegt zusaetzlich 2 % Grundchance, also rund
+  dreieinhalb Glueckstreffer je Run auch ohne das Talent - vorher gab es den
+  Effekt nur fuer den, der ihn gelernt hatte. Mit Capstone erreicht Rang 5
+  12,5 %.
+- **"KRITISCH"-Schriftzug** bei jedem Glueckstreffer: schlaegt in der oberen
+  Spielfeldhaelfte ein, reisst auf und verweht in 420 ms, mit der Punktzahl
+  darunter. Der Serien-Multiplikator weicht ihm fuer seine Dauer, und ein
+  zweiter Schriftzug wartet mindestens 1,5 Sekunden - auf Glueckstreffer
+  Rang 5 faellt sonst alle vier Sekunden einer. Das Feld-Label zeigt beim
+  Glueckstreffer nur noch die Zahl; den Namen traegt jetzt der Schriftzug.
 
 ### Behoben
 
