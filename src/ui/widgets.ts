@@ -1067,27 +1067,35 @@ export function shockwave(
 
 /** Aufsteigende Punktzahl am Fangort. */
 /*
- * Der Aufschlag einer gefangenen Punktzahl.
+ * Die Druckwelle einer gefangenen Punktzahl.
  *
  * Keine Balancing-Werte, sondern die Form einer Bewegung - deshalb hier und
  * nicht in `config/`. Sie veraendern nichts am Spiel, nur daran, wie sich ein
  * Fang anfuehlt.
  */
 
-/** Wie weit die Zahl ueber ihre Ruhegroesse hinausschiesst. */
-const PUNCH_SCALE = 1.85;
+/**
+ * Groesse zu Beginn, als Anteil der Ruhegroesse.
+ *
+ * Der Anlauf, ohne den kein Schlag zu sehen waere: Begaenne die Zahl bereits
+ * auf voller Groesse, gaebe es nur noch ein Wachsen.
+ */
+const BURST_START = 0.35;
 
-/** Ein Serienbonus schlaegt haerter ein - er ist der seltenere Moment. */
-const PUNCH_SCALE_BONUS = 2.3;
+/** Dauer des Aufschlags auf Lesegroesse. Rund drei Frames bei 60 Hz. */
+const BURST_HIT_MS = 55;
 
 /**
- * Dauer des Ausschlags in eine Richtung; mit `yoyo` also das Doppelte.
+ * Wie weit sich die Zahl waehrend des Ausblendens noch ausdehnt.
  *
- * 90 ms sind rund fuenf Frames bei 60 Hz - kurz genug, dass es schlaegt statt
- * zu wachsen, lang genug, dass es auf einem 60-Hz-Geraet nicht zwischen zwei
- * Frames verschwindet.
+ * Der eigentliche Effekt. Sie verschwindet **gross**, nicht klein - deshalb
+ * endet die Bewegung deutlich ueber der Lesegroesse statt auf ihr. Die erste
+ * Fassung kehrte hierher zurueck und hob sich damit selbst auf.
  */
-const PUNCH_MS = 90;
+const BURST_END_SCALE = 2.1;
+
+/** Ein Serienbonus reisst weiter auf - er ist der seltenere Moment. */
+const BURST_END_SCALE_BONUS = 2.7;
 
 export function floatingScore(
   scene: Phaser.Scene,
@@ -1123,12 +1131,11 @@ export function floatingScore(
       ),
     )
     .setOrigin(0.5)
-    // Punktwerte muessen im mobilen Spielfeld auf einen Blick lesbar sein.
-    // Dies ist die RUHEgroesse, auf die der Aufschlag zurueckfaellt - er
-    // schiesst von hier aus ueber sie hinaus (siehe `PUNCH_SCALE`). Sie liegt
-    // deshalb tiefer als frueher, sonst stuende am Ende eine riesige Zahl.
+    // Die LESEgroesse: der Moment, in dem die Zahl abzulesen ist. Die
+    // Bewegung laeuft von `BURST_START` hierher und von hier weiter nach
+    // `BURST_END_SCALE` - dieser Wert ist also die Mitte, nicht das Ende.
     .setScale(
-      bonus ? 0.62 + intensity * 0.14 : isXp ? 0.6 + intensity * 0.08 : 0.72 + intensity * 0.12,
+      bonus ? 0.72 + intensity * 0.16 : isXp ? 0.68 + intensity * 0.1 : 0.84 + intensity * 0.14,
     )
     .setDepth(Depth.FloatingScore);
 
@@ -1158,43 +1165,67 @@ export function floatingScore(
   }
 
   const ziele = bonusLabel ? [text, bonusLabel] : text;
-  const startScale = text.scale;
+  const ruhe = text.scale;
 
-  // Der Aufschlag: in zwei Frames ueber die Zielgroesse hinaus, dann zurueck.
+  // Die Druckwelle: hervorschnellen, weiter aufreissen, dabei verwehen.
   //
-  // Vorher wuchs die Zahl von 0,96 auf 1,0 und schwebte davon - eine
-  // Bewegung, die so gleichmaessig ist, dass der Fang sich nicht vom
-  // Vorbeifliegen unterscheidet. Ein Einschlag braucht die Gegenbewegung:
-  // erst weit darueber hinaus, dann zurueckfallen. Das Auge liest die
-  // Rueckkehr als Wucht, nicht die Groesse selbst.
+  // ## Warum die zweite Fassung auch noch statisch wirkte
   //
-  // `yoyo` statt zweier Tweens, damit exakt derselbe Wert wieder erreicht
-  // wird - eine zweite Animation mit eigenem Ziel weicht bei Framedrops ab
-  // und laesst die Zahl auf einer krummen Groesse stehen.
+  // Der erste Versuch (v0.1.330) liess die Zahl ueber ihre Groesse
+  // hinausschiessen und per `yoyo` darauf zurueckfallen. Gemessen war der
+  // Ausschlag da - 0,78 auf 1,44 und zurueck -, gesehen wurde er trotzdem
+  // nicht: Was am Ende wieder so gross ist wie am Anfang, hat unterm Strich
+  // nichts getan. Die Bewegung hob sich auf, statt sich zu summieren.
+  //
+  // Eine Explosion dehnt sich aus und hoert nicht auf damit. Die Zahl waechst
+  // deshalb jetzt DURCHGEHEND: schlagartig auf ihre Lesegroesse, dann weiter
+  // ueber sie hinaus, waehrend sie ausblendet. Sie verschwindet gross, nicht
+  // klein - dasselbe Prinzip wie bei einer Rauchwolke, die sich auf dem Weg
+  // nach oben auflöst.
+  //
+  // Der Start liegt unter der Ruhegroesse, damit ueberhaupt ein Aufschlag zu
+  // sehen ist: Ohne diesen Anlauf begaenne die Bewegung bereits auf voller
+  // Groesse und waere nur noch ein Groesserwerden.
+  text.setScale(ruhe * BURST_START);
+  bonusLabel?.setScale(bonusLabel.scale * BURST_START);
+
+  // Phase 1: der Schlag. Sehr kurz, mit `Back.Out` - das ueberschiesst leicht
+  // und gibt der Bewegung ihre Haerte.
   scene.tweens.add({
     targets: ziele,
-    scale: startScale * (bonus ? PUNCH_SCALE_BONUS : PUNCH_SCALE),
-    duration: PUNCH_MS,
-    ease: 'Quad.Out',
-    yoyo: true,
+    scale: ruhe,
+    duration: BURST_HIT_MS,
+    ease: 'Back.Out',
   });
 
-  // Das Aufsteigen laeuft parallel und beginnt schnell, damit der Aufschlag
-  // nicht an Ort und Stelle passiert - der Wert soll vom Fang wegspringen.
+  // Phase 2: das Aufreissen. Beginnt, sobald der Schlag sitzt, und laeuft bis
+  // zum Ende weiter - die Zahl wird waehrend des gesamten Ausblendens groesser.
   scene.tweens.add({
     targets: ziele,
-    y: y - (bonus ? 105 : isXp ? 68 : 90),
-    duration: bonus ? 980 : 820,
+    scale: ruhe * (bonus ? BURST_END_SCALE_BONUS : BURST_END_SCALE),
+    delay: BURST_HIT_MS,
+    duration: bonus ? 760 : 640,
+    ease: 'Quart.Out',
+  });
+
+  // Das Wegfliegen: schnell heraus aus dem Fang, dann auslaufen. `Expo.Out`
+  // legt fast die ganze Strecke in der ersten Viertelsekunde zurueck - das
+  // ist der Teil, der als "weggeschleudert" gelesen wird.
+  scene.tweens.add({
+    targets: ziele,
+    y: y - (bonus ? 125 : isXp ? 80 : 108),
+    duration: bonus ? 900 : 780,
     ease: 'Expo.Out',
   });
 
-  // Ausblenden erst, nachdem der Aufschlag gelesen wurde. Liefe es von Anfang
-  // an mit, waere die Zahl genau im lautesten Moment schon halb verschwunden.
+  // Ausblenden ueber die gesamte Ausdehnung, nicht erst danach: Das Verwehen
+  // IST der Effekt. Ein spaeter Einsatz liesse die Zahl erst gross stehen und
+  // dann verschwinden - zwei Schritte statt einer Bewegung.
   scene.tweens.add({
     targets: ziele,
     alpha: 0,
-    delay: bonus ? 380 : 300,
-    duration: bonus ? 600 : 520,
+    delay: BURST_HIT_MS + 40,
+    duration: bonus ? 700 : 580,
     ease: 'Quad.In',
     onComplete: () => {
       text.destroy();

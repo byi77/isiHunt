@@ -14,13 +14,18 @@ Belohnungskarten mit goldenen Ueberschriften. XP-Fortschritt erscheint sofort;
 220 ms Deckkraft-Einblendung ohne Skalierung, bei reduzierter Bewegung statisch.
 Details scrollen unter einer Maske; die goldene Hauptaktion bleibt fest erreichbar.
 
-**Punkteaufschlag, 19.09.2026:** Eine gefangene Punktzahl schlägt ein, statt zu
-wachsen: Sie schießt in 90 ms auf das 1,85-fache ihrer Ruhegröße (Serienbonus:
-2,3-fache) und fällt in derselben Zeit darauf zurück. Das Auge liest die
-Rückkehr als Wucht — die Größe allein tut das nicht, weshalb die frühere
-gleichmäßige Aufwärtsbewegung von 0,96 auf 1,0 wie ein statisches Aufblenden
-wirkte. Das Ausblenden setzt erst nach 300 ms ein, damit die Zahl im lautesten
-Moment noch voll deckend steht. Bei reduzierter Bewegung bleibt es beim
+**Punkte-Druckwelle, 19.09.2026:** Eine gefangene Punktzahl schnellt aus 35 %
+ihrer Lesegröße hervor (55 ms, `Back.Out`), dehnt sich dann **durchgehend
+weiter** auf das 2,1-fache aus (Serienbonus: 2,7-fache) und verblasst dabei.
+Sie verschwindet groß, nicht klein — wie eine Rauchwolke, die sich auf dem Weg
+nach oben auflöst. Gemessen: 0,32 → 1,91 über rund 620 ms, sechsfaches
+Wachstum, 108 px Flughöhe.
+
+Zwei verworfene Fassungen, weil beide „statisch" wirkten: ein gleichmäßiges
+Wachsen von 0,96 auf 1,0 (vier Prozent sind keine Bewegung), und ein
+Überschießen mit Rückkehr auf die Ausgangsgröße per `yoyo` — der Ausschlag war
+messbar, hob sich aber selbst auf. **Eine Bewegung wird gesehen, wenn sie sich
+summiert, nicht wenn sie groß ist.** Bei reduzierter Bewegung bleibt es beim
 statischen Text.
 
 **Talente in der Pause, 19.09.2026:** Die aktiven Verstärkungen stehen als

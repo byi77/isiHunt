@@ -29,11 +29,13 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
-- **Gefangene Punkte schlagen ein, statt still zu erscheinen.** Die Zahl
-  schiesst in 90 ms auf das 1,85-fache (Serienbonus: 2,3-fache) und faellt
-  darauf zurueck; das Ausblenden setzt erst danach ein. Vorher wuchs sie
-  gleichmaessig von 0,96 auf 1,0 - eine Bewegung, die sich vom Vorbeifliegen
-  nicht unterschied.
+- **Gefangene Punkte schlagen ein und dehnen sich aus.** Die Zahl schnellt aus
+  35 Prozent ihrer Lesegroesse hervor, waechst dann durchgehend auf das
+  2,1-fache (Serienbonus: 2,7-fache) und verblasst dabei - sie verschwindet
+  gross, nicht klein. Gemessen: sechsfaches Wachstum ueber rund 620 ms.
+  Vorherige Versuche wirkten statisch, weil die Bewegung entweder zu klein war
+  (0,96 auf 1,0) oder auf die Ausgangsgroesse zurueckkehrte und sich damit
+  selbst aufhob.
 - **Die Talentdetails in der Pause sind eine zweispaltige Liste.** Name und
   Rang links, Wirkung rechtsbuendig, je Talent eine Zeile. Vorher standen bis
   zu zehn Eintraege als ein mit "·" verketteter Absatz, der mitten im Wort
