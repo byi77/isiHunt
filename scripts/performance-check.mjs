@@ -6,7 +6,12 @@ import { resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 
 const PORT = 5200;
-const URL = `http://localhost:${PORT}/`;
+// `skipAuth`: Seit ADR-0026 fuehrt der Start ohne gueltige Supabase-Sitzung in
+// die AccountScene statt ins Menue. Dieses Gate hat keine Sitzung und lief
+// deshalb in den Timeout auf `isActive('Menu')`. Der Haken wird nur im
+// Dev-Build ausgewertet - hier laeuft `vite --mode performance`, also greift
+// er; im Production-Bundle ist der Zweig wegoptimiert.
+const URL = `http://localhost:${PORT}/?skipAuth=1`;
 const sim = process.argv.includes('--sim');
 const SAVE_KEY = 'isihunt.save.v1';
 

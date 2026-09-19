@@ -1163,16 +1163,28 @@ Kette, die Vitest nicht erreicht: Scene-Fluss, Navigation, Bedienelemente,
 Steuerung, Kollision, Punktevergabe, Layout und Persistenz. Rund 71 Schritte,
 etwa 25 Minuten.
 
-**Der Playtest haengt `?skipAuth=1` an jeden Seitenaufruf.** Seit ADR-0026
+**Browser-Gates haengen `?skipAuth=1` an den Seitenaufruf.** Seit ADR-0026
 fuehrt der Start ohne gueltige Supabase-Session in die `AccountScene` statt
-ins Menue; der Playtest hat keine Session und bliebe sonst in jeder Suite
-dort stehen. Der Haken wird in `BootScene.entryScene()` nur ausgewertet, wenn
-`DEBUG_ENABLED` gilt — im ausgelieferten Bundle ist der Zweig wegoptimiert,
-die Anmeldepflicht laesst sich also nicht per URL umgehen.
+ins Menue. Kein automatisierter Lauf hat eine Session; wer auf das Menue
+wartet, laeuft sonst in einen Timeout. Der Haken wird in
+`BootScene.entryScene()` nur ausgewertet, wenn `DEBUG_ENABLED` gilt — im
+ausgelieferten Bundle ist der Zweig wegoptimiert, die Anmeldepflicht laesst
+sich also nicht per URL umgehen.
+
+| Skript                 | Haken | Warum                                                     |
+| ---------------------- | ----- | --------------------------------------------------------- |
+| `playtest.mjs`         | ja    | wartet in fast jeder Suite auf `Menu`                      |
+| `performance-check.mjs`| ja    | wartet auf `Menu`, bevor es `Game` startet                 |
+| `production-check.mjs` | nein  | prueft Canvas, Titel, Version — soll den echten Stand sehen |
+| `smoke-test.mjs`       | nein  | prueft nur auf Konsolenfehler                              |
+| `duel2g-playtest.mjs`  | nein  | behandelt `Account` bereits als moeglichen Startbildschirm  |
 
 Das ist die Stelle, an der eine neue Einstiegsbedingung zuerst weh tut: Die
-Unit-Tests bleiben gruen, weil sie `BootScene` gar nicht laden. Wer dort eine
-Bedingung ergaenzt, prueft deshalb zusaetzlich eine Browser-Suite.
+Unit-Tests bleiben gruen, weil sie `BootScene` gar nicht laden — beim Umbau
+2026-09-19 fiel `performance-check.mjs` deshalb erst in der CI auf, nachdem
+`verify` lokal zweimal durchgelaufen war. Wer am Einstieg eine Bedingung
+ergaenzt, geht **alle** Skripte mit `page.goto` durch, nicht nur das
+naechstliegende, und faehrt `npm run release:check` vor dem Push.
 
 | Suite      | Deckt ab                                                             |
 | ---------- | -------------------------------------------------------------------- |
