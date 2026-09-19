@@ -24,6 +24,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- **Die Auswahl im Hangar ist eine blaetterbare Bildleiste statt eines
+  Dropdowns.** Jeder Eintrag zeigt sich als Bild - Silhouette bei Schiffen,
+  Farbflaeche bei Farben; ein Tipp wechselt die Vorschau sofort. Wischen quer
+  ueber die Vorschau und die Pfeiltasten blaettern ebenfalls. Eine Zeile nennt
+  Position und Besitzstand ("11 von 35 · 3 im Besitz"). Der Hangar oeffnet
+  jetzt beim getragenen Schiff statt beim ersten 3D-Modell.
 - **Gespielt wird nur noch angemeldet.** Der Gastmodus entfaellt ersatzlos:
   Ohne gueltige Sitzung fuehrt der Start in die Anmeldung statt ins Menue.
   Damit gibt es keinen zweiten, rein lokalen Fortschrittsstrang mehr neben dem

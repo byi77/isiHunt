@@ -1,5 +1,4 @@
 import Phaser from 'phaser';
-import { SHIP_SHAPES, getShipShape } from '@/config/shop';
 import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
@@ -21,14 +20,20 @@ export class ShopScene extends Phaser.Scene {
     const save = SaveSystem.load();
     const world = getWorld(save.lastWorldId);
     createSceneBackdrop(this, world);
-    const initialShape = getShipShape(save.shipShape).threeDAssetId
-      ? save.shipShape
-      : (SHIP_SHAPES.find((shape) => shape.threeDAssetId)?.id ?? save.shipShape);
+    // Der Hangar oeffnet mit dem getragenen Schiff.
+    //
+    // Frueher sprang er auf das erste 3D-Modell, wenn die getragene Form
+    // keines hatte - damals zeigte die Vorschau sonst nur eine flache
+    // Silhouette, und das 3D-Modell war das neue Schaustueck. Seit die
+    // Auswahl eine Bildleiste ist, wiegt das andere Argument schwerer: Wer
+    // den Laden oeffnet, will sehen, was er traegt, und von dort aus
+    // blaettern. Ein fremdes Schiff als Einstieg kostete jedes Mal die Suche
+    // zurueck zum eigenen.
     this.hangar = new HangarView(
       this,
       save,
       world.accent,
-      { shapes: initialShape, colors: save.shipColor, auras: save.shipAura },
+      { shapes: save.shipShape, colors: save.shipColor, auras: save.shipAura },
       {
         act: (tab, id) => {
           const current = SaveSystem.load();

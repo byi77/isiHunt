@@ -1427,6 +1427,24 @@ Ausruesten laufen unveraendert ueber `ProgressionSystem` und `SaveSystem`;
 **Die Ausnahme ist benannt und begrenzt.** Sie gilt fuer diesen einen
 Bildschirm. Ein zweiter bekommt sie nicht ohne eigenen ADR.
 
+**Nachtrag 2026-09-19: Die Auswahl ist eine Bildleiste, kein Dropdown.** Der
+erste Entwurf nutzte ein `<select>`. Das ist ein Textwerkzeug und verbirgt
+genau das, worauf es im Laden ankommt — das Aussehen: aufklappen, in einer
+Liste lesen, zuklappen, und erst dann sieht man das Schiff. Wer stoebern will,
+wiederholt das je Eintrag; bei 35 Formen ist das kein Auswaehlen mehr, sondern
+Suchen. Gemeldet als "umstaendlich", und zwar zu Recht.
+
+An seiner Stelle steht eine quer blaetterbare Leiste, die jeden Eintrag als
+Bild zeigt — Silhouette bei Schiffen, Farbflaeche bei Farben. Ein Tipp
+wechselt die grosse Vorschau sofort, ein Wisch quer ueber die Vorschau
+blaettert weiter, Pfeiltasten tun dasselbe. Die Silhouetten kommen aus
+Phasers vorhandenen Texturen (`scene.textures.getBase64`, gecacht); es
+entstehen keine zusaetzlichen Bilddateien.
+
+Das ist zugleich die Begruendung dafuer, den Shop ueberhaupt ins DOM geholt zu
+haben: `scroll-snap-type`, `overflow-x` und `scrollIntoView` sind hier
+Eigenschaften, in Phaser waeren sie wieder Handarbeit gewesen.
+
 ### Begruendung
 
 - **Der Browser kann Textfluss, Phaser nicht.** Umbruch, Scrollen mit

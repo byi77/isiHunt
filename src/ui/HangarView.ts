@@ -19,6 +19,15 @@ import { playerTextureForShape } from './textures';
 import { AURA_FRAME_RUHE, applyTintShift, SHIP_ANIMATIONS, stehendesBild } from './shipAnimations';
 import './hangar.css';
 
+/**
+ * Mindeststrecke, ab der ein Ziehen auf der Vorschau als Blaettern zaehlt.
+ *
+ * Kein Balancing-Wert, sondern eine Eigenschaft der Geste: Darunter liegt das
+ * uebliche Zittern beim Drehen, und ein zu kleiner Wert liesse jeden Dreh in
+ * einem Schiffswechsel enden. 48 CSS-Pixel sind rund ein Daumenbreit.
+ */
+const SWIPE_MIN_PX = 48;
+
 export type HangarTab = 'shapes' | 'colors' | 'auras';
 export interface HangarSelection {
   shapes: string;
@@ -42,14 +51,29 @@ export class HangarView {
   private readonly description = document.createElement('p');
   private readonly balance = document.createElement('span');
   private readonly collection = document.createElement('p');
-  private readonly select = document.createElement('select');
+  private readonly gallery = document.createElement('div');
+  private readonly counter = document.createElement('p');
   private readonly buy = document.createElement('button');
   private readonly tabs = new Map<HangarTab, HTMLButtonElement>();
   private readonly textures = new Map<string, string>();
+  /**
+   * Die Kacheln des gerade gezeigten Reiters, nach Id.
+   *
+   * Gehalten, damit ein Wechsel nur zwei Kacheln umfaerben muss statt die
+   * ganze Leiste neu zu bauen. Ein vollstaendiger `replaceChildren()` bei
+   * jedem Tipp setzte die Scrollposition auf Null zurueck - man verlor beim
+   * Durchblaettern staendig die Stelle, an der man war.
+   */
+  private tiles = new Map<string, HTMLButtonElement>();
+  private tilesTab: HangarTab | null = null;
   private tab: HangarTab = 'shapes';
   private elapsed = 0;
   private fallbackAngle = 0;
   private pointer: { id: number; x: number; y: number } | null = null;
+  /** Startpunkt der laufenden Geste auf der Vorschau - fuer Wischen vs. Drehen. */
+  private swipeStart: { x: number; y: number } | null = null;
+  /** Zurueckgelegte Gesamtstrecke; trennt einen geraden Wisch vom Bogen. */
+  private swipeDistance = 0;
   private frameRequest = 0;
   private available = false;
   private previewVisible = true;
@@ -128,16 +152,31 @@ export class HangarView {
       this.tabs.set(id, button);
       tabs.append(button);
     }
-    const label = document.createElement('label');
-    label.textContent = 'Auswahl zum Anprobieren';
-    this.select.id = 'hangar-selection';
-    label.htmlFor = this.select.id;
-    this.select.addEventListener(
-      'change',
-      () => {
-        this.selection[this.tab] = this.select.value;
-        this.elapsed = 0;
-        this.refresh();
+    // Blaetterbare Bildleiste statt eines `<select>`.
+    //
+    // Das Dropdown zwang zu einem Ablauf, der das Anprobieren verhinderte:
+    // aufklappen, in einer Textliste lesen, zuklappen - und erst dann sah man,
+    // wie das Schiff aussieht. Wer stoebern wollte, musste das je Eintrag
+    // wiederholen. Bei 35 Formen ist das kein Auswaehlen mehr, sondern Suchen.
+    //
+    // Die Leiste zeigt alle Eintraege gleichzeitig als Bild; ein Tipp
+    // wechselt die grosse Vorschau sofort. Gekauft wird weiterhin nur ueber
+    // den Knopf unten - Blaettern kostet nichts.
+    this.gallery.className = 'hangar-gallery';
+    this.gallery.setAttribute('role', 'listbox');
+    this.gallery.setAttribute('aria-label', 'Auswahl zum Anprobieren');
+    this.gallery.tabIndex = 0;
+    this.counter.className = 'hangar-status';
+    // Pfeiltasten blaettern, wenn die Leiste den Fokus hat. Die Vorschau
+    // darueber nutzt dieselben Tasten zum Drehen - deshalb haengt das hier an
+    // der Leiste und nicht am Fenster.
+    this.gallery.addEventListener(
+      'keydown',
+      (event) => {
+        const schritt = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0;
+        if (schritt === 0) return;
+        event.preventDefault();
+        this.step(schritt);
       },
       { signal: this.abort.signal },
     );
@@ -145,17 +184,21 @@ export class HangarView {
     const summary = document.createElement('summary');
     summary.textContent = 'Meine Sammlung';
     details.append(summary, this.collection);
+    // Reihenfolge nach Blickverlauf: Was man auswaehlt, steht direkt unter
+    // dem, was man dabei ansieht. Die Leiste lag zuerst hinter Hinweis,
+    // Werkzeugen und Namenszeile - und damit auf einem Hochformat-Handy
+    // ausserhalb des Bildes, obwohl sie das Hauptbedienelement ist.
     content.append(
       header,
       previewArea,
-      this.hint,
-      tools,
+      tabs,
+      this.gallery,
       this.name,
       this.status,
-      tabs,
-      label,
-      this.select,
+      this.counter,
       this.description,
+      this.hint,
+      tools,
       details,
     );
     const footer = document.createElement('footer');
@@ -199,6 +242,8 @@ export class HangarView {
       'pointerdown',
       (event) => {
         this.pointer = { id: event.pointerId, x: event.clientX, y: event.clientY };
+        this.swipeStart = { x: event.clientX, y: event.clientY };
+        this.swipeDistance = 0;
         previewArea.setPointerCapture(event.pointerId);
       },
       { signal: this.abort.signal },
@@ -209,9 +254,35 @@ export class HangarView {
         if (this.pointer?.id !== event.pointerId) return;
         const dx = event.clientX - this.pointer.x,
           dy = event.clientY - this.pointer.y;
+        this.swipeDistance += Math.hypot(dx, dy);
         this.preview.rotateBy(dx, dy);
         this.fallbackAngle += dx * 0.012;
         this.pointer = { id: event.pointerId, x: event.clientX, y: event.clientY };
+      },
+      { signal: this.abort.signal },
+    );
+    // Wischen quer ueber die Vorschau blaettert - dieselbe Flaeche, auf der
+    // auch gedreht wird.
+    //
+    // Die beiden Gesten trennt die Richtung, nicht ein Modus: Ein Dreh ist
+    // kurz und oft senkrecht, ein Blaettern ist lang und waagerecht.
+    // Ausgewertet wird deshalb erst beim Loslassen, gegen die Gesamtstrecke -
+    // wer waehrend des Drehens einmal weit nach rechts faehrt, soll nicht
+    // versehentlich das Schiff wechseln.
+    previewArea.addEventListener(
+      'pointerup',
+      (event) => {
+        const start = this.swipeStart;
+        this.swipeStart = null;
+        if (!start) return;
+        const dx = event.clientX - start.x;
+        const dy = event.clientY - start.y;
+        const waagerecht = Math.abs(dx) > Math.abs(dy) * 1.6;
+        const weitGenug = Math.abs(dx) >= SWIPE_MIN_PX;
+        // Ein Bogen legt viel Strecke zurueck, endet aber nahe am Start. Wer
+        // gedreht hat, wischt nicht.
+        const gerade = this.swipeDistance <= Math.abs(dx) * 1.5;
+        if (waagerecht && weitGenug && gerade) this.step(dx < 0 ? 1 : -1);
       },
       { signal: this.abort.signal },
     );
@@ -220,6 +291,7 @@ export class HangarView {
         name,
         () => {
           this.pointer = null;
+          if (name !== 'pointerup') this.swipeStart = null;
         },
         { signal: this.abort.signal },
       );
@@ -274,6 +346,93 @@ export class HangarView {
     return value;
   }
 
+  /** Der Katalog des gerade gezeigten Reiters. */
+  private catalog(): readonly { id: string; name: string }[] {
+    return this.tab === 'shapes' ? SHIP_SHAPES : this.tab === 'colors' ? SHIP_COLORS : SHIP_AURAS;
+  }
+
+  /**
+   * Blaettert um `schritt` Eintraege weiter und laeuft dabei ueber die Enden.
+   *
+   * Umlaufend, weil die Leiste zum Stoebern da ist: Am letzten Schiff
+   * anzustossen und nicht weiterzukommen waere genau die Sackgasse, die das
+   * Dropdown schon hatte.
+   */
+  private step(schritt: number): void {
+    const catalog = this.catalog();
+    const jetzt = catalog.findIndex((entry) => entry.id === this.selection[this.tab]);
+    const naechste = (jetzt + schritt + catalog.length) % catalog.length;
+    this.choose(catalog[naechste]!.id);
+  }
+
+  /** Uebernimmt eine Auswahl und holt ihre Kachel in den sichtbaren Bereich. */
+  private choose(id: string): void {
+    this.selection[this.tab] = id;
+    this.elapsed = 0;
+    this.refresh();
+    this.tiles.get(id)?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }
+
+  /**
+   * Das Vorschaubild einer Kachel.
+   *
+   * Schiffe tragen ihre Silhouette als Maske - dieselbe Textur, die auch das
+   * Spiel zeichnet, also ohne zusaetzliche Bilddateien. Farben brauchen kein
+   * Bild, sie sind eines. Auren zeigen die Silhouette des getragenen Schiffs,
+   * weil eine Aura ohne Traeger nichts darstellt.
+   */
+  private paintTile(tile: HTMLButtonElement, id: string): void {
+    const mark = tile.querySelector('i');
+    if (!mark) return;
+    if (this.tab === 'colors') {
+      const farbe = getShipColor(id).color;
+      mark.style.maskImage = '';
+      // Die Weltfarbe hat keinen festen Wert - sie wird als Verlauf gezeigt,
+      // damit sie nicht wie ein weiterer grauer Ton aussieht.
+      mark.style.background =
+        farbe === null
+          ? 'conic-gradient(#ffd479, #35d6c3, #c084fc, #ff4d5e, #ffd479)'
+          : `#${farbe.toString(16).padStart(6, '0')}`;
+      return;
+    }
+    const shapeId = this.tab === 'shapes' ? id : this.selection.shapes;
+    const asset = threeDAssetForId(getShipShape(shapeId).threeDAssetId);
+    mark.style.background = 'currentColor';
+    mark.style.maskImage = `url("${asset?.previewUrl ?? this.texture(playerTextureForShape(shapeId))}")`;
+  }
+
+  /** Baut die Leiste neu - nur beim Reiterwechsel, nicht bei jeder Auswahl. */
+  private buildGallery(): void {
+    const catalog = this.catalog();
+    this.tiles = new Map();
+    this.gallery.replaceChildren(
+      ...catalog.map((item) => {
+        const tile = document.createElement('button');
+        tile.type = 'button';
+        tile.className = 'hangar-tile';
+        tile.setAttribute('role', 'option');
+        tile.title = item.name;
+        const mark = document.createElement('i');
+        const caption = document.createElement('span');
+        caption.textContent = item.name;
+        tile.append(mark, caption);
+        tile.addEventListener('click', () => this.choose(item.id), {
+          signal: this.abort.signal,
+        });
+        this.tiles.set(item.id, tile);
+        return tile;
+      }),
+    );
+    for (const [id, tile] of this.tiles) this.paintTile(tile, id);
+    this.tilesTab = this.tab;
+    // Nach dem Neuaufbau steht die Leiste am Anfang. Wer bereits etwas traegt,
+    // soll es sehen, ohne erst dorthin blaettern zu muessen. `instant`, weil
+    // ein Reiterwechsel kein Ort fuer eine Laufanimation ist.
+    this.tiles
+      .get(this.selection[this.tab])
+      ?.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'instant' });
+  }
+
   private refreshModel(): void {
     const shape = getShipShape(this.selection.shapes);
     const asset = threeDAssetForId(shape.threeDAssetId);
@@ -299,16 +458,25 @@ export class HangarView {
         : this.tab === 'colors'
           ? this.save.shipColor
           : this.save.shipAura;
-    this.select.replaceChildren(
-      ...catalog.map((item) => {
-        const option = document.createElement('option');
-        option.value = item.id;
-        option.textContent = `${item.name}${item.id === equipped ? ' · getragen' : owned.includes(item.id) ? ' · im Besitz' : ''}`;
-        return option;
-      }),
-    );
-    this.select.value = this.selection[this.tab];
-    const item = catalog.find((entry) => entry.id === this.selection[this.tab]) ?? catalog[0]!;
+    if (this.tilesTab !== this.tab) this.buildGallery();
+    const aktiv = this.selection[this.tab];
+    for (const [id, tile] of this.tiles) {
+      const gehoert = owned.includes(id);
+      tile.setAttribute('aria-selected', String(id === aktiv));
+      tile.classList.toggle('is-active', id === aktiv);
+      tile.classList.toggle('is-owned', gehoert && id !== equipped);
+      tile.classList.toggle('is-equipped', id === equipped);
+      // Was man noch nicht hat, bleibt sichtbar, aber zurueckgenommen: Der
+      // Laden soll zeigen, was es gibt - ein verstecktes Ziel weckt kein
+      // Sparen. Die Farben brauchen die Daempfung nicht, sie SIND das Bild.
+      tile.classList.toggle('is-locked', !gehoert && this.tab !== 'colors');
+    }
+    // Die Auren-Kacheln tragen die Silhouette des gewaehlten Schiffs - wechselt
+    // die Form, muessen sie neu gezeichnet werden.
+    if (this.tab === 'auras') for (const [id, tile] of this.tiles) this.paintTile(tile, id);
+    const item = catalog.find((entry) => entry.id === aktiv) ?? catalog[0]!;
+    const position = catalog.findIndex((entry) => entry.id === item.id) + 1;
+    this.counter.textContent = `${position} von ${catalog.length} · ${owned.length} im Besitz`;
     const level = 'minLevel' in item ? item.minLevel : 0;
     const isOwned = owned.includes(item.id),
       isEquipped = equipped === item.id;

@@ -142,13 +142,85 @@
   border-color: #ffd479;
   color: #ffd479;
 }
-.isihunt-hangar select {
-  width: 100%;
-  margin: 5px 0;
+/*
+ * Die Auswahlleiste: alle Eintraege als Bild, quer blaetterbar.
+ *
+ * Ersetzt seit 2026-09-19 das `<select>`. Ein Dropdown verbirgt genau das,
+ * worauf es hier ankommt - das Aussehen -, und zwang zum Aufklappen,
+ * Lesen, Zuklappen je Eintrag.
+ */
+.isihunt-hangar .hangar-gallery {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0;
+  padding: 6px 2px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* Jede Kachel rastet mittig ein - das Blaettern endet nie auf einer halben. */
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
 }
-.isihunt-hangar label {
-  display: block;
+.isihunt-hangar .hangar-tile {
+  flex: none;
+  /* 64px Breite traegt die Silhouette erkennbar und laesst auf einem
+     Hochformat-Handy rund vier Kacheln gleichzeitig sehen - genug, um
+     Nachbarn wahrzunehmen, ohne dass einzelne zu klein zum Treffen werden.
+     Die Gesamthoehe bleibt ueber der 44-px-Marke fuer Tippziele. */
+  width: 64px;
+  min-height: 78px;
+  padding: 6px 2px 4px;
+  display: grid;
+  gap: 3px;
+  justify-items: center;
+  scroll-snap-align: center;
+  background: #15202a;
+  border: 1px solid #344753;
+  border-radius: 12px;
   color: #b8c0d9;
+}
+.isihunt-hangar .hangar-tile i {
+  width: 40px;
+  height: 40px;
+  background: currentColor;
+  mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  -webkit-mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  border-radius: 8px;
+}
+.isihunt-hangar .hangar-tile span {
+  font-size: 9px;
+  line-height: 1.1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Noch nicht gekauft: sichtbar, aber zurueckgenommen. Wer nichts sieht,
+   spart auf nichts. */
+.isihunt-hangar .hangar-tile.is-locked {
+  opacity: 0.45;
+}
+.isihunt-hangar .hangar-tile.is-owned {
+  border-color: #6d7488;
+  color: #e6f0ff;
+}
+/* Getragen und gerade angesehen sind zwei verschiedene Aussagen und duerfen
+   deshalb nicht gleich aussehen. */
+.isihunt-hangar .hangar-tile.is-equipped {
+  border-color: #2fd97a;
+  color: #2fd97a;
+}
+.isihunt-hangar .hangar-tile.is-active {
+  border-color: #ffd479;
+  color: #ffd479;
+  box-shadow: 0 0 0 2px #ffd47955;
+}
+.isihunt-hangar .hangar-tile.is-active.is-locked {
+  opacity: 1;
 }
 .isihunt-hangar .hangar-name {
   font-size: 17px;
