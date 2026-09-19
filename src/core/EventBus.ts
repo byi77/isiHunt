@@ -18,6 +18,7 @@ import type { ProgressionResult, RunStats } from '@/types';
 export const GameEvent = {
   ScoreChanged: 'score:changed',
   ComboChanged: 'combo:changed',
+  ComboWindowChanged: 'combo:window-changed',
   TimerChanged: 'timer:changed',
   Collected: 'run:collected',
   Missed: 'run:missed',
@@ -61,6 +62,20 @@ export interface GameEventPayloads {
     multiplier: number;
     /** Tempobonus der Serie als Faktor - 1 heisst keiner. Siehe SERIES_AGILITY_TIERS. */
     speedFactor: number;
+  };
+  /**
+   * Der Rest des Serienfensters, jeden Frame.
+   *
+   * Eigenes Ereignis statt eines Felds an `ComboChanged`: Das Fenster laeuft
+   * kontinuierlich leer, die Serie aendert sich nur beim Fang. Beides in ein
+   * Ereignis zu legen hiesse, `ComboChanged` 60-mal je Sekunde zu feuern -
+   * und jeder Empfaenger muesste die unveraenderte Serie erneut verarbeiten.
+   */
+  [GameEvent.ComboWindowChanged]: {
+    /** 1 = gerade gefangen, 0 = Fenster zu. */
+    ratio: number;
+    /** Die Serie, die gerade auf dem Spiel steht. */
+    combo: number;
   };
   [GameEvent.TimerChanged]: { remainingMs: number; totalMs: number };
   [GameEvent.Collected]: {

@@ -9,7 +9,7 @@
 
 import Phaser from 'phaser';
 
-import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { COMBO_TIERS, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { getWorld } from '@/config/worlds';
 import { eventBus, GameEvent } from '@/core/EventBus';
 import { SceneKey } from '@/scenes/SceneKey';
@@ -55,6 +55,28 @@ const HUD_TEXT_STROKE = { stroke: '#0b1020', strokeThickness: 4 } as const;
  * als er Freude macht. Faellt ein Krit in die Sperre, bleiben Punkte und
  * Feldanzeige unberuehrt - nur der grosse Schriftzug entfaellt.
  */
+/**
+ * Ab welchem Rest des Serienfensters gewarnt wird, und ab welcher Serie.
+ *
+ * Ein Viertel ist bei 900 ms Grundfenster gut eine Fuenftelsekunde - kurz
+ * genug, dass die Warnung dringend wirkt, lang genug, um noch zu handeln.
+ * Unter Serie 4 bleibt sie aus: Dort ist nichts verloren, was ein Fang nicht
+ * in Sekunden zurueckholt, und eine dauernd rot blinkende Zeile waere
+ * Rauschen statt Warnung.
+ */
+const COMBO_WARN_RATIO = 0.25;
+const COMBO_WARN_MIN_SERIES = 4;
+
+/**
+ * Die Serie, ab der das HUD den Jackpot feiert.
+ *
+ * Genau die Stufe, an der `COMBO_TIERS` endet - ab hier traegt jeder weitere
+ * Fang nur noch `COMBO_MULTIPLIER_PER_EXTRA_SERIES`. Aus der Konfiguration
+ * gelesen statt als Zahl geschrieben, damit eine Balance-Aenderung den
+ * Moment mitnimmt, statt ihn auf einer alten Stufe stehen zu lassen.
+ */
+const SERIES_JACKPOT = COMBO_TIERS[COMBO_TIERS.length - 1]?.minCombo ?? 16;
+
 const CRIT_BURST = {
   /** Anlaufgroesse - der Schriftzug kommt aus dem Nichts. */
   startScale: 0.3,
@@ -116,6 +138,12 @@ export class HudScene extends Phaser.Scene {
   private critBurstPointsText!: Phaser.GameObjects.Text;
   /** Zeitpunkt des letzten Schriftzugs - traegt die Wiederholungssperre. */
   private lastCritBurstAt = Number.NEGATIVE_INFINITY;
+  /** Der leerlaufende Balken unter der Serienzeile. */
+  private comboWindowBar!: BarHandle;
+  /** Warnt die Serienzeile gerade? Verhindert ein Tween je Frame. */
+  private comboWarning = false;
+  /** Schon gefeiert? Der Jackpot-Moment gehoert einmal je Serie. */
+  private jackpotCelebrated = false;
   private timerText!: Phaser.GameObjects.Text;
   private worldText!: Phaser.GameObjects.Text;
   private targetText: Phaser.GameObjects.Text | null = null;
@@ -174,6 +202,8 @@ export class HudScene extends Phaser.Scene {
     this.lastComboMultiplier = 1;
     this.lastAgilityPercent = 0;
     this.lastCritBurstAt = Number.NEGATIVE_INFINITY;
+    this.comboWarning = false;
+    this.jackpotCelebrated = false;
     this.xpTotal = 0;
     this.pauseOverlay = [];
     this.targetText = null;
@@ -200,14 +230,24 @@ export class HudScene extends Phaser.Scene {
       .text(GAME_WIDTH / 2, 62, '0', textStyle(FontSize.title, Palette.ink, { fontStyle: 'bold' }))
       .setOrigin(0.5, 0);
 
+    // Serie und Multiplikator stehen seit 2026-09-19 in EINER Zeile.
+    //
+    // Vorher lagen sie untereinander und nahmen zwei von drei Kopfzeilen
+    // ein, obwohl sie eine einzige Aussage sind: "Serie 7, also x3,2." Die
+    // Trennung zwang dazu, zwei Stellen zu lesen, um eine Zahl zu verstehen
+    // - und kostete die Hoehe, aus der jetzt der Fensterbalken lebt.
+    //
+    // Die Aufteilung folgt den anderen Spalten: Beschriftung klein darueber
+    // (`scoreCaption`, `timeCaption`), die Zahl gross darunter. "SERIE 7"
+    // ist hier die Beschriftung, der Multiplikator die Zahl.
     this.comboText = this.add
       .text(
         GAME_WIDTH - 60,
         76,
         'SERIE 0',
-        textStyle(FontSize.body, Palette.inkDim, { fontStyle: 'bold' }),
+        textStyle(FontSize.tiny, Palette.inkDim, { fontStyle: 'bold' }),
       )
-      .setOrigin(1, 0);
+      .setOrigin(0.5, 0);
 
     this.multiplierText = this.add
       .text(
@@ -216,7 +256,18 @@ export class HudScene extends Phaser.Scene {
         '×1',
         textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
       )
-      .setOrigin(1, 0);
+      .setOrigin(0.5, 0);
+
+    // Der Rest des Serienfensters, direkt unter dem Multiplikator.
+    //
+    // Bis hierher war das die einzige Groesse, die das Spiel jeden Frame
+    // berechnete und nur dem zeigte, der Fokus gelernt hatte (der Ring um
+    // die Figur, `Player.updateTalentVisuals`). Dabei ist es die Frage, an
+    // der die Serien-Taktik haengt: Reicht die Zeit noch fuer ein farbiges
+    // Relikt, oder rettet ein weisses die Kette?
+    this.comboWindowBar = createBar(this, 0, 0, 1, 1, this.accent);
+    this.comboWindowBar.setRatio(0);
+    this.comboWindowBar.container.setAlpha(0);
 
     this.agilityText = this.add
       .text(
@@ -422,11 +473,24 @@ export class HudScene extends Phaser.Scene {
     place(this.worldText, GAME_WIDTH / 2, 9, 10, l.width);
     place(this.scoreCaption, l.scoreX, 26, 10, l.columnWidth);
     place(this.timeCaption, l.timeX, 26, 10, l.columnWidth);
-    place(this.scoreText, l.scoreX, 39, 24, l.columnWidth);
-    place(this.timerText, l.timeX, 39, 24, l.columnWidth);
+    // Die Punktzahl ist die groesste Zahl im Kopf, die Zeit die kleinste.
+    //
+    // Vorher standen beide auf 24 - gleich gross, obwohl die Zeit ihren
+    // eigenen Balken darueber hat und man sie ohnehin nur streift. Die
+    // Punktzahl ist das, wofuer man spielt; sie darf den Platz bekommen,
+    // den die Zeit nicht braucht.
+    place(this.scoreText, l.scoreX, 38, 28, l.columnWidth);
+    place(this.timerText, l.timeX, 41, 19, l.columnWidth);
     place(this.comboText, l.comboX, 26, 10, l.columnWidth);
     place(this.multiplierText, l.comboX, 39, 24, l.columnWidth);
-    place(this.agilityText, l.comboX, 68, 9, l.columnWidth);
+    // Der Fensterbalken sitzt unter dem Multiplikator, in der Breite der
+    // Serienspalte. `createBar` zeichnet von links, deshalb der Versatz um
+    // eine halbe Spalte.
+    const windowBarWidth = l.columnWidth * 0.8;
+    this.comboWindowBar.container
+      .setPosition(l.comboX - windowBarWidth / 2, 66 * l.unit)
+      .setScale(windowBarWidth, l.unit * 0.25);
+    place(this.agilityText, l.comboX, 72, 9, l.columnWidth);
     // Links unter der Punktzahl - die Spalte, die sonst leer bleibt.
     this.xpText.setPosition(l.scoreX - l.columnWidth / 2, 68 * l.unit).setFontSize(l.font(9));
     // Der Zeitbalken sitzt ueber den Zahlen, nicht darunter.
@@ -734,6 +798,63 @@ export class HudScene extends Phaser.Scene {
     else this.emphasize(this.xpText);
   };
 
+  /**
+   * Der leerlaufende Fensterbalken - und die Warnung, bevor die Serie reisst.
+   *
+   * Die Warnung faerbt die ganze Serienspalte rot, nicht nur den Balken:
+   * Dieselbe Sprache, die der Timer in den letzten zehn Sekunden spricht
+   * (`onTimer`). Wer sie einmal gelernt hat, versteht sie hier sofort.
+   *
+   * `comboWarning` merkt sich den Zustand, damit die Faerbung einmal je
+   * Wechsel passiert und nicht bei jedem gemeldeten Hundertstel.
+   */
+  private readonly onComboWindow = ({ ratio, combo }: { ratio: number; combo: number }): void => {
+    this.comboWindowBar.setRatio(ratio);
+    // Ohne laufendes Fenster verschwindet der Balken ganz. Ein dauerhaft
+    // leerer Balken sagt nichts und nimmt der Serienspalte die Ruhe.
+    this.comboWindowBar.container.setAlpha(ratio > 0 ? 1 : 0);
+
+    const warnen = ratio > 0 && ratio <= COMBO_WARN_RATIO && combo >= COMBO_WARN_MIN_SERIES;
+    if (warnen === this.comboWarning) return;
+    this.comboWarning = warnen;
+
+    this.comboWindowBar.setTint(warnen ? 0xff6b6b : this.accent);
+    this.comboText.setColor(warnen ? Palette.danger : Palette.inkDim);
+    this.multiplierText.setColor(warnen ? Palette.danger : Palette.gold);
+    if (warnen) this.emphasize(this.multiplierText);
+  };
+
+  /**
+   * Der Jackpot: die Serie erreicht die letzte konfigurierte Stufe.
+   *
+   * Bis hierher sah Serie 16 aus wie Serie 4 - derselbe kurze
+   * Multiplikator-Burst, obwohl dahinter der groesste Sprung der ganzen
+   * Tabelle steht (x4,5 auf x6) und danach nur noch +0,25 je Fang kommen.
+   * Ein Farbstoss in Weltfarbe macht daraus den Moment, den die Zahl
+   * verdient - einmal je Serie, nicht bei jedem weiteren Fang darueber.
+   */
+  private celebrateJackpot(): void {
+    if (prefersReducedMotion()) return;
+    const flash = this.add
+      .image(GAME_WIDTH / 2, GAME_HEIGHT / 2, TextureKey.Pixel)
+      .setDisplaySize(GAME_WIDTH, GAME_HEIGHT)
+      .setTint(this.accent)
+      .setAlpha(0)
+      .setDepth(Depth.Overlay + 1);
+    // Aufblitzen und langsamer abklingen: 40 ms hin, 260 ms zurueck. Der
+    // Stoss darf das Feld nicht verdecken, nur kurz einfaerben - deshalb
+    // bleibt die Deckkraft weit unter der Haelfte. Als eine Kette aus zwei
+    // Tweens statt als Yoyo, weil Hin- und Rueckweg verschieden lang sind.
+    this.tweens.chain({
+      targets: flash,
+      tweens: [
+        { alpha: 0.28, duration: 40 },
+        { alpha: 0, duration: 260 },
+      ],
+      onComplete: () => flash.destroy(),
+    });
+  }
+
   private readonly onCombo = ({
     combo,
     multiplier,
@@ -751,12 +872,31 @@ export class HudScene extends Phaser.Scene {
     this.fit(this.multiplierText, this.layout.columnWidth);
     this.updateAgility(speedFactor);
 
+    // Ein Fang setzt das Fenster neu - damit ist jede Warnung hinfaellig.
+    // Ohne dieses Zuruecknehmen bliebe die Spalte rot, bis das naechste
+    // Fenster wieder unter die Schwelle faellt.
+    if (this.comboWarning) {
+      this.comboWarning = false;
+      this.comboWindowBar.setTint(this.accent);
+      this.comboText.setColor(Palette.inkDim);
+      this.multiplierText.setColor(Palette.gold);
+    }
+
+    // Mit der Serie faellt auch der Jackpot-Moment: Wer sie neu aufbaut,
+    // soll ihn wieder erleben koennen.
+    if (combo < SERIES_JACKPOT) this.jackpotCelebrated = false;
+
     if (combo < 2) {
       this.lastComboMultiplier = 1;
       return;
     }
 
     this.emphasize(this.comboText);
+
+    if (combo >= SERIES_JACKPOT && !this.jackpotCelebrated) {
+      this.jackpotCelebrated = true;
+      this.celebrateJackpot();
+    }
 
     if (multiplier <= this.lastComboMultiplier) return;
     this.lastComboMultiplier = multiplier;
@@ -985,6 +1125,7 @@ export class HudScene extends Phaser.Scene {
   private registerEvents(): void {
     eventBus.onEvent(GameEvent.ScoreChanged, this.onScore);
     eventBus.onEvent(GameEvent.ComboChanged, this.onCombo);
+    eventBus.onEvent(GameEvent.ComboWindowChanged, this.onComboWindow);
     eventBus.onEvent(GameEvent.Collected, this.onCollected);
     eventBus.onEvent(GameEvent.TimerChanged, this.onTimer);
     eventBus.onEvent(GameEvent.RunPaused, this.onPaused);
@@ -1002,6 +1143,7 @@ export class HudScene extends Phaser.Scene {
     this.scale.off(Phaser.Scale.Events.RESIZE, this.relayout);
     eventBus.offEvent(GameEvent.ScoreChanged, this.onScore);
     eventBus.offEvent(GameEvent.ComboChanged, this.onCombo);
+    eventBus.offEvent(GameEvent.ComboWindowChanged, this.onComboWindow);
     eventBus.offEvent(GameEvent.Collected, this.onCollected);
     eventBus.offEvent(GameEvent.TimerChanged, this.onTimer);
     eventBus.offEvent(GameEvent.RunPaused, this.onPaused);

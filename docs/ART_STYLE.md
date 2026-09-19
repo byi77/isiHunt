@@ -47,10 +47,10 @@ klein, wie eine Rauchwolke, die sich auf dem Weg nach oben auflöst.
 Die Bewegung gibt es an **zwei** Stellen, mit gleicher Wirkung und
 unterschiedlicher Umsetzung:
 
-| Wo | Was | Umsetzung |
-| -- | --- | --------- |
-| `CollectionEffects` | Fänge (Planeten einsammeln) | pro Frame aus dem Alter gerechnet, ohne Tween — bis zu acht gleichzeitig |
-| `widgets.floatingScore` | Strafen, Hindernisse, XP | ein Tween je Anzeige |
+| Wo                      | Was                         | Umsetzung                                                                |
+| ----------------------- | --------------------------- | ------------------------------------------------------------------------ |
+| `CollectionEffects`     | Fänge (Planeten einsammeln) | pro Frame aus dem Alter gerechnet, ohne Tween — bis zu acht gleichzeitig |
+| `widgets.floatingScore` | Strafen, Hindernisse, XP    | ein Tween je Anzeige                                                     |
 
 Gemessen beim Fang: 0,40 → 1,57 über 630 ms, 3,9-faches Wachstum, 46 px
 Aufstieg, Deckkraft 1,0 → 0,16. Der Aufschlag sitzt in den ersten 90 ms.
@@ -58,8 +58,8 @@ Aufstieg, Deckkraft 1,0 → 0,16. Der Aufschlag sitzt in den ersten 90 ms.
 **Drei Anläufe, weil zweimal die falsche Annahme getestet wurde.** Erst ein
 gleichmäßiges Wachsen von 0,96 auf 1,0 — vier Prozent sind keine Bewegung.
 Dann ein Überschießen mit Rückkehr auf die Ausgangsgröße per `yoyo`: messbar,
-aber es hob sich selbst auf. *Eine Bewegung wird gesehen, wenn sie sich
-summiert, nicht wenn sie groß ist.* Und beide Male an der falschen Stelle —
+aber es hob sich selbst auf. _Eine Bewegung wird gesehen, wenn sie sich
+summiert, nicht wenn sie groß ist._ Und beide Male an der falschen Stelle —
 die Fänge laufen über `CollectionEffects`, nicht über `floatingScore`. Ein
 Test hält die Bewegung jetzt fest (`CollectionEffects.test.ts`); der ältere
 Test dort prüfte nur den Zweig für reduzierte Bewegung und war deshalb blind
@@ -235,6 +235,8 @@ Bewegung ist Sprache — sie sagt dem Spieler, was passiert ist.
 | Seltenes Relikt liegt da   | Strahlenkranz dreht gegenlaeufig zum Relikt                        | endlos                   |
 | Vorlage im Duell ueberholt | _UEBERHOLT!_ blendet auf und wieder aus                            | 240 ms + 700 ms          |
 | Glueckstreffer             | _KRITISCH_ schlaegt ein, steht, reisst auf und verweht             | 90 + 110 + 220 ms        |
+| Serie erreicht 16          | Farbstoss in Weltfarbe ueber das ganze Bild, hoechstens 28 %       | 40 + 260 ms              |
+| Serienfenster laeuft aus   | Serienspalte wird rot, Balken laeuft leer                          | ab 25 % Restfenster      |
 
 **Zwei Schwellen steuern die Aufmerksamkeit**, beide in `GameConfig.ts`:
 

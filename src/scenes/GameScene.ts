@@ -132,6 +132,8 @@ export class GameScene extends Phaser.Scene {
   private input_!: InputController;
   private spawner!: SpawnSystem;
   private scoring!: ScoreSystem;
+  /** Zuletzt gemeldeter Stand des Serienfensters - haelt das Ereignis knapp. */
+  private lastComboWindowRatio = 0;
 
   private collectibles: Collectible[] = [];
   private obstacles: Obstacle[] = [];
@@ -269,6 +271,7 @@ export class GameScene extends Phaser.Scene {
     this.player.setWorldInertia(this.world.modifier === 'inertia' ? WORLD_INERTIA_FACTOR : 1);
 
     this.input_ = new InputController(this);
+    this.lastComboWindowRatio = 0;
     this.scoring = new ScoreSystem(
       this.stats.comboGraceMs,
       this.stats.scoreMultiplier * this.world.scoreMultiplier,
@@ -429,6 +432,22 @@ export class GameScene extends Phaser.Scene {
       // Mit der Serie faellt auch ihr Beweglichkeitsbonus - die Blende im
       // Player laesst ihn auslaufen, statt ihn abzuschneiden.
       this.player.setSeriesAgility(agilityForSeries(0));
+    }
+
+    // Das Fenster meldet sich nur, wenn sich die angezeigte Stelle wirklich
+    // aendert. Ungefiltert waere das ein Ereignis je Frame, also 60 in der
+    // Sekunde, von denen das HUD die meisten auf denselben Zustand
+    // abbildete. Ein Hundertstel ist feiner als der Balken darstellen kann.
+    const ratio = this.scoring.comboTimerRatio;
+    if (
+      Math.abs(ratio - this.lastComboWindowRatio) >= 0.01 ||
+      (ratio === 0 && this.lastComboWindowRatio !== 0)
+    ) {
+      this.lastComboWindowRatio = ratio;
+      eventBus.emitEvent(GameEvent.ComboWindowChanged, {
+        ratio,
+        combo: this.scoring.currentCombo,
+      });
     }
   }
 

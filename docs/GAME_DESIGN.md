@@ -242,6 +242,22 @@ Der Multiplikator wirkt **nur auf Punkte, nicht auf XP** — die hängen an der
 Zahl der Fänge, damit Fortschritt und Bestenliste nicht dieselbe Schwankung
 teilen.
 
+**Serie 16 ist der Jackpot und sieht auch so aus.** Dort endet die Tabelle: Es
+ist der größte Sprung (×4,5 auf ×6), und danach kommen nur noch +0,25 je Fang.
+Bis 2026-09-19 sah diese Stufe aus wie jede andere — derselbe kurze
+Multiplikator-Einblender wie bei Serie 4. Jetzt färbt ein kurzer Farbstoß in
+Weltfarbe das ganze Bild, einmal je Serie. Fällt die Serie unter 16, kann der
+Moment erneut verdient werden.
+
+**Das Serienfenster ist sichtbar, für jeden.** Ein Balken unter dem
+Multiplikator läuft leer; fällt er unter ein Viertel und steht eine Serie ab 4
+auf dem Spiel, färbt sich die ganze Serienspalte rot — dieselbe Warnung, die
+der Timer in den letzten zehn Sekunden zeigt. Vorher war diese Information nur
+über das Fokus-Talent zu sehen (der Ring um die Figur): Das Talent _erschuf_
+die Auskunft, statt sie zu verstärken, und ohne es spielte man blind gegen eine
+Uhr, die man nicht sah. Der Ring bleibt und ist mit Fokus größer, kräftiger und
+läuft langsamer leer — weil das Talent das Fenster tatsächlich verlängert.
+
 **Warum die Schwellen so niedrig liegen.** Sie standen bis 2026-08-19 auf
 5/10/20/35/50 — ausgelegt für das alte System, in dem _jeder_ Fang die Serie
 steigerte. Seit nur farbige Relikte steigern (38 % aller Spawns) und das
@@ -331,19 +347,19 @@ Darstellung als ehrliche Liste im Profil sind implementiert. Der Start erfolgt
 immer mit Rang 0; ein voller Ausbau soll spürbar helfen, darf aber weder die
 Jagd noch die Score-Jagd ersetzen.
 
-| Talent      | Max. Rang | Pro Rang              |
-| ----------- | --------- | --------------------- |
-| Reichweite  | 5         | +5 Sammelradius       |
-| Flinkheit   | 5         | +5 % Tempo            |
-| Magnetismus | 4         | +45 Sogreichweite     |
-| Ausdauer    | 4         | +3 s Rundendauer      |
-| Fokus       | 4         | +100 ms Combo-Fenster |
-| Spürsinn    | 3         | +3 % Aufstiegschance  |
-| Erkenntnis  | 5         | +5 % XP               |
-| Gunst       | 5         | +5 % Punkte           |
-| Resonanz    | 3         | +0,05x Serienbonus    |
-| Schutzfeld  | 3         | -8 % Hinderniswirkung |
-| Glückstreffer | 5       | +2 % Chance auf dreifache Fangpunkte (zusätzlich zu 2 % Grundchance) |
+| Talent        | Max. Rang | Pro Rang                                                             |
+| ------------- | --------- | -------------------------------------------------------------------- |
+| Reichweite    | 5         | +5 Sammelradius                                                      |
+| Flinkheit     | 5         | +5 % Tempo                                                           |
+| Magnetismus   | 4         | +45 Sogreichweite                                                    |
+| Ausdauer      | 4         | +3 s Rundendauer                                                     |
+| Fokus         | 4         | +100 ms Combo-Fenster                                                |
+| Spürsinn      | 3         | +3 % Aufstiegschance                                                 |
+| Erkenntnis    | 5         | +5 % XP                                                              |
+| Gunst         | 5         | +5 % Punkte                                                          |
+| Resonanz      | 3         | +0,05x Serienbonus                                                   |
+| Schutzfeld    | 3         | -8 % Hinderniswirkung                                                |
+| Glückstreffer | 5         | +2 % Chance auf dreifache Fangpunkte (zusätzlich zu 2 % Grundchance) |
 
 **Mathematisches Machtbudget:** Die Reichweite wird ueber die zweidimensionale
 Fangflaeche bewertet. Bei einem gewichteten Reliktradius von 31,49 px steigt

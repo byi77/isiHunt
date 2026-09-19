@@ -350,14 +350,27 @@ export class Player extends Phaser.GameObjects.Container {
       this.reachRing.strokeCircle(this.x, this.y, radius - 8 - reachRatio * 3);
     }
 
-    const focusRatio = talentRankRatio(this.stats, 'focus');
-    if (focusRatio > 0 && comboTimerRatio > 0) {
+    // Der Ring zeigt, wie lange das Serienfenster noch laeuft - fuer jeden,
+    // nicht nur mit Fokus.
+    //
+    // Bis 2026-09-19 hing er an `focusRatio > 0`. Damit erschuf das Talent
+    // die Auskunft, statt sie zu verstaerken: Wer Fokus nicht gelernt hatte,
+    // sah nirgends, wie viel Zeit ihm bleibt - und das ist die Frage, an der
+    // die ganze Serien-Taktik haengt ("reicht es noch fuer ein farbiges, oder
+    // rette ich mit einem weissen?"). Derselbe Fehler wie beim
+    // Gluecktreffer, der unbemerkt im Hintergrund wirkte (ADR-0027).
+    //
+    // Das Talent bleibt trotzdem sichtbar: Es macht den Ring groesser,
+    // dicker und kraeftiger - und vor allem laeuft er langsamer leer, weil
+    // Fokus das Fenster selbst verlaengert.
+    if (comboTimerRatio > 0) {
+      const focusRatio = talentRankRatio(this.stats, 'focus');
       const focusRadius = this.stats.collectRadius + 16 + focusRatio * 12;
-      this.reachRing.lineStyle(
-        TALENT_FOCUS_RING_WIDTH + focusRatio * 3,
-        0xffd479,
-        TALENT_FOCUS_RING_ALPHA,
-      );
+      // Der Grundring ist schmaler und blasser als der des Talents: Er soll
+      // ablesbar sein, ohne mit dem Reichweiten-Ring darunter zu streiten.
+      const grundbreite = focusRatio > 0 ? TALENT_FOCUS_RING_WIDTH : TALENT_FOCUS_RING_WIDTH - 2;
+      const grundalpha = focusRatio > 0 ? TALENT_FOCUS_RING_ALPHA : TALENT_FOCUS_RING_ALPHA - 0.25;
+      this.reachRing.lineStyle(grundbreite + focusRatio * 3, 0xffd479, grundalpha);
       this.reachRing.arc(
         this.x,
         this.y,

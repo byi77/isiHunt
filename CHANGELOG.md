@@ -16,12 +16,31 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   dreieinhalb Glueckstreffer je Run auch ohne das Talent - vorher gab es den
   Effekt nur fuer den, der ihn gelernt hatte. Mit Capstone erreicht Rang 5
   12,5 %.
+- **Das Serienfenster ist jetzt fuer jeden sichtbar.** Ein Balken unter dem
+  Multiplikator laeuft leer; faellt er unter ein Viertel und steht eine Serie
+  ab 4 auf dem Spiel, faerbt sich die Serienspalte rot - dieselbe Warnung wie
+  beim Timer in den letzten zehn Sekunden. Vorher zeigte nur der Ring um die
+  Figur das Fenster, und den sah ausschliesslich, wer Fokus gelernt hatte: Das
+  Talent erschuf die Auskunft, statt sie zu verstaerken. Der Ring bleibt und
+  ist mit Fokus groesser, kraeftiger und laeuft langsamer leer.
+- **Serie 16 wird gefeiert.** Ein kurzer Farbstoss in Weltfarbe markiert die
+  Stufe, an der die Multiplikatortabelle endet - der groesste Sprung im Spiel
+  (x4,5 auf x6) sah bis dahin aus wie jeder andere. Einmal je Serie; faellt
+  sie darunter, laesst sich der Moment neu verdienen.
 - **"KRITISCH"-Schriftzug** bei jedem Glueckstreffer: schlaegt in der oberen
   Spielfeldhaelfte ein, reisst auf und verweht in 420 ms, mit der Punktzahl
   darunter. Der Serien-Multiplikator weicht ihm fuer seine Dauer, und ein
   zweiter Schriftzug wartet mindestens 1,5 Sekunden - auf Glueckstreffer
   Rang 5 faellt sonst alle vier Sekunden einer. Das Feld-Label zeigt beim
   Glueckstreffer nur noch die Zahl; den Namen traegt jetzt der Schriftzug.
+
+### Geaendert
+
+- **Die Kopfzeile ordnet sich nach Wichtigkeit.** Serie und Multiplikator
+  stehen in einer Spalte statt in zwei Zeilen - sie sind eine Aussage, nicht
+  zwei. Die gewonnene Hoehe traegt den Fensterbalken. Die Punktzahl waechst
+  von 24 auf 28, die Zeit schrumpft auf 19: Sie hat ihren eigenen Balken
+  darueber und wird ohnehin nur gestreift.
 
 ### Behoben
 
