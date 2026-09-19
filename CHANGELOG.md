@@ -56,6 +56,15 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Client und Server rundeten die Abschlusspraemie verschieden.** Der Client
+  rundete jede Stufe einzeln und summierte danach, die serverseitige Rechnung
+  summiert die Run-Anteile und rundet einmal - Differenz ein bis zwei Punkte.
+  Bei den Punkten waere das harmlos gewesen, bei der XP nicht: Der Server
+  schreibt seinen eigenen Wert ins Konto, der Spieler haette eine andere Zahl
+  gutgeschrieben bekommen als die angezeigte. Der Client rechnet jetzt
+  ebenfalls in Anteilen; ein Test bildet den SQL-Weg nach und faellt um,
+  sobald die Rundung wieder in die Stufen wandert. Ein Durchlauf ueber 6 048
+  Mengenkombinationen zeigt keine Abweichung mehr.
 - **`balance:sync` schrieb seit Phase 2.21 in eine tote Datei.** Das Skript
   kannte fest `phase_2_14_balance_chain.sql` als Ziel - richtig, solange nur
   diese eine Migration `balance_config()` definierte, inzwischen tun es acht.

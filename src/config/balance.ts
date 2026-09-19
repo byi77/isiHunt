@@ -186,17 +186,26 @@ export const BOT_VICTORY_BONUS_XP = xpForRuns(BALANCE.progression.xp.botVictoryR
 export const BOT_VICTORY_BONUS_COINS = coinsForRuns(BALANCE.economy.sources.botVictoryRuns);
 
 /**
- * Abschlusspraemien: Eine fertige Stufe mit ausgerechneten Punkten und XP.
+ * Abschlusspraemien: Eine Stufe mit ihrem Anteil an einem Run.
  *
  * Die Rohdaten nennen Anteile eines Runs (`scoreRuns`, `xpRuns`), nicht
  * absolute Zahlen - so zieht eine Aenderung der Einnahmen die Praemien
  * automatisch mit, statt sie relativ wertlos oder zu maechtig werden zu
  * lassen.
+ *
+ * **Die Stufe traegt den Anteil, nicht die fertige Zahl.** Gerundet wird
+ * einmal, auf der Summe. Zuerst rundete jede Stufe fuer sich und die Summe
+ * lief dadurch ein bis zwei Punkte neben der serverseitigen Rechnung her, die
+ * in Runs summiert und einmal rundet (`run_bonus()` in
+ * `supabase/phase_2_52_run_bonus.sql`). Bei den Punkten waere das harmlos
+ * gewesen, bei der XP nicht: Der Server schreibt seinen eigenen Wert ins
+ * Konto, und der Spieler haette eine andere Zahl gutgeschrieben bekommen als
+ * die, die der Ergebnisbildschirm ihm eben genannt hat.
  */
 export interface RunBonusTier {
   readonly minCount: number;
-  readonly score: number;
-  readonly xp: number;
+  readonly scoreRuns: number;
+  readonly xpRuns: number;
 }
 
 function runBonusTiers(
@@ -204,8 +213,8 @@ function runBonusTiers(
 ): readonly RunBonusTier[] {
   return raw.map((tier) => ({
     minCount: tier.minCount ?? tier.minCombo ?? 0,
-    score: scoreForRuns(tier.scoreRuns),
-    xp: xpForRuns(tier.xpRuns),
+    scoreRuns: tier.scoreRuns,
+    xpRuns: tier.xpRuns,
   }));
 }
 
@@ -218,6 +227,8 @@ export const RUN_BONUS_RARITY_TIERS: Readonly<Record<string, readonly RunBonusTi
   );
 export const RUN_BONUS_SERIES_TIERS = runBonusTiers(BALANCE.runBonus.seriesTiers);
 export const RUN_BONUS_COLLECTION_TIERS = runBonusTiers(BALANCE.runBonus.collectionTiers);
+export const RUN_BONUS_MAX_SCORE_RUNS = BALANCE.runBonus.maxScoreRuns;
+export const RUN_BONUS_MAX_XP_RUNS = BALANCE.runBonus.maxXpRuns;
 export const RUN_BONUS_MAX_SCORE = scoreForRuns(BALANCE.runBonus.maxScoreRuns);
 export const RUN_BONUS_MAX_XP = xpForRuns(BALANCE.runBonus.maxXpRuns);
 

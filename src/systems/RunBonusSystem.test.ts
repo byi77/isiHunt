@@ -2,9 +2,15 @@ import { describe, expect, it } from 'vitest';
 
 import {
   BALANCE,
+  RUN_BONUS_COLLECTION_TIERS,
   RUN_BONUS_MAX_SCORE,
+  RUN_BONUS_MAX_SCORE_RUNS,
   RUN_BONUS_MAX_XP,
+  RUN_BONUS_MAX_XP_RUNS,
   RUN_BONUS_RARITY_TIERS,
+  RUN_BONUS_SERIES_TIERS,
+  scoreForRuns,
+  xpForRuns,
 } from '@/config/balance';
 import type { RarityId } from '@/config/rarities';
 import { calculateRunBonus } from '@/systems/RunBonusSystem';
@@ -68,9 +74,11 @@ describe('calculateRunBonus', () => {
       bestCombo: 0,
     });
     const posten = bonus.entries.find((entry) => entry.id === 'rarity:rare');
-    expect(posten?.score).toBe(hoechste.score);
+    expect(posten?.score).toBe(scoreForRuns(hoechste.scoreRuns));
     // Aufsummiert waere es die Summe aller drei Stufen - das waere zu viel.
-    expect(posten?.score).toBeLessThan(stufen.reduce((sum, tier) => sum + tier.score, 0));
+    expect(posten?.score).toBeLessThan(
+      scoreForRuns(stufen.reduce((sum, tier) => sum + tier.scoreRuns, 0)),
+    );
   });
 
   it('deckelt die Summe und sagt es', () => {
@@ -92,6 +100,65 @@ describe('calculateRunBonus', () => {
       bestCombo: 0,
     });
     expect(bonus.entries[0]?.detail).toContain(String(stufe.minCount));
+  });
+
+  /**
+   * Der Kern der Client-Server-Gleichheit.
+   *
+   * `run_bonus()` in `supabase/phase_2_52_run_bonus.sql` summiert die
+   * Run-Anteile und rundet genau einmal. Rundet der Client stattdessen je
+   * Stufe, laeuft seine Summe ein bis zwei Punkte daneben - bei den Punkten
+   * harmlos, bei der XP nicht: Der Server schreibt seinen eigenen Wert ins
+   * Konto, und der Spieler bekaeme eine andere Zahl gutgeschrieben als die
+   * angezeigte.
+   *
+   * Der Test bildet den SQL-Weg nach und vergleicht. Er faellt um, sobald
+   * jemand die Rundung wieder in die Stufen zieht.
+   */
+  it('rundet wie die serverseitige Rechnung: einmal auf der Summe', () => {
+    const faelle: { collected: Record<RarityId, number>; bestCombo: number }[] = [
+      {
+        collected: collected({ rare: 19, epic: 9, legendary: 3, poor: 45, common: 37 }),
+        bestCombo: 20,
+      },
+      {
+        collected: collected({ rare: 25, epic: 14, legendary: 5, poor: 50, common: 40 }),
+        bestCombo: 28,
+      },
+      { collected: collected({ rare: 32, epic: 18, legendary: 8 }), bestCombo: 16 },
+    ];
+
+    for (const fall of faelle) {
+      const bonus = calculateRunBonus(fall);
+      // Denselben Weg gehen, den `run_bonus()` in SQL geht.
+      let scoreRuns = 0;
+      let xpRuns = 0;
+      for (const [rarityId, tiers] of Object.entries(RUN_BONUS_RARITY_TIERS)) {
+        let treffer = null;
+        for (const tier of tiers)
+          if (fall.collected[rarityId as RarityId]! >= tier.minCount) treffer = tier;
+        if (treffer) {
+          scoreRuns += treffer.scoreRuns;
+          xpRuns += treffer.xpRuns;
+        }
+      }
+      let serie = null;
+      for (const tier of RUN_BONUS_SERIES_TIERS) if (fall.bestCombo >= tier.minCount) serie = tier;
+      if (serie) {
+        scoreRuns += serie.scoreRuns;
+        xpRuns += serie.xpRuns;
+      }
+      const gesamt = Object.values(fall.collected).reduce((sum, count) => sum + count, 0);
+      let menge = null;
+      for (const tier of RUN_BONUS_COLLECTION_TIERS) if (gesamt >= tier.minCount) menge = tier;
+      if (menge) {
+        scoreRuns += menge.scoreRuns;
+        xpRuns += menge.xpRuns;
+      }
+
+      expect(bonus.score).toBe(scoreForRuns(Math.min(scoreRuns, RUN_BONUS_MAX_SCORE_RUNS)));
+      expect(bonus.xp).toBe(xpForRuns(Math.min(xpRuns, RUN_BONUS_MAX_XP_RUNS)));
+    }
   });
 
   /**

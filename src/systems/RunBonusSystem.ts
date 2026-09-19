@@ -20,10 +20,12 @@
 
 import {
   RUN_BONUS_COLLECTION_TIERS,
-  RUN_BONUS_MAX_SCORE,
-  RUN_BONUS_MAX_XP,
+  RUN_BONUS_MAX_SCORE_RUNS,
+  RUN_BONUS_MAX_XP_RUNS,
   RUN_BONUS_RARITY_TIERS,
   RUN_BONUS_SERIES_TIERS,
+  scoreForRuns,
+  xpForRuns,
   type RunBonusTier,
 } from '@/config/balance';
 import type { RarityId } from '@/config/rarities';
@@ -83,35 +85,45 @@ function safeCount(value: number | undefined): number {
  * Ausnahmerun soll sich lohnen, aber kein Vielfaches eines normalen Runs
  * ausschuetten. Die Anzeige zeigt trotzdem alle erreichten Posten - gekuerzt
  * wird erst die Summe, sonst verschwindet eine erreichte Leistung wortlos.
+ *
+ * **Gerechnet wird in Run-Anteilen, gerundet genau einmal.** Die Zahlen an
+ * den Einzelposten sind nur fuer die Anzeige; die Summe entsteht aus den
+ * Anteilen, nicht aus ihnen. Sonst weicht sie von der serverseitigen
+ * Rechnung ab, die es genauso macht - und bei der XP entscheidet der Server,
+ * was im Konto landet.
  */
 export function calculateRunBonus(
   stats: Pick<RunStats, 'collected' | 'bestCombo'>,
 ): RunBonusResult {
   const entries: RunBonusEntry[] = [];
+  let scoreRuns = 0;
+  let xpRuns = 0;
+
+  const erfasse = (tier: RunBonusTier, eintrag: Omit<RunBonusEntry, 'score' | 'xp'>): void => {
+    scoreRuns += tier.scoreRuns;
+    xpRuns += tier.xpRuns;
+    entries.push({
+      ...eintrag,
+      score: scoreForRuns(tier.scoreRuns),
+      xp: xpForRuns(tier.xpRuns),
+    });
+  };
 
   for (const [rarityId, tiers] of Object.entries(RUN_BONUS_RARITY_TIERS)) {
     const count = safeCount(stats.collected[rarityId as RarityId]);
     const tier = highestTier(tiers, count);
     if (!tier) continue;
-    entries.push({
+    erfasse(tier, {
       id: `rarity:${rarityId}`,
       label: RARITY_LABELS[rarityId] ?? rarityId,
       detail: `${count} Stueck`,
-      score: tier.score,
-      xp: tier.xp,
     });
   }
 
   const bestCombo = safeCount(stats.bestCombo);
   const seriesTier = highestTier(RUN_BONUS_SERIES_TIERS, bestCombo);
   if (seriesTier)
-    entries.push({
-      id: 'series',
-      label: 'Serienbonus',
-      detail: `Kette ${bestCombo}`,
-      score: seriesTier.score,
-      xp: seriesTier.xp,
-    });
+    erfasse(seriesTier, { id: 'series', label: 'Serienbonus', detail: `Kette ${bestCombo}` });
 
   const total = Object.values(stats.collected).reduce<number>(
     (sum, count) => sum + safeCount(count),
@@ -119,20 +131,16 @@ export function calculateRunBonus(
   );
   const collectionTier = highestTier(RUN_BONUS_COLLECTION_TIERS, total);
   if (collectionTier)
-    entries.push({
+    erfasse(collectionTier, {
       id: 'collection',
       label: 'Sammelbonus',
       detail: `${total} Relikte`,
-      score: collectionTier.score,
-      xp: collectionTier.xp,
     });
 
-  const rawScore = entries.reduce((sum, entry) => sum + entry.score, 0);
-  const rawXp = entries.reduce((sum, entry) => sum + entry.xp, 0);
   return {
     entries,
-    score: Math.min(rawScore, RUN_BONUS_MAX_SCORE),
-    xp: Math.min(rawXp, RUN_BONUS_MAX_XP),
-    capped: rawScore > RUN_BONUS_MAX_SCORE || rawXp > RUN_BONUS_MAX_XP,
+    score: scoreForRuns(Math.min(scoreRuns, RUN_BONUS_MAX_SCORE_RUNS)),
+    xp: xpForRuns(Math.min(xpRuns, RUN_BONUS_MAX_XP_RUNS)),
+    capped: scoreRuns > RUN_BONUS_MAX_SCORE_RUNS || xpRuns > RUN_BONUS_MAX_XP_RUNS,
   };
 }
