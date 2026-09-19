@@ -22,6 +22,353 @@
 
 begin;
 
+-- Reihenfolge absichern: Phase 2.50 hat den Marker zuletzt gesetzt, Phase
+-- 2.51 aenderte nur Balance-Daten und liess ihn bewusst stehen.
+--
+-- Die 52 wird mit akzeptiert, weil diese Migration wiederholbar sein muss:
+-- Sie wurde einmal ohne den `runBonus`-Abschnitt ausgeliefert und muss
+-- deshalb ein zweites Mal laufen koennen, ohne an ihrer eigenen Pruefung zu
+-- scheitern.
+do $$
+begin
+  if to_regclass('public.isihunt_schema_state') is null
+     or not exists (
+       select 1 from public.isihunt_schema_state
+       where singleton = true and schema_version in (50, 52)
+     ) then
+    raise exception 'Phase 2.50 muss vor Phase 2.52 ausgefuehrt werden';
+  end if;
+end;
+$$;
+
+-- Die Balance-Konfiguration bringt diese Migration selbst mit.
+--
+-- Sie muss es, weil `run_bonus()` unten den Abschnitt `runBonus` daraus
+-- liest. Fehlt er, liefert die Funktion stumm null: Der Client zeigte dann
+-- eine Praemie, die das Konto nie erreicht, und die Plausibilitaetsdecke
+-- rechnete mit einer Praemie von null gegen einen Punktestand, der sie
+-- enthaelt - im Grenzfall wird ein guter Run komplett abgelehnt.
+--
+-- Der Block wird von `npm run balance:sync` geschrieben. Das Skript sucht
+-- sich die jeweils letzte Migration, die `balance_config()` definiert; ab
+-- hier ist das diese Datei.
+create or replace function public.balance_config()
+returns jsonb
+language sql
+immutable
+set search_path = public
+as $$
+  select $json$
+  {
+    "run": {
+      "expectedCatches": 183,
+      "economyCatches": 133,
+      "referenceComboMultiplier": 1.27
+    },
+    "rarities": {
+      "poor": {
+        "points": 5,
+        "xp": 2,
+        "weight": 34
+      },
+      "common": {
+        "points": 10,
+        "xp": 3,
+        "weight": 28
+      },
+      "uncommon": {
+        "points": 25,
+        "xp": 8,
+        "weight": 20
+      },
+      "rare": {
+        "points": 60,
+        "xp": 20,
+        "weight": 11
+      },
+      "epic": {
+        "points": 150,
+        "xp": 55,
+        "weight": 5.5
+      },
+      "legendary": {
+        "points": 400,
+        "xp": 130,
+        "weight": 1.5
+      }
+    },
+    "score": {
+      "seriesRaisingMinRarityIndex": 2,
+      "comboTiers": [
+        {
+          "minCombo": 0,
+          "multiplier": 1
+        },
+        {
+          "minCombo": 2,
+          "multiplier": 1.5
+        },
+        {
+          "minCombo": 4,
+          "multiplier": 2.2
+        },
+        {
+          "minCombo": 7,
+          "multiplier": 3.2
+        },
+        {
+          "minCombo": 11,
+          "multiplier": 4.5
+        },
+        {
+          "minCombo": 16,
+          "multiplier": 6
+        }
+      ],
+      "comboMultiplierPerExtraSeries": 0.25,
+      "seriesAgilityTiers": [
+        {
+          "minCombo": 5,
+          "speedBonus": 0.04,
+          "accelResponse": 15.5
+        },
+        {
+          "minCombo": 10,
+          "speedBonus": 0.08,
+          "accelResponse": 17
+        },
+        {
+          "minCombo": 20,
+          "speedBonus": 0.12,
+          "accelResponse": 19
+        },
+        {
+          "minCombo": 35,
+          "speedBonus": 0.15,
+          "accelResponse": 21
+        }
+      ]
+    },
+    "runBonus": {
+      "rarityTiers": {
+        "rare": [
+          {
+            "minCount": 18,
+            "scoreRuns": 0.03,
+            "xpRuns": 0.03
+          },
+          {
+            "minCount": 24,
+            "scoreRuns": 0.05,
+            "xpRuns": 0.05
+          },
+          {
+            "minCount": 32,
+            "scoreRuns": 0.08,
+            "xpRuns": 0.08
+          }
+        ],
+        "epic": [
+          {
+            "minCount": 9,
+            "scoreRuns": 0.04,
+            "xpRuns": 0.04
+          },
+          {
+            "minCount": 13,
+            "scoreRuns": 0.07,
+            "xpRuns": 0.07
+          },
+          {
+            "minCount": 18,
+            "scoreRuns": 0.11,
+            "xpRuns": 0.11
+          }
+        ],
+        "legendary": [
+          {
+            "minCount": 3,
+            "scoreRuns": 0.05,
+            "xpRuns": 0.05
+          },
+          {
+            "minCount": 5,
+            "scoreRuns": 0.09,
+            "xpRuns": 0.09
+          },
+          {
+            "minCount": 8,
+            "scoreRuns": 0.15,
+            "xpRuns": 0.15
+          }
+        ]
+      },
+      "seriesTiers": [
+        {
+          "minCombo": 16,
+          "scoreRuns": 0.04,
+          "xpRuns": 0.03
+        },
+        {
+          "minCombo": 25,
+          "scoreRuns": 0.08,
+          "xpRuns": 0.06
+        },
+        {
+          "minCombo": 40,
+          "scoreRuns": 0.14,
+          "xpRuns": 0.1
+        }
+      ],
+      "collectionTiers": [
+        {
+          "minCount": 150,
+          "scoreRuns": 0.03,
+          "xpRuns": 0.03
+        },
+        {
+          "minCount": 190,
+          "scoreRuns": 0.06,
+          "xpRuns": 0.06
+        },
+        {
+          "minCount": 230,
+          "scoreRuns": 0.1,
+          "xpRuns": 0.1
+        }
+      ],
+      "maxScoreRuns": 0.55,
+      "maxXpRuns": 0.5
+    },
+    "worlds": {
+      "silberhain": {
+        "scoreMultiplier": 1,
+        "xpMultiplier": 1
+      },
+      "frostzinne": {
+        "scoreMultiplier": 1.04,
+        "xpMultiplier": 1.02
+      },
+      "glutmark": {
+        "scoreMultiplier": 1.08,
+        "xpMultiplier": 1.04
+      },
+      "__LEERENBLÜTE__": {
+        "scoreMultiplier": 1.12,
+        "xpMultiplier": 1.06
+      },
+      "sonnenhort": {
+        "scoreMultiplier": 1.16,
+        "xpMultiplier": 1.08
+      },
+      "mondschmiede": {
+        "scoreMultiplier": 1.2,
+        "xpMultiplier": 1.11
+      },
+      "kristallbruch": {
+        "scoreMultiplier": 1.26,
+        "xpMultiplier": 1.15
+      },
+      "sturmgrenze": {
+        "scoreMultiplier": 1.33,
+        "xpMultiplier": 1.19
+      },
+      "lichtkern": {
+        "scoreMultiplier": 1.39,
+        "xpMultiplier": 1.22
+      },
+      "horizonttor": {
+        "scoreMultiplier": 1.45,
+        "xpMultiplier": 1.25
+      }
+    },
+    "progression": {
+      "maxLevel": 100,
+      "xp": {
+        "referencePerRun": 2146,
+        "globalMultiplier": 1,
+        "runsPerLevel": {
+          "start": 0.5,
+          "settled": 2.2,
+          "max": 3,
+          "rampEnd": 10
+        },
+        "dailyCompletionRuns": 0.3494874184529366,
+        "dailyScoreTierRuns": 0.1164,
+        "botVictoryRuns": 1
+      }
+    },
+    "economy": {
+      "globalMultiplier": 1,
+      "referenceCoinsPerRun": 50,
+      "sources": {
+        "runBaseCoins": 20,
+        "levelRewardRuns": 0.4,
+        "collection": {
+          "stepSize": 25,
+          "coinsPerStep": 3,
+          "maxCoins": 18
+        },
+        "rarity": {
+          "rareCatchesPerCoin": 5,
+          "epicCatchesPerStep": 2,
+          "epicCoinsPerStep": 2,
+          "legendaryCoinsPerCatch": 3
+        },
+        "achievement": {
+          "baseRuns": 0.4,
+          "additionalRunsPerRank": 0.3
+        },
+        "daily": {
+          "loginRuns": 0.5,
+          "completionRuns": 1.8,
+          "scoreTierRuns": 0.4,
+          "scoreTierCount": 3
+        },
+        "botVictoryRuns": 1
+      },
+      "sinks": {
+        "talentCosts": [],
+        "talentResetRuns": 0,
+        "shopPriceScale": true
+      }
+    },
+    "talents": {
+      "levelsPerTalentPoint": 2,
+      "capstoneRankMultiplier": 1.25,
+      "magnetRadiusCapstoneRankMultiplier": 1,
+      "reachRadiusPerRank": 5,
+      "swiftnessSpeedPerRank": 0.05,
+      "magnetRadiusPerRank": 45,
+      "magnetPullSpeedPerRank": 0.15,
+      "enduranceSecondsPerRank": 3,
+      "focusComboMsPerRank": 100,
+      "prospectorPromotionChancePerRank": 0.03,
+      "insightXpPerRank": 0.05,
+      "fortuneScorePerRank": 0.05,
+      "resonanceSeriesMultiplierPerRank": 0.05,
+      "shieldObstacleResistancePerRank": 0.08,
+      "baseCritChance": 0.02,
+      "luckCritChancePerRank": 0.02,
+      "critMultiplier": 3,
+      "maxRanks": {
+        "reach": 5,
+        "swiftness": 5,
+        "magnetism": 4,
+        "endurance": 4,
+        "focus": 4,
+        "prospector": 3,
+        "insight": 5,
+        "fortune": 5,
+        "resonance": 3,
+        "shield": 3,
+        "luck": 5
+      }
+    }
+  }
+  $json$::jsonb;
+$$;
+
 -- Gleiche Rechnung wie `EXPECTED_SCORE_PER_RUN` in src/config/balance.ts:
 -- Die Grundchance auf Gluecktreffer hebt den erwarteten Punktestand, also
 -- muss die Bezugsgroesse sie enthalten. Nur die Grundchance, nicht das
@@ -451,6 +798,12 @@ revoke execute on function public.run_bonus(integer, jsonb) from public, anon;
 revoke execute on function public.submit_progress_event(
   uuid, text, integer, integer, integer, integer, integer, integer, jsonb, text[]
 ) from public, anon;
+
+update public.isihunt_schema_state
+set schema_version = 52,
+    migration_name = 'phase_2_52_run_bonus.sql',
+    applied_at = now()
+where singleton = true;
 
 commit;
 notify pgrst, 'reload schema';

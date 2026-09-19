@@ -279,6 +279,44 @@ requireText(botMatchRetentionMigration, 'schema_version = 49', 'Migrationsguard 
 requireText(botMatchRetentionMigration, 'schema_version = 50', 'Migrationsmarker Phase 2.50');
 
 /*
+ * Jeder Abschnitt, den eine SQL-Funktion aus `balance_config()` liest, muss in
+ * der GELTENDEN Fassung dieser Konfiguration stehen - also in der letzten
+ * Migration, die sie definiert.
+ *
+ * Phase 2.52 lief einmal ohne ihren eigenen `runBonus`-Abschnitt: Der Sync
+ * schrieb damals fest nach `phase_2_14`, waehrend `phase_2_51` die geltende
+ * Fassung trug. `run_bonus()` fand seinen Abschnitt nicht und lieferte stumm
+ * null - der Client zeigte eine Praemie, die kein Konto je erreichte, und die
+ * Plausibilitaetsdecke rechnete mit null gegen einen Punktestand, der die
+ * Praemie enthaelt. Ein fehlender Abschnitt faellt zur Laufzeit nicht auf,
+ * weil `->` auf NULL laeuft statt zu werfen; deshalb prueft es dieses Gate.
+ */
+const balanceConfigDateien = readdirSync(sqlDir)
+  .filter((name) => /^phase_2_\d+_.*\.sql$/.test(name))
+  .filter((name) =>
+    readFileSync(resolve(sqlDir, name), 'utf8').includes(
+      'create or replace function public.balance_config',
+    ),
+  )
+  .sort((a, b) => Number(/^phase_2_(\d+)_/.exec(a)[1]) - Number(/^phase_2_(\d+)_/.exec(b)[1]));
+const geltendeBalanceConfig = balanceConfigDateien[balanceConfigDateien.length - 1];
+const geltenderConfigText = readFileSync(resolve(sqlDir, geltendeBalanceConfig), 'utf8');
+
+const gelesenePfade = new Set();
+for (const file of readdirSync(sqlDir).filter((name) => /^phase_2_\d+_.*\.sql$/.test(name))) {
+  const content = readFileSync(resolve(sqlDir, file), 'utf8');
+  for (const match of content.matchAll(/cfg->'([a-zA-Z]+)'/g)) gelesenePfade.add(match[1]);
+}
+for (const abschnitt of gelesenePfade) {
+  if (!geltenderConfigText.includes(`"${abschnitt}"`)) {
+    failures.push(
+      `${geltendeBalanceConfig}: geltende balance_config() kennt den Abschnitt ` +
+        `"${abschnitt}" nicht, den eine SQL-Funktion liest - npm run balance:sync`,
+    );
+  }
+}
+
+/*
  * AUDIT_2026-09-05, Befund 1: In phase_2_30 hiess eine PL/pgSQL-Variable wie
  * die Ergebnisspalte von `jsonb_array_elements_text`. PostgreSQL bricht das
  * zur Laufzeit mit 42702 ab - die Funktion war fuer JEDES Profil unaufrufbar,
@@ -351,7 +389,7 @@ requireText(verification, 'daily_key', 'Live-Verifikation Tagesbonus');
 requireText(verification, 'upsert_save', 'Live-Verifikation Save-CAS');
 requireText(verification, 'duel_rooms', 'Live-Verifikation Duell');
 requireText(migrationVerification, 'schema_version', 'Live-Verifikation Migrationsmarker');
-requireText(migrationVerification, 'schema_version = 50', 'Live-Verifikation Phase 2.50');
+requireText(migrationVerification, 'schema_version = 52', 'Live-Verifikation Phase 2.52');
 
 if (failures.length > 0) {
   console.error('SQL-Vertragspruefung fehlgeschlagen:');

@@ -56,6 +56,17 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **`balance:sync` schrieb seit Phase 2.21 in eine tote Datei.** Das Skript
+  kannte fest `phase_2_14_balance_chain.sql` als Ziel - richtig, solange nur
+  diese eine Migration `balance_config()` definierte, inzwischen tun es acht.
+  Der Sync pflegte also die aelteste Fassung, waehrend der Server die neueste
+  ausfuehrte. Aufgefallen ist es, weil die Abschlusspraemien serverseitig
+  stumm null lieferten: Ihr Konfigurationsabschnitt landete in einer Datei,
+  die niemand mehr einspielt. Das Skript sucht sich die geltende Fassung
+  jetzt selbst. Ein neues Gate in `check-sql-contract` prueft ausserdem, dass
+  jeder Abschnitt, den eine SQL-Funktion aus `balance_config()` liest, dort
+  auch steht - ein fehlender faellt zur Laufzeit nicht auf, weil `->` auf
+  NULL laeuft statt zu werfen.
 - **Der Talentbaum sprang nach jedem Kauf an den Anfang zurueck.** Wer die
   unteren Talente ausbaute, wurde nach jedem einzelnen Punkt wieder nach oben
   geworfen und musste sich erneut hinunterscrollen. Ursache war der `restart`,
