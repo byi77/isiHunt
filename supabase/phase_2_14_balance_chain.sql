@@ -105,6 +105,97 @@ as $$
         }
       ]
     },
+    "runBonus": {
+      "rarityTiers": {
+        "rare": [
+          {
+            "minCount": 18,
+            "scoreRuns": 0.03,
+            "xpRuns": 0.03
+          },
+          {
+            "minCount": 24,
+            "scoreRuns": 0.05,
+            "xpRuns": 0.05
+          },
+          {
+            "minCount": 32,
+            "scoreRuns": 0.08,
+            "xpRuns": 0.08
+          }
+        ],
+        "epic": [
+          {
+            "minCount": 9,
+            "scoreRuns": 0.04,
+            "xpRuns": 0.04
+          },
+          {
+            "minCount": 13,
+            "scoreRuns": 0.07,
+            "xpRuns": 0.07
+          },
+          {
+            "minCount": 18,
+            "scoreRuns": 0.11,
+            "xpRuns": 0.11
+          }
+        ],
+        "legendary": [
+          {
+            "minCount": 3,
+            "scoreRuns": 0.05,
+            "xpRuns": 0.05
+          },
+          {
+            "minCount": 5,
+            "scoreRuns": 0.09,
+            "xpRuns": 0.09
+          },
+          {
+            "minCount": 8,
+            "scoreRuns": 0.15,
+            "xpRuns": 0.15
+          }
+        ]
+      },
+      "seriesTiers": [
+        {
+          "minCombo": 16,
+          "scoreRuns": 0.04,
+          "xpRuns": 0.03
+        },
+        {
+          "minCombo": 25,
+          "scoreRuns": 0.08,
+          "xpRuns": 0.06
+        },
+        {
+          "minCombo": 40,
+          "scoreRuns": 0.14,
+          "xpRuns": 0.1
+        }
+      ],
+      "collectionTiers": [
+        {
+          "minCount": 150,
+          "scoreRuns": 0.03,
+          "xpRuns": 0.03
+        },
+        {
+          "minCount": 190,
+          "scoreRuns": 0.06,
+          "xpRuns": 0.06
+        },
+        {
+          "minCount": 230,
+          "scoreRuns": 0.1,
+          "xpRuns": 0.1
+        }
+      ],
+      "maxScoreRuns": 0.55,
+      "maxXpRuns": 0.5
+    },
     "worlds": {
       "silberhain": {
         "scoreMultiplier": 1,

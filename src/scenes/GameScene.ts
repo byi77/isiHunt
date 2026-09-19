@@ -50,6 +50,7 @@ import * as DebugSystem from '@/systems/DebugSystem';
 import * as NetworkDuelSystem from '@/systems/NetworkDuelSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
+import { calculateRunBonus } from '@/systems/RunBonusSystem';
 import { PerformanceMonitor } from '@/systems/PerformanceSystem';
 import type { PerformanceReport } from '@/systems/PerformanceSystem';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
@@ -747,8 +748,17 @@ export class GameScene extends Phaser.Scene {
     this.phase = 'ended';
     this.performanceMonitor?.finishRun();
 
+    const rawStats = this.scoring.toRunStats(this.world.id);
+    // Die Praemien werden hier verrechnet, nicht erst im Ergebnisbildschirm:
+    // Von hier aus gehen dieselben Zahlen in den Spielstand, das Cloud-
+    // Ereignis und die Bestenliste. Ein erst spaeter aufgeschlagener Bonus
+    // waere eine reine Anzeige, die der naechste Profilabgleich widerlegt.
+    const bonus = calculateRunBonus(rawStats);
     const stats = {
-      ...this.scoring.toRunStats(this.world.id),
+      ...rawStats,
+      score: rawStats.score + bonus.score,
+      xpGained: rawStats.xpGained + bonus.xp,
+      bonus,
       durationMs: this.totalMs,
       completedAt: new Date().toISOString(),
     };

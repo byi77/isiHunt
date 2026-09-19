@@ -237,6 +237,8 @@ isiHunt/
 │   │   ├── ProgressionSystem.test.ts
 │   │   ├── ScoreSystem.ts      Punkte + Combo eines Runs
 │   │   ├── ScoreSystem.test.ts
+│   │   ├── RunBonusSystem.ts   Abschlusspraemien aus der Ausbeute eines Runs
+│   │   ├── RunBonusSystem.test.ts
 │   │   ├── ChallengeSystem.ts  Duell-Zustand: Seed, Talent-Drafts, Punktstaende, Sieger
 │   │   ├── TalentAllocationSystem.ts  Wiederverwendbare Plus-/Minus-Rangrechnung
 │   │   ├── ChallengeSystem.test.ts
@@ -511,12 +513,29 @@ GameScene.update()  ──▶  Distanztest gegen alle Collectibles
                           ▼
                      HudScene aktualisiert Anzeige
 
-Run-Ende ──▶ ScoreSystem.toRunStats() ──▶ ProgressionSystem.applyRun()
+Run-Ende ──▶ ScoreSystem.toRunStats() ──▶ RunBonusSystem.calculateRunBonus()
+                                                   │
+                                        Praemie in score + xpGained
+                                                   │
+                                         ProgressionSystem.applyRun()
                                                    │
                                             SaveSystem (localStorage)
                                                    │
                                             ResultScene zeigt Ergebnis
 ```
+
+**Die Abschlusspraemie wird vor dem Verbuchen verrechnet**, nicht erst im
+Ergebnisbildschirm angezeigt. Von `endRun()` aus gehen dieselben Zahlen in den
+Spielstand, das Cloud-Ereignis und die Bestenliste; eine erst spaeter
+aufgeschlagene Praemie waere eine reine Anzeige, die der naechste
+Profilabgleich widerlegt. Serverseitig laeuft dieselbe Rechnung noch einmal
+(`supabase/phase_2_52_run_bonus.sql`), weil `submit_progress_event` die
+gemeldete XP-Zahl verwirft und aus `collected` neu bildet. Daraus folgt eine
+Einschraenkung fuer jede kuenftige Praemie: Bedingungen duerfen nur aus
+`collected`, `bestCombo` und `worldId` lesen — nur diese Groessen kommen im
+Ereignis an. `missed` und `bestMultiplier` waeren serverseitig nicht
+nachrechenbar und erzeugten damit genau die Divergenz, gegen die die
+Balance-Kette gebaut ist.
 
 **Wichtig:** Der Spielstand wird **einmal pro Run** geschrieben, nicht bei
 jedem Fang. Das haelt `localStorage`-Zugriffe aus der Frame-Schleife heraus.

@@ -89,6 +89,23 @@ export interface SaveData {
 }
 
 /** Ergebnis eines einzelnen Runs - Eingabe fuer Progression und Achievements. */
+/** Ein benannter Posten der Abschlussrechnung, wie ihn das Ergebnis zeigt. */
+export interface RunBonusEntrySummary {
+  readonly id: string;
+  readonly label: string;
+  readonly detail: string;
+  readonly score: number;
+  readonly xp: number;
+}
+
+export interface RunBonusSummary {
+  readonly entries: readonly RunBonusEntrySummary[];
+  readonly score: number;
+  readonly xp: number;
+  /** Ob der Deckel die Summe unter die Einzelposten gekuerzt hat. */
+  readonly capped: boolean;
+}
+
 export interface RunStats {
   worldId: string;
   score: number;
@@ -99,6 +116,15 @@ export interface RunStats {
   /** Relikte, die verblasst sind, bevor sie eingesammelt wurden. */
   missed: number;
   xpGained: number;
+  /**
+   * Punkte und XP der Abschlusspraemien, bereits in `score` und `xpGained`
+   * enthalten.
+   *
+   * Der Ergebnisbildschirm braucht die Aufschluesselung, um die Posten einzeln
+   * zu nennen; die Summen sind trotzdem schon verrechnet, damit jeder Pfad -
+   * Bestenliste, Cloud-Ereignis, Spielstand - dieselbe Zahl sieht.
+   */
+  bonus?: RunBonusSummary;
   /** Dauer des abgeschlossenen Runs; temporäre Duell-Talente können sie verlängern. */
   durationMs?: number;
   /** Lokaler Zeitpunkt des Run-Endes, auch für einen späteren Offline-Upload. */

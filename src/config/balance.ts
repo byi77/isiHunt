@@ -185,6 +185,42 @@ export const DAILY_SCORE_BONUS_MAX_TIERS = BALANCE.economy.sources.daily.scoreTi
 export const BOT_VICTORY_BONUS_XP = xpForRuns(BALANCE.progression.xp.botVictoryRuns);
 export const BOT_VICTORY_BONUS_COINS = coinsForRuns(BALANCE.economy.sources.botVictoryRuns);
 
+/**
+ * Abschlusspraemien: Eine fertige Stufe mit ausgerechneten Punkten und XP.
+ *
+ * Die Rohdaten nennen Anteile eines Runs (`scoreRuns`, `xpRuns`), nicht
+ * absolute Zahlen - so zieht eine Aenderung der Einnahmen die Praemien
+ * automatisch mit, statt sie relativ wertlos oder zu maechtig werden zu
+ * lassen.
+ */
+export interface RunBonusTier {
+  readonly minCount: number;
+  readonly score: number;
+  readonly xp: number;
+}
+
+function runBonusTiers(
+  raw: readonly { minCount?: number; minCombo?: number; scoreRuns: number; xpRuns: number }[],
+): readonly RunBonusTier[] {
+  return raw.map((tier) => ({
+    minCount: tier.minCount ?? tier.minCombo ?? 0,
+    score: scoreForRuns(tier.scoreRuns),
+    xp: xpForRuns(tier.xpRuns),
+  }));
+}
+
+export const RUN_BONUS_RARITY_TIERS: Readonly<Record<string, readonly RunBonusTier[]>> =
+  Object.fromEntries(
+    Object.entries(BALANCE.runBonus.rarityTiers).map(([rarityId, tiers]) => [
+      rarityId,
+      runBonusTiers(tiers),
+    ]),
+  );
+export const RUN_BONUS_SERIES_TIERS = runBonusTiers(BALANCE.runBonus.seriesTiers);
+export const RUN_BONUS_COLLECTION_TIERS = runBonusTiers(BALANCE.runBonus.collectionTiers);
+export const RUN_BONUS_MAX_SCORE = scoreForRuns(BALANCE.runBonus.maxScoreRuns);
+export const RUN_BONUS_MAX_XP = xpForRuns(BALANCE.runBonus.maxXpRuns);
+
 /** Nach wie vielen Leveln ein weiterer kostenloser Talentpunkt entsteht. */
 export const LEVELS_PER_TALENT_POINT = Math.max(
   1,

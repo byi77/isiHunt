@@ -237,6 +237,14 @@ Bewegung ist Sprache — sie sagt dem Spieler, was passiert ist.
 | Glueckstreffer             | _KRITISCH_ schlaegt ein, steht, reisst auf und verweht             | 90 + 110 + 220 ms        |
 | Serie erreicht 16          | Farbstoss in Weltfarbe ueber das ganze Bild, hoechstens 28 %       | 40 + 260 ms              |
 | Serienfenster laeuft aus   | Serienspalte wird rot, Balken laeuft leer                          | ab 25 % Restfenster      |
+| Ergebnis mit Praemie       | Kopfzahl zaehlt hoch, `Cubic.easeOut`, dann kurzer Pop auf 112 %   | 260 + 1100 + 240 ms      |
+
+**Die Kopfzahl zaehlt nur hoch, wenn sie etwas zu erzaehlen hat.** Ohne
+Abschlusspraemie faellt die Bewegung ganz aus: Ein Zaehlwerk, das bei seinem
+Startwert beginnt und dort endet, ist keine Belohnung, sondern Wartezeit vor
+einer Zahl, die schon feststeht. Der Massstab der Schrift haengt am Endwert,
+nicht am gerade gezeigten Zwischenstand - sonst zappelte die Zahl mit jeder
+neuen Stelle. Bei `prefersReducedMotion` steht das Ergebnis sofort.
 
 **Zwei Schwellen steuern die Aufmerksamkeit**, beide in `GameConfig.ts`:
 

@@ -464,6 +464,49 @@ dem Code nachgezogen (vorher stand hier "15 Erfolge in vier Gruppen", ein
 Stand aus einer frueheren Entwicklungsphase) — s. `docs/AUDIT_2026-08-17.md`
 Abschnitt 4.6.
 
+### 7.4a Abschlussprämien
+
+Während des Runs zählt jeder Fang einzeln. Am Ende kommt eine zweite Frage
+dazu: Was ist aus der Summe geworden? Drei Gruppen zahlen darauf ein, je
+Gruppe zählt **nur die höchste erreichte Stufe** — gestaffelte Stufen bauen
+aufeinander auf, aufsummiert zahlte dieselbe Leistung mehrfach.
+
+| Gruppe          | Bedingung             | Stufen (Anteil eines Runs)      |
+| --------------- | --------------------- | ------------------------------- |
+| Seltene Beute   | `collected.rare`      | 18 / 24 / 32 → 3 % / 5 % / 8 %  |
+| Epische Beute   | `collected.epic`      | 9 / 13 / 18 → 4 % / 7 % / 11 %  |
+| Legendäre Beute | `collected.legendary` | 3 / 5 / 8 → 5 % / 9 % / 15 %    |
+| Serienbonus     | `bestCombo`           | 16 / 25 / 40 → 4 % / 8 % / 14 % |
+| Sammelbonus     | Gesamtmenge           | 150 / 190 / 230 → 3 % / 6 % / 10 % |
+
+**Die Schwellen liegen bewusst über dem Durchschnitt.** Ein Run fängt im
+Mittel 14,6 seltene, 7,3 epische und 2,0 legendäre Relikte. Eine Schwelle bei
+5 bzw. 4 hätte in fast jedem Run ausgelöst — das wäre keine Prämie, sondern
+eine verspätete Grundvergütung mit zusätzlicher Animation. Ein Test hält das
+fest (`RunBonusSystem.test.ts`, "faellt bei einem durchschnittlichen Run noch
+nicht") und zieht mit den Seltenheitsgewichten mit.
+
+**Die Summe ist gedeckelt** auf 55 % eines Runs an Punkten und 50 % an XP.
+Theoretisch erreichbar wären 58 % bzw. 54 %, der Deckel greift also im
+Ausnahmefall wirklich. Gekürzt wird nur die Summe, nicht die Einzelposten —
+sonst verschwände eine erreichte Leistung wortlos. Der Ergebnisbildschirm
+sagt dann dazu, dass die Obergrenze erreicht ist.
+
+**Keine Coins.** Ein Run bringt rund 50 Coins; eine Prämie in der Größenordnung
+der Punktprämien wäre ein Vielfaches davon und würde die Preise im Laden
+entwerten. Prämien zahlen in Punkten und XP.
+
+**Die Prämie wird vor dem Verbuchen verrechnet**, nicht erst angezeigt. Sie
+steckt in `score` und `xpGained` und geht damit denselben Weg wie der Rest des
+Runs — Spielstand, Cloud-Ereignis, Bestenliste. Serverseitig läuft dieselbe
+Rechnung noch einmal (`supabase/phase_2_52_run_bonus.sql`), weil
+`submit_progress_event` die gemeldete XP-Zahl verwirft und aus `collected` neu
+bildet. Deshalb dürfen die Bedingungen auch nur aus `collected` und
+`bestCombo` lesen: `missed` und der Multiplikator stehen im Ereignis nicht.
+
+Quelle: `src/systems/RunBonusSystem.ts`, Zahlen in
+`src/config/balance-data.json` unter `runBonus`.
+
 ## 7.5 Einen Run verlassen
 
 Ein Run laesst sich jederzeit anhalten und verlassen. **Ein abgebrochener Run

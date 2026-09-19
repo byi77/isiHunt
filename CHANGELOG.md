@@ -11,6 +11,18 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Abschlusspraemien am Rundenende.** Wer viel Seltenes faengt, eine lange
+  Kette haelt oder grosse Mengen sammelt, bekommt am Schluss Punkte und XP
+  obendrauf - aufgeschluesselt in benannte Posten statt als gewachsene Zahl
+  ohne Begruendung. Die Schwellen liegen bewusst ueber dem Durchschnitt eines
+  Runs (18 statt 5 seltene, 9 statt 4 epische): Eine Praemie, die in jedem Run
+  faellt, ist eine verspaetete Grundverguetung. Je Gruppe zaehlt nur die
+  hoechste erreichte Stufe, die Summe ist auf 55 % eines Runs gedeckelt.
+  Praemien zahlen in Punkten und XP, nicht in Coins - ein Run bringt rund 50
+  Coins, jede sinnvolle Praemie waere ein Vielfaches davon.
+- **Die Punktzahl im Ergebnis zaehlt hoch.** Vom reinen Laufergebnis auf den
+  Endstand, 1,1 Sekunden mit auslaufendem Rad und einem kurzen Pop am Ende.
+  Ohne Praemie faellt die Bewegung aus, bei `prefersReducedMotion` ebenfalls.
 - **Glueckstreffer** als elftes Talent: +2 % Chance pro Rang auf dreifache
   Fangpunkte. Jede Figur traegt zusaetzlich 2 % Grundchance, also rund
   dreieinhalb Glueckstreffer je Run auch ohne das Talent - vorher gab es den
@@ -44,6 +56,17 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Der Talentbaum sprang nach jedem Kauf an den Anfang zurueck.** Wer die
+  unteren Talente ausbaute, wurde nach jedem einzelnen Punkt wieder nach oben
+  geworfen und musste sich erneut hinunterscrollen. Ursache war der `restart`,
+  mit dem die Scene sich nach einem Kauf neu aufbaut: Der Scrollstand lebte
+  nur im Scroll-Helfer und starb mit ihr. Er reist jetzt als Szenendatum mit.
+  Den dafuer gedachten Parameter `startOffset` gab es samt Begruendung bereits
+  seit dem Laden-Umbau - nur uebergeben hatte ihn nie jemand.
+- **Serverseitige Punktschwellen lagen vier Prozent zu niedrig.** Seit der
+  Grundchance auf Glueckstreffer rechnet der Client den erwarteten
+  Punktestand mit dem Kritfaktor hoch; `balance_score_for_runs` in SQL tat es
+  nicht. Beide Seiten nennen jetzt wieder dieselbe Zahl.
 - Die Performance-Startmessung erfasst den Scene-Aufbau ohne Countdown mit
   einem Budget von acht Sekunden. Das Browser-Gate wartet bis zu 90 Sekunden
   auf den Rundenstart.

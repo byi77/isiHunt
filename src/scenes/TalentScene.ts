@@ -34,6 +34,15 @@ import {
 
 export interface TalentSceneData {
   returnTo?: SceneKeyValue;
+  /**
+   * Scrollstand aus dem vorherigen Aufbau.
+   *
+   * Jeder Kauf baut die Scene neu auf (`restart`), damit Raenge, Pips und
+   * Punktestand aus einer Quelle kommen. Ohne diesen Wert sprang die Liste
+   * dabei an den Anfang - wer die unteren Talente ausbaute, wurde nach jedem
+   * einzelnen Punkt wieder nach oben geworfen.
+   */
+  scrollOffset?: number;
 }
 
 export class TalentScene extends Phaser.Scene {
@@ -41,6 +50,7 @@ export class TalentScene extends Phaser.Scene {
   private busy = false;
   private feedbackText!: Phaser.GameObjects.Text;
   private resetDialogObjects: Phaser.GameObjects.GameObject[] = [];
+  private scrollOffset = 0;
 
   constructor() {
     super(SceneKey.Talents);
@@ -48,6 +58,7 @@ export class TalentScene extends Phaser.Scene {
 
   create(data: TalentSceneData = {}): void {
     this.returnTo = data.returnTo ?? SceneKey.Profile;
+    this.scrollOffset = data.scrollOffset ?? 0;
     SafeAreaSystem.showStatic('TALENTBAUM');
 
     const save = SaveSystem.load();
@@ -133,7 +144,11 @@ export class TalentScene extends Phaser.Scene {
       .map((button) => ({ button, enabled: button.input!.enabled }));
     // Masken begrenzen nur das Bild. Auch unsichtbare Trefferflächen müssen
     // oberhalb der Liste und unter der festen Zurück-Zone gesperrt bleiben.
+    const maxScroll = Math.max(0, contentBottom - layout.contentBottom);
     const positionContent = (offset: number): void => {
+      // Der Stand wird hier gemerkt, nicht im Scroll-Helfer: Nur die Scene
+      // ueberlebt ihren eigenen `restart` - als Startwert im naechsten Aufbau.
+      this.scrollOffset = offset;
       content.setY(-offset);
       for (const { button, enabled } of buttons) {
         const top = button.y - offset - button.height / 2;
@@ -141,12 +156,15 @@ export class TalentScene extends Phaser.Scene {
         button.input!.enabled = enabled && top >= listTop && bottom <= layout.contentBottom;
       }
     };
-    positionContent(0);
+    // Ein gemerkter Stand kann groesser sein als die jetzige Liste zulaesst:
+    // Nach einem Reset schrumpft nichts, nach dem letzten Kauf aber sehr wohl.
+    positionContent(Phaser.Math.Clamp(this.scrollOffset, 0, maxScroll));
     attachVerticalScroll(this, {
-      maxScroll: Math.max(0, contentBottom - layout.contentBottom),
+      maxScroll,
       dragZoneTop: listTop,
       dragZoneBottom: layout.contentBottom,
       onOffsetChange: positionContent,
+      startOffset: this.scrollOffset,
     });
   }
 
@@ -271,7 +289,7 @@ export class TalentScene extends Phaser.Scene {
       this.feedbackText.setText(error).setColor(Palette.gold);
       return;
     }
-    this.scene.restart({ returnTo: this.returnTo });
+    this.scene.restart({ returnTo: this.returnTo, scrollOffset: this.scrollOffset });
   }
 
   private openResetConfirmation(): void {
@@ -376,6 +394,6 @@ export class TalentScene extends Phaser.Scene {
       this.feedbackText.setText(error).setColor(Palette.gold);
       return;
     }
-    this.scene.restart({ returnTo: this.returnTo });
+    this.scene.restart({ returnTo: this.returnTo, scrollOffset: this.scrollOffset });
   }
 }

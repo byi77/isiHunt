@@ -12,12 +12,30 @@ export interface ResultSection {
   progress?: number;
 }
 
+/**
+ * Das Hochzaehlen der grossen Zahl am Kopf.
+ *
+ * Getrennt vom fertigen `score`-Text, weil die Zahl waehrend des Laufs eine
+ * Zahl sein muss: Zwischenstaende entstehen durch Rechnen, nicht durch
+ * Textersatz. `score` bleibt der Endwert - er steht sofort, wenn die Scene
+ * neu aufgebaut wird oder der Spieler auf Bewegung verzichtet.
+ */
+export interface ResultScoreRoll {
+  /** Punktestand ohne die Abschlusspraemien. */
+  from: number;
+  /** Endstand samt Praemien - muss zu `score` passen. */
+  to: number;
+  /** Die Posten, die den Weg dorthin erklaeren. */
+  steps: readonly { label: string; score: number }[];
+}
+
 export interface ResultContent {
   title: string;
   score: string;
   subtitle: string;
   badge?: string;
   sections: ResultSection[];
+  scoreRoll?: ResultScoreRoll;
 }
 
 /** Feste Aktionen; beliebig viele Belohnungen bleiben im Detailbereich erreichbar. */
@@ -35,6 +53,14 @@ export class ResultView {
   private bottom = 0;
   private drag: { id: number; y: number } | null = null;
   private indicator!: Phaser.GameObjects.Text;
+  /**
+   * Das Zaehlwerk laeuft genau einmal, nicht bei jedem `build()`.
+   *
+   * `build()` ist auch der Resize-Handler: Ohne diesen Merker finge die Zahl
+   * bei jeder Drehung des Geraets wieder von vorn an.
+   */
+  private rollPlayed = false;
+  private rollTween?: Phaser.Tweens.Tween;
   private readonly resize = (): void => this.build();
   private readonly down = (pointer: Phaser.Input.Pointer): void => {
     if (pointer.y >= this.top && pointer.y <= this.bottom)
@@ -78,6 +104,10 @@ export class ResultView {
 
   private build(): void {
     if (this.root) this.scene.tweens.killTweensOf(this.root);
+    // Das Zaehlwerk haengt an einem Text-Objekt, das gleich zerstoert wird.
+    // Laeuft es weiter, schreibt sein `onUpdate` in eine Leiche.
+    this.rollTween?.remove();
+    this.rollTween = undefined;
     this.root?.destroy();
     this.buttons = [];
     this.mask?.destroy();
@@ -117,8 +147,12 @@ export class ResultView {
     const score = addText(this.root, this.content.score, y, 42, Palette.ink, true);
     score.setWordWrapWidth(0);
     // Auch sehr grosse Punktzahlen bleiben innerhalb der festen Kopfbreite.
+    // Der Massstab haengt am Endwert, nicht am gerade gezeigten: Sonst
+    // zappelte die Zahl beim Hochzaehlen mit jeder neuen Stelle.
     if (score.width > width) score.setScale(width / score.width);
+    const scoreScale = score.scale;
     y += score.displayHeight + 4 * unit;
+    this.startScoreRoll(score, scoreScale);
     if (this.content.badge) {
       const badge = addText(this.root, this.content.badge, y, 14, Palette.gold, true);
       y += badge.height + 5 * unit;
@@ -208,6 +242,50 @@ export class ResultView {
     });
   }
 
+  /**
+   * Zaehlt die Kopfzahl von der reinen Laufleistung auf den Endstand hoch.
+   *
+   * Die Bewegung ist der Punkt: Der Sprung nach oben soll als Zugewinn
+   * erlebbar sein, nicht als fertige Zahl, die schon immer dastand. Sie endet
+   * mit `Cubic.easeOut` - schnell an, langsam aus, wie ein auslaufendes Rad.
+   *
+   * Ohne Praemie faellt sie ganz aus: Ein Zaehlwerk, das bei seinem Startwert
+   * beginnt und dort endet, ist nur Wartezeit.
+   */
+  private startScoreRoll(score: Phaser.GameObjects.Text, scale: number): void {
+    const roll = this.content.scoreRoll;
+    if (!roll || this.rollPlayed || roll.to <= roll.from) return;
+    if (prefersReducedMotion()) {
+      this.rollPlayed = true;
+      return;
+    }
+    this.rollPlayed = true;
+    const counter = { value: roll.from };
+    score.setText(roll.from.toLocaleString('de-DE')).setScale(scale);
+    this.rollTween = this.scene.tweens.add({
+      targets: counter,
+      value: roll.to,
+      duration: 1100,
+      delay: 260,
+      ease: 'Cubic.easeOut',
+      onUpdate: () => {
+        score.setText(Math.round(counter.value).toLocaleString('de-DE')).setScale(scale);
+      },
+      onComplete: () => {
+        // Der Endwert kommt aus dem fertigen Text, nicht aus dem Zaehler:
+        // Nur so steht am Ende garantiert dieselbe Zahl wie im Rest des
+        // Bildschirms, unabhaengig von Rundung und Tween-Genauigkeit.
+        score.setText(this.content.score).setScale(scale);
+        this.scene.tweens.add({
+          targets: score,
+          scale: { from: scale * 1.12, to: scale },
+          duration: 240,
+          ease: 'Back.easeOut',
+        });
+      },
+    });
+  }
+
   private setScroll(value: number): void {
     this.scroll = Phaser.Math.Clamp(value, 0, this.maxScroll);
     this.body.y = this.top - this.scroll;
@@ -237,6 +315,8 @@ export class ResultView {
     this.scene.input.off('pointerup', this.up);
     this.scene.input.off('pointerupoutside', this.up);
     this.scene.input.off('wheel', this.wheel);
+    this.rollTween?.remove();
+    this.rollTween = undefined;
     this.scene.tweens.killTweensOf(this.root);
     this.root.destroy();
     this.mask.destroy();

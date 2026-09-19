@@ -56,6 +56,22 @@ export function soloResultContent(
         highlight: true,
       });
   }
+  // Die Praemien stehen direkt unter dem XP-Block: Sie erklaeren die Zahl,
+  // die der Kopf gerade hochgezaehlt hat, und gehoeren deshalb nach oben -
+  // nicht hinter das naechste Ziel, wo man sie wegwischen muesste.
+  const bonus = stats.bonus;
+  if (bonus && bonus.entries.length > 0)
+    sections.push({
+      title: `ABSCHLUSSPRAEMIE · +${bonus.score.toLocaleString('de-DE')} Punkte · +${bonus.xp.toLocaleString('de-DE')} XP`,
+      lines: [
+        ...bonus.entries.map(
+          (entry) =>
+            `${entry.label} (${entry.detail}): +${entry.score.toLocaleString('de-DE')} Punkte · +${entry.xp.toLocaleString('de-DE')} XP`,
+        ),
+        ...(bonus.capped ? ['Obergrenze erreicht - die Summe ist gedeckelt.'] : []),
+      ],
+      highlight: true,
+    });
   sections.push({ title: 'NAECHSTES ZIEL', lines: [goal.title, goal.detail] });
   sections.push({
     title: 'AUSBEUTE',
@@ -70,6 +86,14 @@ export function soloResultContent(
     badge: progression.isNewBestScore ? 'NEUER BESTWERT' : undefined,
     subtitle: `Level ${level.level} · ${stats.totalCollected} Relikte · beste Kette ${stats.bestCombo} · max x${stats.bestMultiplier}`,
     sections,
+    scoreRoll:
+      bonus && bonus.score > 0
+        ? {
+            from: stats.score - bonus.score,
+            to: stats.score,
+            steps: bonus.entries.map((entry) => ({ label: entry.label, score: entry.score })),
+          }
+        : undefined,
   };
 }
 
