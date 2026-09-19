@@ -12,6 +12,7 @@ import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
 import * as AuthSystem from '@/systems/AuthSystem';
+import * as DebugSystem from '@/systems/DebugSystem';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
@@ -54,7 +55,22 @@ export class ResultScene extends Phaser.Scene {
     // Fuer eingeloggte Scores muss das zugehoerige Progress-Event zuerst
     // serverseitig akzeptiert sein; die Bestenliste bleibt dadurch kein
     // unabhaengiger Schreibpfad fuer dieselben Client-Zahlen.
-    void ProgressSyncSystem.flush().then(() => this.submitLeaderboardScore(stats));
+    //
+    // Der Bestwert haengt an `finally`, nicht an `then`: Wirft `flush()` - und
+    // das kann es, `adoptProfileProgress` laeuft dort ungeschuetzt -, dann
+    // uebersprang ein `then` den Upload wortlos, weil `void` die Rejection
+    // schluckt. Der Run war gespielt, der Punktestand stand auf dem Schirm,
+    // und in der Bestenliste kam nie etwas an.
+    void ProgressSyncSystem.flush()
+      .catch((error: unknown) => {
+        DebugSystem.pushProtectedLogEntry({
+          timestamp: Date.now(),
+          kind: 'error',
+          label: 'run:sync-abbruch',
+          detail: error instanceof Error ? error.message : 'Unbekannter Fehler',
+        });
+      })
+      .finally(() => this.submitLeaderboardScore(stats));
     this.uploadSave();
   }
 
@@ -63,34 +79,51 @@ export class ResultScene extends Phaser.Scene {
    * ist. Ohne Namen oder ohne Backend bleibt der Bildschirm unveraendert.
    * Fehler sind bewusst still: Die Bestenliste ist eine Zugabe, kein Teil des
    * Runs.
+   *
+   * **Still heisst nicht spurlos.** Jeder Ausstieg schreibt in den geschuetzten
+   * Puffer, warum er ausstieg. Am 19.09. fehlte ein Run mit ueber 120000
+   * Punkten in der Bestenliste, und der Debug-Report konnte nicht einmal
+   * sagen, ob der Upload versucht worden war - drei Diagnoserunden fuer eine
+   * Frage, die eine einzige Zeile beantwortet.
    */
   private submitLeaderboardScore(stats: RunStats): void {
-    if (
-      !CloudSystem.isAvailable() ||
-      SaveSystem.isTestProfileActive() ||
-      !AuthSystem.isSignedIn()
-    ) {
-      return;
-    }
+    const merke = (detail: string): void => {
+      DebugSystem.pushProtectedLogEntry({
+        timestamp: Date.now(),
+        kind: 'event',
+        label: 'run:bestwert',
+        detail,
+      });
+    };
+
+    if (!CloudSystem.isAvailable()) return merke('uebersprungen: kein Online-Dienst');
+    if (SaveSystem.isTestProfileActive()) return merke('uebersprungen: Testprofil');
+    if (!AuthSystem.isSignedIn()) return merke('uebersprungen: nicht angemeldet');
 
     const name = CloudSystem.sanitizePlayerName(SaveSystem.load().playerName);
-    if (!name) return;
+    if (!name) return merke('uebersprungen: kein gueltiger Name');
 
     // Anonyme Score-Submission bleibt bewusst aus: Ein Gast kann keinen
     // serverseitig akzeptierten Progress-Nachweis fuer die Bestenliste tragen.
     const playerId = AuthSystem.currentUserId();
-    if (!playerId) return;
+    if (!playerId) return merke('uebersprungen: keine Konto-Kennung');
+
+    const score = stats.score;
+    const combo = stats.bestCombo;
+    merke(`gesendet: ${score} Punkte, Kette ${combo}, ${stats.worldId}`);
     void CloudSystem.submitScoreSafely(
       playerId,
       name,
       stats.worldId,
       SaveSystem.load().level,
-      stats.score,
-      stats.bestCombo,
+      score,
+      combo,
       stats.durationMs ?? 0,
       stats.collected,
       stats.completedAt ?? new Date().toISOString(),
-    );
+    ).then((result) => {
+      merke(result.ok ? `angenommen: ${score}` : `abgelehnt: ${result.error}`);
+    });
   }
 
   /**

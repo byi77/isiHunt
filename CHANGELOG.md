@@ -62,6 +62,30 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Ein Bestwert ging verloren, wenn der Fortschritts-Abgleich vorher warf.**
+  Der Upload zur Bestenliste hing an `flush().then(...)`, ohne `catch` - und
+  `flush()` kann werfen, weil `adoptProfileProgress()` dort ungeschuetzt
+  laeuft. Das `void` davor schluckte die Ablehnung, der Run war gespielt, die
+  Punktzahl stand auf dem Schirm, und in der Bestenliste kam nie etwas an.
+  Jetzt haengt der Upload an `finally` und der Abbruchgrund im Protokoll.
+- **Eine abgelehnte Punktzahl blockierte alle spaeteren.** Jeder Fehlschlag
+  landete in der Warteschlange - auch ein fachliches "Punktestand nicht
+  plausibel", das sich bei jedem Versuch identisch wiederholt. Der Eintrag
+  wurde dadurch nicht nur ewig erneut abgelehnt; ueber den Vergleich "hoeherer
+  Score gewinnt" verdraengte er auch jeden spaeteren, niedrigeren Bestwert.
+  Eine Allowlist trennt jetzt Funkloch von Nein.
+- **Der Debug-Bericht reichte nicht bis zum Rundenende zurueck.**
+  `combo:window-changed` feuert ~60-mal pro Sekunde und fuellte den
+  1000-Eintraege-Puffer in gut 16 Sekunden - genau die Zeitspanne vor dem
+  Ergebnis war ueberschrieben, in der ein fehlender Bestwert zu sehen gewesen
+  waere. Dieselbe Falle wie 2026-08-19 mit `TimerChanged`; der Ausschluss ist
+  jetzt eine Liste statt einer Sonderbehandlung, damit das naechste
+  Frame-Ereignis nicht wieder durchrutscht.
+- **Eine abgelehnte Punktzahl sah im Protokoll aus wie eine angenommene.** Die
+  Ablehnung steckt in einer erfolgreichen HTTP-Antwort, und die protokollierte
+  der Ringpuffer als `ok`. Sie wird jetzt mit Grund, Punktzahl und Kette als
+  Fehler vermerkt, und der Bestwert-Upload hinterlaesst auf jedem Pfad eine
+  Spur - auch auf den stillen wie "nicht angemeldet".
 - **Client und Server rundeten die Abschlusspraemie verschieden.** Der Client
   rundete jede Stufe einzeln und summierte danach, die serverseitige Rechnung
   summiert die Run-Anteile und rundet einmal - Differenz ein bis zwei Punkte.

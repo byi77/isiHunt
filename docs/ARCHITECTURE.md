@@ -449,9 +449,9 @@ keine Scene den Handler gesetzt hat, genau die Falle von v0.1.236.
 
 **Erfolg wird bewusst nicht protokolliert.** Der `live`-Takt feuert alle 400ms
 und wuerde den Ringpuffer (`DEBUG_LOG_BUFFER_SIZE`) in gut zwei Minuten
-ueberschreiben — derselbe Rechenweg, der `TimerChanged` aus dem Protokoll
-genommen hat (9.x). Verwurfsgruende werden aus demselben Grund nur einmal pro
-Kanal gemeldet.
+ueberschreiben — derselbe Rechenweg, der `TimerChanged` und
+`ComboWindowChanged` aus dem Protokoll genommen hat (9.7). Verwurfsgruende
+werden aus demselben Grund nur einmal pro Kanal gemeldet.
 
 **Handler auf einem Kanal, der laenger lebt als die Scenes.** `activeHandlers`
 in `NetworkDuelSystem` ist ein Modul-Singleton und ueberlebt den Wechsel Lobby
@@ -1578,6 +1578,39 @@ ein Datenverlust; das Skript meldet stattdessen, dass der Stand abweicht.
 
 Vollstaendige Begruendung samt verworfener Alternativen: `DECISIONS.md`
 ADR-0023.
+
+## 9.7 Der Ringpuffer muss das Rundenende ueberleben
+
+`DebugSystem` haelt zwei Puffer: den rollierenden (`DEBUG_LOG_BUFFER_SIZE`,
+1000 Eintraege) und den geschuetzten (`DEBUG_PROTECTED_BUFFER_SIZE`, 60). Beide
+ueberdauern einen App-Neustart, weil sie gedrosselt nach `localStorage`
+geschrieben werden.
+
+**Ereignisse, die in jedem Frame feuern, gehoeren in keinen der beiden.** Bei
+~60 Schuessen pro Sekunde fuellt ein einziges solches Ereignis die 1000 Plaetze
+in gut 16 Sekunden; alles Aeltere ist dann verdraengt. Der Puffer ist aber
+genau fuer das gebaut, was _vor_ einem Fehler geschah.
+
+Dieselbe Falle ist zweimal zugeschnappt:
+
+| Wann       | Ereignis             | Folge                                                                                                     |
+| ---------- | -------------------- | --------------------------------------------------------------------------------------------------------- |
+| 2026-08-19 | `TimerChanged`       | App-Start, Login und Cloud-Fehler aus jedem waehrend eines Runs erzeugten Bericht verdraengt              |
+| 2026-09-19 | `ComboWindowChanged` | Ein fehlender Bestwert war nicht diagnostizierbar: Der Bericht reichte nur 13 s vor das Rundenende zurueck |
+
+Das zweite Mal passierte, weil `ComboWindowChanged` nach dem ersten Befund
+dazukam und die damalige `if`-Sonderbehandlung nicht mitbekam. Deshalb steht
+der Ausschluss jetzt als Menge `FRAME_EREIGNISSE` in `main.ts`: Ein neues
+Frame-Ereignis wird dort eingetragen, statt in einer Bedingungskette vergessen
+zu werden.
+
+**Was eine Runde ueberdauern muss, gehoert in den geschuetzten Puffer.** Der
+Bestwert-Upload schreibt dorthin, und zwar auf jedem Pfad — auch auf den
+stillen: `uebersprungen: nicht angemeldet` ist eine Auskunft, ein fehlender
+Eintrag ist keine. Ebenso die fachliche Ablehnung durch `submit_best_score`:
+Sie steckt in einer **erfolgreichen** HTTP-Antwort, und `withTimeout` hatte
+dafuer bereits `ok` protokolliert — im Bericht war ein abgelehnter Bestwert
+dadurch nicht von einem angenommenen zu unterscheiden.
 
 ## 10. Grenzen der aktuellen Architektur
 

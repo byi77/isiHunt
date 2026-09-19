@@ -791,7 +791,38 @@ export async function submitScore(
 
   if (!result.ok) return result;
   if (!result.value.error) return { ok: true, value: true };
+  // `withTimeout` hat hier bereits "ok" protokolliert: Die HTTP-Antwort kam ja
+  // an. Die fachliche Ablehnung steckt IN dieser Antwort und war im
+  // Ringpuffer bis dahin nicht von einem geglueckten Eintrag zu
+  // unterscheiden - genau die Verwechslung, vor der der Kommentar an
+  // `withTimeout` warnt.
+  DebugSystem.pushProtectedLogEntry({
+    timestamp: Date.now(),
+    kind: 'error',
+    label: 'cloud:Bestwert abgelehnt',
+    detail: `${result.value.error.message} (Punkte ${scoreArgs.p_score}, Kette ${scoreArgs.p_best_combo})`,
+  });
   return { ok: false, error: result.value.error.message };
+}
+
+/**
+ * Ablehnungen von `submit_best_score`, die sich identisch wiederholen.
+ *
+ * Wortlaut aus `phase_2_34_player_name_rules.sql`. Bewusst kurz: Beide haengen
+ * allein am Inhalt der Einreichung, ein spaeterer Versuch aendert daran
+ * nichts. **Nicht** in der Liste stehen die Token- und Sitzungsfehler (ein
+ * neuer Login behebt sie) und 'Spielername bereits vergeben' (eine
+ * Namensaenderung behebt ihn). Im Zweifel wird wiederholt: Ein faelschlich
+ * behaltener Eintrag kostet einen Versuch, ein faelschlich verworfener den
+ * Bestwert.
+ */
+const PERMANENTE_BESTWERT_ABLEHNUNGEN = [
+  'Punktestand nicht plausibel',
+  'Ungueltiges Spielerprofil',
+] as const;
+
+function istDauerhafteAblehnung(error: string): boolean {
+  return PERMANENTE_BESTWERT_ABLEHNUNGEN.some((grund) => error.includes(grund));
 }
 
 /**
@@ -838,6 +869,12 @@ export async function submitScoreSafely(
       if (!existing || (existing.playerId === playerId && existing.score <= score)) {
         clearPendingLeaderboardScore(playerId);
       }
+    } else if (istDauerhafteAblehnung(result.error)) {
+      // Ein solcher Eintrag kommt bei jedem Versuch identisch zurueck. Bliebe
+      // er liegen, wuerde er nicht nur ewig erneut abgelehnt - er verdraengte
+      // ueber `savePendingLeaderboardScore` auch jeden spaeteren Bestwert mit
+      // weniger Punkten aus der Warteschlange.
+      clearPendingLeaderboardScore(playerId);
     } else {
       savePendingLeaderboardScore(pending);
     }

@@ -307,3 +307,68 @@ describe('ohne Anmeldepflicht: Netzfehler bleibt ein Ergebnisobjekt', () => {
     expect(CloudSystem.hasPendingLeaderboardScore('spieler-id')).toBe(true);
   });
 });
+
+/**
+ * Der Unterschied zwischen "kam nicht an" und "wurde abgelehnt".
+ *
+ * Ein Funkloch liefert dasselbe `ok: false` wie ein fachliches Nein - aber nur
+ * das Funkloch verdient einen zweiten Versuch. Eine Ablehnung wiederholt sich
+ * bei jedem Versuch identisch; bliebe sie in der Warteschlange, wuerde sie
+ * dort nicht nur ewig erneut abgelehnt, sondern ueber den
+ * "hoeherer Score gewinnt"-Vergleich in `savePendingLeaderboardScore` auch
+ * jeden spaeteren, niedrigeren Bestwert verdraengen.
+ */
+describe('Bestwert: Ablehnung gehoert nicht in die Warteschlange', () => {
+  /** Laesst `submit_best_score` mit der gegebenen Meldung antworten. */
+  function antworteMit(message: string | null): void {
+    const client = CloudSystem.getSupabaseClient()!;
+    vi.spyOn(client, 'rpc').mockResolvedValue({
+      data: null,
+      error: message === null ? null : { message },
+    } as never);
+  }
+
+  const einreichen = (score: number): Promise<{ ok: boolean }> =>
+    CloudSystem.submitScoreSafely(
+      'spieler-id',
+      'Spielername',
+      'nebula',
+      5,
+      score,
+      10,
+      90_000,
+      {},
+      new Date().toISOString(),
+    );
+
+  it('merkt einen Netzfehler vor', async () => {
+    antworteMit('FetchError: Failed to fetch');
+    await einreichen(1000);
+    expect(CloudSystem.hasPendingLeaderboardScore('spieler-id')).toBe(true);
+  });
+
+  it('merkt eine fachliche Ablehnung NICHT vor', async () => {
+    antworteMit('Punktestand nicht plausibel');
+    const result = await einreichen(1000);
+
+    expect(result.ok).toBe(false);
+    expect(CloudSystem.hasPendingLeaderboardScore('spieler-id')).toBe(false);
+  });
+
+  it('laesst einen abgelehnten Score keinen spaeteren niedrigeren blockieren', async () => {
+    antworteMit('Punktestand nicht plausibel');
+    await einreichen(120_000);
+
+    // Der naechste, kleinere Run trifft auf ein Funkloch. Ohne die
+    // Aussortierung oben laege hier noch der abgelehnte 120000er, und der
+    // Score-Vergleich haette diesen Eintrag verworfen.
+    antworteMit('FetchError: Failed to fetch');
+    await einreichen(60_000);
+
+    expect(CloudSystem.hasPendingLeaderboardScore('spieler-id')).toBe(true);
+    const vorgemerkt = JSON.parse(
+      window.localStorage.getItem('isihunt.pending-leaderboard-score.v2.spieler-id')!,
+    ) as { score: number };
+    expect(vorgemerkt.score).toBe(60_000);
+  });
+});

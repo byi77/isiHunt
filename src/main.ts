@@ -168,6 +168,31 @@ SafeAreaSystem.initialize();
 AuthSystem.initialize();
 
 /**
+ * Ereignisse, die in jedem Frame feuern und deshalb nicht in den Ringpuffer
+ * gehoeren.
+ *
+ * Bei ~60 Schuessen pro Sekunde fuellt ein einziges solches Ereignis die 1000
+ * Plaetze des Puffers in gut 16 Sekunden. Alles Aeltere - App-Start, Login,
+ * Cloud-Antworten, das Rundenende - ist dann verdraengt.
+ *
+ * Das ist zweimal passiert. Erst mit `TimerChanged` (Audit 2026-08-19), dann
+ * erneut mit `ComboWindowChanged`, das spaeter dazukam und den Ausschluss
+ * nicht mitbekam: Am 19.09. fehlte ein Run in der Bestenliste, und der
+ * Debug-Report reichte nur bis 13 Sekunden VOR das Rundenende zurueck - die
+ * entscheidende Frage, ob der Upload ueberhaupt versucht wurde, war aus dem
+ * Puffer gespuelt.
+ *
+ * Deshalb eine Liste statt einer Sonderbehandlung: Ein neues Frame-Ereignis
+ * wird hier eingetragen, nicht in einer `if`-Kette vergessen. Die Information
+ * geht nicht verloren - `RunStarted` steht mit seiner Dauer im Puffer, und
+ * jeder Eintrag traegt einen Zeitstempel.
+ */
+const FRAME_EREIGNISSE: ReadonlySet<string> = new Set<string>([
+  GameEvent.TimerChanged,
+  GameEvent.ComboWindowChanged,
+]);
+
+/**
  * Verdrahtet den rollierenden Debug-Ringpuffer, so frueh wie moeglich im
  * Lebenszyklus - er soll auch Ereignisse und Fehler festhalten, die vor dem
  * Einschalten des Debug-Modus passieren, damit im Ernstfall sichtbar bleibt,
@@ -178,17 +203,8 @@ function installDebugLogging(): void {
   DebugSystem.logAppStart({ standalone: isStandalone(), ios: isIos() });
 
   for (const key of Object.values(GameEvent)) {
-    // `TimerChanged` bleibt bewusst draussen: Es feuert in jedem Frame
-    // (~60/s), waehrend der Ringpuffer 400 Eintraege fasst. Mitgeschrieben
-    // ueberschreibt allein ein 90-Sekunden-Run den Puffer 13,5-mal - der
-    // Verlauf reicht dann nur noch 6,7 Sekunden zurueck statt der Minuten,
-    // fuer die dieser Puffer gebaut ist. App-Start, Login und Cloud-Fehler
-    // waren dadurch aus jedem Fehlerbericht verdraengt, der waehrend eines
-    // Runs erstellt wurde (Audit 2026-08-19).
-    //
-    // Der Timerstand geht nicht verloren: `RunStarted` steht mit seiner
-    // Dauer im Puffer, und jeder Eintrag traegt einen Zeitstempel.
-    if (key === GameEvent.TimerChanged) continue;
+    // Frame-Ereignisse bleiben draussen (siehe FRAME_EREIGNISSE).
+    if (FRAME_EREIGNISSE.has(key)) continue;
 
     eventBus.onEvent(key, (payload) => {
       DebugSystem.pushLogEntry({
