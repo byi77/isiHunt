@@ -136,7 +136,20 @@ try {
     // Phaser's mobile emulation can suspend requestAnimationFrame while the
     // countdown scene is being promoted. Interval polling keeps this gate
     // independent of that browser scheduling detail.
-    { timeout: 25_000, polling: 250 },
+    //
+    // Das Zeitlimit ist bewusst gross und sagt nichts ueber die Leistung
+    // aus. Der Countdown haengt an Phasers Zeitgeber, und der zaehlt in
+    // FRAMES, nicht in Wanduhrzeit: Ein headless gerenderter Chromium ohne
+    // GPU schafft je nach Maschine nur wenige Bilder pro Sekunde. Gemessen
+    // am 2026-09-19 auf einem Entwicklungsrechner brauchten 2,1 Sekunden
+    // Countdown 28 Sekunden real; das damalige Limit von 25 s brach drei
+    // Sekunden zu frueh ab, waehrend die CI gruen blieb.
+    //
+    // Bewertet wird die Startzeit deshalb nicht mehr hier, sondern ueber
+    // `PERFORMANCE_BUDGETS.startupMs` - und die Messung endet jetzt vor dem
+    // Countdown. Dieses Limit muss nur noch grosszuegig genug sein, damit
+    // der Lauf auch auf langsamer Hardware ueberhaupt zustande kommt.
+    { timeout: 90_000, polling: 250 },
   );
 
   let result;

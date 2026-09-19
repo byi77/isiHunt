@@ -66,6 +66,9 @@ Auf einer leeren Datenbank in dieser Reihenfolge einspielen:
 
 ## Aktueller Sollstand
 
+`phase_2_51_luck_balance.sql` aktualisiert anschliessend ausschliesslich die
+Balance-Konfiguration fuer Glueckstreffer. Der Strukturmarker bleibt bei 50.
+
 Der verknuepfte Supabase-Stand wird mit
 `supabase/verify_migration_state.sql` geprueft. Nach den aktuellen Phasen muss
 der Marker auf `schema_version = 50` stehen. Die Pruefung findet unter anderem

@@ -54,8 +54,6 @@ export function installCollectionPreview(scene: Phaser.Scene): void {
         { x: target.x + (i % 2 ? 80 : -80), y: target.y - 130 - (i % 3) * 32 },
         RARITIES[i % 6]!,
         (i + 1) * 100,
-        i % 3 === 0 ? 2.5 : undefined,
-        i % 3 === 0 ? 12 : undefined,
       );
     label.textContent = `${count} Fänge · ${elapsed} ms`;
   };
@@ -69,7 +67,7 @@ export function installCollectionPreview(scene: Phaser.Scene): void {
     effects.destroy();
     effects = make();
     elapsed = 0;
-    effects.add({ x: 10, y: 180 }, RARITIES[5]!, 1000, 2.5, 12);
+    effects.add({ x: 10, y: 180 }, RARITIES[5]!, 1000);
     label.textContent = 'Randfang · 0 ms';
   });
   button('+120 ms', () => {

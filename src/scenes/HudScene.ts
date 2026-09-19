@@ -95,6 +95,9 @@ export class HudScene extends Phaser.Scene {
    * traegt - eine dauerhafte "+0 %"-Zeile waere nur Rauschen.
    */
   private agilityText!: Phaser.GameObjects.Text;
+  /** Im Run gesammelte XP. Unsichtbar ohne Einsicht-Talent. */
+  private xpText!: Phaser.GameObjects.Text;
+  private xpTotal = 0;
   /** Eigener Stand, gespiegelt fuer den Abstandsvergleich in der Gegnerzeile. */
   private lastOwnScore = 0;
   private timerBar!: BarHandle;
@@ -133,6 +136,7 @@ export class HudScene extends Phaser.Scene {
     this.lastOwnScore = 0;
     this.lastComboMultiplier = 1;
     this.lastAgilityPercent = 0;
+    this.xpTotal = 0;
     this.pauseOverlay = [];
     this.targetText = null;
 
@@ -186,6 +190,18 @@ export class HudScene extends Phaser.Scene {
       .setOrigin(1, 0)
       .setAlpha(0);
 
+    // Die im Run gesammelten XP, links unter der Punktzahl.
+    //
+    // Stand bis 2026-09-19 als dritte Zeile am Fang-Label im Spielfeld und
+    // zwang dort zum Lesen, waehrend das Spiel weiterlief. Als Summe oben
+    // taugt sie mehr: Der Einzelwert eines Fangs sagt wenig, der Stand nach
+    // 40 Faengen schon. Unsichtbar ohne Einsicht-Talent - eine dauerhafte
+    // "0 XP"-Zeile waere nur Rauschen (dieselbe Regel wie beim Tempobonus).
+    this.xpText = this.add
+      .text(60, 76 + 32 * 2, '', textStyle(FontSize.tiny, Palette.success, { fontStyle: 'bold' }))
+      .setOrigin(0, 0)
+      .setAlpha(0);
+
     this.talentText = this.add
       .text(
         GAME_WIDTH / 2,
@@ -236,6 +252,7 @@ export class HudScene extends Phaser.Scene {
       this.comboText,
       this.multiplierText,
       this.agilityText,
+      this.xpText,
     ])
       text.setStroke(HUD_TEXT_STROKE.stroke, HUD_TEXT_STROKE.strokeThickness);
 
@@ -337,6 +354,8 @@ export class HudScene extends Phaser.Scene {
     place(this.comboText, l.comboX, 26, 10, l.columnWidth);
     place(this.multiplierText, l.comboX, 39, 24, l.columnWidth);
     place(this.agilityText, l.comboX, 68, 9, l.columnWidth);
+    // Links unter der Punktzahl - die Spalte, die sonst leer bleibt.
+    this.xpText.setPosition(l.scoreX - l.columnWidth / 2, 68 * l.unit).setFontSize(l.font(9));
     // Der Zeitbalken sitzt ueber den Zahlen, nicht darunter.
     //
     // Unten lag er auf der Kante zum Spielfeld und zwang die Kopfflaeche
@@ -601,6 +620,23 @@ export class HudScene extends Phaser.Scene {
     }
   }
 
+  /**
+   * Summiert die XP des Runs fuer die Anzeige links unten im Kopf.
+   *
+   * Nur eine Summe, keine Regel: Wie viel ein Fang bringt, entscheidet
+   * `ProgressionSystem`; hier wird ausschliesslich addiert, was gemeldet
+   * wurde. Fehlt `xpGained`, ist das Einsicht-Talent nicht gelernt - dann
+   * bleibt die Zeile unsichtbar.
+   */
+  private readonly onCollectedXp = ({ xpGained }: { xpGained?: number }): void => {
+    if (xpGained === undefined) return;
+    this.xpTotal += xpGained;
+    this.xpText.setText(`+${this.xpTotal.toLocaleString('de-DE')} XP`);
+    this.fit(this.xpText, this.layout.columnWidth);
+    if (this.xpText.alpha === 0) this.xpText.setAlpha(1);
+    else this.emphasize(this.xpText);
+  };
+
   private readonly onCombo = ({
     combo,
     multiplier,
@@ -784,6 +820,7 @@ export class HudScene extends Phaser.Scene {
   private registerEvents(): void {
     eventBus.onEvent(GameEvent.ScoreChanged, this.onScore);
     eventBus.onEvent(GameEvent.ComboChanged, this.onCombo);
+    eventBus.onEvent(GameEvent.Collected, this.onCollectedXp);
     eventBus.onEvent(GameEvent.TimerChanged, this.onTimer);
     eventBus.onEvent(GameEvent.RunPaused, this.onPaused);
     eventBus.onEvent(GameEvent.RunResumed, this.onResumed);
@@ -800,6 +837,7 @@ export class HudScene extends Phaser.Scene {
     this.scale.off(Phaser.Scale.Events.RESIZE, this.relayout);
     eventBus.offEvent(GameEvent.ScoreChanged, this.onScore);
     eventBus.offEvent(GameEvent.ComboChanged, this.onCombo);
+    eventBus.offEvent(GameEvent.Collected, this.onCollectedXp);
     eventBus.offEvent(GameEvent.TimerChanged, this.onTimer);
     eventBus.offEvent(GameEvent.RunPaused, this.onPaused);
     eventBus.offEvent(GameEvent.RunResumed, this.onResumed);

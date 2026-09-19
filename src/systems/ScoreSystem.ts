@@ -17,6 +17,7 @@
  * gab nie etwas zu entscheiden.
  */
 
+import { CRIT_MULTIPLIER } from '@/config/balance';
 import {
   COMBO_MULTIPLIER_PER_EXTRA_SERIES,
   COMBO_TIERS,
@@ -40,6 +41,8 @@ export interface CollectOutcome {
   sameRarityStreak: number;
   /** Wahr, sobald die Kette erstmals einen sichtbaren Punktebonus gibt. */
   streakBonus: boolean;
+  /** Der Fang war ein Gluecktreffer und hat das Dreifache gebracht. */
+  crit: boolean;
   /**
    * Der Fang hat die Serie gehalten, aber nicht gesteigert - ein weisses
    * Relikt als Rettung. Das HUD kann darauf eine eigene Rueckmeldung geben.
@@ -135,6 +138,7 @@ export class ScoreSystem {
   private comboTimerMs = 0;
   private missed = 0;
   private xpGained = 0;
+  private crits = 0;
   private collected: Record<RarityId, number> = emptyRarityCounts();
 
   constructor(
@@ -142,6 +146,14 @@ export class ScoreSystem {
     private readonly scoreMultiplier: number,
     private readonly xpMultiplier: number,
     private readonly seriesMultiplierBonus = 0,
+    /** Wahrscheinlichkeit eines Gluecktreffers, 0 bis 1. Aus dem Talent. */
+    private readonly critChance = 0,
+    /**
+     * Der Wuerfel. Injizierbar, damit Tests den Zufall festlegen koennen -
+     * ohne das waere ein Gluecktreffer nur statistisch pruefbar, und ein
+     * Vorzeichenfehler fiele erst im Spiel auf.
+     */
+    private readonly roll: () => number = Math.random,
   ) {}
 
   /** Muss jeden Frame aufgerufen werden, damit die Serie zerfallen kann. */
@@ -180,11 +192,25 @@ export class ScoreSystem {
     this.bestMultiplier = Math.max(this.bestMultiplier, multiplier);
 
     const streakBonus = multiplier > 1;
-    const awardedPoints = Math.round(rarity.points * multiplier * this.scoreMultiplier);
+
+    // Der Gluecktreffer wird ZULETZT angewandt, auf den bereits fertigen
+    // Wert. Damit vervielfacht er alles, was der Fang wert war - Seltenheit,
+    // Serie, Weltbonus -, und nicht nur den Grundwert. Genau das macht ihn zu
+    // einem Ereignis: In einer hohen Serie ist er ein Ausschlag, den man
+    // sieht, nicht ein stiller Aufschlag von ein paar Punkten.
+    //
+    // Er steigert die Serie nicht und wird von ihr nicht beeinflusst. Die
+    // Serie misst Koennen; wer sie halten will, soll das mit der Hand tun und
+    // nicht mit dem Wuerfel (vgl. ADR-0027).
+    const crit = this.critChance > 0 && this.roll() < this.critChance;
+    const awardedPoints = Math.round(
+      rarity.points * multiplier * this.scoreMultiplier * (crit ? CRIT_MULTIPLIER : 1),
+    );
     const xp = Math.round(rarity.xp * this.xpMultiplier);
 
     this.score += awardedPoints;
     this.xpGained += xp;
+    if (crit) this.crits += 1;
 
     return {
       awardedPoints,
@@ -195,6 +221,7 @@ export class ScoreSystem {
       multiplierIncreased: multiplier > previousMultiplier,
       sameRarityStreak: this.combo,
       streakBonus,
+      crit,
       /** Ein weisser Fang, der die Serie gerettet, aber nicht gesteigert hat. */
       seriesHeldOnly: !raisesSeries,
     };

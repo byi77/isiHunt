@@ -80,6 +80,7 @@ describe('NextGoalSystem', () => {
       fortune: 5,
       resonance: 3,
       shield: 3,
+      luck: 5,
     } as const;
     const goal = getNextGoal(
       save({

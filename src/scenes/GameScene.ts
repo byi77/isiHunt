@@ -174,6 +174,11 @@ export class GameScene extends Phaser.Scene {
     SafeAreaSystem.hide();
     const save = SaveSystem.load();
 
+    // Messbeginn: hier faengt der Aufbau dieser Scene an. Vorher liegt nur
+    // die Boot-/Asset-Ladezeit aller registrierten Scenes, die kein
+    // Rundenstart verantwortet.
+    this.performanceMonitor?.reset();
+
     this.mode = data.mode ?? 'solo';
     this.world = getWorld(data.worldId ?? save.lastWorldId);
     const isChallengeMode = this.mode !== 'solo';
@@ -283,6 +288,7 @@ export class GameScene extends Phaser.Scene {
       this.stats.scoreMultiplier * this.world.scoreMultiplier,
       this.stats.xpMultiplier * this.world.xpMultiplier * XP_GLOBAL_MULTIPLIER,
       this.stats.seriesMultiplierBonus,
+      this.stats.critChance,
     );
 
     // Nur im Duell wird geseedet - beide Spieler bekommen dieselbe Abfolge.
@@ -352,10 +358,16 @@ export class GameScene extends Phaser.Scene {
       this.startLiveBroadcast();
     }
 
-    // Der Messpunkt beginnt nach dem Scene-Aufbau. So misst startupMs den
-    // sichtbaren Weg bis "LOS!" und nicht die Boot-/Asset-Ladezeit aller
-    // bereits registrierten Phaser-Scenes.
-    this.performanceMonitor?.reset();
+    // Messende: Der Aufbau steht, ab hier laeuft nur noch der Countdown.
+    //
+    // Er bleibt bewusst ausserhalb der Messung. Der Countdown ist eine feste
+    // Wartezeit von rund zwei Sekunden, die nichts ueber die Leistung
+    // aussagt - er haengt aber an Phasers Zeitgeber und damit an der
+    // Bildrate. Auf einem langsam rendernden Rechner dehnte er sich auf 28
+    // Sekunden und sprengte das 30-Sekunden-Budget allein dadurch, waehrend
+    // dieselbe Pruefung in der CI gruen blieb (2026-09-19). Die Bildrate
+    // waehrend des Runs misst ohnehin `recordFrame`.
+    this.performanceMonitor?.markSetupDone();
     this.runCountdown();
 
     // Aufraeumen bei Scene-Restart, damit keine Objekte oder Listener leaken.
@@ -566,12 +578,13 @@ export class GameScene extends Phaser.Scene {
     const outcome = this.scoring.registerCollect(orb.rarity);
     this.collectibles.splice(index, 1);
 
+    // Nur noch Punkte und Seltenheit: Serienbonus und XP zeigt seit
+    // 2026-09-19 das HUD oben, nicht mehr das Label im Spielfeld.
     this.collectionEffects.add(
       { x: orb.x, y: orb.y },
       orb.rarity,
       outcome.awardedPoints,
-      outcome.streakBonus ? outcome.multiplier : undefined,
-      this.stats.talentRanks.insight > 0 ? outcome.xpGained : undefined,
+      outcome.crit,
     );
     // The bounded effect layer owns the visual tail; no orphaned orb tween.
     this.player.pulse(orb.rarity.color);
@@ -585,6 +598,7 @@ export class GameScene extends Phaser.Scene {
       multiplier: outcome.multiplier,
       sameRarityStreak: outcome.sameRarityStreak,
       streakBonus: outcome.streakBonus,
+      xpGained: this.stats.talentRanks.insight > 0 ? outcome.xpGained : undefined,
       x: orb.x,
       y: orb.y,
     });

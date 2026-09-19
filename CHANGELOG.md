@@ -9,8 +9,17 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Hinzugefuegt
+
+- **Glueckstreffer** als elftes Talent: +2 % Chance pro Rang auf dreifache
+  Fangpunkte; Rang 5 erreicht durch den Capstone 10,5 %. Glueckstreffer
+  erscheinen als groessere goldene Punktzahl mit einem x3-Hinweis.
+
 ### Behoben
 
+- Die Performance-Startmessung erfasst den Scene-Aufbau ohne Countdown mit
+  einem Budget von acht Sekunden. Das Browser-Gate wartet bis zu 90 Sekunden
+  auf den Rundenstart.
 - **Drehen in der Hangar-Vorschau sprang zum naechsten Schiff.** Die Trennung
   zwischen Drehen und Blaettern pruefte Richtung, Strecke und Geradlinigkeit -
   Bedingungen, die eine kraeftige waagerechte Drehung allesamt erfuellt. Jetzt
@@ -29,6 +38,8 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- Fang-Anzeigen zeigen kompakt die Punkte in Seltenheitsfarbe. Mit dem
+  Einsicht-Talent stehen gesammelte XP als laufende Summe im HUD.
 - **Gefangene Punkte schlagen ein und dehnen sich aus.** Die Zahl schnellt
   hervor, waechst durchgehend weiter und verblasst dabei - sie verschwindet
   gross, nicht klein. Gemessen beim Fang: 3,9-faches Wachstum ueber 630 ms,

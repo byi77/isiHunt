@@ -2,11 +2,20 @@
 
 export const PERFORMANCE_BUDGETS = {
   /** Zeit von Scene-Erzeugung bis zum tatsaechlichen Run-Start. */
-  // Beinhaltet Scene-Aufbau, HUD und den Drei-Schritt-Countdown. Der Wert ist
-  // bewusst ein hartes mobiles Gate, nicht die Zeit bis zum ersten HTML-Pixel.
-  // 30 Sekunden lassen den kalten Chromium-/CI-Start zu, ohne einen haengenden
-  // Phaser-Start bis zum 25-Sekunden-Timeout des Browser-Gates zu verstecken.
-  startupMs: 30_000,
+  // Scene-Aufbau und HUD - **ohne** den Drei-Schritt-Countdown.
+  //
+  // Der Countdown lag bis 2026-09-19 mit in dieser Zahl. Das machte das Gate
+  // von der Bildrate abhaengig statt von der Aufbauarbeit: Er haengt an
+  // Phasers Zeitgeber, der in Frames zaehlt, und dehnte sich auf einem
+  // headless rendernden Rechner ohne GPU von 2,1 auf 28 Sekunden. Das Gate
+  // war dort dauerhaft rot, in der CI gruen - eine Pruefung, deren Ergebnis
+  // von der Rechenleistung abhaengt, misst nicht mehr, was sie messen soll.
+  //
+  // 8 Sekunden fuer den reinen Aufbau: grosszuegig genug fuer einen kalten
+  // Start auf schwacher Hardware, eng genug, dass eine Scene, die sich beim
+  // Aufbau verschluckt, auffaellt. Die Bildrate waehrend des Runs pruefen
+  // `frameP95Ms` und `frameOverBudgetRatio` - dafuer ist diese Zahl nicht da.
+  startupMs: 8_000,
   /** 95 % der Frames sollen sich wie 60 FPS anfuehlen. */
   frameP95Ms: 25,
   /** Einzelne langsamere Frames sind erlaubt, aber kein regelmaessiges Ruckeln. */
@@ -130,6 +139,20 @@ export function evaluatePerformance(
 /** Sammelt nur in DEV Messwerte; im Release entsteht kein Mess-Overhead. */
 export class PerformanceMonitor {
   private createdAt = performance.now();
+  /**
+   * Ende des Aufbaus - der Moment, in dem der Countdown zu laufen beginnt.
+   *
+   * Die Startzeit wird bis hierher gemessen und NICHT bis zum Rundenstart.
+   * Der Countdown dazwischen ist eine feste Wartezeit von rund zwei
+   * Sekunden, die nichts ueber die Leistung des Geraets aussagt - er haengt
+   * aber an Phasers Zeitgeber und damit an der Bildrate. Auf einem langsam
+   * rendernden Rechner (headless ohne GPU: gemessen 1,5 Bilder/s am
+   * 2026-09-19) dehnte er sich auf 28 Sekunden und sprengte allein dadurch
+   * das 30-Sekunden-Budget, waehrend dieselbe Pruefung in der CI gruen
+   * blieb. Gemessen wird deshalb, was der Aufbau kostet: Texturen, HUD,
+   * Spielfeld.
+   */
+  private setupDoneAt: number | null = null;
   private runStartedAt: number | null = null;
   private readonly frameDurationsMs: number[] = [];
   private peakDynamicObjects = 0;
@@ -138,11 +161,17 @@ export class PerformanceMonitor {
 
   reset(): void {
     this.createdAt = performance.now();
+    this.setupDoneAt = null;
     this.runStartedAt = null;
     this.frameDurationsMs.length = 0;
     this.peakDynamicObjects = 0;
     this.peakParticleGroups = 0;
     this.report = null;
+  }
+
+  /** Der Aufbau ist fertig; ab hier laeuft nur noch der Countdown. */
+  markSetupDone(): void {
+    this.setupDoneAt = performance.now();
   }
 
   markRunStarted(): void {
@@ -159,7 +188,10 @@ export class PerformanceMonitor {
   finishRun(): PerformanceReport | null {
     if (this.runStartedAt === null) return this.report;
     this.report = evaluatePerformance({
-      startupMs: this.runStartedAt - this.createdAt,
+      // Bis zum Ende des Aufbaus, nicht bis zum Rundenstart. Faellt die
+      // Markierung aus (aelterer Aufrufpfad), bleibt der alte Bezugspunkt -
+      // lieber grosszuegig messen als gar nicht.
+      startupMs: (this.setupDoneAt ?? this.runStartedAt) - this.createdAt,
       frameDurationsMs: this.frameDurationsMs,
       peakDynamicObjects: this.peakDynamicObjects,
       peakParticleGroups: this.peakParticleGroups,

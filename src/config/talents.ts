@@ -23,7 +23,8 @@ export type TalentId =
   | 'insight'
   | 'fortune'
   | 'resonance'
-  | 'shield';
+  | 'shield'
+  | 'luck';
 
 export interface TalentDef {
   readonly id: TalentId;
@@ -105,6 +106,13 @@ export const TALENTS: readonly TalentDef[] = [
     maxRank: BALANCE.talents.maxRanks.shield,
     perRank: '-8% Hinderniswirkung',
   },
+  {
+    id: 'luck',
+    name: 'Glückstreffer',
+    description: 'Manche Fänge bringen plötzlich das Dreifache.',
+    maxRank: BALANCE.talents.maxRanks.luck,
+    perRank: '+2% Chance auf ×3',
+  },
 ];
 
 export type TalentRanks = Partial<Record<TalentId, number>>;
@@ -133,6 +141,8 @@ export interface PlayerStats {
   readonly scoreMultiplier: number;
   readonly seriesMultiplierBonus: number;
   readonly obstacleResistance: number;
+  /** Wahrscheinlichkeit eines Gluecktreffers, 0 bis 1. */
+  readonly critChance: number;
 }
 
 function rank(ranks: TalentRanks, id: TalentId): number {
@@ -172,6 +182,7 @@ export function resolveStats(ranks: TalentRanks): PlayerStats {
     fortune: rank(ranks, 'fortune'),
     resonance: rank(ranks, 'resonance'),
     shield: rank(ranks, 'shield'),
+    luck: rank(ranks, 'luck'),
   };
 
   const reachBonus = talentBonus(
@@ -230,6 +241,11 @@ export function resolveStats(ranks: TalentRanks): PlayerStats {
     BALANCE.talents.maxRanks.shield,
     BALANCE.talents.shieldObstacleResistancePerRank,
   );
+  const luckBonus = talentBonus(
+    talentRanks.luck,
+    BALANCE.talents.maxRanks.luck,
+    BALANCE.talents.luckCritChancePerRank,
+  );
 
   return {
     talentRanks,
@@ -244,5 +260,6 @@ export function resolveStats(ranks: TalentRanks): PlayerStats {
     scoreMultiplier: 1 + fortuneBonus,
     seriesMultiplierBonus: resonanceBonus,
     obstacleResistance: shieldBonus,
+    critChance: luckBonus,
   };
 }

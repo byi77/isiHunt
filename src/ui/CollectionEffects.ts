@@ -10,7 +10,8 @@ import {
   type Point,
 } from './collectionMotion';
 import { Depth } from './depth';
-import { Palette, textStyle } from './theme';
+import { CRIT_MULTIPLIER } from '@/config/balance';
+import { textStyle } from './theme';
 
 /*
  * Die Druckwelle einer gefangenen Punktzahl.
@@ -36,6 +37,9 @@ const LABEL_HIT_MS = 70;
 /** Wie weit sich die Zahl bis zum Verschwinden zusaetzlich ausdehnt. */
 const LABEL_END_SCALE = 1.7;
 
+/** Ein Gluecktreffer reisst weiter auf - er ist der seltenere Moment. */
+const LABEL_END_SCALE_CRIT = 2.4;
+
 /** Wie weit sie dabei nach oben davonzieht. */
 const LABEL_RISE_PX = 46;
 
@@ -45,6 +49,8 @@ interface Capture {
   rank: number;
   age: number;
   reduced: boolean;
+  /** Gluecktreffer - reisst weiter auf als ein normaler Fang. */
+  crit: boolean;
   label: Phaser.GameObjects.Text;
   box: EffectBox | null;
 }
@@ -69,34 +75,48 @@ export class CollectionEffects {
     this.graphics.setMask(this.mask);
   }
 
-  add(
-    origin: Point,
-    rarity: RarityDef,
-    points: number,
-    bonusMultiplier?: number,
-    xp?: number,
-  ): void {
+  add(origin: Point, rarity: RarityDef, points: number, crit = false): void {
     if (this.captures.length >= V.maxActive) this.captures.shift()!.label.destroy();
     const unit = 720 / Math.max(1, this.scene.game.canvas.getBoundingClientRect().width);
     const rank = RARITY_IDS.indexOf(rarity.id);
-    const lines = [
-      `${rarityMarker(rarity.id)} +${points.toLocaleString('de-DE')}${rank >= 4 ? ` · ${rarity.label}` : ''}`,
-    ];
-    if (bonusMultiplier !== undefined)
-      lines.push(
-        `×${bonusMultiplier.toLocaleString('de-DE', { maximumFractionDigits: 2 })} SERIENBONUS`,
-      );
-    if (xp !== undefined) lines.push(`+${xp} XP`);
+    // Im Spielfeld steht nur die Zahl - und zwar in der Farbe der Seltenheit.
+    //
+    // Frueher trug dieses Label drei Zeilen: Seltenheitssymbol und -name,
+    // Serienbonus und XP. Im Moment des Fangs ist davon nur eines
+    // interessant, naemlich wie viel es gab; der Rest zwang zum Lesen,
+    // waehrend das Spiel weiterlief (gemeldet 2026-09-19). Serienbonus und
+    // XP stehen jetzt oben im HUD, wo ohnehin schon SERIE und Multiplikator
+    // liegen - dort kann man sie ansehen, wenn man will, statt sie zu
+    // ueberfliegen zu muessen.
+    //
+    // Die Farbe ersetzt das Seltenheitssymbol als schnellere Auskunft. Fuer
+    // Farbfehlsichtige bleibt das Symbol bei den seltenen Stufen erhalten -
+    // genau dort, wo der Unterschied zaehlt.
+    const zahl = `+${points.toLocaleString('de-DE')}`;
+    // Ein Gluecktreffer traegt seinen Namen: Ohne eigene Auszeichnung waere er
+    // nur eine groessere Zahl, und niemand wuesste, dass gerade etwas
+    // Besonderes passiert ist - derselbe Fehler, den das Spuersinn-Talent
+    // macht, das unbemerkt im Hintergrund wirkt (ADR-0027).
+    const text = crit
+      ? `×${CRIT_MULTIPLIER} ${zahl}`
+      : rank >= 4
+        ? `${rarityMarker(rarity.id)} ${zahl}`
+        : zahl;
     const label = this.scene.add
       .text(
         0,
         0,
-        lines.join('\n'),
-        textStyle(Math.round(12 * unit), Palette.ink, {
-          stroke: '#101820',
-          strokeThickness: 3 * unit,
-          align: 'center',
-        }),
+        text,
+        textStyle(
+          Math.round((crit ? 20 : 15) * unit),
+          crit ? '#ffd84d' : `#${rarity.color.toString(16).padStart(6, '0')}`,
+          {
+            fontStyle: 'bold',
+            stroke: '#101820',
+            strokeThickness: (crit ? 6 : 4) * unit,
+            align: 'center',
+          },
+        ),
       )
       .setDepth(Depth.FloatingScore)
       .setWordWrapWidth(170 * unit)
@@ -111,6 +131,7 @@ export class CollectionEffects {
       rank,
       age: 0,
       reduced: this.reducedMotion(),
+      crit,
       label,
       box: null,
     };
@@ -188,7 +209,8 @@ export class CollectionEffects {
           // Quadratisch abgebremst - schnell da, dann ruhig.
           const anlauf = LABEL_START + (1 - LABEL_START) * (1 - (1 - schlag) * (1 - schlag));
           // Danach dehnt es sich durchgehend weiter aus.
-          const dehnung = 1 + (LABEL_END_SCALE - 1) * t * t;
+          const ziel = capture.crit ? LABEL_END_SCALE_CRIT : LABEL_END_SCALE;
+          const dehnung = 1 + (ziel - 1) * t * t;
           // Aufsteigen mit stark abgebremster Kurve: fast die ganze Strecke
           // liegt im ersten Drittel - das ist der Teil, der als
           // "weggeschleudert" gelesen wird.

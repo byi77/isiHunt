@@ -24,6 +24,7 @@ import {
   SERIES_TRAIL_GLOW_WIDTH_MULTIPLIER,
   SERIES_TRAIL_TIERS,
 } from '@/config/GameConfig';
+import { CRIT_MULTIPLIER } from '@/config/balance';
 import { RARITY_BY_ID } from '@/config/rarities';
 import { resolveStats, talentMaxRank } from '@/config/talents';
 import { WORLDS } from '@/config/worlds';
@@ -477,5 +478,50 @@ describe('agilityForSeries', () => {
     const talentTempo = resolveStats({ swiftness: talentMaxRank('swiftness') }).moveSpeed;
     const serienTempo = PLAYER_BASE_SPEED * agilityForSeries(letzte.minCombo).speedFactor;
     expect(serienTempo).toBeLessThan(talentTempo);
+  });
+});
+
+describe('Gluecktreffer', () => {
+  const RARE = RARITY_BY_ID.rare;
+
+  it('verdreifacht den fertigen Wert, nicht nur den Grundwert', () => {
+    // Der Wuerfel faellt immer guenstig. Wichtig ist, dass der Krit NACH
+    // Serie und Weltbonus greift - sonst waere er in einer hohen Serie
+    // kaum zu bemerken.
+    const system = new ScoreSystem(COMBO_GRACE_MS, 2, 1, 0, 1, () => 0);
+    const outcome = system.registerCollect(RARE!);
+
+    expect(outcome.crit).toBe(true);
+    // Grundwert x Weltbonus(2) x Serie(1) x Krit(3)
+    expect(outcome.awardedPoints).toBe(Math.round(RARE!.points * 2 * CRIT_MULTIPLIER));
+  });
+
+  it('bleibt ohne Talent vollstaendig aus', () => {
+    // Auch bei einem Wuerfel, der immer 0 wirft: Ohne Talent kein Krit.
+    const system = new ScoreSystem(COMBO_GRACE_MS, 1, 1, 0, 0, () => 0);
+    const outcome = system.registerCollect(RARE!);
+
+    expect(outcome.crit).toBe(false);
+    expect(outcome.awardedPoints).toBe(RARE!.points);
+  });
+
+  it('loest nicht aus, wenn der Wurf ueber der Chance liegt', () => {
+    // Die Grenze gehoert geprueft: `<` statt `<=` waere bei Chance 0 schon
+    // falsch, und ein Dreher im Vergleich machte aus 2 Prozent 98.
+    const system = new ScoreSystem(COMBO_GRACE_MS, 1, 1, 0, 0.1, () => 0.5);
+    expect(system.registerCollect(RARE!).crit).toBe(false);
+  });
+
+  it('steigert die Serie nicht und wird von ihr nicht verfaelscht', () => {
+    // Die Serie misst Koennen. Ein Gluecktreffer darf sie nicht bewegen -
+    // sonst verdankte man seine beste Kette dem Wuerfel (ADR-0027).
+    const ohne = new ScoreSystem(COMBO_GRACE_MS, 1, 1, 0, 0, () => 0);
+    const mit = new ScoreSystem(COMBO_GRACE_MS, 1, 1, 0, 1, () => 0);
+    for (let i = 0; i < 5; i += 1) {
+      const a = ohne.registerCollect(RARE!);
+      const b = mit.registerCollect(RARE!);
+      expect(b.combo).toBe(a.combo);
+      expect(b.multiplier).toBe(a.multiplier);
+    }
   });
 });

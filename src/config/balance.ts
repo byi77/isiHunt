@@ -176,6 +176,16 @@ export const LEVELS_PER_TALENT_POINT = Math.max(
 export const COINS_PER_EXTRA_TALENT_POINT = 10;
 export const COMBO_TIERS = BALANCE.score.comboTiers;
 export const COMBO_MULTIPLIER_PER_EXTRA_SERIES = BALANCE.score.comboMultiplierPerExtraSeries;
+
+/**
+ * Was ein Gluecktreffer aus einem Fang macht.
+ *
+ * Wirkt auf den bereits fertigen Wert, also nach Seltenheit, Serie und
+ * Weltbonus. Bei Serie 16 (x6) wird aus einem legendaeren Fang damit das
+ * 18-fache seines Grundwerts - der seltene Ausreisser, den das Talent
+ * verspricht. Deshalb ist die Chance niedrig gehalten (2 % je Rang).
+ */
+export const CRIT_MULTIPLIER = BALANCE.talents.critMultiplier;
 export const SERIES_RAISING_MIN_RARITY_INDEX = BALANCE.score.seriesRaisingMinRarityIndex;
 export const SERIES_AGILITY_TIERS = BALANCE.score.seriesAgilityTiers;
 export const WORLD_REWARDS = BALANCE.worlds;

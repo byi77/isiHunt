@@ -213,6 +213,8 @@ as $$
       "fortuneScorePerRank": 0.05,
       "resonanceSeriesMultiplierPerRank": 0.05,
       "shieldObstacleResistancePerRank": 0.08,
+      "luckCritChancePerRank": 0.02,
+      "critMultiplier": 3,
       "maxRanks": {
         "reach": 5,
         "swiftness": 5,
@@ -223,7 +225,8 @@ as $$
         "insight": 5,
         "fortune": 5,
         "resonance": 3,
-        "shield": 3
+        "shield": 3,
+        "luck": 5
       }
     }
   }

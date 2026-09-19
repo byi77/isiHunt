@@ -93,8 +93,17 @@ describe('Phase-5-Balance', () => {
     expect(BALANCE_SNAPSHOT.runsToMaxLevel).toBeGreaterThan(200);
     expect(BALANCE_SNAPSHOT.runsToMaxLevel).toBeLessThan(600);
     expect(BALANCE_SNAPSHOT.runsToMaxTalents).toBe(0);
-    expect(BALANCE_SNAPSHOT.talentRanks).toBe(41);
+    // 46 seit dem Gluecktreffer-Talent (2026-09-19, ADR-0027): fuenf Raenge
+    // mehr als die vorherigen 41. Der Baum bleibt auf Maximallevel
+    // vollstaendig ausbaubar - der Puffer zwischen Raengen und Punkten ist
+    // damit aber von acht auf drei geschrumpft. Ein weiteres Talent dieser
+    // Groesse braucht deshalb entweder mehr Punkte pro Level oder die
+    // bewusste Entscheidung, dass nicht mehr alles gleichzeitig geht.
+    expect(BALANCE_SNAPSHOT.talentRanks).toBe(46);
     expect(BALANCE_SNAPSHOT.talentPointsAtMaxLevel).toBe(49);
+    expect(BALANCE_SNAPSHOT.talentPointsAtMaxLevel).toBeGreaterThanOrEqual(
+      BALANCE_SNAPSHOT.talentRanks,
+    );
   });
 
   it('verwendet fuer Levelanker dieselbe aktuelle XP-Kurve', () => {

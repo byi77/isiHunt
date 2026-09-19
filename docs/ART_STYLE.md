@@ -1,5 +1,11 @@
 # Art Style Guide — isiHunt
 
+**Fang-Anzeigen, 19.09.2026:** Die Punktzahl steht in der Seltenheitsfarbe;
+ab epischen Relikten bleibt das Seltenheitssymbol sichtbar. Glückstreffer
+zeigen eine grössere goldene Zahl mit x3-Hinweis und stärkerer Ausdehnung.
+Serienbonus bleibt im HUD; mit Einsicht erscheint dort zusätzlich die
+laufende XP-Summe statt einzelner XP-Zeilen am Fang.
+
 Grafik-Update Punkt 7: Der Hangar nutzt eine schräge orthografische Kamera,
 eine dunkle Plattform mit goldener Leuchtkante und einen kleinen Triebwerksschweif.
 Manuelles Drehen ersetzt die automatische Shop-Rotation; nur das Schweben bewegt

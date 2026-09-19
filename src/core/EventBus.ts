@@ -71,6 +71,14 @@ export interface GameEventPayloads {
     multiplier: number;
     sameRarityStreak: number;
     streakBonus: boolean;
+    /**
+     * XP aus diesem Fang, oder `undefined` ohne Einsicht-Talent.
+     *
+     * Das HUD summiert sie fuer die laufende Anzeige. Es rechnet sie
+     * ausdruecklich nicht selbst aus - die Regel, wie viel ein Fang bringt,
+     * gehoert in die Systeme (Regel 3), das HUD stellt nur dar.
+     */
+    xpGained?: number;
     x: number;
     y: number;
   };

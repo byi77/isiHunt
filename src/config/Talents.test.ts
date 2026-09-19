@@ -7,9 +7,9 @@ import { RARITIES } from '@/config/rarities';
 import { createDefaultSave } from '@/systems/SaveSystem';
 
 describe('Talentwirkung', () => {
-  it('enthält genau zehn separat kaufbare Talente', () => {
-    expect(TALENTS).toHaveLength(10);
-    expect(new Set(TALENTS.map((talent) => talent.id)).size).toBe(10);
+  it('enthält genau elf separat kaufbare Talente', () => {
+    expect(TALENTS).toHaveLength(11);
+    expect(new Set(TALENTS.map((talent) => talent.id)).size).toBe(11);
   });
 
   it('macht alle maximalen Ränge nützlich, ohne einzelne Werte zu sprengen', () => {
@@ -83,6 +83,8 @@ describe('Talentwirkung', () => {
           return stats.seriesMultiplierBonus;
         case 'shield':
           return stats.obstacleResistance;
+        case 'luck':
+          return stats.critChance;
       }
     };
 

@@ -1,3 +1,16 @@
+-- Phase 2.51: Glueckstreffer in die serverseitige Talentkonfiguration aufnehmen.
+-- Nur Balance-Daten; bestehende Kaufregeln und Schema-Version bleiben erhalten.
+-- Nicht Phase 2.14 erneut ausfuehren: sie enthaelt ueberholte RPC-Definitionen.
+
+begin;
+
+create or replace function public.balance_config()
+returns jsonb
+language sql
+immutable
+set search_path = public
+as $$
+  select $json$
 {
   "run": {
     "expectedCatches": 183,
@@ -113,3 +126,8 @@
     }
   }
 }
+  $json$::jsonb;
+$$;
+
+commit;
+notify pgrst, 'reload schema';

@@ -325,7 +325,7 @@ Ziel folgt direkt darunter.
 
 ### 7.2 Talente
 
-Dauerhafte Upgrades. Die zehn Talente sind unabhängige, mit Talentpunkten
+Dauerhafte Upgrades. Die elf Talente sind unabhängige, mit Talentpunkten
 gekaufte Ränge ohne Voraussetzungen. Kauf, kostenloser Reset und die
 Darstellung als ehrliche Liste im Profil sind implementiert. Der Start erfolgt
 immer mit Rang 0; ein voller Ausbau soll spürbar helfen, darf aber weder die
@@ -343,6 +343,7 @@ Jagd noch die Score-Jagd ersetzen.
 | Gunst       | 5         | +5 % Punkte           |
 | Resonanz    | 3         | +0,05x Serienbonus    |
 | Schutzfeld  | 3         | -8 % Hinderniswirkung |
+| Glückstreffer | 5       | +2 % Chance auf dreifache Fangpunkte |
 
 **Mathematisches Machtbudget:** Die Reichweite wird ueber die zweidimensionale
 Fangflaeche bewertet. Bei einem gewichteten Reliktradius von 31,49 px steigt
@@ -372,8 +373,12 @@ Zeitverlust eines Zeit-Hindernisses. _Spürsinn_ hebt ein Relikt höchstens um
 eine Seltenheitsstufe an und erzeugt keine direkte Orange-Garantie.
 
 Quelle: `src/config/balance-data.json`, aufgelöst in `src/config/talents.ts`.
-Die zehn Talente umfassen 41 Ränge. Bei einem Talentpunkt alle zwei Level
-werden bis Level 100 insgesamt 49 Punkte verdient; die acht Punkte über dem
+Glückstreffer vervielfacht die Fangpunkte inklusive Serien-, Welt- und
+Punktebonus vor der Rundung, ohne XP oder Serie zu erhöhen. Mit dem Capstone
+beträgt die Chance auf Rang 5 insgesamt 10,5 %.
+
+Die elf Talente umfassen 46 Ränge. Bei einem Talentpunkt alle zwei Level
+werden bis Level 100 insgesamt 49 Punkte verdient; die drei Punkte über dem
 Vollausbau bleiben als kleiner Endgame-Puffer ohne weitere Coin-Kosten.
 
 ### 7.3 Welten
