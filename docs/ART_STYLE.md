@@ -238,6 +238,18 @@ Bewegung ist Sprache — sie sagt dem Spieler, was passiert ist.
 | Serie erreicht 16          | Farbstoss in Weltfarbe ueber das ganze Bild, hoechstens 28 %       | 40 + 260 ms              |
 | Serienfenster laeuft aus   | Serienspalte wird rot, Balken laeuft leer                          | ab 25 % Restfenster      |
 | Ergebnis mit Praemie       | Kopfzahl zaehlt hoch, `Cubic.easeOut`, dann kurzer Pop auf 112 %   | 260 + 1100 + 240 ms      |
+| Update liegt bereit        | Goldener Balken in der Kopfzeile, Glimmen pulsiert 35 % ↔ 100 %    | 900 ms, endlos           |
+
+**Der Update-Hinweis darf aus dem Raster fallen.** Bis v0.1.341 war er ein
+gewoehnlicher Sekundaerknopf in der Kopfzeile - dieselbe graue Flaeche,
+dieselbe Hoehe und dieselbe Form wie die acht Menueknoepfe darunter. Er war
+sichtbar und wurde trotzdem uebersehen, weil nichts ihn von Navigation
+unterschied. Jetzt traegt er die goldene Primaerfarbe, steht hoeher als eine
+Menuezeile und liegt in einem pulsierenden Glimmen. Das ist der einzige
+Dauerpuls im Menue, und er ist es wert: Eine verpasste Aktualisierung macht
+jede Rueckmeldung vom Geraet wertlos (`docs/CODE_STYLE.md` 1.9). Bei
+`prefersReducedMotion` bleibt das Glimmen stehen statt zu pulsieren - die
+Farbe allein traegt den Hinweis dann.
 
 **Die Kopfzahl zaehlt nur hoch, wenn sie etwas zu erzaehlen hat.** Ohne
 Abschlusspraemie faellt die Bewegung ganz aus: Ein Zaehlwerk, das bei seinem

@@ -48,6 +48,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- **Der Update-Hinweis im Hauptmenue faellt jetzt auf.** Bis dahin war er ein
+  gewoehnlicher grauer Knopf in der Kopfzeile - dieselbe Farbe, Form und Hoehe
+  wie die acht Menueknoepfe darunter, und damit uebersehbar, obwohl er da war.
+  Jetzt traegt er die goldene Primaerfarbe, steht hoeher als eine Menuezeile,
+  nennt die neue Versionsnummer in Grossbuchstaben und liegt in einem
+  pulsierenden Glimmen. Bei `prefersReducedMotion` steht das Glimmen still.
 - **Die Kopfzeile ordnet sich nach Wichtigkeit.** Serie und Multiplikator
   stehen in einer Spalte statt in zwei Zeilen - sie sind eine Aussage, nicht
   zwei. Die gewonnene Hoehe traegt den Fensterbalken. Die Punktzahl waechst

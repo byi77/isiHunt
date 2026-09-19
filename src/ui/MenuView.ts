@@ -236,15 +236,7 @@ export class MenuView {
     const { margin, headerHeight, unit, compact } = this.layout;
     // Der Hinweis ersetzt die dekorative Kopfzeile statt zusätzliche Höhe zu verlangen.
     if (this.updateVersion !== null) {
-      this.button(
-        GAME_WIDTH / 2,
-        headerHeight / 2,
-        this.layout.innerWidth,
-        44 * unit,
-        `Update ${this.updateVersion} laden`,
-        () => this.callbacks.onAction('update'),
-        14,
-      );
+      this.updateBanner();
       return;
     }
     const logoHeight = headerHeight - 4 * unit;
@@ -276,6 +268,75 @@ export class MenuView {
         Palette.inkDim,
         true,
       );
+  }
+
+  /**
+   * Der Update-Hinweis als eigener Balken statt als grauer Knopf.
+   *
+   * Vorher war es ein gewoehnlicher Sekundaerknopf in der Kopfzeile: gleiche
+   * Farbe, gleiche Form und gleiche Groesse wie die acht Menueknoepfe
+   * darunter. Wer nicht gezielt hinsah, hielt ihn fuer Teil des Menues - der
+   * Hinweis war zwar da, wurde aber uebersehen.
+   *
+   * Deshalb bricht er jetzt bewusst aus dem Raster aus: goldene Flaeche in der
+   * Warnfarbe, hoeher als eine Menuezeile, ein Glimmen darunter und ein
+   * langsamer Puls. Ein Update zu verpassen kostet mehr als ein auffaelliger
+   * Balken - genau daran sind vier Runden Fehlersuche gescheitert
+   * (docs/CODE_STYLE.md 1.9).
+   */
+  private updateBanner(): void {
+    const { headerHeight, innerWidth, unit } = this.layout;
+    // Das Glimmen liegt aussen um den Balken herum. Es muss in die Kopfzeile
+    // passen, sonst ragt es oben aus dem Canvas und unten in die Profilkarte -
+    // zwischen beiden liegen nur 6 Pixel (`menuLayout.profileTop`).
+    const saum = 5 * unit;
+    const height = Math.min(headerHeight - 2 * saum, 58 * unit);
+    const y = headerHeight / 2;
+
+    // Liegt unter dem Knopf und traegt keine Trefferflaeche: reines Leuchten,
+    // das den Balken aus der dunklen Kopfzeile heraushebt.
+    const glow = this.scene.add.graphics();
+    glow.fillStyle(Palette.goldHex, 0.22);
+    glow.fillRoundedRect(
+      GAME_WIDTH / 2 - innerWidth / 2 - saum,
+      y - height / 2 - saum,
+      innerWidth + 2 * saum,
+      height + 2 * saum,
+      Math.min(height / 3, 26 * unit),
+    );
+    this.root.add(glow);
+
+    this.button(
+      GAME_WIDTH / 2,
+      y,
+      innerWidth,
+      height,
+      // Kurz halten: `createButton` verkleinert die Schrift, sobald der Text
+      // breiter wird als der Knopf - ein langer Hinweis endet also kleiner
+      // gesetzt als der alte, den niemand gesehen hat.
+      `UPDATE ${this.updateVersion} LADEN`,
+      () => this.callbacks.onAction('update'),
+      19,
+      true,
+    );
+
+    if (prefersReducedMotion()) {
+      // Ohne Puls traegt allein die Farbe den Hinweis - dann aber mit dem
+      // vollen Glimmen, nicht mit dem Startwert des Dauerlaufs.
+      glow.setAlpha(1);
+      return;
+    }
+    const puls = this.scene.tweens.add({
+      targets: glow,
+      alpha: { from: 0.35, to: 1 },
+      duration: 900,
+      yoyo: true,
+      repeat: -1,
+      ease: 'Sine.InOut',
+    });
+    // `build()` zerstoert die Root bei jedem Resize und bei jedem Neuaufbau.
+    // Ohne diese Kopplung schriebe der Dauerlauf danach in ein totes Objekt.
+    glow.once(Phaser.GameObjects.Events.DESTROY, () => puls.remove());
   }
 
   private profile(): void {
