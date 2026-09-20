@@ -28,6 +28,7 @@ export type TalentId =
 
 export interface TalentDef {
   readonly id: TalentId;
+  readonly group: 'BEWEGUNG' | 'SAMMELN' | 'ERTRAG';
   readonly name: string;
   readonly description: string;
   readonly maxRank: number;
@@ -38,6 +39,7 @@ export interface TalentDef {
 export const TALENTS: readonly TalentDef[] = [
   {
     id: 'reach',
+    group: 'SAMMELN',
     name: 'Reichweite',
     description: 'Vergrößert den Radius, in dem du Relikte einsammelst.',
     maxRank: BALANCE.talents.maxRanks.reach,
@@ -45,6 +47,7 @@ export const TALENTS: readonly TalentDef[] = [
   },
   {
     id: 'swiftness',
+    group: 'BEWEGUNG',
     name: 'Flinkheit',
     description: 'Deine Figur bewegt sich schneller.',
     maxRank: BALANCE.talents.maxRanks.swiftness,
@@ -52,6 +55,7 @@ export const TALENTS: readonly TalentDef[] = [
   },
   {
     id: 'magnetism',
+    group: 'SAMMELN',
     name: 'Magnetismus',
     description: 'Relikte in der Nähe werden zu dir gezogen.',
     maxRank: BALANCE.talents.maxRanks.magnetism,
@@ -59,6 +63,7 @@ export const TALENTS: readonly TalentDef[] = [
   },
   {
     id: 'endurance',
+    group: 'BEWEGUNG',
     name: 'Ausdauer',
     description: 'Verlängert die Dauer eines Runs.',
     maxRank: BALANCE.talents.maxRanks.endurance,
@@ -66,6 +71,7 @@ export const TALENTS: readonly TalentDef[] = [
   },
   {
     id: 'focus',
+    group: 'BEWEGUNG',
     name: 'Fokus',
     description: 'Deine Combo hält länger, bevor sie zerfällt.',
     maxRank: BALANCE.talents.maxRanks.focus,
@@ -73,6 +79,7 @@ export const TALENTS: readonly TalentDef[] = [
   },
   {
     id: 'prospector',
+    group: 'ERTRAG',
     name: 'Spürsinn',
     description: 'Erhöht leicht die Chance, dass ein Relikt seltener wird.',
     maxRank: BALANCE.talents.maxRanks.prospector,
@@ -80,6 +87,7 @@ export const TALENTS: readonly TalentDef[] = [
   },
   {
     id: 'insight',
+    group: 'ERTRAG',
     name: 'Erkenntnis',
     description: 'Du erhältst mehr Erfahrung pro Relikt.',
     maxRank: BALANCE.talents.maxRanks.insight,
@@ -87,6 +95,7 @@ export const TALENTS: readonly TalentDef[] = [
   },
   {
     id: 'fortune',
+    group: 'ERTRAG',
     name: 'Gunst',
     description: 'Du erhältst mehr Punkte pro Relikt.',
     maxRank: BALANCE.talents.maxRanks.fortune,
@@ -94,6 +103,7 @@ export const TALENTS: readonly TalentDef[] = [
   },
   {
     id: 'resonance',
+    group: 'ERTRAG',
     name: 'Resonanz',
     description: 'Verstärkt deinen Serienbonus, sobald die Serie aktiv ist.',
     maxRank: BALANCE.talents.maxRanks.resonance,
@@ -101,6 +111,7 @@ export const TALENTS: readonly TalentDef[] = [
   },
   {
     id: 'shield',
+    group: 'BEWEGUNG',
     name: 'Schutzfeld',
     description: 'Schwächt die Wirkung von Hindernissen ab.',
     maxRank: BALANCE.talents.maxRanks.shield,
@@ -108,6 +119,7 @@ export const TALENTS: readonly TalentDef[] = [
   },
   {
     id: 'luck',
+    group: 'ERTRAG',
     name: 'Glückstreffer',
     description: 'Lässt deutlich häufiger einen Fang das Dreifache bringen.',
     maxRank: BALANCE.talents.maxRanks.luck,

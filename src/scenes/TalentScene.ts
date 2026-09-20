@@ -185,9 +185,14 @@ export class TalentScene extends Phaser.Scene {
     );
     content.add(
       this.add
+        .text(66, y - 49, talent.group, textStyle(11, Palette.inkDim, { fontStyle: 'bold' }))
+        .setOrigin(0, 0.5),
+    );
+    content.add(
+      this.add
         .text(
           66,
-          y - 42,
+          y - 25,
           talent.name,
           textStyle(FontSize.body, toCss(accent), { fontStyle: 'bold' }),
         )
@@ -195,7 +200,7 @@ export class TalentScene extends Phaser.Scene {
     );
     content.add(
       this.add
-        .text(66, y - 12, talent.description, textStyle(FontSize.tiny, Palette.inkDim))
+        .text(66, y + 2, talent.description, textStyle(FontSize.tiny, Palette.inkDim))
         .setOrigin(0, 0)
         .setWordWrapWidth(230),
     );
@@ -203,7 +208,7 @@ export class TalentScene extends Phaser.Scene {
       this.add
         .text(
           405,
-          y - 38,
+          y - 32,
           'RANG ' + rank + '/' + talent.maxRank,
           textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }),
         )
@@ -211,7 +216,12 @@ export class TalentScene extends Phaser.Scene {
     );
     content.add(
       this.add
-        .text(405, y - 10, talent.perRank, textStyle(FontSize.tiny, Palette.gold))
+        .text(
+          405,
+          y - 4,
+          `AKTUELL RANG ${rank} · NÄCHSTER ${talent.perRank}`,
+          textStyle(FontSize.tiny, Palette.gold),
+        )
         .setWordWrapWidth(180)
         .setAlign('center')
         .setOrigin(0.5, 0),

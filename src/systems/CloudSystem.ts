@@ -36,6 +36,12 @@ import { sanitizePlayerName } from '@/config/playerName';
 import * as DebugSystem from '@/systems/DebugSystem';
 import * as AuthSystem from '@/systems/AuthSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
+import {
+  validateRewardRedemptionRequest,
+  type RewardRedemptionReceipt,
+  type RewardRedemptionRequest,
+} from '@/systems/RewardRedemptionContract';
+import { validateRewardPackage } from '@/systems/RewardPackageSystem';
 import type { ProgressEvent, SaveData } from '@/types';
 import type { TalentId, TalentRanks } from '@/config/talents';
 
@@ -304,6 +310,10 @@ export interface DailyLoginClaim {
   profile: RemoteProfileProgress | null;
 }
 
+export interface RewardRedemptionResult extends RewardRedemptionReceipt {
+  profileRevision: string;
+}
+
 /** Eine Zeile der ausschließlich serverseitig autorisierten Wartungsansicht. */
 export interface AdminUserStats {
   playerName: string;
@@ -383,6 +393,33 @@ export function normalizeProfileProgress(raw: unknown): RemoteProfileProgress | 
     data: data as unknown as SaveData,
     totalXp: finiteNonNegative(value.total_xp),
     updatedAt: typeof value.updated_at === 'string' ? value.updated_at : '',
+  };
+}
+
+/** Validiert den Edge-Handler-Beleg, bevor die UI ihn anzeigt. */
+export function normalizeRewardRedemption(raw: unknown): RewardRedemptionResult | null {
+  const value = recordFrom(raw);
+  if (
+    !value ||
+    typeof value.redemptionId !== 'string' ||
+    typeof value.requestId !== 'string' ||
+    typeof value.packageVersion !== 'number' ||
+    !Number.isInteger(value.packageVersion) ||
+    typeof value.profileRevision !== 'string'
+  ) {
+    return null;
+  }
+  const packageResult = validateRewardPackage({
+    version: value.packageVersion,
+    grants: value.grants,
+  });
+  if (!packageResult.ok) return null;
+  return {
+    redemptionId: value.redemptionId,
+    requestId: value.requestId,
+    packageVersion: value.packageVersion,
+    grants: packageResult.value.grants,
+    profileRevision: value.profileRevision,
   };
 }
 
@@ -1258,6 +1295,42 @@ export async function fetchProfileProgress(): Promise<CloudResult<RemoteProfileP
   if (result.value.error) return { ok: false, error: result.value.error.message };
 
   return { ok: true, value: normalizeProfileProgress(result.value.data) };
+}
+
+/**
+ * Loest einen Belohnungscode ueber den authentifizierten Edge-Handler ein.
+ * Die Request-ID kommt vom Aufrufer und bleibt bei einem Retry unveraendert.
+ */
+export async function redeemRewardCode(
+  request: RewardRedemptionRequest,
+): Promise<CloudResult<RewardRedemptionResult>> {
+  const validated = validateRewardRedemptionRequest(request);
+  if (!validated.ok) return { ok: false, error: 'Ungueltiger Belohnungscode' };
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const result = await withTimeout(
+    authenticated.value.functions.invoke('redeem-reward-code', {
+      body: { code: validated.value.code, requestId: validated.value.requestId },
+    }),
+    'Belohnungscode einloesen',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) {
+    const body = recordFrom(result.value.data);
+    const code = typeof body?.code === 'string' ? body.code : '';
+    if (code === 'rate_limited')
+      return { ok: false, error: 'Zu viele Versuche. Bitte kurz warten.' };
+    if (code === 'already_redeemed')
+      return { ok: false, error: 'Diesen Code hast du bereits erhalten.' };
+    if (code === 'unavailable')
+      return { ok: false, error: 'Dieser Code ist derzeit nicht verfuegbar.' };
+    return { ok: false, error: 'Belohnungscode konnte nicht eingelöst werden.' };
+  }
+  const receipt = normalizeRewardRedemption(result.value.data);
+  return receipt
+    ? { ok: true, value: receipt }
+    : { ok: false, error: 'Ungueltige Belohnungsantwort' };
 }
 
 /** Erstellt den gemeinsamen Stand, falls das Profil noch keinen besitzt. */

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 360" role="img" aria-labelledby="title desc">
+  <title id="title">isiHunt — Weltraumexpedition</title>
+  <desc id="desc">Kompakte Wortmarke mit Schiffs- und Orbitmarke</desc>
+  <defs>
+    <linearGradient id="ink" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4f1e8"/>
+      <stop offset="1" stop-color="#b8c0d9"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fff7cf"/>
+      <stop offset="1" stop-color="#ffd479"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(84 56)">
+    <ellipse cx="124" cy="124" rx="112" ry="42" fill="none" stroke="#ffd479" stroke-width="7" transform="rotate(-18 124 124)"/>
+    <path d="M124 40 L180 151 L124 132 L68 151 Z" fill="url(#gold)" stroke="#f4f1e8" stroke-width="5" stroke-linejoin="round"/>
+    <path d="M124 132v42M93 141l-26 29M155 141l26 29" stroke="#7dd3fc" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="124" cy="111" r="14" fill="#0b1020" stroke="#bfe8ff" stroke-width="6"/>
+  </g>
+  <text x="310" y="197" fill="url(#ink)" font-family="Trebuchet MS, Segoe UI, sans-serif" font-size="150" font-weight="700" letter-spacing="-6">isiHunt</text>
+  <rect x="316" y="235" width="610" height="4" rx="2" fill="#344753"/>
+  <text x="320" y="286" fill="#ffd479" font-family="Trebuchet MS, Segoe UI, sans-serif" font-size="28" letter-spacing="7">WELTRAUMEXPEDITION</text>
+</svg>

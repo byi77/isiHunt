@@ -7,6 +7,8 @@ import type { SaveData } from '@/types';
 export type AchievementCategory =
   'combo' | 'collection' | 'score' | 'worlds' | 'playtime' | 'talents' | 'daily' | 'special';
 
+export type AchievementFilter = 'all' | 'near' | 'unlocked' | AchievementCategory;
+
 export interface AchievementProgress {
   readonly category: AchievementCategory;
   readonly current: number;
@@ -82,6 +84,37 @@ export function achievementCategory(achievement: AchievementDef): AchievementCat
 
 export function achievementCategoryLabel(category: AchievementCategory): string {
   return CATEGORY_LABELS[category];
+}
+
+export function achievementCategoryIcon(category: AchievementCategory): string {
+  return {
+    combo: '✦',
+    collection: '◆',
+    score: '★',
+    worlds: '◉',
+    playtime: '◷',
+    talents: '⬡',
+    daily: '☀',
+    special: '✧',
+  }[category];
+}
+
+/** Filtert nur die Anzeige; IDs und gespeicherte Freischaltungen bleiben gleich. */
+export function filterAchievements(
+  achievements: readonly AchievementDef[],
+  save: SaveData,
+  filter: AchievementFilter,
+): readonly AchievementDef[] {
+  return achievements.filter((achievement) => {
+    const unlocked = save.unlockedAchievements.includes(achievement.id);
+    if (filter === 'all') return true;
+    if (filter === 'unlocked') return unlocked;
+    const progress = getAchievementProgress(achievement, save);
+    if (filter === 'near') {
+      return !unlocked && progress.trackable && progress.current / progress.target >= 0.75;
+    }
+    return progress.category === filter;
+  });
 }
 
 /** Liefert das noch gesperrte Ziel mit dem kleinsten verbleibenden Anteil. */

@@ -1,14 +1,14 @@
 -- Read-only Nachweis fuer den produktiven Migrationsstand.
--- Erwartet genau eine Zeile mit schema_version = 57.
+-- Erwartet genau eine Zeile mit schema_version = 60.
 
 do $$
 begin
   if not exists (
     select 1
     from public.isihunt_schema_state
-    where singleton = true and schema_version = 57
+    where singleton = true and schema_version = 60
   ) then
-    raise exception 'Erwartet schema_version = 57';
+    raise exception 'Erwartet schema_version = 60';
   end if;
 end;
 $$;
@@ -29,6 +29,9 @@ where n.nspname = 'public'
     'request_duel_rematch', 'create_duel_invitation', 'list_duel_invitations',
     'accept_duel_invitation', 'decline_duel_invitation', 'cancel_duel_invitation',
     'duel_participant_slot', 'duel_result_slot', 'start_duel_talent_draft', 'set_duel_start_time', 'get_duel_room',
-    'leave_duel_room', 'record_duel_leaderboard_match', 'get_duel_leaderboard'
+    'leave_duel_room', 'record_duel_leaderboard_match', 'get_duel_leaderboard',
+    'redeem_reward_code_internal', 'admin_create_reward_campaign_internal',
+    'admin_set_reward_campaign_status_internal', 'admin_create_reward_codes_internal',
+    'start_boosted_run_internal', 'abandon_boosted_run_internal', 'finish_boosted_run_internal'
   )
 order by routine_name, arguments;

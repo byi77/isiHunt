@@ -28,6 +28,7 @@ import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SyncStatusSystem from '@/systems/SyncStatusSystem';
+import { clearPendingRewardRedemption, prepareRewardRedemption } from '@/systems/RewardCodeSystem';
 import { shipTint } from '@/config/shop';
 import { formatPlayTime } from '@/ui/format';
 import { playerTextureForShape, TextureKey } from '@/ui/textures';
@@ -85,6 +86,7 @@ export class ProfileScene extends Phaser.Scene {
     const profileY = sections.next(620);
     const statisticsY = statsVisible ? sections.next(220) : 0;
     const accountY = !firstStart ? sections.next(300) : 0;
+    const rewardCodeY = !firstStart && AuthSystem.isSignedIn() ? sections.next(310) : 0;
 
     addContent(
       createPanel(this, GAME_WIDTH / 2, profileY, GAME_WIDTH - 120, 620, world.accent, {
@@ -411,8 +413,10 @@ export class ProfileScene extends Phaser.Scene {
     }
 
     if (!firstStart) this.buildAccountSection(world.accent, accountY, addContent);
+    if (rewardCodeY > 0) this.buildRewardCodeSection(world.accent, rewardCodeY, addContent);
 
-    const contentBottom = (!firstStart ? accountY + 150 : profileY + 310) + 40;
+    const contentBottom =
+      (rewardCodeY > 0 ? rewardCodeY + 155 : !firstStart ? accountY + 150 : profileY + 310) + 40;
     const maxScroll = Math.max(0, contentBottom - layout.contentBottom);
     attachVerticalScroll(this, {
       maxScroll,
@@ -517,6 +521,108 @@ export class ProfileScene extends Phaser.Scene {
         this.accountStatus.setText('Das Online-Profil ist gerade nicht verfügbar.');
       }
     }
+  }
+
+  /** Spieleroberflaeche fuer den ausschliesslich serverseitig eingeloesten Code. */
+  private buildRewardCodeSection(
+    accent: number,
+    y: number,
+    addContent: (object: Phaser.GameObjects.GameObject) => void,
+  ): void {
+    addContent(
+      createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 120, 310, accent, {
+        alpha: 0.58,
+        radius: 20,
+      }),
+    );
+    addContent(
+      this.add
+        .text(GAME_WIDTH / 2, y - 125, 'BELOHNUNGSCODE', textStyle(FontSize.body, Palette.gold))
+        .setOrigin(0.5)
+        .setLetterSpacing(2),
+    );
+    const status = this.add
+      .text(GAME_WIDTH / 2, y + 125, '', textStyle(FontSize.tiny, Palette.inkDim))
+      .setOrigin(0.5)
+      .setWordWrapWidth(GAME_WIDTH - 160)
+      .setAlign('center');
+    addContent(status);
+
+    const input = createTextInput(this, GAME_WIDTH / 2, y - 55, {
+      placeholder: '1234-5678-9012',
+      maxLength: 14,
+      width: 420,
+      accent,
+      numericKeyboard: true,
+    });
+    addContent(input.element);
+    input.element.node.addEventListener('input', () => {
+      const element = input.element.node as HTMLInputElement;
+      const cursor = element.selectionStart ?? element.value.length;
+      const digitsBeforeCursor = element.value.slice(0, cursor).replace(/\D/g, '').length;
+      const digits = element.value.replace(/\D/g, '').slice(0, 12);
+      const display = digits.replace(/(\d{4})(?=\d)/g, '$1-');
+      if (element.value !== display) {
+        element.value = display;
+        const nextCursor = digitsBeforeCursor + Math.floor(Math.max(0, digitsBeforeCursor - 1) / 4);
+        element.setSelectionRange(nextCursor, nextCursor);
+      }
+    });
+
+    const controls: { redeemButton: ButtonHandle | null } = { redeemButton: null };
+    const redeem = async (): Promise<void> => {
+      if (this.busy) return;
+      const profileId = AuthSystem.currentUserId();
+      const pending = profileId ? prepareRewardRedemption(profileId, input.getValue()) : null;
+      if (!pending) {
+        status.setText('Bitte gib einen zwölfstelligen Code ein.').setColor(Palette.gold);
+        return;
+      }
+      this.busy = true;
+      controls.redeemButton?.setEnabled(false);
+      status.setText('Profilstand wird geprüft …').setColor(Palette.inkDim);
+      await ProgressSyncSystem.flush();
+      if (!this.scene.isActive()) return;
+      if (ProgressSyncSystem.hasPendingData()) {
+        this.busy = false;
+        controls.redeemButton?.setEnabled(true);
+        status
+          .setText('Bitte warte, bis ausstehende Runs synchronisiert sind.')
+          .setColor(Palette.gold);
+        return;
+      }
+      const result = await CloudSystem.redeemRewardCode(pending);
+      if (!this.scene.isActive()) return;
+      this.busy = false;
+      controls.redeemButton?.setEnabled(true);
+      if (!result.ok) {
+        status.setText(result.error).setColor(Palette.gold);
+        return;
+      }
+      clearPendingRewardRedemption(profileId!, pending.requestId);
+      const profile = await CloudSystem.fetchProfileProgress();
+      if (!this.scene.isActive()) return;
+      if (profile.ok && profile.value) SaveSystem.adoptProfileProgress(profile.value.data);
+      input.setValue('');
+      status
+        .setText(`Erhalten: ${result.value.grants.map((grant) => grant.type).join(', ')}.`)
+        .setColor(toCss(accent));
+    };
+    const redeemButton: ButtonHandle = createButton(
+      this,
+      GAME_WIDTH / 2,
+      y + 35,
+      'CODE EINLÖSEN',
+      () => void redeem(),
+      {
+        width: 420,
+        height: 58,
+        accent,
+        fontSize: FontSize.small,
+      },
+    );
+    controls.redeemButton = redeemButton;
+    addContent(redeemButton.container);
   }
 
   private async syncAccount(): Promise<void> {

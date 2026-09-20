@@ -76,6 +76,15 @@ const botMatchRetentionMigration = readFileSync(
 );
 const verification = readFileSync(resolve(sqlDir, 'verify_security_hardening.sql'), 'utf8');
 const migrationVerification = readFileSync(resolve(sqlDir, 'verify_migration_state.sql'), 'utf8');
+const rewardCodeCoreMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_58_reward_code_core.sql'),
+  'utf8',
+);
+const rewardCodeAdminMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_59_reward_code_admin.sql'),
+  'utf8',
+);
+const boostedRunsMigration = readFileSync(resolve(sqlDir, 'phase_2_60_boosted_runs.sql'), 'utf8');
 
 const failures = [];
 function requireText(text, fragment, label) {
@@ -389,7 +398,29 @@ requireText(verification, 'daily_key', 'Live-Verifikation Tagesbonus');
 requireText(verification, 'upsert_save', 'Live-Verifikation Save-CAS');
 requireText(verification, 'duel_rooms', 'Live-Verifikation Duell');
 requireText(migrationVerification, 'schema_version', 'Live-Verifikation Migrationsmarker');
-requireText(migrationVerification, 'schema_version = 57', 'Live-Verifikation Phase 2.57');
+requireText(migrationVerification, 'schema_version = 60', 'Live-Verifikation Phase 2.60');
+requireText(rewardCodeCoreMigration, 'reward_codes', 'Reward-Code-Katalog');
+requireText(rewardCodeCoreMigration, 'reward_redemptions', 'Reward-Einloesbelege');
+requireText(rewardCodeCoreMigration, 'reward_code_attempts', 'Reward-Rate-Limits');
+requireText(rewardCodeCoreMigration, 'redeem_reward_code_internal', 'Interne Reward-Einloesung');
+requireText(
+  rewardCodeCoreMigration,
+  "auth.role() is distinct from 'service_role'",
+  'Reward-Service-Role-Gate',
+);
+requireText(rewardCodeCoreMigration, 'schema_version = 58', 'Migrationsmarker Phase 2.58');
+requireText(
+  rewardCodeAdminMigration,
+  'admin_create_reward_campaign_internal',
+  'Admin-Kampagnenerzeugung',
+);
+requireText(rewardCodeAdminMigration, 'admin_create_reward_codes_internal', 'Admin-Codepruefwerte');
+requireText(rewardCodeAdminMigration, 'schema_version = 59', 'Migrationsmarker Phase 2.59');
+requireText(boostedRunsMigration, 'boost_run_attempts', 'Bonuslaufversuche');
+requireText(boostedRunsMigration, 'start_boosted_run_internal', 'Bonuslaufstart');
+requireText(boostedRunsMigration, 'finish_boosted_run_internal', 'Bonuslauffinish');
+requireText(boostedRunsMigration, 'finish_fingerprint', 'Bonuslauf-Replay-Schutz');
+requireText(boostedRunsMigration, 'schema_version = 60', 'Migrationsmarker Phase 2.60');
 const progressEventJsonbMigration = readFileSync(
   resolve(sqlDir, 'phase_2_54_progress_event_jsonb.sql'),
   'utf8',

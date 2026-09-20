@@ -8,6 +8,20 @@ und die RPC-Funktionen, über die das Spiel mit der Datenbank spricht.
 aufeinander aufbauen. Wer die Datenbank neu aufsetzen muss, findet hier die
 verbindliche Reihenfolge und den aktuellen Verifikationsnachweis.
 
+## Aktuelle Reward-Code-Phasen
+
+`phase_2_58_reward_code_core.sql` installiert den geschuetzten Katalog,
+Einloesbelege, Limits, Reward-Adapter und Bonusrechte. Klartextcodes bleiben
+aus der Datenbank heraus. `phase_2_59_reward_code_admin.sql` ergänzt interne
+Adminfunktionen; die Edge-Funktionen `redeem-reward-code` und
+`admin-reward-campaign` berechnen die HMAC-Pruefwerte mit dem Supabase Secret
+`REWARD_CODE_HMAC_SECRET`.
+
+`phase_2_60_boosted_runs.sql` bindet XP-Bonusrunden an eine serverseitig
+erzeugte Lauf- und Ereignis-ID. Starts verbrauchen eine Anwendung; Finish und
+Abbruch haben genau einen Endzustand. Nach Phase 2.60 erwartet
+`verify_migration_state.sql` Schema **60**.
+
 ## Reihenfolge
 
 **Der Zahlenteil im Dateinamen ist die Reihenfolge, nicht die

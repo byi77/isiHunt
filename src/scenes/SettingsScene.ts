@@ -8,7 +8,7 @@
 
 import Phaser from 'phaser';
 
-import { GAME_WIDTH } from '@/config/GameConfig';
+import { APP_VERSION, GAME_WIDTH } from '@/config/GameConfig';
 import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as SaveSystem from '@/systems/SaveSystem';
@@ -132,7 +132,9 @@ export class SettingsScene extends Phaser.Scene {
         .text(
           GAME_WIDTH / 2,
           soundY + 5,
-          'LAUTSTÄRKE: IPHONE-TASTEN',
+          typeof window !== 'undefined' && 'AudioContext' in window
+            ? 'AUDIO: BROWSER-AUDIO VERFÜGBAR'
+            : 'AUDIO: BROWSER-AUDIO NICHT VERFÜGBAR',
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0.5)
@@ -157,7 +159,9 @@ export class SettingsScene extends Phaser.Scene {
         .text(
           GAME_WIDTH / 2,
           soundY + 105,
-          'VIBRATION: GERAETEHAPTIK',
+          typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'
+            ? 'VIBRATION: GERÄTEHAPTIK VERFÜGBAR'
+            : 'VIBRATION: NICHT VOM GERÄT UNTERSTÜTZT',
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0.5)
@@ -225,6 +229,16 @@ export class SettingsScene extends Phaser.Scene {
           GAME_WIDTH / 2,
           legalY + 145,
           'Dein Spielstand wird automatisch lokal gespeichert.',
+          textStyle(FontSize.tiny, Palette.inkDim),
+        )
+        .setOrigin(0.5),
+    );
+    addContent(
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          legalY + 178,
+          `Version v${APP_VERSION} · Hilfe & Diagnose über das Debug-Logo-Menü`,
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0.5),

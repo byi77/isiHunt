@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { ACHIEVEMENTS } from '@/config/achievements';
 import {
   achievementCategory,
+  filterAchievements,
   getAchievementProgress,
   getNextAchievement,
 } from '@/systems/AchievementProgressSystem';
@@ -49,5 +50,15 @@ describe('AchievementProgressSystem', () => {
     save.unlockedAchievements = ['first_hunt'];
 
     expect(getNextAchievement(ACHIEVEMENTS, save)?.id).toBe('combo_10');
+  });
+
+  it('filtert fast erreichte Ziele ohne freigeschaltete Erfolge einzumischen', () => {
+    const save = createDefaultSave();
+    save.bestCombo = 9;
+    save.unlockedAchievements = ['first_hunt'];
+
+    const ids = filterAchievements(ACHIEVEMENTS, save, 'near').map((item) => item.id);
+    expect(ids).toContain('combo_10');
+    expect(ids).not.toContain('first_hunt');
   });
 });
