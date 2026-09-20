@@ -4,6 +4,8 @@ export const SceneKey = {
   Menu: 'Menu',
   /** Profil: Name und Spielericon; beim ersten Start verpflichtend. */
   Profile: 'Profile',
+  /** Eigene Oberfläche für die serverseitige Einlösung von Belohnungscodes. */
+  RewardCode: 'RewardCode',
   /** Übersicht der im Spiel freigeschalteten Erfolge. */
   Achievements: 'Achievements',
   /** Detailansicht einer Welt: Besonderheit, Hindernisse, Belohnung. */

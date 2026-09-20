@@ -38,6 +38,7 @@ import { LeaderboardScene } from '@/scenes/LeaderboardScene';
 import { MenuScene } from '@/scenes/MenuScene';
 import { OnlineDuelScene } from '@/scenes/OnlineDuelScene';
 import { ProfileScene } from '@/scenes/ProfileScene';
+import { RewardCodeScene } from '@/scenes/RewardCodeScene';
 import { ResultScene } from '@/scenes/ResultScene';
 import { RulerScene } from '@/scenes/RulerScene';
 import { SettingsScene } from '@/scenes/SettingsScene';
@@ -122,6 +123,7 @@ function createGameConfig(): Phaser.Types.Core.GameConfig {
       BootScene,
       MenuScene,
       ProfileScene,
+      RewardCodeScene,
       AchievementsScene,
       WorldInfoScene,
       GameScene,

@@ -86,7 +86,6 @@ export class ProfileScene extends Phaser.Scene {
     const profileY = sections.next(620);
     const statisticsY = statsVisible ? sections.next(220) : 0;
     const accountY = !firstStart ? sections.next(300) : 0;
-    const rewardCodeY = !firstStart && AuthSystem.isSignedIn() ? sections.next(310) : 0;
 
     addContent(
       createPanel(this, GAME_WIDTH / 2, profileY, GAME_WIDTH - 120, 620, world.accent, {
@@ -413,10 +412,7 @@ export class ProfileScene extends Phaser.Scene {
     }
 
     if (!firstStart) this.buildAccountSection(world.accent, accountY, addContent);
-    if (rewardCodeY > 0) this.buildRewardCodeSection(world.accent, rewardCodeY, addContent);
-
-    const contentBottom =
-      (rewardCodeY > 0 ? rewardCodeY + 155 : !firstStart ? accountY + 150 : profileY + 310) + 40;
+    const contentBottom = (!firstStart ? accountY + 150 : profileY + 310) + 40;
     const maxScroll = Math.max(0, contentBottom - layout.contentBottom);
     attachVerticalScroll(this, {
       maxScroll,
@@ -524,7 +520,7 @@ export class ProfileScene extends Phaser.Scene {
   }
 
   /** Spieleroberflaeche fuer den ausschliesslich serverseitig eingeloesten Code. */
-  private buildRewardCodeSection(
+  buildRewardCodeSection(
     accent: number,
     y: number,
     addContent: (object: Phaser.GameObjects.GameObject) => void,

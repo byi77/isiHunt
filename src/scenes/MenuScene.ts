@@ -757,6 +757,9 @@ export class MenuScene extends Phaser.Scene {
       case 'profile':
         this.scene.start(SceneKey.Profile);
         break;
+      case 'rewardCode':
+        this.scene.start(SceneKey.RewardCode);
+        break;
       case 'duel':
         this.scene.start(SceneKey.OnlineDuel, { worldId: this.selectedWorld.id });
         break;

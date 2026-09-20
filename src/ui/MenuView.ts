@@ -36,6 +36,7 @@ export type MenuAction =
   | 'shop'
   | 'info'
   | 'fullscreen'
+  | 'rewardCode'
   | 'logo'
   | 'update';
 
@@ -242,16 +243,23 @@ export class MenuView {
       return;
     }
     const logoHeight = headerHeight - 4 * unit;
-    const logoWidth = (logoHeight * 400) / 225;
+    // Die Wortmarke bleibt immer auf der echten Bildschirmmitte. Seitliche
+    // Aktionen duerfen ihre optische Mitte nicht mehr verschieben.
+    const logoWidth = Math.min((logoHeight * 400) / 225, (compact ? 120 : 150) * unit);
     const logo = this.scene.add
-      .image(margin + logoWidth / 2, headerHeight / 2, TextureKey.Logo)
+      .image(GAME_WIDTH / 2, headerHeight / 2, TextureKey.Logo)
       .setDisplaySize(logoWidth, logoHeight)
       .setInteractive();
     logo.on('pointerdown', () => this.callbacks.onAction('logo'));
     this.root.add(logo);
+    const codeWidth = (compact ? 92 : 112) * unit;
+    const codeX = GAME_WIDTH - margin - codeWidth / 2;
+    this.button(codeX, headerHeight / 2, codeWidth, 40 * unit, 'CODE', () =>
+      this.callbacks.onAction('rewardCode'),
+    );
     if (this.scene.scale.fullscreen.available && !isStandalone()) {
       this.button(
-        GAME_WIDTH - margin - 22 * unit,
+        codeX - codeWidth / 2 - 8 * unit - 22 * unit,
         headerHeight / 2,
         44 * unit,
         44 * unit,
@@ -262,11 +270,11 @@ export class MenuView {
     }
     if (!compact)
       this.label(
-        GAME_WIDTH / 2 + 10 * unit,
+        (margin + (GAME_WIDTH / 2 - logoWidth / 2 - 12 * unit)) / 2,
         headerHeight / 2,
         'JAGE DAS LICHT',
         10,
-        110 * unit,
+        GAME_WIDTH / 2 - logoWidth / 2 - margin - 12 * unit,
         Palette.inkDim,
         true,
       );
