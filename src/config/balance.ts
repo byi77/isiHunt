@@ -225,6 +225,11 @@ export const RUN_BONUS_RARITY_TIERS: Readonly<Record<string, readonly RunBonusTi
       runBonusTiers(tiers),
     ]),
   );
+export const RUN_BONUS_COMPLETION = {
+  minCount: 0,
+  scoreRuns: BALANCE.runBonus.completion.scoreRuns,
+  xpRuns: BALANCE.runBonus.completion.xpRuns,
+} as const;
 export const RUN_BONUS_SERIES_TIERS = runBonusTiers(BALANCE.runBonus.seriesTiers);
 export const RUN_BONUS_COLLECTION_TIERS = runBonusTiers(BALANCE.runBonus.collectionTiers);
 export const RUN_BONUS_MAX_SCORE_RUNS = BALANCE.runBonus.maxScoreRuns;

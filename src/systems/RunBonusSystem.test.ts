@@ -57,11 +57,15 @@ describe('calculateRunBonus', () => {
    * ist keine Praemie, sondern eine verspaetete Grundverguetung. Die Schwellen
    * muessen ueber dem Durchschnitt liegen.
    */
-  it('faellt bei einem durchschnittlichen Run noch nicht', () => {
+  it('vergibt fuer jeden echten Run den sichtbaren Abschlussbonus', () => {
     const bonus = calculateRunBonus({
       collected: durchschnittlicheAusbeute(),
       bestCombo: BALANCE.score.comboTiers[3]!.minCombo,
     });
+    expect(bonus.entries.map((entry) => entry.id)).toContain('completion');
+    expect(bonus.entries.find((entry) => entry.id === 'completion')?.score).toBe(
+      scoreForRuns(BALANCE.runBonus.completion.scoreRuns),
+    );
     expect(bonus.entries.map((entry) => entry.id)).not.toContain('rarity:rare');
     expect(bonus.entries.map((entry) => entry.id)).not.toContain('rarity:epic');
   });
@@ -106,8 +110,8 @@ describe('calculateRunBonus', () => {
       bestCombo: 69,
     });
 
-    expect(bonus.score).toBe(8_322);
-    expect(bonus.xp).toBe(1_502);
+    expect(bonus.score).toBe(10_990);
+    expect(bonus.xp).toBe(2_039);
     expect(bonus.capped).toBe(false);
   });
 
@@ -174,6 +178,11 @@ describe('calculateRunBonus', () => {
         xpRuns += menge.xpRuns;
       }
 
+      const total = Object.values(fall.collected).reduce((sum, count) => sum + count, 0);
+      if (total > 0) {
+        scoreRuns += BALANCE.runBonus.completion.scoreRuns;
+        xpRuns += BALANCE.runBonus.completion.xpRuns;
+      }
       expect(bonus.score).toBe(scoreForRuns(Math.min(scoreRuns, RUN_BONUS_MAX_SCORE_RUNS)));
       expect(bonus.xp).toBe(xpForRuns(Math.min(xpRuns, RUN_BONUS_MAX_XP_RUNS)));
     }

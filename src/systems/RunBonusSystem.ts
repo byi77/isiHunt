@@ -20,6 +20,7 @@
 
 import {
   RUN_BONUS_COLLECTION_TIERS,
+  RUN_BONUS_COMPLETION,
   RUN_BONUS_MAX_SCORE_RUNS,
   RUN_BONUS_MAX_XP_RUNS,
   RUN_BONUS_RARITY_TIERS,
@@ -98,6 +99,10 @@ export function calculateRunBonus(
   const entries: RunBonusEntry[] = [];
   let scoreRuns = 0;
   let xpRuns = 0;
+  const total = Object.values(stats.collected).reduce<number>(
+    (sum, count) => sum + safeCount(count),
+    0,
+  );
 
   const erfasse = (tier: RunBonusTier, eintrag: Omit<RunBonusEntry, 'score' | 'xp'>): void => {
     scoreRuns += tier.scoreRuns;
@@ -108,6 +113,15 @@ export function calculateRunBonus(
       xp: xpForRuns(tier.xpRuns),
     });
   };
+
+  // Ein abgeschlossener, echter Lauf soll immer sichtbar belohnt werden.
+  // Die weiteren Gruppen bleiben leistungsabhaengige Zuschlaege darauf.
+  if (total > 0)
+    erfasse(RUN_BONUS_COMPLETION, {
+      id: 'completion',
+      label: 'Run abgeschlossen',
+      detail: `${total} Relikte`,
+    });
 
   for (const [rarityId, tiers] of Object.entries(RUN_BONUS_RARITY_TIERS)) {
     const count = safeCount(stats.collected[rarityId as RarityId]);
@@ -125,10 +139,6 @@ export function calculateRunBonus(
   if (seriesTier)
     erfasse(seriesTier, { id: 'series', label: 'Serienbonus', detail: `Kette ${bestCombo}` });
 
-  const total = Object.values(stats.collected).reduce<number>(
-    (sum, count) => sum + safeCount(count),
-    0,
-  );
   const collectionTier = highestTier(RUN_BONUS_COLLECTION_TIERS, total);
   if (collectionTier)
     erfasse(collectionTier, {

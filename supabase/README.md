@@ -19,8 +19,11 @@ Adminfunktionen; die Edge-Funktionen `redeem-reward-code` und
 
 `phase_2_60_boosted_runs.sql` bindet XP-Bonusrunden an eine serverseitig
 erzeugte Lauf- und Ereignis-ID. Starts verbrauchen eine Anwendung; Finish und
-Abbruch haben genau einen Endzustand. Nach Phase 2.60 erwartet
-`verify_migration_state.sql` Schema **60**.
+Abbruch haben genau einen Endzustand.
+
+`phase_2_61_completion_run_bonus.sql` ergänzt einen garantierten, zentral
+gerechneten Abschlussbonus für jeden Lauf mit mindestens einem Relikt. Nach
+Phase 2.61 erwartet `verify_migration_state.sql` Schema **61**.
 
 ## Reihenfolge
 

@@ -31,6 +31,7 @@
     ]
   },
   "runBonus": {
+    "completion": { "scoreRuns": 0.5, "xpRuns": 0.25 },
     "rarityTiers": {
       "rare": [
         { "minCount": 18, "scoreRuns": 0.12, "xpRuns": 0.06 },

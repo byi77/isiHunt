@@ -85,6 +85,10 @@ const rewardCodeAdminMigration = readFileSync(
   'utf8',
 );
 const boostedRunsMigration = readFileSync(resolve(sqlDir, 'phase_2_60_boosted_runs.sql'), 'utf8');
+const completionBonusMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_61_completion_run_bonus.sql'),
+  'utf8',
+);
 
 const failures = [];
 function requireText(text, fragment, label) {
@@ -385,7 +389,7 @@ for (const [functionName, { file, body }] of latestDefinition) {
 }
 
 const migrationFiles = readdirSync(sqlDir).filter((name) =>
-  /^phase_2_(2[89]|3[0-9]|4[0-9]|5[0-9])_.*\.sql$/.test(name),
+  /^phase_2_(2[89]|3[0-9]|4[0-9]|5[0-9]|6[0-1])_.*\.sql$/.test(name),
 );
 for (const file of migrationFiles) {
   const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();
@@ -398,7 +402,7 @@ requireText(verification, 'daily_key', 'Live-Verifikation Tagesbonus');
 requireText(verification, 'upsert_save', 'Live-Verifikation Save-CAS');
 requireText(verification, 'duel_rooms', 'Live-Verifikation Duell');
 requireText(migrationVerification, 'schema_version', 'Live-Verifikation Migrationsmarker');
-requireText(migrationVerification, 'schema_version = 60', 'Live-Verifikation Phase 2.60');
+requireText(migrationVerification, 'schema_version = 61', 'Live-Verifikation Phase 2.61');
 requireText(rewardCodeCoreMigration, 'reward_codes', 'Reward-Code-Katalog');
 requireText(rewardCodeCoreMigration, 'reward_redemptions', 'Reward-Einloesbelege');
 requireText(rewardCodeCoreMigration, 'reward_code_attempts', 'Reward-Rate-Limits');
@@ -421,6 +425,9 @@ requireText(boostedRunsMigration, 'start_boosted_run_internal', 'Bonuslaufstart'
 requireText(boostedRunsMigration, 'finish_boosted_run_internal', 'Bonuslauffinish');
 requireText(boostedRunsMigration, 'finish_fingerprint', 'Bonuslauf-Replay-Schutz');
 requireText(boostedRunsMigration, 'schema_version = 60', 'Migrationsmarker Phase 2.60');
+requireText(completionBonusMigration, "bonus_cfg->'completion'", 'Garantierter Abschlussbonus');
+requireText(completionBonusMigration, 'total_collected > 0', 'Abschlussbonus nur mit Relikt');
+requireText(completionBonusMigration, 'schema_version = 61', 'Migrationsmarker Phase 2.61');
 const progressEventJsonbMigration = readFileSync(
   resolve(sqlDir, 'phase_2_54_progress_event_jsonb.sql'),
   'utf8',
