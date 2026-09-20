@@ -33,33 +33,33 @@
   "runBonus": {
     "rarityTiers": {
       "rare": [
-        { "minCount": 18, "scoreRuns": 0.03, "xpRuns": 0.03 },
-        { "minCount": 24, "scoreRuns": 0.05, "xpRuns": 0.05 },
-        { "minCount": 32, "scoreRuns": 0.08, "xpRuns": 0.08 }
+        { "minCount": 18, "scoreRuns": 0.12, "xpRuns": 0.06 },
+        { "minCount": 24, "scoreRuns": 0.2, "xpRuns": 0.1 },
+        { "minCount": 32, "scoreRuns": 0.32, "xpRuns": 0.16 }
       ],
       "epic": [
-        { "minCount": 9, "scoreRuns": 0.04, "xpRuns": 0.04 },
-        { "minCount": 13, "scoreRuns": 0.07, "xpRuns": 0.07 },
-        { "minCount": 18, "scoreRuns": 0.11, "xpRuns": 0.11 }
+        { "minCount": 9, "scoreRuns": 0.16, "xpRuns": 0.08 },
+        { "minCount": 13, "scoreRuns": 0.28, "xpRuns": 0.14 },
+        { "minCount": 18, "scoreRuns": 0.44, "xpRuns": 0.22 }
       ],
       "legendary": [
-        { "minCount": 3, "scoreRuns": 0.05, "xpRuns": 0.05 },
-        { "minCount": 5, "scoreRuns": 0.09, "xpRuns": 0.09 },
-        { "minCount": 8, "scoreRuns": 0.15, "xpRuns": 0.15 }
+        { "minCount": 3, "scoreRuns": 0.2, "xpRuns": 0.1 },
+        { "minCount": 5, "scoreRuns": 0.36, "xpRuns": 0.18 },
+        { "minCount": 8, "scoreRuns": 0.6, "xpRuns": 0.3 }
       ]
     },
     "seriesTiers": [
-      { "minCombo": 16, "scoreRuns": 0.04, "xpRuns": 0.03 },
-      { "minCombo": 25, "scoreRuns": 0.08, "xpRuns": 0.06 },
-      { "minCombo": 40, "scoreRuns": 0.14, "xpRuns": 0.1 }
+      { "minCombo": 16, "scoreRuns": 0.16, "xpRuns": 0.06 },
+      { "minCombo": 25, "scoreRuns": 0.32, "xpRuns": 0.12 },
+      { "minCombo": 40, "scoreRuns": 0.56, "xpRuns": 0.2 }
     ],
     "collectionTiers": [
-      { "minCount": 150, "scoreRuns": 0.03, "xpRuns": 0.03 },
-      { "minCount": 190, "scoreRuns": 0.06, "xpRuns": 0.06 },
-      { "minCount": 230, "scoreRuns": 0.1, "xpRuns": 0.1 }
+      { "minCount": 150, "scoreRuns": 0.12, "xpRuns": 0.06 },
+      { "minCount": 190, "scoreRuns": 0.24, "xpRuns": 0.12 },
+      { "minCount": 230, "scoreRuns": 0.4, "xpRuns": 0.2 }
     ],
-    "maxScoreRuns": 0.55,
-    "maxXpRuns": 0.5
+    "maxScoreRuns": 2.2,
+    "maxXpRuns": 1
   },
   "worlds": {
     "silberhain": { "scoreMultiplier": 1, "xpMultiplier": 1 },

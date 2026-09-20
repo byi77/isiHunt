@@ -54,6 +54,7 @@ export class MenuView {
   private ship: Phaser.GameObjects.Image | null = null;
   private halo: Phaser.GameObjects.Image | null = null;
   private aura: Phaser.GameObjects.Image | null = null;
+  private engineGlow: Phaser.GameObjects.Image | null = null;
   private layout!: MenuLayout;
   private elapsed = 0;
   private resizePending = false;
@@ -130,6 +131,7 @@ export class MenuView {
         .setAlpha(frame.alpha);
     }
     this.halo?.setTint(tint);
+    this.engineGlow?.setAlpha(0.38 * frame.alpha);
     this.orbit?.update(index !== null);
     if (this.aura) {
       const asset = auraAssetForId(shipAuraAssetId(this.save));
@@ -154,13 +156,13 @@ export class MenuView {
     this.scene.input.off('pointerup', this.onPointerUp);
     this.scene.input.off('pointerupoutside', this.onPointerUp);
     this.root.destroy(true);
-    this.ship = this.halo = this.aura = null;
+    this.ship = this.halo = this.aura = this.engineGlow = null;
     this.orbit = null;
   }
 
   private build(): void {
     this.root?.destroy(true);
-    this.ship = this.halo = this.aura = null;
+    this.ship = this.halo = this.aura = this.engineGlow = null;
     this.orbit = null;
     this.pointerStart = null;
     const canvas = this.scene.game.canvas.getBoundingClientRect();
@@ -421,19 +423,24 @@ export class MenuView {
     this.halo = this.scene.add
       .image(GAME_WIDTH / 2, shipY, TextureKey.PlayerHalo)
       .setDisplaySize(shipSize * 1.5, shipSize * 1.5)
-      .setAlpha(0.45);
+      .setAlpha(0.3);
     this.hero.add(this.halo);
     if (shipAuraIndex(this.save) !== null || shipAuraAssetId(this.save)) {
       this.aura = this.scene.add.image(GAME_WIDTH / 2, shipY, TextureKey.Glow);
       this.hero.add(this.aura);
     }
+    this.engineGlow = this.scene.add
+      .image(GAME_WIDTH / 2, shipY + shipSize * 0.34, TextureKey.Glow)
+      .setDisplaySize(shipSize * 0.34, shipSize * 0.52)
+      .setTint(0xbfe8ff)
+      .setAlpha(0.38);
     this.ship = this.scene.add.image(
       GAME_WIDTH / 2,
       shipY,
       playerTextureForShape(getShipShape(this.save.shipShape).id),
     );
     this.orbit = new ShipOrbit(this.scene, GAME_WIDTH / 2, shipY, shipSize);
-    this.hero.add([this.orbit.back, this.ship, this.orbit.front]);
+    this.hero.add([this.engineGlow, this.orbit.back, this.ship, this.orbit.front]);
     const selectedIndex = WORLDS.indexOf(this.world);
     const previous = this.button(
       margin + 22 * unit,
@@ -456,6 +463,24 @@ export class MenuView {
       22,
     );
     next.setEnabled(nextWorld !== undefined && nextWorld.unlockLevel <= this.save.level);
+    this.button(
+      GAME_WIDTH / 2 + 76 * unit,
+      worldTitleY - 28 * unit,
+      92 * unit,
+      44 * unit,
+      'Anpassen',
+      () => this.callbacks.onAction('shop'),
+      11,
+    );
+    this.label(
+      GAME_WIDTH / 2 - 118 * unit,
+      worldTitleY - 28 * unit,
+      getShipShape(this.save.shipShape).name,
+      13,
+      100 * unit,
+      Palette.ink,
+      false,
+    );
     this.button(
       GAME_WIDTH / 2,
       worldTitleY,

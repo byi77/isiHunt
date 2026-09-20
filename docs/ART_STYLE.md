@@ -1,5 +1,85 @@
 # Art Style Guide — isiHunt
 
+## Gemeinsame Gestaltungsgrundlage — Phase 5, 20.09.2026
+
+Diese Ebene ist der verbindliche Rahmen vor weiteren Einzelumbauten. Sie
+bewahrt die vorhandene Weltraumatmosphaere und legt nur gemeinsame Regeln
+fest; Menue, Logo und einzelne Oberflaechen bleiben Aufgaben der Folgephasen.
+
+### Tokens
+
+| Zweck | Wert |
+| --- | --- |
+| Hintergrund | `#0b1020` |
+| Panel | `#13212c` |
+| Button | `#172734` |
+| Button-Kontur | `#344753` |
+| Haupttext | `#f4f1e8` |
+| Sekundaertext | `#b8c0d9` |
+| Primaeraktion / Gold | `#ffd479` |
+| Warnung | `#ff6b6b` |
+| Erfolg | `#7ee787` |
+| Radien | 12–14 px fuer Standardflaechen, 20–24 px fuer grosse Karten |
+| Abstufungen | 8 px Grundraster; 16/24/32 px fuer groessere Gruppen |
+
+Die Tokens liegen in `src/ui/theme.ts`. Szenen definieren keine eigenen
+Oberflaechenfarben. Seltenheitsfarben bleiben ausschliesslich Spielinformation
+und werden nicht fuer allgemeine Navigation wiederverwendet.
+
+### Typografie und Informationshierarchie
+
+`FONT_FAMILY` bleibt der robuste System-Stack aus `theme.ts`; dadurch gibt es
+keine Webfont-Ladezeit und keinen Layoutsprung im Offline-Spiel.
+
+1. Seitentitel: ein kurzer Titel, `FontSize.title` oder `heading`.
+2. Hauptwert: groesser und kontrastreich, nur fuer den wichtigsten Wert.
+3. Zeilentitel: `body`/`small`, fett nur fuer die Orientierung.
+4. Beschreibung und Metadaten: `small`/`tiny`, gedämpft aber lesbar.
+
+Laengere Erklaerungen werden nicht in Vollversalien gesetzt. Zahlen erhalten
+deutsche Formatierung und bleiben mit ihrer Einheit oder Bedeutung verbunden.
+
+### Interaktion und Zustaende
+
+Jede relevante Ansicht beschreibt mindestens diese Zustaende mit Text und
+einem passenden Icon oder einer Form: Laden, Offline, Fehler, leer, Erfolg,
+gesperrt und aktiv. Farbe allein ist nie die einzige Zustandsinformation.
+
+Primaeraktionen verwenden Gold mit dunkler Beschriftung. Sekundaeraktionen
+bleiben auf Buttonflaeche und Kontur. Fokus, Hover und deaktivierte Zustände
+veraendern Kontrast oder Kontur, nicht nur die Helligkeit.
+
+Alle nativen oder DOM-basierten Aktionen erhalten mindestens 44 × 44 CSS-Pixel
+Trefferflaeche. Phaser-Koordinaten werden dafuer ueber die tatsaechliche
+Canvas-Skalierung bewertet. Scrollbereiche enthalten nur Details; Kopfzeile,
+Zuruecknavigation und die wichtigste Aktion bleiben fest erreichbar.
+
+### Responsive Pruefmatrix
+
+| Breite | Erwartung |
+| ---: | --- |
+| 360 px | Grundaktion und Zurueckweg sichtbar; Kulisse schrumpft zuerst |
+| 390 px | Referenzbreite fuer Karten, Listen und Standardabstaende |
+| 402 px | Zusatzbreite darf Luft geben, aber keine neue Informationshierarchie erzwingen |
+
+Die bestehende Layout-Pruefung (`src/ui/layoutAudit.ts`) misst sichtbare
+Text-, Bild- und Trefferflaechen in CSS-Pixeln. Vor einer breiten UI-Aenderung
+wird eine Musterseite an allen drei Breiten dokumentiert.
+
+### Technikentscheidung
+
+Phaser bleibt die gemeinsame Oberflaeche fuer Spiel- und Menueszenen; native
+DOM-Elemente werden nur fuer Eingaben, Systemdialoge und nachweislich bessere
+Accessibility verwendet. Es wird keine zweite allgemeine UI-Bibliothek
+eingefuehrt. Animationen fragen `prefers-reduced-motion` ab und stoppen bei
+verborgenem Tab, soweit sie nicht spielmechanisch erforderlich sind.
+
+### Vor Phase 6
+
+Die Grundlage ist mit `Palette`, `FontSize`, `textStyle`, `layoutAudit` und den
+vorhandenen Layout-/Reduced-Motion-Tests im Code verankert. Browser-Screenshots
+an 360/390/402 px bleiben bis zur ausdruecklichen Browserfreigabe offen.
+
 **Relikte, 19.09.2026:** Ein schmaler Seltenheitsrand ersetzt den dominanten
 Lichtnebel. Eine feste Lichtkante links oben und eine schattige Nachtseite
 geben den rotierenden Oberflaechen Tiefe. Ein bis sechs kleine Rangmarken

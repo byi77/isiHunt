@@ -47,13 +47,80 @@ export interface LogEntry {
   readonly detail: string;
 }
 
-const logBuffer: LogEntry[] = loadPersistedBuffer(DEBUG_LOG_STORAGE_KEY);
-const protectedBuffer: LogEntry[] = loadPersistedBuffer(DEBUG_PROTECTED_STORAGE_KEY);
+const DEBUG_REPORT_VERSION = 2;
+let droppedLogEntries = 0;
+let droppedProtectedEntries = 0;
+let persistFailures = 0;
+
+const logBuffer: LogEntry[] = loadPersistedBuffer(DEBUG_LOG_STORAGE_KEY, DEBUG_LOG_BUFFER_SIZE);
+const protectedBuffer: LogEntry[] = loadPersistedBuffer(
+  DEBUG_PROTECTED_STORAGE_KEY,
+  DEBUG_PROTECTED_BUFFER_SIZE,
+);
 let tapTimestamps: number[] = [];
 let debugModeCache: boolean | null = null;
 let consoleCaptureInstalled = false;
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
 let soundDiagnosticsProvider: (() => string) | null = null;
+let stateDiagnosticsProvider: (() => string) | null = null;
+let lastServerContactAt: number | null = null;
+const sessionId = createSessionId();
+
+function createSessionId(): string {
+  try {
+    if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  } catch {
+    // A restricted browser context may expose crypto without randomUUID.
+  }
+  return `session-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function correlationId(): string {
+  try {
+    if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  } catch {
+    // Fall through to a non-secret local identifier.
+  }
+  return `rpc-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function safeRpcText(value: unknown, maxLength = 500): string {
+  if (typeof value !== 'string') return '';
+  return value
+    .replace(/bearer\s+[a-z0-9._-]+/gi, 'Bearer [redacted]')
+    .replace(/(token|secret|password|pin)\s*[=:]\s*[^\s,;]+/gi, '$1=[redacted]')
+    .slice(0, maxLength);
+}
+
+/** Protokolliert die fachliche RPC-Antwort getrennt vom HTTP-/Transportergebnis. */
+export function logRpcResponse(
+  operation: string,
+  response: unknown,
+  requestCorrelationId = correlationId(),
+): string {
+  const record =
+    response && typeof response === 'object' ? (response as Record<string, unknown>) : {};
+  const error =
+    record.error && typeof record.error === 'object'
+      ? (record.error as Record<string, unknown>)
+      : null;
+  const detail = error
+    ? [
+        `correlation=${requestCorrelationId}`,
+        `code=${safeRpcText(error.code) || 'unbekannt'}`,
+        `message=${safeRpcText(error.message) || 'unbekannt'}`,
+        `details=${safeRpcText(error.details) || '-'}`,
+        `hint=${safeRpcText(error.hint) || '-'}`,
+      ].join(' ')
+    : `correlation=${requestCorrelationId} fachlich=ok`;
+  pushProtectedLogEntry({
+    timestamp: Date.now(),
+    kind: error ? 'error' : 'event',
+    label: `rpc:${operation}`,
+    detail,
+  });
+  return requestCorrelationId;
+}
 
 /**
  * Laedt den beim letzten Beenden gespeicherten Puffer, damit ein
@@ -64,12 +131,28 @@ let soundDiagnosticsProvider: (() => string) | null = null;
  * Nimmt den Schluessel als Parameter, weil Haupt- und geschuetzter Puffer
  * dieselbe Ladelogik brauchen, aber getrennt liegen muessen.
  */
-function loadPersistedBuffer(storageKey: string): LogEntry[] {
+function isLogEntry(value: unknown): value is LogEntry {
+  if (!value || typeof value !== 'object') return false;
+  const entry = value as Partial<LogEntry>;
+  return (
+    typeof entry.timestamp === 'number' &&
+    Number.isFinite(entry.timestamp) &&
+    (entry.kind === 'event' || entry.kind === 'error') &&
+    typeof entry.label === 'string' &&
+    entry.label.length <= 160 &&
+    typeof entry.detail === 'string' &&
+    entry.detail.length <= 4000
+  );
+}
+
+function loadPersistedBuffer(storageKey: string, maxEntries: number): LogEntry[] {
   try {
     const raw = window.localStorage.getItem(storageKey);
     if (!raw) return [];
     const parsed: unknown = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as LogEntry[]) : [];
+    if (!Array.isArray(parsed)) return [];
+    const valid = parsed.filter(isLogEntry);
+    return valid.slice(-maxEntries);
   } catch {
     return [];
   }
@@ -97,6 +180,7 @@ function flushPersistedLogBuffer(): void {
     window.localStorage.setItem(DEBUG_LOG_STORAGE_KEY, JSON.stringify(logBuffer));
     window.localStorage.setItem(DEBUG_PROTECTED_STORAGE_KEY, JSON.stringify(protectedBuffer));
   } catch {
+    persistFailures += 1;
     // Privater Browsermodus oder voller Speicher duerfen das Spiel nicht
     // stoeren - der Puffer bleibt dann nur In-Memory gueltig.
   }
@@ -115,7 +199,10 @@ if (typeof document !== 'undefined') {
 /** Nimmt einen Eintrag in den Ringpuffer auf; verwirft den aeltesten bei Ueberlauf. */
 export function pushLogEntry(entry: LogEntry): void {
   logBuffer.push(entry);
-  if (logBuffer.length > DEBUG_LOG_BUFFER_SIZE) logBuffer.shift();
+  if (logBuffer.length > DEBUG_LOG_BUFFER_SIZE) {
+    logBuffer.shift();
+    droppedLogEntries += 1;
+  }
   schedulePersist();
 }
 
@@ -143,7 +230,10 @@ export function pushLogEntry(entry: LogEntry): void {
  */
 export function pushProtectedLogEntry(entry: LogEntry): void {
   protectedBuffer.push(entry);
-  if (protectedBuffer.length > DEBUG_PROTECTED_BUFFER_SIZE) protectedBuffer.shift();
+  if (protectedBuffer.length > DEBUG_PROTECTED_BUFFER_SIZE) {
+    protectedBuffer.shift();
+    droppedProtectedEntries += 1;
+  }
   schedulePersist();
 }
 
@@ -165,10 +255,23 @@ export function setSoundDiagnosticsProvider(provider: (() => string) | null): vo
   soundDiagnosticsProvider = provider;
 }
 
+/** Bindet den aktuellen Save-/Sync-/Auth-Zustand an den Report, ohne Systeme zu importieren. */
+export function setStateDiagnosticsProvider(provider: (() => string) | null): void {
+  stateDiagnosticsProvider = provider;
+}
+
+/** Merkt den letzten erhaltenen Serverkontakt; eine Antwort mit RPC-Fehler ist trotzdem Kontakt. */
+export function markServerContact(timestamp = Date.now()): void {
+  lastServerContactAt = timestamp;
+}
+
 /** Loescht beide Puffer auch aus dem localStorage - fuer Tests und einen moeglichen "Log leeren"-Knopf. */
 export function clearLogBuffer(): void {
   logBuffer.length = 0;
   protectedBuffer.length = 0;
+  droppedLogEntries = 0;
+  droppedProtectedEntries = 0;
+  persistFailures = 0;
   try {
     window.localStorage.removeItem(DEBUG_LOG_STORAGE_KEY);
     window.localStorage.removeItem(DEBUG_PROTECTED_STORAGE_KEY);
@@ -237,6 +340,16 @@ function formatBuffer(entries: readonly LogEntry[]): string {
       return `${time}  [${entry.kind}]  ${entry.label}  ${entry.detail}`;
     })
     .join('\n');
+}
+
+function bufferSummary(name: string, entries: readonly LogEntry[], dropped: number): string {
+  const first = entries[0]?.timestamp;
+  const last = entries[entries.length - 1]?.timestamp;
+  const range =
+    first !== undefined && last !== undefined
+      ? `${new Date(first).toISOString()} bis ${new Date(last).toISOString()}`
+      : '(kein Zeitraum)';
+  return `${name}: ${entries.length} Eintraege, verworfen=${dropped}, Zeitraum=${range}`;
 }
 
 /** True, wenn der Debug-Modus aktuell eingeschaltet ist. */
@@ -353,8 +466,14 @@ export async function buildReport(
   const storageLine = await readWebStorageLine();
   return [
     `isiHunt Debug-Report`,
+    `Reportformat ${DEBUG_REPORT_VERSION}`,
     `Zeit        ${new Date().toISOString()}`,
     `Version     v${APP_VERSION}`,
+    `Session     ${sessionId}`,
+    `Sichtbarkeit ${document.visibilityState}`,
+    `Online      ${navigator.onLine}  letzter Serverkontakt=${
+      lastServerContactAt === null ? 'unbekannt' : new Date(lastServerContactAt).toISOString()
+    }`,
     `Scenes      ${activeSceneKeys.join(', ') || '(keine)'}`,
     '',
     'GERÄT / BROWSER',
@@ -369,6 +488,14 @@ export async function buildReport(
     '',
     'TON-DIAGNOSE',
     soundDiagnosticsProvider?.() ?? 'Nicht verfuegbar (Audio-Diagnose nicht initialisiert)',
+    '',
+    'PUFFER',
+    bufferSummary('Geschuetzt', protectedBuffer, droppedProtectedEntries),
+    bufferSummary('Verlauf', logBuffer, droppedLogEntries),
+    `Persistierungsfehler=${persistFailures}`,
+    '',
+    'ZUSTAND',
+    stateDiagnosticsProvider?.() ?? 'Zustandsdiagnose nicht initialisiert',
     '',
     // Zuerst der geschuetzte Puffer: er traegt die seltenen Ereignisse, die
     // eine Diagnose ueberhaupt erst moeglich machen, und wuerde am Ende eines
@@ -386,19 +513,24 @@ export async function shareReport(
   canvas: HTMLCanvasElement,
   activeSceneKeys: readonly string[],
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
-  const [screenshot, reportText] = await Promise.all([
-    captureScreenshot(canvas),
-    buildReport(canvas, activeSceneKeys),
-  ]);
+  const reportText = await buildReport(canvas, activeSceneKeys);
   const reportFile = new File([reportText], `isihunt-debug-${Date.now()}.txt`, {
     type: 'text/plain',
   });
+
+  let screenshot: File | null = null;
+  try {
+    screenshot = await captureScreenshot(canvas);
+  } catch (error) {
+    console.warn('[DebugSystem] Screenshot fehlgeschlagen, Textreport bleibt verfuegbar.', error);
+  }
 
   const nav = navigator as Navigator & {
     canShare?: (data: { files: File[] }) => boolean;
   };
 
   if (
+    screenshot &&
     typeof nav.share === 'function' &&
     (!nav.canShare || nav.canShare({ files: [screenshot, reportFile] }))
   ) {
@@ -415,9 +547,14 @@ export async function shareReport(
     }
   }
 
-  downloadFallback(screenshot);
+  if (screenshot) downloadFallback(screenshot);
   downloadFallback(reportFile);
-  return { ok: false, reason: 'Teilen nicht verfuegbar - Dateien wurden heruntergeladen.' };
+  return {
+    ok: false,
+    reason: screenshot
+      ? 'Teilen nicht verfuegbar - Dateien wurden heruntergeladen.'
+      : 'Screenshot fehlgeschlagen - Textreport wurde heruntergeladen.',
+  };
 }
 
 /** Loest einen unsichtbaren Download aus - Fallback fuer Plattformen ohne Web Share API. */

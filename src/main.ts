@@ -49,6 +49,8 @@ import { WorldInfoScene } from '@/scenes/WorldInfoScene';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as AuthSystem from '@/systems/AuthSystem';
 import * as DebugSystem from '@/systems/DebugSystem';
+import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
+import * as SaveSystem from '@/systems/SaveSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
 import { installDebugOverlay } from '@/ui/debugOverlay';
 import { Palette } from '@/ui/theme';
@@ -166,6 +168,18 @@ DebugSystem.setSoundDiagnosticsProvider(() =>
 );
 SafeAreaSystem.initialize();
 AuthSystem.initialize();
+DebugSystem.setStateDiagnosticsProvider(() => {
+  const save = SaveSystem.load();
+  const userId = AuthSystem.currentUserId();
+  const account = userId ? `angemeldet:${userId.slice(0, 8)}` : 'nicht angemeldet';
+  return [
+    `Account=${account}`,
+    `Level=${save.level} XP=${save.xp} Gesamt-XP=lokal nicht separat gespeichert`,
+    `Coins=${save.coins} Bestwert=${save.bestScore} Runs=${save.totalRuns}`,
+    `Outbox=${ProgressSyncSystem.pendingCount()}`,
+    'Schema-/Balanceversion=im Report nicht abgefragt',
+  ].join('  ');
+});
 
 /**
  * Ereignisse, die in jedem Frame feuern und deshalb nicht in den Ringpuffer

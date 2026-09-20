@@ -389,7 +389,7 @@ requireText(verification, 'daily_key', 'Live-Verifikation Tagesbonus');
 requireText(verification, 'upsert_save', 'Live-Verifikation Save-CAS');
 requireText(verification, 'duel_rooms', 'Live-Verifikation Duell');
 requireText(migrationVerification, 'schema_version', 'Live-Verifikation Migrationsmarker');
-requireText(migrationVerification, 'schema_version = 54', 'Live-Verifikation Phase 2.54');
+requireText(migrationVerification, 'schema_version = 57', 'Live-Verifikation Phase 2.57');
 const progressEventJsonbMigration = readFileSync(
   resolve(sqlDir, 'phase_2_54_progress_event_jsonb.sql'),
   'utf8',

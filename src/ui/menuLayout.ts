@@ -27,13 +27,16 @@ export function calculateMenuLayout(
   const worldTitleY = worldBottom - 40;
   const heroBottom = worldTitleY - 30;
   const heroHeight = Math.max(20, heroBottom - worldTop);
+  // Der Planet bleibt Kulisse; das ausgeruestete Schiff ist der Vordergrund.
+  // Beide Werte werden in CSS-Pixeln bestimmt, damit FIT die Hierarchie nicht
+  // auf kleinen Geraeten umkehrt.
   const planetSize = Math.max(
     18,
-    Math.min(compact ? 126 : 218, canvasWidth * 0.58, heroHeight * 0.83),
+    Math.min(compact ? 118 : 176, canvasWidth * 0.48, heroHeight * 0.7),
   );
   const planetY = worldTop + heroHeight * 0.46;
-  const shipSize = Math.min(compact ? 40 : 64, planetSize * 0.4);
-  const shipY = Math.min(heroBottom - shipSize * 0.95 - 4, planetY + planetSize * 0.38);
+  const shipSize = Math.min(compact ? 76 : 108, planetSize * 0.62);
+  const shipY = Math.min(heroBottom - shipSize * 0.95 - 4, planetY + planetSize * 0.3);
   const innerWidth = canvasWidth - margin * 2;
 
   // Alle Rückgabekoordinaten gehören wieder in Phasers logischen Raum.

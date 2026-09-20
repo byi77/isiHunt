@@ -34,6 +34,10 @@ describe('Menü in tatsächlichen Bildschirm-Pixeln', () => {
         expect(layout.shipY + layout.shipSize * 0.95).toBeLessThan(
           layout.worldTitleY - 22 * layout.unit,
         );
+        expect(layout.shipSize).toBeGreaterThanOrEqual(layout.planetSize * 0.6);
+        expect(layout.planetSize).toBeLessThanOrEqual(
+          Math.min((layout.compact ? 118 : 176) * layout.unit, width! * 0.48 * layout.unit),
+        );
       });
     }
   }

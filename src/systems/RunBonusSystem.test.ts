@@ -93,6 +93,24 @@ describe('calculateRunBonus', () => {
     expect(bonus.entries.reduce((sum, entry) => sum + entry.score, 0)).toBeGreaterThan(bonus.score);
   });
 
+  it('wendet den Phase-4-Faktor auf den Referenzlauf an', () => {
+    const bonus = calculateRunBonus({
+      collected: collected({
+        poor: 76,
+        common: 42,
+        uncommon: 49,
+        rare: 18,
+        epic: 19,
+        legendary: 3,
+      }),
+      bestCombo: 69,
+    });
+
+    expect(bonus.score).toBe(8_322);
+    expect(bonus.xp).toBe(1_502);
+    expect(bonus.capped).toBe(false);
+  });
+
   it('nennt zu jedem Posten die Menge, die ihn ausgeloest hat', () => {
     const stufe = RUN_BONUS_RARITY_TIERS.legendary![0]!;
     const bonus = calculateRunBonus({

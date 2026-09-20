@@ -626,6 +626,7 @@ export function isAvailable(): boolean {
  */
 async function withTimeout<T>(operation: PromiseLike<T>, label: string): Promise<CloudResult<T>> {
   const startedAt = Date.now();
+  const requestCorrelationId = `cloud-${Date.now()}-${Math.random().toString(16).slice(2)}`;
   let timeoutId: number | undefined;
   try {
     const timeout = new Promise<never>((_, reject) => {
@@ -636,11 +637,13 @@ async function withTimeout<T>(operation: PromiseLike<T>, label: string): Promise
     });
 
     const value = await Promise.race([operation, timeout]);
+    DebugSystem.markServerContact();
+    DebugSystem.logRpcResponse(label, value, requestCorrelationId);
     DebugSystem.pushLogEntry({
       timestamp: Date.now(),
       kind: 'event',
       label: `cloud:${label}`,
-      detail: `ok ${Date.now() - startedAt}ms`,
+      detail: `ok ${Date.now() - startedAt}ms correlation=${requestCorrelationId}`,
     });
     return { ok: true, value };
   } catch (error) {
@@ -649,7 +652,7 @@ async function withTimeout<T>(operation: PromiseLike<T>, label: string): Promise
       timestamp: Date.now(),
       kind: 'error',
       label: `cloud:${label}`,
-      detail: `fehlgeschlagen ${Date.now() - startedAt}ms: ${reason}`,
+      detail: `fehlgeschlagen ${Date.now() - startedAt}ms correlation=${requestCorrelationId}: ${reason}`,
     });
     console.warn(`[CloudSystem] ${label} fehlgeschlagen:`, error);
     return { ok: false, error: `${label}: ${reason}` };
