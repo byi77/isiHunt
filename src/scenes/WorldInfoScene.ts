@@ -18,6 +18,7 @@ import { getWorld } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
+import * as CloudSystem from '@/systems/CloudSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
@@ -146,7 +147,7 @@ export class WorldInfoScene extends Phaser.Scene {
       GAME_WIDTH / 2,
       GAME_HEIGHT - 172,
       MODE_TITLES[mode],
-      () => this.startMode(worldId, mode),
+      () => void this.startMode(worldId, mode),
       { width: 460, accent, fontSize: FontSize.large },
     );
 
@@ -161,16 +162,23 @@ export class WorldInfoScene extends Phaser.Scene {
   }
 
   /** Loest je nach Modus genau den Zustandsaufbau aus, den der Zielbildschirm erwartet. */
-  private startMode(worldId: string, mode: WorldInfoMode): void {
+  private async startMode(worldId: string, mode: WorldInfoMode): Promise<void> {
     if (mode === 'jagd') {
-      this.scene.start(SceneKey.Game, { worldId });
+      const effectRun = await CloudSystem.startRewardEffectRun(worldId);
+      if (!this.scene.isActive()) return;
+      this.scene.start(SceneKey.Game, {
+        worldId,
+        rewardEffects: effectRun.ok ? (effectRun.value ?? undefined) : undefined,
+      });
       return;
     }
     if (mode === 'duell') {
+      if (!this.scene.isActive()) return;
       ChallengeSystem.start(worldId);
       this.scene.start(SceneKey.Challenge);
       return;
     }
+    if (!this.scene.isActive()) return;
     ChallengeSystem.startDaily(worldId);
     this.scene.start(SceneKey.Challenge);
   }

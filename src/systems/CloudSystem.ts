@@ -1343,6 +1343,34 @@ export async function createAdminRewardCodes(input: {
   return codes ? { ok: true, value: codes } : { ok: false, error: 'Ungueltige Codeantwort' };
 }
 
+export type RewardRunEffects = Readonly<
+  Partial<Record<'speed' | 'magnetism' | 'combo_grace', number>>
+>;
+
+/** Verbraucht vorhandene, begrenzte Effektrechte atomar genau beim Solo-Start. */
+export async function startRewardEffectRun(
+  worldId: string,
+): Promise<CloudResult<RewardRunEffects | null>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return { ok: true, value: null };
+  const requestId = crypto.randomUUID();
+  const result = await withTimeout(
+    authenticated.value.functions.invoke('boosted-run', {
+      body: { action: 'startEffects', requestId, worldId },
+    }),
+    'Effektbonus starten',
+  );
+  if (!result.ok || result.value.error) return { ok: true, value: null };
+  const body = recordFrom(result.value.data);
+  const raw = recordFrom(body?.effects);
+  if (!body?.ok || !raw) return { ok: true, value: null };
+  const effects: Partial<Record<'speed' | 'magnetism' | 'combo_grace', number>> = {};
+  for (const effect of ['speed', 'magnetism', 'combo_grace'] as const) {
+    if (raw[effect] === 1.3) effects[effect] = 1.3;
+  }
+  return Object.keys(effects).length ? { ok: true, value: effects } : { ok: true, value: null };
+}
+
 /** Lädt den gemeinsamen Profilstand des angemeldeten Benutzers. */
 export async function fetchProfileProgress(): Promise<CloudResult<RemoteProfileProgress | null>> {
   const authenticated = await requireAuthenticatedClient();

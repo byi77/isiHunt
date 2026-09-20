@@ -406,7 +406,7 @@ requireText(verification, 'daily_key', 'Live-Verifikation Tagesbonus');
 requireText(verification, 'upsert_save', 'Live-Verifikation Save-CAS');
 requireText(verification, 'duel_rooms', 'Live-Verifikation Duell');
 requireText(migrationVerification, 'schema_version', 'Live-Verifikation Migrationsmarker');
-requireText(migrationVerification, 'schema_version = 63', 'Live-Verifikation Phase 2.63');
+requireText(migrationVerification, 'schema_version = 64', 'Live-Verifikation Phase 2.64');
 requireText(rewardCodeCoreMigration, 'reward_codes', 'Reward-Code-Katalog');
 requireText(rewardCodeCoreMigration, 'reward_redemptions', 'Reward-Einloesbelege');
 requireText(rewardCodeCoreMigration, 'reward_code_attempts', 'Reward-Rate-Limits');
@@ -442,6 +442,12 @@ const rewardCodePresetMigration = readFileSync(
 requireText(rewardCodePresetMigration, 'schema_version = 63', 'Migrationsmarker Phase 2.63');
 requireText(rewardCodePresetMigration, 'run_effect_boost', 'Effektcode-Vertrag Phase 2.63');
 requireText(rewardCodePresetMigration, 'shop_god_mode', 'Shop-God-Modus Phase 2.63');
+const rewardEffectRunMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_64_reward_effect_run_start.sql'),
+  'utf8',
+);
+requireText(rewardEffectRunMigration, 'start_reward_effect_run_internal', 'Effektstart Phase 2.64');
+requireText(rewardEffectRunMigration, 'schema_version = 64', 'Migrationsmarker Phase 2.64');
 const progressEventJsonbMigration = readFileSync(
   resolve(sqlDir, 'phase_2_54_progress_event_jsonb.sql'),
   'utf8',

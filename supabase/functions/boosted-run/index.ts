@@ -38,7 +38,10 @@ Deno.serve(async (request) => {
   const service = createClient(url, serviceRole);
   let rpc: string;
   let parameters: Record<string, unknown>;
-  if (body.action === 'start' && isUuid(body.requestId) && typeof body.worldId === 'string' && body.mode === 'solo') {
+  if (body.action === 'startEffects' && isUuid(body.requestId) && typeof body.worldId === 'string') {
+    rpc = 'start_reward_effect_run_internal';
+    parameters = { p_profile_id: userData.user.id, p_request_id: body.requestId, p_world_id: body.worldId };
+  } else if (body.action === 'start' && isUuid(body.requestId) && typeof body.worldId === 'string' && body.mode === 'solo') {
     rpc = 'start_boosted_run_internal';
     parameters = { p_profile_id: userData.user.id, p_request_id: body.requestId, p_world_id: body.worldId, p_mode: body.mode };
   } else if (body.action === 'abandon' && isUuid(body.runId)) {

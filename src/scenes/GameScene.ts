@@ -73,6 +73,22 @@ export interface GameSceneData {
   worldId: string;
   /** Fehlt der Modus, ist es ein normaler Solo-Run. */
   mode?: RunMode;
+  /** Ausschliesslich vom serverbestaetigten Effektstart geliefert. */
+  rewardEffects?: Readonly<Partial<Record<'speed' | 'magnetism' | 'combo_grace', number>>>;
+}
+
+function applyRewardEffects(
+  stats: PlayerStats,
+  effects: GameSceneData['rewardEffects'],
+): PlayerStats {
+  if (!effects) return stats;
+  return {
+    ...stats,
+    moveSpeed: stats.moveSpeed * (effects.speed ?? 1),
+    magnetRadius: stats.magnetRadius * (effects.magnetism ?? 1),
+    magnetPullSpeed: stats.magnetPullSpeed * (effects.magnetism ?? 1),
+    comboGraceMs: Math.round(stats.comboGraceMs * (effects.combo_grace ?? 1)),
+  };
 }
 
 type RunPhase = 'countdown' | 'running' | 'ended';
@@ -194,12 +210,15 @@ export class GameScene extends Phaser.Scene {
       challenge?.kind === 'bot' ||
       challenge?.kind === 'duel-online';
     const duelTalentRanks = challenge ? ChallengeSystem.duelTalentDraftFor(this.playerIndex) : {};
-    this.stats = resolveStats(
-      usesTalents
-        ? this.mode === 'solo' || this.mode === 'daily'
-          ? save.talents
-          : duelTalentRanks
-        : {},
+    this.stats = applyRewardEffects(
+      resolveStats(
+        usesTalents
+          ? this.mode === 'solo' || this.mode === 'daily'
+            ? save.talents
+            : duelTalentRanks
+          : {},
+      ),
+      data.rewardEffects,
     );
 
     // Kosmetik ist eine andere Frage als Spielvorteil.
