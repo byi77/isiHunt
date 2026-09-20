@@ -9,7 +9,7 @@
 import Phaser from 'phaser';
 
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
-import { TALENTS, type TalentId } from '@/config/talents';
+import { TALENTS, type TalentDef, type TalentId } from '@/config/talents';
 import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import type { SceneKeyValue } from '@/scenes/SceneKey';
@@ -87,16 +87,26 @@ export class TalentScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
 
-    const rowTop = sections.next(112);
+    const rowTop = sections.next(82);
     // Drei Beschreibungszeilen brauchen Platz; die vorhandene Scrollfläche
     // hält die übrigen Talente und die Reset-Aktion erreichbar.
     const rowStep = 128;
     const content = this.add.container(0, 0);
-    TALENTS.forEach((talent, index) =>
-      this.buildTalentRow(talent.id, rowTop + index * rowStep, world.accent, content),
-    );
+    const groupOrder: readonly TalentDef['group'][] = ['BEWEGUNG', 'SAMMELN', 'ERTRAG'];
+    let nextY = rowTop;
+    for (const group of groupOrder) {
+      const talents = TALENTS.filter((talent) => talent.group === group);
+      if (talents.length === 0) continue;
+      this.buildGroupHeader(group, nextY, world.accent, content);
+      nextY += 42;
+      for (const talent of talents) {
+        this.buildTalentRow(talent.id, nextY, world.accent, content);
+        nextY += rowStep;
+      }
+      nextY += 16;
+    }
 
-    const resetY = rowTop + TALENTS.length * rowStep + 16;
+    const resetY = nextY;
     const resetButton = createButton(
       this,
       GAME_WIDTH / 2,
@@ -185,14 +195,9 @@ export class TalentScene extends Phaser.Scene {
     );
     content.add(
       this.add
-        .text(66, y - 49, talent.group, textStyle(11, Palette.inkDim, { fontStyle: 'bold' }))
-        .setOrigin(0, 0.5),
-    );
-    content.add(
-      this.add
         .text(
           66,
-          y - 25,
+          y - 38,
           talent.name,
           textStyle(FontSize.body, toCss(accent), { fontStyle: 'bold' }),
         )
@@ -200,7 +205,7 @@ export class TalentScene extends Phaser.Scene {
     );
     content.add(
       this.add
-        .text(66, y + 2, talent.description, textStyle(FontSize.tiny, Palette.inkDim))
+        .text(66, y - 10, talent.description, textStyle(FontSize.tiny, Palette.inkDim))
         .setOrigin(0, 0)
         .setWordWrapWidth(230),
     );
@@ -208,7 +213,7 @@ export class TalentScene extends Phaser.Scene {
       this.add
         .text(
           405,
-          y - 32,
+          y - 38,
           'RANG ' + rank + '/' + talent.maxRank,
           textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }),
         )
@@ -218,7 +223,7 @@ export class TalentScene extends Phaser.Scene {
       this.add
         .text(
           405,
-          y - 4,
+          y - 10,
           `AKTUELL RANG ${rank} · NÄCHSTER ${talent.perRank}`,
           textStyle(FontSize.tiny, Palette.gold),
         )
@@ -252,6 +257,20 @@ export class TalentScene extends Phaser.Scene {
     );
     content.add(purchaseButton.container);
     purchaseButton.setEnabled(rank < talent.maxRank && save.talentPoints > 0);
+  }
+
+  private buildGroupHeader(
+    group: TalentDef['group'],
+    y: number,
+    accent: number,
+    content: Phaser.GameObjects.Container,
+  ): void {
+    const label = this.add
+      .text(58, y, group, textStyle(FontSize.small, toCss(accent), { fontStyle: 'bold' }))
+      .setOrigin(0, 0.5)
+      .setLetterSpacing(2);
+    const line = this.add.rectangle(232, y, 478, 2, accent, 0.62).setOrigin(0, 0.5);
+    content.add([label, line]);
   }
 
   private async purchase(id: TalentId): Promise<void> {

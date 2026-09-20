@@ -8,23 +8,26 @@ import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import {
   achievementCategoryLabel,
-  achievementCategoryIcon,
-  filterAchievements,
   getNextAchievement,
   getAchievementProgress,
 } from '@/systems/AchievementProgressSystem';
-import type { AchievementFilter } from '@/systems/AchievementProgressSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
-import { createBackButton, createButton, createPanel, createSceneBackdrop } from '@/ui/widgets';
+import {
+  createBackButton,
+  createButton,
+  createMenuLayout,
+  createPanel,
+  createSceneBackdrop,
+} from '@/ui/widgets';
 
 export class AchievementsScene extends Phaser.Scene {
   constructor() {
     super(SceneKey.Achievements);
   }
 
-  create(data: { page?: number; filter?: AchievementFilter } = {}): void {
+  create(data: { page?: number } = {}): void {
     SafeAreaSystem.showStatic('ERFOLGE');
     const save = SaveSystem.load();
     const world = getWorld(save.lastWorldId);
@@ -32,62 +35,37 @@ export class AchievementsScene extends Phaser.Scene {
     createSceneBackdrop(this, world);
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
 
+    const sections = createMenuLayout().sections;
     const unlocked = save.unlockedAchievements.filter((id) =>
       ACHIEVEMENTS.some((achievement) => achievement.id === id),
     ).length;
-    const filter = data.filter ?? 'all';
-    const visibleAchievements = filterAchievements(ACHIEVEMENTS, save, filter);
     this.add
       .text(
         GAME_WIDTH / 2,
-        48,
-        `${unlocked} von ${ACHIEVEMENTS.length} freigeschaltet · ${visibleAchievements.length} angezeigt`,
+        sections.next(30),
+        `${unlocked} von ${ACHIEVEMENTS.length} freigeschaltet`,
         textStyle(FontSize.body, toCss(world.accent), { fontStyle: 'bold' }),
       )
       .setOrigin(0.5);
 
-    const filterButtons: readonly [AchievementFilter, string][] = [
-      ['all', 'ALLE'],
-      ['near', 'FAST FERTIG'],
-      ['unlocked', 'FREIGESCHALTET'],
-      ['collection', 'SAMMLUNG'],
-    ];
-    filterButtons.forEach(([value, label], index) => {
-      createButton(
-        this,
-        92 + index * 178,
-        94,
-        label,
-        () => {
-          if (value !== filter) this.scene.restart({ filter: value, page: 0 });
-        },
-        {
-          width: 164,
-          height: 42,
-          accent: value === filter ? world.accent : 0x69738d,
-          fontSize: 11,
-        },
-      );
-    });
-
-    const pageSize = 8;
-    const pageCount = Math.max(1, Math.ceil(visibleAchievements.length / pageSize));
+    const pageSize = 10;
+    const pageCount = Math.ceil(ACHIEVEMENTS.length / pageSize);
     const page = Math.min(pageCount - 1, Math.max(0, data.page ?? 0));
-    const pageAchievements = visibleAchievements.slice(page * pageSize, (page + 1) * pageSize);
+    const pageAchievements = ACHIEVEMENTS.slice(page * pageSize, (page + 1) * pageSize);
     const nextAchievement = getNextAchievement(ACHIEVEMENTS, save);
     const columnX = [190, 530] as const;
-    const rowTop = 190;
-    const rowStep = 148;
+    const rowTop = sections.next(112);
+    const rowStep = 195;
     pageAchievements.forEach((achievement, index) => {
-      const column = index < 4 ? 0 : 1;
-      const row = column === 0 ? index : index - 4;
+      const column = index < 5 ? 0 : 1;
+      const row = column === 0 ? index : index - 5;
       const isUnlocked = save.unlockedAchievements.includes(achievement.id);
       const accent = isUnlocked ? Palette.goldHex : 0x69738d;
       const x = columnX[column];
       const y = rowTop + row * rowStep;
 
       const progress = getAchievementProgress(achievement, save);
-      createPanel(this, x, y, 316, 136, accent, {
+      createPanel(this, x, y, 316, 180, accent, {
         alpha: isUnlocked ? 0.58 : 0.38,
         radius: 14,
       });
@@ -96,14 +74,14 @@ export class AchievementsScene extends Phaser.Scene {
       const rankBadge = this.add.graphics();
       rankBadge.fillStyle(isUnlocked ? Palette.goldHex : 0x69738d, isUnlocked ? 0.2 : 0.16);
       rankBadge.lineStyle(1.5, isUnlocked ? Palette.goldHex : 0x69738d, 0.75);
-      rankBadge.fillRoundedRect(x - 104, y - 62, 92, 28, 8);
-      rankBadge.strokeRoundedRect(x - 104, y - 62, 92, 28, 8);
+      rankBadge.fillRoundedRect(x - 104, y - 78, 92, 28, 8);
+      rankBadge.strokeRoundedRect(x - 104, y - 78, 92, 28, 8);
 
       this.add
         .text(
           x - 94,
-          y - 48,
-          `${achievementCategoryIcon(progress.category)} RANG ${achievement.rank} · +${achievement.coinReward}`,
+          y - 64,
+          `RANG ${achievement.rank} · +${achievement.coinReward}`,
           textStyle(FontSize.tiny, isUnlocked ? Palette.gold : Palette.inkDim, {
             fontStyle: 'bold',
           }),
@@ -112,7 +90,7 @@ export class AchievementsScene extends Phaser.Scene {
       this.add
         .text(
           x + 140,
-          y - 48,
+          y - 64,
           nextAchievement?.id === achievement.id
             ? 'NÄCHSTES ZIEL'
             : achievementCategoryLabel(progress.category),
@@ -128,7 +106,7 @@ export class AchievementsScene extends Phaser.Scene {
       const nameText = this.add
         .text(
           x - 102,
-          y - 23,
+          y - 35,
           achievement.name,
           textStyle(FontSize.tiny, isUnlocked ? Palette.ink : Palette.inkDim, {
             fontStyle: 'bold',
@@ -158,7 +136,7 @@ export class AchievementsScene extends Phaser.Scene {
       this.add
         .text(
           x - 102,
-          y + 48,
+          y + 66,
           progress.trackable ? `FORTSCHRITT  ${progress.label}` : progress.label,
           textStyle(14, isUnlocked ? Palette.gold : Palette.inkDim, {
             fontStyle: 'bold',
@@ -167,18 +145,6 @@ export class AchievementsScene extends Phaser.Scene {
         .setOrigin(0, 0.5)
         .setWordWrapWidth(230);
     });
-
-    if (pageAchievements.length === 0) {
-      this.add
-        .text(
-          GAME_WIDTH / 2,
-          330,
-          'Keine Erfolge in diesem Filter.\nAndere Kategorie auswählen.',
-          textStyle(FontSize.body, Palette.inkDim),
-        )
-        .setOrigin(0.5)
-        .setAlign('center');
-    }
 
     this.add
       .text(

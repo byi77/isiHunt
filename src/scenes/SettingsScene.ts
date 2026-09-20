@@ -8,7 +8,7 @@
 
 import Phaser from 'phaser';
 
-import { APP_VERSION, GAME_WIDTH } from '@/config/GameConfig';
+import { GAME_WIDTH } from '@/config/GameConfig';
 import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as SaveSystem from '@/systems/SaveSystem';
@@ -51,12 +51,14 @@ export class SettingsScene extends Phaser.Scene {
     // Luft darunter; ein größerer Startwert erzeugt sichtbar unnötigen Raum.
     const layout = createMenuLayout();
     const sections = layout.sections;
-    const profileY = sections.next(330);
-    const soundY = sections.next(300);
-    const legalY = sections.next(350);
+    // Vermessene Innenränder: Alle Texte bleiben mindestens 42 px von der
+    // Kartenkante und mindestens 14 px von einer Buttonkante entfernt.
+    const profileY = sections.next(350);
+    const soundY = sections.next(350);
+    const legalY = sections.next(430);
 
     addContent(
-      createPanel(this, GAME_WIDTH / 2, profileY, GAME_WIDTH - 120, 330, world.accent, {
+      createPanel(this, GAME_WIDTH / 2, profileY, GAME_WIDTH - 120, 350, world.accent, {
         alpha: 0.58,
         radius: 20,
       }),
@@ -66,7 +68,7 @@ export class SettingsScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          profileY - 115,
+          profileY - 135,
           'PROFIL & GERÄTE',
           textStyle(FontSize.body, Palette.gold),
         )
@@ -78,12 +80,13 @@ export class SettingsScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          profileY - 50,
+          profileY - 76,
           'Name, Level, Statistik und Mehrgeräte-Anmeldung an einem Ort.',
           textStyle(FontSize.small, Palette.ink),
         )
         .setOrigin(0.5)
-        .setAlign('center'),
+        .setAlign('center')
+        .setWordWrapWidth(GAME_WIDTH - 240),
     );
 
     // Fuehrt unabhaengig vom Login-Status zum selben Ziel wie der
@@ -93,7 +96,7 @@ export class SettingsScene extends Phaser.Scene {
       createButton(
         this,
         GAME_WIDTH / 2,
-        profileY + 75,
+        profileY + 85,
         'PROFIL ÖFFNEN',
         () => this.scene.start(SceneKey.Profile),
         { width: 460, height: 76, accent: world.accent, fontSize: FontSize.small },
@@ -101,7 +104,7 @@ export class SettingsScene extends Phaser.Scene {
     );
 
     addContent(
-      createPanel(this, GAME_WIDTH / 2, soundY, GAME_WIDTH - 120, 300, world.accent, {
+      createPanel(this, GAME_WIDTH / 2, soundY, GAME_WIDTH - 120, 350, world.accent, {
         alpha: 0.5,
         radius: 20,
       }),
@@ -109,7 +112,7 @@ export class SettingsScene extends Phaser.Scene {
 
     addContent(
       this.add
-        .text(GAME_WIDTH / 2, soundY - 118, 'FEEDBACK', textStyle(FontSize.body, Palette.gold))
+        .text(GAME_WIDTH / 2, soundY - 135, 'FEEDBACK', textStyle(FontSize.body, Palette.gold))
         .setOrigin(0.5)
         .setLetterSpacing(3),
     );
@@ -117,7 +120,7 @@ export class SettingsScene extends Phaser.Scene {
     const soundButton = createButton(
       this,
       GAME_WIDTH / 2,
-      soundY - 35,
+      soundY - 55,
       SoundSystem.isEnabled() ? 'TON: AN' : 'TON: AUS',
       () => {
         const enabled = !SoundSystem.isEnabled();
@@ -131,10 +134,8 @@ export class SettingsScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          soundY + 5,
-          typeof window !== 'undefined' && 'AudioContext' in window
-            ? 'AUDIO: BROWSER-AUDIO VERFÜGBAR'
-            : 'AUDIO: BROWSER-AUDIO NICHT VERFÜGBAR',
+          soundY - 2,
+          'Spieltöne und Effekte',
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0.5)
@@ -144,7 +145,7 @@ export class SettingsScene extends Phaser.Scene {
     const hapticsButton = createButton(
       this,
       GAME_WIDTH / 2,
-      soundY + 62,
+      soundY + 72,
       HapticsSystem.isEnabled() ? 'HAPTIK: AN' : 'HAPTIK: AUS',
       () => {
         const enabled = !HapticsSystem.isEnabled();
@@ -158,10 +159,8 @@ export class SettingsScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          soundY + 105,
-          typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function'
-            ? 'VIBRATION: GERÄTEHAPTIK VERFÜGBAR'
-            : 'VIBRATION: NICHT VOM GERÄT UNTERSTÜTZT',
+          soundY + 125,
+          'Vibration bei Treffern und Aktionen',
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0.5)
@@ -169,7 +168,7 @@ export class SettingsScene extends Phaser.Scene {
     );
 
     addContent(
-      createPanel(this, GAME_WIDTH / 2, legalY, GAME_WIDTH - 120, 350, world.accent, {
+      createPanel(this, GAME_WIDTH / 2, legalY, GAME_WIDTH - 120, 430, world.accent, {
         alpha: 0.5,
         radius: 20,
       }),
@@ -177,7 +176,7 @@ export class SettingsScene extends Phaser.Scene {
 
     addContent(
       this.add
-        .text(GAME_WIDTH / 2, legalY - 125, 'IMPRESSUM', textStyle(FontSize.body, Palette.gold))
+        .text(GAME_WIDTH / 2, legalY - 165, 'IMPRESSUM', textStyle(FontSize.body, Palette.gold))
         .setOrigin(0.5)
         .setLetterSpacing(3),
     );
@@ -186,7 +185,7 @@ export class SettingsScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          legalY - 70,
+          legalY - 105,
           'PROGRAMMIERT VON  YAVUZ ISIK',
           textStyle(FontSize.small, Palette.ink, { fontStyle: 'bold' }),
         )
@@ -197,7 +196,7 @@ export class SettingsScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          legalY + 45,
+          legalY + 15,
           'BESONDERER DANK AN EMRE UND SIMAY\n' +
             'Für eure aussergewöhnliche Unterstützung bei der Planung,\n' +
             'mit Vorschlägen und Ideen, beim Testen und Bugfixen.\n' +
@@ -209,7 +208,7 @@ export class SettingsScene extends Phaser.Scene {
         .setAlign('center'),
     );
 
-    const contentBottom = legalY + 350;
+    const contentBottom = legalY + 215;
     const maxScroll = Math.max(0, contentBottom - layout.contentBottom);
     attachVerticalScroll(this, {
       maxScroll,
@@ -227,18 +226,8 @@ export class SettingsScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          legalY + 145,
+          legalY + 126,
           'Dein Spielstand wird automatisch lokal gespeichert.',
-          textStyle(FontSize.tiny, Palette.inkDim),
-        )
-        .setOrigin(0.5),
-    );
-    addContent(
-      this.add
-        .text(
-          GAME_WIDTH / 2,
-          legalY + 178,
-          `Version v${APP_VERSION} · Hilfe & Diagnose über das Debug-Logo-Menü`,
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0.5),

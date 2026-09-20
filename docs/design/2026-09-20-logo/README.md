@@ -1,5 +1,10 @@
 # Logo-Entwuerfe — P2-61
 
+> Status: Beide Entwuerfe wurden am 20.09.2026 verworfen. Sie bleiben als
+> historische Designnotiz erhalten und duerfen weder als App-Logo noch als
+> Favicon oder in der Kopfzeile eingebaut werden. Die bisherige Wortmarke
+> bleibt aktiv.
+
 Zwei bewusst kleine, transparente SVG-Entwuerfe fuer die naechste
 Designentscheidung. Beide behalten den Namen `isiHunt` und funktionieren ohne
 Rasterbild als Skalierungsabhaengigkeit.

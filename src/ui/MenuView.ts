@@ -464,24 +464,6 @@ export class MenuView {
     );
     next.setEnabled(nextWorld !== undefined && nextWorld.unlockLevel <= this.save.level);
     this.button(
-      GAME_WIDTH / 2 + 76 * unit,
-      worldTitleY - 28 * unit,
-      92 * unit,
-      44 * unit,
-      'Anpassen',
-      () => this.callbacks.onAction('shop'),
-      11,
-    );
-    this.label(
-      GAME_WIDTH / 2 - 118 * unit,
-      worldTitleY - 28 * unit,
-      getShipShape(this.save.shipShape).name,
-      13,
-      100 * unit,
-      Palette.ink,
-      false,
-    );
-    this.button(
       GAME_WIDTH / 2,
       worldTitleY,
       innerWidth,

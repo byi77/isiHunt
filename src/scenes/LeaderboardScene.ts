@@ -281,7 +281,9 @@ export class LeaderboardScene extends Phaser.Scene {
       if (requestId !== this.requestId || !this.scene.isActive()) return;
 
       if (!result.ok) {
-        this.showLoadError(result.error);
+        this.statusText
+          .setText(`Bestenliste nicht erreichbar.\n${result.error}`)
+          .setColor(Palette.danger);
         return;
       }
 
@@ -304,7 +306,9 @@ export class LeaderboardScene extends Phaser.Scene {
     if (requestId !== this.requestId || !this.scene.isActive()) return;
 
     if (!result.ok) {
-      this.showLoadError(result.error);
+      this.statusText
+        .setText(`Bestenliste nicht erreichbar.\n${result.error}`)
+        .setColor(Palette.danger);
       return;
     }
 
@@ -318,19 +322,6 @@ export class LeaderboardScene extends Phaser.Scene {
 
     this.statusText.setText('');
     this.renderList(result.value);
-  }
-
-  private showLoadError(error: string): void {
-    this.statusText.setText(`Bestenliste nicht erreichbar.\n${error}`).setColor(Palette.danger);
-    const retry = createButton(
-      this,
-      GAME_WIDTH / 2,
-      this.listTop + 108,
-      'ERNEUT VERSUCHEN',
-      () => void this.loadList(),
-      { width: 260, height: 54, accent: Palette.goldHex, fontSize: FontSize.tiny },
-    );
-    this.listItems.push(retry.container);
   }
 
   private renderList(entries: readonly LeaderboardEntry[]): void {
