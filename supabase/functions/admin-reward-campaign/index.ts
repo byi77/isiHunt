@@ -61,12 +61,12 @@ Deno.serve(async (request) => {
   const { data: userData } = await auth.auth.getUser();
   if (!userData.user) return json({ error: 'unauthorized' }, 401);
   const service = createClient(url, serviceRole);
-  const { data: profile } = await service
-    .from('profiles')
-    .select('is_admin')
-    .eq('id', userData.user.id)
-    .maybeSingle();
-  if (!profile?.is_admin) return json({ error: 'forbidden' }, 403);
+
+  // Die folgenden internen RPCs pruefen `profiles.is_admin` selbst unter
+  // Service-Role-Gate (`reward_require_admin`). Der fruehere zweite Lookup
+  // hier im Edge-Handler konnte bei einem frisch angelegten Profil trotz
+  // gesetzter Rolle 403 liefern. Die DB bleibt damit die einzige autoritative
+  // Berechtigungsentscheidung, ohne einen weniger verlaesslichen Doppelcheck.
 
   let body: Record<string, unknown>;
   try {
