@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest';
 import {
   BALANCE,
   RUN_BONUS_COLLECTION_TIERS,
-  RUN_BONUS_MAX_SCORE,
   RUN_BONUS_MAX_SCORE_RUNS,
   RUN_BONUS_MAX_XP,
   RUN_BONUS_MAX_XP_RUNS,
@@ -91,13 +90,14 @@ describe('calculateRunBonus', () => {
       bestCombo: 400,
     });
     expect(bonus.capped).toBe(true);
-    expect(bonus.score).toBe(RUN_BONUS_MAX_SCORE);
+    expect(bonus.score).toBe(scoreForRuns(5.14));
     expect(bonus.xp).toBe(RUN_BONUS_MAX_XP);
-    // Die Posten bleiben vollstaendig sichtbar, nur die Summe ist gekuerzt.
-    expect(bonus.entries.reduce((sum, entry) => sum + entry.score, 0)).toBeGreaterThan(bonus.score);
+    // Nur die XP-Summe wird in diesem Fall gekuerzt; die Punkte bleiben
+    // unter ihrem eigenen, höheren Deckel.
+    expect(bonus.entries.reduce((sum, entry) => sum + entry.xp, 0)).toBeGreaterThan(bonus.xp);
   });
 
-  it('wendet den Phase-4-Faktor auf den Referenzlauf an', () => {
+  it('wendet den erhoehten Leistungsbonus auf den Referenzlauf an', () => {
     const bonus = calculateRunBonus({
       collected: collected({
         poor: 76,
@@ -110,8 +110,8 @@ describe('calculateRunBonus', () => {
       bestCombo: 69,
     });
 
-    expect(bonus.score).toBe(10_990);
-    expect(bonus.xp).toBe(2_039);
+    expect(bonus.score).toBe(19_312);
+    expect(bonus.xp).toBe(3_541);
     expect(bonus.capped).toBe(false);
   });
 

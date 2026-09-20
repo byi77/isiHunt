@@ -23,7 +23,9 @@ Abbruch haben genau einen Endzustand.
 
 `phase_2_61_completion_run_bonus.sql` ergänzt einen garantierten, zentral
 gerechneten Abschlussbonus für jeden Lauf mit mindestens einem Relikt. Nach
-Phase 2.61 erwartet `verify_migration_state.sql` Schema **61**.
+`phase_2_62_run_bonus_boost.sql` verdoppelt zusätzlich die fünf
+leistungsabhängigen Abschlussboni und erhöht ihre Deckel. Nach Phase 2.62
+erwartet `verify_migration_state.sql` Schema **62**.
 
 ## Reihenfolge
 
