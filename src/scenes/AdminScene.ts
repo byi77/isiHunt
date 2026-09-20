@@ -240,6 +240,7 @@ export class AdminScene extends Phaser.Scene {
     const repairY = actions.next(54);
     const statsY = actions.next(54);
     const usersY = actions.next(54);
+    const rewardsY = actions.next(54);
     const rulerY = actions.next(54);
     const resetY = actions.next(76);
 
@@ -269,6 +270,15 @@ export class AdminScene extends Phaser.Scene {
         accent: 0x9aa3bd,
         fontSize: FontSize.small,
       },
+    );
+
+    createButton(
+      this,
+      GAME_WIDTH / 2,
+      rewardsY,
+      'BELOHNUNGSCODES',
+      () => this.scene.start(SceneKey.AdminRewardCodes),
+      { width: 460, height: 54, accent: Palette.goldHex, fontSize: FontSize.small },
     );
 
     createButton(

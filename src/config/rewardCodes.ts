@@ -11,7 +11,7 @@ export const REWARD_CODE_MAX_COINS = 100_000;
 export const REWARD_CODE_MAX_LEVEL = 100;
 export const REWARD_CODE_MAX_BOOST_APPLICATIONS = 10;
 
-export const REWARD_CODE_XP_FACTORS = [1.25, 1.5, 2] as const;
+export const REWARD_CODE_XP_FACTORS = [1.25, 1.3, 1.5, 2] as const;
 export type RewardCodeXpFactor = (typeof REWARD_CODE_XP_FACTORS)[number];
 
 export type RewardCodeFailureCode =

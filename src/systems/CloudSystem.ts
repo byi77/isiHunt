@@ -42,6 +42,7 @@ import {
   type RewardRedemptionRequest,
 } from '@/systems/RewardRedemptionContract';
 import { validateRewardPackage } from '@/systems/RewardPackageSystem';
+import type { RewardPackage } from '@/systems/RewardPackageSystem';
 import type { ProgressEvent, SaveData } from '@/types';
 import type { TalentId, TalentRanks } from '@/config/talents';
 
@@ -1280,6 +1281,66 @@ export async function adminResetUser(alias: string): Promise<CloudResult<true>> 
   if (!result.ok) return result;
   if (result.value.error) return { ok: false, error: result.value.error.message };
   return { ok: true, value: true };
+}
+
+/** Erstellt, aktiviert und materialisiert eine feste Admin-Codekampagne.
+ * Klartextcodes kommen ausschliesslich in der Antwort des Edge-Handlers zurueck. */
+export async function createAdminRewardCodes(input: {
+  readonly name: string;
+  readonly description: string;
+  readonly package: RewardPackage;
+  readonly count: number;
+}): Promise<CloudResult<readonly string[]>> {
+  const valid = validateRewardPackage(input.package);
+  if (!valid.ok || !Number.isInteger(input.count) || input.count < 1 || input.count > 1000)
+    return { ok: false, error: 'Ungueltige Codevorlage' };
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+  const startsAt = new Date().toISOString();
+  const endsAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString();
+  const campaign = await withTimeout(
+    authenticated.value.functions.invoke('admin-reward-campaign', {
+      body: {
+        action: 'createCampaign',
+        name: input.name,
+        description: input.description,
+        package: valid.value,
+        startsAt,
+        endsAt,
+        globalLimit: input.count,
+        accountLimit: 1,
+      },
+    }),
+    'Codekampagne anlegen',
+  );
+  if (!campaign.ok) return campaign;
+  const campaignBody = recordFrom(campaign.value.data);
+  const campaignId = typeof campaignBody?.campaignId === 'string' ? campaignBody.campaignId : '';
+  if (campaign.value.error || !campaignId)
+    return { ok: false, error: 'Codekampagne konnte nicht angelegt werden.' };
+  const activated = await withTimeout(
+    authenticated.value.functions.invoke('admin-reward-campaign', {
+      body: { action: 'setStatus', campaignId, status: 'active' },
+    }),
+    'Codekampagne aktivieren',
+  );
+  if (!activated.ok || activated.value.error)
+    return { ok: false, error: 'Codekampagne wurde angelegt, aber nicht aktiviert.' };
+  const generated = await withTimeout(
+    authenticated.value.functions.invoke('admin-reward-campaign', {
+      body: { action: 'generateCodes', campaignId, count: input.count },
+    }),
+    'Codes erzeugen',
+  );
+  if (!generated.ok || generated.value.error)
+    return { ok: false, error: 'Kampagne ist aktiv, aber Codes konnten nicht erzeugt werden.' };
+  const generatedBody = recordFrom(generated.value.data);
+  const codes =
+    Array.isArray(generatedBody?.codes) &&
+    generatedBody.codes.every((code) => typeof code === 'string')
+      ? (generatedBody.codes as string[])
+      : null;
+  return codes ? { ok: true, value: codes } : { ok: false, error: 'Ungueltige Codeantwort' };
 }
 
 /** Lädt den gemeinsamen Profilstand des angemeldeten Benutzers. */

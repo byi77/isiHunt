@@ -18,7 +18,14 @@ export type RewardGrant =
       readonly type: 'xp_run_boost';
       readonly factor: RewardCodeXpFactor;
       readonly applications: number;
-    };
+    }
+  | {
+      readonly type: 'run_effect_boost';
+      readonly effect: 'speed' | 'magnetism' | 'combo_grace';
+      readonly factor: 1.3;
+      readonly applications: number;
+    }
+  | { readonly type: 'shop_god_mode' };
 
 export interface RewardPackage {
   readonly version: number;
@@ -96,6 +103,29 @@ export function validateRewardPackage(input: unknown): RewardPackageValidation {
         return { ok: false, error: 'invalid_boost_grant' };
       }
       grants.push({ type: 'xp_run_boost', factor, applications });
+      continue;
+    }
+    if (rawGrant.type === 'run_effect_boost') {
+      if (
+        !['speed', 'magnetism', 'combo_grace'].includes(String(rawGrant.effect)) ||
+        rawGrant.factor !== 1.3 ||
+        typeof rawGrant.applications !== 'number' ||
+        !Number.isInteger(rawGrant.applications) ||
+        rawGrant.applications < 1 ||
+        rawGrant.applications > REWARD_CODE_MAX_BOOST_APPLICATIONS
+      ) {
+        return { ok: false, error: 'invalid_run_effect_boost' };
+      }
+      grants.push({
+        type: 'run_effect_boost',
+        effect: rawGrant.effect as 'speed' | 'magnetism' | 'combo_grace',
+        factor: 1.3,
+        applications: rawGrant.applications,
+      });
+      continue;
+    }
+    if (rawGrant.type === 'shop_god_mode') {
+      grants.push({ type: 'shop_god_mode' });
       continue;
     }
     if (rawGrant.type === 'cosmetic_grant') {

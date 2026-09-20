@@ -43,6 +43,8 @@ export const SceneKey = {
   AdminStats: 'AdminStats',
   /** Serverseitig geschützte Benutzerwerkzeuge für Wartungsadmins. */
   AdminUsers: 'AdminUsers',
+  /** Erzeugt sichere, vorgegebene Belohnungscode-Kampagnen. */
+  AdminRewardCodes: 'AdminRewardCodes',
   /**
    * Pixel-Lineal ueber dem Spielfeld. Macht aus "da ist ein Balken" die Aussage
    * "von 0 bis 160 ist schwarz" - eine Zahl statt einer Beschreibung.

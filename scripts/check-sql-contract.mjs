@@ -406,7 +406,7 @@ requireText(verification, 'daily_key', 'Live-Verifikation Tagesbonus');
 requireText(verification, 'upsert_save', 'Live-Verifikation Save-CAS');
 requireText(verification, 'duel_rooms', 'Live-Verifikation Duell');
 requireText(migrationVerification, 'schema_version', 'Live-Verifikation Migrationsmarker');
-requireText(migrationVerification, 'schema_version = 62', 'Live-Verifikation Phase 2.62');
+requireText(migrationVerification, 'schema_version = 63', 'Live-Verifikation Phase 2.63');
 requireText(rewardCodeCoreMigration, 'reward_codes', 'Reward-Code-Katalog');
 requireText(rewardCodeCoreMigration, 'reward_redemptions', 'Reward-Einloesbelege');
 requireText(rewardCodeCoreMigration, 'reward_code_attempts', 'Reward-Rate-Limits');
@@ -435,6 +435,13 @@ requireText(completionBonusMigration, 'schema_version = 61', 'Migrationsmarker P
 requireText(boostedCompletionBonusMigration, '"maxScoreRuns": 5.2', 'Hoeherer Punktebonus-Deckel');
 requireText(boostedCompletionBonusMigration, '"maxXpRuns": 2.3', 'Hoeherer XP-Bonus-Deckel');
 requireText(boostedCompletionBonusMigration, 'schema_version = 62', 'Migrationsmarker Phase 2.62');
+const rewardCodePresetMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_63_reward_code_preset_grants.sql'),
+  'utf8',
+);
+requireText(rewardCodePresetMigration, 'schema_version = 63', 'Migrationsmarker Phase 2.63');
+requireText(rewardCodePresetMigration, 'run_effect_boost', 'Effektcode-Vertrag Phase 2.63');
+requireText(rewardCodePresetMigration, 'shop_god_mode', 'Shop-God-Modus Phase 2.63');
 const progressEventJsonbMigration = readFileSync(
   resolve(sqlDir, 'phase_2_54_progress_event_jsonb.sql'),
   'utf8',
