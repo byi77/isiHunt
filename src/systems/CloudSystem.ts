@@ -1347,6 +1347,137 @@ export type RewardRunEffects = Readonly<
   Partial<Record<'speed' | 'magnetism' | 'combo_grace', number>>
 >;
 
+export interface BoostedRunStart {
+  runId: string;
+  status: 'active';
+  startedAt: string;
+  expiresAt: string;
+  factor: number;
+  remainingApplications: number;
+}
+
+export interface BoostedRunFinish {
+  runId: string;
+  status: 'settled';
+  baseXp: number;
+  bonusXp: number;
+  profile: Record<string, unknown> | null;
+}
+
+export interface BoostedRunTerminalResult {
+  runId: string;
+  status: 'abandoned' | 'expired';
+}
+
+function boostedRunError(body: Record<string, unknown> | null): string {
+  const code = body?.code;
+  return typeof code === 'string' && code ? `Bonusrunde: ${code}` : 'Bonusrunde abgelehnt';
+}
+
+/** Startet eine serverseitig abgebuchte XP-Bonusrunde idempotent. */
+export async function startBoostedRun(
+  worldId: string,
+  requestId = crypto.randomUUID(),
+): Promise<CloudResult<BoostedRunStart>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const result = await withTimeout(
+    authenticated.value.functions.invoke('boosted-run', {
+      body: { action: 'start', requestId, worldId, mode: 'solo' },
+    }),
+    'Bonusrunde starten',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  const body = recordFrom(result.value.data);
+  if (
+    !body?.ok ||
+    body.status !== 'active' ||
+    typeof body.runId !== 'string' ||
+    typeof body.startedAt !== 'string' ||
+    typeof body.expiresAt !== 'string'
+  ) {
+    return { ok: false, error: boostedRunError(body) };
+  }
+  return {
+    ok: true,
+    value: {
+      runId: body.runId,
+      status: 'active',
+      startedAt: body.startedAt,
+      expiresAt: body.expiresAt,
+      factor: Math.max(1, finiteNonNegative(body.factor, 1)),
+      remainingApplications: finiteNonNegative(body.remainingApplications),
+    },
+  };
+}
+
+/** Beendet eine laufende Bonusrunde ohne Rückerstattung idempotent. */
+export async function abandonBoostedRun(
+  runId: string,
+): Promise<CloudResult<BoostedRunTerminalResult>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const result = await withTimeout(
+    authenticated.value.functions.invoke('boosted-run', {
+      body: { action: 'abandon', runId },
+    }),
+    'Bonusrunde abbrechen',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  const body = recordFrom(result.value.data);
+  if (
+    !body?.ok ||
+    typeof body.runId !== 'string' ||
+    (body.status !== 'abandoned' && body.status !== 'expired')
+  ) {
+    return { ok: false, error: boostedRunError(body) };
+  }
+  return { ok: true, value: { runId: body.runId, status: body.status } };
+}
+
+/** Übermittelt das fertige Ergebnis; der Server bucht XP und Fortschritt genau einmal. */
+export async function finishBoostedRun(input: {
+  runId: string;
+  score: number;
+  bestCombo: number;
+  durationMs: number;
+  collected: Record<string, number>;
+  achievementIds: string[];
+}): Promise<CloudResult<BoostedRunFinish>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const result = await withTimeout(
+    authenticated.value.functions.invoke('boosted-run', {
+      body: { action: 'finish', ...input },
+    }),
+    'Bonusrunde abschliessen',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  const body = recordFrom(result.value.data);
+  if (!body?.ok || body.status !== 'settled' || typeof body.runId !== 'string') {
+    return { ok: false, error: boostedRunError(body) };
+  }
+  return {
+    ok: true,
+    value: {
+      runId: body.runId,
+      status: 'settled',
+      baseXp: finiteNonNegative(body.baseXp),
+      bonusXp: finiteNonNegative(body.bonusXp),
+      profile: recordFrom(body.profile),
+    },
+  };
+}
+
 /** Verbraucht vorhandene, begrenzte Effektrechte atomar genau beim Solo-Start. */
 export async function startRewardEffectRun(
   worldId: string,

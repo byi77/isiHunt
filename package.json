@@ -1,6 +1,6 @@
 {
   "name": "isihunt",
-  "version": "0.1.362",
+  "version": "0.1.364",
   "private": true,
   "type": "module",
   "description": "isiHunt - ein farbenfroher 2D-Arcade-Collector fuer mobile Browser",
@@ -24,6 +24,7 @@
     "performance:realtime": "node scripts/performance-check.mjs --realtime",
     "ios:check": "node scripts/check-ios-support.mjs",
     "sql:check": "node scripts/check-sql-contract.mjs",
+    "p0a:inventory": "node scripts/p0-a-inventory.mjs",
     "release:check": "npm run smoke && npm run production:check && npm run performance:check && npm run ios:check && npm run sql:check",
     "test:scope": "node scripts/test-scope.mjs",
     "balance:sync": "node scripts/sync-balance-sql.mjs",

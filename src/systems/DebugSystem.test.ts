@@ -239,6 +239,16 @@ describe('Persistenz ueber einen App-Neustart', () => {
 });
 
 describe('DebugSystem.buildReport', () => {
+  it('fasst fachliche RPC-Ablehnungen getrennt zusammen', () => {
+    DebugSystem.logRpcResponse('Fortschritt synchronisieren', {
+      error: { code: '23514', message: 'Vertrag verletzt', details: 'fixture', hint: 'prüfen' },
+    });
+
+    expect(DebugSystem.getRpcDiagnostics()).toContain('Aufrufe=1');
+    expect(DebugSystem.getRpcDiagnostics()).toContain('fachlicheFehler=1');
+    expect(DebugSystem.getRpcDiagnostics()).toContain('Fortschritt synchronisieren');
+  });
+
   it('enthaelt Geraet-, Layout-, Ton- und Verlaufsabschnitte', async () => {
     const canvas = document.createElement('canvas');
     DebugSystem.pushLogEntry({

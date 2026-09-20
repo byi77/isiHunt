@@ -1098,6 +1098,24 @@ export class OnlineDuelScene extends Phaser.Scene {
 
   private async pollLobbyStatus(statusText: Phaser.GameObjects.Text): Promise<void> {
     if (this.runStarted || !this.scene.isActive()) return;
+    const lobby = await NetworkDuelSystem.getDuelLobbyState(this.roomCode, this.participantToken);
+    if (this.runStarted || !this.scene.isActive()) return;
+    if (lobby.ok && lobby.value) {
+      this.roomPlayerCount = lobby.value.playerCount;
+      this.roomMaxPlayers = lobby.value.maxPlayers;
+      const names = lobby.value.slots
+        .sort((left, right) => left.index - right.index)
+        .map((slot) => slot.playerName);
+      if (!this.talentDraftStarted) {
+        this.renderRoomLobby(names, this.roomPlayerCount, this.roomMaxPlayers);
+      }
+      if (this.isHost && lobby.value.pendingInvitations.length > 0) {
+        const pending = lobby.value.pendingInvitations
+          .map((invitation) => invitation.inviteeName)
+          .join(', ');
+        statusText.setText(`Offene Einladungen: ${pending}`);
+      }
+    }
     const result = await NetworkDuelSystem.getRoomStatus(this.roomCode, this.participantToken);
     if (this.runStarted || !this.scene.isActive() || !result.ok || !result.value) return;
 
@@ -1109,7 +1127,12 @@ export class OnlineDuelScene extends Phaser.Scene {
     if (result.value.talentDraftStartedAtMs !== null && !this.talentDraftStarted) {
       this.beginInitialTalentDraft(statusText);
     }
-    const names = ChallengeSystem.getState()?.online?.playerNames ?? [];
+    const names =
+      lobby.ok && lobby.value
+        ? lobby.value.slots
+            .sort((left, right) => left.index - right.index)
+            .map((slot) => slot.playerName)
+        : (ChallengeSystem.getState()?.online?.playerNames ?? []);
     if (!this.talentDraftStarted) {
       this.renderRoomLobby(names, this.roomPlayerCount, this.roomMaxPlayers);
     }

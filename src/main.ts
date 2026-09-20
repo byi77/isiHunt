@@ -18,7 +18,9 @@ import {
   GAME_HEIGHT,
   GAME_WIDTH,
   PERFORMANCE_MODE,
+  SAVE_VERSION,
 } from '@/config/GameConfig';
+import { BALANCE_BASELINES } from '@/config/balance';
 import { isIos, isStandalone } from '@/core/display';
 import { eventBus, GameEvent } from '@/core/EventBus';
 import { requestPortraitOrientationLock } from '@/core/orientation';
@@ -175,13 +177,17 @@ AuthSystem.initialize();
 DebugSystem.setStateDiagnosticsProvider(() => {
   const save = SaveSystem.load();
   const userId = AuthSystem.currentUserId();
+  const sync = ProgressSyncSystem.getDiagnostics();
   const account = userId ? `angemeldet:${userId.slice(0, 8)}` : 'nicht angemeldet';
+  const oldest =
+    sync.oldestPendingAt === null ? 'unbekannt' : new Date(sync.oldestPendingAt).toISOString();
   return [
     `Account=${account}`,
     `Level=${save.level} XP=${save.xp} Gesamt-XP=lokal nicht separat gespeichert`,
     `Coins=${save.coins} Bestwert=${save.bestScore} Runs=${save.totalRuns}`,
-    `Outbox=${ProgressSyncSystem.pendingCount()}`,
-    'Schema-/Balanceversion=im Report nicht abgefragt',
+    `OutboxEvents=${sync.pendingEvents} ältestesEvent=${oldest} Tagesbonus=${sync.pendingDaily} BotSiege=${sync.pendingBotVictories} abgelehnt=${sync.rejectedEvents}`,
+    `SpielstandVersion=${SAVE_VERSION} SchemaErwartung=66 (Serverzeit nicht abgefragt)`,
+    `BalanceQuelle=balance-data.json Baseline=${BALANCE_BASELINES.capturedAt}`,
   ].join('  ');
 });
 

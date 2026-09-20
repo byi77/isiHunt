@@ -61,6 +61,7 @@ interface PendingDuelResult {
 }
 
 let pendingDuelFlush: Promise<void> | null = null;
+let duelLobbyContractUnavailable = false;
 
 function duelResultOutboxKey(accountId: string | null): string {
   return `${DUEL_RESULT_OUTBOX_PREFIX}${accountId ?? 'anonymous'}`;
@@ -264,6 +265,28 @@ export interface DuelRoomStatus {
   playerCount: number;
   maxPlayers: number;
   playerResults: (DuelRoundResult | null)[];
+}
+
+export interface DuelLobbySlot {
+  index: number;
+  state: 'free' | 'invited' | 'connected' | 'ready';
+  playerName: string | null;
+  talentReady: boolean;
+}
+
+export interface PendingDuelInvitation {
+  id: string;
+  inviteeName: string;
+  expiresAt: string;
+}
+
+export interface DuelLobbyState {
+  code: string;
+  phase: 'open' | 'talent' | 'started';
+  playerCount: number;
+  maxPlayers: number;
+  slots: DuelLobbySlot[];
+  pendingInvitations: PendingDuelInvitation[];
 }
 
 // --- Code-Erzeugung -----------------------------------------------------------
@@ -809,6 +832,111 @@ export async function getRoomStatus(
         ? Number(row.max_players)
         : CHALLENGE_MAX_PLAYER_COUNT,
       playerResults: parsePlayerResults(row.player_results, row.host_result, row.guest_result),
+    },
+  };
+}
+
+/**
+ * Liest die serverautoritative Lobbyansicht. Presence bleibt nur ein Hinweis
+ * fuer die globale Spielerliste; Slots und offene Einladungen kommen aus SQL.
+ * Der RPC ist additiv. Ein alter Server darf deshalb mit null beantwortet
+ * werden, bis Phase 2.65/2.66 ausgerollt ist.
+ */
+export async function getDuelLobbyState(
+  code: string,
+  participantToken = '',
+): Promise<CloudResult<DuelLobbyState | null>> {
+  if (duelLobbyContractUnavailable) return { ok: true, value: null };
+  const supabase = CloudSystem.getSupabaseClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+
+  const result = await withTimeout(
+    supabase.rpc('get_duel_lobby_state', {
+      p_code: code,
+      p_participant_token: participantToken,
+    }),
+    'Duell-Lobbystatus laden',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) {
+    // Phase 2.65 kann hinter einem alten Client ausgerollt werden; der
+    // bestehende get_duel_room-Pfad bleibt dann die sichere Rückfallebene.
+    const message = result.value.error.message ?? '';
+    if (
+      result.value.error.code === 'PGRST202' ||
+      message.includes('get_duel_lobby_state') ||
+      message.includes('does not exist')
+    ) {
+      duelLobbyContractUnavailable = true;
+      return { ok: true, value: null };
+    }
+    return { ok: false, error: result.value.error.message };
+  }
+
+  const record = objectFrom(result.value.data);
+  if (!record) return { ok: true, value: null };
+  const phase = record.phase;
+  if (phase !== 'open' && phase !== 'talent' && phase !== 'started') {
+    return { ok: false, error: 'Ungueltige Lobbyphase vom Server' };
+  }
+  const slots = Array.isArray(record.slots)
+    ? record.slots.flatMap((raw): DuelLobbySlot[] => {
+        const slot = objectFrom(raw);
+        if (!slot) return [];
+        const index = Number(slot.index);
+        const state = slot.state;
+        if (
+          !Number.isInteger(index) ||
+          index < 0 ||
+          index >= CHALLENGE_MAX_PLAYER_COUNT ||
+          (state !== 'free' && state !== 'invited' && state !== 'connected' && state !== 'ready')
+        ) {
+          return [];
+        }
+        const name = slot.playerName;
+        return [
+          {
+            index,
+            state,
+            playerName: typeof name === 'string' ? sanitizePlayerName(name) || null : null,
+            talentReady: slot.talentReady === true,
+          },
+        ];
+      })
+    : [];
+  const pendingInvitations = Array.isArray(record.pendingInvitations)
+    ? record.pendingInvitations.flatMap((raw): PendingDuelInvitation[] => {
+        const invitation = objectFrom(raw);
+        if (!invitation) return [];
+        const id = stringValue(invitation.id);
+        const inviteeName = sanitizePlayerName(
+          stringValue(invitation.inviteeName ?? invitation.invitee_name),
+        );
+        const expiresAt = stringValue(invitation.expiresAt ?? invitation.expires_at);
+        return id && inviteeName && expiresAt ? [{ id, inviteeName, expiresAt }] : [];
+      })
+    : [];
+  const playerCount = Number(record.playerCount);
+  const maxPlayers = Number(record.maxPlayers);
+  if (
+    !Number.isInteger(playerCount) ||
+    !Number.isInteger(maxPlayers) ||
+    playerCount < 1 ||
+    maxPlayers < 2 ||
+    maxPlayers > CHALLENGE_MAX_PLAYER_COUNT ||
+    playerCount > maxPlayers
+  ) {
+    return { ok: false, error: 'Ungueltige Lobbykapazitaet vom Server' };
+  }
+  return {
+    ok: true,
+    value: {
+      code: stringValue(record.code) || code,
+      phase,
+      playerCount,
+      maxPlayers,
+      slots,
+      pendingInvitations,
     },
   };
 }

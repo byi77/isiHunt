@@ -1,0 +1,24 @@
+{
+  "source": "TODO_2026-09-20.md P0-00",
+  "purpose": "Anonymisierte Regressionseingabe fuer Diagnose und Fortschrittsvertrag",
+  "cases": [
+    {
+      "id": "progress-large-run",
+      "score": 81210,
+      "bestCombo": 69,
+      "durationMs": 99000,
+      "collected": {
+        "poor": 76,
+        "common": 42,
+        "uncommon": 49,
+        "rare": 18,
+        "epic": 19,
+        "legendary": 3
+      },
+      "expected": {
+        "mustRemainFinite": true,
+        "mustPreserveCollectedTotal": 207
+      }
+    }
+  ]
+}

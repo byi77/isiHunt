@@ -51,6 +51,9 @@ const DEBUG_REPORT_VERSION = 2;
 let droppedLogEntries = 0;
 let droppedProtectedEntries = 0;
 let persistFailures = 0;
+let rpcCount = 0;
+let rpcFailureCount = 0;
+let lastRpcFailure: { timestamp: number; operation: string; detail: string } | null = null;
 
 const logBuffer: LogEntry[] = loadPersistedBuffer(DEBUG_LOG_STORAGE_KEY, DEBUG_LOG_BUFFER_SIZE);
 const protectedBuffer: LogEntry[] = loadPersistedBuffer(
@@ -98,6 +101,7 @@ export function logRpcResponse(
   response: unknown,
   requestCorrelationId = correlationId(),
 ): string {
+  rpcCount += 1;
   const record =
     response && typeof response === 'object' ? (response as Record<string, unknown>) : {};
   const error =
@@ -119,7 +123,19 @@ export function logRpcResponse(
     label: `rpc:${operation}`,
     detail,
   });
+  if (error) {
+    rpcFailureCount += 1;
+    lastRpcFailure = { timestamp: Date.now(), operation, detail };
+  }
   return requestCorrelationId;
+}
+
+/** Kompakte RPC-Zusammenfassung für den Zustandsblock des Diagnoseberichts. */
+export function getRpcDiagnostics(): string {
+  const last = lastRpcFailure
+    ? `${lastRpcFailure.operation} at=${new Date(lastRpcFailure.timestamp).toISOString()} ${lastRpcFailure.detail}`
+    : 'keine';
+  return `Aufrufe=${rpcCount} fachlicheFehler=${rpcFailureCount} letzteAblehnung=${last}`;
 }
 
 /**
@@ -272,6 +288,9 @@ export function clearLogBuffer(): void {
   droppedLogEntries = 0;
   droppedProtectedEntries = 0;
   persistFailures = 0;
+  rpcCount = 0;
+  rpcFailureCount = 0;
+  lastRpcFailure = null;
   try {
     window.localStorage.removeItem(DEBUG_LOG_STORAGE_KEY);
     window.localStorage.removeItem(DEBUG_PROTECTED_STORAGE_KEY);
@@ -493,6 +512,9 @@ export async function buildReport(
     bufferSummary('Geschuetzt', protectedBuffer, droppedProtectedEntries),
     bufferSummary('Verlauf', logBuffer, droppedLogEntries),
     `Persistierungsfehler=${persistFailures}`,
+    '',
+    'RPC-DIAGNOSE',
+    getRpcDiagnostics(),
     '',
     'ZUSTAND',
     stateDiagnosticsProvider?.() ?? 'Zustandsdiagnose nicht initialisiert',

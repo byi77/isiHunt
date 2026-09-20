@@ -845,6 +845,53 @@ export function pendingCount(): number {
   return readOutbox(AuthSystem.currentUserId()).length;
 }
 
+export interface SyncDiagnostics {
+  readonly pendingEvents: number;
+  readonly oldestPendingAt: number | null;
+  readonly pendingDaily: boolean;
+  readonly pendingBotVictories: number;
+  readonly rejectedEvents: number;
+}
+
+function readStoredArrayLength(key: string): number {
+  try {
+    const parsed: unknown = JSON.parse(window.localStorage.getItem(key) ?? '[]');
+    return Array.isArray(parsed) ? parsed.length : 0;
+  } catch {
+    return 0;
+  }
+}
+
+/** Liefert nur aggregierte Outboxdaten; IDs und Nutzlasten bleiben im Bericht. */
+export function getDiagnostics(): SyncDiagnostics {
+  const accountId = AuthSystem.currentUserId();
+  const entries = accountId ? readOutbox(accountId) : [];
+  let oldestPendingAt: number | null = null;
+  if (accountId) {
+    for (const key of storageKeysWithPrefix(eventOutboxPrefix(accountId))) {
+      try {
+        const parsed: unknown = JSON.parse(window.localStorage.getItem(key) ?? '');
+        if (!parsed || typeof parsed !== 'object') continue;
+        const queuedAt = (parsed as { queuedAt?: unknown }).queuedAt;
+        if (typeof queuedAt === 'number' && Number.isFinite(queuedAt)) {
+          oldestPendingAt =
+            oldestPendingAt === null ? queuedAt : Math.min(oldestPendingAt, queuedAt);
+        }
+      } catch {
+        // Ein kaputter Eintrag wird von readOutbox separat quarantänisiert.
+      }
+    }
+  }
+  const save = SaveSystem.load();
+  return {
+    pendingEvents: entries.length,
+    oldestPendingAt,
+    pendingDaily: Boolean(save.pendingDailyKey && save.pendingDailyCoins > 0),
+    pendingBotVictories: accountId ? readBotVictories(accountId).length : 0,
+    rejectedEvents: accountId ? readStoredArrayLength(rejectedOutboxKey(accountId)) : 0,
+  };
+}
+
 /** Ob neben dem sichtbaren Spielstand noch lokale Daten zum Upload warten. */
 export function hasPendingData(): boolean {
   const local = SaveSystem.load();

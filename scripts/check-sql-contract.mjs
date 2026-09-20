@@ -93,6 +93,10 @@ const boostedCompletionBonusMigration = readFileSync(
   resolve(sqlDir, 'phase_2_62_run_bonus_boost.sql'),
   'utf8',
 );
+const duelLobbyContractMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_65_duel_lobby_contract.sql'),
+  'utf8',
+);
 
 const failures = [];
 function requireText(text, fragment, label) {
@@ -406,7 +410,7 @@ requireText(verification, 'daily_key', 'Live-Verifikation Tagesbonus');
 requireText(verification, 'upsert_save', 'Live-Verifikation Save-CAS');
 requireText(verification, 'duel_rooms', 'Live-Verifikation Duell');
 requireText(migrationVerification, 'schema_version', 'Live-Verifikation Migrationsmarker');
-requireText(migrationVerification, 'schema_version = 64', 'Live-Verifikation Phase 2.64');
+requireText(migrationVerification, 'schema_version = 66', 'Live-Verifikation Phase 2.66');
 requireText(rewardCodeCoreMigration, 'reward_codes', 'Reward-Code-Katalog');
 requireText(rewardCodeCoreMigration, 'reward_redemptions', 'Reward-Einloesbelege');
 requireText(rewardCodeCoreMigration, 'reward_code_attempts', 'Reward-Rate-Limits');
@@ -435,6 +439,24 @@ requireText(completionBonusMigration, 'schema_version = 61', 'Migrationsmarker P
 requireText(boostedCompletionBonusMigration, '"maxScoreRuns": 5.2', 'Hoeherer Punktebonus-Deckel');
 requireText(boostedCompletionBonusMigration, '"maxXpRuns": 2.3', 'Hoeherer XP-Bonus-Deckel');
 requireText(boostedCompletionBonusMigration, 'schema_version = 62', 'Migrationsmarker Phase 2.62');
+requireText(
+  duelLobbyContractMigration,
+  'duel_invitation_participant_token',
+  'Idempotenter Duell-Einladungstoken',
+);
+requireText(
+  duelLobbyContractMigration,
+  'get_duel_lobby_state',
+  'Serverautoritativer Duell-Lobbystatus',
+);
+requireText(duelLobbyContractMigration, 'schema_version = 65', 'Migrationsmarker Phase 2.65');
+const duelLobbySlotStatesMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_66_duel_lobby_slot_states.sql'),
+  'utf8',
+);
+requireText(duelLobbySlotStatesMigration, "'invited'", 'Vierfacher Duell-Slotzustand Phase 2.66');
+requireText(duelLobbySlotStatesMigration, "'ready'", 'Bereiter Duell-Slot Phase 2.66');
+requireText(duelLobbySlotStatesMigration, 'schema_version = 66', 'Migrationsmarker Phase 2.66');
 const rewardCodePresetMigration = readFileSync(
   resolve(sqlDir, 'phase_2_63_reward_code_preset_grants.sql'),
   'utf8',
