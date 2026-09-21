@@ -1377,7 +1377,7 @@ function boostedRunError(body: Record<string, unknown> | null): string {
 /** Startet eine serverseitig abgebuchte XP-Bonusrunde idempotent. */
 export async function startBoostedRun(
   worldId: string,
-  requestId = crypto.randomUUID(),
+  requestId: string = crypto.randomUUID(),
 ): Promise<CloudResult<BoostedRunStart>> {
   const authenticated = await requireAuthenticatedClient();
   if (!authenticated.ok) return authenticated;
@@ -1442,14 +1442,18 @@ export async function abandonBoostedRun(
 }
 
 /** Übermittelt das fertige Ergebnis; der Server bucht XP und Fortschritt genau einmal. */
-export async function finishBoostedRun(input: {
+export interface BoostedRunFinishInput {
   runId: string;
   score: number;
   bestCombo: number;
   durationMs: number;
   collected: Record<string, number>;
   achievementIds: string[];
-}): Promise<CloudResult<BoostedRunFinish>> {
+}
+
+export async function finishBoostedRun(
+  input: BoostedRunFinishInput,
+): Promise<CloudResult<BoostedRunFinish>> {
   const authenticated = await requireAuthenticatedClient();
   if (!authenticated.ok) return authenticated;
 

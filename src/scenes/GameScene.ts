@@ -46,10 +46,12 @@ import { DebugKeys } from '@/input/DebugKeys';
 import { InputController } from '@/input/InputController';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
+import * as CloudSystem from '@/systems/CloudSystem';
 import * as DebugSystem from '@/systems/DebugSystem';
 import * as NetworkDuelSystem from '@/systems/NetworkDuelSystem';
 import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
+import * as BoostedRunSession from '@/systems/BoostedRunSession';
 import { calculateRunBonus } from '@/systems/RunBonusSystem';
 import { PerformanceMonitor } from '@/systems/PerformanceSystem';
 import type { PerformanceReport } from '@/systems/PerformanceSystem';
@@ -75,6 +77,8 @@ export interface GameSceneData {
   mode?: RunMode;
   /** Ausschliesslich vom serverbestaetigten Effektstart geliefert. */
   rewardEffects?: Readonly<Partial<Record<'speed' | 'magnetism' | 'combo_grace', number>>>;
+  /** Serverbestaetigter XP-Bonuslauf; der Start wurde bereits verbraucht. */
+  boostedRun?: CloudSystem.BoostedRunStart;
 }
 
 function applyRewardEffects(
@@ -177,6 +181,7 @@ export class GameScene extends Phaser.Scene {
    */
   private localActivity: NetworkDuelSystem.DuelOpponentActivity = 'playing';
   private challenge: ChallengeState | null = null;
+  private boostedRun: CloudSystem.BoostedRunStart | null = null;
   private readonly performanceMonitor: PerformanceMonitor | null = DEBUG_ENABLED
     ? new PerformanceMonitor()
     : null;
@@ -195,6 +200,7 @@ export class GameScene extends Phaser.Scene {
     this.performanceMonitor?.reset();
 
     this.mode = data.mode ?? 'solo';
+    this.boostedRun = data.boostedRun ?? null;
     this.world = getWorld(data.worldId ?? save.lastWorldId);
     const isChallengeMode = this.mode !== 'solo';
     const challenge = isChallengeMode ? ChallengeSystem.getState() : null;
@@ -782,6 +788,34 @@ export class GameScene extends Phaser.Scene {
       completedAt: new Date().toISOString(),
     };
 
+    if (this.boostedRun) {
+      const finish: CloudSystem.BoostedRunFinishInput = {
+        runId: this.boostedRun.runId,
+        score: stats.score,
+        bestCombo: rawStats.bestCombo,
+        durationMs: rawStats.durationMs ?? this.totalMs,
+        collected: rawStats.collected,
+        achievementIds: ProgressionSystem.previewAchievementIds(SaveSystem.load(), stats),
+      };
+      if (!BoostedRunSession.savePendingFinish({ run: this.boostedRun, input: finish })) {
+        DebugSystem.pushProtectedLogEntry({
+          timestamp: Date.now(),
+          kind: 'error',
+          label: 'boosted-run:finish-persist',
+          detail: 'Finish-Auftrag konnte nicht lokal gespeichert werden',
+        });
+      }
+      this.time.delayedCall(450, () => {
+        this.scene.stop(SceneKey.Hud);
+        this.scene.start(SceneKey.Result, {
+          stats,
+          boostedRun: this.boostedRun,
+          boostedFinish: finish,
+        });
+      });
+      return;
+    }
+
     // Ein Duell-Durchgang laesst den Spielstand unberuehrt: die Haelfte der
     // Durchgaenge spielt jemand, dem er nicht gehoert (config/challenge.ts).
     // Der Tageslauf ist die bewusste Ausnahme: gleiche Ausgangswerte sorgen
@@ -982,6 +1016,18 @@ export class GameScene extends Phaser.Scene {
     this.setLocalActivity('left');
     const onlineRoom = this.challenge?.kind === 'duel-online' ? this.challenge.online : undefined;
     this.phase = 'ended';
+
+    if (this.boostedRun) {
+      const abandoned = await CloudSystem.abandonBoostedRun(this.boostedRun.runId);
+      if (!abandoned.ok) {
+        DebugSystem.pushProtectedLogEntry({
+          timestamp: Date.now(),
+          kind: 'error',
+          label: 'boosted-run:abandon',
+          detail: abandoned.error,
+        });
+      }
+    }
 
     // Auch beim direkten ABBRECHEN aus GameScene muss der alte Realtime-
     // Zustand verschwinden. Sonst bleiben Kanal-Handler an der beendeten

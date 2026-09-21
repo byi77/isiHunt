@@ -17,8 +17,11 @@ import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { getWorld } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
+import * as AuthSystem from '@/systems/AuthSystem';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
+import * as BoostedRunSession from '@/systems/BoostedRunSession';
+import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
@@ -48,6 +51,9 @@ function describeBonus(world: WorldDef): string {
 }
 
 export class WorldInfoScene extends Phaser.Scene {
+  private boostedBusy = false;
+  private boostedStatus: Phaser.GameObjects.Text | null = null;
+
   constructor() {
     super(SceneKey.WorldInfo);
   }
@@ -142,10 +148,29 @@ export class WorldInfoScene extends Phaser.Scene {
   }
 
   private buildButtons(worldId: string, accent: number, mode: WorldInfoMode): void {
+    const hasBoostButton = mode === 'jagd' && AuthSystem.isSignedIn();
+    this.boostedStatus = hasBoostButton
+      ? this.add
+          .text(GAME_WIDTH / 2, GAME_HEIGHT - 116, '', textStyle(FontSize.tiny, Palette.inkDim))
+          .setOrigin(0.5)
+          .setWordWrapWidth(GAME_WIDTH - 120)
+          .setAlign('center')
+      : null;
+
+    if (hasBoostButton) {
+      createButton(
+        this,
+        GAME_WIDTH / 2,
+        GAME_HEIGHT - 248,
+        'BONUS-XP-RUN STARTEN',
+        () => void this.startBoostedMode(worldId),
+        { width: 460, accent: 0xd7a93b, fontSize: FontSize.small },
+      );
+    }
     createButton(
       this,
       GAME_WIDTH / 2,
-      GAME_HEIGHT - 172,
+      hasBoostButton ? GAME_HEIGHT - 184 : GAME_HEIGHT - 172,
       MODE_TITLES[mode],
       () => void this.startMode(worldId, mode),
       { width: 460, accent, fontSize: FontSize.large },
@@ -159,6 +184,38 @@ export class WorldInfoScene extends Phaser.Scene {
       () => this.scene.start(SceneKey.Menu),
       { width: 300, height: 72, accent: 0x9aa3bd, fontSize: FontSize.small },
     );
+  }
+
+  private async startBoostedMode(worldId: string): Promise<void> {
+    if (this.boostedBusy || !this.scene.isActive()) return;
+    this.boostedBusy = true;
+    this.boostedStatus?.setText('Bonusrecht wird serverseitig reserviert …');
+    await ProgressSyncSystem.flush();
+    if (!this.scene.isActive()) return;
+    if (ProgressSyncSystem.hasPendingData()) {
+      this.boostedBusy = false;
+      this.boostedStatus
+        ?.setText('Ausstehende Läufe zuerst synchronisieren.')
+        .setColor(Palette.gold);
+      return;
+    }
+    const pending =
+      BoostedRunSession.readPendingStart(worldId) ?? BoostedRunSession.prepareStart(worldId);
+    const result = await CloudSystem.startBoostedRun(worldId, pending.requestId);
+    if (!this.scene.isActive()) return;
+    if (!result.ok) {
+      this.boostedBusy = false;
+      this.boostedStatus?.setText(result.error).setColor(Palette.gold);
+      return;
+    }
+    const effectRun = await CloudSystem.startRewardEffectRun(worldId);
+    if (!this.scene.isActive()) return;
+    BoostedRunSession.clearStart();
+    this.scene.start(SceneKey.Game, {
+      worldId,
+      boostedRun: result.value,
+      rewardEffects: effectRun.ok ? (effectRun.value ?? undefined) : undefined,
+    });
   }
 
   /** Loest je nach Modus genau den Zustandsaufbau aus, den der Zielbildschirm erwartet. */

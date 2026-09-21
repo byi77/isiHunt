@@ -8,22 +8,26 @@
 
 import Phaser from 'phaser';
 
-import { getWorld } from '@/config/worlds';
+import { getWorld, WORLDS } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
 import * as AuthSystem from '@/systems/AuthSystem';
+import * as BoostedRunSession from '@/systems/BoostedRunSession';
 import * as DebugSystem from '@/systems/DebugSystem';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
-import { createSceneBackdrop } from '@/ui/widgets';
+import { createButton, createSceneBackdrop } from '@/ui/widgets';
+import { FontSize, Palette, textStyle } from '@/ui/theme';
 import { ResultView } from '@/ui/ResultView';
 import { soloResultContent } from '@/ui/resultContent';
 import type { ProgressionResult, RunStats } from '@/types';
 
 export interface ResultSceneData {
   stats: RunStats;
-  progression: ProgressionResult;
+  progression?: ProgressionResult;
+  boostedRun?: CloudSystem.BoostedRunStart;
+  boostedFinish?: CloudSystem.BoostedRunFinishInput;
 }
 
 export class ResultScene extends Phaser.Scene {
@@ -32,8 +36,20 @@ export class ResultScene extends Phaser.Scene {
   }
 
   create(data: ResultSceneData): void {
+    if (data.boostedFinish) {
+      void this.createBoostedResult(data);
+      return;
+    }
+    if (!data.progression) return;
+    this.renderStandardResult(data.stats, data.progression, false);
+  }
+
+  private renderStandardResult(
+    stats: RunStats,
+    progression: ProgressionResult,
+    serverSettled: boolean,
+  ): void {
     SafeAreaSystem.showStatic('RUN BEENDET');
-    const { stats, progression } = data;
     const world = getWorld(stats.worldId);
 
     createSceneBackdrop(this, world);
@@ -51,7 +67,7 @@ export class ResultScene extends Phaser.Scene {
         },
       },
     ]);
-    ProgressSyncSystem.enqueueRun(stats, progression);
+    if (!serverSettled) ProgressSyncSystem.enqueueRun(stats, progression);
     // Fuer eingeloggte Scores muss das zugehoerige Progress-Event zuerst
     // serverseitig akzeptiert sein; die Bestenliste bleibt dadurch kein
     // unabhaengiger Schreibpfad fuer dieselben Client-Zahlen.
@@ -61,17 +77,105 @@ export class ResultScene extends Phaser.Scene {
     // uebersprang ein `then` den Upload wortlos, weil `void` die Rejection
     // schluckt. Der Run war gespielt, der Punktestand stand auf dem Schirm,
     // und in der Bestenliste kam nie etwas an.
-    void ProgressSyncSystem.flush()
-      .catch((error: unknown) => {
-        DebugSystem.pushProtectedLogEntry({
-          timestamp: Date.now(),
-          kind: 'error',
-          label: 'run:sync-abbruch',
-          detail: error instanceof Error ? error.message : 'Unbekannter Fehler',
-        });
-      })
-      .finally(() => this.submitLeaderboardScore(stats));
+    if (!serverSettled) {
+      void ProgressSyncSystem.flush()
+        .catch((error: unknown) => {
+          DebugSystem.pushProtectedLogEntry({
+            timestamp: Date.now(),
+            kind: 'error',
+            label: 'run:sync-abbruch',
+            detail: error instanceof Error ? error.message : 'Unbekannter Fehler',
+          });
+        })
+        .finally(() => this.submitLeaderboardScore(stats));
+    } else {
+      this.submitLeaderboardScore(stats);
+    }
     this.uploadSave();
+  }
+
+  private async createBoostedResult(data: ResultSceneData): Promise<void> {
+    const stats = data.stats;
+    const world = getWorld(stats.worldId);
+    createSceneBackdrop(this, world);
+    SafeAreaSystem.showStatic('BONUSRUNDE');
+    const status = this.add
+      .text(
+        this.scale.width / 2,
+        this.scale.height / 2 - 110,
+        'Ergebnis wird serverseitig gebucht …',
+        textStyle(FontSize.body, Palette.ink),
+      )
+      .setOrigin(0.5)
+      .setAlign('center')
+      .setWordWrapWidth(this.scale.width - 100);
+
+    const pending = BoostedRunSession.readPendingFinish();
+    const input = pending?.input ?? data.boostedFinish;
+    if (!input) return;
+    const before = SaveSystem.load();
+    const result = await CloudSystem.finishBoostedRun(input);
+    if (!this.scene.isActive()) return;
+    if (!result.ok) {
+      this.showBoostedRetry(status, data, result.error);
+      return;
+    }
+    const profile = await CloudSystem.fetchProfileProgress();
+    if (!this.scene.isActive()) return;
+    if (!profile.ok || !profile.value) {
+      this.showBoostedRetry(
+        status,
+        data,
+        'Profilstand konnte nach der Buchung nicht geladen werden.',
+      );
+      return;
+    }
+    const after = SaveSystem.adoptProfileProgress(profile.value.data);
+    BoostedRunSession.clearFinish();
+    const progression: ProgressionResult = {
+      levelsGained: Math.max(0, after.level - before.level),
+      newLevel: after.level,
+      talentPointsGained: Math.max(0, after.talentPoints - before.talentPoints),
+      coinsGained: Math.max(0, after.coins - before.coins),
+      unlockedWorldIds: WORLDS.filter(
+        (candidate) => candidate.unlockLevel > before.level && candidate.unlockLevel <= after.level,
+      ).map((candidate) => candidate.id),
+      unlockedAchievementIds: after.unlockedAchievements.filter(
+        (id) => !before.unlockedAchievements.includes(id),
+      ),
+      isNewBestScore: stats.score > before.bestScore,
+    };
+    this.children.removeAll(true);
+    this.renderStandardResult(stats, progression, true);
+  }
+
+  private showBoostedRetry(
+    status: Phaser.GameObjects.Text,
+    data: ResultSceneData,
+    error: string,
+  ): void {
+    status.setText(`Buchung ausstehend:\n${error}`);
+    createButton(
+      this,
+      this.scale.width / 2,
+      this.scale.height / 2,
+      'ERNEUT VERSUCHEN',
+      () => {
+        this.children.removeAll(true);
+        void this.createBoostedResult(data);
+      },
+      { width: 400, accent: 0xd7a93b, fontSize: FontSize.small },
+    );
+    createButton(
+      this,
+      this.scale.width / 2,
+      this.scale.height / 2 + 90,
+      'ZUM MENUE',
+      () => {
+        this.scene.start(SceneKey.Menu);
+      },
+      { width: 300, accent: 0x9aa3bd, fontSize: FontSize.small },
+    );
   }
 
   /**

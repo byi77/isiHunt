@@ -397,11 +397,16 @@ export function resetTalents(): SaveData | null {
   return wasReset ? result : null;
 }
 
-/** Prueft alle noch nicht freigeschalteten Achievements und speichert Treffer. */
-function evaluateAchievements(save: SaveData, run: RunStats): string[] {
-  const newlyUnlocked = ACHIEVEMENTS.filter(
+/** Prueft alle noch nicht freigeschalteten Achievements ohne Seiteneffekt. */
+export function previewAchievementIds(save: SaveData, run: RunStats): string[] {
+  return ACHIEVEMENTS.filter(
     (a) => !save.unlockedAchievements.includes(a.id) && a.check(save, run),
   ).map((a) => a.id);
+}
+
+/** Prueft alle noch nicht freigeschalteten Achievements und speichert Treffer. */
+function evaluateAchievements(save: SaveData, run: RunStats): string[] {
+  const newlyUnlocked = previewAchievementIds(save, run);
 
   if (newlyUnlocked.length > 0) {
     SaveSystem.update((data) => {
