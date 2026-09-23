@@ -14,6 +14,7 @@ import {
   ONLINE_DUEL_SCORE_BROADCAST_INTERVAL_MS,
 } from '@/config/onlineDuel';
 import { CHALLENGE_DURATION_MS } from '@/config/challenge';
+import { SCENE_TRANSITION } from '@/config/effectVisuals';
 import {
   COMBO_GRACE_MS,
   COUNTDOWN_STEP_MS,
@@ -40,7 +41,7 @@ import { getWorld } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { eventBus, GameEvent } from '@/core/EventBus';
 import { Collectible } from '@/entities/Collectible';
-import { Obstacle } from '@/entities/Obstacle';
+import { Obstacle, obstacleColor } from '@/entities/Obstacle';
 import { Player } from '@/entities/Player';
 import { DebugKeys } from '@/input/DebugKeys';
 import { InputController } from '@/input/InputController';
@@ -61,6 +62,8 @@ import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { agilityForSeries, ScoreSystem, trailTierForSeries } from '@/systems/ScoreSystem';
 import { SpawnSystem } from '@/systems/SpawnSystem';
 import { CollectionEffects } from '@/ui/CollectionEffects';
+import { FinalSecondsWarning } from '@/ui/FinalSecondsWarning';
+import { enterScene, fadeOutAlongside, leaveScene } from '@/ui/sceneTransition';
 import { GameBackdrop } from '@/ui/GameBackdrop';
 import type { HudScene } from '@/scenes/HudScene';
 import { Depth } from '@/ui/depth';
@@ -150,6 +153,7 @@ export class GameScene extends Phaser.Scene {
   private player!: Player;
   private collectionEffects!: CollectionEffects;
   private backdrop!: GameBackdrop;
+  private finalSeconds!: FinalSecondsWarning;
   private input_!: InputController;
   private spawner!: SpawnSystem;
   private scoring!: ScoreSystem;
@@ -258,7 +262,9 @@ export class GameScene extends Phaser.Scene {
     );
 
     this.backdrop = new GameBackdrop(this, GAME_WIDTH, GAME_HEIGHT, this.world);
+    enterScene(this);
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
+    this.finalSeconds = new FinalSecondsWarning(this, GAME_WIDTH, GAME_HEIGHT);
 
     this.player = new Player(
       this,
@@ -433,6 +439,7 @@ export class GameScene extends Phaser.Scene {
     this.updateObstacles(delta);
     this.updateSpawning(delta);
     this.updateTimer(delta);
+    this.finalSeconds.update(this.remainingMs, delta);
     this.checkOpponentAlive();
     this.performanceMonitor?.recordFrame(
       delta,
@@ -561,7 +568,7 @@ export class GameScene extends Phaser.Scene {
   }
 
   private spawnObstacle(x: number, y: number, kind: 'brake' | 'penalty'): void {
-    this.obstacles.push(new Obstacle(this, x, y, kind, this.world.accent));
+    this.obstacles.push(new Obstacle(this, x, y, kind));
   }
 
   private updateObstacles(deltaMs: number): void {
@@ -583,13 +590,13 @@ export class GameScene extends Phaser.Scene {
           WORLD_BRAKE_DURATION_MS * obstacleEffectScale,
           1 - (1 - WORLD_BRAKE_FACTOR) * obstacleEffectScale,
         );
-        floatingScore(this, obstacle.x, obstacle.y, 'VERLANGSAMT', 0x38bdf8);
+        floatingScore(this, obstacle.x, obstacle.y, 'VERLANGSAMT', obstacleColor('brake'));
       } else {
         const penaltyMs = Math.round(WORLD_PENALTY_MS * obstacleEffectScale);
         this.remainingMs = Math.max(0, this.remainingMs - penaltyMs);
         this.scoring.registerMiss();
         const penaltyLabel = `-${(penaltyMs / 1000).toFixed(1).replace('.', ',')} s`;
-        floatingScore(this, obstacle.x, obstacle.y, penaltyLabel, 0xa855f7);
+        floatingScore(this, obstacle.x, obstacle.y, penaltyLabel, obstacleColor('penalty'));
         if (!prefersReducedMotion()) this.cameras.main.shake(120, 0.004);
       }
       eventBus.emitEvent(GameEvent.ObstacleHit, { kind: obstacle.kind });
@@ -805,14 +812,8 @@ export class GameScene extends Phaser.Scene {
           detail: 'Finish-Auftrag konnte nicht lokal gespeichert werden',
         });
       }
-      this.time.delayedCall(450, () => {
-        this.scene.stop(SceneKey.Hud);
-        this.scene.start(SceneKey.Result, {
-          stats,
-          boostedRun: this.boostedRun,
-          boostedFinish: finish,
-        });
-      });
+      const boostedRun = this.boostedRun;
+      this.leaveRun(SceneKey.Result, { stats, boostedRun, boostedFinish: finish });
       return;
     }
 
@@ -848,10 +849,7 @@ export class GameScene extends Phaser.Scene {
         console.warn('[GameScene] Rundenergebnis nicht vollstaendig gesichert.', error);
       }
 
-      this.time.delayedCall(450, () => {
-        this.scene.stop(SceneKey.Hud);
-        this.scene.start(SceneKey.Challenge);
-      });
+      this.leaveRun(SceneKey.Challenge);
       return;
     }
 
@@ -904,20 +902,30 @@ export class GameScene extends Phaser.Scene {
         });
       }
 
-      this.time.delayedCall(450, () => {
-        this.scene.stop(SceneKey.Hud);
-        this.scene.start(SceneKey.OnlineDuel, { phase: 'result' });
-      });
+      this.leaveRun(SceneKey.OnlineDuel, { phase: 'result' });
       return;
     }
 
     const progression = ProgressionSystem.applyRun(stats);
     eventBus.emitEvent(GameEvent.RunEnded, { stats, progression });
 
-    // Kurz stehen lassen, damit der letzte Fang noch ausklingt.
-    this.time.delayedCall(450, () => {
-      this.scene.stop(SceneKey.Hud);
-      this.scene.start(SceneKey.Result, { stats, progression });
+    this.leaveRun(SceneKey.Result, { stats, progression });
+  }
+
+  /**
+   * Laesst das Spielfeld kurz stehen und blendet dann zum naechsten
+   * Bildschirm ueber. Die Blende liegt innerhalb der Stehzeit, der Wechsel
+   * kommt also so schnell wie vorher; nur der harte Schnitt faellt weg.
+   */
+  private leaveRun(key: string, data?: object): void {
+    const linger = SCENE_TRANSITION.runEndLingerMs;
+    const fadeMs = prefersReducedMotion() ? 0 : SCENE_TRANSITION.outMs;
+    this.time.delayedCall(linger - fadeMs, () => {
+      if (this.scene.isActive(SceneKey.Hud)) fadeOutAlongside(this.scene.get(SceneKey.Hud));
+      leaveScene(this, () => {
+        this.scene.stop(SceneKey.Hud);
+        this.scene.start(key, data);
+      });
     });
   }
 

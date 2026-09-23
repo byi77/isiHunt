@@ -46,6 +46,7 @@ import {
   createVignette,
   createWorldBackdrop,
 } from '@/ui/widgets';
+import { enterScene } from '@/ui/sceneTransition';
 
 /**
  * Wann zuletzt ein vollstaendiger Abgleich begonnen hat.
@@ -123,6 +124,7 @@ export class MenuScene extends Phaser.Scene {
     createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, this.selectedWorld.spaceVariant);
     createAmbientMotes(this, GAME_WIDTH, GAME_HEIGHT, this.selectedWorld.accent);
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
+    enterScene(this);
 
     if (DEBUG_ENABLED && new URLSearchParams(window.location.search).has('hudPreview')) {
       void import('@/ui/hudPreview').then(({ installHudPreview }) => {

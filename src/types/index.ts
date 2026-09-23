@@ -3,6 +3,8 @@
 import type { RarityId } from '@/config/rarities';
 import type { TalentRanks } from '@/config/talents';
 
+export type EffectsQuality = 'full' | 'reduced';
+
 /**
  * Persistenter Spielstand (localStorage).
  *
@@ -71,6 +73,11 @@ export interface SaveData {
   soundEnabled: boolean;
   /** Haptisches Feedback ist separat vom Ton schaltbar. */
   hapticsEnabled: boolean;
+  /**
+   * Leuchtshader und Zierde wie der Lichtriss seltener Relikte. `reduced`
+   * ist der Ausweg fuer schwache Geraete; spielrelevante Anzeigen bleiben.
+   */
+  effectsQuality: EffectsQuality;
 
   /** Anzeigename im Profil und in der Bestenliste. Leer beim ersten Start. */
   playerName: string;

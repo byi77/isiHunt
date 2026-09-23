@@ -1569,3 +1569,43 @@ setzt ihn selbst.
 - Die Zusammenfuehrungslogik fuer anonyme Staende bleibt vorerst bestehen. Sie
   wird erst ueberfluessig, wenn keine Altstaende aus der Gastzeit mehr
   existieren; die Userbase wird vor dem Release ohnehin zurueckgesetzt.
+
+---
+
+## ADR-0027 — Effektstufe als eigene Einstellung neben reduzierter Bewegung
+
+**Datum:** 2026-09-24 · **Status:** Angenommen
+
+### Kontext
+
+Das Grafik-Update fuehrt Leuchtshader (Phasers `preFX`, nur WebGL) um die
+Figur und um epische/legendaere Relikte ein, dazu einen kurzen Lichtriss beim
+Erscheinen seltener Relikte. Jeder `preFX` rendert sein Objekt in einen eigenen
+Zwischenpuffer. Was das auf schwachen Handys an Bildrate kostet, ist nicht
+gemessen.
+
+Die naheliegende Stelle zum Abschalten waere `prefersReducedMotion` gewesen:
+Das Projekt fragt es ohnehin ueberall ab.
+
+### Entscheidung
+
+Eine eigene Einstellung `effectsQuality: 'full' | 'reduced'` im Spielstand,
+erreichbar in den Einstellungen unter GRAFIK ("EFFEKTE: VOLL / SPARSAM"),
+gelesen ueber `systems/EffectsQualitySystem.ts`. Standard ist `full`.
+
+- **Nicht an reduzierter Bewegung festgemacht:** Jene Einstellung fragt nach
+  Bewegung, diese nach Rechenlast. Ein Leuchtshader bewegt nichts, und wer
+  ruhige Bewegung will, hat nicht zwingend ein langsames Geraet - umgekehrt
+  genauso.
+- **Nur Zierde haengt daran.** Restzeitbogen, Warnrand der Schlussphase und die
+  Hindernisdarstellung sind Spielinformation und bleiben in beiden Stufen.
+- **Ein neues Feld, keine Migration:** `reconcile()` fuellt es auf und verwirft
+  unbekannte Werte; Abmelden (`clearLocalProfile`) und der Neustart der
+  Talentpunkt-Wirtschaft behalten es wie Ton und Haptik.
+
+### Konsequenzen
+
+- Der Standard `full` steht ohne Messung. Ruckelt es auf einem Geraet, ist
+  `SPARSAM` der Ausweg; eine automatische Erkennung gibt es nicht.
+- Im Canvas-Renderer gibt es kein `preFX`; `effectsFx.applyGlow` gibt dort
+  `null` zurueck, ohne dass ein Aufrufer den Renderer kennen muss.

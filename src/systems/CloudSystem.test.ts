@@ -76,6 +76,7 @@ function createSave(overrides: Partial<SaveData> = {}): SaveData {
     shipAura: DEFAULT_SHIP_AURA,
     soundEnabled: true,
     hapticsEnabled: true,
+    effectsQuality: 'full',
     playerName: '',
     cloudId: null,
     ...overrides,

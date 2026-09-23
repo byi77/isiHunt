@@ -8,8 +8,10 @@
 
 import Phaser from 'phaser';
 
+import { GLOW_FX, RELIC_LIFETIME_ARC } from '@/config/effectVisuals';
 import {
   MAGNET_PULL_SPEED,
+  RARITY_IMPACT_MIN_POINTS,
   RARITY_RAYS_MIN_POINTS,
   TALENT_MAGNET_ORB_ALPHA,
   TALENT_MAGNET_ORB_STREAK_LENGTH,
@@ -17,6 +19,7 @@ import {
 } from '@/config/GameConfig';
 import { RARITY_IDS, type RarityDef } from '@/config/rarities';
 import { Depth } from '@/ui/depth';
+import { applyGlow, playRareArrival } from '@/ui/effectsFx';
 import { TextureKey } from '@/ui/textures';
 import type { TextureKeyValue } from '@/ui/textures';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
@@ -45,6 +48,10 @@ export class Collectible extends Phaser.GameObjects.Container {
   private readonly rays: Phaser.GameObjects.Image | null;
   /** Sichtbares Sog-Feedback direkt am Relikt. */
   private readonly magnetVisual: Phaser.GameObjects.Graphics;
+  /** Restzeit als Bogen - wer mehrere Relikte sieht, weiss, welches eilt. */
+  private readonly lifetimeArc: Phaser.GameObjects.Graphics;
+  /** Zuletzt gezeichneter Restanteil; neu gezeichnet wird nur bei Aenderung. */
+  private drawnLifetimeRatio = -1;
   private readonly velocity: Phaser.Math.Vector2;
   private readonly lifetimeMs: number;
   private readonly blinking: boolean;
@@ -122,9 +129,19 @@ export class Collectible extends Phaser.GameObjects.Container {
       contour.fillStyle(rarity.color, 0.95);
       contour.fillCircle(x, y, rank >= 4 ? 2 : 1.5);
     }
-    this.add([lighting, contour]);
+    this.lifetimeArc = scene.add.graphics();
+    this.add([lighting, contour, this.lifetimeArc]);
     this.setDepth(Depth.Collectible);
     scene.add.existing(this);
+    this.drawLifetimeArc(1);
+
+    // Seltenes spueren: Nur ab episch leuchtet der Planet selbst und reisst
+    // beim Erscheinen einen Lichtspalt auf - dieselbe Schwelle wie Kamera-
+    // Ruckler und doppelte Splitter beim Fang.
+    if (rarity.points >= RARITY_IMPACT_MIN_POINTS) {
+      applyGlow(this.orb, rarity.color, GLOW_FX.relicOuter, GLOW_FX.relicInner);
+      playRareArrival(scene, x, y, rarity.color);
+    }
 
     // Driftrichtung mit der seltenheitsabhaengigen Geschwindigkeit. Der Winkel
     // kommt vom Aufrufer; der Rueckfall auf `FloatBetween` gilt nur fuer
@@ -222,6 +239,10 @@ export class Collectible extends Phaser.GameObjects.Container {
     // zu einer einzigen drehenden Scheibe zu vermischen.
 
     const remaining = this.lifetimeMs - this.ageMs;
+    const lifetimeRatio = Phaser.Math.Clamp(remaining / this.lifetimeMs, 0, 1);
+    if (Math.abs(lifetimeRatio - this.drawnLifetimeRatio) >= RELIC_LIFETIME_ARC.redrawStep) {
+      this.drawLifetimeArc(lifetimeRatio);
+    }
     if (remaining <= FADE_OUT_MS) {
       const ratio = Phaser.Math.Clamp(remaining / FADE_OUT_MS, 0, 1);
       this.setAlpha(ratio);
@@ -260,6 +281,32 @@ export class Collectible extends Phaser.GameObjects.Container {
 
   get isCollected(): boolean {
     return this.collected;
+  }
+
+  /**
+   * Restzeitbogen: beginnt oben und leert sich im Uhrzeigersinn.
+   *
+   * Vorher war der Ablauf erst in den letzten 700 ms zu sehen - zu spaet, um
+   * noch umzusteuern. Der Bogen gilt auch bei reduzierter Bewegung, denn er
+   * ist Spielinformation, keine Zierde; er aendert sich langsam und springt nie.
+   */
+  private drawLifetimeArc(ratio: number): void {
+    const a = RELIC_LIFETIME_ARC;
+    this.drawnLifetimeRatio = ratio;
+    this.lifetimeArc.clear();
+    if (ratio <= 0) return;
+    const urgent = ratio <= a.urgentRatio;
+    this.lifetimeArc.lineStyle(
+      urgent ? a.urgentWidth : a.width,
+      this.rarity.color,
+      urgent ? a.urgentAlpha : a.alpha,
+    );
+    // Die Luecke waechst wie ein Uhrzeiger von zwoelf Uhr aus.
+    const top = -Math.PI / 2;
+    const full = Math.PI * 2;
+    this.lifetimeArc.beginPath();
+    this.lifetimeArc.arc(0, 0, this.radius + a.gap, top + (1 - ratio) * full, top + full, false);
+    this.lifetimeArc.strokePath();
   }
 
   /** Zeichnet Richtung, Boegen und Nachlauf des aktiven Magnet-Sogs. */

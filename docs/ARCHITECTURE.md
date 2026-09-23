@@ -30,6 +30,22 @@ ResultScene behaelt die bestehenden einmaligen Sync-Aufrufe. `ui/resultPreview.t
 bietet ausschliesslich im Dev-Build pruefbare Daten ohne Spielstand/Netzwerk.
 `layoutAudit` beruecksichtigt fuer Texte deklarierte rechteckige Maskengrenzen.
 
+Grafik-Update Runde 2 (2026-09-24): `config/effectVisuals.ts` haelt die rein
+visuellen Budgets fuer Hindernisse, Restzeitbogen, Lichtriss, Warnrand,
+Szenenwechsel, Leuchtshader und Freischaltbilder; Farben stehen in `theme.ts`.
+Die Sperrzeit nach einem Hindernistreffer ist Spielregel und liegt deshalb als
+`WORLD_OBSTACLE_HIT_COOLDOWN_MS` in `GameConfig.ts`.
+`ui/sceneTransition.ts` blendet ueber die Hauptkamera ein und aus; eine
+abgebrochene Blende hinterlaesst nichts, weil Phaser beim `SHUTDOWN` die
+Kameras zerstoert und beim Start die Eingabe wieder einschaltet.
+`ui/FinalSecondsWarning.ts` zeichnet den Warnrand, die Taktrechnung liegt ohne
+Phaser in `ui/finalSecondsPulse.ts`. `ui/effectsFx.ts` kapselt Phasers `preFX`
+(nur WebGL) und den Lichtriss; beides fragt `systems/EffectsQualitySystem.ts`,
+das die Effektstufe im Spielstand haelt (ADR-0027). `ui/achievementBadge.ts`
+zeichnet die Erfolgsabzeichen als Vektor, `ui/unlockShowcase.ts` baut daraus
+und aus Planeten- und Halo-Texturen die Bilder der Freischaltkarten in
+`ResultView`.
+
 **Stand:** 2026-08-30 · gilt fuer den Stand aus `package.json`/`version.json`
 
 Dieses Dokument beschreibt, **wie** der Code aufgebaut ist und **warum**.
@@ -159,6 +175,7 @@ isiHunt/
 │   │   ├── balance-data.json   Eine Quelle fuer Punkte, XP, Coins und Kosten
 │   │   ├── balance.ts          Ableitungen und Balance-Snapshot
 │   │   ├── GameConfig.ts       Kompatibilitaets-Fassade fuer alte Imports
+│   │   ├── effectVisuals.ts    Visuelle Budgets: Hindernisse, Warnrand, Blenden
 │   │   ├── rarities.ts         Seltenheitsstufen
 │   │   ├── worlds.ts           Welten
 │   │   ├── talents.ts          Talente + Stat-Aufloesung
@@ -195,7 +212,7 @@ isiHunt/
 │   │   │                       leitet bei bereits bestehender Sitzung zu
 │   │   │                       ProfileScene weiter. Pflichtstation beim
 │   │   │                       Start ohne Session (firstStart)
-│   │   ├── SettingsScene.ts    Ton, Spielstand-Aktionen; Profil-Knopf zeigt
+│   │   ├── SettingsScene.ts    Ton, Haptik, Effektstufe; Profil-Knopf zeigt
 │   │   │                       auf ProfileScene
 │   │   ├── TalentScene.ts      Ehrliche Talentliste mit Rangkauf
 │   │   ├── ShopScene.ts        Laden: Formen, Farben und Auren gegen Muenzen
@@ -220,6 +237,8 @@ isiHunt/
 │   │   ├── SafeAreaSystem.test.ts
 │   │   ├── SoundSystem.ts      Audio-Fassade, Settings und Fallback
 │   │   ├── SoundSystem.test.ts
+│   │   ├── EffectsQualitySystem.ts Effektstufe voll/sparsam (ADR-0027)
+│   │   ├── EffectsQualitySystem.test.ts
 │   │   ├── audio/SoundModule.ts Provider-Vertrag und Prioritaetskette
 │   │   ├── audio/SampledSoundModule.ts CC0-Sample mit Fallback
 │   │   ├── LevelUpPresentationSystem.ts reine Level-Up-Belohnungszusammenfassung
@@ -266,6 +285,12 @@ isiHunt/
 │   │   ├── debugOverlay.ts     Schwebender Debug-Knopf ausserhalb des Canvas (ADR-0016)
 │   │   ├── textInput.ts        Echtes HTML-Eingabefeld ueber dem Canvas
 │   │   ├── talentDraft.ts      Temporaere Duell-Talentkarten mit Plus/Minus
+│   │   ├── sceneTransition.ts  Ein-/Ausblenden zwischen Scenes
+│   │   ├── effectsFx.ts        Leuchtshader und Lichtriss (Effektstufe)
+│   │   ├── FinalSecondsWarning.ts Roter Warnrand der Schlussphase
+│   │   ├── finalSecondsPulse.ts Takt des Warnrands, ohne Phaser pruefbar
+│   │   ├── achievementBadge.ts Erfolgsabzeichen: Emblem je Kategorie, Rangmarken
+│   │   ├── unlockShowcase.ts   Bilder der Freischaltkarten im Ergebnis
 │   │   └── widgets.ts          Knoepfe, Balken, Hintergruende, Effekte, createStatusPage
 │   ├── env.d.ts                Typen der Umgebungsvariablen
 │   └── main.ts                 Phaser-Konfiguration

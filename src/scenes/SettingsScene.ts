@@ -15,6 +15,7 @@ import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
 import * as HapticsSystem from '@/systems/HapticsSystem';
+import * as EffectsQualitySystem from '@/systems/EffectsQualitySystem';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import {
   attachVerticalScroll,
@@ -55,6 +56,7 @@ export class SettingsScene extends Phaser.Scene {
     // Kartenkante und mindestens 14 px von einer Buttonkante entfernt.
     const profileY = sections.next(350);
     const soundY = sections.next(350);
+    const graphicsY = sections.next(230);
     const legalY = sections.next(430);
 
     addContent(
@@ -161,6 +163,46 @@ export class SettingsScene extends Phaser.Scene {
           GAME_WIDTH / 2,
           soundY + 125,
           'Vibration bei Treffern und Aktionen',
+          textStyle(FontSize.tiny, Palette.inkDim),
+        )
+        .setOrigin(0.5)
+        .setLetterSpacing(2),
+    );
+
+    addContent(
+      createPanel(this, GAME_WIDTH / 2, graphicsY, GAME_WIDTH - 120, 230, world.accent, {
+        alpha: 0.5,
+        radius: 20,
+      }),
+    );
+
+    addContent(
+      this.add
+        .text(GAME_WIDTH / 2, graphicsY - 75, 'GRAFIK', textStyle(FontSize.body, Palette.gold))
+        .setOrigin(0.5)
+        .setLetterSpacing(3),
+    );
+
+    const effectsLabel = (): string =>
+      EffectsQualitySystem.isFull() ? 'EFFEKTE: VOLL' : 'EFFEKTE: SPARSAM';
+    const effectsButton = createButton(
+      this,
+      GAME_WIDTH / 2,
+      graphicsY + 5,
+      effectsLabel(),
+      () => {
+        EffectsQualitySystem.setQuality(EffectsQualitySystem.isFull() ? 'reduced' : 'full');
+        effectsButton.setLabel(effectsLabel());
+      },
+      { width: 360, height: 64, accent: world.accent, fontSize: FontSize.body },
+    );
+    addContent(effectsButton.container);
+    addContent(
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          graphicsY + 62,
+          'Sparsam schont schwache Geräte',
           textStyle(FontSize.tiny, Palette.inkDim),
         )
         .setOrigin(0.5)

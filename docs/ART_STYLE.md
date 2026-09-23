@@ -80,6 +80,57 @@ Die Grundlage ist mit `Palette`, `FontSize`, `textStyle`, `layoutAudit` und den
 vorhandenen Layout-/Reduced-Motion-Tests im Code verankert. Browser-Screenshots
 an 360/390/402 px bleiben bis zur ausdruecklichen Browserfreigabe offen.
 
+**Grafik-Update Runde 2, 24.09.2026:**
+
+- **Hindernisse sind Schatten, nicht Licht.** Dunkler Zackenkoerper
+  (`Palette.obstacleBody`), eine farbige Warnkontur, ein gestrichelter
+  Innenring und ein aufrechtes Symbol - Sanduhr fuer Zeitstrafe
+  (`obstaclePenaltyHex`, dieselbe Warnfarbe wie die kritische Restzeit),
+  Doppelwinkel fuer Bremse (`obstacleBrakeHex`, kaltes Stahlgrau). Kein
+  additiver Schein: Vorher trugen sie ein Leuchten und lila Zacken und lasen
+  sich damit wie ein episches Relikt - gegen 1.2 und 2.1. Die aufsteigenden
+  Texte beim Treffer tragen dieselben Farben. Die Kontur pulsiert nur in der
+  Deckkraft; reduzierte Bewegung haelt sie still.
+- **Restzeitbogen.** Ein duenner Bogen in Seltenheitsfarbe ausserhalb der
+  Rangmarken leert sich wie ein Uhrzeiger von zwoelf Uhr aus; im letzten
+  Viertel wird er breiter und kraeftiger. Er ist Spielinformation und gilt
+  deshalb auch bei reduzierter Bewegung und sparsamen Effekten.
+- **Lichtriss ab episch.** Beim Erscheinen oeffnet sich ein senkrechter
+  Lichtspalt in Seltenheitsfarbe (180 ms auf, 60 ms stehen, 160 ms zu) mit
+  einem sich weitenden Ring. Er laeuft gleichzeitig mit dem Aufspringen des
+  Relikts, nie davor - eine Vorankuendigung haette den Spawnzeitpunkt im Duell
+  verschoben. Entfaellt bei reduzierter Bewegung und sparsamen Effekten.
+- **Leuchtshader.** Figur (Weltfarbe) sowie epische und legendaere Relikte
+  bekommen einen `preFX`-Glow - nur unter WebGL, nur bei voller Effektstufe
+  (ADR-0027). Bewusst nicht fuer jedes Relikt: Jeder Shader ist ein eigener
+  Renderdurchgang.
+- **Warnrand der Schlussphase.** Ab 10 s Restzeit - dieselbe Schwelle, an der
+  Timer und Zeitbalken rot werden - legt sich ein roter Randschein additiv
+  ueber das Feld und schlaegt bei jedem Sekundenwechsel an (Deckkraft 0,16
+  Grund, bis 0,46 auf der Spitze, weich abklingend). Kein Aufblitzen, und die
+  erste Warnsekunde blendet ein. Reduzierte Bewegung zeigt den Grundwert
+  still. Die Vorlage `tex-edge-glow` ist ein Canvas-Radialverlauf bis in die
+  Ecken; ein Rahmen aus Rechtecken zeigte gestreckt Streifen und Diagonalnaehte.
+- **HUD-Schleier ohne Doppelzeilen.** Die Stufen des Kopfschleiers stossen
+  buendig aneinander (2 px). Vorher ueberlappten 16 Streifen je um 1 px; die
+  doppelt gedeckten Zeilen waren ueber dem roten Warnrand als Linien sichtbar.
+- **Szenenwechsel.** Game, Result, Challenge, WorldInfo, HUD und Menue blenden
+  aus dem Grundton ein (240 ms). Der Start einer Jagd faehrt die Kamera
+  leicht heran und blendet aus (260 ms, Zoom 1,1); andere Wechsel blenden in
+  200 ms aus. Am Rundenende liegt die Blende innerhalb der bisherigen 450 ms.
+  Reduzierte Bewegung wechselt ohne Blende.
+- **Erfolgsabzeichen.** Medaille mit Beleuchtung von links oben, dunklem Kern,
+  einem Emblem je Kategorie (Blitz, Stein, Stern, Planet, Uhr, Knoten, Sonne,
+  vierzackiger Stern) und ein bis sieben Rangmarken am unteren Rand. Gesperrt
+  grau, aber an Emblem und Rang erkennbar. Metalltoene in `Palette.medal*`.
+  Der Rangrahmen der Karte folgt der gemessenen Schriftbreite; wird die Zeile
+  eng, schrumpft die Kategoriebeschriftung.
+- **Freischaltungen im Ergebnis.** Karten fuer neue Welt, neue Optik und Erfolg
+  tragen links ein Bild (Planet mit Weltschein, Halo mit Schiff, Abzeichen),
+  das sich einmal aufdreht: aus der Kante in die Flaeche, 460 ms, mehrere
+  versetzt um 120 ms. Nur beim ersten Aufbau, nicht bei Resize; statisch bei
+  reduzierter Bewegung.
+
 **Relikte, 19.09.2026:** Ein schmaler Seltenheitsrand ersetzt den dominanten
 Lichtnebel. Eine feste Lichtkante links oben und eine schattige Nachtseite
 geben den rotierenden Oberflaechen Tiefe. Ein bis sechs kleine Rangmarken
@@ -275,6 +326,9 @@ Seltenheitsfarben klar unterscheiden.
 | Hervorhebung / Gold | `#ffd479` |
 | Warnung             | `#ff6b6b` |
 | Erfolg              | `#7ee787` |
+| Hindernis: Strafe   | `#ff6b6b` |
+| Hindernis: Bremse   | `#a9bfd6` |
+| Hinderniskoerper    | `#0a0e18` |
 
 Definiert in `src/ui/theme.ts`. Scenes definieren **keine** eigenen Farben.
 
@@ -319,6 +373,10 @@ Bewegung ist Sprache — sie sagt dem Spieler, was passiert ist.
 | Serienfenster laeuft aus   | Serienspalte wird rot, Balken laeuft leer                          | ab 25 % Restfenster      |
 | Ergebnis mit Praemie       | Kopfzahl zaehlt hoch, `Cubic.easeOut`, dann kurzer Pop auf 112 %   | 260 + 1100 + 240 ms      |
 | Update liegt bereit        | Goldener Balken in der Kopfzeile, Glimmen pulsiert 35 % ↔ 100 %    | 900 ms, endlos           |
+| Seltenes Relikt erscheint  | Lichtriss oeffnet und schliesst sich, Ring weitet sich (ab episch) | 180 + 60 + 160 ms        |
+| Letzte 10 Sekunden         | Roter Randschein schlaegt je Sekunde an und klingt ab              | 1000 ms Takt             |
+| Szenenwechsel              | Ausblenden bzw. Heranfahren, Einblenden aus dem Grundton           | 200/260 + 240 ms         |
+| Freischaltung im Ergebnis  | Bild dreht sich aus der Kante auf                                  | 460 ms, je +120 ms       |
 
 **Der Update-Hinweis darf aus dem Raster fallen.** Bis v0.1.341 war er ein
 gewoehnlicher Sekundaerknopf in der Kopfzeile - dieselbe graue Flaeche,
@@ -464,6 +522,7 @@ hinzu, damit die sechs Seltenheitsfarben eindeutig bleiben.
 | `tex-rays`        | Strahlenkranz hinter seltenen Relikten                 | 160×160 |
 | `tex-ring`        | Ring fuer die Schockwelle beim Fang                    | 128×128 |
 | `tex-vignette`    | radiale Randabdunklung                                 | 256×256 |
+| `tex-edge-glow`   | weisser Randschein zum Einfaerben (Warnrand)           | 256×256 |
 | `tex-player-core` | Licht-Raumschiff mit Cockpit, Fluegeln und Triebwerken | 96×96   |
 | `tex-player-halo` | Ring mit vier Segmenten und Markern                    | 128×128 |
 

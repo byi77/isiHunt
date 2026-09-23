@@ -1,15 +1,19 @@
 import Phaser from 'phaser';
+import { UNLOCK_SHOWCASE } from '@/config/effectVisuals';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import { Palette, textStyle } from '@/ui/theme';
 import { createBar, createButton, createPanel } from '@/ui/widgets';
 import type { ButtonHandle } from '@/ui/widgets';
+import { createUnlockVisual, spinInUnlock, type UnlockVisual } from '@/ui/unlockShowcase';
 
 export interface ResultSection {
   title: string;
   lines: string[];
   highlight?: boolean;
   progress?: number;
+  /** Bild links in der Karte - nur fuer Freischaltungen. */
+  visual?: UnlockVisual;
 }
 
 /**
@@ -60,6 +64,8 @@ export class ResultView {
    * bei jeder Drehung des Geraets wieder von vorn an.
    */
   private rollPlayed = false;
+  /** Wie das Zaehlwerk: Die Freischaltungen drehen sich nur beim ersten Aufbau auf. */
+  private showcasePlayed = false;
   private rollTween?: Phaser.Tweens.Tween;
   private readonly resize = (): void => this.build();
   private readonly down = (pointer: Phaser.Input.Pointer): void => {
@@ -128,14 +134,15 @@ export class ResultView {
       color: string,
       bold = false,
       padding = 0,
+      indent = 0,
     ): Phaser.GameObjects.Text => {
       const label = this.scene.add.text(
-        margin + padding,
+        margin + padding + indent,
         y,
         value,
         textStyle(size * unit, color, {
           fontStyle: bold ? 'bold' : 'normal',
-          wordWrap: { width: width - padding * 2, useAdvancedWrap: true },
+          wordWrap: { width: width - padding * 2 - indent, useAdvancedWrap: true },
         }),
       );
       parent.add(label);
@@ -174,9 +181,12 @@ export class ResultView {
       new Phaser.Geom.Rectangle(0, this.top, GAME_WIDTH, Math.max(0, this.bottom - this.top)),
     );
     let bodyY = 0;
+    let showcaseOrder = 0;
+    const visualSize = UNLOCK_SHOWCASE.size * unit;
     for (const section of this.content.sections) {
       const card = this.scene.add.container(0, bodyY);
       this.body.add(card);
+      const indent = section.visual ? visualSize + 12 * unit : 0;
       let rowY = 12 * unit;
       const title = addText(
         card,
@@ -186,6 +196,7 @@ export class ResultView {
         section.highlight ? Palette.gold : Palette.ink,
         true,
         12 * unit,
+        indent,
       );
       rowY += title.height + 8 * unit;
       if (section.progress !== undefined) {
@@ -202,10 +213,11 @@ export class ResultView {
         rowY += 18 * unit;
       }
       for (const line of section.lines) {
-        const text = addText(card, line, rowY, 14, Palette.inkDim, false, 12 * unit);
+        const text = addText(card, line, rowY, 14, Palette.inkDim, false, 12 * unit, indent);
         rowY += text.height + 7 * unit;
       }
       rowY += 5 * unit;
+      if (section.visual) rowY = Math.max(rowY, visualSize + 20 * unit);
       const panel = createPanel(
         this.scene,
         GAME_WIDTH / 2,
@@ -216,8 +228,16 @@ export class ResultView {
         { alpha: 0.94, radius: 12 * unit },
       );
       card.addAt(panel, 0);
+      if (section.visual) {
+        const visual = createUnlockVisual(this.scene, section.visual, visualSize);
+        visual.setPosition(margin + 12 * unit + visualSize / 2, rowY / 2);
+        card.add(visual);
+        if (!this.showcasePlayed) spinInUnlock(this.scene, visual, showcaseOrder);
+        showcaseOrder += 1;
+      }
       bodyY += rowY + 10 * unit;
     }
+    this.showcasePlayed = true;
     this.maxScroll = Math.max(0, bodyY - 10 * unit - (this.bottom - this.top));
     this.indicator = addText(this.root, '', this.bottom + 5 * unit, 11, Palette.inkDim);
     this.setScroll(this.scroll);

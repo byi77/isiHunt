@@ -1,6 +1,8 @@
 import { ACHIEVEMENT_BY_ID } from '@/config/achievements';
 import { RARITIES } from '@/config/rarities';
+import { getWorld } from '@/config/worlds';
 import { accessibleRarityLabel } from '@/systems/AccessibilitySystem';
+import { achievementCategory } from '@/systems/AchievementProgressSystem';
 import { getLevelUpRewardSummary } from '@/systems/LevelUpPresentationSystem';
 import { getNextGoal } from '@/systems/NextGoalSystem';
 import { getLevelProgress } from '@/systems/ProgressionSystem';
@@ -39,13 +41,21 @@ export function soloResultContent(
       ],
       highlight: true,
     });
-  for (const world of reward.unlockedWorldNames)
-    sections.push({ title: 'NEUE WELT', lines: [world], highlight: true });
+  for (const worldId of progression.unlockedWorldIds) {
+    const world = getWorld(worldId);
+    sections.push({
+      title: 'NEUE WELT',
+      lines: [world.name],
+      highlight: true,
+      visual: { kind: 'world', spaceVariant: world.spaceVariant, accent: world.accent },
+    });
+  }
   for (const aura of reward.availableAuraNames)
     sections.push({
       title: 'NEUE OPTIK IM SHOP',
       lines: [aura, 'Jetzt zum Kauf verfuegbar'],
       highlight: true,
+      visual: { kind: 'aura' },
     });
   for (const id of progression.unlockedAchievementIds) {
     const achievement = ACHIEVEMENT_BY_ID[id];
@@ -54,6 +64,11 @@ export function soloResultContent(
         title: 'ERFOLG FREIGESCHALTET',
         lines: [achievement.name, `${achievement.coinReward} Coins in der Gesamtsumme enthalten`],
         highlight: true,
+        visual: {
+          kind: 'achievement',
+          category: achievementCategory(achievement),
+          rank: achievement.rank,
+        },
       });
   }
   // Die Praemien stehen direkt unter dem XP-Block: Sie erklaeren die Zahl,

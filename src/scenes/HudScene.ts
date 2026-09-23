@@ -9,6 +9,7 @@
 
 import Phaser from 'phaser';
 
+import { FINAL_SECONDS } from '@/config/effectVisuals';
 import { COMBO_TIERS, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { getWorld } from '@/config/worlds';
 import { eventBus, GameEvent } from '@/core/EventBus';
@@ -17,6 +18,7 @@ import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import { calculateHudLayout } from '@/ui/hudLayout';
+import { enterScene } from '@/ui/sceneTransition';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import type { BarHandle, ButtonHandle } from '@/ui/widgets';
 import { createBar, createButton, createPanel } from '@/ui/widgets';
@@ -186,6 +188,7 @@ export class HudScene extends Phaser.Scene {
   }
 
   create(data: HudSceneData): void {
+    enterScene(this);
     const world = getWorld(data.worldId);
     this.accent = world.accent;
     this.scoreToBeat = data.scoreToBeat ?? null;
@@ -549,22 +552,25 @@ export class HudScene extends Phaser.Scene {
    * den sie verdeckt.
    *
    * Der Verlauf ist aus waagerechten Streifen gebaut, weil Phasers `Graphics`
-   * keinen Farbverlauf kennt. 16 Stufen sind bei dieser Hoehe nicht als
-   * Banding zu sehen und kosten einen Zeichenaufruf pro Stufe - nur beim
-   * Layout, nicht je Frame.
+   * keinen Farbverlauf kennt. Die Streifen stossen buendig aneinander und
+   * ueberlappen nie: Bis 2026-09-23 war jeder 1 px hoeher als sein Abstand,
+   * damit keine Luecke blieb. Die doppelt gedeckte Zeile stand dann alle
+   * 1/16 als dunkle Linie da - unsichtbar auf Nachthimmel, deutlich, sobald
+   * der rote Warnrand der Schlussphase darunter lag (gemessen: Rotkanal
+   * faellt dort periodisch um 5-10 Stufen). Ganze Pixelgrenzen statt
+   * Bruchteilen lassen keine Luecke und keine Doppelzeile zu; 2-px-Stufen
+   * zeigen kein Banding. Gezeichnet nur beim Layout, nicht je Frame.
    */
   private drawPlate(height: number): void {
-    const stufen = 16;
+    const stufe = 2;
     this.plate.clear();
-    for (let i = 0; i < stufen; i++) {
-      const oben = (height * i) / stufen;
-      const hoehe = height / stufen + 1;
+    for (let oben = 0; oben < height; oben += stufe) {
       // Quadratisch auslaufend: oben traegt die Deckung die Zahlen, unten
       // geht sie schneller gegen Null als ein linearer Verlauf - die Kante
       // faellt dadurch nicht auf.
-      const anteil = 1 - i / stufen;
+      const anteil = 1 - (oben + stufe / 2) / height;
       this.plate.fillStyle(Palette.panel, PLATE_MAX_ALPHA * anteil * anteil);
-      this.plate.fillRect(0, oben, GAME_WIDTH, hoehe);
+      this.plate.fillRect(0, oben, GAME_WIDTH, Math.min(stufe, height - oben));
     }
   }
 
@@ -1027,9 +1033,10 @@ export class HudScene extends Phaser.Scene {
     this.timerText.setText(`${seconds}s`);
     this.timerBar.setRatio(remainingMs / totalMs);
 
-    // Letzte 10 Sekunden rot - klare Warnung ohne zusaetzliches UI-Element.
-    const isCritical = seconds <= 10;
-    this.timerBar.setTint(isCritical ? 0xff6b6b : this.accent);
+    // Schlussphase rot - dieselbe Schwelle wie der Warnrand im Spielfeld, damit
+    // Zahl und Rand im selben Augenblick umschlagen.
+    const isCritical = remainingMs <= FINAL_SECONDS.thresholdMs;
+    this.timerBar.setTint(isCritical ? Palette.dangerHex : this.accent);
     this.timerText.setColor(isCritical ? Palette.danger : Palette.ink);
   };
 

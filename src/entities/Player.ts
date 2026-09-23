@@ -43,9 +43,11 @@ import {
   TALENT_SPEED_STREAK_TALENT_LENGTH,
   TALENT_SPEED_STREAK_WIDTH,
 } from '@/config/GameConfig';
+import { GLOW_FX } from '@/config/effectVisuals';
 import { talentMaxRank, type PlayerStats, type TalentId } from '@/config/talents';
 import type { SeriesAgility } from '@/systems/ScoreSystem';
 import { Depth } from '@/ui/depth';
+import { applyGlow } from '@/ui/effectsFx';
 import { auraAssetForId, type Ego3DAsset } from '@/ui/egoAssets';
 import {
   applyTintShift,
@@ -97,6 +99,8 @@ export class Player extends Phaser.GameObjects.Container {
   private readonly enginePlume: Phaser.GameObjects.Image;
   private readonly engineCore: Phaser.GameObjects.Image;
   private readonly aura: Phaser.GameObjects.Image;
+  /** Leuchtshader am Rumpf; `null` im Canvas-Renderer oder bei sparsamer Stufe. */
+  private readonly coreGlow: Phaser.FX.Glow | null;
   private readonly threeDPreview: ThreeDShipPreview | null = null;
   private readonly threeDPreviewDom: Phaser.GameObjects.DOMElement | null = null;
   private readonly trail: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -211,6 +215,7 @@ export class Player extends Phaser.GameObjects.Container {
     // Entscheidung faellt in `shipHullTint()`.
     this.core = scene.add.image(0, 0, textureKey).setTint(hullColor);
     this.hullColor = hullColor;
+    this.coreGlow = applyGlow(this.core, accentColor, GLOW_FX.playerOuter, GLOW_FX.playerInner);
 
     this.orbit = new ShipOrbit(scene);
     this.orbit.update(false);
@@ -685,6 +690,7 @@ export class Player extends Phaser.GameObjects.Container {
     this.accentColor = color;
     this.aura.setTint(color);
     this.halo.setTint(color);
+    if (this.coreGlow) this.coreGlow.color = color;
     if (this.seriesTier === null) this.trail.setParticleTint(color);
   }
 

@@ -17,6 +17,7 @@ import * as DebugSystem from '@/systems/DebugSystem';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
+import { enterScene, transitionTo } from '@/ui/sceneTransition';
 import { createButton, createSceneBackdrop } from '@/ui/widgets';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import { ResultView } from '@/ui/ResultView';
@@ -36,6 +37,7 @@ export class ResultScene extends Phaser.Scene {
   }
 
   create(data: ResultSceneData): void {
+    enterScene(this);
     if (data.boostedFinish) {
       void this.createBoostedResult(data);
       return;
@@ -57,13 +59,13 @@ export class ResultScene extends Phaser.Scene {
       {
         label: 'NOCHMAL',
         run: () => {
-          this.scene.start(SceneKey.Game, { worldId: stats.worldId });
+          transitionTo(this, SceneKey.Game, { worldId: stats.worldId }, 'dive');
         },
       },
       {
         label: 'ZUM MENUE',
         run: () => {
-          this.scene.start(SceneKey.Menu);
+          transitionTo(this, SceneKey.Menu);
         },
       },
     ]);

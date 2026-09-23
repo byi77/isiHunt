@@ -21,6 +21,8 @@ export const TextureKey = {
   Rays: 'tex-rays',
   Ring: 'tex-ring',
   Vignette: 'tex-vignette',
+  /** Weisser Randschein zum Einfaerben - die Vignette selbst ist schwarz. */
+  EdgeGlow: 'tex-edge-glow',
   /** Grundfigur - Rueckfall, wenn eine Form fehlt. */
   PlayerCore: 'tex-player-core',
   PlayerHalo: 'tex-player-halo',
@@ -53,6 +55,7 @@ export function createTextures(scene: Phaser.Scene): void {
   createRays(scene);
   createRing(scene);
   createVignette(scene);
+  createEdgeGlow(scene);
   createShipTextures(scene);
   createPlayerHalo(scene);
 }
@@ -335,6 +338,31 @@ function createVignette(scene: Phaser.Scene): void {
       g.strokeCircle(c, c, r);
     }
   });
+}
+
+/**
+ * Weisser Randschein: innen leer, zu den Kanten und Ecken hin voll.
+ *
+ * Eine eigene Vorlage, weil die Vignette schwarz ist und sich nicht rot
+ * einfaerben laesst - Tint multipliziert. Gezeichnet als echter radialer
+ * Verlauf im Canvas, dessen Aussenradius bis in die Ecken reicht: Ein
+ * Rahmen aus Rechtecken zeigte gestreckt Streifen und diagonale Nahtlinien,
+ * ein Graphics-Kreis liesse die Ecken leer.
+ */
+function createEdgeGlow(scene: Phaser.Scene): void {
+  if (scene.textures.exists(TextureKey.EdgeGlow)) return;
+  const size = 256;
+  const c = size / 2;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const context = canvas.getContext('2d')!;
+  const gradient = context.createRadialGradient(c, c, c * 0.62, c, c, c * Math.SQRT2);
+  gradient.addColorStop(0, 'rgba(255,255,255,0)');
+  gradient.addColorStop(0.35, 'rgba(255,255,255,0.35)');
+  gradient.addColorStop(1, 'rgba(255,255,255,1)');
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, size, size);
+  scene.textures.addCanvas(TextureKey.EdgeGlow, canvas);
 }
 
 /** Die Spielfigur: ein kleines, nach oben ausgerichtetes Licht-Raumschiff. */

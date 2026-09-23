@@ -198,6 +198,8 @@ export const WORLD_BRAKE_DURATION_MS = 700;
 export const WORLD_BRAKE_FACTOR = 0.72;
 /** Späte Welten bestrafen einen Treffer mit einem kurzen Zeitverlust. */
 export const WORLD_PENALTY_MS = 800;
+/** Sperrzeit nach einem Hindernistreffer - kein Doppeltreffer im selben Anflug. */
+export const WORLD_OBSTACLE_HIT_COOLDOWN_MS = 950;
 /** Abgeschwächte Weltunterschiede gegenüber dem ersten Phase-5-Prototyp. */
 export const WORLD_INERTIA_FACTOR = 0.8;
 export const WORLD_DRIFT_MULTIPLIER = 1.15;

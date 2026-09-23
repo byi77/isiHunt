@@ -157,6 +157,14 @@ Die zentrale Achse. Alles andere haengt daran.
 **Designregel:** Seltener ⇒ wertvoller ⇒ schneller ⇒ kuerzer sichtbar ⇒
 groesser (damit man es ueberhaupt rechtzeitig sieht).
 
+**Die Restzeit ist sichtbar (seit 2026-09-24).** Ein Bogen um jedes Relikt
+leert sich ueber seine Lebensdauer; im letzten Viertel wird er kraeftiger.
+Vorher zeigte sich der Ablauf erst in den letzten 700 ms - zu spaet, um noch
+umzusteuern. Mit dem Bogen wird aus "welches ist am wertvollsten?" auch
+"welches laeuft zuerst ab?": Wer zwischen einem blauen mit wenig Rest und
+einem gruenen mit viel Rest waehlt, entscheidet jetzt mit Information statt
+mit Glueck. An Lebensdauer, Punkten oder Spawns aendert der Bogen nichts.
+
 **Erwartungswert pro Spawn:** ≈ 30,4 Punkte, ≈ 10,3 XP.
 Quelle: `src/config/rarities.ts` — diese Tabelle ist eine Abschrift, der Code
 ist die Wahrheit. Werte am 2026-08-17 aus dem Code nachgezogen, s.

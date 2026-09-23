@@ -11,6 +11,25 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Restzeit am Relikt.** Ein duenner Bogen leert sich ueber die Lebensdauer
+  jedes Relikts und wird im letzten Viertel kraeftiger. Vorher sah man den
+  Ablauf erst in den letzten 700 ms.
+- **Seltenes kuendigt sich an.** Ab episch reisst beim Erscheinen ein kurzer
+  Lichtspalt auf, gleichzeitig mit dem Relikt - der Spawnzeitpunkt bleibt
+  derselbe, auch im Duell.
+- **Die letzten zehn Sekunden.** Ein roter Randschein schlaegt mit jeder
+  Sekunde an, im selben Moment, in dem Timer und Balken rot werden.
+- **Ueberblendungen** zwischen Menue, Weltinfo, Duell, Jagd und Ergebnis; der
+  Start einer Jagd faehrt die Kamera leicht heran. Am Rundenende dauert der
+  Wechsel so lange wie vorher.
+- **Leuchtshader** um die Figur und um epische/legendaere Relikte, dazu in den
+  Einstellungen die Karte GRAFIK mit "EFFEKTE: VOLL / SPARSAM" fuer schwache
+  Geraete (ADR-0027).
+- **Erfolgsabzeichen** mit Emblem je Kategorie und Rangmarken statt eines
+  einheitlichen Pokals.
+- **Freischaltungen im Ergebnis** - neue Welt, neue Optik, Erfolg - tragen ein
+  Bild, das sich einmal aufdreht.
+
 - **Abschlusspraemien am Rundenende.** Wer viel Seltenes faengt, eine lange
   Kette haelt oder grosse Mengen sammelt, bekommt am Schluss Punkte und XP
   obendrauf - aufgeschluesselt in benannte Posten statt als gewachsene Zahl
@@ -48,6 +67,11 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Geaendert
 
+- **Hindernisse sehen nicht mehr aus wie Relikte.** Sie trugen einen
+  leuchtenden Schein und lila Zacken - dieselbe Sprache wie ein episches
+  Relikt. Jetzt sind sie dunkle Schatten mit Warnkontur und Symbol: rote
+  Sanduhr fuer Zeitstrafe, stahlgraue Doppelwinkel fuer Bremse. Die Texte beim
+  Treffer tragen dieselben Farben.
 - **Der Update-Hinweis im Hauptmenue faellt jetzt auf.** Bis dahin war er ein
   gewoehnlicher grauer Knopf in der Kopfzeile - dieselbe Farbe, Form und Hoehe
   wie die acht Menueknoepfe darunter, und damit uebersehbar, obwohl er da war.
@@ -62,6 +86,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Die Rangbeschriftung der Erfolge lief aus ihrem Rahmen.** Der Rahmen war
+  fest 92 px breit, schon "RANG 1 · +20" war breiter. Er folgt jetzt der
+  Schrift; wird die Zeile eng, schrumpft die Kategorie daneben.
+- **Feine Linien im HUD-Schleier.** Seine Stufen ueberlappten je um einen
+  Pixel; die doppelt gedeckten Zeilen waren ueber hellem Untergrund als
+  Streifen sichtbar.
 - **Lauf-Uploads und Ranglisteneintraege nach Phase 2.52.** Phase 2.54
   wandelt validierte Achievement-IDs in JSONB um; der bisherige Typfehler
   brach den gesamten Fortschritts-Upload ab und liess den Laufbeleg fuer

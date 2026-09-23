@@ -25,6 +25,7 @@ import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
+import { enterScene, transitionTo } from '@/ui/sceneTransition';
 import { createButton, createMenuLayout, createPanel, createSceneBackdrop } from '@/ui/widgets';
 
 export type WorldInfoMode = 'jagd' | 'duell' | 'tageslauf';
@@ -67,6 +68,7 @@ export class WorldInfoScene extends Phaser.Scene {
     SafeAreaSystem.showStatic(world.name.toUpperCase());
 
     createSceneBackdrop(this, world);
+    enterScene(this);
     const layout = createMenuLayout(24);
     const sections = layout.sections;
 
@@ -211,11 +213,16 @@ export class WorldInfoScene extends Phaser.Scene {
     const effectRun = await CloudSystem.startRewardEffectRun(worldId);
     if (!this.scene.isActive()) return;
     BoostedRunSession.clearStart();
-    this.scene.start(SceneKey.Game, {
-      worldId,
-      boostedRun: result.value,
-      rewardEffects: effectRun.ok ? (effectRun.value ?? undefined) : undefined,
-    });
+    transitionTo(
+      this,
+      SceneKey.Game,
+      {
+        worldId,
+        boostedRun: result.value,
+        rewardEffects: effectRun.ok ? (effectRun.value ?? undefined) : undefined,
+      },
+      'dive',
+    );
   }
 
   /** Loest je nach Modus genau den Zustandsaufbau aus, den der Zielbildschirm erwartet. */
@@ -223,20 +230,22 @@ export class WorldInfoScene extends Phaser.Scene {
     if (mode === 'jagd') {
       const effectRun = await CloudSystem.startRewardEffectRun(worldId);
       if (!this.scene.isActive()) return;
-      this.scene.start(SceneKey.Game, {
-        worldId,
-        rewardEffects: effectRun.ok ? (effectRun.value ?? undefined) : undefined,
-      });
+      transitionTo(
+        this,
+        SceneKey.Game,
+        { worldId, rewardEffects: effectRun.ok ? (effectRun.value ?? undefined) : undefined },
+        'dive',
+      );
       return;
     }
     if (mode === 'duell') {
       if (!this.scene.isActive()) return;
       ChallengeSystem.start(worldId);
-      this.scene.start(SceneKey.Challenge);
+      transitionTo(this, SceneKey.Challenge);
       return;
     }
     if (!this.scene.isActive()) return;
     ChallengeSystem.startDaily(worldId);
-    this.scene.start(SceneKey.Challenge);
+    transitionTo(this, SceneKey.Challenge);
   }
 }

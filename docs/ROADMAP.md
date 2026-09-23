@@ -8,6 +8,18 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 - [x] Eigene Spielfeldkulisse mit strukturierten Weltennebeln, drei
   Sternlagen, sanfter Parallaxe und hochaufgeloestem Randplaneten.
 
+### Grafik-Update - Runde 2 (2026-09-24)
+
+- [x] Hindernisse als Schatten mit Warnkontur und Symbol statt Leuchten und Lila.
+- [x] Restzeitbogen um jedes Relikt; Lichtriss beim Erscheinen ab episch.
+- [x] Roter Warnrand im Sekundentakt in den letzten 10 Sekunden; HUD-Schleier ohne Doppelzeilen.
+- [x] Ueberblendungen zwischen Menue, Weltinfo, Duell, Jagd und Ergebnis.
+- [x] Leuchtshader fuer Figur und epische/legendaere Relikte; Effektstufe VOLL/SPARSAM (ADR-0027).
+- [x] Erfolgsabzeichen je Kategorie mit Rangmarken; Rangrahmen passt sich der Schrift an.
+- [x] Freischaltungen im Ergebnis mit aufdrehendem Bild.
+- [x] `npm run verify` (660 Tests) und Playtest `--sim` 76/76 gruen; Screenshots im Browser geprueft.
+- [ ] Voller Playtest ohne `--sim`, echte Mobilgeraete und Bildrate der Leuchtshader auf schwachen Geraeten.
+
 ### Grafik-Update - Punkt 7 live in v0.1.322
 
 - [x] Drehbarer 3D-Hangar mit Plattform, neun Modellen, Farben, Auren und Triebwerkslicht.

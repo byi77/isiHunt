@@ -40,6 +40,7 @@ import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { Depth } from '@/ui/depth';
 import { createTalentDraftView, type TalentDraftView } from '@/ui/talentDraft';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
+import { enterScene, transitionTo } from '@/ui/sceneTransition';
 import { createButton, createPanel, createSceneBackdrop } from '@/ui/widgets';
 import type { ChallengeState } from '@/types';
 
@@ -76,6 +77,7 @@ export class ChallengeScene extends Phaser.Scene {
 
     const world = getWorld(state.worldId);
     this.buildBackground(world);
+    enterScene(this);
 
     if (ChallengeSystem.isComplete()) {
       this.buildResult(state, world);
@@ -186,7 +188,7 @@ export class ChallengeScene extends Phaser.Scene {
         : kind === 'bot'
           ? 'BOT-DUELL STARTEN'
           : 'SPIELER 1 STARTET',
-      () => this.scene.start(SceneKey.Game, { worldId: world.id, mode: kind }),
+      () => transitionTo(this, SceneKey.Game, { worldId: world.id, mode: kind }, 'dive'),
       { width: 460, accent: world.accent, fontSize: FontSize.large },
     );
 
@@ -246,10 +248,12 @@ export class ChallengeScene extends Phaser.Scene {
         this.talentDraftTimer = null;
       }
       this.talentDraftView?.setEnabled(false);
-      this.scene.start(SceneKey.Game, {
-        worldId: world.id,
-        mode: kind === 'bot' ? 'bot' : 'challenge',
-      });
+      transitionTo(
+        this,
+        SceneKey.Game,
+        { worldId: world.id, mode: kind === 'bot' ? 'bot' : 'challenge' },
+        'dive',
+      );
     };
 
     const updateTimer = (): void => {

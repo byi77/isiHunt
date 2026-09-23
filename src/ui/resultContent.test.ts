@@ -45,6 +45,50 @@ describe('Ergebnisdarstellung', () => {
     expect({ save, stats, progression }).toEqual(before);
   });
 
+  it('gibt jeder Freischaltung ein Bild und laesst gewoehnliche Karten ohne', () => {
+    const save = createDefaultSave();
+    save.level = 50;
+    const stats: RunStats = {
+      worldId: WORLDS[0]!.id,
+      score: 1000,
+      totalCollected: 3,
+      bestCombo: 2,
+      bestMultiplier: 1,
+      xpGained: 10,
+      missed: 0,
+      collected: Object.fromEntries(RARITIES.map((r) => [r.id, 0])) as RunStats['collected'],
+    };
+    const world = WORLDS[2]!;
+    const achievementId = Object.keys(ACHIEVEMENT_BY_ID)[0]!;
+    const content = soloResultContent(
+      stats,
+      {
+        levelsGained: 49,
+        newLevel: 50,
+        talentPointsGained: 49,
+        coinsGained: 0,
+        isNewBestScore: false,
+        unlockedWorldIds: [world.id],
+        unlockedAchievementIds: [achievementId],
+      },
+      save,
+    );
+    const byTitle = (title: string) => content.sections.filter((s) => s.title === title);
+
+    expect(byTitle('NEUE WELT')[0]!.visual).toEqual({
+      kind: 'world',
+      spaceVariant: world.spaceVariant,
+      accent: world.accent,
+    });
+    expect(byTitle('ERFOLG FREIGESCHALTET')[0]!.visual).toMatchObject({
+      kind: 'achievement',
+      rank: ACHIEVEMENT_BY_ID[achievementId]!.rank,
+    });
+    for (const aura of byTitle('NEUE OPTIK IM SHOP')) expect(aura.visual).toEqual({ kind: 'aura' });
+    expect(byTitle('AUSBEUTE')[0]!.visual).toBeUndefined();
+    expect(byTitle('NAECHSTES ZIEL')[0]!.visual).toBeUndefined();
+  });
+
   it('haelt die lokale Bot-Praemie erkennbar und ordnet vier Ergebnisse ihren Namen zu', () => {
     const labels = ['AlexandertheGreat123456789', 'Mira', 'Nebeljaeger', 'Vier'];
     const state: ChallengeState = {

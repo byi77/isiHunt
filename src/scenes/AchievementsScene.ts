@@ -13,6 +13,7 @@ import {
 } from '@/systems/AchievementProgressSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
+import { createAchievementBadge } from '@/ui/achievementBadge';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   createBackButton,
@@ -69,15 +70,20 @@ export class AchievementsScene extends Phaser.Scene {
         alpha: isUnlocked ? 0.58 : 0.38,
         radius: 14,
       });
-      addTrophy(this, x - 134, y - 4, isUnlocked);
+      createAchievementBadge(
+        this,
+        x - 131,
+        y - 4,
+        progress.category,
+        achievement.rank,
+        isUnlocked,
+        22,
+      );
 
-      const rankBadge = this.add.graphics();
-      rankBadge.fillStyle(isUnlocked ? Palette.goldHex : 0x69738d, isUnlocked ? 0.2 : 0.16);
-      rankBadge.lineStyle(1.5, isUnlocked ? Palette.goldHex : 0x69738d, 0.75);
-      rankBadge.fillRoundedRect(x - 104, y - 78, 92, 28, 8);
-      rankBadge.strokeRoundedRect(x - 104, y - 78, 92, 28, 8);
-
-      this.add
+      // Der Rahmen folgt der gemessenen Schriftbreite. Mit fester Breite von
+      // 92 px lief schon "RANG 1 · +20" hinaus - die Breite haengt an Rang,
+      // Praemie und der Systemschrift des Geraets, keiner davon ist fest.
+      const rankLabel = this.add
         .text(
           x - 94,
           y - 64,
@@ -87,7 +93,15 @@ export class AchievementsScene extends Phaser.Scene {
           }),
         )
         .setOrigin(0, 0.5);
-      this.add
+      const rankBadge = this.add.graphics();
+      rankBadge.fillStyle(isUnlocked ? Palette.goldHex : 0x69738d, isUnlocked ? 0.2 : 0.16);
+      rankBadge.lineStyle(1.5, isUnlocked ? Palette.goldHex : 0x69738d, 0.75);
+      const rankWidth = Math.ceil(rankLabel.width) + 20;
+      rankBadge.fillRoundedRect(x - 104, y - 78, rankWidth, 28, 8);
+      rankBadge.strokeRoundedRect(x - 104, y - 78, rankWidth, 28, 8);
+      // Der Rahmen entsteht nach der Schrift, muss aber unter ihr liegen.
+      rankLabel.setDepth(1);
+      const categoryLabel = this.add
         .text(
           x + 140,
           y - 64,
@@ -103,6 +117,13 @@ export class AchievementsScene extends Phaser.Scene {
           ),
         )
         .setOrigin(1, 0.5);
+      // Rangrahmen und Kategorie teilen sich eine Zeile. Wird es eng - etwa
+      // "NAECHSTES ZIEL" neben einer dreistelligen Praemie -, gibt die
+      // Kategorie nach: Der Rang ist die haeufiger gesuchte Angabe.
+      const categoryRoom = x + 140 - (x - 104 + rankWidth + 8);
+      if (categoryLabel.width > categoryRoom) {
+        categoryLabel.setFontSize(Math.floor((FontSize.tiny * categoryRoom) / categoryLabel.width));
+      }
       const nameText = this.add
         .text(
           x - 102,
@@ -175,122 +196,4 @@ export class AchievementsScene extends Phaser.Scene {
     );
     next.setEnabled(page < pageCount - 1);
   }
-}
-
-/** Detaillierter Pokal als Vektor-Element, damit er auf jedem Geraet sauber bleibt. */
-function addTrophy(scene: Phaser.Scene, x: number, y: number, unlocked: boolean): void {
-  const primary = unlocked ? 0xf0b52f : 0x69738d;
-  const secondary = unlocked ? 0xb87316 : 0x4b556d;
-  const highlight = unlocked ? 0xfff0a0 : 0xaeb6c7;
-  const trophy = scene.add.container(x, y);
-
-  const glow = scene.add.graphics();
-  glow.fillStyle(primary, unlocked ? 0.13 : 0.06);
-  glow.fillCircle(0, 0, 27);
-
-  const shadow = scene.add.graphics();
-  shadow.fillStyle(0x050817, 0.34);
-  shadow.fillEllipse(0, 21, 34, 7);
-
-  const cup = scene.add.graphics();
-  cup.fillGradientStyle(highlight, primary, highlight, secondary, unlocked ? 1 : 0.78);
-  cup.fillPoints(
-    [
-      { x: -14, y: -20 },
-      { x: 14, y: -20 },
-      { x: 11, y: -8 },
-      { x: 7, y: 0 },
-      { x: 3, y: 6 },
-      { x: -3, y: 6 },
-      { x: -7, y: 0 },
-      { x: -11, y: -8 },
-    ],
-    true,
-  );
-  cup.fillStyle(primary, unlocked ? 1 : 0.78);
-  cup.fillRoundedRect(-16, -23, 32, 5, 2);
-  cup.fillGradientStyle(primary, secondary, primary, secondary, unlocked ? 1 : 0.78);
-  cup.fillRoundedRect(-4, 5, 8, 11, 2);
-  cup.fillRoundedRect(-10, 14, 20, 5, 2);
-  cup.fillRoundedRect(-17, 19, 34, 6, 2);
-
-  cup.lineStyle(4, primary, unlocked ? 1 : 0.78);
-  cup.beginPath();
-  cup.moveTo(-12, -18);
-  cup.lineTo(-20, -18);
-  cup.lineTo(-20, -9);
-  cup.lineTo(-12, -4);
-  cup.moveTo(12, -18);
-  cup.lineTo(20, -18);
-  cup.lineTo(20, -9);
-  cup.lineTo(12, -4);
-  cup.strokePath();
-
-  const detail = scene.add.graphics();
-  detail.lineStyle(2, highlight, unlocked ? 0.9 : 0.55);
-  detail.beginPath();
-  detail.moveTo(-9, -17);
-  detail.lineTo(-7, -8);
-  detail.lineTo(-4, -2);
-  detail.strokePath();
-  detail.lineStyle(2, secondary, unlocked ? 0.9 : 0.55);
-  detail.beginPath();
-  detail.moveTo(9, -17);
-  detail.lineTo(7, -8);
-  detail.lineTo(4, -2);
-  detail.strokePath();
-  detail.lineStyle(2, highlight, unlocked ? 0.95 : 0.6);
-  detail.beginPath();
-  detail.moveTo(-13, 22);
-  detail.lineTo(13, 22);
-  detail.strokePath();
-
-  const emblem = scene.add.graphics();
-  emblem.fillStyle(highlight, unlocked ? 0.95 : 0.5);
-  emblem.fillPoints(
-    [
-      { x: 0, y: -13 },
-      { x: 3, y: -7 },
-      { x: 9, y: -7 },
-      { x: 4, y: -3 },
-      { x: 6, y: 3 },
-      { x: 0, y: 0 },
-      { x: -6, y: 3 },
-      { x: -4, y: -3 },
-      { x: -9, y: -7 },
-      { x: -3, y: -7 },
-    ],
-    true,
-  );
-
-  const sparkles = scene.add.graphics();
-  sparkles.fillStyle(highlight, unlocked ? 0.9 : 0.35);
-  sparkles.fillPoints(
-    [
-      { x: -25, y: -17 },
-      { x: -23, y: -12 },
-      { x: -18, y: -10 },
-      { x: -23, y: -8 },
-      { x: -25, y: -3 },
-      { x: -27, y: -8 },
-      { x: -32, y: -10 },
-      { x: -27, y: -12 },
-    ],
-    true,
-  );
-  sparkles.fillPoints(
-    [
-      { x: 25, y: -12 },
-      { x: 27, y: -8 },
-      { x: 31, y: -6 },
-      { x: 27, y: -4 },
-      { x: 25, y: 0 },
-      { x: 23, y: -4 },
-      { x: 19, y: -6 },
-      { x: 23, y: -8 },
-    ],
-    true,
-  );
-
-  trophy.add([glow, shadow, cup, detail, emblem, sparkles]);
 }

@@ -19,7 +19,26 @@ export const Palette = {
   gold: '#ffd479',
   goldHex: 0xffd479,
   danger: '#ff6b6b',
+  dangerHex: 0xff6b6b,
   success: '#7ee787',
+  /**
+   * Bremsfeld: kaltes Stahlgrau. Weder Blau (selten) noch Grau (schlicht) -
+   * die Form traegt die Unterscheidung, die Farbe nur die Warnung.
+   */
+  obstacleBrakeHex: 0xa9bfd6,
+  /** Zeitstrafe: dieselbe Warnfarbe wie die kritische Restzeit im HUD. */
+  obstaclePenaltyHex: 0xff6b6b,
+  /** Hinderniskoerper: nah am Grundton, damit er vor jeder Welt als Schatten absteht. */
+  obstacleBody: 0x0a0e18,
+  /** Abzeichen: dieselben Metalltoene wie der fruehere Pokal der Erfolgsseite. */
+  medalPrimary: 0xf0b52f,
+  medalShade: 0xb87316,
+  medalLight: 0xfff0a0,
+  medalLocked: 0x69738d,
+  medalLockedShade: 0x4b556d,
+  medalLockedLight: 0xaeb6c7,
+  medalCore: 0x13212c,
+  medalShadow: 0x050817,
   dailyHex: 0x46d7c3,
   achievementHex: 0xc084fc,
 } as const;
