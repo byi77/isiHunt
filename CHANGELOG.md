@@ -11,6 +11,11 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Neue Schiffe.** Alle kaufbaren Formen sind schaerfer (dreifache
+  Aufloesung) und plastischer (Kontur, Kantenlicht, Glanz). Die Raumschiffe
+  tragen Kanzelglas, Triebwerke, Paneele und Naehte, die Figuren Gesichter,
+  Visiere, Guertel und Stiefel. Im Hangar erscheint die Zeichnung jetzt
+  eingefaerbt statt als einfarbige Silhouette.
 - **Restzeit am Relikt.** Ein duenner Bogen leert sich ueber die Lebensdauer
   jedes Relikts und wird im letzten Viertel kraeftiger. Vorher sah man den
   Ablauf erst in den letzten 700 ms.
@@ -86,6 +91,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Der Bonus-XP-Knopf erschien ohne Bonusrecht** und fuehrte nur zu
+  "Bonusrunde: unavailable". Er zeigt sich jetzt nur, wenn eine Bonusrunde
+  eingeloest ist (mit Faktor und Restanzahl), und deckt den Startknopf nicht
+  mehr ab. Serverablehnungen stehen in verstaendlichen Saetzen da.
+- **Das Menue-Logo war vom Vollbildknopf verdeckt** und gestaucht.
+- **Emojis in Titeln mit Buchstabenabstand** erschienen als "��".
 - **Die Rangbeschriftung der Erfolge lief aus ihrem Rahmen.** Der Rahmen war
   fest 92 px breit, schon "RANG 1 · +20" war breiter. Er folgt jetzt der
   Schrift; wird die Zeile eng, schrumpft die Kategorie daneben.

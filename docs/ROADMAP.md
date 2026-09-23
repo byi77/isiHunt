@@ -8,6 +8,15 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 - [x] Eigene Spielfeldkulisse mit strukturierten Weltennebeln, drei
   Sternlagen, sanfter Parallaxe und hochaufgeloestem Randplaneten.
 
+### Grafik-Update - Schiffe (2026-09-24)
+
+- [x] Schiffstexturen in dreifacher Aufloesung mit Kontur, Fase, Licht und Glanz.
+- [x] 18 Raumschiffe und Flugzeuge neu gezeichnet; Figuren, Tiere und Drohnen mit Binnenzeichnung.
+- [x] Hangar zeigt die eingefaerbte Zeichnung statt einer einfarbigen Silhouette.
+- [x] Bonus-XP-Knopf nur bei vorhandenem Bonusrecht, ohne Ueberdeckung des Startknopfs; verstaendliche Fehlermeldungen.
+- [x] Menue-Logo nicht mehr vom Vollbildknopf verdeckt; Emojis bei Buchstabenabstand heil.
+- [ ] Formen 30-99 (nicht im Shop) und 3D-Modelle unveraendert; Bonusknopf mit echtem Bonusrecht auf dem Geraet pruefen.
+
 ### Grafik-Update - Runde 2 (2026-09-24)
 
 - [x] Hindernisse als Schatten mit Warnkontur und Symbol statt Leuchten und Lila.

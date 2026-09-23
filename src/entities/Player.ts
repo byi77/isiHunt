@@ -55,7 +55,7 @@ import {
   stehendesBild,
   type AuraAnimation,
 } from '@/ui/shipAnimations';
-import { TextureKey } from '@/ui/textures';
+import { shipDisplayScale, TextureKey } from '@/ui/textures';
 import type { TextureKeyValue } from '@/ui/textures';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import { shipFlightPose, shipExhaustOffset, type ShipFlightPose } from '@/ui/shipFlight';
@@ -101,6 +101,8 @@ export class Player extends Phaser.GameObjects.Container {
   private readonly aura: Phaser.GameObjects.Image;
   /** Leuchtshader am Rumpf; `null` im Canvas-Renderer oder bei sparsamer Stufe. */
   private readonly coreGlow: Phaser.FX.Glow | null;
+  /** Rueckrechnung hochaufgeloester Schiffstexturen auf die gewohnte Groesse. */
+  private readonly coreBase: number;
   private readonly threeDPreview: ThreeDShipPreview | null = null;
   private readonly threeDPreviewDom: Phaser.GameObjects.DOMElement | null = null;
   private readonly trail: Phaser.GameObjects.Particles.ParticleEmitter;
@@ -214,6 +216,8 @@ export class Player extends Phaser.GameObjects.Container {
     // auch falsch - dann steht eine gruene Figur auf gruenem Grund. Die
     // Entscheidung faellt in `shipHullTint()`.
     this.core = scene.add.image(0, 0, textureKey).setTint(hullColor);
+    this.coreBase = shipDisplayScale(textureKey);
+    this.core.setScale(this.coreBase);
     this.hullColor = hullColor;
     this.coreGlow = applyGlow(this.core, accentColor, GLOW_FX.playerOuter, GLOW_FX.playerInner);
 
@@ -558,7 +562,7 @@ export class Player extends Phaser.GameObjects.Container {
     this.auraMs += dtSec * 1000;
     this.pulseRestMs = Math.max(0, this.pulseRestMs - dtSec * 1000);
     this.applyAura();
-    const exhaust = shipExhaustOffset(this.core.rotation, this.core.scaleY);
+    const exhaust = shipExhaustOffset(this.core.rotation, this.core.scaleY / this.coreBase);
     const thrust = prefersReducedMotion() ? 0 : Math.min(1, speed / this.stats.moveSpeed);
     this.enginePlume
       .setPosition(exhaust.x, exhaust.y)
@@ -614,7 +618,10 @@ export class Player extends Phaser.GameObjects.Container {
         .setBlendMode(Phaser.BlendModes.NORMAL)
         .setTexture(TextureKey.Glow)
         .setScale(2.1 * this.ruheScale);
-      this.core.setScale(this.ruheScale, this.ruheScale * (1 - this.flightPose.pitch));
+      this.core.setScale(
+        this.coreBase * this.ruheScale,
+        this.coreBase * this.ruheScale * (1 - this.flightPose.pitch),
+      );
       this.core.rotation = this.flightPose.bank;
       this.core.setAlpha(1);
       this.core.setTint(this.hullColor);
@@ -622,8 +629,8 @@ export class Player extends Phaser.GameObjects.Container {
     }
 
     this.core.setScale(
-      this.ruheScale * frame.scaleX,
-      this.ruheScale * frame.scaleY * (1 - this.flightPose.pitch),
+      this.coreBase * this.ruheScale * frame.scaleX,
+      this.coreBase * this.ruheScale * frame.scaleY * (1 - this.flightPose.pitch),
     );
     this.core.rotation = this.flightPose.bank + frame.rotation;
     this.core.setAlpha(frame.alpha);

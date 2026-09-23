@@ -242,39 +242,61 @@ export class MenuView {
       this.updateBanner();
       return;
     }
-    const logoHeight = headerHeight - 4 * unit;
     // Die Wortmarke bleibt immer auf der echten Bildschirmmitte. Seitliche
-    // Aktionen duerfen ihre optische Mitte nicht mehr verschieben.
-    const logoWidth = Math.min((logoHeight * 400) / 225, (compact ? 120 : 150) * unit);
+    // Aktionen duerfen ihre optische Mitte nicht verschieben - also wird sie
+    // so schmal, dass sie zwischen die breitere der beiden Seiten passt.
+    //
+    // Bis 2026-09-24 sass der Vollbildknopf rechts neben CODE und damit
+    // mitten im Logo (bei 390 CSS-Pixeln etwa x=210-254 gegen ein Logo von
+    // 120-270). Er steht jetzt links, wo die Kopfzeile auf dem Handy leer war.
+    const gap = 8 * unit;
+    const codeWidth = (compact ? 92 : 112) * unit;
+    const fullscreenSize = 44 * unit;
+    const hasFullscreen = this.scene.scale.fullscreen.available && !isStandalone();
+    const rightReserved = codeWidth + gap;
+    const leftReserved = hasFullscreen ? fullscreenSize + gap : 0;
+    const halfRoom = GAME_WIDTH / 2 - margin - Math.max(leftReserved, rightReserved);
+    const logoAspect = 400 / 225;
+    const logoWidth = Math.min(
+      (headerHeight - 4 * unit) * logoAspect,
+      (compact ? 120 : 150) * unit,
+      halfRoom * 2,
+    );
+    // Hoehe aus der Breite: Vorher war die Hoehe fest und nur die Breite
+    // begrenzt - das Logo wurde gestaucht statt verkleinert.
+    const logoHeight = logoWidth / logoAspect;
     const logo = this.scene.add
       .image(GAME_WIDTH / 2, headerHeight / 2, TextureKey.Logo)
       .setDisplaySize(logoWidth, logoHeight)
       .setInteractive();
     logo.on('pointerdown', () => this.callbacks.onAction('logo'));
     this.root.add(logo);
-    const codeWidth = (compact ? 92 : 112) * unit;
     const codeX = GAME_WIDTH - margin - codeWidth / 2;
     this.button(codeX, headerHeight / 2, codeWidth, 40 * unit, 'CODE', () =>
       this.callbacks.onAction('rewardCode'),
     );
-    if (this.scene.scale.fullscreen.available && !isStandalone()) {
+    if (hasFullscreen) {
       this.button(
-        codeX - codeWidth / 2 - 8 * unit - 22 * unit,
+        margin + fullscreenSize / 2,
         headerHeight / 2,
-        44 * unit,
-        44 * unit,
+        fullscreenSize,
+        fullscreenSize,
         '⛶',
         () => this.callbacks.onAction('fullscreen'),
         23,
       );
     }
-    if (!compact)
+    // Der Leitspruch fuellt den Platz links vom Logo - nur, wenn neben dem
+    // Vollbildknopf noch nennenswert Raum bleibt.
+    const labelLeft = margin + leftReserved;
+    const labelRight = GAME_WIDTH / 2 - logoWidth / 2 - 12 * unit;
+    if (!compact && labelRight - labelLeft >= 70 * unit)
       this.label(
-        (margin + (GAME_WIDTH / 2 - logoWidth / 2 - 12 * unit)) / 2,
+        (labelLeft + labelRight) / 2,
         headerHeight / 2,
         'JAGE DAS LICHT',
         10,
-        GAME_WIDTH / 2 - logoWidth / 2 - margin - 12 * unit,
+        labelRight - labelLeft,
         Palette.inkDim,
         true,
       );

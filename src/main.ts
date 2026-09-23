@@ -57,6 +57,7 @@ import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
 import { installDebugOverlay } from '@/ui/debugOverlay';
+import { installLetterSpacingGuard } from '@/ui/letterSpacingGuard';
 import { Palette } from '@/ui/theme';
 
 function createGameConfig(): Phaser.Types.Core.GameConfig {
@@ -380,6 +381,7 @@ async function startGame(): Promise<void> {
   // korrigieren. Erst danach darf GAME_HEIGHT fuer Phaser festgelegt werden.
   await waitForViewportToSettle();
   configureGameHeight();
+  installLetterSpacingGuard();
   game = new Phaser.Game(createGameConfig());
 
   installAdminLongPress(game);

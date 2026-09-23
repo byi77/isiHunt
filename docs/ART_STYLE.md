@@ -131,6 +131,36 @@ an 360/390/402 px bleiben bis zur ausdruecklichen Browserfreigabe offen.
   versetzt um 120 ms. Nur beim ersten Aufbau, nicht bei Resize; statisch bei
   reduzierter Bewegung.
 
+**Schiffe und Figuren, 24.09.2026:**
+
+- **Dreifache Aufloesung.** Die Fluggestalten entstehen weiter im 96-px-
+  Koordinatensystem, die Textur aber in 288 px (`SHIP_TEXTURE_RESOLUTION`).
+  Vorher wurden sie auf Handys mit Pixelverhaeltnis 3 rund 1,6-fach
+  hochgezogen und wirkten weich. Anzeigestellen, die nicht per
+  `setDisplaySize` einpassen, rechnen ueber `shipDisplayScale()` zurueck.
+- **Beleuchtung aus Kanten** (`textures.createShipTexture`): dunkle Kontur um
+  die Silhouette (bleibt beim Einfaerben dunkel und traegt den Kontrast auf
+  jeder Welt), Licht von links oben, Fase - helle Kante oben links, dunkle
+  unten rechts, aus Silhouette minus versetzter Kopie - und ein Glanzpunkt.
+- **Binnenzeichnung in vier Grautoenen**: Rumpf weiss, `RUMPF_MITTEL` fuer
+  abgesetzte Paneele, `RUMPF_TIEF` fuer Vertiefungen, `NAHT` fuer Linien,
+  dazu dunkles Kanzelglas mit hellem Reflex und Triebwerke mit Gehaeuse und
+  Duesenkern. Beim Einfaerben entsteht daraus eine zweifarbige Lackierung.
+  Die 18 Raumschiffe und Flugzeuge sind neu gezeichnet, Figuren, Tiere und
+  Drohnen tragen Gesichter oder Visiere, Guertel, Stiefel, Umhangfalten,
+  Federn, Rotoren. Die Umrisse sind unveraendert - Wiedererkennung vor Neuheit.
+- **Hangar zeigt die Zeichnung.** Das Schiff lag dort nur als einfarbige
+  CSS-Maske - ein Scherenschnitt. Jetzt liegt die Textur zusaetzlich als
+  Hintergrund darunter und wird per `background-blend-mode: multiply` mit
+  der Farbe verrechnet, also wie Tint im Spiel. 3D-Modelle behalten ihre
+  Vorschau-Silhouette.
+- **Kopfzeile des Menues.** Der Vollbildknopf sitzt links, CODE rechts, das
+  Logo bleibt mittig und wird so schmal, dass es zwischen die breitere Seite
+  passt; die Hoehe folgt der Breite (vorher gestaucht und vom Knopf verdeckt).
+- **Emojis und Buchstabenabstand.** Phaser zerlegt Text mit Abstand in
+  UTF-16-Einheiten und zerreisst Emojis ausserhalb der Grundebene.
+  `ui/letterSpacingGuard.ts` zeichnet solche Texte ohne Abstand.
+
 **Relikte, 19.09.2026:** Ein schmaler Seltenheitsrand ersetzt den dominanten
 Lichtnebel. Eine feste Lichtkante links oben und eine schattige Nachtseite
 geben den rotierenden Oberflaechen Tiefe. Ein bis sechs kleine Rangmarken

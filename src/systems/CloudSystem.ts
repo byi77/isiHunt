@@ -1369,9 +1369,67 @@ export interface BoostedRunTerminalResult {
   status: 'abandoned' | 'expired';
 }
 
+/**
+ * Die Codes kommen aus `start/finish/abandon_boosted_run_internal`. Sie standen
+ * bis 2026-09-24 roh auf dem Bildschirm ("Bonusrunde: unavailable") - fuer
+ * den Spieler ohne jeden Hinweis, was zu tun ist.
+ */
+const BOOSTED_RUN_MESSAGES: Readonly<Record<string, string>> = {
+  unavailable: 'Keine Bonusrunde verfuegbar - zuerst einen Belohnungscode einloesen.',
+  conflict: 'Es laeuft bereits eine Bonusrunde. Erst beenden, dann neu starten.',
+  unauthorized: 'Bitte erneut anmelden.',
+  invalid_request: 'Die Bonusrunde konnte nicht gestartet werden.',
+};
+
 function boostedRunError(body: Record<string, unknown> | null): string {
   const code = body?.code;
-  return typeof code === 'string' && code ? `Bonusrunde: ${code}` : 'Bonusrunde abgelehnt';
+  if (typeof code !== 'string' || !code) return 'Bonusrunde abgelehnt';
+  return BOOSTED_RUN_MESSAGES[code] ?? `Bonusrunde abgelehnt (${code})`;
+}
+
+export interface BoostBalance {
+  /** Noch nicht verbrauchte Bonusrunden ueber alle aktiven Rechte. */
+  remaining: number;
+  /** Faktor des Rechts, das der Server als naechstes verbraucht (aeltestes zuerst). */
+  nextFactor: number;
+}
+
+/**
+ * Liest die eigenen Bonusrechte - dieselbe Menge, aus der
+ * `start_boosted_run_internal` beim Start eine Anwendung abbucht.
+ *
+ * Ohne diese Abfrage zeigte die Weltinfo den Bonusknopf jedem angemeldeten
+ * Spieler; wer kein Recht eingeloest hatte, bekam beim Tippen nur
+ * "Bonusrunde: unavailable". Die Tabelle ist per RLS auf die eigenen Zeilen
+ * beschraenkt (phase_2_58, Policy "Eigene Bonusrechte lesen").
+ */
+export async function fetchBoostBalance(): Promise<CloudResult<BoostBalance>> {
+  const authenticated = await requireAuthenticatedClient();
+  if (!authenticated.ok) return authenticated;
+
+  const result = await withTimeout(
+    authenticated.value
+      .from('profile_boosts')
+      .select('factor, remaining_applications, created_at')
+      .eq('status', 'active')
+      .gt('remaining_applications', 0)
+      .order('created_at', { ascending: true }),
+    'Bonusrechte laden',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  const rows = Array.isArray(result.value.data) ? result.value.data : [];
+  let remaining = 0;
+  let nextFactor = 1;
+  for (const row of rows) {
+    const record = recordFrom(row);
+    const count = finiteNonNegative(record?.remaining_applications);
+    if (count <= 0) continue;
+    if (remaining === 0) nextFactor = Math.max(1, finiteNonNegative(record?.factor, 1));
+    remaining += count;
+  }
+  return { ok: true, value: { remaining, nextFactor } };
 }
 
 /** Startet eine serverseitig abgebuchte XP-Bonusrunde idempotent. */

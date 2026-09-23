@@ -459,8 +459,35 @@ export class HangarView {
     }
     const shapeId = this.tab === 'shapes' ? id : this.selection.shapes;
     const asset = threeDAssetForId(getShipShape(shapeId).threeDAssetId);
-    mark.style.background = 'currentColor';
-    mark.style.maskImage = `url("${asset?.previewUrl ?? this.texture(playerTextureForShape(shapeId))}")`;
+    mark.style.background = '';
+    mark.style.backgroundColor = 'currentColor';
+    this.paintShip(mark, shapeId, asset?.previewUrl);
+  }
+
+  /**
+   * Zeigt ein Schiff mit seiner Binnenzeichnung statt als blosse Silhouette.
+   *
+   * Bis 2026-09-24 trug das Element die Textur nur als Maske und war sonst
+   * einfarbig - Kanzel, Paneele und Triebwerke gingen verloren, der Hangar
+   * zeigte einen weissen Scherenschnitt. Jetzt liegt dieselbe Textur zusaetzlich
+   * als Hintergrund darunter und wird mit der Farbe multipliziert: genau die
+   * Rechnung, mit der Phaser im Spiel einfaerbt. Die Maske bleibt fuer den Umriss.
+   *
+   * 3D-Modelle bringen eine eigene Vorschau-Silhouette (`previewUrl`) ohne
+   * Binnenzeichnung mit; dort bleibt es bei der Maske.
+   */
+  private paintShip(element: HTMLElement, shapeId: string, previewUrl?: string): void {
+    const url = previewUrl ?? this.texture(playerTextureForShape(shapeId));
+    element.style.maskImage = `url("${url}")`;
+    if (previewUrl) {
+      element.style.backgroundImage = '';
+      return;
+    }
+    element.style.backgroundImage = `url("${url}")`;
+    element.style.backgroundSize = 'contain';
+    element.style.backgroundPosition = 'center';
+    element.style.backgroundRepeat = 'no-repeat';
+    element.style.backgroundBlendMode = 'multiply';
   }
 
   /** Baut die Leiste neu - nur beim Reiterwechsel, nicht bei jeder Auswahl. */
@@ -498,7 +525,7 @@ export class HangarView {
   private refreshModel(): void {
     const shape = getShipShape(this.selection.shapes);
     const asset = threeDAssetForId(shape.threeDAssetId);
-    this.hull.style.maskImage = `url("${asset?.previewUrl ?? this.texture(playerTextureForShape(shape.id))}")`;
+    this.paintShip(this.hull, shape.id, asset?.previewUrl);
     this.preview.setModel(
       this.force2d ? undefined : threeDAssetForId(shape.threeDAssetId),
       getShipColor(this.selection.colors).color ?? 0xffffff,

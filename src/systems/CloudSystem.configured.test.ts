@@ -129,6 +129,58 @@ it('haelt den SQL-Fehler eines Laufereignisses im geschuetzten Debug-Report fest
   );
 });
 
+/** Nachbildung von `from(...).select().eq().gt().order()` mit festem Ergebnis. */
+function stubTable(response: { data: unknown; error: unknown }): void {
+  const chain: Record<string, unknown> = {
+    then: (resolve: (value: unknown) => unknown) => Promise.resolve(response).then(resolve),
+  };
+  for (const method of ['select', 'eq', 'gt', 'order']) chain[method] = () => chain;
+  vi.spyOn(CloudSystem.getSupabaseClient()!, 'from').mockReturnValue(chain as never);
+}
+
+describe('Bonusrechte fuer den Bonusknopf', () => {
+  it('summiert die Restanwendungen und nimmt den Faktor des aeltesten Rechts', async () => {
+    signIn();
+    // PostgREST liefert `numeric` als String - "2.00" muss als 2 ankommen.
+    stubTable({
+      data: [
+        { factor: '2.00', remaining_applications: 3, created_at: '2026-09-20T10:00:00Z' },
+        { factor: '1.50', remaining_applications: 2, created_at: '2026-09-21T10:00:00Z' },
+      ],
+      error: null,
+    });
+    await expect(CloudSystem.fetchBoostBalance()).resolves.toEqual({
+      ok: true,
+      value: { remaining: 5, nextFactor: 2 },
+    });
+  });
+
+  it('meldet 0, wenn kein Recht eingeloest ist - dann bleibt der Knopf weg', async () => {
+    signIn();
+    stubTable({ data: [], error: null });
+    await expect(CloudSystem.fetchBoostBalance()).resolves.toEqual({
+      ok: true,
+      value: { remaining: 0, nextFactor: 1 },
+    });
+  });
+
+  it('uebersetzt die Serverablehnung statt den Rohcode zu zeigen', async () => {
+    signIn();
+    // `client.functions` ist ein Getter mit frischem Objekt je Zugriff - ein
+    // Spy auf ein einzelnes `invoke` erreichte den Aufruf nie.
+    vi.spyOn(CloudSystem.getSupabaseClient()!, 'functions', 'get').mockReturnValue({
+      invoke: () =>
+        Promise.resolve({
+          data: { ok: false, code: 'unavailable', retryable: false },
+          error: null,
+        }),
+    } as never);
+    const result = await CloudSystem.startBoostedRun('silberhain');
+    expect(result.ok).toBe(false);
+    expect(result.ok ? '' : result.error).toContain('Belohnungscode');
+  });
+});
+
 /**
  * Ebene 2: eingerichtet, aber niemand angemeldet.
  *

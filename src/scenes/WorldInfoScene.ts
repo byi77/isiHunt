@@ -36,6 +36,17 @@ const MODE_TITLES: Record<WorldInfoMode, string> = {
   tageslauf: 'TAGESLAUF STARTEN',
 };
 
+/**
+ * Lage des Bonusknopfs ueber dem Startknopf (Mitte H-172, Hoehe 92, also
+ * Oberkante H-218): 22 px Luft, dann der 76 px hohe Bonusknopf.
+ */
+const WORLD_INFO_LAYOUT = { boostOffset: 278, boostHeight: 76, statusGap: 10 } as const;
+
+/** 2 -> "2", 1.5 -> "1,5" - Faktoren in deutscher Schreibweise ohne Nullen. */
+function formatFactor(factor: number): string {
+  return String(Math.round(factor * 100) / 100).replace('.', ',');
+}
+
 /** Kindgerechte Kurzfassung des Hindernismodus - `obstacleMode` ist nur technisch benannt. */
 function describeObstacles(world: WorldDef): string {
   if (world.obstacleMode === 'none') return 'Keine Hindernisse in dieser Welt.';
@@ -138,8 +149,10 @@ export class WorldInfoScene extends Phaser.Scene {
         title,
         textStyle(FontSize.small, toCss(accent), { fontStyle: 'bold' }),
       )
-      .setOrigin(0.5)
-      .setLetterSpacing(1);
+      // Ohne Buchstabenabstand: Phaser zerlegt Text mit Abstand per
+      // `split('')` in UTF-16-Einheiten und zerreisst dabei jedes Emoji
+      // ausserhalb der Grundebene - 💥 und 🎁 erschienen als "��".
+      .setOrigin(0.5);
 
     this.add
       .text(GAME_WIDTH / 2, y + 6, body, textStyle(FontSize.small, Palette.ink))
@@ -150,33 +163,19 @@ export class WorldInfoScene extends Phaser.Scene {
   }
 
   private buildButtons(worldId: string, accent: number, mode: WorldInfoMode): void {
-    const hasBoostButton = mode === 'jagd' && AuthSystem.isSignedIn();
-    this.boostedStatus = hasBoostButton
-      ? this.add
-          .text(GAME_WIDTH / 2, GAME_HEIGHT - 116, '', textStyle(FontSize.tiny, Palette.inkDim))
-          .setOrigin(0.5)
-          .setWordWrapWidth(GAME_WIDTH - 120)
-          .setAlign('center')
-      : null;
-
-    if (hasBoostButton) {
-      createButton(
-        this,
-        GAME_WIDTH / 2,
-        GAME_HEIGHT - 248,
-        'BONUS-XP-RUN STARTEN',
-        () => void this.startBoostedMode(worldId),
-        { width: 460, accent: 0xd7a93b, fontSize: FontSize.small },
-      );
-    }
+    // Der Startknopf steht immer an derselben Stelle. Der Bonusknopf kommt
+    // erst nach der Abfrage dazu und darueber - so springt nichts, waehrend
+    // der Daumen schon unterwegs ist. Vorher lagen beide 64 px auseinander
+    // bei 92 px Knopfhoehe und ueberdeckten sich um 28 px.
     createButton(
       this,
       GAME_WIDTH / 2,
-      hasBoostButton ? GAME_HEIGHT - 184 : GAME_HEIGHT - 172,
+      GAME_HEIGHT - 172,
       MODE_TITLES[mode],
       () => void this.startMode(worldId, mode),
       { width: 460, accent, fontSize: FontSize.large },
     );
+    if (mode === 'jagd' && AuthSystem.isSignedIn()) void this.offerBoostedRun(worldId);
 
     createButton(
       this,
@@ -186,6 +185,47 @@ export class WorldInfoScene extends Phaser.Scene {
       () => this.scene.start(SceneKey.Menu),
       { width: 300, height: 72, accent: 0x9aa3bd, fontSize: FontSize.small },
     );
+  }
+
+  /**
+   * Zeigt den Bonusknopf nur, wenn es eine Bonusrunde zu starten gibt.
+   *
+   * Eine Bonusrunde verbraucht ein Recht, das vorher per Belohnungscode
+   * eingeloest wurde. Ohne Recht lehnt der Server mit `unavailable` ab; der
+   * Knopf war dann nur eine Fehlermeldung mit Anlauf. Ein offener Start aus
+   * einem abgebrochenen Versuch zaehlt mit: Sein Recht ist schon abgebucht,
+   * der Bestand steht also womoeglich auf 0, und genau dieser Start muss sich
+   * wieder aufnehmen lassen.
+   */
+  private async offerBoostedRun(worldId: string): Promise<void> {
+    const pending = BoostedRunSession.readPendingStart(worldId);
+    const balance = await CloudSystem.fetchBoostBalance();
+    if (!this.scene.isActive()) return;
+    const remaining = balance.ok ? balance.value.remaining : 0;
+    if (remaining <= 0 && !pending) return;
+
+    const buttonY = GAME_HEIGHT - WORLD_INFO_LAYOUT.boostOffset;
+    const factor = balance.ok ? balance.value.nextFactor : 1;
+    const label =
+      remaining > 0
+        ? `BONUS-XP-RUN · XP ×${formatFactor(factor)} · NOCH ${remaining}`
+        : 'BONUS-XP-RUN FORTSETZEN';
+    createButton(this, GAME_WIDTH / 2, buttonY, label, () => void this.startBoostedMode(worldId), {
+      width: 460,
+      height: WORLD_INFO_LAYOUT.boostHeight,
+      accent: 0xd7a93b,
+      fontSize: FontSize.small,
+    });
+    this.boostedStatus = this.add
+      .text(
+        GAME_WIDTH / 2,
+        buttonY - WORLD_INFO_LAYOUT.boostHeight / 2 - WORLD_INFO_LAYOUT.statusGap,
+        'Verbraucht beim Start eine Bonusrunde - auch bei Abbruch.',
+        textStyle(FontSize.tiny, Palette.inkDim),
+      )
+      .setOrigin(0.5, 1)
+      .setWordWrapWidth(GAME_WIDTH - 120)
+      .setAlign('center');
   }
 
   private async startBoostedMode(worldId: string): Promise<void> {

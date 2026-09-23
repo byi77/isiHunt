@@ -46,6 +46,20 @@ zeichnet die Erfolgsabzeichen als Vektor, `ui/unlockShowcase.ts` baut daraus
 und aus Planeten- und Halo-Texturen die Bilder der Freischaltkarten in
 `ResultView`.
 
+Schiffe (2026-09-24): `ui/shipShapes.ts` zeichnet weiter im 96-px-Raster,
+`ui/textures.ts` erzeugt daraus per `scaleCanvas` 288-px-Texturen und
+beleuchtet sie auf Canvas-Ebenen (Kontur, Licht, Fase, Glanz). Wer eine
+Schiffstextur als Bild zeigt, multipliziert seine Skalierung mit
+`shipDisplayScale(key)` (Player, ProfileScene, Dev-Vorschau); das Menue passt
+ueber die Texturbreite ein, der Hangar ueber CSS. `HangarView.paintShip` legt
+die Textur als Maske und als multiplizierten Hintergrund an.
+`ui/letterSpacingGuard.ts` umhuellt einmalig `Text.updateText` (installiert in
+`main.ts` vor dem Spielstart): Texte mit Zeichen ausserhalb der Grundebene
+werden ohne Buchstabenabstand aufgebaut, weil Phaser sie sonst in
+UTF-16-Einheiten zerlegt. `CloudSystem.fetchBoostBalance` liest die eigenen
+`profile_boosts` (RLS-Policy aus phase_2_58); die Weltinfo zeigt den
+Bonusknopf nur bei vorhandenem Recht oder offenem Start.
+
 **Stand:** 2026-08-30 · gilt fuer den Stand aus `package.json`/`version.json`
 
 Dieses Dokument beschreibt, **wie** der Code aufgebaut ist und **warum**.
@@ -291,6 +305,7 @@ isiHunt/
 │   │   ├── finalSecondsPulse.ts Takt des Warnrands, ohne Phaser pruefbar
 │   │   ├── achievementBadge.ts Erfolgsabzeichen: Emblem je Kategorie, Rangmarken
 │   │   ├── unlockShowcase.ts   Bilder der Freischaltkarten im Ergebnis
+│   │   ├── letterSpacingGuard.ts Emojis bei Buchstabenabstand heil lassen
 │   │   └── widgets.ts          Knoepfe, Balken, Hintergruende, Effekte, createStatusPage
 │   ├── env.d.ts                Typen der Umgebungsvariablen
 │   └── main.ts                 Phaser-Konfiguration

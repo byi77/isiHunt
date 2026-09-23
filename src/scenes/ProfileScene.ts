@@ -31,7 +31,7 @@ import * as SyncStatusSystem from '@/systems/SyncStatusSystem';
 import { clearPendingRewardRedemption, prepareRewardRedemption } from '@/systems/RewardCodeSystem';
 import { shipTint } from '@/config/shop';
 import { formatPlayTime } from '@/ui/format';
-import { playerTextureForShape, TextureKey } from '@/ui/textures';
+import { playerTextureForShape, shipDisplayScale, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   attachVerticalScroll,
@@ -106,7 +106,7 @@ export class ProfileScene extends Phaser.Scene {
       this.add
         .image(GAME_WIDTH / 2, profileY - 210, playerTextureForShape(save.shipShape))
         .setTint(shipTint(save, world.accent))
-        .setScale(0.82),
+        .setScale(0.82 * shipDisplayScale(playerTextureForShape(save.shipShape))),
     );
 
     addContent(

@@ -2,14 +2,17 @@ import type Phaser from 'phaser';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { RARITIES } from '@/config/rarities';
 import { CollectionEffects } from './CollectionEffects';
-import { TextureKey } from './textures';
+import { shipDisplayScale, TextureKey } from './textures';
 import { Collectible } from '@/entities/Collectible';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 
 /** Static-time visual fixture: inspect flight phases without changing a save. */
 export function installCollectionPreview(scene: Phaser.Scene): void {
   const target = { x: GAME_WIDTH / 2, y: GAME_HEIGHT * 0.55 };
-  const ship = scene.add.image(target.x, target.y, TextureKey.PlayerCore).setDepth(50);
+  const ship = scene.add
+    .image(target.x, target.y, TextureKey.PlayerCore)
+    .setScale(shipDisplayScale(TextureKey.PlayerCore))
+    .setDepth(50);
   let effects: CollectionEffects;
   let quiet = false;
   const make = () =>

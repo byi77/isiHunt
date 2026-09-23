@@ -34,8 +34,15 @@
 
 import type Phaser from 'phaser';
 
-/** Kantenlaenge jeder Figurentextur. */
+/** Kantenlaenge jeder Figurentextur - das Koordinatensystem aller Zeichnungen. */
 export const SHIP_TEXTURE_SIZE = 96;
+
+/**
+ * Die Textur selbst entsteht in dieser Vielfachen: Auf Handys mit
+ * Pixelverhaeltnis 3 wird ein Schiff sonst hochgezogen und weich.
+ * Anzeigestellen rechnen ueber `shipDisplayScale()` zurueck.
+ */
+export const SHIP_TEXTURE_RESOLUTION = 3;
 
 type G = Phaser.GameObjects.Graphics;
 
@@ -54,32 +61,6 @@ const C = S / 2;
  * `fillPoints` liest ohnehin nur `.x` und `.y`.
  */
 const v = (x: number, y: number): { x: number; y: number } => ({ x, y });
-
-/** Neutral shading stays tintable, unlike white alpha painted over white hulls. */
-function cockpit(g: G, points: [number, number][]): void {
-  g.fillStyle(0x223747, 1);
-  g.fillPoints(
-    points.map(([x, y]) => v(x, y)),
-    true,
-  );
-  g.lineStyle(1.5, 0xffffff, 0.8);
-  const first = points[0];
-  const last = points[points.length - 1];
-  if (first && last) g.lineBetween(first[0], first[1], last[0], last[1]);
-  if (points.length >= 3 && first) {
-    const next = points[1]!;
-    const end = points[points.length - 1]!;
-    g.fillStyle(0xd7efff, 0.48);
-    g.fillTriangle(
-      first[0],
-      first[1],
-      first[0] + (next[0] - first[0]) * 0.45,
-      first[1] + (next[1] - first[1]) * 0.45,
-      end[0],
-      end[1],
-    );
-  }
-}
 
 /** Vollflaechig, in der Grundhelligkeit. */
 function voll(g: G, punkte: [number, number][]): void {
@@ -193,6 +174,89 @@ function figur(g: G, armeVorn: boolean, helm: boolean): void {
       [C - 11, 86],
     ]),
   );
+
+  // Binnenzeichnung: Visier oder Haar, Guertel, Brustzeichen, Stiefel, Handschuhe.
+  if (helm) {
+    visier(g, C, 20, 13);
+  } else {
+    haarkappe(g, C, 20, 10);
+    augen(g, C, 21, 10);
+  }
+  flaeche(
+    g,
+    [
+      [C - 8.8, 54],
+      [C + 8.8, 54],
+      [C + 8.5, 58],
+      [C - 8.5, 58],
+    ],
+    RUMPF_TIEF,
+  );
+  brustzeichen(g, C, 43);
+  paar(
+    g,
+    [
+      [C - 10.5, 80],
+      [C - 3.4, 80],
+      [C - 4, 88],
+      [C - 11, 86],
+    ],
+    RUMPF_TIEF,
+  );
+  if (armeVorn) {
+    paar(
+      g,
+      [
+        [C - 16.6, 9.8],
+        [C - 20, 4],
+        [C - 28, 9],
+        [C - 24.4, 14.4],
+      ],
+      RUMPF_TIEF,
+    );
+  }
+}
+
+/** Glasvisier eines Helms. */
+function visier(g: G, mx: number, my: number, r: number): void {
+  g.fillStyle(GLAS, 1);
+  g.fillEllipse(mx, my + r * 0.05, r * 1.45, r * 1.05);
+  g.lineStyle(1, 0xffffff, 0.85);
+  g.strokeEllipse(mx, my + r * 0.05, r * 1.45, r * 1.05);
+  g.fillStyle(GLAS_REFLEX, 0.75);
+  g.fillEllipse(mx - r * 0.28, my - r * 0.2, r * 0.55, r * 0.28);
+}
+
+/** Obere Kopfhaelfte als Haar - der Kopf bekommt eine Oberseite. */
+function haarkappe(g: G, mx: number, my: number, r: number): void {
+  g.fillStyle(RUMPF_TIEF, 1);
+  g.beginPath();
+  g.arc(mx, my, r, Math.PI * 1.02, Math.PI * 1.98, false);
+  g.closePath();
+  g.fillPath();
+}
+
+/** Zwei Augenpunkte - auch klein das staerkste Signal fuer "Figur". */
+function augen(g: G, mx: number, my: number, r: number): void {
+  g.fillStyle(NAHT, 1);
+  g.fillCircle(mx - r * 0.36, my, Math.max(0.9, r * 0.13));
+  g.fillCircle(mx + r * 0.36, my, Math.max(0.9, r * 0.13));
+}
+
+/** Kleine Raute auf der Brust. */
+function brustzeichen(g: G, mx: number, my: number): void {
+  flaeche(
+    g,
+    [
+      [mx, my - 4],
+      [mx + 3.5, my],
+      [mx, my + 4],
+      [mx - 3.5, my],
+    ],
+    RUMPF_MITTEL,
+  );
+  g.lineStyle(0.8, NAHT, 0.6);
+  g.strokePoints([v(mx, my - 4), v(mx + 3.5, my), v(mx, my + 4), v(mx - 3.5, my)], true);
 }
 
 /** Ein Vogel mit ausgebreiteten Schwingen. `spitz` steuert die Fluegelform. */
@@ -238,25 +302,81 @@ function vogel(g: G, spitz: boolean, schwanzGabel: boolean): void {
       [C - 6, 90],
     ]);
   }
+
+  // Federn: drei Linien je Schwinge, zur Spitze hin auslaufend.
+  const [wurzel, spitze, , hinten] = fluegel as [P, P, P, P];
+  for (const t of [0.3, 0.55, 0.8]) {
+    const von: P = [
+      wurzel[0] + (hinten[0] - wurzel[0]) * t,
+      wurzel[1] + (hinten[1] - wurzel[1]) * t,
+    ];
+    const bis: P = [
+      spitze[0] + (hinten[0] - spitze[0]) * t * 0.6,
+      spitze[1] + (hinten[1] - spitze[1]) * t * 0.6,
+    ];
+    nahtPaar(g, [von, bis], 0.55);
+  }
+  // Bauch heller abgesetzt, Schnabelspitze dunkel, zwei Augen.
+  flaeche(
+    g,
+    [
+      [C, 40],
+      [C + 3.5, 50],
+      [C + 3, 66],
+      [C - 3, 66],
+      [C - 3.5, 50],
+    ],
+    RUMPF_MITTEL,
+  );
+  flaeche(
+    g,
+    [
+      [C, 14],
+      [C + 2.5, 20],
+      [C - 2.5, 20],
+    ],
+    RUMPF_TIEF,
+  );
+  augen(g, C, 25, 7);
+  naht(g, [
+    [C, 70],
+    [C, 86],
+  ]);
 }
 
 /** Ein Rotorkreuz mit `arme` Auslegern - die Grundform jeder Drohne. */
 function drohne(g: G, arme: number, rotorRadius: number): void {
-  g.fillStyle(0xffffff, 1);
-  g.fillCircle(C, C, 13);
-
   for (let i = 0; i < arme; i++) {
     const winkel = (Math.PI * 2 * i) / arme - Math.PI / 2 + Math.PI / arme;
     const ax = C + Math.cos(winkel) * 30;
     const ay = C + Math.sin(winkel) * 30;
     g.lineStyle(6, 0xffffff, 1);
     g.lineBetween(C, C, ax, ay);
-    g.fillStyle(0xffffff, 0.5);
+    g.lineStyle(1, NAHT, 0.6);
+    g.lineBetween(C, C, ax, ay);
+    // Rotor: durchscheinende Scheibe, zwei Blaetter, Motornabe.
+    g.fillStyle(0xffffff, 0.35);
     g.fillCircle(ax, ay, rotorRadius);
-    g.lineStyle(2.5, 0xffffff, 0.9);
+    g.lineStyle(2.2, 0xffffff, 0.95);
     g.strokeCircle(ax, ay, rotorRadius);
-    g.fillStyle(0xffffff, 1);
+    g.lineStyle(1.6, RUMPF_MITTEL, 0.9);
+    const blatt = winkel + Math.PI / 5;
+    g.lineBetween(
+      ax - Math.cos(blatt) * rotorRadius * 0.85,
+      ay - Math.sin(blatt) * rotorRadius * 0.85,
+      ax + Math.cos(blatt) * rotorRadius * 0.85,
+      ay + Math.sin(blatt) * rotorRadius * 0.85,
+    );
+    g.fillStyle(GEHAEUSE, 1);
+    g.fillCircle(ax, ay, 3);
   }
+
+  g.fillStyle(0xffffff, 1);
+  g.fillCircle(C, C, 13);
+  g.lineStyle(2.4, RUMPF_MITTEL, 1);
+  g.strokeCircle(C, C, 10.5);
+  // Kamerakuppel in der Mitte.
+  kuppel(g, C, C, 6);
 }
 
 /**
@@ -273,8 +393,9 @@ function kopf(
   schmuck: 'keiner' | 'helm' | 'haar' | 'krone' | 'zoepfe' | 'spitzhut' | 'maske',
 ): void {
   if (schmuck === 'haar' || schmuck === 'zoepfe') {
-    // Haar zuerst, damit der Kopf darauf liegt.
-    g.fillStyle(0xffffff, 0.75);
+    // Haar zuerst, damit der Kopf darauf liegt. Deckend im tiefen Ton statt
+    // halbdurchsichtig - so bleibt es beim Einfaerben als Haar lesbar.
+    g.fillStyle(RUMPF_TIEF, 1);
     g.fillEllipse(C, y + 4, radius * 2.6, radius * 2.4);
   }
 
@@ -282,13 +403,16 @@ function kopf(
   g.fillCircle(C, y, radius);
 
   if (schmuck === 'helm') {
-    g.fillStyle(0xffffff, 0.45);
-    g.fillCircle(C, y - 1, radius * 0.62);
-  }
-
-  if (schmuck === 'maske') {
-    g.fillStyle(0xffffff, 0.35);
+    visier(g, C, y - 1, radius);
+  } else if (schmuck === 'maske') {
+    g.fillStyle(NAHT, 1);
     g.fillRect(C - radius, y - 3, radius * 2, 6);
+    g.fillStyle(0xffffff, 0.9);
+    g.fillEllipse(C - radius * 0.4, y, radius * 0.45, 2.4);
+    g.fillEllipse(C + radius * 0.4, y, radius * 0.45, 2.4);
+  } else {
+    if (schmuck === 'haar' || schmuck === 'zoepfe') haarkappe(g, C, y, radius);
+    augen(g, C, y + 1, radius);
   }
 
   if (schmuck === 'krone') {
@@ -299,6 +423,24 @@ function kopf(
       [C + radius * 0.55, y - radius - 9],
       [C + radius, y - radius + 2],
     ]);
+    flaeche(
+      g,
+      [
+        [C - radius, y - radius + 2],
+        [C + radius, y - radius + 2],
+        [C + radius * 0.95, y - radius - 0.5],
+        [C - radius * 0.95, y - radius - 0.5],
+      ],
+      RUMPF_MITTEL,
+    );
+    fenster(
+      g,
+      [
+        [C - radius * 0.55, y - radius - 4],
+        [C + radius * 0.55, y - radius - 4],
+      ],
+      1.2,
+    );
   }
 
   if (schmuck === 'spitzhut') {
@@ -307,6 +449,16 @@ function kopf(
       [C, y - radius - 20],
       [C + radius + 2, y - radius + 3],
     ]);
+    flaeche(
+      g,
+      [
+        [C - radius - 2, y - radius + 3],
+        [C + radius + 2, y - radius + 3],
+        [C + radius * 0.8, y - radius - 1],
+        [C - radius * 0.8, y - radius - 1],
+      ],
+      RUMPF_TIEF,
+    );
   }
 
   if (schmuck === 'zoepfe') {
@@ -316,8 +468,7 @@ function kopf(
       [C - radius - 3, y + 18],
       [C - radius + 2, y + 6],
     ];
-    voll(g, zopf);
-    voll(g, gespiegelt(zopf));
+    paar(g, zopf, RUMPF_TIEF);
   }
 }
 
@@ -330,6 +481,28 @@ function rumpf(g: G, oben: number, unten: number, breiteOben: number, rock: bool
     [C + breiteUnten, unten],
     [C - breiteUnten, unten],
   ]);
+  // Guertel dort, wo der Rumpf in Beine oder Rock uebergeht.
+  const t = rock ? 0.28 : 0.78;
+  const gy = oben + (unten - oben) * t;
+  const halb = breiteOben + (breiteUnten - breiteOben) * t;
+  flaeche(
+    g,
+    [
+      [C - halb, gy - 2],
+      [C + halb, gy - 2],
+      [C + halb + (breiteUnten - breiteOben) * 0.05, gy + 2],
+      [C - halb - (breiteUnten - breiteOben) * 0.05, gy + 2],
+    ],
+    RUMPF_TIEF,
+  );
+  brustzeichen(g, C, oben + (gy - oben) * 0.45);
+  if (rock) {
+    // Zwei Falten im Rock.
+    nahtPaar(g, [
+      [C - halb * 0.4, gy + 3],
+      [C - breiteUnten * 0.45, unten - 1],
+    ]);
+  }
 }
 
 /**
@@ -419,11 +592,25 @@ function beine(g: G, oben: number, unten: number): void {
   ];
   voll(g, bein);
   voll(g, gespiegelt(bein));
+  // Stiefel: das untere Viertel im tiefen Ton.
+  const t = 0.72;
+  paar(
+    g,
+    [
+      [C - 8 + (-11 + 8) * t, oben + (unten - 2 - oben) * t],
+      [C - 2 + (-4 + 2) * t, oben + (unten - oben) * t],
+      [C - 4, unten],
+      [C - 11, unten - 2],
+    ],
+    RUMPF_TIEF,
+  );
 }
 
 /** Ein Umhang, der hinter der Figur weht. */
 function umhang(g: G, oben: number, unten: number, breite: number): void {
-  akzent(
+  // Deckend im tiefen Ton statt halbdurchsichtig: Der Umhang liegt hinter der
+  // Figur und hebt sie dadurch ab, statt mit ihr zu verschwimmen.
+  flaeche(
     g,
     [
       [C - breite, oben],
@@ -432,7 +619,15 @@ function umhang(g: G, oben: number, unten: number, breite: number): void {
       [C, unten - 14],
       [C - breite * 0.62, unten],
     ],
-    0.7,
+    RUMPF_TIEF,
+  );
+  nahtPaar(
+    g,
+    [
+      [C - breite * 0.55, oben + 4],
+      [C - breite * 0.45, unten - 6],
+    ],
+    0.6,
   );
 }
 
@@ -460,6 +655,31 @@ function fluegelpaar(g: G, y: number, spannweite: number, art: 'feder' | 'insekt
     akzent(g, gespiegelt(oben), 0.75);
     akzent(g, unten, 0.75);
     akzent(g, gespiegelt(unten), 0.75);
+    // Adern: aus der Flaeche wird ein Insektenfluegel.
+    nahtPaar(
+      g,
+      [
+        [C - 6, y + 2],
+        [C - spannweite + 4, y - 14],
+      ],
+      0.5,
+    );
+    nahtPaar(
+      g,
+      [
+        [C - 6, y + 2],
+        [C - spannweite + 5, y - 2],
+      ],
+      0.4,
+    );
+    nahtPaar(
+      g,
+      [
+        [C - 6, y + 14],
+        [C - spannweite + 12, y + 22],
+      ],
+      0.5,
+    );
     return;
   }
 
@@ -474,6 +694,10 @@ function fluegelpaar(g: G, y: number, spannweite: number, art: 'feder' | 'insekt
     ];
     voll(g, haut);
     voll(g, gespiegelt(haut));
+    // Fingerknochen der Flughaut, von der Wurzel zu jeder Zacke.
+    for (const zacke of [haut[1], haut[3], haut[4]] as P[]) {
+      nahtPaar(g, [[C - 7, y + 2], zacke], 0.6, 1);
+    }
     return;
   }
 
@@ -487,19 +711,37 @@ function fluegelpaar(g: G, y: number, spannweite: number, art: 'feder' | 'insekt
   ];
   voll(g, feder);
   voll(g, gespiegelt(feder));
+  // Schwungfedern: die Stufen der Kante laufen als Linien zur Wurzel.
+  for (const stufe of [feder[2], feder[4]] as P[]) {
+    nahtPaar(g, [[C - 7, y + 4], stufe], 0.55);
+  }
+  paar(
+    g,
+    [
+      [C - 7, y - 6],
+      [C - spannweite * 0.55, y - 12],
+      [C - spannweite * 0.5, y - 6],
+      [C - 7, y - 1],
+    ],
+    RUMPF_MITTEL,
+  );
 }
 
 /** Ein Stab mit Kopf - Zauberstab, Zepter, Dreizack. */
 function stab(g: G, kopfArt: 'stern' | 'kugel' | 'zacken'): void {
   g.fillStyle(0xffffff, 1);
   g.fillRect(C + 22, 26, 5, 52);
+  g.fillStyle(RUMPF_TIEF, 1);
+  g.fillRect(C + 22, 44, 5, 8);
 
   if (kopfArt === 'stern') {
     stern(g, C + 24, 18, 13, 5, 5);
+    g.fillStyle(RUMPF_MITTEL, 1);
+    g.fillCircle(C + 24, 18, 4);
     return;
   }
   if (kopfArt === 'kugel') {
-    g.fillCircle(C + 24, 18, 10);
+    kuppel(g, C + 24, 18, 10);
     return;
   }
   voll(g, [
@@ -511,6 +753,129 @@ function stab(g: G, kopfArt: 'stern' | 'kugel' | 'zacken'): void {
     [C + 31, 4],
     [C + 34, 22],
   ]);
+}
+
+// ---- Werkzeuge fuer Binnenzeichnung ----------------------------------------
+//
+// Seit 2026-09-24 tragen die Raumschiffe Paneele, Naehte, Glas und Triebwerke.
+// Vorher waren es weisse Umrisse mit ein, zwei grauen Flecken - im Spiel las
+// sich das wie ein Piktogramm, nicht wie ein Fahrzeug. Alle Toene sind Grau:
+// Beim Einfaerben werden sie zu hellen und dunklen Stufen der Rumpffarbe, eine
+// zweifarbige Lackierung entsteht dadurch von selbst.
+
+/** Zweiter Rumpfton - abgesetzte Paneele, Fluegelflaechen. */
+const RUMPF_MITTEL = 0xd4dae3;
+/** Vertiefte Flaechen - Fluegelwurzeln, Schaechte, Klappen. */
+const RUMPF_TIEF = 0x9aa5b4;
+/** Naehte und Einlaesse. */
+const NAHT = 0x4c5968;
+/** Glas: dunkler Grund, heller Reflex. */
+const GLAS = 0x1b2a3a;
+const GLAS_REFLEX = 0xcfeeff;
+/** Triebwerksgehaeuse. */
+const GEHAEUSE = 0x3d4856;
+
+type P = [number, number];
+
+/** Flaeche in einem der Rumpftoene. */
+function flaeche(g: G, punkte: P[], farbe: number, alpha = 1): void {
+  g.fillStyle(farbe, alpha);
+  g.fillPoints(
+    punkte.map(([x, y]) => v(x, y)),
+    true,
+  );
+}
+
+/** Flaeche und ihr Spiegelbild. */
+function paar(g: G, punkte: P[], farbe: number, alpha = 1): void {
+  flaeche(g, punkte, farbe, alpha);
+  flaeche(g, gespiegelt(punkte), farbe, alpha);
+}
+
+/** Feine Paneelnaht als Linienzug. */
+function naht(g: G, punkte: P[], alpha = 0.7, breite = 0.8): void {
+  g.lineStyle(breite, NAHT, alpha);
+  g.beginPath();
+  punkte.forEach(([x, y], i) => (i === 0 ? g.moveTo(x, y) : g.lineTo(x, y)));
+  g.strokePath();
+}
+
+/** Naht und ihr Spiegelbild. */
+function nahtPaar(g: G, punkte: P[], alpha = 0.7, breite = 0.8): void {
+  naht(g, punkte, alpha, breite);
+  naht(g, gespiegelt(punkte), alpha, breite);
+}
+
+/**
+ * Tropfenfoermige Kanzel: dunkles Glas, Rahmen, Reflex oben links.
+ * `mx/oben` ist die Spitze, `breite/hoehe` die Ausdehnung nach unten.
+ */
+function kanzel(g: G, mx: number, oben: number, breite: number, hoehe: number): void {
+  const h = breite / 2;
+  const glas: P[] = [
+    [mx, oben],
+    [mx + h * 0.75, oben + hoehe * 0.35],
+    [mx + h, oben + hoehe * 0.7],
+    [mx + h * 0.55, oben + hoehe],
+    [mx - h * 0.55, oben + hoehe],
+    [mx - h, oben + hoehe * 0.7],
+    [mx - h * 0.75, oben + hoehe * 0.35],
+  ];
+  flaeche(g, glas, GLAS);
+  g.lineStyle(1, 0xffffff, 0.9);
+  g.strokePoints(
+    glas.map(([x, y]) => v(x, y)),
+    true,
+  );
+  // Rahmenstrebe quer durch die Kanzel.
+  g.lineStyle(0.9, 0xffffff, 0.55);
+  g.lineBetween(mx - h * 0.9, oben + hoehe * 0.62, mx + h * 0.9, oben + hoehe * 0.62);
+  // Reflex: schmaler heller Streifen auf der Lichtseite.
+  flaeche(
+    g,
+    [
+      [mx - h * 0.15, oben + hoehe * 0.12],
+      [mx - h * 0.55, oben + hoehe * 0.4],
+      [mx - h * 0.7, oben + hoehe * 0.58],
+      [mx - h * 0.4, oben + hoehe * 0.34],
+    ],
+    GLAS_REFLEX,
+    0.75,
+  );
+}
+
+/** Runde Glaskuppel mit Reflex. */
+function kuppel(g: G, mx: number, my: number, r: number): void {
+  g.fillStyle(GLAS, 1);
+  g.fillCircle(mx, my, r);
+  g.lineStyle(1, 0xffffff, 0.85);
+  g.strokeCircle(mx, my, r);
+  g.fillStyle(GLAS_REFLEX, 0.7);
+  g.fillEllipse(mx - r * 0.35, my - r * 0.38, r * 0.7, r * 0.42);
+}
+
+/**
+ * Triebwerk von oben: Gehaeuse, Duesenring, heller Kern am Heck.
+ * `mx/oben` Mitte oben, `breite/hoehe` Gehaeuse.
+ */
+function triebwerk(g: G, mx: number, oben: number, breite: number, hoehe: number): void {
+  g.fillStyle(GEHAEUSE, 1);
+  g.fillRoundedRect(mx - breite / 2, oben, breite, hoehe, Math.min(breite, hoehe) * 0.3);
+  g.fillStyle(RUMPF_MITTEL, 1);
+  g.fillRect(mx - breite / 2 + 0.8, oben + hoehe * 0.22, breite - 1.6, 1.1);
+  // Duese: dunkler Ring, heller Kern - der Schweif im Spiel setzt hier an.
+  g.fillStyle(NAHT, 1);
+  g.fillEllipse(mx, oben + hoehe, breite * 0.95, breite * 0.5);
+  g.fillStyle(0xffffff, 1);
+  g.fillEllipse(mx, oben + hoehe, breite * 0.55, breite * 0.28);
+}
+
+/** Kleine Fensterreihe (Frachter, Kreuzer). */
+function fenster(g: G, punkte: P[], r = 1.3): void {
+  g.fillStyle(GLAS, 1);
+  for (const [x, y] of punkte) g.fillCircle(x, y, r);
+  g.fillStyle(GLAS_REFLEX, 0.8);
+  for (const [x, y] of punkte) g.fillCircle(x - r * 0.3, y - r * 0.3, r * 0.4);
 }
 
 /**
@@ -534,25 +899,47 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [12, 78],
       [32, 38],
     ]);
-    cockpit(g, [
-      [C, 18],
-      [55, 48],
-      [41, 48],
+    paar(
+      g,
+      [
+        [34, 42],
+        [16, 74],
+        [36, 68],
+        [40, 50],
+      ],
+      RUMPF_MITTEL,
+    );
+    paar(
+      g,
+      [
+        [15, 76],
+        [20, 71],
+        [24, 74],
+      ],
+      RUMPF_TIEF,
+    );
+    nahtPaar(g, [
+      [33, 46],
+      [21, 70],
     ]);
-    cockpit(g, [
-      [31, 47],
-      [39, 58],
-      [22, 69],
+    nahtPaar(g, [
+      [43, 38],
+      [43, 66],
+      [C, 78],
     ]);
-    cockpit(g, [
-      [65, 47],
-      [57, 58],
-      [74, 69],
-    ]);
-    g.fillStyle(0x536579, 1);
-    g.fillRoundedRect(31, 69, 8, 9, 2);
-    g.fillRoundedRect(57, 69, 8, 9, 2);
-    duesen(g, 35, 61, 78, 91);
+    paar(
+      g,
+      [
+        [39, 44],
+        [42, 42],
+        [42, 55],
+        [39, 57],
+      ],
+      NAHT,
+    );
+    kanzel(g, C, 17, 10, 21);
+    triebwerk(g, 38, 63, 7, 12);
+    triebwerk(g, 58, 63, 7, 12);
   },
   /** 1 Delta - breites Dreieck, satte Flaeche. */
   (g) => {
@@ -562,12 +949,45 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [C, 66],
       [8, 82],
     ]);
-    cockpit(g, [
-      [C, 20],
-      [66, 74],
-      [30, 74],
+    paar(
+      g,
+      [
+        [40, 40],
+        [16, 76],
+        [40, 68],
+      ],
+      RUMPF_MITTEL,
+    );
+    paar(
+      g,
+      [
+        [16, 78.5],
+        [42, 68],
+        [42, 65.5],
+        [18, 76],
+      ],
+      RUMPF_TIEF,
+    );
+    nahtPaar(g, [
+      [45, 16],
+      [43, 60],
     ]);
-    duesen(g, 38, 58, 66, 84);
+    nahtPaar(g, [
+      [38, 44],
+      [22, 72],
+    ]);
+    flaeche(
+      g,
+      [
+        [C, 6],
+        [50, 12],
+        [46, 12],
+      ],
+      RUMPF_TIEF,
+    );
+    kanzel(g, C, 18, 10, 22);
+    triebwerk(g, 42, 57, 6, 10);
+    triebwerk(g, 54, 57, 6, 10);
   },
   /** 2 Sichel - weit ausgestellte Spitzen, schmale Mitte. */
   (g) => {
@@ -581,12 +1001,60 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [4, 84],
       [40, 44],
     ]);
-    g.fillStyle(0x536579, 1);
-    g.fillEllipse(C, 40, 18, 34);
-    duesen(g, 40, 56, 72, 90);
+    paar(
+      g,
+      [
+        [40, 50],
+        [14, 79],
+        [36, 70],
+      ],
+      RUMPF_MITTEL,
+    );
+    paar(
+      g,
+      [
+        [6, 83],
+        [14, 76],
+        [17, 79],
+      ],
+      RUMPF_TIEF,
+    );
+    nahtPaar(g, [
+      [38, 52],
+      [20, 74],
+    ]);
+    nahtPaar(g, [
+      [43, 56],
+      [43, 72],
+    ]);
+    kanzel(g, C, 22, 12, 30);
+    triebwerk(g, 41, 63, 6, 11);
+    triebwerk(g, 55, 63, 6, 11);
   },
   /** 3 Ring - offener Kreis um den Rumpf. */
   (g) => {
+    g.lineStyle(5, 0xffffff, 1);
+    g.strokeCircle(C, 46, 30);
+    // Nut im Ring und vier dunklere Segmente - aus der Flaeche wird ein Bauteil.
+    g.lineStyle(0.9, NAHT, 0.6);
+    g.strokeCircle(C, 46, 30);
+    g.lineStyle(5, RUMPF_TIEF, 1);
+    for (let i = 0; i < 4; i++) {
+      const start = (Math.PI / 2) * i + Math.PI / 4 - 0.18;
+      g.beginPath();
+      g.arc(C, 46, 30, start, start + 0.36, false);
+      g.strokePath();
+    }
+    paar(
+      g,
+      [
+        [19, 44],
+        [37, 44],
+        [37, 49],
+        [19, 49],
+      ],
+      RUMPF_MITTEL,
+    );
     voll(g, [
       [C, 14],
       [60, 46],
@@ -594,40 +1062,104 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [36, 76],
       [36, 46],
     ]);
-    g.lineStyle(5, 0xffffff, 0.9);
-    g.strokeCircle(C, 46, 30);
-    cockpit(g, [
-      [C, 20],
-      [54, 42],
-      [42, 42],
+    flaeche(
+      g,
+      [
+        [40, 50],
+        [56, 50],
+        [56, 72],
+        [40, 72],
+      ],
+      RUMPF_MITTEL,
+    );
+    nahtPaar(g, [
+      [40, 60],
+      [56, 60],
     ]);
-    duesen(g, 41, 55, 74, 92);
+    kanzel(g, C, 20, 10, 22);
+    triebwerk(g, 42, 70, 6, 10);
+    triebwerk(g, 54, 70, 6, 10);
   },
   /** 4 Doppelrumpf - zwei Haelften, eine Bruecke. */
   (g) => {
-    voll(g, [
+    const rumpf: P[] = [
       [30, 12],
       [44, 44],
       [44, 80],
       [16, 80],
       [16, 44],
+    ];
+    voll(g, rumpf);
+    voll(g, gespiegelt(rumpf));
+    paar(
+      g,
+      [
+        [16, 50],
+        [21, 50],
+        [21, 78],
+        [16, 78],
+      ],
+      RUMPF_TIEF,
+    );
+    paar(
+      g,
+      [
+        [30, 16],
+        [41, 42],
+        [19, 42],
+      ],
+      RUMPF_MITTEL,
+    );
+    nahtPaar(g, [
+      [16, 44],
+      [44, 44],
     ]);
-    voll(g, [
-      [66, 12],
-      [80, 44],
-      [80, 80],
-      [52, 80],
-      [52, 44],
+    fenster(g, [
+      [31, 52],
+      [31, 58],
+      [31, 64],
+      [65, 52],
+      [65, 58],
+      [65, 64],
     ]);
-    g.fillStyle(0xffffff, 0.7);
-    g.fillRect(38, 48, 20, 12);
-    duesen(g, 30, 66, 78, 92);
+    flaeche(
+      g,
+      [
+        [40, 47],
+        [56, 47],
+        [56, 61],
+        [40, 61],
+      ],
+      RUMPF_MITTEL,
+    );
+    kuppel(g, C, 54, 5);
+    triebwerk(g, 24, 72, 7, 10);
+    triebwerk(g, 37, 72, 7, 10);
+    triebwerk(g, 59, 72, 7, 10);
+    triebwerk(g, 72, 72, 7, 10);
   },
   /** 5 Stern - sechs Zacken, radialsymmetrisch. */
   (g) => {
     stern(g, C, C, 42, 17, 6);
-    g.fillStyle(0x536579, 1);
-    g.fillCircle(C, C, 12);
+    // Jede Zacke in zwei Facetten: die rechte Haelfte liegt im Schatten.
+    for (let i = 0; i < 6; i++) {
+      const spitze = (Math.PI * 2 * i) / 6 - Math.PI / 2;
+      const innen = spitze + Math.PI / 6;
+      flaeche(
+        g,
+        [
+          [C, C],
+          [C + Math.cos(spitze) * 42, C + Math.sin(spitze) * 42],
+          [C + Math.cos(innen) * 17, C + Math.sin(innen) * 17],
+        ],
+        RUMPF_MITTEL,
+      );
+    }
+    g.fillStyle(RUMPF_TIEF, 1);
+    g.fillCircle(C, C, 14);
+    g.lineStyle(0.9, NAHT, 0.7);
+    g.strokeCircle(C, C, 14);
+    kuppel(g, C, C, 9);
   },
   /** 6 Krone - breite Basis mit drei Zinnen. */
   (g) => {
@@ -642,13 +1174,54 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [82, 80],
       [14, 80],
     ]);
-    g.fillStyle(0x536579, 1);
-    g.fillRect(28, 50, 40, 16);
-    duesen(g, 32, 64, 78, 92);
+    for (const [x, y] of [
+      [30, 12],
+      [C, 6],
+      [66, 12],
+    ] as P[]) {
+      flaeche(
+        g,
+        [
+          [x, y],
+          [x + 3, y + 8],
+          [x - 3, y + 8],
+        ],
+        RUMPF_TIEF,
+      );
+    }
+    flaeche(
+      g,
+      [
+        [18, 64],
+        [78, 64],
+        [79, 70],
+        [17, 70],
+      ],
+      RUMPF_MITTEL,
+    );
+    nahtPaar(g, [
+      [30, 36],
+      [30, 64],
+    ]);
+    naht(g, [
+      [C, 36],
+      [C, 64],
+    ]);
+    fenster(g, [
+      [26, 50],
+      [34, 50],
+      [42, 50],
+      [54, 50],
+      [62, 50],
+      [70, 50],
+    ]);
+    triebwerk(g, 30, 72, 8, 10);
+    triebwerk(g, C, 72, 8, 10);
+    triebwerk(g, 66, 72, 8, 10);
   },
   /** 7 Vierfluegler - X-foermig gespreizte Tragflaechen um einen Spindelrumpf. */
   (g) => {
-    const fluegel: [number, number][] = [
+    const fluegel: P[] = [
       [C - 5, 40],
       [6, 14],
       [12, 24],
@@ -656,7 +1229,7 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
     ];
     voll(g, fluegel);
     voll(g, gespiegelt(fluegel));
-    const unten: [number, number][] = [
+    const unten: P[] = [
       [C - 4, 54],
       [12, 76],
       [6, 86],
@@ -664,6 +1237,32 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
     ];
     voll(g, unten);
     voll(g, gespiegelt(unten));
+    paar(
+      g,
+      [
+        [C - 5, 44],
+        [9, 19],
+        [12, 24],
+        [C - 4, 50],
+      ],
+      RUMPF_MITTEL,
+    );
+    paar(
+      g,
+      [
+        [C - 4, 54],
+        [12, 76],
+        [9, 81],
+        [C - 5, 58],
+      ],
+      RUMPF_MITTEL,
+    );
+    // Laeufe an den Fluegelspitzen.
+    g.lineStyle(2, GEHAEUSE, 1);
+    g.lineBetween(7, 15, 3, 8);
+    g.lineBetween(89, 15, 93, 8);
+    g.lineBetween(7, 85, 4, 91);
+    g.lineBetween(89, 85, 92, 91);
     voll(g, [
       [C, 10],
       [C + 6, 40],
@@ -671,31 +1270,59 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [C - 5, 84],
       [C - 6, 40],
     ]);
-    cockpit(g, [
-      [C, 22],
-      [C + 4, 38],
-      [C - 4, 38],
+    nahtPaar(g, [
+      [C - 3, 42],
+      [C - 3, 72],
     ]);
+    kanzel(g, C, 20, 8, 19);
+    triebwerk(g, C, 76, 8, 9);
   },
   /** 8 Kanzeljaeger - Kugelkanzel zwischen zwei senkrechten Flaechen. */
   (g) => {
-    voll(g, [
+    const flaecheLinks: P[] = [
       [6, 10],
       [26, 26],
       [26, 70],
       [6, 86],
-    ]);
-    voll(g, [
-      [90, 10],
-      [70, 26],
-      [70, 70],
-      [90, 86],
+    ];
+    voll(g, flaecheLinks);
+    voll(g, gespiegelt(flaecheLinks));
+    paar(
+      g,
+      [
+        [9, 17],
+        [23, 29],
+        [23, 67],
+        [9, 79],
+      ],
+      RUMPF_MITTEL,
+    );
+    // Rippen strahlen vom Tragarm aus - die Flaeche wirkt gespannt statt leer.
+    for (const ende of [
+      [9, 17],
+      [9, 34],
+      [9, 48],
+      [9, 62],
+      [9, 79],
+    ] as P[]) {
+      nahtPaar(g, [[23, 48], ende], 0.65);
+    }
+    g.fillStyle(RUMPF_TIEF, 1);
+    g.fillRect(24, 44, 48, 8);
+    naht(g, [
+      [24, 48],
+      [72, 48],
     ]);
     g.fillStyle(0xffffff, 1);
     g.fillCircle(C, C, 17);
-    g.fillRect(26, 44, 44, 8);
-    g.fillStyle(0x536579, 1);
-    g.fillCircle(C, C, 10);
+    g.lineStyle(0.9, NAHT, 0.7);
+    g.strokeCircle(C, C, 14.5);
+    kuppel(g, C, C, 10);
+    g.lineStyle(0.8, 0xffffff, 0.5);
+    for (let i = 0; i < 4; i++) {
+      const w = (Math.PI / 2) * i + Math.PI / 4;
+      g.lineBetween(C, C, C + Math.cos(w) * 10, C + Math.sin(w) * 10);
+    }
   },
   /** 9 Keilkreuzer - langer Keil, breites Heck. */
   (g) => {
@@ -704,34 +1331,97 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [78, 82],
       [18, 82],
     ]);
-    g.fillStyle(0x536579, 1);
-    g.fillRect(34, 60, 28, 14);
-    duesen(g, 32, 64, 80, 92);
+    paar(
+      g,
+      [
+        [46, 24],
+        [28, 74],
+        [44, 74],
+      ],
+      RUMPF_MITTEL,
+    );
+    naht(g, [
+      [C, 10],
+      [C, 54],
+    ]);
+    nahtPaar(g, [
+      [40, 40],
+      [26, 78],
+    ]);
+    flaeche(
+      g,
+      [
+        [40, 54],
+        [56, 54],
+        [56, 70],
+        [40, 70],
+      ],
+      0xffffff,
+    );
+    g.lineStyle(0.9, NAHT, 0.7);
+    g.strokeRect(40, 54, 16, 16);
+    fenster(g, [
+      [43, 59],
+      [C, 59],
+      [53, 59],
+    ]);
+    g.fillStyle(NAHT, 1);
+    g.fillRect(38, 73, 20, 2.5);
+    triebwerk(g, 32, 76, 7, 9);
+    triebwerk(g, C, 76, 8, 10);
+    triebwerk(g, 64, 76, 7, 9);
   },
   /** 10 Scheibenfrachter - runde Scheibe mit vorstehender Kanzel. */
   (g) => {
     g.fillStyle(0xffffff, 1);
     g.fillEllipse(C, 54, 76, 54);
+    g.fillStyle(RUMPF_MITTEL, 1);
+    g.fillEllipse(C, 54, 60, 42);
+    g.fillStyle(0xffffff, 1);
+    g.fillEllipse(C, 54, 44, 30);
+    g.lineStyle(0.9, NAHT, 0.65);
+    g.strokeEllipse(C, 54, 60, 42);
+    const fensterRing: P[] = [];
+    for (let i = 0; i < 12; i++) {
+      const w = (Math.PI * 2 * i) / 12;
+      fensterRing.push([C + Math.cos(w) * 34, 54 + Math.sin(w) * 23.5]);
+    }
+    fenster(g, fensterRing, 1.2);
+    g.fillStyle(GLAS, 1);
+    g.fillEllipse(C, 54, 22, 15);
+    g.fillStyle(GLAS_REFLEX, 0.7);
+    g.fillEllipse(C - 4, 50, 9, 4);
     voll(g, [
       [C - 10, 30],
       [C + 10, 30],
       [C + 6, 8],
       [C - 6, 8],
     ]);
-    g.fillStyle(0x536579, 1);
-    g.fillEllipse(C, 54, 34, 24);
+    kanzel(g, C, 10, 8, 15);
   },
   /** 11 Sonde - Kugel mit drei Auslegern, ohne Vorne und Hinten. */
   (g) => {
-    g.fillStyle(0xffffff, 1);
-    g.fillCircle(C, C, 20);
     for (let i = 0; i < 3; i++) {
       const w = (Math.PI * 2 * i) / 3 - Math.PI / 2;
-      g.lineStyle(7, 0xffffff, 0.9);
-      g.lineBetween(C, C, C + Math.cos(w) * 40, C + Math.sin(w) * 40);
+      const ex = C + Math.cos(w) * 38;
+      const ey = C + Math.sin(w) * 38;
+      g.lineStyle(7, 0xffffff, 1);
+      g.lineBetween(C, C, ex, ey);
+      g.lineStyle(1, NAHT, 0.6);
+      g.lineBetween(C, C, ex, ey);
+      // Antennenschale am Ende jedes Auslegers.
+      g.fillStyle(RUMPF_MITTEL, 1);
+      g.fillCircle(ex, ey, 6);
+      g.lineStyle(0.9, NAHT, 0.7);
+      g.strokeCircle(ex, ey, 6);
+      g.fillStyle(GEHAEUSE, 1);
+      g.fillCircle(ex, ey, 2);
     }
-    g.fillStyle(0x536579, 1);
-    g.fillCircle(C, C, 11);
+    g.fillStyle(0xffffff, 1);
+    g.fillCircle(C, C, 20);
+    g.lineStyle(3, RUMPF_MITTEL, 1);
+    g.strokeCircle(C, C, 16);
+    kuppel(g, C, C, 10);
   },
   /** 12 Trichter - weit geoeffneter Einlass, schmales Heck. */
   (g) => {
@@ -743,21 +1433,49 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [34, 88],
       [34, 60],
     ]);
-    g.fillStyle(0x536579, 1);
-    g.fillRect(30, 20, 36, 12);
+    flaeche(
+      g,
+      [
+        [17, 15],
+        [79, 15],
+        [73, 27],
+        [23, 27],
+      ],
+      GLAS,
+    );
+    g.lineStyle(1, 0xffffff, 0.45);
+    for (let x = 24; x <= 72; x += 6) g.lineBetween(x, 16, x, 26);
+    paar(
+      g,
+      [
+        [26, 32],
+        [40, 32],
+        [40, 58],
+        [36, 58],
+      ],
+      RUMPF_MITTEL,
+    );
+    flaeche(
+      g,
+      [
+        [37, 62],
+        [59, 62],
+        [59, 80],
+        [37, 80],
+      ],
+      RUMPF_MITTEL,
+    );
+    naht(g, [
+      [37, 71],
+      [59, 71],
+    ]);
+    triebwerk(g, C, 78, 12, 9);
   },
 
   // ---- Flugzeuge --------------------------------------------------------
   /** 13 Duesenjet - Pfeilfluegel, Leitwerk, spitze Nase. */
   (g) => {
-    voll(g, [
-      [C, 6],
-      [C + 5, 34],
-      [C + 5, 76],
-      [C - 5, 76],
-      [C - 5, 34],
-    ]);
-    const fl: [number, number][] = [
+    const fl: P[] = [
       [C - 5, 40],
       [8, 62],
       [8, 70],
@@ -765,7 +1483,17 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
     ];
     voll(g, fl);
     voll(g, gespiegelt(fl));
-    const leit: [number, number][] = [
+    paar(
+      g,
+      [
+        [C - 5, 54],
+        [9, 67],
+        [8, 70],
+        [C - 5, 58],
+      ],
+      RUMPF_TIEF,
+    );
+    const leit: P[] = [
       [C - 4, 72],
       [22, 86],
       [22, 90],
@@ -773,21 +1501,41 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
     ];
     voll(g, leit);
     voll(g, gespiegelt(leit));
-    akzent(g, [
-      [C, 16],
-      [C + 4, 32],
-      [C - 4, 32],
+    voll(g, [
+      [C, 6],
+      [C + 5, 34],
+      [C + 5, 76],
+      [C - 5, 76],
+      [C - 5, 34],
     ]);
+    nahtPaar(g, [
+      [C - 3, 36],
+      [C - 3, 74],
+    ]);
+    kanzel(g, C, 14, 6, 18);
+    triebwerk(g, C, 76, 7, 8);
   },
   /** 14 Propellermaschine - gerade Tragflaeche, runder Rumpf, Luftschraube. */
   (g) => {
-    g.fillStyle(0xffffff, 1);
-    g.fillEllipse(C, 52, 20, 68);
     voll(g, [
       [4, 44],
       [92, 44],
       [92, 56],
       [4, 56],
+    ]);
+    paar(
+      g,
+      [
+        [8, 52],
+        [38, 52],
+        [38, 56],
+        [8, 56],
+      ],
+      RUMPF_TIEF,
+    );
+    nahtPaar(g, [
+      [22, 44],
+      [22, 56],
     ]);
     voll(g, [
       [30, 80],
@@ -795,32 +1543,49 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [66, 88],
       [30, 88],
     ]);
-    g.fillStyle(0xffffff, 0.5);
-    g.fillRect(C - 26, 10, 52, 5);
     g.fillStyle(0xffffff, 1);
-    g.fillCircle(C, 12, 6);
+    g.fillEllipse(C, 52, 20, 68);
+    nahtPaar(g, [
+      [C - 5, 40],
+      [C - 5, 78],
+    ]);
+    kanzel(g, C, 28, 9, 14);
+    // Die drehende Luftschraube als halbdurchsichtige Scheibe.
+    g.fillStyle(0xffffff, 0.35);
+    g.fillEllipse(C, 13, 54, 7);
+    g.lineStyle(0.8, NAHT, 0.5);
+    g.strokeEllipse(C, 13, 54, 7);
+    g.fillStyle(GEHAEUSE, 1);
+    g.fillCircle(C, 13, 5);
+    g.fillStyle(0xffffff, 0.8);
+    g.fillCircle(C - 1.5, 11.5, 1.6);
   },
   /** 15 Doppeldecker - zwei uebereinanderliegende Tragflaechen mit Streben. */
   (g) => {
-    g.fillStyle(0xffffff, 1);
-    g.fillEllipse(C, 54, 18, 64);
-    voll(g, [
-      [8, 34],
-      [88, 34],
-      [88, 44],
-      [8, 44],
-    ]);
-    voll(g, [
-      [12, 60],
-      [84, 60],
-      [84, 70],
-      [12, 70],
-    ]);
-    g.lineStyle(3, 0xffffff, 0.8);
+    for (const oben of [34, 60]) {
+      const einzug = oben === 34 ? 8 : 12;
+      voll(g, [
+        [einzug, oben],
+        [S - einzug, oben],
+        [S - einzug, oben + 10],
+        [einzug, oben + 10],
+      ]);
+      g.lineStyle(0.8, NAHT, 0.55);
+      for (let x = einzug + 8; x < S - einzug; x += 8) g.lineBetween(x, oben + 1, x, oben + 9);
+    }
+    g.lineStyle(3, RUMPF_TIEF, 1);
     g.lineBetween(24, 44, 24, 60);
     g.lineBetween(72, 44, 72, 60);
+    g.lineStyle(1, RUMPF_TIEF, 1);
+    g.lineBetween(24, 44, 40, 60);
+    g.lineBetween(72, 44, 56, 60);
     g.fillStyle(0xffffff, 1);
-    g.fillCircle(C, 16, 6);
+    g.fillEllipse(C, 54, 18, 64);
+    kanzel(g, C, 44, 8, 11);
+    g.fillStyle(0xffffff, 0.35);
+    g.fillEllipse(C, 17, 44, 6);
+    g.fillStyle(GEHAEUSE, 1);
+    g.fillCircle(C, 17, 5);
   },
   /** 16 Nurfluegler - reine Flaeche ohne abgesetzten Rumpf. */
   (g) => {
@@ -832,11 +1597,53 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [30, 68],
       [4, 74],
     ]);
-    g.fillStyle(0xffffff, 0.45);
-    g.fillEllipse(C, 40, 20, 22);
+    paar(
+      g,
+      [
+        [C, 30],
+        [80, 70],
+        [64, 66],
+        [C, 78],
+      ],
+      RUMPF_MITTEL,
+    );
+    paar(
+      g,
+      [
+        [86, 72],
+        [66, 67],
+        [67, 69.5],
+        [86, 73.5],
+      ],
+      RUMPF_TIEF,
+    );
+    nahtPaar(g, [
+      [42, 40],
+      [16, 70],
+    ]);
+    kanzel(g, C, 28, 11, 17);
+    g.fillStyle(NAHT, 1);
+    g.fillRoundedRect(38, 70, 7, 3, 1);
+    g.fillRoundedRect(51, 70, 7, 3, 1);
   },
   /** 17 Rakete - schlanker Zylinder mit drei Finnen. */
   (g) => {
+    const finne: P[] = [
+      [C - 11, 58],
+      [22, 88],
+      [C - 11, 78],
+    ];
+    voll(g, finne);
+    voll(g, gespiegelt(finne));
+    paar(
+      g,
+      [
+        [C - 11, 66],
+        [26, 84],
+        [C - 11, 76],
+      ],
+      RUMPF_MITTEL,
+    );
     voll(g, [
       [C, 4],
       [C + 11, 30],
@@ -844,21 +1651,33 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [C - 11, 74],
       [C - 11, 30],
     ]);
-    const finne: [number, number][] = [
-      [C - 11, 58],
-      [22, 88],
-      [C - 11, 78],
-    ];
-    voll(g, finne);
-    voll(g, gespiegelt(finne));
-    voll(g, [
-      [C - 5, 74],
-      [C + 5, 74],
-      [C + 4, 90],
-      [C - 4, 90],
-    ]);
-    g.fillStyle(0xffffff, 0.45);
-    g.fillCircle(C, 34, 8);
+    flaeche(
+      g,
+      [
+        [C, 4],
+        [C + 7, 20],
+        [C - 7, 20],
+      ],
+      RUMPF_TIEF,
+    );
+    // Rechte Zylinderseite im Schatten - macht aus dem Rechteck eine Roehre.
+    flaeche(
+      g,
+      [
+        [C + 5, 22],
+        [C + 11, 30],
+        [C + 11, 74],
+        [C + 5, 74],
+      ],
+      RUMPF_MITTEL,
+    );
+    g.fillStyle(RUMPF_TIEF, 1);
+    g.fillRect(C - 11, 50, 22, 4);
+    g.fillRect(C - 11, 64, 22, 2);
+    fenster(g, [[C, 36]], 5);
+    g.lineStyle(1, 0xffffff, 0.85);
+    g.strokeCircle(C, 36, 5);
+    triebwerk(g, C, 74, 10, 10);
   },
   /** 18 Gleitschirm - breite Kappe mit Leinen und Last. */
   (g) => {
@@ -871,8 +1690,21 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
     g.lineBetween(14, 46, C - 5, 76);
     g.lineBetween(C, 46, C, 76);
     g.lineBetween(82, 46, C + 5, 76);
+    // Kammern der Kappe: Naehte strahlen vom Mittelpunkt, jede zweite dunkler.
+    for (let i = 1; i < 8; i++) {
+      const w = Math.PI + (Math.PI * i) / 8;
+      naht(g, [
+        [C + Math.cos(w) * 12, 46 + Math.sin(w) * 12],
+        [C + Math.cos(w) * 39, 46 + Math.sin(w) * 39],
+      ]);
+    }
+    g.lineStyle(3, RUMPF_TIEF, 1);
+    g.beginPath();
+    g.arc(C, 46, 38.5, Math.PI, 0, false);
+    g.strokePath();
     g.fillStyle(0xffffff, 1);
     g.fillCircle(C, 82, 9);
+    visier(g, C, 82, 8);
   },
 
   // ---- Fliegende Figuren ------------------------------------------------
@@ -889,9 +1721,16 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [C, 76],
       [C - 16, 92],
     ]);
+    nahtPaar(g, [
+      [C - 12, 34],
+      [C - 14, 86],
+    ]);
     g.fillStyle(0xffffff, 1);
     g.fillCircle(C, 20, 10);
-    akzent(
+    haarkappe(g, C, 20, 10);
+    augen(g, C, 21, 10);
+    // Die Figur vor dem Umhang: im mittleren Ton, damit sie sich abhebt.
+    flaeche(
       g,
       [
         [C - 9, 32],
@@ -899,8 +1738,19 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
         [C + 6, 64],
         [C - 6, 64],
       ],
-      0.75,
+      RUMPF_MITTEL,
     );
+    flaeche(
+      g,
+      [
+        [C - 7.5, 52],
+        [C + 7.5, 52],
+        [C + 7.2, 55],
+        [C - 7.2, 55],
+      ],
+      RUMPF_TIEF,
+    );
+    brustzeichen(g, C, 41);
   },
   /** 22 Fluegelwesen - Figur mit zwei grossen Schwingen. */
   (g) => {
@@ -912,13 +1762,47 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
     ];
     voll(g, schwinge);
     voll(g, gespiegelt(schwinge));
+    paar(
+      g,
+      [
+        [C - 8, 34],
+        [4, 18],
+        [6, 28],
+        [C - 8, 42],
+      ],
+      RUMPF_MITTEL,
+    );
+    for (const ende of [
+      [7, 34],
+      [9, 42],
+      [14, 50],
+    ] as P[]) {
+      nahtPaar(g, [[C - 8, 44], ende], 0.55);
+    }
     g.fillStyle(0xffffff, 1);
     g.fillCircle(C, 22, 9);
+    haarkappe(g, C, 22, 9);
+    augen(g, C, 23, 9);
     voll(g, [
       [C - 8, 32],
       [C + 8, 32],
       [C + 6, 88],
       [C - 6, 88],
+    ]);
+    flaeche(
+      g,
+      [
+        [C - 7.4, 56],
+        [C + 7.4, 56],
+        [C + 7.2, 59],
+        [C - 7.2, 59],
+      ],
+      RUMPF_TIEF,
+    );
+    brustzeichen(g, C, 44);
+    naht(g, [
+      [C, 60],
+      [C, 86],
     ]);
   },
   /**
@@ -938,19 +1822,53 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
     ];
     voll(g, tank);
     voll(g, gespiegelt(tank));
-    duesen(g, C - 22, C + 22, 70, 92);
+    // Tankbaender und Schattenseite - zwei Zylinder statt zwei Flaechen.
+    paar(
+      g,
+      [
+        [C - 19, 29],
+        [C - 14, 30],
+        [C - 14, 66],
+        [C - 19, 68],
+      ],
+      RUMPF_MITTEL,
+    );
+    for (const y of [38, 56]) {
+      paar(
+        g,
+        [
+          [C - 30, y],
+          [C - 14, y],
+          [C - 14, y + 3],
+          [C - 30, y + 3],
+        ],
+        RUMPF_TIEF,
+      );
+    }
+    triebwerk(g, C - 22, 66, 9, 8);
+    triebwerk(g, C + 22, 66, 9, 8);
 
     // Kompakte Figur dazwischen.
     g.fillStyle(0xffffff, 1);
     g.fillCircle(C, 24, 11);
-    g.fillStyle(0xffffff, 0.45);
-    g.fillCircle(C, 23, 7);
+    visier(g, C, 23, 11);
     voll(g, [
       [C - 9, 36],
       [C + 9, 36],
       [C + 7, 70],
       [C - 7, 70],
     ]);
+    flaeche(
+      g,
+      [
+        [C - 8, 58],
+        [C + 8, 58],
+        [C + 7.8, 61],
+        [C - 7.8, 61],
+      ],
+      RUMPF_TIEF,
+    );
+    brustzeichen(g, C, 46);
   },
 
   // ---- Fliegende Tiere --------------------------------------------------
@@ -990,6 +1908,30 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
         [C - 1, 20],
       ]),
     );
+    paar(
+      g,
+      [
+        [C - 7, 19],
+        [C - 4, 12],
+        [C - 2.5, 19],
+      ],
+      RUMPF_TIEF,
+    );
+    for (const zacke of [haut[1], haut[3], haut[4]] as P[]) {
+      nahtPaar(g, [[C - 6, 36], zacke], 0.6, 1);
+    }
+    flaeche(
+      g,
+      [
+        [C, 36],
+        [C + 3.5, 46],
+        [C + 3, 68],
+        [C - 3, 68],
+        [C - 3.5, 46],
+      ],
+      RUMPF_MITTEL,
+    );
+    augen(g, C, 26, 8);
   },
   /** 27 Libelle - vier schmale Fluegel, langer Hinterleib. */
   (g) => {
@@ -1009,14 +1951,31 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
     akzent(g, gespiegelt(fl1), 0.75);
     akzent(g, fl2, 0.75);
     akzent(g, gespiegelt(fl2), 0.75);
+    nahtPaar(g, [
+      [C - 4, 38],
+      [6, 28],
+    ]);
+    nahtPaar(g, [
+      [C - 4, 50],
+      [6, 58],
+    ]);
     g.fillStyle(0xffffff, 1);
     g.fillCircle(C, 24, 9);
+    // Facettenaugen: zwei grosse Glaskugeln.
+    kuppel(g, C - 4.5, 22, 4);
+    kuppel(g, C + 4.5, 22, 4);
     voll(g, [
       [C - 4, 32],
       [C + 4, 32],
       [C + 3, 90],
       [C - 3, 90],
     ]);
+    for (let y = 44; y <= 84; y += 8) {
+      naht(g, [
+        [C - 3.6, y],
+        [C + 3.6, y],
+      ]);
+    }
   },
 
   // ---- Drohnen ----------------------------------------------------------
@@ -1067,6 +2026,26 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [C + 11, 68],
       [C - 11, 68],
     ]);
+    // Brustpanzer: zwei Platten, Mittelnaht, Guertel.
+    nahtPaar(g, [
+      [C - 18, 38],
+      [C - 3, 50],
+      [C, 50],
+    ]);
+    naht(g, [
+      [C, 50],
+      [C, 62],
+    ]);
+    flaeche(
+      g,
+      [
+        [C - 12, 62],
+        [C + 12, 62],
+        [C + 11, 67],
+        [C - 11, 67],
+      ],
+      RUMPF_TIEF,
+    );
     arme(g, 38, 'oben');
     beine(g, 66, 92);
   },
@@ -1088,6 +2067,34 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       [C + 16, 66],
       [C - 16, 66],
     ]);
+    // Schulterstuecke und Plattenreihen des Panzers.
+    paar(
+      g,
+      [
+        [C - 22, 32],
+        [C - 12, 32],
+        [C - 13, 40],
+        [C - 21, 38],
+      ],
+      RUMPF_MITTEL,
+    );
+    for (const y of [46, 54]) {
+      naht(g, [
+        [C - 19 + (y - 32) * 0.18, y],
+        [C + 19 - (y - 32) * 0.18, y],
+      ]);
+    }
+    brustzeichen(g, C, 40);
+    flaeche(
+      g,
+      [
+        [C - 16.5, 61],
+        [C + 16.5, 61],
+        [C + 16, 66],
+        [C - 16, 66],
+      ],
+      RUMPF_TIEF,
+    );
     arme(g, 38, 'seitlich');
     beine(g, 64, 90);
   },
