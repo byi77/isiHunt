@@ -46,7 +46,7 @@ import {
   createVignette,
   createWorldBackdrop,
 } from '@/ui/widgets';
-import { enterScene } from '@/ui/sceneTransition';
+import { enterScene, transitionTo } from '@/ui/sceneTransition';
 
 /**
  * Wann zuletzt ein vollstaendiger Abgleich begonnen hat.
@@ -749,6 +749,13 @@ export class MenuScene extends Phaser.Scene {
   private handleMenuAction(action: MenuAction): void {
     switch (action) {
       case 'jagd':
+        transitionTo(
+          this,
+          SceneKey.WorldInfo,
+          { worldId: this.selectedWorld.id, mode: 'jagd' satisfies WorldInfoMode },
+          'dive',
+        );
+        break;
       case 'daily':
       case 'info':
         this.scene.start(SceneKey.WorldInfo, {

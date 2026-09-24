@@ -8,6 +8,20 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 - [x] Eigene Spielfeldkulisse mit strukturierten Weltennebeln, drei
   Sternlagen, sanfter Parallaxe und hochaufgeloestem Randplaneten.
 
+### Grafik-Update - Grafikrunde 3 (2026-09-24)
+
+- [x] Start aus dem Menue mit Tauch-Uebergang; der vorhandene Szenenwechsel
+  traegt den Ablauf bis zur Jagd und zum Ergebnis.
+- [x] Prozedurale, statische Weltkonturen fuer Eis, Gas, Raumriss und weitere
+  Welttypen in den aeusseren Spielfeldzonen.
+- [x] Ausgeruestetes Schiff zusaetzlich in der Solo-Ergebnisansicht.
+- [x] Dezente Cockpit-Skala am HUD und facettierter Siegelrand fuer legendaere
+  Fangaeffekte.
+- [ ] Sichtpruefung auf 360/390/402 CSS-Pixeln, echte Mobilgeraete,
+  reduzierte Bewegung und Laufzeit-/Speichermessung.
+
+Details und offene Pruefungen: [Grafik-Update-Plan](GRAFIK_UPDATE_PLAN.md).
+
 ### Grafik-Update - Schiffe (2026-09-24)
 
 - [x] Schiffstexturen in dreifacher Aufloesung mit Kontur, Fase, Licht und Glanz.

@@ -572,6 +572,15 @@ export class HudScene extends Phaser.Scene {
       this.plate.fillStyle(Palette.panel, PLATE_MAX_ALPHA * anteil * anteil);
       this.plate.fillRect(0, oben, GAME_WIDTH, Math.min(stufe, height - oben));
     }
+    // Feine Instrumenten-Skala am unteren Schleier-Rand: Sie fasst Zeit,
+    // Punktestand und Serie als eine Cockpit-Leiste zusammen, ohne Text zu
+    // rahmen oder die Spielflaeche mit einer deckenden Karte zu blockieren.
+    this.plate.lineStyle(1, this.accent, 0.2);
+    this.plate.lineBetween(16, height - 3, GAME_WIDTH - 16, height - 3);
+    for (let x = 24; x < GAME_WIDTH - 20; x += 24) {
+      const tick = x % 96 === 24 ? 5 : 3;
+      this.plate.lineBetween(x, height - 3 - tick, x, height - 3);
+    }
   }
 
   private fit(text: Phaser.GameObjects.Text, width: number): void {

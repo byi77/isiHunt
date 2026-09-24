@@ -1,5 +1,24 @@
 # Art Style Guide — isiHunt
 
+## Grafikrunde 3: Expedition und gezeichnete Welten
+
+Die Folgefassung bewahrt die dunkle Weltraumatmosphäre und ergänzt eine
+zurückhaltende, illustrative Linienzeichnung. Weltkonturen entstehen
+prozedural in Phaser und bleiben in den Randzonen des Spielfelds. Eiswelten
+verwenden offene Kristallkanten, Gas- und Sonnenwelten geschichtete Ströme,
+Raumrisse gebrochene Rahmen und ruhigere Welten topografische Bahnen. Die
+Linien sind Kulisse; Relikte, Hindernisse, Schiff und HUD behalten Vorrang.
+
+Das Cockpit-Gefühl entsteht durch eine feine Skala am HUD-Schleier, nicht
+durch zusätzliche deckende Karten. Seltene Relikte erhalten zusätzliche
+geometrische Facetten. Das Schiff bleibt in jeder Szene an seiner
+ausgerüsteten Form und Farbe erkennbar; die Solo-Ergebnisansicht zeigt es als
+kleines Abzeichen.
+
+Neue Kulissenzeichnung muss einmalig beim Szenenaufbau entstehen, in der
+Spielmitte ruhig bleiben und auf kleinen Displays hinter den Spielelementen
+lesbar sein. Externe Texturen sind dafür nicht erforderlich.
+
 ## Gemeinsame Gestaltungsgrundlage — Phase 5, 20.09.2026
 
 Diese Ebene ist der verbindliche Rahmen vor weiteren Einzelumbauten. Sie
