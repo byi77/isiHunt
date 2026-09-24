@@ -56,6 +56,20 @@ export const RARE_ARRIVAL = {
   ringAlpha: 0.75,
 } as const;
 
+/** Spielrelevanter Vorblitz fuer blaue und hoehere Relikte. */
+export const RARE_SPAWN_WARNING = {
+  leadMs: 420,
+  /** Nahe am Rundenende bleibt wenigstens ein kurzer Fangmoment. */
+  minimumVisibleMs: 120,
+  starInnerPx: 2,
+  starOuterPx: 6,
+  starBurstScale: 1.8,
+  ringRadiusPx: 8,
+  ringBurstScale: 2.6,
+  shardDistancePx: 18,
+  shardRadiusPx: 1.5,
+} as const;
+
 /** Die letzten Sekunden eines Runs: roter Rand im Sekundentakt. */
 export const FINAL_SECONDS = {
   thresholdMs: 10_000,

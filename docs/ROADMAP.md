@@ -5,6 +5,9 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 
 ## Bereits spielbar
 
+- [x] In allen Modi kuendigt ein winziger Stern blaue und hoehere Relikte
+      kurz vor ihrem Erscheinen am tatsaechlichen Spawnort an.
+
 ### Endlosmodus (2026-09-24)
 
 - [x] „Jagd“ und „Endlos“ als eigene Starts im Hauptmenue.

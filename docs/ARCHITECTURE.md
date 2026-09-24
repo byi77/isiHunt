@@ -669,6 +669,13 @@ Beide Regeln stehen als Kommentar in `SpawnSystem.ts`, weil sie beim Lesen des
 Codes wie unnoetiger Aufwand aussehen. Sie sind es nicht — ohne sie ist der
 Modus kaputt, und zwar auf eine Weise, die niemand beim Spielen bemerkt.
 
+Ab blauer Seltenheit haelt `GameScene` einen gezogenen Spawn kurz in einer
+lokalen Warteschlange und zeigt am feststehenden Spawnort den Vorblitz.
+Die Warteschlange rechnet mit Spiel-`delta`, sodass Pausen und simulierte Runs
+den gleichen Ablauf behalten. Der Effekt zieht keine Zufallszahlen; beide
+Duellanten behalten damit denselben Seed-Verlauf. Unfertige Warnungen werden
+beim Rundenende verworfen.
+
 **Geprueft** wurde das durch zwei Durchgaenge desselben Duells ohne Eingabe: 12
 Spawns, identisch in Seltenheit, Position und Spielzeit. Ein automatisierter
 Test dafuer steht weiterhin aus (ROADMAP.md, M2): Die Vitest-Suite deckt den

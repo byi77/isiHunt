@@ -9,6 +9,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Spielgefuehl
+
+- In Jagd, Endlos und Duellen zeigt ein kleiner Stern kurz vorher den
+  Spawnort blauer, epischer und legendaerer Relikte. Die Duell-Spawnfolge
+  bleibt durch den festen, zufallsfreien Vorblitz gleich.
+
 ### Endlosmodus
 
 - Der Punktestand laeuft zwischen 30-Sekunden-Runden weiter. Gates pruefen

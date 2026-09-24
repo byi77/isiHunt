@@ -170,6 +170,11 @@ kumulierten Serienstand je angemeldetem Profil; Jagd und Duelle bleiben getrennt
 
 Die zentrale Achse. Alles andere haengt daran.
 
+In allen Modi kuendigt ein kleiner Stern am geplanten Erscheinungsort blaue
+und hoehere Relikte kurz vorher an. Gruene, weisse und graue Relikte erscheinen
+ohne Vorwarnung. Position und Seltenheit kommen weiterhin aus demselben
+Spawnplan; das Signal gibt aufmerksamen Spielern einen Bewegungsvorsprung.
+
 | Stufe         | Farbe            | Punkte | XP  | Spawn | Lebensdauer | Tempo    | Radius |
 | ------------- | ---------------- | ------ | --- | ----- | ----------- | -------- | ------ |
 | Schlicht      | Grau `#9d9d9d`   | 5      | 2   | 34 %  | 5,2 s       | 30 px/s  | 30     |

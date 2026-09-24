@@ -14,7 +14,7 @@ import {
   ONLINE_DUEL_SCORE_BROADCAST_INTERVAL_MS,
 } from '@/config/onlineDuel';
 import { CHALLENGE_DURATION_MS } from '@/config/challenge';
-import { SCENE_TRANSITION } from '@/config/effectVisuals';
+import { RARE_SPAWN_WARNING, SCENE_TRANSITION } from '@/config/effectVisuals';
 import {
   COMBO_GRACE_MS,
   COUNTDOWN_STEP_MS,
@@ -34,6 +34,7 @@ import {
   WORLD_PENALTY_MS,
 } from '@/config/GameConfig';
 import { XP_GLOBAL_MULTIPLIER } from '@/config/balance';
+import { hasRareSpawnWarning } from '@/config/rarities';
 import type { RarityDef } from '@/config/rarities';
 import { resolveStats, TALENTS } from '@/config/talents';
 import type { PlayerStats } from '@/config/talents';
@@ -71,7 +72,9 @@ import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { agilityForSeries, ScoreSystem, trailTierForSeries } from '@/systems/ScoreSystem';
 import { SpawnSystem } from '@/systems/SpawnSystem';
+import type { SpawnRequest } from '@/systems/SpawnSystem';
 import { CollectionEffects } from '@/ui/CollectionEffects';
+import { playRareSpawnWarning } from '@/ui/effectsFx';
 import { FinalSecondsWarning } from '@/ui/FinalSecondsWarning';
 import { enterScene, fadeOutAlongside, leaveScene } from '@/ui/sceneTransition';
 import { GameBackdrop } from '@/ui/GameBackdrop';
@@ -177,6 +180,11 @@ export class GameScene extends Phaser.Scene {
   private lastComboWindowRatio = 0;
 
   private collectibles: Collectible[] = [];
+  private pendingCollectibles: {
+    request: SpawnRequest;
+    remainingMs: number;
+    clearWarning: () => void;
+  }[] = [];
   private obstacles: Obstacle[] = [];
   private playfield!: Phaser.Geom.Rectangle;
   private playerPosition = new Phaser.Math.Vector2();
@@ -293,6 +301,7 @@ export class GameScene extends Phaser.Scene {
     this.remainingMs = this.totalMs;
     this.phase = 'countdown';
     this.collectibles = [];
+    this.pendingCollectibles = [];
     this.obstacles = [];
 
     this.playfield = new Phaser.Geom.Rectangle(
@@ -487,6 +496,7 @@ export class GameScene extends Phaser.Scene {
 
     this.updatePlayer(dtSec);
     this.updateCombo(delta);
+    this.updatePendingCollectibles(delta);
     this.updateCollectibles(dtSec, delta);
     this.player.updateTalentVisuals(delta, this.collectibles, this.scoring.comboTimerRatio);
     this.updateObstacles(delta);
@@ -572,7 +582,7 @@ export class GameScene extends Phaser.Scene {
     const request = this.spawner.update(
       deltaMs,
       progress,
-      this.collectibles.length + this.obstacles.length,
+      this.collectibles.length + this.pendingCollectibles.length + this.obstacles.length,
       this.player.x,
       this.player.y,
     );
@@ -581,8 +591,49 @@ export class GameScene extends Phaser.Scene {
     if (request.kind === 'obstacle' && request.obstacleMode) {
       this.spawnObstacle(request.x, request.y, request.obstacleMode);
     } else {
+      if (hasRareSpawnWarning(request.rarity.id)) {
+        const leadMs = Math.min(
+          RARE_SPAWN_WARNING.leadMs,
+          Math.max(0, this.remainingMs - deltaMs - RARE_SPAWN_WARNING.minimumVisibleMs),
+        );
+        if (leadMs > deltaMs) {
+          this.pendingCollectibles.push({
+            request,
+            remainingMs: leadMs,
+            clearWarning: playRareSpawnWarning(
+              this,
+              request.x,
+              request.y,
+              request.rarity.color,
+              leadMs,
+            ),
+          });
+          return;
+        }
+      }
       this.spawnCollectible(request.x, request.y, request.rarity, request);
     }
+  }
+
+  private updatePendingCollectibles(deltaMs: number): void {
+    for (let index = this.pendingCollectibles.length - 1; index >= 0; index -= 1) {
+      const pending = this.pendingCollectibles[index]!;
+      pending.remainingMs -= deltaMs;
+      if (pending.remainingMs > 0) continue;
+      pending.clearWarning();
+      this.spawnCollectible(
+        pending.request.x,
+        pending.request.y,
+        pending.request.rarity,
+        pending.request,
+      );
+      this.pendingCollectibles.splice(index, 1);
+    }
+  }
+
+  private clearPendingCollectibles(): void {
+    for (const pending of this.pendingCollectibles) pending.clearWarning();
+    this.pendingCollectibles = [];
   }
 
   private updateTimer(deltaMs: number): void {
@@ -833,6 +884,7 @@ export class GameScene extends Phaser.Scene {
   private endRun(): void {
     if (this.phase === 'ended') return;
     this.phase = 'ended';
+    this.clearPendingCollectibles();
     this.performanceMonitor?.finishRun();
 
     const rawStats = this.scoring.toRunStats(this.world.id);
@@ -1241,6 +1293,7 @@ export class GameScene extends Phaser.Scene {
     this.setLocalActivity('left');
     const onlineRoom = this.challenge?.kind === 'duel-online' ? this.challenge.online : undefined;
     this.phase = 'ended';
+    this.clearPendingCollectibles();
 
     if (this.boostedRun) {
       const abandoned = await CloudSystem.abandonBoostedRun(this.boostedRun.runId);
@@ -1369,6 +1422,7 @@ export class GameScene extends Phaser.Scene {
   private cleanup(): void {
     this.backdrop?.destroy();
     this.collectionEffects?.destroy();
+    this.clearPendingCollectibles();
     if (this.liveBroadcastTimer) {
       this.liveBroadcastTimer.remove();
       this.liveBroadcastTimer = null;

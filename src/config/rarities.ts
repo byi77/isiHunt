@@ -96,6 +96,11 @@ export const RARITY_BY_ID: Readonly<Record<RarityId, RarityDef>> = Object.fromEn
 /** Alle Ids in Anzeigereihenfolge (schlicht -> legendaer). */
 export const RARITY_IDS: readonly RarityId[] = RARITIES.map((r) => r.id);
 
+/** Blau beginnt bei `rare`; Gruen (`uncommon`) bleibt ohne Vorwarnung. */
+export function hasRareSpawnWarning(id: RarityId): boolean {
+  return RARITY_IDS.indexOf(id) >= RARITY_IDS.indexOf('rare');
+}
+
 /** Leerer Zaehler pro Seltenheit - Basis fuer Run- und Gesamtstatistik. */
 export function emptyRarityCounts(): Record<RarityId, number> {
   return Object.fromEntries(RARITY_IDS.map((id) => [id, 0])) as Record<RarityId, number>;
