@@ -238,6 +238,9 @@ export class ThreeDShipPreview {
       const renderer = new THREE.WebGLRenderer({
         canvas: this.canvas,
         alpha: true,
+        // This WebGL canvas sits above Phaser's canvas. Straight alpha avoids
+        // dark rectangular compositing artifacts on mobile browsers.
+        premultipliedAlpha: false,
         antialias: true,
         powerPreference: 'low-power',
       });
@@ -248,6 +251,7 @@ export class ThreeDShipPreview {
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
       renderer.setSize(this.width, this.height, false);
       renderer.setClearColor(0x000000, 0);
+      renderer.setClearAlpha(0);
 
       const scene = new THREE.Scene();
       // Die OBJ-Modelle liegen flach in der X/Z-Ebene. Die Kamera blickt
@@ -627,6 +631,8 @@ export class ThreeDShipPreview {
 
   private render(): void {
     if (this.renderer === null || this.scene === null || this.camera === null) return;
+    this.renderer.setClearAlpha(0);
+    this.renderer.clear(true, true, true);
     this.renderer.render(this.scene, this.camera);
   }
 }

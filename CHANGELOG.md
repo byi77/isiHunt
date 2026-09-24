@@ -9,6 +9,13 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Behoben
+
+- **Dunkles Quadrat um das 3D-Spielerschiff entfernt.** Das transparente
+  WebGL-Overlay nutzt jetzt Straight Alpha und leert den Zeichenpuffer vor
+  jedem Frame explizit transparent. So bleibt der Planet hinter dem Schiff
+  sichtbar.
+
 ### Hinzugefuegt
 
 - **Orbital-Schiffe umfassend nachgearbeitet.** Alle neun OBJ-Draufsichten

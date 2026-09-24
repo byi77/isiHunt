@@ -1026,8 +1026,11 @@ externe 2D-Form, die Prismaflut nutzt sechs CC0-Kenney-Flame-Frames als
 Overlay, und neun CC0-OBJ-Modelle stehen fuer die Shopvorschau bereit. Die
 3D-Modelle werden ueber `threeDAssetForId()` gefunden und von
 `ThreeDShipPreview` lazy geladen. Im Solo-Run liegt die Vorschau als
-transparente DOM-Canvas-Schicht auf der Phaser-Spielerposition; Profil und
-Ergebnis bleiben beim 2D-Pfad. Besitz-IDs, Shopdaten, Save-Sync,
+transparente DOM-Canvas-Schicht auf der Phaser-Spielerposition. Der Renderer
+verwendet Straight Alpha, transparentes Clear-Alpha und leert Farbe, Tiefe und
+Stencil vor jedem Frame, damit die separate WebGL-Schicht keinen dunklen
+Canvas-Rahmen ueber Planeten legt. Profil und Ergebnis bleiben beim 2D-Pfad.
+Besitz-IDs, Shopdaten, Save-Sync,
 Trefferlogik und Progressionsregeln bleiben davon unabhaengig. Fehlt ein
 Asset, WebGL oder die Ladeverbindung, bleibt die prozedurale Zeichnung aktiv;
 bei Reduced Motion wird ein Standbild verwendet.

@@ -740,3 +740,11 @@ Möglicher Einstieg nächste Woche:
 > Lies `docs/GRAFIK_UPDATE_PLAN.md`. Wir wollen das Grafik-Update Punkt für Punkt
 > umsetzen. Lies auch den verlinkten Arbeitsstand mit den Entwürfen und setze
 > beim dokumentierten nächsten Schritt fort; wiederhole keine erledigte Bestandsaufnahme.
+
+### Rendering-Korrektur: 24. September 2026
+
+Das 3D-Schiff im Solo-Spiel wird als transparente WebGL-DOM-Canvas über dem
+Phaser-Spielfeld dargestellt. Straight Alpha und ein explizit transparenter
+Clear vor jedem Frame verhindern, dass die Canvasfläche als dunkles Quadrat
+über dem Planeten erscheint. Die Korrektur ist in
+`src/ui/threeDShipPreview.ts` umgesetzt.
