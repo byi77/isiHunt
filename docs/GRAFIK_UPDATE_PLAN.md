@@ -743,11 +743,9 @@ Möglicher Einstieg nächste Woche:
 
 ### Rendering-Korrektur: 24. September 2026
 
-Die transparente WebGL-DOM-Canvas zeigte im Solo-Spiel weiterhin ein dunkles
-Rechteck über dem Planeten. Clear-Alpha und Straight Alpha reichten nicht aus.
-Die Spielszene verwendet daher wieder die detaillierte, transparente
-2D-Schiffstextur; die interaktive 3D-Vorschau bleibt im Hangar. Der 3D-Overlay-
-Pfad im Spiel ist ausgesetzt, bis seine Komposition browser- und GPU-übergreifend
-zuverlässig funktioniert. Nachdem das Rechteck auch in v0.1.374 noch sichtbar
-war, wurde als verbleibende Quelle der Phaser-preFX-Glow am Schiff identifiziert
-und entfernt; die separate Aura bleibt bestehen.
+Das Quadrat auf dem Screenshot lag im Hauptmenü, nicht in der Jagd: `MenuView`
+legte ein großes, getöntes `TextureKey.Glow` hinter den Planeten. Auf manchen
+Mobilgeräten wurde die quadratische Texturfläche sichtbar. Dieses Sprite ist
+entfernt; Atmosphärenrand und Ring des Planeten bleiben erhalten. Die früheren
+Änderungen am 3D-Spieloverlay und am Rumpf-Glow betrafen andere Screens und
+konnten diesen Menüfehler daher nicht beheben.

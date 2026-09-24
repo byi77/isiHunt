@@ -435,11 +435,6 @@ export class MenuView {
       worldTitleY,
       worldSubtitleY,
     } = this.layout;
-    const glow = this.scene.add
-      .image(GAME_WIDTH / 2, planetY, TextureKey.Glow)
-      .setDisplaySize(planetSize * 1.3, planetSize * 1.3)
-      .setTint(this.world.accent)
-      .setAlpha(0.16);
     const planet = createSpatialPlanet(
       this.scene,
       GAME_WIDTH / 2,
@@ -447,7 +442,10 @@ export class MenuView {
       planetSize,
       this.world.spaceVariant,
     );
-    this.root.add([glow, planet]);
+    // Kein quadratisches Glow-Sprite hinter dem Planeten: Auf manchen
+    // mobilen Renderern bleibt dessen quadratische Texturfläche sichtbar.
+    // Die Atmosphäre und der Rim in `createSpatialPlanet` liefern den Rand.
+    this.root.add(planet);
     this.hero = this.scene.add.container(0, 0);
     this.root.add(this.hero);
     this.halo = this.scene.add

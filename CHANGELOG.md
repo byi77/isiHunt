@@ -11,6 +11,10 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
+- **Quadratische Fläche im Hauptmenü entfernt.** Ursache war das groß
+  skalierte Glow-Sprite hinter dem Planeten in `MenuView`; seine quadratische
+  Texturfläche wurde auf manchen Mobilgeräten sichtbar. Der planetare
+  Atmosphärenrand bleibt bestehen.
 - **Dunkles Quadrat um das Spielerschiff umgangen.** Im Spielfeld nutzt das
   Schiff wieder seine transparente, detaillierte 2D-Textur. Die separate
   Three.js-DOM-Canvas bleibt auf die Hangar-Vorschau beschraenkt, bis die

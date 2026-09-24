@@ -138,6 +138,9 @@ Punkt 3 ergänzt `config/worldVisuals.ts` (rein visuelle Weltprofile),
 `ui/spatialPlanet.ts` (Phaser-Ansicht mit geteilten Ringen und fester Beleuchtung).
 Texturen werden pro Welt wiederverwendet. Bewegung bleibt in der Ansicht;
 Listener werden beim Zerstören der Ansicht entfernt. Weltregeln bleiben in `worlds.ts`.
+`MenuView` legt kein groß skaliertes `TextureKey.Glow` mehr hinter den
+Planeten: Dessen quadratische Spritefläche wurde auf manchen mobilen Renderern
+sichtbar; Atmosphärenrand und planetarer Rim bleiben erhalten.
 Ein Entwicklungsbuild kann mit `?worldPreview=0` bis `9` die Welten im Hauptmenü
 ansehen, ohne sie im Spielstand freizuschalten oder die Weltenauswahl zu speichern.
 Die Menüansicht zeigt dafür ein virtuelles Level 100. Die Option existiert nicht
@@ -1028,10 +1031,9 @@ Overlay, und neun CC0-OBJ-Modelle stehen fuer die Shopvorschau bereit. Die
 `ThreeDShipPreview` lazy geladen. Der Hangar zeigt die interaktive 3D-Vorschau.
 Im Spielfeld bleibt das Schiff auf der transparenten 2D-Textur, weil eine
 separate WebGL-DOM-Canvas auf einigen Browser-/GPU-Kombinationen als dunkles
-Rechteck komponiert wurde. Auch der Phaser-preFX-Glow ist dort deaktiviert:
-Sein Zwischenpuffer verursachte denselben Fehler auf bestimmten mobilen
-WebGL-Treibern; den sichtbaren Schein zeichnet weiterhin das separate
-Aura-Bild. Profil und Ergebnis bleiben ebenfalls beim 2D-Pfad.
+Rechteck komponiert wurde. Auch der Phaser-preFX-Glow auf dem Spielerschiff ist
+deaktiviert; den sichtbaren Schein zeichnet das separate Aura-Bild. Profil und
+Ergebnis bleiben ebenfalls beim 2D-Pfad.
 Besitz-IDs, Shopdaten, Save-Sync,
 Trefferlogik und Progressionsregeln bleiben davon unabhaengig. Fehlt ein
 Asset, WebGL oder die Ladeverbindung, bleibt die prozedurale Zeichnung aktiv;
