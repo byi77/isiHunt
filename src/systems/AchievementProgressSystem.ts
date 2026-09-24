@@ -7,7 +7,7 @@ import type { SaveData } from '@/types';
 export type AchievementCategory =
   'combo' | 'collection' | 'score' | 'worlds' | 'playtime' | 'talents' | 'daily' | 'special';
 
-export type AchievementFilter = 'all' | 'near' | 'unlocked' | AchievementCategory;
+export type AchievementFilter = 'all' | 'near' | 'open' | 'unlocked' | AchievementCategory;
 
 export interface AchievementProgress {
   readonly category: AchievementCategory;
@@ -108,6 +108,7 @@ export function filterAchievements(
   return achievements.filter((achievement) => {
     const unlocked = save.unlockedAchievements.includes(achievement.id);
     if (filter === 'all') return true;
+    if (filter === 'open') return !unlocked;
     if (filter === 'unlocked') return unlocked;
     const progress = getAchievementProgress(achievement, save);
     if (filter === 'near') {

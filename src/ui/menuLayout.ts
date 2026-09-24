@@ -9,14 +9,14 @@ export function calculateMenuLayout(
   const scale = canvasWidth / 720;
   const unit = 1 / scale;
   const margin = compact ? 14 : 22;
-  const gap = 10;
+  const gap = compact ? 6 : 10;
   const headerHeight = compact ? 54 : 76;
   const profileTop = headerHeight + 6;
   const profileHeight = compact ? 48 : 58;
   const rowHeight = compact ? 44 : 48;
   const primaryHeight = compact ? 48 : 56;
-  const installHeight = showInstallHint ? 40 : 0;
-  const bottom = Math.max(24, bottomInset + 12);
+  const installHeight = showInstallHint ? (compact ? 32 : 40) : 0;
+  const bottom = Math.max(compact ? 18 : 24, bottomInset + 12);
   const lastBottom = canvasHeight - bottom - (showInstallHint ? installHeight + gap : 0);
   const settingsY = lastBottom - rowHeight / 2;
   const tertiaryY = settingsY - rowHeight - gap;
@@ -32,10 +32,10 @@ export function calculateMenuLayout(
   // auf kleinen Geraeten umkehrt.
   const planetSize = Math.max(
     18,
-    Math.min(compact ? 118 : 176, canvasWidth * 0.48, heroHeight * 0.7),
+    Math.min(compact ? 118 : 176, canvasWidth * 0.48, heroHeight * (compact ? 0.84 : 0.7)),
   );
   const planetY = worldTop + heroHeight * 0.46;
-  const shipSize = Math.min(compact ? 76 : 108, planetSize * 0.62);
+  const shipSize = Math.min(compact ? 82 : 108, planetSize * 0.62);
   const shipY = Math.min(heroBottom - shipSize * 0.95 - 4, planetY + planetSize * 0.3);
   const innerWidth = canvasWidth - margin * 2;
 

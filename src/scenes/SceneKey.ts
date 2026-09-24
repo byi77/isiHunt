@@ -8,6 +8,8 @@ export const SceneKey = {
   RewardCode: 'RewardCode',
   /** Übersicht der im Spiel freigeschalteten Erfolge. */
   Achievements: 'Achievements',
+  /** Album mit bereits gesammelten Relikten und freigeschalteten Welten. */
+  Collection: 'Collection',
   /** Detailansicht einer Welt: Besonderheit, Hindernisse, Belohnung. */
   WorldInfo: 'WorldInfo',
   Game: 'Game',

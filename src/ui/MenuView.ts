@@ -12,6 +12,7 @@ import { Depth } from '@/ui/depth';
 import { auraAssetForId } from '@/ui/egoAssets';
 import { calculateMenuLayout } from '@/ui/menuLayout';
 import { createSpatialPlanet } from '@/ui/spatialPlanet';
+import { createSceneIcon, type UiIcon } from '@/ui/iconography';
 import type { MenuLayout } from '@/ui/menuLayout';
 import {
   AURA_FRAME_RUHE,
@@ -51,6 +52,7 @@ interface MenuCallbacks {
 export class MenuView {
   private root!: Phaser.GameObjects.Container;
   private hero!: Phaser.GameObjects.Container;
+  private worldPlanet: Phaser.GameObjects.Container | null = null;
   private orbit: ShipOrbit | null = null;
   private ship: Phaser.GameObjects.Image | null = null;
   private halo: Phaser.GameObjects.Image | null = null;
@@ -162,6 +164,7 @@ export class MenuView {
   }
 
   private build(): void {
+    if (this.worldPlanet) this.scene.tweens.killTweensOf(this.worldPlanet);
     this.root?.destroy(true);
     this.ship = this.halo = this.aura = this.engineGlow = null;
     this.orbit = null;
@@ -224,6 +227,7 @@ export class MenuView {
     action: () => void,
     size = 14,
     primary = false,
+    icon?: UiIcon,
   ): ButtonHandle {
     const handle = createButton(this.scene, x, y, label, action, {
       width,
@@ -232,6 +236,18 @@ export class MenuView {
       variant: primary ? 'primary' : 'secondary',
     });
     this.root.add(handle.container);
+    if (icon) {
+      this.root.add(
+        createSceneIcon(
+          this.scene,
+          icon,
+          x - width / 2 + 23 * this.layout.unit,
+          y,
+          19 * this.layout.unit,
+          primary ? Palette.buttonInkHex : Palette.inkDimHex,
+        ),
+      );
+    }
     return handle;
   }
 
@@ -272,7 +288,7 @@ export class MenuView {
     logo.on('pointerdown', () => this.callbacks.onAction('logo'));
     this.root.add(logo);
     const codeX = GAME_WIDTH - margin - codeWidth / 2;
-    this.button(codeX, headerHeight / 2, codeWidth, 40 * unit, 'CODE', () =>
+    this.button(codeX, headerHeight / 2, codeWidth, 44 * unit, 'CODE', () =>
       this.callbacks.onAction('rewardCode'),
     );
     if (hasFullscreen) {
@@ -449,6 +465,7 @@ export class MenuView {
     // mobilen Renderern bleibt dessen quadratische Texturfläche sichtbar.
     // Die Atmosphäre und der Rim in `createSpatialPlanet` liefern den Rand.
     this.root.add(planet);
+    this.worldPlanet = planet;
     this.hero = this.scene.add.container(0, 0);
     this.root.add(this.hero);
     this.halo = this.scene.add
@@ -502,11 +519,20 @@ export class MenuView {
       `${this.world.name}  ⓘ`,
       () => this.callbacks.onAction('info'),
       this.layout.compact ? 20 : 24,
+      false,
+      'world',
     );
+    const worldFeature: Record<WorldDef['modifier'], string> = {
+      none: 'Einstieg',
+      inertia: 'Trägheit',
+      short_lived: 'Schnelle Relikte',
+      blink: 'Blinkende Relikte',
+      rare_bonus: 'Seltene Funde',
+    };
     const subtitle =
       nextWorld && nextWorld.unlockLevel > this.save.level
         ? `Nächste: ${nextWorld.name} · Level ${nextWorld.unlockLevel}`
-        : `Welt ${selectedIndex + 1} / ${WORLDS.length} · Hoch / runter wischen`;
+        : `Welt ${selectedIndex + 1} / ${WORLDS.length} · ${worldFeature[this.world.modifier]} · Wischen`;
     this.label(GAME_WIDTH / 2, worldSubtitleY, subtitle, 12, innerWidth, Palette.inkDim, true);
   }
 
@@ -516,6 +542,15 @@ export class MenuView {
     this.world = world;
     this.callbacks.onWorldSelected(world);
     this.build();
+    if (!prefersReducedMotion() && this.worldPlanet) {
+      this.scene.tweens.add({
+        targets: this.worldPlanet,
+        alpha: { from: 0.55, to: 1 },
+        scale: { from: 0.94, to: 1 },
+        duration: 180,
+        ease: 'Sine.Out',
+      });
+    }
   }
 
   private navigation(): void {
@@ -545,8 +580,19 @@ export class MenuView {
       action('jagd'),
       this.layout.compact ? 17 : 19,
       true,
+      'world',
     );
-    this.button(margin + half / 2, secondaryY, half, rowHeight, 'Tageslauf', action('daily'));
+    this.button(
+      margin + half / 2,
+      secondaryY,
+      half,
+      rowHeight,
+      'Tageslauf',
+      action('daily'),
+      14,
+      false,
+      'time',
+    );
     this.button(
       GAME_WIDTH - margin - half / 2,
       secondaryY,
@@ -573,7 +619,7 @@ export class MenuView {
       'Rangliste',
       action('leaderboard'),
       13,
-    ).setEnabled(this.callbacks.leaderboardAvailable);
+    );
     this.button(
       margin + half / 2,
       settingsY,
@@ -583,7 +629,17 @@ export class MenuView {
       action('settings'),
       13,
     );
-    this.button(GAME_WIDTH - margin - half / 2, settingsY, half, rowHeight, 'Shop', action('shop'));
+    this.button(
+      GAME_WIDTH - margin - half / 2,
+      settingsY,
+      half,
+      rowHeight,
+      'Shop',
+      action('shop'),
+      14,
+      false,
+      'shop',
+    );
     if (installHeight > 0) {
       this.label(
         GAME_WIDTH / 2,

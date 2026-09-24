@@ -69,6 +69,7 @@ Für eine Geräte- oder Backendaufgabe zusätzlich:
 | Browser-Spiel, 90-Sekunden-Run, Touch, Pause, Persistenz | gebaut und ausgeliefert | echte Geräteabnahme der aktuellen Spielinhalte |
 | Profil, Alias-Login, Offline-Outbox, Zusammenführung | implementiert | iPhone-/iPad-End-to-End-Test mit Offline-Runs |
 | Weltraum-Thema, Welten, Hindernisse, Tageslauf, Bot-Duell | implementiert | Balancing mit Emre und Simay |
+| Grafische Modernisierung | implementiert; Browser-Playtest 78/78, `verify` 665 Tests | Geräteprüfung, 2D/3D-Dauertest, vollständige Referenzmatrix und Welt-Partikelrhythmen; siehe [Einbauplan](docs/GRAFIK_MODERNISIERUNG_EINBAUPLAN.md) |
 | Coins, XP, Punkte, Talente, Shop | implementiert; zentrale Balance-Kette aktiv | echte Economy-Messung mit Zielgruppe |
 | Shop | 100 Fluggestalten, Farben und Anprobe vorhanden | Figuren im laufenden Spiel auf Gerät sehen; weitere Kosmetik erst danach |
 | Netzwerk-Duell Phase 1 | 2–4-Spieler-Raum, direkte Einladungen, Talentphase, Startzeit, Live-Stand und Ergebnisvergleich vorhanden | echte Geräteabnahme, 3-/4-Spieler-Lauf und Abbruch-/Reconnect-Matrix |

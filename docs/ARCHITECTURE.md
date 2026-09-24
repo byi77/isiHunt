@@ -22,6 +22,14 @@ Menue-Start verwendet fuer den Wechsel in die Weltinformation den vorhandenen
 `sceneTransition`-Pfad. HUD-Skala und Fang-Siegel werden beim ohnehin
 stattfindenden Layout-/Effektaufbau gezeichnet.
 
+Die grafische Modernisierung ergaenzt in `ui/worldEtching.ts` zehn statische
+Randzeichen. `ui/iconography.ts` enthaelt eine gemeinsame 24er-Vektorgeometrie
+fuer Phaser-Graphics und DOM-SVG im Hangar. `CollectionScene` liest nur die
+vorhandenen Sammelzahlen und freigeschalteten Welten aus dem Spielstand; sie
+erzeugt keinen eigenen Fortschrittszustand. Der Hangar-Fotoexport rastert
+bereits geladene Texturen lokal auf ein 1080er Canvas und startet einen
+PNG-Download ohne Serveraufruf.
+
 Die Orbital-3D-Modelle verwenden `shipN-preview.svg` als gemeinsame 2D-Ansicht
 für Shop, Menü, Spiel und Ergebnis. `playerTextureForShape()` löst die
 `threeDAssetId` auf den eigens geladenen Fallback-Texture-Key auf; `shipDisplayScale()`
@@ -259,6 +267,8 @@ isiHunt/
 │   │   ├── TalentScene.ts      Ehrliche Talentliste mit Rangkauf
 │   │   ├── ShopScene.ts        Laden: Formen, Farben und Auren gegen Muenzen
 │   │   ├── AchievementsScene.ts Erfolgsliste
+│   │   ├── CollectionScene.ts  Visuelles Album aus gespeicherten Reliktzahlen
+│   │   │                       und bereits freigeschalteten Welten
 │   │   ├── GameScene.ts        Die Simulation (Solo und Duell)
 │   │   ├── HudScene.ts         Anzeige waehrend des Runs
 │   │   ├── ChallengeScene.ts   Duell: Einfuehrung, Uebergabe, Ergebnis

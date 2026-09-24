@@ -39,6 +39,8 @@ export interface ResultContent {
   score: string;
   subtitle: string;
   badge?: string;
+  /** Wichtigste bereits verbuchte Belohnung, noch vor den Detailkarten sichtbar. */
+  headlineReward?: string;
   sections: ResultSection[];
   scoreRoll?: ResultScoreRoll;
   /** Das ausgeruestete Schiff verbindet den Ergebnisbildschirm mit dem Run. */
@@ -152,7 +154,7 @@ export class ResultView {
       return label;
     };
     let y = 14 * unit;
-    const heading = addText(this.root, this.content.title, y, 12, Palette.inkDim, true);
+    const heading = addText(this.root, 'ERGEBNIS', y, 12, Palette.inkDim, true);
     y += heading.height + 6 * unit;
     if (this.content.heroShip) {
       const ship = this.scene.add
@@ -177,6 +179,10 @@ export class ResultView {
     if (this.content.badge) {
       const badge = addText(this.root, this.content.badge, y, 14, Palette.gold, true);
       y += badge.height + 5 * unit;
+    }
+    if (this.content.headlineReward) {
+      const reward = addText(this.root, this.content.headlineReward, y, 16, Palette.gold, true);
+      y += reward.height + 6 * unit;
     }
     const subtitle = addText(this.root, this.content.subtitle, y, 12, Palette.inkDim);
     this.top = y + subtitle.height + 12 * unit;

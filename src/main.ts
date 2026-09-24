@@ -32,6 +32,7 @@ import { AdminUsersScene } from '@/scenes/AdminUsersScene';
 import { AdminRewardCodesScene } from '@/scenes/AdminRewardCodesScene';
 import { AccountScene } from '@/scenes/AccountScene';
 import { AchievementsScene } from '@/scenes/AchievementsScene';
+import { CollectionScene } from '@/scenes/CollectionScene';
 import { BootScene } from '@/scenes/BootScene';
 import { ChallengeScene } from '@/scenes/ChallengeScene';
 import { DuelSelectScene } from '@/scenes/DuelSelectScene';
@@ -129,6 +130,7 @@ function createGameConfig(): Phaser.Types.Core.GameConfig {
       ProfileScene,
       RewardCodeScene,
       AchievementsScene,
+      CollectionScene,
       WorldInfoScene,
       GameScene,
       HudScene,

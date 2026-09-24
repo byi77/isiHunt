@@ -9,6 +9,23 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Grafische Modernisierung
+
+- Talentgruppen haben mehr Abstand und sichtbare Pfade; Profil und Ergebnis
+  ordnen Fortschritt und Belohnung klarer. Das kurze Menü zeigt Planet, Schiff
+  und Weltmerkmal mit größeren Touchzielen.
+- Hangar-Kacheln unterscheiden Getragen, Besitz, Anprobe und Gesperrt. Ein
+  lokaler PNG-Export setzt das ausgewählte Schiff vor eine freigeschaltete Welt
+  und kennzeichnet die gewählte Aura. Ausrüsten löst einen kurzen Lichtimpuls aus.
+- Neue Sammlung für Reliktstufen und Welten; Erfolge lassen sich nach Nähe und
+  Status filtern. Rangliste und Duellwahl haben klarere Leer- und Rückwege.
+- Zehn kleine, statische Weltzeichen unterscheiden die Spielfeldränder; die
+  Weltinfo nutzt nun ebenfalls den festen Zurück-Bereich.
+- Ein gemeinsames Monoline-Iconset zeichnet Welt, Zeit, Coins, XP, Rang, Shop,
+  Profil und Zurück in Phaser und im DOM-Hangar aus denselben Formen.
+- Szenen-Screenshots stoppen zuvor aktive Ansichten vor der Aufnahme, damit
+  ein Duellbild keine späteren Ansichten verdeckt.
+
 ### Behoben
 
 - **Quadratische Fläche im Hauptmenü entfernt.** Die Menükugel nutzt jetzt

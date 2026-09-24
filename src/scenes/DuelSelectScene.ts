@@ -3,7 +3,7 @@
 import Phaser from 'phaser';
 
 import { CHALLENGE_BOT_DEFAULT_DIFFICULTY } from '@/config/challenge';
-import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import { GAME_WIDTH } from '@/config/GameConfig';
 import { DEFAULT_WORLD_ID, getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as AuthSystem from '@/systems/AuthSystem';
@@ -12,7 +12,9 @@ import * as CloudSystem from '@/systems/CloudSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
-import { createButton, createPanel, createSceneBackdrop } from '@/ui/widgets';
+import { createSpatialPlanet } from '@/ui/spatialPlanet';
+import { planetTextureForVariant } from '@/ui/textures';
+import { createBackButton, createButton, createPanel, createSceneBackdrop } from '@/ui/widgets';
 
 interface DuelSelectSceneData {
   worldId?: string;
@@ -33,7 +35,7 @@ export class DuelSelectScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         150,
-        'DUELL',
+        'WÄHLE GEGNER',
         textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
       )
       .setOrigin(0.5)
@@ -42,10 +44,21 @@ export class DuelSelectScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         212,
-        `Welt: ${world.name}  |  WÄHLE DEINEN GEGNER`,
+        `Welt: ${world.name}`,
         textStyle(FontSize.small, toCss(world.accent)),
       )
       .setOrigin(0.5);
+
+    createSpatialPlanet(
+      this,
+      GAME_WIDTH / 2,
+      290,
+      120,
+      world.spaceVariant,
+      false,
+      undefined,
+      planetTextureForVariant(world.spaceVariant),
+    );
 
     createPanel(this, GAME_WIDTH / 2, 600, GAME_WIDTH - 100, 500, world.accent, {
       alpha: 0.28,
@@ -84,14 +97,7 @@ export class DuelSelectScene extends Phaser.Scene {
       fontSize: FontSize.large,
     });
 
-    createButton(
-      this,
-      GAME_WIDTH / 2,
-      GAME_HEIGHT - 76,
-      'ZURUECK',
-      () => this.scene.start(SceneKey.Menu),
-      { width: 300, height: 72, accent: 0x9aa3bd, fontSize: FontSize.small },
-    );
+    createBackButton(this, () => this.scene.start(SceneKey.Menu));
   }
 
   private async startBotChallenge(worldId: string): Promise<void> {

@@ -26,7 +26,13 @@ import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import { enterScene, transitionTo } from '@/ui/sceneTransition';
-import { createButton, createMenuLayout, createPanel, createSceneBackdrop } from '@/ui/widgets';
+import {
+  createBackButton,
+  createButton,
+  createMenuLayout,
+  createPanel,
+  createSceneBackdrop,
+} from '@/ui/widgets';
 
 export type WorldInfoMode = 'jagd' | 'duell' | 'tageslauf';
 
@@ -170,21 +176,14 @@ export class WorldInfoScene extends Phaser.Scene {
     createButton(
       this,
       GAME_WIDTH / 2,
-      GAME_HEIGHT - 172,
+      GAME_HEIGHT - 190,
       MODE_TITLES[mode],
       () => void this.startMode(worldId, mode),
-      { width: 460, accent, fontSize: FontSize.large },
+      { width: 460, height: 82, accent, fontSize: FontSize.large },
     );
     if (mode === 'jagd' && AuthSystem.isSignedIn()) void this.offerBoostedRun(worldId);
 
-    createButton(
-      this,
-      GAME_WIDTH / 2,
-      GAME_HEIGHT - 76,
-      '‹  ZURÜCK',
-      () => this.scene.start(SceneKey.Menu),
-      { width: 300, height: 72, accent: 0x9aa3bd, fontSize: FontSize.small },
-    );
+    createBackButton(this, () => this.scene.start(SceneKey.Menu));
   }
 
   /**

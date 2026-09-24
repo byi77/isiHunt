@@ -5,6 +5,18 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 
 ## Bereits spielbar
 
+### Grafische Modernisierung (2026-09-24)
+
+- [x] Talentpfade, entlastetes Profil, klarer Ergebnis-Kopf und kompaktes Menü.
+- [x] Hangar-Zustände direkt an den Kacheln, lokaler PNG-Fotoexport und Sammlungsalbum.
+- [x] Erfolgsfilter, erklärender Ranglisten-Leerzustand und einheitlicher Duell-Rückweg.
+- [x] Gemeinsame Vektor-Icons für Phaser und DOM; individuelle statische Randzeichen für alle zehn Welten.
+- [x] CSS-gemessene Touchflächen und korrigierte Szenen-Screenshots im Playtest.
+- [x] Browser-Playtest ohne Simulation: 78/78 Schritte; `verify` mit 665 Tests und Build grün.
+- [x] Lokales `release:check` mit Smoke-, Produktions-, Performance-, iOS- und SQL-Gate grün.
+- [ ] Echte Geräte, 2D/3D-Dauertest und alle übrigen Abnahmekriterien aus
+      [Einbauplan](GRAFIK_MODERNISIERUNG_EINBAUPLAN.md) prüfen.
+
 - [x] Eigene Spielfeldkulisse mit strukturierten Weltennebeln, drei
       Sternlagen, sanfter Parallaxe und hochaufgeloestem Randplaneten.
 

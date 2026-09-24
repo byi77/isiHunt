@@ -281,16 +281,14 @@ export class LeaderboardScene extends Phaser.Scene {
       if (requestId !== this.requestId || !this.scene.isActive()) return;
 
       if (!result.ok) {
-        this.statusText
-          .setText(`Bestenliste nicht erreichbar.\n${result.error}`)
-          .setColor(Palette.danger);
+        this.showEmpty(`Bestenliste nicht erreichbar.\n${result.error}`, true);
         return;
       }
 
       if (result.value.length === 0) {
-        this.statusText
-          .setText('Noch kein gewertetes Duell.\nSpielt ein Online-Match mit 2 bis 4 Spielern.')
-          .setColor(Palette.inkDim);
+        this.showEmpty(
+          'Noch kein gewertetes Duell.\nSpielt ein Online-Match mit 2 bis 4 Spielern.',
+        );
         return;
       }
 
@@ -306,17 +304,13 @@ export class LeaderboardScene extends Phaser.Scene {
     if (requestId !== this.requestId || !this.scene.isActive()) return;
 
     if (!result.ok) {
-      this.statusText
-        .setText(`Bestenliste nicht erreichbar.\n${result.error}`)
-        .setColor(Palette.danger);
+      this.showEmpty(`Bestenliste nicht erreichbar.\n${result.error}`, true);
       return;
     }
 
     if (result.value.length === 0) {
       const scope = this.filter ? 'dieser Welt' : 'den Welten';
-      this.statusText
-        .setText(`Noch kein Eintrag in ${scope}.\nSpiel einen Run mit Namen und sei dabei.`)
-        .setColor(Palette.inkDim);
+      this.showEmpty(`Noch kein Eintrag in ${scope}.\nSpiel einen Run mit Namen und sei dabei.`);
       return;
     }
 
@@ -379,6 +373,31 @@ export class LeaderboardScene extends Phaser.Scene {
           .setOrigin(1, 0.5),
       );
     });
+  }
+
+  private showEmpty(message: string, error = false): void {
+    this.statusText.setText('');
+    const y = this.listTop + 155;
+    this.listItems.push(
+      createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 110, 280, this.backdropWorld.accent, {
+        alpha: 0.42,
+        radius: 18,
+      }),
+      this.add
+        .image(GAME_WIDTH / 2, y - 58, planetTextureForVariant(this.backdropWorld.spaceVariant))
+        .setDisplaySize(88, 88)
+        .setAlpha(0.82),
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          y + 55,
+          message,
+          textStyle(FontSize.small, error ? Palette.danger : Palette.inkDim),
+        )
+        .setOrigin(0.5)
+        .setAlign('center')
+        .setWordWrapWidth(GAME_WIDTH - 170),
+    );
   }
 
   private renderDuelList(entries: readonly DuelLeaderboardEntry[]): void {

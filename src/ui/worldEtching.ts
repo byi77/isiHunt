@@ -1,4 +1,4 @@
-import type Phaser from 'phaser';
+import Phaser from 'phaser';
 
 /**
  * Ruhige, gezeichnete Weltkonturen fuer die Spielfeldkulisse.
@@ -75,6 +75,89 @@ export function createWorldEtching(
       graphics.lineTo(edgeX + direction * 48, y - 1);
       graphics.strokePath();
     }
+  }
+
+  // Ein kleines, statisches Erkennungszeichen je Welt. Es bleibt am Rand und
+  // kostet waehrend des Runs keine zusaetzliche Zeichnung pro Frame.
+  const markX = edgeX + direction * 35;
+  const markY = baseY - 58;
+  graphics.lineStyle(1.6, accent, 0.26);
+  switch (variant) {
+    case 0: // Sternenweide: drei ruhige Sternkreuze.
+      for (let index = 0; index < 3; index++) {
+        const x = markX + direction * index * 17;
+        const y = markY + (index % 2) * 12;
+        graphics.strokeLineShape(new Phaser.Geom.Line(x - 3, y, x + 3, y));
+        graphics.strokeLineShape(new Phaser.Geom.Line(x, y - 3, x, y + 3));
+      }
+      break;
+    case 1: // Eisring: gebrochene Lichtkante.
+      graphics.strokePoints([
+        { x: markX, y: markY + 22 },
+        { x: markX + direction * 12, y: markY },
+        { x: markX + direction * 23, y: markY + 15 },
+        { x: markX + direction * 32, y: markY - 8 },
+      ]);
+      break;
+    case 2: // Glutnebel: aufsteigende Funken.
+      for (let index = 0; index < 4; index++) {
+        graphics.fillStyle(accent, 0.32);
+        graphics.fillCircle(markX + direction * index * 10, markY + 25 - index * 9, 2);
+      }
+      break;
+    case 3: // Nullsektor: versetzter Riss.
+      graphics.strokePoints([
+        { x: markX, y: markY - 8 },
+        { x: markX + direction * 15, y: markY + 6 },
+        { x: markX + direction * 8, y: markY + 15 },
+        { x: markX + direction * 28, y: markY + 28 },
+      ]);
+      break;
+    case 4: // Sonnenkrone: Strahlenfaecher.
+      for (let index = -1; index <= 1; index++) {
+        graphics.strokeLineShape(
+          new Phaser.Geom.Line(
+            markX,
+            markY + 18,
+            markX + direction * (28 + index * 4),
+            markY + index * 15,
+          ),
+        );
+      }
+      break;
+    case 5: // Mondschmiede: ineinanderliegende Krater.
+      graphics.strokeCircle(markX + direction * 12, markY + 10, 18);
+      graphics.strokeCircle(markX + direction * 17, markY + 5, 7);
+      break;
+    case 6: // Kristallbruch: gegabelte Bruchlinie.
+      graphics.strokePoints([
+        { x: markX, y: markY + 24 },
+        { x: markX + direction * 13, y: markY + 7 },
+        { x: markX + direction * 26, y: markY - 10 },
+      ]);
+      graphics.strokeLineShape(
+        new Phaser.Geom.Line(markX + direction * 13, markY + 7, markX + direction * 29, markY + 18),
+      );
+      break;
+    case 7: // Sturmgrenze: kurzer Zickzack-Blitz.
+      graphics.strokePoints([
+        { x: markX, y: markY - 8 },
+        { x: markX + direction * 17, y: markY + 4 },
+        { x: markX + direction * 8, y: markY + 10 },
+        { x: markX + direction * 30, y: markY + 23 },
+      ]);
+      break;
+    case 8: // Lichtkern: konzentrische Wellen.
+      for (let radius = 10; radius <= 25; radius += 8) {
+        graphics.strokeCircle(markX + direction * 15, markY + 10, radius);
+      }
+      break;
+    case 9: // Horizonttor: zwei offene Boegen.
+      graphics.strokeRoundedRect(left ? markX : markX - 30, markY - 8, 30, 42, 12);
+      graphics.strokeLineShape(
+        new Phaser.Geom.Line(markX + direction * 15, markY, markX + direction * 15, markY + 26),
+      );
+      break;
   }
 
   return graphics;

@@ -7,6 +7,7 @@ import {
   SHIP_COLORS,
   SHIP_SHAPES,
 } from '@/config/shop';
+import { WORLDS, getWorld } from '@/config/worlds';
 import type { SaveData } from '@/types';
 import {
   cosmeticStatusText,
@@ -14,8 +15,9 @@ import {
 } from '@/systems/CosmeticCollectionSystem';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import { auraAssetForId, threeDAssetForId } from './egoAssets';
+import { createDomIcon } from './iconography';
 import { ThreeDShipPreview } from './threeDShipPreview';
-import { playerTextureForShape } from './textures';
+import { planetTextureForVariant, playerTextureForShape } from './textures';
 import { AURA_FRAME_RUHE, applyTintShift, SHIP_ANIMATIONS, stehendesBild } from './shipAnimations';
 import './hangar.css';
 
@@ -80,6 +82,7 @@ export class HangarView {
   private readonly aura = document.createElement('div');
   private readonly hint = document.createElement('p');
   private readonly name = document.createElement('p');
+  private readonly equippedSummary = document.createElement('p');
   private readonly status = document.createElement('p');
   private readonly description = document.createElement('p');
   private readonly balance = document.createElement('span');
@@ -87,6 +90,7 @@ export class HangarView {
   private readonly gallery = document.createElement('div');
   private readonly counter = document.createElement('p');
   private readonly buy = document.createElement('button');
+  private readonly photoWorld = document.createElement('select');
   private readonly tabs = new Map<HangarTab, HTMLButtonElement>();
   private readonly textures = new Map<string, string>();
   /**
@@ -160,6 +164,7 @@ export class HangarView {
     this.stage.append(this.fallback, this.aura);
     previewArea.append(this.stage, this.host);
     this.name.className = 'hangar-name';
+    this.equippedSummary.className = 'hangar-equipped-summary';
     this.status.className = 'hangar-status';
     this.status.setAttribute('aria-live', 'polite');
     this.hint.className = 'hangar-status';
@@ -175,6 +180,24 @@ export class HangarView {
         this.refreshModel();
       }),
     );
+    const photoControls = document.createElement('div');
+    photoControls.className = 'hangar-photo-controls';
+    this.photoWorld.setAttribute('aria-label', 'Hintergrundwelt für Foto wählen');
+    for (const world of WORLDS.filter((entry) => entry.unlockLevel <= this.save.level)) {
+      const option = document.createElement('option');
+      option.value = world.id;
+      option.textContent = world.name;
+      this.photoWorld.append(option);
+    }
+    this.photoWorld.value = getWorld(this.save.lastWorldId).id;
+    const photoButton = this.button('Foto speichern', () => {
+      void this.savePhoto().catch(() => {
+        this.hint.textContent = 'Foto konnte nicht gespeichert werden.';
+      });
+    });
+    photoButton.classList.add('hangar-icon-button');
+    photoButton.prepend(createDomIcon('world'));
+    photoControls.append(this.photoWorld, photoButton);
     const tabs = document.createElement('div');
     tabs.className = 'hangar-tabs';
     for (const [id, label] of [
@@ -232,11 +255,13 @@ export class HangarView {
       tabs,
       this.gallery,
       this.name,
+      this.equippedSummary,
       this.status,
       this.counter,
       this.description,
       this.hint,
       tools,
+      photoControls,
       details,
     );
     const footer = document.createElement('footer');
@@ -244,16 +269,31 @@ export class HangarView {
     this.buy.addEventListener(
       'click',
       () => {
+        const equippedBefore = {
+          shapes: this.save.shipShape,
+          colors: this.save.shipColor,
+          auras: this.save.shipAura,
+        }[this.tab];
         const updated = this.callbacks.act(this.tab, this.selection[this.tab]);
         if (updated) this.save = updated;
         this.refresh();
+        const equippedAfter = {
+          shapes: this.save.shipShape,
+          colors: this.save.shipColor,
+          auras: this.save.shipAura,
+        }[this.tab];
+        if (equippedBefore !== equippedAfter && !prefersReducedMotion()) {
+          previewArea.classList.remove('is-equip-pulse');
+          void previewArea.offsetWidth;
+          previewArea.classList.add('is-equip-pulse');
+        }
       },
       { signal: this.abort.signal },
     );
-    footer.append(
-      this.buy,
-      this.button('Zum Menue', () => this.callbacks.back()),
-    );
+    const backButton = this.button('Zum Menue', () => this.callbacks.back());
+    backButton.classList.add('hangar-icon-button');
+    backButton.prepend(createDomIcon('back'));
+    footer.append(this.buy, backButton);
     this.root.append(content, footer);
     document.body.append(this.root);
     this.observer = new IntersectionObserver(
@@ -385,6 +425,82 @@ export class HangarView {
     return button;
   }
 
+  private async savePhoto(): Promise<void> {
+    const world = getWorld(this.photoWorld.value);
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = 1080;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const background = ctx.createLinearGradient(0, 0, 0, 1080);
+    background.addColorStop(0, `#${world.bgTop.toString(16).padStart(6, '0')}`);
+    background.addColorStop(1, `#${world.bgBottom.toString(16).padStart(6, '0')}`);
+    ctx.fillStyle = background;
+    ctx.fillRect(0, 0, 1080, 1080);
+    ctx.globalAlpha = 0.4;
+    const planet = await this.loadPhotoImage(
+      this.texture(planetTextureForVariant(world.spaceVariant)),
+    );
+    ctx.drawImage(planet, 140, 70, 800, 800);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#ffd479';
+    ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.ellipse(540, 690, 290, 80, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    const aura = getShipAura(this.selection.auras);
+    if (aura.animIndex !== null) {
+      const auraColor = getShipColor(this.selection.colors).color ?? this.accent;
+      ctx.save();
+      ctx.strokeStyle = `#${auraColor.toString(16).padStart(6, '0')}`;
+      ctx.globalAlpha = 0.65;
+      ctx.lineWidth = 8;
+      ctx.shadowColor = ctx.strokeStyle;
+      ctx.shadowBlur = 35;
+      ctx.beginPath();
+      ctx.ellipse(540, 515, 285, 285, 0, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
+    }
+    const ship = await this.loadPhotoImage(
+      this.texture(playerTextureForShape(this.selection.shapes)),
+    );
+    const shipLayer = document.createElement('canvas');
+    shipLayer.width = shipLayer.height = 500;
+    const shipCtx = shipLayer.getContext('2d');
+    if (!shipCtx) return;
+    shipCtx.drawImage(ship, 0, 0, 500, 500);
+    const tint = getShipColor(this.selection.colors).color;
+    if (tint !== null) {
+      shipCtx.globalCompositeOperation = 'multiply';
+      shipCtx.fillStyle = `#${tint.toString(16).padStart(6, '0')}`;
+      shipCtx.fillRect(0, 0, 500, 500);
+      shipCtx.globalCompositeOperation = 'destination-in';
+      shipCtx.drawImage(ship, 0, 0, 500, 500);
+    }
+    ctx.drawImage(shipLayer, 290, 270, 500, 500);
+    ctx.fillStyle = '#f4f1e8';
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 50px Trebuchet MS, sans-serif';
+    ctx.fillText(getShipShape(this.selection.shapes).name, 540, 920);
+    ctx.font = '28px Trebuchet MS, sans-serif';
+    ctx.fillText(`${getShipColor(this.selection.colors).name} · ${aura.name}`, 540, 970);
+    ctx.fillText(world.name, 540, 1010);
+    const link = document.createElement('a');
+    link.download = `isihunt-${this.selection.shapes}-${world.id}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    this.hint.textContent = 'Foto gespeichert · 1080 × 1080';
+  }
+
+  private loadPhotoImage(src: string): Promise<HTMLImageElement> {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('Foto-Bild konnte nicht geladen werden.'));
+      image.src = src;
+    });
+  }
+
   private position(): void {
     const rect = this.scene.game.canvas.getBoundingClientRect();
     const bottom =
@@ -499,8 +615,10 @@ export class HangarView {
         tile.title = item.name;
         const mark = document.createElement('i');
         const caption = document.createElement('span');
+        const state = document.createElement('small');
+        state.className = 'hangar-tile-state';
         caption.textContent = item.name;
-        tile.append(mark, caption);
+        tile.append(mark, caption, state);
         tile.addEventListener('click', () => this.choose(item.id), {
           signal: this.abort.signal,
         });
@@ -555,6 +673,10 @@ export class HangarView {
       // Laden soll zeigen, was es gibt - ein verstecktes Ziel weckt kein
       // Sparen. Die Farben brauchen die Daempfung nicht, sie SIND das Bild.
       tile.classList.toggle('is-locked', !gehoert && this.tab !== 'colors');
+      const state = tile.querySelector('.hangar-tile-state');
+      if (state)
+        state.textContent =
+          id === equipped ? 'Getragen' : id === aktiv ? 'Anprobe' : gehoert ? 'Besitz' : 'Gesperrt';
     }
     // Die Auren-Kacheln tragen die Silhouette des gewaehlten Schiffs - wechselt
     // die Form, muessen sie neu gezeichnet werden.
@@ -565,12 +687,16 @@ export class HangarView {
     const level = 'minLevel' in item ? item.minLevel : 0;
     const isOwned = owned.includes(item.id),
       isEquipped = equipped === item.id;
-    this.balance.textContent = `${this.save.coins.toLocaleString('de-DE')} Coins`;
+    this.balance.replaceChildren(
+      createDomIcon('coins'),
+      document.createTextNode(`${this.save.coins.toLocaleString('de-DE')} Coins`),
+    );
     const trying =
       this.selection.shapes !== this.save.shipShape ||
       this.selection.colors !== this.save.shipColor ||
       this.selection.auras !== this.save.shipAura;
-    this.name.textContent = `${trying ? 'Anprobe' : 'Ausgeruestet'} · ${getShipShape(this.selection.shapes).name} · ${getShipColor(this.selection.colors).name} · ${getShipAura(this.selection.auras).name}`;
+    this.name.textContent = `${trying ? 'Anprobe' : 'Ausgerüstet'} · ${getShipShape(this.selection.shapes).name} · ${getShipColor(this.selection.colors).name} · ${getShipAura(this.selection.auras).name}`;
+    this.equippedSummary.textContent = `Getragen: ${getShipShape(this.save.shipShape).name} · ${getShipColor(this.save.shipColor).name} · ${getShipAura(this.save.shipAura).name}`;
     this.status.textContent = `${item.name}: ${cosmeticStatusText(this.save, this.tab, item.id, isEquipped)}${level > this.save.level ? ` · ab Level ${level}` : ''}`;
     this.description.textContent =
       'description' in item

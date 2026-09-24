@@ -41,6 +41,18 @@
 }
 .isihunt-hangar .hangar-balance {
   color: #ffd479;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.isihunt-hangar .hangar-icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.isihunt-hangar svg {
+  flex: none;
 }
 .isihunt-hangar .hangar-preview {
   position: relative;
@@ -53,6 +65,22 @@
   touch-action: none;
   cursor: grab;
   outline-offset: -3px;
+}
+.isihunt-hangar .hangar-preview.is-equip-pulse {
+  animation: hangar-equip-pulse 420ms ease-out;
+}
+@keyframes hangar-equip-pulse {
+  45% {
+    border-color: #ffd479;
+    box-shadow:
+      inset 0 0 36px #ffd47955,
+      0 0 20px #ffd47966;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .isihunt-hangar .hangar-preview.is-equip-pulse {
+    animation: none;
+  }
 }
 .isihunt-hangar .hangar-stage {
   position: absolute;
@@ -168,7 +196,7 @@
      Nachbarn wahrzunehmen, ohne dass einzelne zu klein zum Treffen werden.
      Die Gesamthoehe bleibt ueber der 44-px-Marke fuer Tippziele. */
   width: 64px;
-  min-height: 78px;
+  min-height: 88px;
   padding: 6px 2px 4px;
   display: grid;
   gap: 3px;
@@ -199,6 +227,11 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.isihunt-hangar .hangar-tile-state {
+  font-size: 9px;
+  line-height: 1;
+  color: #f4f1e8;
+}
 /* Noch nicht gekauft: sichtbar, aber zurueckgenommen. Wer nichts sieht,
    spart auf nichts. */
 .isihunt-hangar .hangar-tile.is-locked {
@@ -227,6 +260,10 @@
   font-weight: bold;
   color: #ffd479;
 }
+.isihunt-hangar .hangar-equipped-summary {
+  color: #b8c0d9;
+  font-size: 12px;
+}
 .isihunt-hangar .hangar-status {
   color: #b8c0d9;
 }
@@ -237,6 +274,12 @@
 .isihunt-hangar .hangar-tools button {
   flex: 1;
   font-size: 12px;
+}
+.isihunt-hangar .hangar-photo-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 8px;
 }
 .isihunt-hangar footer {
   flex: none;

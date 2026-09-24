@@ -1,5 +1,69 @@
 # Art Style Guide — isiHunt
 
+## Grafische Modernisierung: Informationsansichten (24.09.2026)
+
+Ein tatsächlicher Ausrüstwechsel setzt einen kurzen Lichtimpuls an der
+Hangar-Vorschau. Der Weltwechsel blendet den neuen Planeten kurz ein. Bei
+reduzierter Bewegung stehen beide Zustände ohne Animation bereit. Das Album
+zeigt zu jeder Reliktstufe dieselbe Anzahl Rangpunkte wie im Spiel, damit
+Seltenheit auch ohne Farbe lesbar ist.
+
+Welt, Zeit, Coins, XP, Rang, Shop, Profil und Zurück teilen eine selbst
+gezeichnete Monoline-Geometrie in `src/ui/iconography.ts`. Phaser und
+DOM-Hangar zeichnen daraus dieselben Konturen mit zwei Einheiten Strichstärke
+auf einem 24er Raster. Ein Icon ergänzt immer Text oder eine Zahl.
+
+Talentgruppen erhalten einen eigenen Abstand vor der ersten Karte. Karten
+bekommen sichtbare Zwischenräume; Gruppenlinien dürfen weder Karten noch Text
+kreuzen. Im Profil stehen Eingabe, XP-Fortschritt und Speichern als drei
+getrennte Zeilen. Ergebnisse zeigen Punktzahl, Rekord und Belohnungssumme im
+ersten Blick; Detailkarten behalten alle Buchungen und Freischaltungen.
+
+Zustände im Hangar tragen neben einer Farbe eine kurze Bezeichnung: ausgerüstet,
+in Besitz, Anprobe oder gesperrt. Die aktuell betrachtete Optik und die
+ausgerüstete Optik werden separat genannt. Zusätzliche Leuchtflächen dürfen
+den Schiffsrumpf oder seine Binnenzeichnung nicht verdecken.
+
+Die Mindesthöhe von 44 CSS-Pixeln gilt nach der Canvas-Skalierung auch für
+gemeinsame Phaser-Buttons. Logische Spielkoordinaten allein reichen für diese
+Zusage nicht aus.
+
+Die Erfolgsseite trennt alle, offene, fast erreichte und abgeschlossene Ziele
+über beschriftete Filter. Ein Filter ohne Treffer erklärt seinen leeren Zustand.
+Leere Ranglisten zeigen eine ruhige Weltillustration und einen konkreten
+nächsten Schritt in der Inhaltsfläche, statt nur eine Fehlermeldung im Fuß.
+Die Menükopfzeile verwendet einen kurzen Leitspruch, damit die Wortmarke
+und die Hauptaktion visuell führen.
+
+Das Sammlungsalbum zeigt Reliktstufen als sechs große Karten und Welten mit
+ihren vorhandenen Planetenmotiven. Unbekannte Welten erscheinen als gedämpfte
+Silhouette mit Freischaltstufe. Die Ansicht liest nur vorhandene Fortschrittsdaten.
+
+Der Hangar-Fotoexport setzt das ausgewählte Schiff als statisches 2D-Bild vor
+eine wählbare, bereits freigeschaltete Weltkulisse. Der Export enthält keine
+Bedienelemente und keine Profil- oder Kontodaten. Eine 3D-Aufnahme ist nicht
+Voraussetzung, damit der Export auch ohne WebGL funktioniert.
+
+Das kompakte Hauptmenü gibt Planet und Schiff mehr Platz, indem die Abstände
+zwischen den unteren Menüzeilen geringer sind. Ihre Trefferflächen bleiben
+bei mindestens 44 CSS-Pixeln; der iPhone-Installationshinweis bleibt sichtbar.
+
+Im Talentbaum zeigen drei kurze Gruppennamen den Pfad. Feine Verbindungen
+zwischen den Karten machen den Zusammenhang sichtbar, liegen hinter den
+Kartenflächen und kreuzen keine Beschriftung.
+
+Relikte behalten ihren Sammelradius. Ein kleinerer diffuser Schein und eine
+schärfere Kontur lassen ihren Planetenkern im mobilen Spielfeld klarer wirken.
+
+Jede der zehn Welten erhält am äußeren Spielfeldrand ein kleines statisches
+Erkennungszeichen: Sterne, Eisbruch, Glutfunken, Raumriss, Strahlenfächer,
+Krater, Kristallgabel, Sturmblitz, Lichtwellen oder Torbogen. Die Zeichen
+entstehen einmal beim Szenenstart und bleiben außerhalb des Fangbereichs.
+
+Die Profilkarte nennt neben Schiff, Level und Bestwert auch die zuletzt
+gewählte Welt. Sie bezeichnet diese ausdrücklich als letzte Welt, nicht als
+Lieblingswelt; ein solcher Wert wird nicht gespeichert.
+
 ## Schiffs-Modernisierung: technische Lackierung und Metallfacetten
 
 Kaufbare Fluggeraete erhalten neben ihrer individuellen Silhouette ein

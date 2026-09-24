@@ -99,6 +99,7 @@ export function soloResultContent(
   return {
     title: 'RUN BEENDET',
     score: stats.score.toLocaleString('de-DE'),
+    headlineReward: `+${stats.xpGained.toLocaleString('de-DE')} XP · +${progression.coinsGained.toLocaleString('de-DE')} Coins`,
     heroShip: { shapeId: save.shipShape, tint: shipTint(save, getWorld(stats.worldId).accent) },
     badge: progression.isNewBestScore ? 'NEUER BESTWERT' : undefined,
     subtitle: `Level ${level.level} · ${stats.totalCollected} Relikte · beste Kette ${stats.bestCombo} · max x${stats.bestMultiplier}`,

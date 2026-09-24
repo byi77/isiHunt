@@ -26,7 +26,7 @@
 //        dabei schlaeft. Begruendung im Detail bei `simulateUntilDone()`.
 //        Vor einem Release oder Audit den Lauf ohne --sim fahren.
 import { chromium, webkit, devices } from 'playwright';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 
@@ -674,6 +674,7 @@ async function suiteScreens() {
       ['Talents', 'Talentbaum'],
       ['Shop', 'Shop'],
       ['Achievements', 'Erfolge'],
+      ['Collection', 'Sammlung'],
       ['Settings', 'Einstellungen'],
       ['Leaderboard', 'Rangliste'],
       ['DuelSelect', 'Duellauswahl'],
@@ -686,6 +687,7 @@ async function suiteScreens() {
       const started = await page.evaluate((k) => {
         const g = window.isiHunt;
         if (!g?.scene?.getScene(k)) return false;
+        for (const scene of g.scene.getScenes(true)) g.scene.stop(scene.scene.key);
         g.scene.start(k);
         return true;
       }, key);
@@ -704,6 +706,30 @@ async function suiteScreens() {
       }
       await page.waitForTimeout(700);
       await page.screenshot({ path: `${shotDir}/screen-${key.toLowerCase()}.png` });
+
+      if (key === 'Collection') {
+        await page.evaluate(() =>
+          window.isiHunt.scene.getScene('Collection').scene.restart({ tab: 'worlds' }),
+        );
+        await waitForScene(page, 'Collection', 10000);
+        await page.screenshot({ path: `${shotDir}/screen-collection-worlds.png` });
+      }
+      if (key === 'Shop') {
+        const downloadStarted = page.waitForEvent('download', { timeout: 10000 });
+        await page.getByRole('button', { name: 'Foto speichern' }).click();
+        const download = await downloadStarted;
+        record(
+          'Hangar-Fotoexport startet PNG-Download',
+          download.suggestedFilename().endsWith('.png'),
+        );
+        const png = readFileSync(await download.path());
+        record(
+          'Hangar-Fotoexport enthaelt 1080er PNG',
+          png.subarray(1, 4).toString() === 'PNG' &&
+            png.readUInt32BE(16) === 1080 &&
+            png.readUInt32BE(20) === 1080,
+        );
+      }
 
       const fresh = errors.slice(before);
       record(
@@ -1218,11 +1244,9 @@ async function suiteControls() {
   // Spielflaeche ist 720 breit und wird auf die Geraetebreite skaliert, ein
   // 60-px-Knopf misst auf einem 390-px-iPhone also nur ~33 CSS-px.
   //
-  // Apple empfiehlt 44 pt. Dieser Wert wird hier als *Hinweis* gefuehrt und
-  // nicht als Fehler: Der Zurueck-Knopf liegt mit ~33 CSS-px darunter, ist
-  // aber seit v0.1.3 auf dem Geraet ausdruecklich als gut bedienbar
-  // bestaetigt (TODO.md, Phase 1). Ein harter Fehler waere hier eine
-  // erfundene Regel, die die Suite nur rot faerbt.
+  // 44 CSS-px sind das aktuelle Gestaltungsziel. Der historische harte
+  // Fehlerwert bleibt 22 CSS-px, damit aeltere Sondersteuerungen weiterhin
+  // als Warnung statt als unbelegte Regression erscheinen.
   //
   // Hart geprueft wird erst die Haelfte davon - so klein, dass Treffen
   // wirklich zum Gluecksspiel wird.
@@ -1233,7 +1257,7 @@ async function suiteControls() {
     await waitForScene(page, 'Menu');
     await page.waitForTimeout(600);
 
-    const SCENES = ['Menu', 'Profile', 'Talents', 'Shop', 'Achievements', 'Settings'];
+    const SCENES = ['Menu', 'Profile', 'Talents', 'Shop', 'Achievements', 'Collection', 'Settings'];
 
     // Gewechselt wird immer von der gerade offenen Scene aus - siehe
     // switchScene(): der globale Manager wuerde die alte mitlaufen lassen.

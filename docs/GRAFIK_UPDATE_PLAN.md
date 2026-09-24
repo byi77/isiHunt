@@ -1,5 +1,11 @@
 # isiHunt: Grafik-Update und 3D-Effekte
 
+Der konkrete Einbauplan für die anschließende UI-Durchsicht vom 24. September
+steht in [`GRAFIK_MODERNISIERUNG_EINBAUPLAN.md`](GRAFIK_MODERNISIERUNG_EINBAUPLAN.md).
+Er ordnet alle zusätzlichen Layout-, Menü-, Spiel-, Hangar- und Nice-to-have-
+Vorschläge in überprüfbare Arbeitspakete ein. Die abgeschlossenen Grafikpässe
+dieses Dokuments bleiben ihre Ausgangslage.
+
 ## Folgeplan: Grafikrunde 3 — Weltraumexpedition und neue Bildsprache
 
 Stand: 24. September 2026

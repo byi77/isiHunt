@@ -86,11 +86,19 @@ export class TalentScene extends Phaser.Scene {
         textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
       )
       .setOrigin(0.5);
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        walletY + 36,
+        'Bewegung  ·  Sammeln  ·  Ertrag',
+        textStyle(FontSize.tiny, Palette.inkDim),
+      )
+      .setOrigin(0.5);
 
     const rowTop = sections.next(82);
     // Drei Beschreibungszeilen brauchen Platz; die vorhandene Scrollfläche
     // hält die übrigen Talente und die Reset-Aktion erreichbar.
-    const rowStep = 128;
+    const rowStep = 146;
     const content = this.add.container(0, 0);
     const groupOrder: readonly TalentDef['group'][] = ['BEWEGUNG', 'SAMMELN', 'ERTRAG'];
     let nextY = rowTop;
@@ -98,12 +106,21 @@ export class TalentScene extends Phaser.Scene {
       const talents = TALENTS.filter((talent) => talent.group === group);
       if (talents.length === 0) continue;
       this.buildGroupHeader(group, nextY, world.accent, content);
-      nextY += 42;
+      nextY += 82;
+      if (talents.length > 1) {
+        const path = this.add.graphics();
+        path.lineStyle(3, world.accent, 0.35);
+        path.beginPath();
+        path.moveTo(GAME_WIDTH / 2, nextY + 64);
+        path.lineTo(GAME_WIDTH / 2, nextY + (talents.length - 1) * rowStep - 64);
+        path.strokePath();
+        content.add(path);
+      }
       for (const talent of talents) {
         this.buildTalentRow(talent.id, nextY, world.accent, content);
         nextY += rowStep;
       }
-      nextY += 16;
+      nextY += 24;
     }
 
     const resetY = nextY;
@@ -269,7 +286,7 @@ export class TalentScene extends Phaser.Scene {
       .text(58, y, group, textStyle(FontSize.small, toCss(accent), { fontStyle: 'bold' }))
       .setOrigin(0, 0.5)
       .setLetterSpacing(2);
-    const line = this.add.rectangle(232, y, 478, 2, accent, 0.62).setOrigin(0, 0.5);
+    const line = this.add.rectangle(232, y, 418, 2, accent, 0.62).setOrigin(0, 0.5);
     content.add([label, line]);
   }
 

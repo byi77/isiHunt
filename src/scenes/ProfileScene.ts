@@ -83,12 +83,13 @@ export class ProfileScene extends Phaser.Scene {
     // Safe-Area-Kopfzeile. Diese Seite hatte früher eine zweite Überschrift
     // samt Sonderabstand; der zentrale Stapel verhindert das künftig.
     const sections = layout.sections;
-    const profileY = sections.next(620);
+    const profileY = sections.next(700);
     const statisticsY = statsVisible ? sections.next(220) : 0;
+    const collectionY = statsVisible ? sections.next(95) : 0;
     const accountY = !firstStart ? sections.next(300) : 0;
 
     addContent(
-      createPanel(this, GAME_WIDTH / 2, profileY, GAME_WIDTH - 120, 620, world.accent, {
+      createPanel(this, GAME_WIDTH / 2, profileY, GAME_WIDTH - 120, 700, world.accent, {
         alpha: 0.62,
         radius: 20,
       }),
@@ -107,6 +108,17 @@ export class ProfileScene extends Phaser.Scene {
         .image(GAME_WIDTH / 2, profileY - 210, playerTextureForShape(save.shipShape))
         .setTint(shipTint(save, world.accent))
         .setScale(0.82 * shipDisplayScale(playerTextureForShape(save.shipShape))),
+    );
+
+    addContent(
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          profileY - 151,
+          `ZULETZT: ${world.name}`,
+          textStyle(FontSize.tiny, Palette.inkDim),
+        )
+        .setOrigin(0.5),
     );
 
     addContent(
@@ -330,7 +342,7 @@ export class ProfileScene extends Phaser.Scene {
     saveButton = createButton(
       this,
       GAME_WIDTH / 2,
-      profileY + 255,
+      profileY + 300,
       firstStart ? "LOS GEHT'S" : 'SPEICHERN',
       saveProfile,
       { width: 440, accent: world.accent, fontSize: FontSize.large },
@@ -352,7 +364,7 @@ export class ProfileScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          profileY + 205,
+          profileY + 230,
           levelProgress.xpNeeded === 0
             ? `Level ${levelProgress.level}  ·  MAX LEVEL`
             : `Level ${levelProgress.level}  ·  ${levelProgress.xpInLevel} / ${levelProgress.xpNeeded} XP`,
@@ -409,6 +421,19 @@ export class ProfileScene extends Phaser.Scene {
             .setOrigin(0, 0.5),
         );
       });
+    }
+
+    if (statsVisible) {
+      addContent(
+        createButton(
+          this,
+          GAME_WIDTH / 2,
+          collectionY,
+          'SAMMLUNG ANSEHEN',
+          () => this.scene.start(SceneKey.Collection),
+          { width: GAME_WIDTH - 120, height: 80, accent: world.accent, fontSize: FontSize.small },
+        ).container,
+      );
     }
 
     if (!firstStart) this.buildAccountSection(world.accent, accountY, addContent);

@@ -83,8 +83,8 @@ export class Collectible extends Phaser.GameObjects.Container {
     this.glow = scene.add
       .image(0, 0, TextureKey.Glow)
       .setTint(rarity.color)
-      .setScale(effectScale * 1.25)
-      .setAlpha(0.65)
+      .setScale(effectScale * 0.85)
+      .setAlpha(0.52)
       .setBlendMode(Phaser.BlendModes.ADD);
 
     // Strahlenkranz nur ab "selten": Bekaeme ihn jedes Relikt, wuerde er
@@ -114,7 +114,7 @@ export class Collectible extends Phaser.GameObjects.Container {
       .image(0, 0, TextureKey.RelicLight)
       .setDisplaySize(this.radius * 2, this.radius * 2);
     const contour = scene.add.graphics();
-    contour.lineStyle(2, rarity.color, 0.95);
+    contour.lineStyle(2.5, rarity.color, 0.95);
     contour.strokeCircle(0, 0, this.radius + 1.5);
     contour.lineStyle(1.5, 0xf0f7ff, 0.72);
     contour.beginPath();

@@ -8,9 +8,11 @@ import { getWorld } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import {
   achievementCategoryLabel,
+  filterAchievements,
   getNextAchievement,
   getAchievementProgress,
 } from '@/systems/AchievementProgressSystem';
+import type { AchievementFilter } from '@/systems/AchievementProgressSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { createAchievementBadge } from '@/ui/achievementBadge';
@@ -28,7 +30,7 @@ export class AchievementsScene extends Phaser.Scene {
     super(SceneKey.Achievements);
   }
 
-  create(data: { page?: number } = {}): void {
+  create(data: { page?: number; filter?: AchievementFilter } = {}): void {
     SafeAreaSystem.showStatic('ERFOLGE');
     const save = SaveSystem.load();
     const world = getWorld(save.lastWorldId);
@@ -49,17 +51,54 @@ export class AchievementsScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
 
-    const pageSize = 10;
-    const pageCount = Math.ceil(ACHIEVEMENTS.length / pageSize);
+    const filter = data.filter ?? 'all';
+    const filtered = filterAchievements(ACHIEVEMENTS, save, filter);
+    const filterY = sections.next(90);
+    const filterTabs: readonly { id: AchievementFilter; label: string }[] = [
+      { id: 'all', label: 'Alle' },
+      { id: 'near', label: 'Bald' },
+      { id: 'open', label: 'Offen' },
+      { id: 'unlocked', label: 'Erreicht' },
+    ];
+    filterTabs.forEach(({ id, label }, index) => {
+      createButton(
+        this,
+        105 + index * 170,
+        filterY,
+        label,
+        () => this.scene.restart({ filter: id, page: 0 }),
+        {
+          width: 140,
+          height: 80,
+          fontSize: FontSize.tiny,
+          variant: id === filter ? 'primary' : 'secondary',
+        },
+      );
+    });
+    const pageSize = 8;
+    const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
     const page = Math.min(pageCount - 1, Math.max(0, data.page ?? 0));
-    const pageAchievements = ACHIEVEMENTS.slice(page * pageSize, (page + 1) * pageSize);
+    const pageAchievements = filtered.slice(page * pageSize, (page + 1) * pageSize);
     const nextAchievement = getNextAchievement(ACHIEVEMENTS, save);
     const columnX = [190, 530] as const;
     const rowTop = sections.next(112);
     const rowStep = 195;
+    if (pageAchievements.length === 0) {
+      this.add
+        .text(
+          GAME_WIDTH / 2,
+          rowTop + 180,
+          filter === 'near'
+            ? 'Noch kein Erfolg kurz vor dem Ziel.\nSpiele weiter und schau später wieder vorbei.'
+            : 'Hier gibt es derzeit keine Erfolge.',
+          textStyle(FontSize.small, Palette.inkDim),
+        )
+        .setOrigin(0.5)
+        .setAlign('center');
+    }
     pageAchievements.forEach((achievement, index) => {
-      const column = index < 5 ? 0 : 1;
-      const row = column === 0 ? index : index - 5;
+      const column = index < 4 ? 0 : 1;
+      const row = column === 0 ? index : index - 4;
       const isUnlocked = save.unlockedAchievements.includes(achievement.id);
       const accent = isUnlocked ? Palette.goldHex : 0x69738d;
       const x = columnX[column];
@@ -181,7 +220,7 @@ export class AchievementsScene extends Phaser.Scene {
       GAME_WIDTH / 2 - 145,
       GAME_HEIGHT - 190,
       '‹',
-      () => this.scene.restart({ page: page - 1 }),
+      () => this.scene.restart({ page: page - 1, filter }),
       { width: 76, height: 64, accent: world.accent, fontSize: FontSize.heading },
     );
     previous.setEnabled(page > 0);
@@ -191,7 +230,7 @@ export class AchievementsScene extends Phaser.Scene {
       GAME_WIDTH / 2 + 145,
       GAME_HEIGHT - 190,
       '›',
-      () => this.scene.restart({ page: page + 1 }),
+      () => this.scene.restart({ page: page + 1, filter }),
       { width: 76, height: 64, accent: world.accent, fontSize: FontSize.heading },
     );
     next.setEnabled(page < pageCount - 1);

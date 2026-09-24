@@ -24,6 +24,7 @@ import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import * as SoundSystem from '@/systems/SoundSystem';
 import { ensureTouchTarget, prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import { createSpatialPlanet } from '@/ui/spatialPlanet';
+import { createSceneIcon } from '@/ui/iconography';
 
 export interface ButtonHandle {
   container: Phaser.GameObjects.Container;
@@ -127,7 +128,12 @@ export function createButton(
     variant?: 'primary' | 'secondary';
   } = {},
 ): ButtonHandle {
-  const target = ensureTouchTarget(options.width ?? 380, options.height ?? 92);
+  const canvasWidth = scene.game.canvas.getBoundingClientRect().width || GAME_WIDTH;
+  const minLogicalSize = (44 * GAME_WIDTH) / canvasWidth;
+  const target = ensureTouchTarget(
+    Math.max(options.width ?? 380, minLogicalSize),
+    Math.max(options.height ?? 92, minLogicalSize),
+  );
   const width = target.width;
   const height = target.height;
   const accent = options.accent ?? Palette.goldHex;
@@ -337,7 +343,7 @@ export function createBackButton(
     scene,
     BACK_BUTTON_X,
     GAME_HEIGHT - BACK_BUTTON_BOTTOM_OFFSET,
-    options.label ?? '‹  ZURÜCK',
+    options.label ?? 'ZURÜCK',
     onClick,
     {
       width: 196,
@@ -347,6 +353,16 @@ export function createBackButton(
     },
   );
   button.container.setScrollFactor(0).setDepth(Depth.Overlay + 1);
+  createSceneIcon(
+    scene,
+    'back',
+    BACK_BUTTON_X - 68,
+    GAME_HEIGHT - BACK_BUTTON_BOTTOM_OFFSET,
+    24,
+    Palette.inkDimHex,
+  )
+    .setScrollFactor(0)
+    .setDepth(Depth.Overlay + 2);
   return button;
 }
 

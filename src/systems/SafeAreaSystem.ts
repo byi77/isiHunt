@@ -57,7 +57,7 @@ function showNextTickerItem(): void {
 export function showMenuTicker(): void {
   stopTicker();
   tickerItems = [
-    'JAGE DAS LICHT  ·  SAMMLE PLANETEN',
+    'JAGE DAS LICHT',
     'KETTEN BRINGEN MEHR PUNKTE',
     'NEUE WELTEN WARTEN AUF DICH',
     'SCHAFFE DEINEN BESTWERT',
