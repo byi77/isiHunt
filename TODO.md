@@ -76,7 +76,7 @@ Für eine Geräte- oder Backendaufgabe zusätzlich:
 | Netzwerk-Duell Phase 1 | 2–4-Spieler-Raum, direkte Einladungen, Talentphase, Startzeit, Live-Stand und Ergebnisvergleich vorhanden | echte Geräteabnahme, 3-/4-Spieler-Lauf und Abbruch-/Reconnect-Matrix |
 | Bestenliste | gemeinsame Casual-Liste und automatischer Eintrag vorhanden | Fairness bei Weltmodifikatoren; Ranked bleibt gesperrt |
 | Debugging und Release | Debug-Report, Versionsanzeige, `verify`, Pre-Push und GitHub-Pages-Deploy vorhanden | Gerätebelege konsequent als Release-Gate verwenden |
-| Supabase-Migrationsstand | verknüpftes Projekt am 2026-09-24 auf `schema_version = 67` geprüft | Endlos-RPC im echten Kontolauf testen |
+| Supabase-Migrationsstand | verknüpftes Projekt am 2026-09-24 auf `schema_version = 68` geprüft | Endlos-RPC im echten Kontolauf testen |
 | Native App / Dynamic Island | bewusst noch nicht begonnen | erst nach stabiler Web-Basis und P3-Gate |
 
 ### Neue verbindliche Ausführungsreihenfolge
@@ -85,8 +85,8 @@ Die IDs bleiben stabil, damit Verweise und Git-Historie lesbar bleiben. Die
 folgende Reihenfolge ist die aktuelle Priorisierung; erledigte Punkte werden
 nicht erneut als Arbeit eingeplant:
 
-1. **P0-01a erledigt:** Die Migrationskette wurde bis Phase 2.67 eingespielt;
-   Marker, Endlos-Spalten und RPC-Signatur sind live geprüft.
+1. **P0-01a erledigt:** Die Migrationskette wurde bis Phase 2.68 eingespielt;
+   Marker, Endlos-Spalten und beide RPC-Signaturen sind live geprüft.
 2. **P0-02:** den tatsächlich ausgelieferten `version.json`-Stand auf iPhone
    und iPad mit Profil, Offline-Runs, Boost und Zusammenführung prüfen.
 3. **P0-03:** Netzwerk-Duell auf echten Geräten mit vollständigem Host- und
@@ -252,8 +252,8 @@ ausgeführt; Details stehen in `docs/AUDIT_2026-08-30.md`.
 - [x] **Die seit dem Live-Nachweis hinzugekommenen Phasen ausführen.**
 
 **Aktueller Nachweis 2026-09-24:** Das verknüpfte Projekt meldet
-`schema_version = 67`. `submit_endless_round` ist für `authenticated`
-ausführbar; die drei `endless_*`-Spalten sind vorhanden. Die folgende
+`schema_version = 68`. `submit_endless_round` ist für `authenticated`
+ausführbar; `get_endless_leaderboard` ist lesbar und die drei `endless_*`-Spalten sind vorhanden. Die folgende
 Beschreibung dokumentiert den damaligen Stand nach Phase 2.42.
 
 Der Live-Nachweis oben deckt Stand `schema_version = 42` ab. Seither sind acht

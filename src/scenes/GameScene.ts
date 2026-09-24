@@ -42,7 +42,7 @@ import {
   ENDLESS_DOUBLE_TALENT_EVERY,
   ENDLESS_ROUND_MS,
   ENDLESS_TALENT_CHOICES,
-  endlessGate,
+  endlessTotalGate,
   endlessRewards,
   endlessTalentChoices,
   endlessWorld,
@@ -382,7 +382,8 @@ export class GameScene extends Phaser.Scene {
       mode: this.mode,
       durationMs: this.totalMs,
       endlessRound: this.endlessState?.round,
-      endlessGate: this.endlessState ? endlessGate(this.endlessState.round) : undefined,
+      endlessGate: this.endlessState ? endlessTotalGate(this.endlessState.round) : undefined,
+      endlessScoreOffset: this.endlessState?.totalScore,
       playerLabel: isChallengeMode ? ChallengeSystem.playerLabel(this.playerIndex) : null,
       scoreToBeat: isChallengeMode ? ChallengeSystem.scoreToBeat() : null,
       talentLines: usesTalents ? activeTalentLines(this.stats) : [],
@@ -695,7 +696,9 @@ export class GameScene extends Phaser.Scene {
       y: orb.y,
     });
 
-    eventBus.emitEvent(GameEvent.ScoreChanged, { score: this.scoring.currentScore });
+    eventBus.emitEvent(GameEvent.ScoreChanged, {
+      score: (this.endlessState?.totalScore ?? 0) + this.scoring.currentScore,
+    });
     const agility = agilityForSeries(outcome.combo);
     this.player.setSeriesAgility(agility);
     eventBus.emitEvent(GameEvent.ComboChanged, {
@@ -970,7 +973,7 @@ export class GameScene extends Phaser.Scene {
 
   private endEndlessRound(rawStats: RunStats): void {
     const state = this.endlessState!;
-    const passed = rawStats.score >= endlessGate(state.round);
+    const passed = state.totalScore + rawStats.score >= endlessTotalGate(state.round);
     const stats: RunStats = {
       ...rawStats,
       endlessRound: state.round,
@@ -1044,7 +1047,7 @@ export class GameScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         GAME_HEIGHT / 2 - 120,
-        `Gesamt: ${state.totalScore.toLocaleString('de-DE')} Punkte\n+${this.endlessLastStats!.xpGained.toLocaleString('de-DE')} XP · +${this.endlessLastProgression!.coinsGained} Coins\nNaechste Welt: ${endlessWorld(state.round + 1).name}\nNaechstes Ziel: ${endlessGate(state.round + 1).toLocaleString('de-DE')}`,
+        `Gesamt: ${state.totalScore.toLocaleString('de-DE')} Punkte\n+${this.endlessLastStats!.xpGained.toLocaleString('de-DE')} XP · +${this.endlessLastProgression!.coinsGained} Coins\nNaechste Welt: ${endlessWorld(state.round + 1).name}\nNaechstes Ziel: ${endlessTotalGate(state.round + 1).toLocaleString('de-DE')}`,
         textStyle(FontSize.small, Palette.ink, { align: 'center' }),
       )
       .setOrigin(0.5)
@@ -1089,7 +1092,7 @@ export class GameScene extends Phaser.Scene {
         return;
       }
       detail.setText(
-        `+${this.endlessLastStats!.xpGained.toLocaleString('de-DE')} XP · +${this.endlessLastProgression!.coinsGained} Coins\nGesamt: ${state.totalScore.toLocaleString('de-DE')} Punkte\n${endlessWorld(state.round + 1).name}: ${endlessGate(state.round + 1).toLocaleString('de-DE')} Punkte\nTalent waehlen (${remaining} frei)`,
+        `+${this.endlessLastStats!.xpGained.toLocaleString('de-DE')} XP · +${this.endlessLastProgression!.coinsGained} Coins\nGesamt: ${state.totalScore.toLocaleString('de-DE')} Punkte\n${endlessWorld(state.round + 1).name}: ${endlessTotalGate(state.round + 1).toLocaleString('de-DE')} Punkte\nTalent waehlen (${remaining} frei)`,
       );
       const options = Phaser.Utils.Array.Shuffle([...available]).slice(0, ENDLESS_TALENT_CHOICES);
       options.forEach((id, index) => {
@@ -1114,7 +1117,7 @@ export class GameScene extends Phaser.Scene {
     const exit = createButton(
       this,
       GAME_WIDTH / 2,
-      GAME_HEIGHT / 2 + 210,
+      GAME_HEIGHT - 84,
       'SERIE BEENDEN',
       () => {
         clearChoices();

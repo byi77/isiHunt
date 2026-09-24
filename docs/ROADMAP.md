@@ -13,6 +13,12 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 - [x] Jede abgeschlossene Runde wird lokal und ueber den Endlos-RPC verbucht;
       Supabase-Phase 2.67 ist auf dem verknuepften Projekt eingespielt und
       mit `schema_version = 67` sowie RPC-Signatur geprueft.
+- [x] Der Serienstand bleibt zwischen Runden sichtbar; Ueberschuesse gelten
+      fuer weitere Gates. Endlos hat einen eigenen Ranglisten-Tab und einen
+      deutlich abgesetzten Ausstieg am unteren Bildschirmrand. Phase 2.68
+      stellt die Wertung aus geprueften Rundenbelegen bereit.
+- [x] Supabase-Phase 2.68 wurde am 2026-09-24 live eingespielt; Marker und
+      Ranglisten-RPC wurden geprueft.
 - [ ] Gate-Erfolgsquoten, Economy und laengere Serien mit echten Spielern und
       Mobilgeraeten pruefen. Werte und Testmatrix: [Einbauplan](ENDLOS_EINBAUPLAN.md).
 

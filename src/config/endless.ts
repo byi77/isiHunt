@@ -42,6 +42,14 @@ export function endlessGate(round: number): number {
   );
 }
 
+/** Gesamtstand, der am Ende dieser Runde mindestens erreicht sein muss. */
+export function endlessTotalGate(round: number): number {
+  const lastRound = Math.max(1, Math.floor(round));
+  let total = 0;
+  for (let current = 1; current <= lastRound; current += 1) total += endlessGate(current);
+  return total;
+}
+
 export function endlessWorld(round: number) {
   return WORLDS[Math.min(WORLDS.length - 1, Math.floor((Math.max(1, round) - 1) / 2))]!;
 }

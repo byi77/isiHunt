@@ -4,6 +4,7 @@ import { coinsForRun } from '@/systems/ProgressionSystem';
 import {
   ENDLESS_ROUND_MS,
   endlessGate,
+  endlessTotalGate,
   endlessRewards,
   endlessTalentChoices,
   endlessWorld,
@@ -16,6 +17,9 @@ describe('Endlosmodus', () => {
       500, 700, 900, 1_100, 1_300, 1_600, 2_500,
     ]);
     expect(endlessGate(50)).toBeGreaterThan(endlessGate(20));
+    expect([1, 2, 3, 4, 5, 6].map(endlessTotalGate)).toEqual([
+      500, 1_200, 2_100, 3_200, 4_500, 6_100,
+    ]);
   });
 
   it('wechselt alle zwei Runden die Welt und steigert die Belohnung', () => {

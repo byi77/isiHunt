@@ -11,6 +11,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Endlosmodus
 
+- Der Punktestand laeuft zwischen 30-Sekunden-Runden weiter. Gates pruefen
+  den Gesamtstand, sodass fruehe Ueberschuesse in die naechste Runde mitgehen.
+  „Serie beenden“ steht am unteren Bildschirmrand, getrennt von der Talentwahl.
+- Die Rangliste hat einen eigenen Endlos-Tab fuer den besten Gesamtstand je
+  Spieler. Phase 2.68 prueft kumulierte Checkpoints und stellt die Wertung
+  aus serverseitig akzeptierten Runden bereit.
 - „Jagd“ und „Endlos“ stehen im Hauptmenue nebeneinander. Endlos bietet
   30-Sekunden-Runden mit steigenden Gates, Weltwechsel und kostenlosen
   temporaeren Talenten nach Checkpoints. Erreichte und verfehlte Runden

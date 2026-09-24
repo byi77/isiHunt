@@ -104,6 +104,7 @@ export interface HudSceneData {
   mode?: RunMode;
   endlessRound?: number;
   endlessGate?: number;
+  endlessScoreOffset?: number;
   /** Im Duell: wer gerade spielt. Sonst null. */
   playerLabel?: string | null;
   /** Im Duell ab Durchgang zwei: die Vorlage des Gegners. Sonst null. */
@@ -174,6 +175,7 @@ export class HudScene extends Phaser.Scene {
   private scoreToBeat: number | null = null;
   private hasOvertaken = false;
   private mode: RunMode = 'solo';
+  private endlessScoreOffset = 0;
   private lastComboMultiplier = 1;
   /** Zuletzt angezeigte Beweglichkeitsstufe in Prozent. */
   private lastAgilityPercent = 0;
@@ -196,6 +198,7 @@ export class HudScene extends Phaser.Scene {
     this.scoreToBeat = data.scoreToBeat ?? null;
     this.hasOvertaken = false;
     this.mode = data.mode ?? 'solo';
+    this.endlessScoreOffset = data.endlessScoreOffset ?? 0;
     this.talentLines = data.talentLines ?? [];
     this.opponentLabels = data.opponentLabels ? [...data.opponentLabels] : [];
     this.localPlayerIndex = Number.isInteger(data.localPlayerIndex) ? data.localPlayerIndex! : 0;
@@ -235,7 +238,12 @@ export class HudScene extends Phaser.Scene {
     this.worldText.setLetterSpacing(1);
 
     this.scoreText = this.add
-      .text(GAME_WIDTH / 2, 62, '0', textStyle(FontSize.title, Palette.ink, { fontStyle: 'bold' }))
+      .text(
+        GAME_WIDTH / 2,
+        62,
+        this.endlessScoreOffset.toLocaleString('de-DE'),
+        textStyle(FontSize.title, Palette.ink, { fontStyle: 'bold' }),
+      )
       .setOrigin(0.5, 0);
 
     // Serie und Multiplikator stehen seit 2026-09-19 in EINER Zeile.

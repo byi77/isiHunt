@@ -144,11 +144,12 @@ das lokale Bot-Duell bleibt der direkte Einzelgeraet-Weg.
 ### 4.2 Endlos
 
 Im Hauptmenue stehen **Jagd** und **Endlos** nebeneinander. Eine Endlos-Serie
-beginnt immer in der Sternenweide. Jede Runde dauert 30 Sekunden und hat ein
-eigenes Punkteziel. Der Rundenscore startet bei null; die Gesamtpunkte werden
-fuer das Ergebnis addiert. Die ersten vier Gates liegen bei 500, 700, 900 und
-1.100 Punkten. Runde 5 verlangt 1.300 Punkte, danach steigt das Ziel um 300
-Punkte je Runde. Diese Startwerte sind noch nicht mit echten Spielern
+beginnt immer in der Sternenweide. Jede Runde dauert 30 Sekunden. Der sichtbare
+Punktestand laeuft ueber die ganze Serie weiter; Ueberschuesse helfen beim
+naechsten Gate. Die ersten vier Runden erhoehen das Gesamtziel um 500, 700,
+900 und 1.100 Punkte (Gates 500, 1.200, 2.100, 3.200). Runde 5 erhoeht es
+um 1.300 Punkte, danach steigt der Rundenzuwachs um 300 Punkte je Runde.
+Diese Startwerte sind noch nicht mit echten Spielern
 ausbalanciert; der [Einbauplan](ENDLOS_EINBAUPLAN.md) nennt die offenen Messungen.
 
 Nach jedem erreichten Gate waehlt der Spieler kostenlos einen temporaeren
@@ -162,8 +163,8 @@ Pro Runde nach der ersten steigen die Fangpunkte um 2 %, die Fang-XP um 4 %
 und die Coin-Praemie um 2. Der Basis-Coinanteil wird von 90 auf 30 Sekunden
 skaliert; Welt-, Seltenheits- und Sammelboni bleiben erhalten. Auch eine Runde
 mit verfehltem Gate wird verbucht, bevor die Serie endet. Bereits verdiente
-Belohnungen gehen nicht verloren. Endlos-Runden laufen nicht in die normale
-Casual-Bestenliste.
+Belohnungen gehen nicht verloren. Die Endlos-Rangliste zeigt den besten
+kumulierten Serienstand je angemeldetem Profil; Jagd und Duelle bleiben getrennt.
 
 ## 5. Seltenheitsstufen
 

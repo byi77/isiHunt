@@ -410,7 +410,7 @@ requireText(verification, 'daily_key', 'Live-Verifikation Tagesbonus');
 requireText(verification, 'upsert_save', 'Live-Verifikation Save-CAS');
 requireText(verification, 'duel_rooms', 'Live-Verifikation Duell');
 requireText(migrationVerification, 'schema_version', 'Live-Verifikation Migrationsmarker');
-requireText(migrationVerification, 'schema_version = 67', 'Live-Verifikation Phase 2.67');
+requireText(migrationVerification, 'schema_version = 68', 'Live-Verifikation Phase 2.68');
 requireText(rewardCodeCoreMigration, 'reward_codes', 'Reward-Code-Katalog');
 requireText(rewardCodeCoreMigration, 'reward_redemptions', 'Reward-Einloesbelege');
 requireText(rewardCodeCoreMigration, 'reward_code_attempts', 'Reward-Rate-Limits');
@@ -462,6 +462,13 @@ requireText(endlessMigration, 'submit_endless_round', 'Endlos-Runden-RPC');
 requireText(endlessMigration, 'safe_duration_ms <> 30000', 'Endlos-Rundendauer');
 requireText(endlessMigration, 'total_talent_ranks > p_round - 1', 'Endlos-Talentgrenze');
 requireText(endlessMigration, 'schema_version = 67', 'Migrationsmarker Phase 2.67');
+const endlessLeaderboardMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_68_endless_leaderboard.sql'),
+  'utf8',
+);
+requireText(endlessLeaderboardMigration, 'get_endless_leaderboard', 'Endlos-Ranglisten-RPC');
+requireText(endlessLeaderboardMigration, 'sum(score)', 'Kumulierter Endlos-Checkpoint');
+requireText(endlessLeaderboardMigration, 'schema_version = 68', 'Migrationsmarker Phase 2.68');
 const rewardCodePresetMigration = readFileSync(
   resolve(sqlDir, 'phase_2_63_reward_code_preset_grants.sql'),
   'utf8',

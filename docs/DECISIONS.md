@@ -1633,6 +1633,12 @@ Baum bleibt unberuehrt. Der eigene RPC `submit_endless_round` rechnet XP und
 Coins serverseitig nach. Endlos-Runden bleiben ausserhalb der normalen
 Casual-Bestenliste.
 
+**Ergaenzung 2026-09-24:** Der sichtbare Punktestand und die Gate-Pruefung
+verwenden die Summe aller Runden derselben Serie. So gehen Ueberschuesse beim
+Checkpoint nicht verloren. Die Einzelbelege bleiben fuer Belohnung und
+Plausibilitaet erhalten. Eine eigene Endlos-Rangliste liest diese akzeptierten
+Belege und zeigt pro Profil nur die beste Serie.
+
 ### Konsequenzen
 
 - Ein verfehltes Gate beendet nur die Serie; die gespielte letzte Runde und

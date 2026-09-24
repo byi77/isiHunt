@@ -638,7 +638,10 @@ startet `GameScene` mit dem naechsten Zustand neu. Das Rundenende wird einmal
 verbucht, bevor Checkpoint oder Ergebnis erscheinen. Verfehlt der Spieler das
 Gate, endet die Serie nach der Gutschrift dieser Runde.
 
-`config/endless.ts` berechnet Gate, Welt und Belohnungsfaktoren. Der
+`config/endless.ts` berechnet den kumulierten Gate-Stand, Welt und
+Belohnungsfaktoren. Das HUD addiert den bisherigen Serienstand zu den Punkten
+der laufenden Runde; fuer Profilbuchung und Plausibilitaet bleibt jede Runde
+ein eigener Beleg. Der
 `ProgressionSystem`-Coinanteil ist auf 30 Sekunden skaliert. Die normale
 Abschlusspraemie aus `RunBonusSystem` gilt nicht fuer Endlos, weil ihre
 Schwellen fuer 90-Sekunden-Runs bestimmt sind. `ProgressSyncSystem` legt jede
@@ -646,8 +649,10 @@ Runde als eigenes Ereignis in die Outbox; `CloudSystem` ruft dafuer
 `submit_endless_round` auf. Die serverseitige Phase 2.67 prueft Dauer,
 Weltfolge, temporaere Talentrange und den zuvor erreichten Checkpoint derselben
 Serienkennung. Eine eindeutige Kombination aus Profil, Serie und Runde
-verhindert doppelte Buchungen. Endlos-Ergebnisse werden nicht an die normale
-Casual-Bestenliste uebergeben.
+verhindert doppelte Buchungen. Phase 2.68 prueft den vorherigen Checkpoint
+gegen die Summe der Serienpunkte und berechnet die Endlos-Rangliste aus den
+serverseitig angenommenen Belegen. Pro Profil zaehlt nur die beste Serie;
+die normale Jagd-Bestenliste bleibt getrennt.
 
 ## 4.1 Determinismus im Duell
 

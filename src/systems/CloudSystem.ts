@@ -81,6 +81,15 @@ export interface DuelLeaderboardEntry {
   isOwn: boolean;
 }
 
+export interface EndlessLeaderboardEntry {
+  rank: number;
+  playerName: string;
+  score: number;
+  rounds: number;
+  createdAt: string;
+  isOwn: boolean;
+}
+
 interface PendingLeaderboardScore {
   playerId: string;
   playerName: string;
@@ -784,6 +793,34 @@ export async function fetchDuelLeaderboard(): Promise<CloudResult<DuelLeaderboar
       wins: finiteNonNegative(row.wins),
       losses: finiteNonNegative(row.losses),
       draws: finiteNonNegative(row.draws),
+      isOwn: row.is_own === true,
+    })),
+  };
+}
+
+/** Bester kumulierter Endlos-Serienstand je angemeldetem Profil. */
+export async function fetchEndlessLeaderboard(): Promise<CloudResult<EndlessLeaderboardEntry[]>> {
+  const supabase = getClient();
+  if (!supabase) return { ok: false, error: 'Kein Online-Dienst eingerichtet' };
+
+  const result = await withTimeout(
+    supabase.rpc('get_endless_leaderboard', { p_limit: LEADERBOARD_LIMIT }),
+    'Endlos-Bestenliste laden',
+  );
+  if (!result.ok) return result;
+  if (result.value.error) return { ok: false, error: result.value.error.message };
+
+  const rows: Record<string, unknown>[] = Array.isArray(result.value.data)
+    ? (result.value.data as Record<string, unknown>[])
+    : [];
+  return {
+    ok: true,
+    value: rows.map((row) => ({
+      rank: Math.max(1, finiteNonNegative(row.rank, 1)),
+      playerName: String(row.player_name),
+      score: finiteNonNegative(row.score),
+      rounds: Math.max(1, finiteNonNegative(row.rounds, 1)),
+      createdAt: String(row.created_at),
       isOwn: row.is_own === true,
     })),
   };

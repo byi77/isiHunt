@@ -13,7 +13,11 @@ import { getWorld, WORLDS } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
-import type { DuelLeaderboardEntry, LeaderboardEntry } from '@/systems/CloudSystem';
+import type {
+  DuelLeaderboardEntry,
+  EndlessLeaderboardEntry,
+  LeaderboardEntry,
+} from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { planetTextureForVariant, TextureKey } from '@/ui/textures';
@@ -30,7 +34,7 @@ import {
 } from '@/ui/widgets';
 
 const ROW_HEIGHT = 60;
-type LeaderboardMode = 'hunt' | 'duel';
+type LeaderboardMode = 'hunt' | 'endless' | 'duel';
 
 function formatRecordDate(value: string): string {
   const timestamp = Date.parse(value);
@@ -68,7 +72,7 @@ export class LeaderboardScene extends Phaser.Scene {
     SafeAreaSystem.showStatic('RANGLISTE');
     const save = SaveSystem.load();
 
-    this.mode = data.mode === 'duel' ? 'duel' : 'hunt';
+    this.mode = data.mode === 'duel' || data.mode === 'endless' ? data.mode : 'hunt';
     this.filter =
       this.mode === 'hunt' && data.worldId
         ? (WORLDS.find((w) => w.id === data.worldId) ?? null)
@@ -95,8 +99,10 @@ export class LeaderboardScene extends Phaser.Scene {
     this.buildModeTabs(sections.next(70));
     if (this.mode === 'hunt') {
       this.buildWorldTabs(sections.next(115));
-    } else {
+    } else if (this.mode === 'duel') {
       this.buildDuelIntro(sections.next(100));
+    } else {
+      this.buildEndlessIntro(sections.next(100));
     }
     this.listTop = sections.currentTop();
 
@@ -105,38 +111,49 @@ export class LeaderboardScene extends Phaser.Scene {
     void this.loadList();
   }
 
-  /** Gemeinsamer Einstiegspunkt fuer Jagd- und Duellwertung. */
+  /** Getrennte Wertungen fuer Jagd, Endlos und Duelle. */
   private buildModeTabs(sectionY: number): void {
-    createButton(
-      this,
-      GAME_WIDTH / 2 - 120,
-      sectionY,
-      'JAGD',
-      () => {
-        if (this.mode !== 'hunt') this.scene.restart({ mode: 'hunt' });
-      },
-      {
-        width: 210,
-        height: 52,
-        accent: this.mode === 'hunt' ? Palette.goldHex : 0x687394,
-        fontSize: FontSize.small,
-      },
-    );
-    createButton(
-      this,
-      GAME_WIDTH / 2 + 120,
-      sectionY,
-      'DUELLE',
-      () => {
-        if (this.mode !== 'duel') this.scene.restart({ mode: 'duel' });
-      },
-      {
-        width: 210,
-        height: 52,
-        accent: this.mode === 'duel' ? Palette.goldHex : 0x687394,
-        fontSize: FontSize.small,
-      },
-    );
+    const modes: readonly { mode: LeaderboardMode; label: string }[] = [
+      { mode: 'hunt', label: 'JAGD' },
+      { mode: 'endless', label: 'ENDLOS' },
+      { mode: 'duel', label: 'DUELLE' },
+    ];
+    modes.forEach(({ mode, label }, index) => {
+      createButton(
+        this,
+        GAME_WIDTH / 2 + (index - 1) * 215,
+        sectionY,
+        label,
+        () => {
+          if (this.mode !== mode) this.scene.restart({ mode });
+        },
+        {
+          width: 190,
+          height: 52,
+          accent: this.mode === mode ? Palette.goldHex : 0x687394,
+          fontSize: FontSize.small,
+        },
+      );
+    });
+  }
+
+  private buildEndlessIntro(sectionY: number): void {
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        sectionY - 18,
+        'ENDLOS-WERTUNG',
+        textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
+      )
+      .setOrigin(0.5);
+    this.add
+      .text(
+        GAME_WIDTH / 2,
+        sectionY + 20,
+        'Bester Gesamtstand einer Serie',
+        textStyle(FontSize.tiny, Palette.inkDim),
+      )
+      .setOrigin(0.5);
   }
 
   /** Erklaert kurz die Mehrspielerwertung, ohne die Liste mit Weltfiltern zu vermischen. */
@@ -297,6 +314,22 @@ export class LeaderboardScene extends Phaser.Scene {
       return;
     }
 
+    if (this.mode === 'endless') {
+      const result = await CloudSystem.fetchEndlessLeaderboard();
+      if (requestId !== this.requestId || !this.scene.isActive()) return;
+      if (!result.ok) {
+        this.showEmpty(`Bestenliste nicht erreichbar.\n${result.error}`, true);
+        return;
+      }
+      if (result.value.length === 0) {
+        this.showEmpty('Noch keine Endlos-Serie gewertet.\nStarte Endlos und sammle Punkte.');
+        return;
+      }
+      this.statusText.setText('');
+      this.renderEndlessList(result.value);
+      return;
+    }
+
     const result = await CloudSystem.fetchLeaderboard(this.filter?.id);
 
     // Zwischenzeitlich wurde die Welt gewechselt oder die Scene verlassen -
@@ -439,6 +472,56 @@ export class LeaderboardScene extends Phaser.Scene {
             textStyle(FontSize.tiny, Palette.inkDim),
           )
           .setOrigin(0, 0.5),
+      );
+    });
+  }
+
+  private renderEndlessList(entries: readonly EndlessLeaderboardEntry[]): void {
+    entries.forEach((entry) => {
+      const y = this.listTop + (entry.rank - 1) * ROW_HEIGHT;
+      if (entry.isOwn) {
+        this.listItems.push(
+          createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 110, ROW_HEIGHT - 6, Palette.goldHex, {
+            alpha: 0.4,
+            radius: 10,
+          }),
+        );
+      }
+      this.listItems.push(
+        this.add
+          .text(
+            76,
+            y,
+            `${entry.rank}`,
+            textStyle(FontSize.small, entry.rank <= 3 ? Palette.gold : Palette.ink, {
+              fontStyle: 'bold',
+            }),
+          )
+          .setOrigin(0, 0.5),
+        this.add
+          .text(
+            134,
+            y - 8,
+            entry.playerName,
+            textStyle(FontSize.small, entry.isOwn ? Palette.gold : Palette.ink),
+          )
+          .setOrigin(0, 0.5),
+        this.add
+          .text(
+            134,
+            y + 13,
+            `${entry.rounds} RUNDEN · ${formatRecordDate(entry.createdAt)}`,
+            textStyle(FontSize.tiny, Palette.inkDim),
+          )
+          .setOrigin(0, 0.5),
+        this.add
+          .text(
+            GAME_WIDTH - 76,
+            y,
+            entry.score.toLocaleString('de-DE'),
+            textStyle(FontSize.small, Palette.ink, { fontStyle: 'bold' }),
+          )
+          .setOrigin(1, 0.5),
       );
     });
   }
