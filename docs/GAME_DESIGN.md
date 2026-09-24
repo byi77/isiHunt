@@ -46,7 +46,7 @@ Menue  →  Run (90 s)  →  Ergebnis  →  Menue
              └──────  "Nochmal"  ───────┘
 ```
 
-Daneben stehen die **Duell-Modi** (Abschnitt 4.1): ein Bot-Duell auf einem
+Daneben stehen **Endlos** (Abschnitt 4.2) und die **Duell-Modi** (Abschnitt 4.1): ein Bot-Duell auf einem
 Geraet sowie ein Online-Duell fuer zwei bis vier Personen auf getrennten
 Geraeten.
 
@@ -140,6 +140,30 @@ ueber die Bereitschaftslobby. Der aktuelle Backend-Vertrag steht in
 **Warum kein geteilter Bildschirm:** Zwei Spielfelder waeren auf einem
 Hochformat-Handy zu klein. Das Online-Duell nutzt deshalb getrennte Geraete;
 das lokale Bot-Duell bleibt der direkte Einzelgeraet-Weg.
+
+### 4.2 Endlos
+
+Im Hauptmenue stehen **Jagd** und **Endlos** nebeneinander. Eine Endlos-Serie
+beginnt immer in der Sternenweide. Jede Runde dauert 30 Sekunden und hat ein
+eigenes Punkteziel. Der Rundenscore startet bei null; die Gesamtpunkte werden
+fuer das Ergebnis addiert. Die ersten vier Gates liegen bei 500, 700, 900 und
+1.100 Punkten. Runde 5 verlangt 1.300 Punkte, danach steigt das Ziel um 300
+Punkte je Runde. Diese Startwerte sind noch nicht mit echten Spielern
+ausbalanciert; der [Einbauplan](ENDLOS_EINBAUPLAN.md) nennt die offenen Messungen.
+
+Nach jedem erreichten Gate waehlt der Spieler kostenlos einen temporaeren
+Talentrang aus drei Angeboten; nach jedem vierten Gate sind es zwei Wahlen.
+Dauerhafte Talente wirken hier nicht. Ausdauer ist ausgeschlossen, weil die
+Rundenlaenge fest bleibt. Alle zwei Runden folgt die naechste Welt. Die letzte
+Welt bleibt nach ihrer Ankunft aktiv. Hindernisse bremsen, ziehen in diesem
+Modus aber weder Zeit noch Punkte ab.
+
+Pro Runde nach der ersten steigen die Fangpunkte um 2 %, die Fang-XP um 4 %
+und die Coin-Praemie um 2. Der Basis-Coinanteil wird von 90 auf 30 Sekunden
+skaliert; Welt-, Seltenheits- und Sammelboni bleiben erhalten. Auch eine Runde
+mit verfehltem Gate wird verbucht, bevor die Serie endet. Bereits verdiente
+Belohnungen gehen nicht verloren. Endlos-Runden laufen nicht in die normale
+Casual-Bestenliste.
 
 ## 5. Seltenheitsstufen
 
@@ -479,12 +503,12 @@ dazu: Was ist aus der Summe geworden? Drei Gruppen zahlen darauf ein, je
 Gruppe zählt **nur die höchste erreichte Stufe** — gestaffelte Stufen bauen
 aufeinander auf, aufsummiert zahlte dieselbe Leistung mehrfach.
 
-| Gruppe          | Bedingung             | Stufen (Anteil eines Runs)      |
-| --------------- | --------------------- | ------------------------------- |
-| Seltene Beute   | `collected.rare`      | 18 / 24 / 32 → 3 % / 5 % / 8 %  |
-| Epische Beute   | `collected.epic`      | 9 / 13 / 18 → 4 % / 7 % / 11 %  |
-| Legendäre Beute | `collected.legendary` | 3 / 5 / 8 → 5 % / 9 % / 15 %    |
-| Serienbonus     | `bestCombo`           | 16 / 25 / 40 → 4 % / 8 % / 14 % |
+| Gruppe          | Bedingung             | Stufen (Anteil eines Runs)         |
+| --------------- | --------------------- | ---------------------------------- |
+| Seltene Beute   | `collected.rare`      | 18 / 24 / 32 → 3 % / 5 % / 8 %     |
+| Epische Beute   | `collected.epic`      | 9 / 13 / 18 → 4 % / 7 % / 11 %     |
+| Legendäre Beute | `collected.legendary` | 3 / 5 / 8 → 5 % / 9 % / 15 %       |
+| Serienbonus     | `bestCombo`           | 16 / 25 / 40 → 4 % / 8 % / 14 %    |
 | Sammelbonus     | Gesamtmenge           | 150 / 190 / 230 → 3 % / 6 % / 10 % |
 
 **Die Schwellen liegen bewusst über dem Durchschnitt.** Ein Run fängt im
@@ -524,6 +548,10 @@ Das ist kein Strafmechanismus, sondern verhindert eine Auslese: Wer einen
 schlechten Lauf abbrechen und trotzdem gewertet bekommen koennte, haette einen
 Grund, jeden mittelmaessigen Run wegzuwerfen und nur die guten zu Ende zu
 spielen. Der Bestwert waere dann keine Leistung mehr, sondern Geduld.
+
+Im Endlosmodus werden abgeschlossene 30-Sekunden-Runden einzeln gebucht.
+Verlassen waehrend einer laufenden Runde verwirft nur diese noch nicht
+abgeschlossene Runde; fruehere Checkpoints bleiben gutgeschrieben.
 
 **Im Duell haelt die Simulation nicht an.** Wer anhalten koennte, waehrend ein
 legendaeres Relikt auf dem Feld liegt, duerfte in Ruhe zielen — das waere ein
@@ -644,18 +672,18 @@ darf nicht als Geschenk direkt unter dem Daumen erscheinen.
 
 ## 10. Was bewusst NICHT drin ist
 
-| Nicht drin                           | Begruendung                                                                                            |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------ |
-| Gegner / Schaden / Verlieren         | Es gibt keine Lebenspunkte und kein Game Over. Hindernisse bremsen oder ziehen nur wenige Sekunden ab. |
-| Tutorial                             | Wenn es eins braucht, ist das Design gescheitert (Designziel 1).                                       |
-| Werbung / Kaeufe                     | Vorerst kein Monetarisierungsdruck. Beeinflusst sonst das Balancing.                                   |
-| Oeffentliches Ranked                 | Erst nach serverseitiger Laufpruefung sowie Datenschutz- und Moderationskonzept.                       |
-| Querformat                           | Das Spiel ist fuer eine Hand gebaut.                                                                   |
-| Geteilter Bildschirm im Online-Duell | Zwei Spielfelder auf einem Hochformat-Handy sind zu klein; Online-Spieler nutzen getrennte Geraete.    |
+| Nicht drin                           | Begruendung                                                                                          |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Gegner / Schaden                     | Es gibt keine Lebenspunkte. Hindernisse bremsen oder ziehen im normalen Lauf nur wenige Sekunden ab. |
+| Tutorial                             | Wenn es eins braucht, ist das Design gescheitert (Designziel 1).                                     |
+| Werbung / Kaeufe                     | Vorerst kein Monetarisierungsdruck. Beeinflusst sonst das Balancing.                                 |
+| Oeffentliches Ranked                 | Erst nach serverseitiger Laufpruefung sowie Datenschutz- und Moderationskonzept.                     |
+| Querformat                           | Das Spiel ist fuer eine Hand gebaut.                                                                 |
+| Geteilter Bildschirm im Online-Duell | Zwei Spielfelder auf einem Hochformat-Handy sind zu klein; Online-Spieler nutzen getrennte Geraete.  |
 
 ## 11. Offene Designfragen
 
-- [ ] Endlos-Modus ohne Timer als zweiter Spielmodus?
+- [ ] Endlos-Gates und Rundenertraege mit echten Spielern ausbalancieren.
 - [ ] Serverseitige Laufpruefung als Voraussetzung fuer Ranked-Duelle?
 - [ ] Datenschutz, Moderation und Reichweite der Spieler-Lobby ausserhalb des
       privaten/familiären Kreises?

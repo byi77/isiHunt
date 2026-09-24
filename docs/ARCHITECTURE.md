@@ -224,6 +224,7 @@ isiHunt/
 │   ├── config/                 Reine Daten, keine Logik
 │   │   ├── balance-data.json   Eine Quelle fuer Punkte, XP, Coins und Kosten
 │   │   ├── balance.ts          Ableitungen und Balance-Snapshot
+│   │   ├── endless.ts          Gates, Rundenbelohnungen und temporaere Talente
 │   │   ├── GameConfig.ts       Kompatibilitaets-Fassade fuer alte Imports
 │   │   ├── effectVisuals.ts    Visuelle Budgets: Hindernisse, Warnrand, Blenden
 │   │   ├── rarities.ts         Seltenheitsstufen
@@ -269,7 +270,7 @@ isiHunt/
 │   │   ├── AchievementsScene.ts Erfolgsliste
 │   │   ├── CollectionScene.ts  Visuelles Album aus gespeicherten Reliktzahlen
 │   │   │                       und bereits freigeschalteten Welten
-│   │   ├── GameScene.ts        Die Simulation (Solo und Duell)
+│   │   ├── GameScene.ts        Die Simulation (Jagd, Endlos und Duell)
 │   │   ├── HudScene.ts         Anzeige waehrend des Runs
 │   │   ├── ChallengeScene.ts   Duell: Einfuehrung, Uebergabe, Ergebnis
 │   │   ├── DuelSelectScene.ts  Online-Duell oder VS Bot auswaehlen
@@ -627,6 +628,26 @@ und blockiert den Run nicht.
 Im Duell-Modus faellt dieser letzte Schritt komplett weg: `GameScene.endRun()`
 uebergibt an `ChallengeSystem` statt an `ProgressionSystem`, und der Spielstand
 wird nicht angefasst.
+
+### Endlos-Runden
+
+`GameScene` verwendet fuer `mode: 'endless'` feste 30 Sekunden und einen
+`EndlessState` mit Serienkennung, Rundennummer, Gesamtstand und temporaeren
+Talenten. Nach einem erreichten Gate stoppt das HUD, zeigt die Talentwahl und
+startet `GameScene` mit dem naechsten Zustand neu. Das Rundenende wird einmal
+verbucht, bevor Checkpoint oder Ergebnis erscheinen. Verfehlt der Spieler das
+Gate, endet die Serie nach der Gutschrift dieser Runde.
+
+`config/endless.ts` berechnet Gate, Welt und Belohnungsfaktoren. Der
+`ProgressionSystem`-Coinanteil ist auf 30 Sekunden skaliert. Die normale
+Abschlusspraemie aus `RunBonusSystem` gilt nicht fuer Endlos, weil ihre
+Schwellen fuer 90-Sekunden-Runs bestimmt sind. `ProgressSyncSystem` legt jede
+Runde als eigenes Ereignis in die Outbox; `CloudSystem` ruft dafuer
+`submit_endless_round` auf. Die serverseitige Phase 2.67 prueft Dauer,
+Weltfolge, temporaere Talentrange und den zuvor erreichten Checkpoint derselben
+Serienkennung. Eine eindeutige Kombination aus Profil, Serie und Runde
+verhindert doppelte Buchungen. Endlos-Ergebnisse werden nicht an die normale
+Casual-Bestenliste uebergeben.
 
 ## 4.1 Determinismus im Duell
 

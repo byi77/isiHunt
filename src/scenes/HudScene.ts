@@ -102,6 +102,8 @@ export interface HudSceneData {
   worldId: string;
   durationMs: number;
   mode?: RunMode;
+  endlessRound?: number;
+  endlessGate?: number;
   /** Im Duell: wer gerade spielt. Sonst null. */
   playerLabel?: string | null;
   /** Im Duell ab Durchgang zwei: die Vorlage des Gegners. Sonst null. */
@@ -223,7 +225,10 @@ export class HudScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         34,
-        (data.playerLabel ?? world.name).toUpperCase(),
+        (data.endlessRound
+          ? `RUNDE ${data.endlessRound} · ${world.name}`
+          : (data.playerLabel ?? world.name)
+        ).toUpperCase(),
         textStyle(FontSize.tiny, data.playerLabel ? Palette.gold : Palette.inkDim),
       )
       .setOrigin(0.5, 0);
@@ -385,7 +390,16 @@ export class HudScene extends Phaser.Scene {
 
     // Im zweiten Duell-Durchgang steht links, was zu schlagen ist. Ohne diese
     // Zahl waere der zweite Spieler bis zum Ergebnisbildschirm blind.
-    if (this.scoreToBeat !== null) {
+    if (data.endlessGate !== undefined) {
+      this.targetText = this.add
+        .text(
+          60,
+          40,
+          `GATE ${data.endlessGate.toLocaleString('de-DE')}`,
+          textStyle(FontSize.small, Palette.gold),
+        )
+        .setOrigin(0, 0);
+    } else if (this.scoreToBeat !== null) {
       this.targetText = this.add
         .text(
           60,

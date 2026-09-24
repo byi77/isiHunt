@@ -35,9 +35,19 @@ import {
 } from '@/config/GameConfig';
 import { XP_GLOBAL_MULTIPLIER } from '@/config/balance';
 import type { RarityDef } from '@/config/rarities';
-import { resolveStats } from '@/config/talents';
+import { resolveStats, TALENTS } from '@/config/talents';
 import type { PlayerStats } from '@/config/talents';
 import { getWorld } from '@/config/worlds';
+import {
+  ENDLESS_DOUBLE_TALENT_EVERY,
+  ENDLESS_ROUND_MS,
+  ENDLESS_TALENT_CHOICES,
+  endlessGate,
+  endlessRewards,
+  endlessTalentChoices,
+  endlessWorld,
+} from '@/config/endless';
+import type { EndlessState } from '@/config/endless';
 import type { WorldDef } from '@/config/worlds';
 import { eventBus, GameEvent } from '@/core/EventBus';
 import { Collectible } from '@/entities/Collectible';
@@ -70,13 +80,20 @@ import { Depth } from '@/ui/depth';
 import { shipAuraAssetId, shipAuraIndex, shipHullTint, shipTint } from '@/config/shop';
 import { planetTextureForVariant, playerTextureForShape } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
-import { createVignette, floatingScore } from '@/ui/widgets';
-import type { ActiveTalentLine, ChallengeState, RunMode } from '@/types';
+import { createButton, createPanel, createVignette, floatingScore } from '@/ui/widgets';
+import type {
+  ActiveTalentLine,
+  ChallengeState,
+  ProgressionResult,
+  RunMode,
+  RunStats,
+} from '@/types';
 
 export interface GameSceneData {
   worldId: string;
   /** Fehlt der Modus, ist es ein normaler Solo-Run. */
   mode?: RunMode;
+  endlessState?: EndlessState;
   /** Ausschliesslich vom serverbestaetigten Effektstart geliefert. */
   rewardEffects?: Readonly<Partial<Record<'speed' | 'magnetism' | 'combo_grace', number>>>;
   /** Serverbestaetigter XP-Bonuslauf; der Start wurde bereits verbraucht. */
@@ -97,7 +114,7 @@ function applyRewardEffects(
   };
 }
 
-type RunPhase = 'countdown' | 'running' | 'ended';
+type RunPhase = 'countdown' | 'running' | 'checkpoint' | 'ended';
 
 /**
  * Die tatsaechlich aktiven Talentverstaerkungen, je eine Zeile.
@@ -168,6 +185,9 @@ export class GameScene extends Phaser.Scene {
   private remainingMs = 0;
   private totalMs = 0;
   private mode: RunMode = 'solo';
+  private endlessState: EndlessState | null = null;
+  private endlessLastStats: RunStats | null = null;
+  private endlessLastProgression: ProgressionResult | null = null;
   private playerIndex = 0;
   /** Nur im Netzwerk-Duell gesetzt - Taktgeber fuer den eigenen Live-Stand. */
   private liveBroadcastTimer: Phaser.Time.TimerEvent | null = null;
@@ -203,9 +223,24 @@ export class GameScene extends Phaser.Scene {
     this.performanceMonitor?.reset();
 
     this.mode = data.mode ?? 'solo';
+    this.endlessState =
+      this.mode === 'endless'
+        ? (data.endlessState ?? {
+            sessionId: crypto.randomUUID(),
+            round: 1,
+            totalScore: 0,
+            totalXp: 0,
+            totalCoins: 0,
+            talents: {},
+          })
+        : null;
+    this.endlessLastStats = null;
+    this.endlessLastProgression = null;
     this.boostedRun = data.boostedRun ?? null;
-    this.world = getWorld(data.worldId ?? save.lastWorldId);
-    const isChallengeMode = this.mode !== 'solo';
+    this.world = this.endlessState
+      ? endlessWorld(this.endlessState.round)
+      : getWorld(data.worldId ?? save.lastWorldId);
+    const isChallengeMode = this.mode !== 'solo' && this.mode !== 'endless';
     const challenge = isChallengeMode ? ChallengeSystem.getState() : null;
     this.playerIndex = challenge ? ChallengeSystem.currentPlayerIndex() : 0;
 
@@ -214,6 +249,7 @@ export class GameScene extends Phaser.Scene {
     // dem Vormatch; ohne diesen bleiben sie bei den Grundwerten.
     const usesTalents =
       this.mode === 'solo' ||
+      this.mode === 'endless' ||
       this.mode === 'daily' ||
       challenge?.kind === 'duel' ||
       challenge?.kind === 'bot' ||
@@ -224,7 +260,9 @@ export class GameScene extends Phaser.Scene {
         usesTalents
           ? this.mode === 'solo' || this.mode === 'daily'
             ? save.talents
-            : duelTalentRanks
+            : this.mode === 'endless'
+              ? (this.endlessState?.talents ?? {})
+              : duelTalentRanks
           : {},
       ),
       data.rewardEffects,
@@ -247,7 +285,11 @@ export class GameScene extends Phaser.Scene {
     this.opponentTerminal.clear();
     this.localActivity = 'playing';
 
-    this.totalMs = usesTalents ? this.stats.runDurationMs : CHALLENGE_DURATION_MS;
+    this.totalMs = this.endlessState
+      ? ENDLESS_ROUND_MS
+      : usesTalents
+        ? this.stats.runDurationMs
+        : CHALLENGE_DURATION_MS;
     this.remainingMs = this.totalMs;
     this.phase = 'countdown';
     this.collectibles = [];
@@ -309,8 +351,13 @@ export class GameScene extends Phaser.Scene {
     this.lastComboWindowRatio = 0;
     this.scoring = new ScoreSystem(
       this.stats.comboGraceMs,
-      this.stats.scoreMultiplier * this.world.scoreMultiplier,
-      this.stats.xpMultiplier * this.world.xpMultiplier * XP_GLOBAL_MULTIPLIER,
+      this.stats.scoreMultiplier *
+        this.world.scoreMultiplier *
+        (this.endlessState ? endlessRewards(this.endlessState.round).scoreMultiplier : 1),
+      this.stats.xpMultiplier *
+        this.world.xpMultiplier *
+        XP_GLOBAL_MULTIPLIER *
+        (this.endlessState ? endlessRewards(this.endlessState.round).xpMultiplier : 1),
       this.stats.seriesMultiplierBonus,
       this.stats.critChance,
     );
@@ -334,6 +381,8 @@ export class GameScene extends Phaser.Scene {
       worldId: this.world.id,
       mode: this.mode,
       durationMs: this.totalMs,
+      endlessRound: this.endlessState?.round,
+      endlessGate: this.endlessState ? endlessGate(this.endlessState.round) : undefined,
       playerLabel: isChallengeMode ? ChallengeSystem.playerLabel(this.playerIndex) : null,
       scoreToBeat: isChallengeMode ? ChallengeSystem.scoreToBeat() : null,
       talentLines: usesTalents ? activeTalentLines(this.stats) : [],
@@ -422,7 +471,7 @@ export class GameScene extends Phaser.Scene {
   update(_time: number, delta: number): void {
     this.backdrop.update(delta, this.player.x, this.player.y);
     this.collectionEffects.update(delta);
-    if (this.phase === 'ended') return;
+    if (this.phase === 'ended' || this.phase === 'checkpoint') return;
 
     const dtSec = delta / 1000;
 
@@ -588,7 +637,7 @@ export class GameScene extends Phaser.Scene {
 
       obstacle.markHit();
       const obstacleEffectScale = 1 - this.stats.obstacleResistance;
-      if (obstacle.kind === 'brake') {
+      if (obstacle.kind === 'brake' || this.mode === 'endless') {
         this.player.applySlow(
           WORLD_BRAKE_DURATION_MS * obstacleEffectScale,
           1 - (1 - WORLD_BRAKE_FACTOR) * obstacleEffectScale,
@@ -667,7 +716,7 @@ export class GameScene extends Phaser.Scene {
   private runCountdown(): void {
     // Im Duell zuerst zeigen, wer gerade spielt - nach der Geraeteuebergabe ist
     // das die wichtigste Information auf dem Bildschirm.
-    if (this.mode !== 'solo') {
+    if (this.mode !== 'solo' && this.mode !== 'endless') {
       this.add
         .text(
           GAME_WIDTH / 2,
@@ -784,6 +833,10 @@ export class GameScene extends Phaser.Scene {
     this.performanceMonitor?.finishRun();
 
     const rawStats = this.scoring.toRunStats(this.world.id);
+    if (this.endlessState) {
+      this.endEndlessRound(rawStats);
+      return;
+    }
     // Die Praemien werden hier verrechnet, nicht erst im Ergebnisbildschirm:
     // Von hier aus gehen dieselben Zahlen in den Spielstand, das Cloud-
     // Ereignis und die Bestenliste. Ein erst spaeter aufgeschlagener Bonus
@@ -915,6 +968,164 @@ export class GameScene extends Phaser.Scene {
     this.leaveRun(SceneKey.Result, { stats, progression });
   }
 
+  private endEndlessRound(rawStats: RunStats): void {
+    const state = this.endlessState!;
+    const passed = rawStats.score >= endlessGate(state.round);
+    const stats: RunStats = {
+      ...rawStats,
+      endlessRound: state.round,
+      endlessSessionId: state.sessionId,
+      endlessTalents: { ...state.talents },
+      durationMs: ENDLESS_ROUND_MS,
+      completedAt: new Date().toISOString(),
+    };
+    const progression = ProgressionSystem.applyRun(stats);
+    ProgressSyncSystem.enqueueRun(stats, progression);
+    void ProgressSyncSystem.flush();
+    state.totalScore += stats.score;
+    state.totalXp += stats.xpGained;
+    state.totalCoins += progression.coinsGained;
+    this.endlessLastStats = stats;
+    this.endlessLastProgression = progression;
+    if (!passed) {
+      this.finishEndless();
+      return;
+    }
+    this.phase = 'checkpoint';
+    this.showEndlessCheckpoint();
+  }
+
+  private finishEndless(): void {
+    if (!this.endlessLastStats || !this.endlessLastProgression) return;
+    this.phase = 'ended';
+    eventBus.emitEvent(GameEvent.RunEnded, {
+      stats: this.endlessLastStats,
+      progression: this.endlessLastProgression,
+    });
+    this.leaveRun(SceneKey.Result, {
+      stats: this.endlessLastStats,
+      progression: this.endlessLastProgression,
+      endlessRound: this.endlessState?.round ?? 1,
+      endlessTotalScore: this.endlessState?.totalScore ?? 0,
+      endlessTotalXp: this.endlessState?.totalXp ?? 0,
+      endlessTotalCoins: this.endlessState?.totalCoins ?? 0,
+      alreadySynced: true,
+    });
+  }
+
+  private showEndlessCheckpoint(): void {
+    const state = this.endlessState!;
+    this.scene.stop(SceneKey.Hud);
+    SafeAreaSystem.showStatic(`CHECKPOINT ${state.round}`);
+    const shade = this.add
+      .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x050914, 0.82)
+      .setOrigin(0)
+      .setDepth(Depth.Overlay)
+      .setInteractive();
+    const panel = createPanel(
+      this,
+      GAME_WIDTH / 2,
+      GAME_HEIGHT / 2,
+      GAME_WIDTH - 70,
+      500,
+      Palette.goldHex,
+      { alpha: 0.98 },
+    ).setDepth(Depth.Overlay + 1);
+    const title = this.add
+      .text(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2 - 205,
+        `CHECKPOINT ${state.round} ERREICHT`,
+        textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
+      )
+      .setOrigin(0.5)
+      .setDepth(Depth.Overlay + 2);
+    const detail = this.add
+      .text(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2 - 120,
+        `Gesamt: ${state.totalScore.toLocaleString('de-DE')} Punkte\n+${this.endlessLastStats!.xpGained.toLocaleString('de-DE')} XP · +${this.endlessLastProgression!.coinsGained} Coins\nNaechste Welt: ${endlessWorld(state.round + 1).name}\nNaechstes Ziel: ${endlessGate(state.round + 1).toLocaleString('de-DE')}`,
+        textStyle(FontSize.small, Palette.ink, { align: 'center' }),
+      )
+      .setOrigin(0.5)
+      .setDepth(Depth.Overlay + 2);
+    const objects: Phaser.GameObjects.GameObject[] = [shade, panel, title, detail];
+    let remaining = state.round % ENDLESS_DOUBLE_TALENT_EVERY === 0 ? 2 : 1;
+    const choiceHandles: ReturnType<typeof createButton>[] = [];
+    const clearChoices = () => {
+      for (const handle of choiceHandles.splice(0)) handle.container.destroy(true);
+    };
+    const nextRound = () => {
+      clearChoices();
+      for (const object of objects) object.destroy();
+      this.scene.stop(SceneKey.Hud);
+      this.scene.restart({
+        worldId: endlessWorld(state.round + 1).id,
+        mode: 'endless',
+        endlessState: {
+          sessionId: state.sessionId,
+          round: state.round + 1,
+          totalScore: state.totalScore,
+          totalXp: state.totalXp,
+          totalCoins: state.totalCoins,
+          talents: { ...state.talents },
+        },
+      } satisfies GameSceneData);
+    };
+    const offerTalents = () => {
+      clearChoices();
+      const available = endlessTalentChoices(state.talents);
+      if (remaining <= 0 || available.length === 0) {
+        const continueButton = createButton(
+          this,
+          GAME_WIDTH / 2,
+          GAME_HEIGHT / 2 + 145,
+          'WEITER',
+          nextRound,
+          { width: GAME_WIDTH - 130, height: 52, variant: 'primary' },
+        );
+        continueButton.container.setDepth(Depth.Overlay + 2);
+        choiceHandles.push(continueButton);
+        return;
+      }
+      detail.setText(
+        `+${this.endlessLastStats!.xpGained.toLocaleString('de-DE')} XP · +${this.endlessLastProgression!.coinsGained} Coins\nGesamt: ${state.totalScore.toLocaleString('de-DE')} Punkte\n${endlessWorld(state.round + 1).name}: ${endlessGate(state.round + 1).toLocaleString('de-DE')} Punkte\nTalent waehlen (${remaining} frei)`,
+      );
+      const options = Phaser.Utils.Array.Shuffle([...available]).slice(0, ENDLESS_TALENT_CHOICES);
+      options.forEach((id, index) => {
+        const talent = TALENTS.find((entry) => entry.id === id)!;
+        const handle = createButton(
+          this,
+          GAME_WIDTH / 2,
+          GAME_HEIGHT / 2 - 25 + index * 62,
+          `${talent.name}  +1`,
+          () => {
+            state.talents = { ...state.talents, [id]: (state.talents[id] ?? 0) + 1 };
+            remaining -= 1;
+            offerTalents();
+          },
+          { width: GAME_WIDTH - 130, height: 48 },
+        );
+        handle.container.setDepth(Depth.Overlay + 2);
+        choiceHandles.push(handle);
+      });
+    };
+    offerTalents();
+    const exit = createButton(
+      this,
+      GAME_WIDTH / 2,
+      GAME_HEIGHT / 2 + 210,
+      'SERIE BEENDEN',
+      () => {
+        clearChoices();
+        for (const object of objects) object.destroy();
+        this.finishEndless();
+      },
+      { width: GAME_WIDTH - 130, height: 42 },
+    );
+    exit.container.setDepth(Depth.Overlay + 2);
+  }
+
   /**
    * Laesst das Spielfeld kurz stehen und blendet dann zum naechsten
    * Bildschirm ueber. Die Blende liegt innerhalb der Stehzeit, der Wechsel
@@ -956,7 +1167,7 @@ export class GameScene extends Phaser.Scene {
     // Wer anhalten koennte, waehrend ein legendaeres Relikt erscheint, duerfte
     // in Ruhe zielen - das bricht die Fairness gegenueber dem ersten Spieler
     // (config/challenge.ts). Aussteigen bleibt moeglich.
-    if (this.mode !== 'solo') {
+    if (this.mode !== 'solo' && this.mode !== 'endless') {
       // Der Gegner soll sehen, dass hier gerade niemand hinschaut - seine
       // Punktzahl steigt derweil weiter, denn die Simulation laeuft.
       this.setLocalActivity('away');
@@ -998,7 +1209,7 @@ export class GameScene extends Phaser.Scene {
     // die Beobachtung, die diesen Punkt ausgeloest hat ("Bildschirm hing,
     // nichts ging mehr"). Phaser haelt die Update-Schleife im Hintergrund
     // ohnehin an; ein Vorteil entsteht durch den Hinweis also nicht.
-    if (this.mode !== 'solo') {
+    if (this.mode !== 'solo' && this.mode !== 'endless') {
       this.setLocalActivity('away');
       eventBus.emitEvent(GameEvent.RunPaused, { reason: 'interrupted' });
       return;
@@ -1072,7 +1283,7 @@ export class GameScene extends Phaser.Scene {
     // fortgesetzt: Ohne den Durchgang des Aussteigers gibt es nichts zu
     // vergleichen, und ein halber Zustand schickte die ChallengeScene in die
     // falsche Phase.
-    if (this.mode !== 'solo') ChallengeSystem.clear();
+    if (this.mode !== 'solo' && this.mode !== 'endless') ChallengeSystem.clear();
 
     this.scene.stop(SceneKey.Hud);
     this.scene.start(SceneKey.Menu);

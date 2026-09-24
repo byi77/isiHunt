@@ -1833,8 +1833,9 @@ export async function submitProgressEvent(
   const authenticated = await requireAuthenticatedClient();
   if (!authenticated.ok) return authenticated;
 
+  const rpcName = event.endlessRound ? 'submit_endless_round' : 'submit_progress_event';
   const result = await withTimeout(
-    authenticated.value.rpc('submit_progress_event', {
+    authenticated.value.rpc(rpcName, {
       p_event_id: event.eventId,
       p_world_id: event.worldId,
       p_score: Math.max(0, Math.round(event.score)),
@@ -1845,7 +1846,13 @@ export async function submitProgressEvent(
       p_talent_points_gained: Math.max(0, Math.round(event.talentPointsGained)),
       p_collected: event.collected,
       p_achievement_ids: event.unlockedAchievementIds,
-      p_daily_key: event.dailyKey ?? null,
+      ...(event.endlessRound
+        ? {
+            p_round: event.endlessRound,
+            p_session_id: event.endlessSessionId,
+            p_talents: event.endlessTalents ?? {},
+          }
+        : { p_daily_key: event.dailyKey ?? null }),
     }),
     'Fortschritt synchronisieren',
   );

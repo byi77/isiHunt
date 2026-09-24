@@ -1,4 +1,5 @@
 - [Doku nur auf Nachfrage](docs-nur-auf-nachfrage.md) — Markdown-Doku erst nach Task-Ende aktualisieren, vorher immer fragen
 - [Playtest immer mit --watch](playtest-immer-mit-watch.md) — isiHunt-Tests nie headless starten, der Nutzer will zusehen
 - [Denken auf Deutsch](denken-auf-deutsch.md) — Denkbloecke auf Deutsch, nicht nur die Antworten
+- [Sound-Umbau Planung](sound-umbau-planung.md) — Countdown deutsch, Stimme Thorsten neutral roh, "Letzte Chance"/Musik zurueckgestellt
 - [Diagnose-Rueckbau Namensfeld](diagnose-rueckbau-namensfeld.md) — befristete Debug-Ausgabe in Profile/AccountScene nach der Messung entfernen

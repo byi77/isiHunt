@@ -28,6 +28,7 @@ import type { ButtonHandle } from '@/ui/widgets';
 export type MenuAction =
   | 'profile'
   | 'jagd'
+  | 'endless'
   | 'daily'
   | 'duel'
   | 'achievements'
@@ -572,15 +573,25 @@ export class MenuView {
     const third = (innerWidth - gap * 2) / 3;
     const action = (key: MenuAction) => () => this.callbacks.onAction(key);
     this.button(
-      GAME_WIDTH / 2,
+      margin + half / 2,
       primaryY,
-      innerWidth,
+      half,
       primaryHeight,
-      'JAGD STARTEN',
+      'JAGD',
       action('jagd'),
       this.layout.compact ? 17 : 19,
       true,
       'world',
+    );
+    this.button(
+      GAME_WIDTH - margin - half / 2,
+      primaryY,
+      half,
+      primaryHeight,
+      'ENDLOS',
+      action('endless'),
+      this.layout.compact ? 17 : 19,
+      true,
     );
     this.button(
       margin + half / 2,

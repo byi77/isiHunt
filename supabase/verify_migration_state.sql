@@ -1,14 +1,14 @@
 -- Read-only Nachweis fuer den produktiven Migrationsstand.
--- Erwartet genau eine Zeile mit schema_version = 66.
+-- Erwartet genau eine Zeile mit schema_version = 67.
 
 do $$
 begin
   if not exists (
     select 1
     from public.isihunt_schema_state
-    where singleton = true and schema_version = 66
+    where singleton = true and schema_version = 67
   ) then
-    raise exception 'Erwartet schema_version = 66';
+    raise exception 'Erwartet schema_version = 67';
   end if;
 end;
 $$;
@@ -22,7 +22,7 @@ from pg_proc p
 join pg_namespace n on n.oid = p.pronamespace
 where n.nspname = 'public'
   and p.proname in (
-    'submit_progress_event', 'claim_daily_bonus', 'redeem_sync_code',
+    'submit_progress_event', 'submit_endless_round', 'claim_daily_bonus', 'redeem_sync_code',
     'sync_profile_cosmetics', 'start_bot_match', 'claim_bot_victory_bonus',
     'bot_match_retention_count', 'prune_bot_victory_claims', 'run_bonus',
     'upsert_save', 'submit_duel_result', 'submit_duel_talent_draft',

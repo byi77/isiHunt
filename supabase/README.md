@@ -87,13 +87,22 @@ Auf einer leeren Datenbank in dieser Reihenfolge einspielen:
 
 `phase_2_51_luck_balance.sql` aktualisiert anschliessend ausschliesslich die
 Balance-Konfiguration fuer Glueckstreffer. Der Strukturmarker bleibt bei 50.
+Seitdem wurden die Folgephasen bis **2.67** eingespielt. Der verknuepfte
+Supabase-Stand wurde am 2026-09-24 mit `schema_version = 67`, den drei
+Endlos-Spalten und der Signatur von `submit_endless_round` geprueft.
 
 Der verknuepfte Supabase-Stand wird mit
 `supabase/verify_migration_state.sql` geprueft. Nach den aktuellen Phasen muss
-der Marker auf `schema_version = 50` stehen. Die Pruefung findet unter anderem
+der Marker auf `schema_version = 67` stehen. Die Pruefung findet unter anderem
 `sync_profile_cosmetics`, `duel_result_slot`, `start_bot_match`,
 `claim_bot_victory_bonus`, `bot_match_retention_count` und
 `prune_bot_victory_claims` in der erwarteten Signatur.
+
+Phase 2.67 fuegt `submit_endless_round` sowie `endless_session_id`,
+`endless_round` und `endless_talents` an den Laufbelegen hinzu. Der Server
+prueft 30 Sekunden, die Welt je Rundennummer, Talentgrenzen und den erreichten
+vorherigen Checkpoint. Ein eindeutiger Index pro Profil, Serie und Runde
+verhindert doppelte Buchungen.
 
 - Der Host startet die Talentphase erst ab zwei Teilnehmern.
 - Jeder Teilnehmer bestaetigt seinen temporaeren Talent-Build.

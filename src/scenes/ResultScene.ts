@@ -27,6 +27,11 @@ import type { ProgressionResult, RunStats } from '@/types';
 export interface ResultSceneData {
   stats: RunStats;
   progression?: ProgressionResult;
+  endlessRound?: number;
+  endlessTotalScore?: number;
+  endlessTotalXp?: number;
+  endlessTotalCoins?: number;
+  alreadySynced?: boolean;
   boostedRun?: CloudSystem.BoostedRunStart;
   boostedFinish?: CloudSystem.BoostedRunFinishInput;
 }
@@ -43,23 +48,41 @@ export class ResultScene extends Phaser.Scene {
       return;
     }
     if (!data.progression) return;
-    this.renderStandardResult(data.stats, data.progression, false);
+    this.renderStandardResult(data.stats, data.progression, false, data);
   }
 
   private renderStandardResult(
     stats: RunStats,
     progression: ProgressionResult,
     serverSettled: boolean,
+    data?: ResultSceneData,
   ): void {
-    SafeAreaSystem.showStatic('RUN BEENDET');
+    SafeAreaSystem.showStatic(data?.endlessRound ? 'ENDLOS BEENDET' : 'RUN BEENDET');
     const world = getWorld(stats.worldId);
 
     createSceneBackdrop(this, world);
-    new ResultView(this, soloResultContent(stats, progression, SaveSystem.load()), world.accent, [
+    const content = soloResultContent(stats, progression, SaveSystem.load());
+    if (data?.endlessRound) {
+      content.title = `ENDLOS · RUNDE ${data.endlessRound}`;
+      content.score = (data.endlessTotalScore ?? 0).toLocaleString('de-DE');
+      content.subtitle = `Gesamt: ${(data.endlessTotalScore ?? 0).toLocaleString('de-DE')} Punkte · Letzte Runde: ${stats.score.toLocaleString('de-DE')}`;
+      content.headlineReward = `+${(data.endlessTotalXp ?? 0).toLocaleString('de-DE')} XP · +${(data.endlessTotalCoins ?? 0).toLocaleString('de-DE')} Coins`;
+      if (content.sections[0]) {
+        content.sections[0].title = content.headlineReward;
+      }
+    }
+    new ResultView(this, content, world.accent, [
       {
         label: 'NOCHMAL',
         run: () => {
-          transitionTo(this, SceneKey.Game, { worldId: stats.worldId }, 'dive');
+          transitionTo(
+            this,
+            SceneKey.Game,
+            data?.endlessRound
+              ? { worldId: WORLDS[0]!.id, mode: 'endless' }
+              : { worldId: stats.worldId },
+            'dive',
+          );
         },
       },
       {
@@ -69,7 +92,7 @@ export class ResultScene extends Phaser.Scene {
         },
       },
     ]);
-    if (!serverSettled) ProgressSyncSystem.enqueueRun(stats, progression);
+    if (!serverSettled && !data?.alreadySynced) ProgressSyncSystem.enqueueRun(stats, progression);
     // Fuer eingeloggte Scores muss das zugehoerige Progress-Event zuerst
     // serverseitig akzeptiert sein; die Bestenliste bleibt dadurch kein
     // unabhaengiger Schreibpfad fuer dieselben Client-Zahlen.
@@ -79,7 +102,7 @@ export class ResultScene extends Phaser.Scene {
     // uebersprang ein `then` den Upload wortlos, weil `void` die Rejection
     // schluckt. Der Run war gespielt, der Punktestand stand auf dem Schirm,
     // und in der Bestenliste kam nie etwas an.
-    if (!serverSettled) {
+    if (!serverSettled && !data?.alreadySynced) {
       void ProgressSyncSystem.flush()
         .catch((error: unknown) => {
           DebugSystem.pushProtectedLogEntry({
@@ -90,7 +113,7 @@ export class ResultScene extends Phaser.Scene {
           });
         })
         .finally(() => this.submitLeaderboardScore(stats));
-    } else {
+    } else if (!data?.endlessRound) {
       this.submitLeaderboardScore(stats);
     }
     this.uploadSave();

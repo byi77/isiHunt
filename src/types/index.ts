@@ -115,6 +115,10 @@ export interface RunBonusSummary {
 
 export interface RunStats {
   worldId: string;
+  /** Eigenstaendige 30-Sekunden-Runde im Endlosmodus. */
+  endlessRound?: number;
+  endlessSessionId?: string;
+  endlessTalents?: TalentRanks;
   score: number;
   bestCombo: number;
   bestMultiplier: number;
@@ -141,10 +145,10 @@ export interface RunStats {
 /**
  * In welchem Modus ein Run laeuft.
  *
- * `solo` und `daily` schreiben Progression, `challenge` nicht - siehe
+ * `solo`, `endless` und `daily` schreiben Progression, `challenge` nicht - siehe
  * config/challenge.ts.
  */
-export type RunMode = 'solo' | 'challenge' | 'daily' | 'bot';
+export type RunMode = 'solo' | 'endless' | 'challenge' | 'daily' | 'bot';
 
 /**
  * Eine aktive Talentverstaerkung, aufgeteilt in Name und Wirkung.
@@ -257,6 +261,9 @@ export interface ProgressionResult {
 export interface ProgressEvent {
   eventId: string;
   worldId: string;
+  endlessRound?: number;
+  endlessSessionId?: string;
+  endlessTalents?: TalentRanks;
   score: number;
   bestCombo: number;
   xpGained: number;

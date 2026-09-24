@@ -345,6 +345,14 @@ function isProgressEvent(value: unknown): value is ProgressEvent {
     isFiniteInteger(event.bestCombo, 0, 10_000) &&
     isFiniteInteger(event.xpGained, 0, 10_000_000) &&
     isFiniteInteger(event.durationMs, 0, 120_000) &&
+    (event.endlessRound === undefined || isFiniteInteger(event.endlessRound, 1, 10000)) &&
+    (event.endlessSessionId === undefined ||
+      (typeof event.endlessSessionId === 'string' &&
+        /^[0-9a-f-]{36}$/i.test(event.endlessSessionId))) &&
+    (event.endlessTalents === undefined ||
+      (typeof event.endlessTalents === 'object' &&
+        event.endlessTalents !== null &&
+        Object.values(event.endlessTalents).every((rank) => isFiniteInteger(rank, 0, 5)))) &&
     isFiniteInteger(event.coinsGained, 0, 10_000_000) &&
     isFiniteInteger(event.talentPointsGained, 0, 10_000) &&
     isCollected(event.collected) &&
@@ -586,6 +594,9 @@ export function enqueueRun(
   const event: ProgressEvent = {
     eventId,
     worldId: stats.worldId,
+    endlessRound: stats.endlessRound,
+    endlessSessionId: stats.endlessSessionId,
+    endlessTalents: stats.endlessTalents,
     score: stats.score,
     bestCombo: stats.bestCombo,
     xpGained: stats.xpGained,

@@ -9,6 +9,16 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Endlosmodus
+
+- „Jagd“ und „Endlos“ stehen im Hauptmenue nebeneinander. Endlos bietet
+  30-Sekunden-Runden mit steigenden Gates, Weltwechsel und kostenlosen
+  temporaeren Talenten nach Checkpoints. Erreichte und verfehlte Runden
+  schreiben ihre Belohnungen einzeln; der dauerhafte Talentbaum bleibt aussen vor.
+- Punkte, XP und Coins steigen mit der Rundennummer. Die eigene Supabase-RPC
+  validiert 30-Sekunden-Runden, Talente und vorherige Checkpoints; Phase 2.67
+  wurde auf dem verknuepften Projekt eingespielt.
+
 ### Grafische Modernisierung
 
 - Talentgruppen haben mehr Abstand und sichtbare Pfade; Profil und Ergebnis

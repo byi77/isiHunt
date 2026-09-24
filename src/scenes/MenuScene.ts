@@ -756,6 +756,9 @@ export class MenuScene extends Phaser.Scene {
           'dive',
         );
         break;
+      case 'endless':
+        transitionTo(this, SceneKey.Game, { worldId: WORLDS[0]!.id, mode: 'endless' }, 'dive');
+        break;
       case 'daily':
       case 'info':
         this.scene.start(SceneKey.WorldInfo, {

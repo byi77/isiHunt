@@ -1,6 +1,6 @@
 # TODO — Arbeitsplan und Produkt-Audit
 
-**Stand:** 2026-08-30
+**Stand:** 2026-09-24
 **Repository-/Live-Version:** siehe `package.json` und `version.json`; der
 ausgelieferte Stand wird erst nach einem Deploy als live bestätigt.
 **Verbindliche Arbeitsreihenfolge:** die Phasen und Prioritäten in dieser Datei
@@ -69,13 +69,14 @@ Für eine Geräte- oder Backendaufgabe zusätzlich:
 | Browser-Spiel, 90-Sekunden-Run, Touch, Pause, Persistenz | gebaut und ausgeliefert | echte Geräteabnahme der aktuellen Spielinhalte |
 | Profil, Alias-Login, Offline-Outbox, Zusammenführung | implementiert | iPhone-/iPad-End-to-End-Test mit Offline-Runs |
 | Weltraum-Thema, Welten, Hindernisse, Tageslauf, Bot-Duell | implementiert | Balancing mit Emre und Simay |
+| Endlosmodus | 30-Sekunden-Runden, Gates, temporäre Talente und Supabase-RPC implementiert | Balance und längere Serien auf echten Geräten prüfen; siehe [Einbauplan](docs/ENDLOS_EINBAUPLAN.md) |
 | Grafische Modernisierung | implementiert; Browser-Playtest 78/78, `verify` 665 Tests | Geräteprüfung, 2D/3D-Dauertest, vollständige Referenzmatrix und Welt-Partikelrhythmen; siehe [Einbauplan](docs/GRAFIK_MODERNISIERUNG_EINBAUPLAN.md) |
 | Coins, XP, Punkte, Talente, Shop | implementiert; zentrale Balance-Kette aktiv | echte Economy-Messung mit Zielgruppe |
 | Shop | 100 Fluggestalten, Farben und Anprobe vorhanden | Figuren im laufenden Spiel auf Gerät sehen; weitere Kosmetik erst danach |
 | Netzwerk-Duell Phase 1 | 2–4-Spieler-Raum, direkte Einladungen, Talentphase, Startzeit, Live-Stand und Ergebnisvergleich vorhanden | echte Geräteabnahme, 3-/4-Spieler-Lauf und Abbruch-/Reconnect-Matrix |
 | Bestenliste | gemeinsame Casual-Liste und automatischer Eintrag vorhanden | Fairness bei Weltmodifikatoren; Ranked bleibt gesperrt |
 | Debugging und Release | Debug-Report, Versionsanzeige, `verify`, Pre-Push und GitHub-Pages-Deploy vorhanden | Gerätebelege konsequent als Release-Gate verwenden |
-| Supabase-Migrationsstand | produktiv auf Phase 2.42 belegt; **2.43 bis 2.50 liegen versioniert vor, sind aber nicht eingespielt** | P0-01a: die acht offenen Phasen ausführen und `schema_version = 50` nachweisen |
+| Supabase-Migrationsstand | verknüpftes Projekt am 2026-09-24 auf `schema_version = 67` geprüft | Endlos-RPC im echten Kontolauf testen |
 | Native App / Dynamic Island | bewusst noch nicht begonnen | erst nach stabiler Web-Basis und P3-Gate |
 
 ### Neue verbindliche Ausführungsreihenfolge
@@ -84,10 +85,8 @@ Die IDs bleiben stabil, damit Verweise und Git-Historie lesbar bleiben. Die
 folgende Reihenfolge ist die aktuelle Priorisierung; erledigte Punkte werden
 nicht erneut als Arbeit eingeplant:
 
-1. **P0-01a:** die Migrationen 2.43 bis 2.50 einspielen und
-   `schema_version = 50` nachweisen. Zuerst, weil Phase 2.50 die Serverseite
-   eines belegten Datenverlusts behebt und jede Geräteabnahme sonst gegen
-   einen anderen Serverstand läuft als den versionierten.
+1. **P0-01a erledigt:** Die Migrationskette wurde bis Phase 2.67 eingespielt;
+   Marker, Endlos-Spalten und RPC-Signatur sind live geprüft.
 2. **P0-02:** den tatsächlich ausgelieferten `version.json`-Stand auf iPhone
    und iPad mit Profil, Offline-Runs, Boost und Zusammenführung prüfen.
 3. **P0-03:** Netzwerk-Duell auf echten Geräten mit vollständigem Host- und
@@ -248,9 +247,14 @@ ausgeführt; Details stehen in `docs/AUDIT_2026-08-30.md`.
 **Abhängigkeiten:** keine. Der Live-Nachweis ist Voraussetzung für Aussagen
 über weitere produktive SQL- oder Mehrgeräte-Abläufe.
 
-### P0-01a — Migrationen 2.43 bis 2.50 einspielen und belegen
+### P0-01a — Migrationen 2.43 bis 2.50 einspielen und belegen (erledigt)
 
-- [ ] **Die seit dem Live-Nachweis hinzugekommenen Phasen ausführen.**
+- [x] **Die seit dem Live-Nachweis hinzugekommenen Phasen ausführen.**
+
+**Aktueller Nachweis 2026-09-24:** Das verknüpfte Projekt meldet
+`schema_version = 67`. `submit_endless_round` ist für `authenticated`
+ausführbar; die drei `endless_*`-Spalten sind vorhanden. Die folgende
+Beschreibung dokumentiert den damaligen Stand nach Phase 2.42.
 
 Der Live-Nachweis oben deckt Stand `schema_version = 42` ab. Seither sind acht
 Migrationen dazugekommen, die letzte am 2026-09-05:

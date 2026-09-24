@@ -5,6 +5,17 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 
 ## Bereits spielbar
 
+### Endlosmodus (2026-09-24)
+
+- [x] „Jagd“ und „Endlos“ als eigene Starts im Hauptmenue.
+- [x] 30-Sekunden-Runden mit Gates, Weltwechsel, temporaeren Talenten und
+      steigenden Punkte-, XP- und Coinboni.
+- [x] Jede abgeschlossene Runde wird lokal und ueber den Endlos-RPC verbucht;
+      Supabase-Phase 2.67 ist auf dem verknuepften Projekt eingespielt und
+      mit `schema_version = 67` sowie RPC-Signatur geprueft.
+- [ ] Gate-Erfolgsquoten, Economy und laengere Serien mit echten Spielern und
+      Mobilgeraeten pruefen. Werte und Testmatrix: [Einbauplan](ENDLOS_EINBAUPLAN.md).
+
 ### Grafische Modernisierung (2026-09-24)
 
 - [x] Talentpfade, entlastetes Profil, klarer Ergebnis-Kopf und kompaktes Menü.

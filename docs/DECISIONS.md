@@ -1404,8 +1404,7 @@ von Hand aus Rechtecken und `Text`-Objekten aufgebaut waren.
 
 Der Bildschirm ist der textlastigste des Spiels. Er zeigt neun Schiffe, Farben
 und Auren mit Namen, Beschreibung, Preis, Besitzstand und Levelhinweis — Inhalte
-also, deren Hoehe vom Text abhaengt und die auf 320 Pixeln anders brechen als auf
-430. Genau das ist in Phaser Handarbeit: Ein Canvas kennt keinen Textfluss, kein
+also, deren Hoehe vom Text abhaengt und die auf 320 Pixeln anders brechen als auf 430. Genau das ist in Phaser Handarbeit: Ein Canvas kennt keinen Textfluss, kein
 `overflow`, keine Zeilenhoehe. Jede dieser Eigenschaften war nachgebaut.
 
 Dieselbe Schwierigkeit hat das Projekt bereits zweimal geloest, indem es die
@@ -1609,3 +1608,37 @@ gelesen ueber `systems/EffectsQualitySystem.ts`. Standard ist `full`.
   `SPARSAM` der Ausweg; eine automatische Erkennung gibt es nicht.
 - Im Canvas-Renderer gibt es kein `preFX`; `effectsFx.applyGlow` gibt dort
   `null` zurueck, ohne dass ein Aufrufer den Renderer kennen muss.
+
+---
+
+## ADR-0028 — Endlos als Folge verbuchter 30-Sekunden-Runden
+
+**Datum:** 2026-09-24 · **Status:** Angenommen
+
+### Kontext
+
+Ein langer Lauf mit nur einem abschliessenden Upload wuerde Belohnungen bei
+Verbindungsabbruch oder App-Ende verlieren. Die vorhandene
+`submit_progress_event`-Pruefung akzeptiert nur 60 bis 120 Sekunden und
+berechnet XP aus dem dauerhaften Talentbaum.
+
+### Entscheidung
+
+Endlos ist eine Serie eigenstaendiger 30-Sekunden-Runden. Jede abgeschlossene
+Runde wird sofort lokal gutgeschrieben und als eigenes Cloud-Ereignis
+eingereiht. Die Serie traegt eine UUID; Runde 2 und spaeter setzen einen
+serverseitig belegten, bestandenen vorherigen Checkpoint derselben Serie
+voraus. Temporäre Talente gelten nur innerhalb dieser Serie, der dauerhafte
+Baum bleibt unberuehrt. Der eigene RPC `submit_endless_round` rechnet XP und
+Coins serverseitig nach. Endlos-Runden bleiben ausserhalb der normalen
+Casual-Bestenliste.
+
+### Konsequenzen
+
+- Ein verfehltes Gate beendet nur die Serie; die gespielte letzte Runde und
+  alle vorherigen Checkpoints bleiben bezahlt.
+- Die Outbox muss Runden derselben Serie in Reihenfolge senden. Die eindeutige
+  Kombination aus Profil, Serienkennung und Rundennummer verhindert doppelte
+  Gutschriften mit neuen Ereignis-IDs.
+- Die Gates und Ertragsfaktoren sind vorlaeufig und brauchen echte
+  Erfolgsquoten und Economy-Messungen vor einer Balance-Freigabe.

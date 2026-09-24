@@ -397,7 +397,7 @@ for (const [functionName, { file, body }] of latestDefinition) {
 }
 
 const migrationFiles = readdirSync(sqlDir).filter((name) =>
-  /^phase_2_(2[89]|3[0-9]|4[0-9]|5[0-9]|6[0-2])_.*\.sql$/.test(name),
+  /^phase_2_(2[89]|3[0-9]|4[0-9]|5[0-9]|6[0-7])_.*\.sql$/.test(name),
 );
 for (const file of migrationFiles) {
   const content = readFileSync(resolve(sqlDir, file), 'utf8').toLowerCase();
@@ -410,7 +410,7 @@ requireText(verification, 'daily_key', 'Live-Verifikation Tagesbonus');
 requireText(verification, 'upsert_save', 'Live-Verifikation Save-CAS');
 requireText(verification, 'duel_rooms', 'Live-Verifikation Duell');
 requireText(migrationVerification, 'schema_version', 'Live-Verifikation Migrationsmarker');
-requireText(migrationVerification, 'schema_version = 66', 'Live-Verifikation Phase 2.66');
+requireText(migrationVerification, 'schema_version = 67', 'Live-Verifikation Phase 2.67');
 requireText(rewardCodeCoreMigration, 'reward_codes', 'Reward-Code-Katalog');
 requireText(rewardCodeCoreMigration, 'reward_redemptions', 'Reward-Einloesbelege');
 requireText(rewardCodeCoreMigration, 'reward_code_attempts', 'Reward-Rate-Limits');
@@ -457,6 +457,11 @@ const duelLobbySlotStatesMigration = readFileSync(
 requireText(duelLobbySlotStatesMigration, "'invited'", 'Vierfacher Duell-Slotzustand Phase 2.66');
 requireText(duelLobbySlotStatesMigration, "'ready'", 'Bereiter Duell-Slot Phase 2.66');
 requireText(duelLobbySlotStatesMigration, 'schema_version = 66', 'Migrationsmarker Phase 2.66');
+const endlessMigration = readFileSync(resolve(sqlDir, 'phase_2_67_endless_rounds.sql'), 'utf8');
+requireText(endlessMigration, 'submit_endless_round', 'Endlos-Runden-RPC');
+requireText(endlessMigration, 'safe_duration_ms <> 30000', 'Endlos-Rundendauer');
+requireText(endlessMigration, 'total_talent_ranks > p_round - 1', 'Endlos-Talentgrenze');
+requireText(endlessMigration, 'schema_version = 67', 'Migrationsmarker Phase 2.67');
 const rewardCodePresetMigration = readFileSync(
   resolve(sqlDir, 'phase_2_63_reward_code_preset_grants.sql'),
   'utf8',

@@ -22,6 +22,7 @@ import {
 } from '@/config/GameConfig';
 import { auraLevelReached, SHIP_AURAS, SHIP_COLORS, SHIP_SHAPES } from '@/config/shop';
 import { TALENTS, type TalentId } from '@/config/talents';
+import { endlessRewards } from '@/config/endless';
 import { WORLDS } from '@/config/worlds';
 import * as CloudSystem from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
@@ -54,7 +55,11 @@ export function coinsForRun(run: RunStats): number {
     Math.floor(rare / RARE_CATCHES_PER_BONUS_COIN) +
     Math.floor(epic / EPIC_CATCHES_PER_BONUS_STEP) * EPIC_BONUS_COINS_PER_STEP +
     legendary * LEGENDARY_BONUS_COINS;
-  return Math.max(0, COINS_PER_RUN + collectionBonus + rarityBonus);
+  const base = run.endlessRound
+    ? Math.round((COINS_PER_RUN * (run.durationMs ?? 0)) / 90_000) +
+      endlessRewards(run.endlessRound).bonusCoins
+    : COINS_PER_RUN;
+  return Math.max(0, base + collectionBonus + rarityBonus);
 }
 
 function grantLevelReward(data: SaveData): number {
