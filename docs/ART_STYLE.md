@@ -1,5 +1,21 @@
 # Art Style Guide — isiHunt
 
+## Schiffs-Modernisierung: technische Lackierung und Metallfacetten
+
+Kaufbare Fluggeraete erhalten neben ihrer individuellen Silhouette ein
+gemeinsames Technikvokabular: gebrochene Fluegelstreifen, Wartungsluken,
+Kuehlschlitze und Kennpunkte. Die Markierungen bleiben in Graustufen und
+werden mit der Rumpffarbe getintet; Glas und Triebwerke behalten ihre dunklen
+beziehungsweise hellen Kontraststufen. Prozedurale Markierungen werden nur
+auf den Fluggeraeten eingesetzt, nicht auf Figuren, Tieren oder Drohnen.
+
+Die Low-Poly-3D-Schiffe zeigen im Hangar zusaetzlich lichtgefasste
+Kantenflaechen und einen abgesetzten Triebwerksring. Die Kanten verwenden
+einen Winkel-Schwellenwert, damit flache Dreieckskanten nicht als Drahtgitter
+erscheinen. Metall bleibt matt genug, dass die ausgeruestete Farbe erkennbar
+bleibt; die Linienebene wird beim Modellwechsel gemeinsam mit dem Modell
+freigegeben.
+
 ## Grafikrunde 3: Expedition und gezeichnete Welten
 
 Die Folgefassung bewahrt die dunkle Weltraumatmosphäre und ergänzt eine
@@ -27,19 +43,19 @@ fest; Menue, Logo und einzelne Oberflaechen bleiben Aufgaben der Folgephasen.
 
 ### Tokens
 
-| Zweck | Wert |
-| --- | --- |
-| Hintergrund | `#0b1020` |
-| Panel | `#13212c` |
-| Button | `#172734` |
-| Button-Kontur | `#344753` |
-| Haupttext | `#f4f1e8` |
-| Sekundaertext | `#b8c0d9` |
-| Primaeraktion / Gold | `#ffd479` |
-| Warnung | `#ff6b6b` |
-| Erfolg | `#7ee787` |
-| Radien | 12–14 px fuer Standardflaechen, 20–24 px fuer grosse Karten |
-| Abstufungen | 8 px Grundraster; 16/24/32 px fuer groessere Gruppen |
+| Zweck                | Wert                                                        |
+| -------------------- | ----------------------------------------------------------- |
+| Hintergrund          | `#0b1020`                                                   |
+| Panel                | `#13212c`                                                   |
+| Button               | `#172734`                                                   |
+| Button-Kontur        | `#344753`                                                   |
+| Haupttext            | `#f4f1e8`                                                   |
+| Sekundaertext        | `#b8c0d9`                                                   |
+| Primaeraktion / Gold | `#ffd479`                                                   |
+| Warnung              | `#ff6b6b`                                                   |
+| Erfolg               | `#7ee787`                                                   |
+| Radien               | 12–14 px fuer Standardflaechen, 20–24 px fuer grosse Karten |
+| Abstufungen          | 8 px Grundraster; 16/24/32 px fuer groessere Gruppen        |
 
 Die Tokens liegen in `src/ui/theme.ts`. Szenen definieren keine eigenen
 Oberflaechenfarben. Seltenheitsfarben bleiben ausschliesslich Spielinformation
@@ -75,10 +91,10 @@ Zuruecknavigation und die wichtigste Aktion bleiben fest erreichbar.
 
 ### Responsive Pruefmatrix
 
-| Breite | Erwartung |
-| ---: | --- |
-| 360 px | Grundaktion und Zurueckweg sichtbar; Kulisse schrumpft zuerst |
-| 390 px | Referenzbreite fuer Karten, Listen und Standardabstaende |
+| Breite | Erwartung                                                                      |
+| -----: | ------------------------------------------------------------------------------ |
+| 360 px | Grundaktion und Zurueckweg sichtbar; Kulisse schrumpft zuerst                  |
+| 390 px | Referenzbreite fuer Karten, Listen und Standardabstaende                       |
 | 402 px | Zusatzbreite darf Luft geben, aber keine neue Informationshierarchie erzwingen |
 
 Die bestehende Layout-Pruefung (`src/ui/layoutAudit.ts`) misst sichtbare

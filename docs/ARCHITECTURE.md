@@ -32,6 +32,13 @@ behält seine Draufsicht. Updates kommen von Phaser, ohne zweiten Animationsloop
 OBJ-Flächen. `egoAssets.ts` verbindet sie über `previewUrl` mit den Modellen;
 der Hangar verwendet sie als passende 2D-Alternative.
 
+Die Schiffs-Livery liegt als zweiter Zeichendurchlauf in
+`ui/shipShapes.ts::drawShipLivery`; `ui/textures.ts` fuegt sie vor Kontur,
+Bevel und Tint in dieselbe hochaufgeloeste Textur ein. 3D-Modelle erhalten im
+Hangarmodus `EdgesGeometry` mit Winkelschwelle als eigene `LineSegments`-
+Ebene. `disposeObject()` gibt deren Geometrie und Material zusammen mit dem
+OBJ frei; im Spielmodus bleibt diese zusaetzliche Linienebene aus.
+
 Grafik-Update Punkt 8: `ui/ResultView.ts` zeigt einen festen Ergebniskopf und
 44-CSS-Pixel-Aktionen um einen maskierten Detailbereich. Die View baut bei Resize
 nur Darstellung neu auf und entfernt Input-/Resize-Listener beim Shutdown.

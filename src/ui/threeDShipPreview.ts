@@ -2,8 +2,10 @@ import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import type { ShipFlightPose } from '@/ui/shipFlight';
 import type {
   Group,
+  LineBasicMaterial,
   Mesh,
   LineLoop,
+  LineSegments,
   Object3D,
   OrthographicCamera,
   Scene,
@@ -49,6 +51,7 @@ export class ThreeDShipPreview {
   private initialization: Promise<void> | null = null;
   private platform: Group | null = null;
   private engine: Mesh | null = null;
+  private engineRing: Mesh | null = null;
   private yaw = 0;
   private tilt = 0;
   private elapsed = 0;
@@ -270,7 +273,7 @@ export class ThreeDShipPreview {
       keyLight.position.set(2, 3, 4);
       scene.add(keyLight);
 
-      const rimLight = new THREE.DirectionalLight(0x80aaff, 1.2);
+      const rimLight = new THREE.DirectionalLight(0x9bdcff, 1.45);
       rimLight.position.set(-3, 1, -2);
       scene.add(rimLight);
 
@@ -362,6 +365,17 @@ export class ThreeDShipPreview {
           this.engine.position.set(0, 0, 0.72);
           this.engine.scale.set(0.6, 0.5, 2.2);
           pivot.add(this.engine);
+          this.engineRing = new this.runtime!.Mesh(
+            new this.runtime!.TorusGeometry(0.075, 0.012, 6, 24),
+            new this.runtime!.MeshBasicMaterial({
+              color: 0xdff7ff,
+              transparent: true,
+              opacity: 0.82,
+            }),
+          );
+          this.engineRing.name = 'engine-nozzle-rim';
+          this.engineRing.position.set(0, 0, 0.68);
+          pivot.add(this.engineRing);
         }
         this.model = pivot;
         this.scene?.add(pivot);
@@ -400,26 +414,31 @@ export class ThreeDShipPreview {
     model.traverse((object) => {
       const mesh = object as Mesh;
       if (!mesh.isMesh) return;
+      if (this.hangar) this.applyHullEtching(mesh, tint);
       const originalMaterial = mesh.material;
       const materials = Array.isArray(originalMaterial) ? originalMaterial : [originalMaterial];
       const tintedMaterials = materials.map((material) => {
         if (material instanceof this.runtime!.MeshStandardMaterial) {
           material.color.setHex(tint);
           material.emissive.setHex(tint);
+          material.emissiveIntensity = 0.045;
+          material.roughness = 0.32;
+          material.metalness = 0.62;
+          material.flatShading = true;
           if (this.hangar) {
             material.transparent = true;
             material.opacity = this.appearance.alpha;
           }
           return material;
         }
-        if (mesh === this.engine) return material;
+        if (mesh === this.engine || mesh === this.engineRing) return material;
         material.dispose();
         return new this.runtime!.MeshStandardMaterial({
           color: tint,
           emissive: tint,
-          emissiveIntensity: 0.12,
-          roughness: 0.46,
-          metalness: 0.28,
+          emissiveIntensity: 0.045,
+          roughness: 0.32,
+          metalness: 0.62,
           flatShading: true,
           side: this.runtime!.DoubleSide,
         });
@@ -436,19 +455,46 @@ export class ThreeDShipPreview {
     });
   }
 
+  /** Kantenlicht zeichnet die Low-Poly-Flaechen wie lackierte Metallplatten. */
+  private applyHullEtching(mesh: Mesh, tint: number): void {
+    const THREE = this.runtime;
+    if (THREE === null) return;
+    const key = 'isihuntHullEtching';
+    let etching = mesh.userData[key] as LineSegments | undefined;
+    if (!etching) {
+      const geometry = new THREE.EdgesGeometry(mesh.geometry, 22);
+      const material = new THREE.LineBasicMaterial({
+        color: 0xe3f5ff,
+        transparent: true,
+        opacity: 0.46,
+        depthWrite: false,
+      });
+      etching = new THREE.LineSegments(geometry, material);
+      etching.name = 'hull-panel-edges';
+      etching.renderOrder = 2;
+      mesh.add(etching);
+      mesh.userData[key] = etching;
+    }
+    const material = etching.material as LineBasicMaterial;
+    material.color.setHex(tint).lerp(new THREE.Color(0xf3fbff), 0.5);
+    material.opacity = 0.46 * this.appearance.alpha;
+  }
+
   private removeModel(): void {
     if (this.model === null) return;
     this.scene?.remove(this.model);
     this.disposeObject(this.model);
     this.model = null;
     this.engine = null;
+    this.engineRing = null;
   }
 
   private disposeObject(object: Object3D): void {
     object.traverse((child) => {
       const mesh = child as Mesh;
-      if (!mesh.isMesh) return;
-      mesh.geometry.dispose();
+      const line = child as LineSegments;
+      if (!mesh.isMesh && !line.isLineSegments) return;
+      line.geometry.dispose();
       const materials = Array.isArray(mesh.material) ? mesh.material : [mesh.material];
       for (const material of materials) material.dispose();
     });

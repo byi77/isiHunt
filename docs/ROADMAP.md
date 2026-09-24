@@ -6,19 +6,19 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 ## Bereits spielbar
 
 - [x] Eigene Spielfeldkulisse mit strukturierten Weltennebeln, drei
-  Sternlagen, sanfter Parallaxe und hochaufgeloestem Randplaneten.
+      Sternlagen, sanfter Parallaxe und hochaufgeloestem Randplaneten.
 
 ### Grafik-Update - Grafikrunde 3 (2026-09-24)
 
 - [x] Start aus dem Menue mit Tauch-Uebergang; der vorhandene Szenenwechsel
-  traegt den Ablauf bis zur Jagd und zum Ergebnis.
+      traegt den Ablauf bis zur Jagd und zum Ergebnis.
 - [x] Prozedurale, statische Weltkonturen fuer Eis, Gas, Raumriss und weitere
-  Welttypen in den aeusseren Spielfeldzonen.
+      Welttypen in den aeusseren Spielfeldzonen.
 - [x] Ausgeruestetes Schiff zusaetzlich in der Solo-Ergebnisansicht.
 - [x] Dezente Cockpit-Skala am HUD und facettierter Siegelrand fuer legendaere
-  Fangaeffekte.
+      Fangaeffekte.
 - [ ] Sichtpruefung auf 360/390/402 CSS-Pixeln, echte Mobilgeraete,
-  reduzierte Bewegung und Laufzeit-/Speichermessung.
+      reduzierte Bewegung und Laufzeit-/Speichermessung.
 
 Details und offene Pruefungen: [Grafik-Update-Plan](GRAFIK_UPDATE_PLAN.md).
 
@@ -30,6 +30,15 @@ Details und offene Pruefungen: [Grafik-Update-Plan](GRAFIK_UPDATE_PLAN.md).
 - [x] Bonus-XP-Knopf nur bei vorhandenem Bonusrecht, ohne Ueberdeckung des Startknopfs; verstaendliche Fehlermeldungen.
 - [x] Menue-Logo nicht mehr vom Vollbildknopf verdeckt; Emojis bei Buchstabenabstand heil.
 - [ ] Formen 30-99 (nicht im Shop) und 3D-Modelle unveraendert; Bonusknopf mit echtem Bonusrecht auf dem Geraet pruefen.
+
+### Schiffs-Modernisierung - Lackierung und Metallfacetten
+
+- [x] Kaufbare Fluggeraete mit variantenbezogenen Wartungsmarkierungen,
+      Fluegelstreifen, Kuehlschlitzen und technischen Kennpunkten.
+- [x] 3D-Hangar mit kantengefassten Low-Poly-Flaechen und detailliertem
+      Triebwerksring; Ressourcen werden beim Modellwechsel freigegeben.
+- [ ] Ansichten aller kaufbaren Formen im Hangar und im Spielfeld auf kleinen
+      Geraeten pruefen; Facettenkontrast und Tintfarben visuell abstimmen.
 
 ### Grafik-Update - Runde 2 (2026-09-24)
 
@@ -61,7 +70,6 @@ Technische Nachprüfung: [Abschlussbericht](design/2026-09-17-audit/README.md).
 - [ ] Echte Mobilgeraete, reduzierte Bewegung auf OS-Ebene und Live-Netzwerkduell.
 
 Details: [Punkt 8](design/2026-09-17-results/README.md).
-
 
 ### Grafik-Update — Punkt 6 lokal umgesetzt
 

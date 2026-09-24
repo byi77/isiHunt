@@ -11,6 +11,10 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Schiffs-Modernisierung.** Kaufbare Raumjaeger und Flugzeuge erhalten
+  gebrochene Lackstreifen, Wartungsluken und Kuehlschlitze. Die Low-Poly-3D-
+  Modelle im Hangar bekommen lichtgefasste Metallkanten und einen abgesetzten
+  Triebwerksring; Formen, Tinting und Bewegung bleiben dieselben.
 - **Grafikrunde 3: Weltraumexpedition.** Der Menüstart taucht in die
   Weltinformation ein; statische, gezeichnete Randkonturen unterscheiden die
   Welttypen im Spielfeld. Das Solo-Ergebnis zeigt das ausgerüstete Schiff,

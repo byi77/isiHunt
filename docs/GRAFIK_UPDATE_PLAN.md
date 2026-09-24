@@ -4,6 +4,22 @@
 
 Stand: 24. September 2026
 
+### Schiffsdetails und Metallfacetten — 24. September 2026
+
+Der zusätzliche Modernisierungspass ergänzt die kaufbaren Raumschiffe und
+Flugzeuge um eine zweite, formabhängige Lackierungsebene: gebrochene
+Flügelstreifen, Wartungsluken, Kühlschlitze und Kennpunkte. Figuren, Tiere und
+Drohnen behalten ihre eigene Binnenzeichnung. Im 3D-Hangar erhalten die
+Low-Poly-Rümpfe metallischere Materialien, dezente Lichtkanten entlang der
+großen Flächen und einen abgesetzten Triebwerksring. Beim Modellwechsel werden
+auch die ergänzenden Kantenressourcen freigegeben.
+
+Die 2D-Schiffsgalerie und eine Hangaransicht wurden lokal visuell geprüft.
+Offen bleiben die Sichtprüfung aller kaufbaren Schiffe auf kleinen Geräten,
+der Abgleich der Facetten mit unterschiedlichen Tints sowie reale
+Geräte-/GPU-Laufzeitmessungen. Details: [`ART_STYLE.md`](ART_STYLE.md) und
+[`ROADMAP.md`](ROADMAP.md).
+
 ### Ziel und Umfang
 
 Diese Runde baut auf dem abgeschlossenen Grafik-Update auf. Sie soll isiHunt

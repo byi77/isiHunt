@@ -10,7 +10,12 @@ import Phaser from 'phaser';
 
 import { getShipShape } from '@/config/shop';
 import { EGO_ASSET_KEY, textureKeyForEgoShape } from '@/ui/egoAssets';
-import { SHIP_DRAWINGS, SHIP_TEXTURE_RESOLUTION, SHIP_TEXTURE_SIZE } from '@/ui/shipShapes';
+import {
+  drawShipLivery,
+  SHIP_DRAWINGS,
+  SHIP_TEXTURE_RESOLUTION,
+  SHIP_TEXTURE_SIZE,
+} from '@/ui/shipShapes';
 
 export const TextureKey = {
   Orb: 'tex-orb',
@@ -88,12 +93,12 @@ export function shipDisplayScale(textureKey: string): number {
 /** Legt fuer jede Zeichnung in `SHIP_DRAWINGS` eine Textur an. */
 function createShipTextures(scene: Phaser.Scene): void {
   SHIP_DRAWINGS.forEach((zeichnen, index) =>
-    createShipTexture(scene, shipTextureKey(index), zeichnen),
+    createShipTexture(scene, shipTextureKey(index), zeichnen, index),
   );
   // Rueckfall unter dem alten Namen - `TextureKey.PlayerCore` wird an einigen
   // Stellen direkt verwendet.
   const first = SHIP_DRAWINGS[0];
-  if (first) createShipTexture(scene, TextureKey.PlayerCore, first);
+  if (first) createShipTexture(scene, TextureKey.PlayerCore, first, 0);
 }
 
 /**
@@ -120,6 +125,7 @@ function createShipTexture(
   scene: Phaser.Scene,
   key: string,
   zeichnen: (g: Phaser.GameObjects.Graphics) => void,
+  index: number,
 ): void {
   if (scene.textures.exists(key)) return;
   const r = SHIP_TEXTURE_RESOLUTION;
@@ -131,6 +137,7 @@ function createShipTexture(
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
   g.scaleCanvas(r, r);
   zeichnen(g);
+  drawShipLivery(g, index);
   g.generateTexture(rawKey, size, size);
   g.destroy();
   const raw = scene.textures.get(rawKey).getSourceImage() as HTMLCanvasElement;

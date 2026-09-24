@@ -879,6 +879,170 @@ function fenster(g: G, punkte: P[], r = 1.3): void {
 }
 
 /**
+ * Lack- und Wartungsmarkierungen fuer die kaufbaren Fluggeraete.
+ *
+ * Die Grundzeichnungen liefern bereits die Silhouette. Dieser zweite Durchlauf
+ * gibt den Schiffen eine gemeinsame, technische Identitaet: Wartungslinien,
+ * Fluegelstreifen und kleine Kennfelder, die auch nach dem Tinting sichtbar
+ * bleiben. Figuren, Tiere und Drohnen behalten ihre eigene Bildsprache.
+ */
+export function drawShipLivery(g: G, index: number): void {
+  if (index > 18) return;
+
+  if (index === 5 || index === 11) {
+    // Radialmarken der Sternen- und Sondenformen folgen deren Symmetrie.
+    g.lineStyle(1.2, RUMPF_MITTEL, 0.85);
+    const count = index === 5 ? 6 : 3;
+    for (let i = 0; i < count; i++) {
+      const angle = (Math.PI * 2 * i) / count - Math.PI / 2;
+      const inner = index === 5 ? 19 : 15;
+      const outer = index === 5 ? 31 : 27;
+      g.lineBetween(
+        C + Math.cos(angle) * inner,
+        C + Math.sin(angle) * inner,
+        C + Math.cos(angle) * outer,
+        C + Math.sin(angle) * outer,
+      );
+    }
+    g.lineStyle(0.8, NAHT, 0.9);
+    g.strokeCircle(C, C, index === 5 ? 20 : 27);
+    return;
+  }
+
+  if (index === 10) {
+    // Frachter: kurze radiale Fugen machen die grosse Scheibe zur Huelle.
+    g.lineStyle(0.9, NAHT, 0.72);
+    for (let i = 0; i < 8; i++) {
+      const angle = (Math.PI * 2 * i) / 8;
+      g.lineBetween(
+        C + Math.cos(angle) * 24,
+        54 + Math.sin(angle) * 15,
+        C + Math.cos(angle) * 34,
+        54 + Math.sin(angle) * 22,
+      );
+    }
+    g.lineStyle(1.2, RUMPF_MITTEL, 0.85);
+    g.strokeEllipse(C, 54, 50, 32);
+    return;
+  }
+
+  if (index === 15) {
+    // Doppeldecker: Markierungen gehoeren auf beide Tragflaechen, nicht in
+    // den freien Spalt zwischen ihnen.
+    for (const y of [36, 62]) {
+      paar(
+        g,
+        [
+          [C - 7, y],
+          [C - 21, y],
+          [C - 21, y + 4],
+          [C - 8, y + 4],
+        ],
+        RUMPF_MITTEL,
+        0.9,
+      );
+    }
+    g.lineStyle(1, NAHT, 0.9);
+    g.lineBetween(C - 5, 48, C - 5, 58);
+    g.lineBetween(C + 5, 48, C + 5, 58);
+    return;
+  }
+
+  if (index === 17) {
+    // Raketenrumpf: zwei breite Wartungsbaender und ein schmaler Leitwerksstrich.
+    g.fillStyle(RUMPF_MITTEL, 0.95);
+    g.fillRect(C - 10, 47, 20, 2);
+    g.fillRect(C - 10, 61, 20, 2);
+    g.lineStyle(1, NAHT, 0.9);
+    g.lineBetween(C - 7, 27, C - 7, 46);
+    g.lineBetween(C + 7, 27, C + 7, 46);
+    return;
+  }
+
+  if (index === 18) {
+    // Gleitschirm: abgesetzte Segelbahnen folgen der Rundung der Kappe.
+    paar(
+      g,
+      [
+        [C - 4, 12],
+        [C - 12, 15],
+        [C - 24, 24],
+        [C - 17, 28],
+        [C - 6, 21],
+      ],
+      RUMPF_MITTEL,
+      0.72,
+    );
+    g.lineStyle(1.1, NAHT, 0.82);
+    g.lineBetween(C - 2, 13, C - 2, 42);
+    g.lineBetween(C + 2, 13, C + 2, 42);
+    return;
+  }
+
+  // Zwei gebrochene Fluegelstreifen statt eines durchgehenden Rennstreifens:
+  // Die Kanzel und die Grundsilhouette bleiben dadurch der Blickfang.
+  const span = index >= 13 ? 15 : 21;
+  const yRoot = index === 14 || index === 15 ? 49 : 48;
+  const yTip = index === 14 || index === 15 ? 53 : 62;
+  const markings: P[] = [
+    [C - 7, yRoot],
+    [C - span, yTip - 4],
+    [C - span + 2, yTip - 1],
+    [C - 8, yRoot + 4],
+  ];
+  paar(g, markings, RUMPF_MITTEL, 0.82);
+  nahtPaar(
+    g,
+    [
+      [C - 10, yRoot + 7],
+      [C - span + 3, yTip + 1],
+    ],
+    0.9,
+    1,
+  );
+
+  // Wartungsluke und zwei kurze Kuehlschlitze hinter der Kanzel.
+  const plate: P[] = [
+    [C - 4, 50],
+    [C + 4, 50],
+    [C + 5, 61],
+    [C - 5, 61],
+  ];
+  flaeche(g, plate, RUMPF_MITTEL, 0.88);
+  g.lineStyle(0.8, NAHT, 0.92);
+  g.lineBetween(C - 2.5, 53, C + 2.5, 53);
+  g.lineBetween(C - 2.5, 56, C + 2.5, 56);
+  g.lineBetween(C - 2.5, 59, C + 2.5, 59);
+
+  if (index % 3 === 0 || index === 17) {
+    // Kleine Kontrollpunkte an den Fluegelwurzeln, statt weiterer Flaechen.
+    g.fillStyle(0xffffff, 0.9);
+    g.fillCircle(C - span + 5, yTip - 2, 1.15);
+    g.fillCircle(C + span - 5, yTip - 2, 1.15);
+  } else {
+    // Doppelte Kuehlschlitze geben den dunklen Fluechen Tiefe.
+    nahtPaar(
+      g,
+      [
+        [C - span + 4, yTip - 3],
+        [C - span + 8, yTip - 1],
+      ],
+      0.92,
+      1.2,
+    );
+    nahtPaar(
+      g,
+      [
+        [C - span + 3, yTip],
+        [C - span + 7, yTip + 2],
+      ],
+      0.72,
+      0.9,
+    );
+  }
+}
+
+/**
  * Alle Zeichnungen, ueber den stabilen `skinIndex` aus `SHIP_SHAPES` adressiert.
  *
  * Der Index ist der Vertrag zwischen Konfiguration und Zeichnung. Die
