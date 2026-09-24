@@ -2,7 +2,9 @@ import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import type { ShipFlightPose } from '@/ui/shipFlight';
 import type {
   Group,
+  BufferGeometry,
   LineBasicMaterial,
+  Material,
   Mesh,
   LineLoop,
   LineSegments,
@@ -454,7 +456,7 @@ export class ThreeDShipPreview {
       roughness: 0.2,
     });
     const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xffd479 });
-    const add = (geometry: import('three').BufferGeometry, material: import('three').Material) => {
+    const add = (geometry: BufferGeometry, material: Material) => {
       const mesh = new THREE.Mesh(geometry, material);
       detail.add(mesh);
       return mesh;
