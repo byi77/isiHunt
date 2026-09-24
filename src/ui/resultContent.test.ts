@@ -86,7 +86,7 @@ describe('Ergebnisdarstellung', () => {
     });
     for (const aura of byTitle('NEUE OPTIK IM SHOP')) expect(aura.visual).toEqual({ kind: 'aura' });
     expect(byTitle('AUSBEUTE')[0]!.visual).toBeUndefined();
-    expect(byTitle('NAECHSTES ZIEL')[0]!.visual).toBeUndefined();
+    expect(byTitle('DEIN NÄCHSTES ZIEL')[0]!.visual).toBeUndefined();
   });
 
   it('haelt die lokale Bot-Praemie erkennbar und ordnet vier Ergebnisse ihren Namen zu', () => {

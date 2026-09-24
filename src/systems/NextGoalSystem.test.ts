@@ -55,11 +55,11 @@ describe('NextGoalSystem', () => {
     expect(goal.detail).toContain('Rang 1');
   });
 
-  it('zeigt ein nahes Gebiet vor einem weit entfernten Kaufziel', () => {
+  it('zeigt das erste Talentziel vor einem nahen Gebiet', () => {
     const goal = getNextGoal(save({ level: 1, coins: 0 }));
 
-    expect(goal.kind).toBe('world');
-    expect(goal.title).toContain('Eisring');
+    expect(goal.kind).toBe('talent');
+    expect(goal.title).toContain('Reichweite');
   });
 
   it('zeigt den fehlenden Talentpunkt fuer den naechsten Talent-Rang', () => {
