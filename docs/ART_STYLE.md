@@ -16,6 +16,14 @@ erscheinen. Metall bleibt matt genug, dass die ausgeruestete Farbe erkennbar
 bleibt; die Linienebene wird beim Modellwechsel gemeinsam mit dem Modell
 freigegeben.
 
+Für die neun Orbital-Modelle gilt zusätzlich: Der Raumschiffcharakter muss
+auch aus der Draufsicht sofort lesbar sein. Kanzelglas, ein klarer Mittelrumpf,
+abgesetzte Flügelpanzerung und sichtbare Heckdüsen durchbrechen die reine
+Dreiecksfläche. Die vom OBJ abgeleiteten SVGs tragen dieselben Details in
+Shop, Menü und Ergebnis; ihre Kontur bleibt das CC0-Modell. Die ersten
+Raumjäger-Silhouetten nutzen breite, abgestufte Flügel und mehrere Triebwerke.
+Kontrastreiche Metalltöne dürfen die gewählte Schiffstönung nicht verdrängen.
+
 ## Grafikrunde 3: Expedition und gezeichnete Welten
 
 Die Folgefassung bewahrt die dunkle Weltraumatmosphäre und ergänzt eine

@@ -1,6 +1,6 @@
 # Roadmap — isiHunt
 
-**Stand:** 2026-08-30 · Produktstand siehe `package.json`/`version.json` · Die detaillierte und verbindliche Aufgabenreihenfolge
+**Stand:** 2026-09-24 · Produktstand siehe `package.json`/`version.json` · Die detaillierte und verbindliche Aufgabenreihenfolge
 steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 
 ## Bereits spielbar
@@ -29,16 +29,21 @@ Details und offene Pruefungen: [Grafik-Update-Plan](GRAFIK_UPDATE_PLAN.md).
 - [x] Hangar zeigt die eingefaerbte Zeichnung statt einer einfarbigen Silhouette.
 - [x] Bonus-XP-Knopf nur bei vorhandenem Bonusrecht, ohne Ueberdeckung des Startknopfs; verstaendliche Fehlermeldungen.
 - [x] Menue-Logo nicht mehr vom Vollbildknopf verdeckt; Emojis bei Buchstabenabstand heil.
-- [ ] Formen 30-99 (nicht im Shop) und 3D-Modelle unveraendert; Bonusknopf mit echtem Bonusrecht auf dem Geraet pruefen.
+- [ ] Formen 30-99 (nicht im Shop) unveraendert; Bonusknopf mit echtem Bonusrecht auf dem Geraet pruefen.
 
-### Schiffs-Modernisierung - Lackierung und Metallfacetten
+### Schiffs-Modernisierung - Raumjaeger, Orbitalmodelle und Fallbacks
 
-- [x] Kaufbare Fluggeraete mit variantenbezogenen Wartungsmarkierungen,
-      Fluegelstreifen, Kuehlschlitzen und technischen Kennpunkten.
-- [x] 3D-Hangar mit kantengefassten Low-Poly-Flaechen und detailliertem
-      Triebwerksring; Ressourcen werden beim Modellwechsel freigegeben.
+- [x] 35 kaufbare Formen aus Raumschiffen, Flugzeugen, Figuren, Tieren und
+      Drohnen im Shop, in der 2D-Ansicht und im Hangar gesichtet.
+- [x] Pfeil, Delta, Sichel und Keilkreuzer mit breiteren, gepanzerten
+      Silhouetten und mehreren Hecktriebwerken.
+- [x] Neun Orbital-OBJ-Schiffe mit Cockpit, Schulterpanzerung, Paneelfugen,
+      Lichtpunkten und Zwillingsduesen; detailreiche SVGs werden auch im Shop,
+      Menue und Ergebnis als 2D-Fallback benutzt.
+- [x] Hangarvorschau zeigt die getoente Binnenzeichnung statt einer leeren
+      SVG-Maske; die 3D-Ansicht ergänzt eigene Metallteile und Lichtpunkte.
 - [ ] Ansichten aller kaufbaren Formen im Hangar und im Spielfeld auf kleinen
-      Geraeten pruefen; Facettenkontrast und Tintfarben visuell abstimmen.
+      Geraeten pruefen; Tintfarben, Bewegung und GPU-/Langzeitverhalten abstimmen.
 
 ### Grafik-Update - Runde 2 (2026-09-24)
 

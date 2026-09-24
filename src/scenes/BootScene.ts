@@ -44,6 +44,19 @@ export class BootScene extends Phaser.Scene {
       frameWidth: 64,
       frameHeight: 64,
     });
+    [
+      TextureKey.OrbitalShip01,
+      TextureKey.OrbitalShip02,
+      TextureKey.OrbitalShip03,
+      TextureKey.OrbitalShip04,
+      TextureKey.OrbitalShip05,
+      TextureKey.OrbitalShip06,
+      TextureKey.OrbitalShip07,
+      TextureKey.OrbitalShip08,
+      TextureKey.OrbitalShip09,
+    ].forEach((key, index) => {
+      this.load.image(key, `./assets/ego3d/cc0-spaceships/ship${index + 1}-preview.svg`);
+    });
     this.load.image(TextureKey.EgoCc0AuraFlame01, './assets/ego/aura/cc0-flame_01.png');
     this.load.image(TextureKey.EgoCc0AuraFlame02, './assets/ego/aura/cc0-flame_02.png');
     this.load.image(TextureKey.EgoCc0AuraFlame03, './assets/ego/aura/cc0-flame_03.png');

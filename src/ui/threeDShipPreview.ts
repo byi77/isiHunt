@@ -267,13 +267,13 @@ export class ThreeDShipPreview {
       camera.position.set(0, 4, this.hangar ? 4 : 0);
       camera.up.set(0, this.hangar ? 1 : 0, this.hangar ? 0 : -1);
       camera.lookAt(0, 0, 0);
-      scene.add(new THREE.AmbientLight(0xffffff, this.hangar ? 1.5 : 0.85));
+      scene.add(new THREE.AmbientLight(0xffffff, this.hangar ? 0.78 : 0.72));
 
-      const keyLight = new THREE.DirectionalLight(0xffffff, 2.4);
+      const keyLight = new THREE.DirectionalLight(0xffffff, 1.35);
       keyLight.position.set(2, 3, 4);
       scene.add(keyLight);
 
-      const rimLight = new THREE.DirectionalLight(0x9bdcff, 1.45);
+      const rimLight = new THREE.DirectionalLight(0x9bdcff, 0.9);
       rimLight.position.set(-3, 1, -2);
       scene.add(rimLight);
 
@@ -353,6 +353,7 @@ export class ThreeDShipPreview {
         // Rotate around the fitted centre, not the OBJ export origin.
         const pivot = new this.runtime!.Group();
         pivot.add(model);
+        pivot.add(this.createHullDetails(model));
         if (this.hangar) {
           this.engine = new this.runtime!.Mesh(
             new this.runtime!.SphereGeometry(0.1, 12, 8),
@@ -409,6 +410,128 @@ export class ThreeDShipPreview {
     model.position.sub(centered);
   }
 
+  /** Adds a cockpit, armored plates and twin drives to the sparse CC0 hulls. */
+  private createHullDetails(model: Group): Group {
+    const THREE = this.runtime!;
+    const bounds = new THREE.Box3().setFromObject(model);
+    const size = bounds.getSize(new THREE.Vector3());
+    const center = bounds.getCenter(new THREE.Vector3());
+    const alongX = size.x > size.z;
+    const length = Math.max(size.x, size.z);
+    const beam = Math.min(size.x, size.z);
+    const depth = Math.max(size.y, 0.09);
+    const top = bounds.max.y + depth * 0.025;
+    const elongated = length / Math.max(beam, 0.001) > 1.35;
+    const detail = new THREE.Group();
+    detail.name = 'ship-hard-surface-details';
+    detail.position.set(center.x, 0, center.z);
+    if (alongX) detail.rotation.y = Math.PI / 2;
+
+    const hullMaterial = new THREE.MeshStandardMaterial({
+      color: 0x263c52,
+      metalness: 0.78,
+      roughness: 0.3,
+      flatShading: true,
+    });
+    const plateMaterial = new THREE.MeshStandardMaterial({
+      color: 0x58728a,
+      metalness: 0.72,
+      roughness: 0.25,
+      flatShading: true,
+    });
+    const canopyMaterial = new THREE.MeshStandardMaterial({
+      color: 0x12344d,
+      emissive: 0x07506c,
+      emissiveIntensity: 0.38,
+      metalness: 0.72,
+      roughness: 0.15,
+    });
+    const nozzleMaterial = new THREE.MeshStandardMaterial({
+      color: 0x9beaff,
+      emissive: 0x35bfff,
+      emissiveIntensity: 1.3,
+      metalness: 0.25,
+      roughness: 0.2,
+    });
+    const markerMaterial = new THREE.MeshBasicMaterial({ color: 0xffd479 });
+    const add = (geometry: import('three').BufferGeometry, material: import('three').Material) => {
+      const mesh = new THREE.Mesh(geometry, material);
+      detail.add(mesh);
+      return mesh;
+    };
+    const lift = Math.max(depth * 0.07, 0.018);
+    const spine = add(new THREE.BoxGeometry(beam * 0.24, lift, length * 0.5), hullMaterial);
+    spine.position.set(0, top + lift * 0.48, -length * 0.015);
+
+    const canopy = add(new THREE.SphereGeometry(1, 18, 12), canopyMaterial);
+    canopy.position.set(0, top + lift * 0.72, -length * 0.2);
+    canopy.scale.set(beam * 0.14, lift * 0.78, length * 0.19);
+
+    for (const side of [-1, 1]) {
+      const plate = add(
+        new THREE.BoxGeometry(
+          beam * (elongated ? 0.34 : 0.25),
+          lift * 0.8,
+          length * (elongated ? 0.24 : 0.19),
+        ),
+        plateMaterial,
+      );
+      plate.position.set(
+        side * beam * (elongated ? 0.38 : 0.32),
+        top + lift * 0.28,
+        -length * 0.025,
+      );
+      plate.rotation.y = side * -0.14;
+
+      const shoulder = add(
+        new THREE.BoxGeometry(beam * 0.105, lift * 0.56, length * 0.14),
+        hullMaterial,
+      );
+      shoulder.position.set(side * beam * 0.17, top + lift * 0.58, -length * 0.12);
+      shoulder.rotation.y = side * 0.12;
+
+      const engineZ = length * 0.38;
+      const nozzleRadius = Math.max(beam * 0.064, 0.025);
+      const nozzle = add(
+        new THREE.CylinderGeometry(nozzleRadius, nozzleRadius * 0.82, lift * 1.15, 12),
+        hullMaterial,
+      );
+      nozzle.position.set(side * beam * 0.2, top + lift * 0.1, engineZ);
+      const rim = add(
+        new THREE.TorusGeometry(nozzleRadius * 0.78, Math.max(lift * 0.11, 0.006), 6, 16),
+        plateMaterial,
+      );
+      rim.rotation.x = Math.PI / 2;
+      rim.position.set(side * beam * 0.2, top + lift * 0.58, engineZ);
+      const core = add(new THREE.CircleGeometry(nozzleRadius * 0.52, 16), nozzleMaterial);
+      core.rotation.x = -Math.PI / 2;
+      core.position.set(side * beam * 0.2, top + lift * 0.64, engineZ);
+
+      const marker = add(
+        new THREE.SphereGeometry(Math.max(beam * 0.018, 0.009), 8, 6),
+        markerMaterial,
+      );
+      marker.position.set(side * beam * 0.39, top + lift * 0.32, -length * 0.04);
+    }
+
+    const seamMaterial = new THREE.LineBasicMaterial({
+      color: 0x24394b,
+      transparent: true,
+      opacity: 0.92,
+    });
+    const seam = new THREE.LineSegments(
+      new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(-beam * 0.13, top + lift * 0.52, -length * 0.02),
+        new THREE.Vector3(-beam * 0.29, top + lift * 0.4, length * 0.11),
+        new THREE.Vector3(beam * 0.13, top + lift * 0.52, -length * 0.02),
+        new THREE.Vector3(beam * 0.29, top + lift * 0.4, length * 0.11),
+      ]),
+      seamMaterial,
+    );
+    detail.add(seam);
+    return detail;
+  }
+
   private applyTint(model: Object3D, tint: number): void {
     if (this.runtime === null) return;
     model.traverse((object) => {
@@ -419,11 +542,11 @@ export class ThreeDShipPreview {
       const materials = Array.isArray(originalMaterial) ? originalMaterial : [originalMaterial];
       const tintedMaterials = materials.map((material) => {
         if (material instanceof this.runtime!.MeshStandardMaterial) {
-          material.color.setHex(tint);
+          material.color.setHex(tint).multiplyScalar(0.78);
           material.emissive.setHex(tint);
-          material.emissiveIntensity = 0.045;
-          material.roughness = 0.32;
-          material.metalness = 0.62;
+          material.emissiveIntensity = 0.012;
+          material.roughness = 0.4;
+          material.metalness = 0.52;
           material.flatShading = true;
           if (this.hangar) {
             material.transparent = true;
@@ -434,11 +557,11 @@ export class ThreeDShipPreview {
         if (mesh === this.engine || mesh === this.engineRing) return material;
         material.dispose();
         return new this.runtime!.MeshStandardMaterial({
-          color: tint,
+          color: new this.runtime!.Color(tint).multiplyScalar(0.78),
           emissive: tint,
-          emissiveIntensity: 0.045,
-          roughness: 0.32,
-          metalness: 0.62,
+          emissiveIntensity: 0.012,
+          roughness: 0.4,
+          metalness: 0.52,
           flatShading: true,
           side: this.runtime!.DoubleSide,
         });

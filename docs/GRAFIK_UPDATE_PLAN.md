@@ -4,6 +4,29 @@
 
 Stand: 24. September 2026
 
+### Schiffs-Audit und Silhouettenpass — 24. September 2026
+
+Der komplette kaufbare Katalog wurde geprüft: 35 Formen aus Raumschiffen,
+Flugzeugen, Figuren, Tieren und Drohnen, dazu alle neun Orbital-OBJ-Modelle.
+Der klare Mangel lag bei den Orbital-Schiffen: Die OBJ-Draufsichten zeigten
+fast nur helle Dreiecke. Ihre Shopkacheln verwendeten die SVGs nur als Maske,
+wodurch die Binnenzeichnung verschwand; in Menue und Ergebnis erschienen
+generische Papierflieger-Fallbacks. Auch die Formen Pfeil, Delta, Sichel und
+Keilkreuzer hatten eine zu einfache Dreiecks-Silhouette.
+
+Der Pass ergänzt die neun OBJ-Ansichten um Kanzelglas, gepanzerte Flügelplatten,
+Paneelfugen, Triebwerksdüsen und Positionslichter. Die Shopkacheln zeigen die
+Detailzeichnung nun auch in ihrer getönten Rumpffarbe; dieselben OBJ-basierten
+SVGs dienen als 2D-Fallback in Menü, Spiel und Ergebnis. Die 3D-Modelle erhalten
+zusätzlich Cockpit, Schulterpanzer, Zwillingsantrieb und kontrastreichere
+Metallflächen. Pfeil, Delta, Sichel und Keilkreuzer haben kräftigere, breitere
+Rümpfe statt einer einfachen Papierflieger-Dreiecksform.
+
+Lokal angesehen wurden der vollständige Shop-Katalog und der Hangar mit
+Orbital-01. Die Formen 30–99 außerhalb des Shops und reale Geräte-/GPU-Messungen
+bleiben außerhalb dieses Passes; die vereinbarten kleinen Geräte- und
+Tintprüfungen bleiben offen.
+
 ### Schiffsdetails und Metallfacetten — 24. September 2026
 
 Der zusätzliche Modernisierungspass ergänzt die kaufbaren Raumschiffe und
@@ -29,14 +52,14 @@ werden in der Reihenfolge unten umgesetzt. Jede Etappe beginnt mit einer
 Beispielwelt und wird erst nach Sichtprüfung auf weitere Welten übertragen.
 Spielregeln, Steuerung und Balancing bleiben unverändert.
 
-| Nr. | Vorhaben | Ergebnis |
-| ---: | --- | --- |
-| 1 | Expedition inszenieren | Startanflug, Missionsabschluss und kurze Übergänge verbinden Menü, Spiel und Ergebnis. |
-| 2 | Weltformen differenzieren | Jede Welt erhält eine an ihrer Silhouette erkennbare Formensprache. |
-| 3 | Illustrative Stilrichtung erproben | Eine vollständige Beispielwelt erhält Textur, Licht und Formen als stimmiges Art-Paket. |
-| 4 | Schiff zur Hauptfigur machen | Das ausgerüstete Schiff steht in Einstieg, Spiel und Ergebnis sichtbar im Mittelpunkt. |
-| 5 | HUD als Cockpit gestalten | Spielwerte wirken wie Instrumente des Schiffs und bleiben im Spiel sofort lesbar. |
-| 6 | Seltene Fänge inszenieren | Seltene Relikte erhalten einen kurzen, klar abgestuften Höhepunkt. |
+| Nr. | Vorhaben                           | Ergebnis                                                                                |
+| --: | ---------------------------------- | --------------------------------------------------------------------------------------- |
+|   1 | Expedition inszenieren             | Startanflug, Missionsabschluss und kurze Übergänge verbinden Menü, Spiel und Ergebnis.  |
+|   2 | Weltformen differenzieren          | Jede Welt erhält eine an ihrer Silhouette erkennbare Formensprache.                     |
+|   3 | Illustrative Stilrichtung erproben | Eine vollständige Beispielwelt erhält Textur, Licht und Formen als stimmiges Art-Paket. |
+|   4 | Schiff zur Hauptfigur machen       | Das ausgerüstete Schiff steht in Einstieg, Spiel und Ergebnis sichtbar im Mittelpunkt.  |
+|   5 | HUD als Cockpit gestalten          | Spielwerte wirken wie Instrumente des Schiffs und bleiben im Spiel sofort lesbar.       |
+|   6 | Seltene Fänge inszenieren          | Seltene Relikte erhalten einen kurzen, klar abgestuften Höhepunkt.                      |
 
 ### Umsetzungsstand: erster Durchlauf
 

@@ -473,16 +473,12 @@ export class HangarView {
    * als Hintergrund darunter und wird mit der Farbe multipliziert: genau die
    * Rechnung, mit der Phaser im Spiel einfaerbt. Die Maske bleibt fuer den Umriss.
    *
-   * 3D-Modelle bringen eine eigene Vorschau-Silhouette (`previewUrl`) ohne
-   * Binnenzeichnung mit; dort bleibt es bei der Maske.
+   * 3D-Modelle bringen eigene, aus dem OBJ abgeleitete Vorschaubilder mit.
+   * Diese enthalten inzwischen ebenfalls Kanzel, Panzerplatten und Triebwerke.
    */
   private paintShip(element: HTMLElement, shapeId: string, previewUrl?: string): void {
     const url = previewUrl ?? this.texture(playerTextureForShape(shapeId));
     element.style.maskImage = `url("${url}")`;
-    if (previewUrl) {
-      element.style.backgroundImage = '';
-      return;
-    }
     element.style.backgroundImage = `url("${url}")`;
     element.style.backgroundSize = 'contain';
     element.style.backgroundPosition = 'center';

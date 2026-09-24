@@ -45,6 +45,15 @@ export const TextureKey = {
   EgoCc0AuraFlame04: EGO_ASSET_KEY.cc0Flame[3],
   EgoCc0AuraFlame05: EGO_ASSET_KEY.cc0Flame[4],
   EgoCc0AuraFlame06: EGO_ASSET_KEY.cc0Flame[5],
+  OrbitalShip01: 'asset-ship-orbital-01',
+  OrbitalShip02: 'asset-ship-orbital-02',
+  OrbitalShip03: 'asset-ship-orbital-03',
+  OrbitalShip04: 'asset-ship-orbital-04',
+  OrbitalShip05: 'asset-ship-orbital-05',
+  OrbitalShip06: 'asset-ship-orbital-06',
+  OrbitalShip07: 'asset-ship-orbital-07',
+  OrbitalShip08: 'asset-ship-orbital-08',
+  OrbitalShip09: 'asset-ship-orbital-09',
 } as const;
 
 export type TextureKeyValue = (typeof TextureKey)[keyof typeof TextureKey];
@@ -85,9 +94,11 @@ export function shipTextureKey(skinIndex: number): string {
  * Texturen (Ego-Assets) behalten 1.
  */
 export function shipDisplayScale(textureKey: string): number {
-  return textureKey === TextureKey.PlayerCore || /^tex-ship-\d+$/.test(textureKey)
-    ? 1 / SHIP_TEXTURE_RESOLUTION
-    : 1;
+  if (textureKey === TextureKey.PlayerCore || /^tex-ship-\d+$/.test(textureKey)) {
+    return 1 / SHIP_TEXTURE_RESOLUTION;
+  }
+  // Die Orbital-Fallback-SVGs sind 128 px gross statt der 96-px-Prozedurvorlage.
+  return /^asset-ship-orbital-\d+$/.test(textureKey) ? SHIP_TEXTURE_SIZE / 128 : 1;
 }
 
 /** Legt fuer jede Zeichnung in `SHIP_DRAWINGS` eine Textur an. */
@@ -227,9 +238,25 @@ function createShipTexture(
  * gehoert jetzt in den Laden - die Begruendung steht in `config/shop.ts`.
  */
 export function playerTextureForShape(shapeId: string): TextureKeyValue {
+  const shape = getShipShape(shapeId);
+  const orbital = shape.threeDAssetId ? ORBITAL_SHIP_TEXTURE_KEYS[shape.threeDAssetId] : undefined;
   return (textureKeyForEgoShape(shapeId) ??
-    shipTextureKey(getShipShape(shapeId).skinIndex)) as TextureKeyValue;
+    orbital ??
+    shipTextureKey(shape.skinIndex)) as TextureKeyValue;
 }
+
+/** Konsistente 2D-Fallbacks fuer Orbital-Schiffe in Menue, Ergebnis und Spiel. */
+const ORBITAL_SHIP_TEXTURE_KEYS: Readonly<Record<string, TextureKeyValue>> = {
+  'cc0-3d-ship-1': TextureKey.OrbitalShip01,
+  'cc0-3d-ship-2': TextureKey.OrbitalShip02,
+  'cc0-3d-ship-3': TextureKey.OrbitalShip03,
+  'cc0-3d-ship-4': TextureKey.OrbitalShip04,
+  'cc0-3d-ship-5': TextureKey.OrbitalShip05,
+  'cc0-3d-ship-6': TextureKey.OrbitalShip06,
+  'cc0-3d-ship-7': TextureKey.OrbitalShip07,
+  'cc0-3d-ship-8': TextureKey.OrbitalShip08,
+  'cc0-3d-ship-9': TextureKey.OrbitalShip09,
+};
 
 /** Liefert die echte Planetentextur fuer eine Raumzonen-Komposition. */
 export function planetTextureForVariant(spaceVariant: number): TextureKeyValue {

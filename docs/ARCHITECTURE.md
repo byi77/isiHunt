@@ -22,6 +22,14 @@ Menue-Start verwendet fuer den Wechsel in die Weltinformation den vorhandenen
 `sceneTransition`-Pfad. HUD-Skala und Fang-Siegel werden beim ohnehin
 stattfindenden Layout-/Effektaufbau gezeichnet.
 
+Die Orbital-3D-Modelle verwenden `shipN-preview.svg` als gemeinsame 2D-Ansicht
+für Shop, Menü, Spiel und Ergebnis. `playerTextureForShape()` löst die
+`threeDAssetId` auf den eigens geladenen Fallback-Texture-Key auf; `shipDisplayScale()`
+gleicht die 128-px-SVGs an die bisherige 96-px-Zeichenfläche an. Im Hangar
+überlagert `ThreeDShipPreview` die CC0-Geometrie mit separaten Cockpit-,
+Panzerplatten- und Triebwerksmeshes. Der Shop zeigt die volle SVG-Zeichnung als
+getönte Hintergrundfläche und nutzt sie zugleich als Maske.
+
 Grafik-Update Punkt 7: `ui/HangarView.ts` und `ui/hangar.css` bilden die native,
 responsive Shop-Bedienung ab. `ShopScene` vermittelt unveränderte Kauf-/Ausrüstregeln.
 Der DOM-Bereich folgt den Canvas-Grenzen; eigene Listener hängen an einem

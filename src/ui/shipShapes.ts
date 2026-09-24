@@ -1051,149 +1051,196 @@ export function drawShipLivery(g: G, index: number): void {
  */
 export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
   // ---- Raumjäger --------------------------------------------------------
-  /** 0 Pfeil - der Klassiker: schlank, klare Spitze, gekerbtes Heck. */
+  /** 0 Pfeil - breiter Abfangjaeger mit gepanzertem Mittelrumpf und Zwillingsduesen. */
   (g) => {
     voll(g, [
-      [C, 8],
-      [64, 38],
-      [84, 78],
-      [60, 70],
-      [C, 88],
-      [36, 70],
-      [12, 78],
-      [32, 38],
+      [C, 7],
+      [58, 25],
+      [68, 30],
+      [87, 45],
+      [90, 60],
+      [69, 59],
+      [62, 55],
+      [58, 78],
+      [54, 89],
+      [42, 89],
+      [38, 78],
+      [34, 55],
+      [27, 59],
+      [6, 60],
+      [9, 45],
+      [28, 30],
+      [38, 25],
     ]);
+    // Dicke Tragfluegel mit abgesetzten Panzerplatten statt einer einzigen
+    // Papierflieger-Flaeche.
     paar(
       g,
       [
-        [34, 42],
-        [16, 74],
-        [36, 68],
-        [40, 50],
+        [38, 32],
+        [29, 37],
+        [13, 48],
+        [13, 54],
+        [33, 49],
       ],
       RUMPF_MITTEL,
     );
     paar(
       g,
       [
-        [15, 76],
-        [20, 71],
-        [24, 74],
+        [36, 48],
+        [15, 54],
+        [29, 54],
+        [35, 59],
       ],
       RUMPF_TIEF,
     );
     nahtPaar(g, [
-      [33, 46],
-      [21, 70],
+      [31, 39],
+      [17, 48],
+      [13, 55],
     ]);
     nahtPaar(g, [
-      [43, 38],
-      [43, 66],
-      [C, 78],
+      [32, 52],
+      [20, 55],
+    ]);
+    nahtPaar(g, [
+      [35, 35],
+      [35, 60],
+      [C, 76],
     ]);
     paar(
       g,
       [
-        [39, 44],
-        [42, 42],
-        [42, 55],
-        [39, 57],
+        [39, 32],
+        [43, 29],
+        [43, 58],
+        [39, 62],
       ],
       NAHT,
     );
-    kanzel(g, C, 17, 10, 21);
-    triebwerk(g, 38, 63, 7, 12);
-    triebwerk(g, 58, 63, 7, 12);
+    kanzel(g, C, 14, 14, 24);
+    triebwerk(g, 29, 57, 8, 12);
+    triebwerk(g, 67, 57, 8, 12);
+    triebwerk(g, 40, 72, 7, 13);
+    triebwerk(g, 56, 72, 7, 13);
   },
-  /** 1 Delta - breites Dreieck, satte Flaeche. */
+  /** 1 Delta - schwerer Mehrzweckjaeger mit abgeschnittenen Fluegelspitzen. */
   (g) => {
     voll(g, [
       [C, 6],
-      [88, 82],
-      [C, 66],
-      [8, 82],
+      [57, 26],
+      [86, 36],
+      [91, 50],
+      [73, 57],
+      [64, 55],
+      [58, 82],
+      [52, 88],
+      [44, 88],
+      [38, 82],
+      [32, 55],
+      [23, 57],
+      [5, 50],
+      [10, 36],
+      [39, 26],
     ]);
     paar(
       g,
       [
-        [40, 40],
-        [16, 76],
-        [40, 68],
+        [38, 31],
+        [31, 35],
+        [13, 41],
+        [10, 48],
+        [31, 48],
       ],
       RUMPF_MITTEL,
     );
     paar(
       g,
       [
-        [16, 78.5],
-        [42, 68],
-        [42, 65.5],
-        [18, 76],
+        [35, 48],
+        [13, 47],
+        [28, 53],
+        [35, 56],
       ],
       RUMPF_TIEF,
     );
     nahtPaar(g, [
-      [45, 16],
-      [43, 60],
+      [30, 38],
+      [18, 42],
+      [12, 48],
     ]);
     nahtPaar(g, [
-      [38, 44],
-      [22, 72],
+      [35, 31],
+      [35, 59],
+      [C, 75],
     ]);
     flaeche(
       g,
       [
         [C, 6],
-        [50, 12],
-        [46, 12],
+        [51, 13],
+        [45, 13],
       ],
       RUMPF_TIEF,
     );
-    kanzel(g, C, 18, 10, 22);
-    triebwerk(g, 42, 57, 6, 10);
-    triebwerk(g, 54, 57, 6, 10);
+    kanzel(g, C, 14, 13, 24);
+    triebwerk(g, 28, 45, 7, 11);
+    triebwerk(g, 68, 45, 7, 11);
+    triebwerk(g, 41, 69, 8, 12);
+    triebwerk(g, 55, 69, 8, 12);
   },
-  /** 2 Sichel - weit ausgestellte Spitzen, schmale Mitte. */
+  /** 2 Sichel - asymmetrischer Abfangjaeger mit gebogenen Tragarmen. */
   (g) => {
     voll(g, [
-      [C, 10],
-      [56, 44],
-      [92, 84],
-      [58, 72],
-      [C, 80],
-      [38, 72],
-      [4, 84],
-      [40, 44],
+      [C, 8],
+      [57, 29],
+      [92, 72],
+      [87, 84],
+      [68, 74],
+      [55, 61],
+      [C, 69],
+      [41, 61],
+      [28, 74],
+      [9, 84],
+      [4, 72],
+      [39, 29],
     ]);
     paar(
       g,
       [
-        [40, 50],
-        [14, 79],
-        [36, 70],
+        [39, 36],
+        [31, 40],
+        [12, 69],
+        [20, 70],
+        [37, 54],
       ],
       RUMPF_MITTEL,
     );
     paar(
       g,
       [
-        [6, 83],
-        [14, 76],
-        [17, 79],
+        [36, 51],
+        [15, 74],
+        [27, 72],
+        [39, 60],
       ],
       RUMPF_TIEF,
     );
     nahtPaar(g, [
-      [38, 52],
-      [20, 74],
+      [35, 40],
+      [20, 65],
+      [12, 71],
     ]);
     nahtPaar(g, [
-      [43, 56],
-      [43, 72],
+      [40, 43],
+      [40, 63],
     ]);
-    kanzel(g, C, 22, 12, 30);
-    triebwerk(g, 41, 63, 6, 11);
-    triebwerk(g, 55, 63, 6, 11);
+    kanzel(g, C, 16, 13, 25);
+    triebwerk(g, 28, 65, 8, 12);
+    triebwerk(g, 68, 65, 8, 12);
+    triebwerk(g, 42, 65, 6, 11);
+    triebwerk(g, 54, 65, 6, 11);
   },
   /** 3 Ring - offener Kreis um den Rumpf. */
   (g) => {
@@ -1488,52 +1535,92 @@ export const SHIP_DRAWINGS: readonly ((g: G) => void)[] = [
       g.lineBetween(C, C, C + Math.cos(w) * 10, C + Math.sin(w) * 10);
     }
   },
-  /** 9 Keilkreuzer - langer Keil, breites Heck. */
+  /** 9 Keilkreuzer - schwerer Kreuzer mit breiten Schultermodulen und Panzerbug. */
   (g) => {
     voll(g, [
       [C, 6],
-      [78, 82],
-      [18, 82],
+      [57, 25],
+      [70, 31],
+      [86, 43],
+      [91, 58],
+      [70, 62],
+      [63, 57],
+      [58, 79],
+      [54, 89],
+      [42, 89],
+      [38, 79],
+      [33, 57],
+      [26, 62],
+      [5, 58],
+      [10, 43],
+      [26, 31],
+      [39, 25],
     ]);
     paar(
       g,
       [
-        [46, 24],
-        [28, 74],
-        [44, 74],
+        [39, 32],
+        [27, 37],
+        [12, 47],
+        [11, 53],
+        [34, 48],
       ],
       RUMPF_MITTEL,
     );
+    paar(
+      g,
+      [
+        [36, 49],
+        [13, 53],
+        [27, 56],
+        [36, 60],
+      ],
+      RUMPF_TIEF,
+    );
+    nahtPaar(g, [
+      [31, 39],
+      [17, 48],
+      [13, 54],
+    ]);
     naht(g, [
-      [C, 10],
-      [C, 54],
+      [C, 11],
+      [C, 73],
     ]);
     nahtPaar(g, [
-      [40, 40],
-      [26, 78],
+      [37, 49],
+      [32, 64],
     ]);
     flaeche(
       g,
       [
-        [40, 54],
-        [56, 54],
-        [56, 70],
-        [40, 70],
+        [42, 48],
+        [54, 48],
+        [54, 66],
+        [42, 66],
       ],
       0xffffff,
     );
     g.lineStyle(0.9, NAHT, 0.7);
-    g.strokeRect(40, 54, 16, 16);
+    g.strokeRect(42, 48, 12, 18);
     fenster(g, [
-      [43, 59],
-      [C, 59],
-      [53, 59],
+      [44, 53],
+      [C, 53],
+      [52, 53],
     ]);
-    g.fillStyle(NAHT, 1);
-    g.fillRect(38, 73, 20, 2.5);
-    triebwerk(g, 32, 76, 7, 9);
-    triebwerk(g, C, 76, 8, 10);
-    triebwerk(g, 64, 76, 7, 9);
+    flaeche(
+      g,
+      [
+        [C - 16, 72],
+        [C + 16, 72],
+        [C + 12, 82],
+        [C - 12, 82],
+      ],
+      NAHT,
+    );
+    triebwerk(g, 27, 69, 8, 11);
+    triebwerk(g, 42, 74, 7, 12);
+    triebwerk(g, 54, 74, 7, 12);
+    triebwerk(g, 69, 69, 8, 11);
   },
   /** 10 Scheibenfrachter - runde Scheibe mit vorstehender Kanzel. */
   (g) => {

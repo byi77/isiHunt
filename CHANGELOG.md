@@ -11,6 +11,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Orbital-Schiffe umfassend nachgearbeitet.** Alle neun OBJ-Draufsichten
+  zeigen jetzt Kanzelglas, Flügelpanzer, Nähte und Zwillingsdüsen. Die
+  Detailzeichnung bleibt im getönten Hangar sichtbar und wird als 2D-Bild in
+  Menü und Ergebnis verwendet. Die vier papierfliegerartigen Raumjäger-Formen
+  Pfeil, Delta, Sichel und Keilkreuzer haben kräftigere Rümpfe; die 3D-Modelle
+  erhalten zusätzliche Cockpits, Schulterpanzer, Triebwerke und Lichtpunkte.
 - **Schiffs-Modernisierung.** Kaufbare Raumjaeger und Flugzeuge erhalten
   gebrochene Lackstreifen, Wartungsluken und Kuehlschlitze. Die Low-Poly-3D-
   Modelle im Hangar bekommen lichtgefasste Metallkanten und einen abgesetzten
