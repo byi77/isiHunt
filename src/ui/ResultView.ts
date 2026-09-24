@@ -6,6 +6,7 @@ import { Palette, textStyle } from '@/ui/theme';
 import { createBar, createButton, createPanel } from '@/ui/widgets';
 import type { ButtonHandle } from '@/ui/widgets';
 import { createUnlockVisual, spinInUnlock, type UnlockVisual } from '@/ui/unlockShowcase';
+import { playerTextureForShape } from '@/ui/textures';
 
 export interface ResultSection {
   title: string;
@@ -40,6 +41,8 @@ export interface ResultContent {
   badge?: string;
   sections: ResultSection[];
   scoreRoll?: ResultScoreRoll;
+  /** Das ausgeruestete Schiff verbindet den Ergebnisbildschirm mit dem Run. */
+  heroShip?: { shapeId: string; tint: number };
 }
 
 /** Feste Aktionen; beliebig viele Belohnungen bleiben im Detailbereich erreichbar. */
@@ -151,6 +154,17 @@ export class ResultView {
     let y = 14 * unit;
     const heading = addText(this.root, this.content.title, y, 12, Palette.inkDim, true);
     y += heading.height + 6 * unit;
+    if (this.content.heroShip) {
+      const ship = this.scene.add
+        .image(
+          GAME_WIDTH - margin - 18 * unit,
+          26 * unit,
+          playerTextureForShape(this.content.heroShip.shapeId),
+        )
+        .setDisplaySize(34 * unit, 34 * unit)
+        .setTint(this.content.heroShip.tint);
+      this.root.add(ship);
+    }
     const score = addText(this.root, this.content.score, y, 42, Palette.ink, true);
     score.setWordWrapWidth(0);
     // Auch sehr grosse Punktzahlen bleiben innerhalb der festen Kopfbreite.

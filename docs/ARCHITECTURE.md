@@ -12,6 +12,16 @@ zeigt die Kulisse mit HUD und Schiff ohne laufende Simulation; `worldPreview`
 waehlt 0 bis 9. Dieser Pfad ist wie die bestehende HUD-Vorschau nur im Dev-Build
 aktiv. Der grosse Randplanet nutzt ein statisches 256-Pixel-Bild pro Welt.
 
+Grafikrunde 3 ergaenzt `ui/worldEtching.ts`: Die Funktion zeichnet einmalig
+pro Szene geometrische Weltkonturen in die aeusseren Spielfeldbereiche. Sie
+verwendet weder Timer noch Frame-Listener. `GameBackdrop` besitzt und zerstoert
+die Zeichenebene zusammen mit den uebrigen Kulissenelementen. Der Solo-Run
+uebergibt die ausgeruestete Schiffform und Farbe als optionale Darstellung in
+`ResultContent`; `ResultView` zeigt sie ohne Save- oder Szenenzugriff. Der
+Menue-Start verwendet fuer den Wechsel in die Weltinformation den vorhandenen
+`sceneTransition`-Pfad. HUD-Skala und Fang-Siegel werden beim ohnehin
+stattfindenden Layout-/Effektaufbau gezeichnet.
+
 Grafik-Update Punkt 7: `ui/HangarView.ts` und `ui/hangar.css` bilden die native,
 responsive Shop-Bedienung ab. `ShopScene` vermittelt unveränderte Kauf-/Ausrüstregeln.
 Der DOM-Bereich folgt den Canvas-Grenzen; eigene Listener hängen an einem

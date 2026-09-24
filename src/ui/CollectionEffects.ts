@@ -236,7 +236,8 @@ export class CollectionEffects {
     if (ringT < 1) {
       g.lineStyle(2, c.color, (1 - ringT) * 0.75);
       const radius = 12 + (24 + c.rank * 5) * (1 - (1 - ringT) ** 3);
-      for (let ring = 0; ring < (c.rank >= 4 ? 2 : 1); ring++) {
+      const ringCount = c.rank >= 5 ? 3 : c.rank >= 4 ? 2 : 1;
+      for (let ring = 0; ring < ringCount; ring++) {
         g.beginPath();
         for (let step = 0; step <= 48; step++) {
           const angle = (step / 48) * Math.PI * 2;
@@ -248,6 +249,25 @@ export class CollectionEffects {
           else g.lineTo(px, py);
         }
         g.strokePath();
+      }
+      if (c.rank >= 5) {
+        // Das hoechste Relikt bekommt einen facettierten Siegelrand statt
+        // bloss mehr Partikel. Die vier Markierungen bleiben klein genug,
+        // um weder Zahl noch Schiff zu verdecken.
+        const sealRadius = radius + 18;
+        g.lineStyle(1.5, 0xffffff, (1 - ringT) * 0.68);
+        for (let facet = 0; facet < 4; facet++) {
+          const angle = (facet / 4) * Math.PI * 2 + Math.PI / 4;
+          const cx = c.origin.x + Math.cos(angle) * sealRadius;
+          const cy = c.origin.y + Math.sin(angle) * sealRadius * 0.42;
+          g.beginPath();
+          g.moveTo(cx, cy - 4);
+          g.lineTo(cx + 3, cy);
+          g.lineTo(cx, cy + 4);
+          g.lineTo(cx - 3, cy);
+          g.closePath();
+          g.strokePath();
+        }
       }
     }
     const t = Math.min(1, c.age / (V.baseFlightMs + c.rank * V.flightStepMs));

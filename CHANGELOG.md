@@ -11,6 +11,11 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Hinzugefuegt
 
+- **Grafikrunde 3: Weltraumexpedition.** Der Menüstart taucht in die
+  Weltinformation ein; statische, gezeichnete Randkonturen unterscheiden die
+  Welttypen im Spielfeld. Das Solo-Ergebnis zeigt das ausgerüstete Schiff,
+  das HUD erhält eine feine Instrumentenskala und legendäre Fänge einen
+  facettierten Siegelrand. Geräte- und Layoutsichtprüfung steht noch aus.
 - **Neue Schiffe.** Alle kaufbaren Formen sind schaerfer (dreifache
   Aufloesung) und plastischer (Kontur, Kantenlicht, Glanz). Die Raumschiffe
   tragen Kanzelglas, Triebwerke, Paneele und Naehte, die Figuren Gesichter,

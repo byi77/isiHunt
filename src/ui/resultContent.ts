@@ -1,6 +1,7 @@
 import { ACHIEVEMENT_BY_ID } from '@/config/achievements';
 import { RARITIES } from '@/config/rarities';
 import { getWorld } from '@/config/worlds';
+import { shipTint } from '@/config/shop';
 import { accessibleRarityLabel } from '@/systems/AccessibilitySystem';
 import { achievementCategory } from '@/systems/AchievementProgressSystem';
 import { getLevelUpRewardSummary } from '@/systems/LevelUpPresentationSystem';
@@ -98,6 +99,7 @@ export function soloResultContent(
   return {
     title: 'RUN BEENDET',
     score: stats.score.toLocaleString('de-DE'),
+    heroShip: { shapeId: save.shipShape, tint: shipTint(save, getWorld(stats.worldId).accent) },
     badge: progression.isNewBestScore ? 'NEUER BESTWERT' : undefined,
     subtitle: `Level ${level.level} · ${stats.totalCollected} Relikte · beste Kette ${stats.bestCombo} · max x${stats.bestMultiplier}`,
     sections,

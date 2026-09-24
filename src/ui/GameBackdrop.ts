@@ -6,6 +6,7 @@ import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import { Depth } from './depth';
 import { createSpatialPlanet } from './spatialPlanet';
 import { paintSafeAreaBackdrop } from './widgets';
+import { createWorldEtching } from './worldEtching';
 
 function hash(x: number, y: number, seed: number): number {
   const value = Math.sin(x * 127.1 + y * 311.7 + seed * 74.7) * 43758.5453;
@@ -125,6 +126,7 @@ export class GameBackdrop {
       V.planetResolution,
     ).setAlpha(V.planetAlpha);
     this.root.add(planet);
+    this.root.add(createWorldEtching(scene, width, height, world.spaceVariant, world.accent));
   }
 
   update(delta: number, playerX: number, playerY: number): void {

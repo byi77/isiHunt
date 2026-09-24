@@ -1,5 +1,204 @@
 # isiHunt: Grafik-Update und 3D-Effekte
 
+## Folgeplan: Grafikrunde 3 — Weltraumexpedition und neue Bildsprache
+
+Stand: 24. September 2026
+
+### Ziel und Umfang
+
+Diese Runde baut auf dem abgeschlossenen Grafik-Update auf. Sie soll isiHunt
+wie eine zusammenhängende Weltraumexpedition wirken lassen und die Welten
+stärker über Form, Material und Bewegung unterscheiden. Die sechs Vorhaben
+werden in der Reihenfolge unten umgesetzt. Jede Etappe beginnt mit einer
+Beispielwelt und wird erst nach Sichtprüfung auf weitere Welten übertragen.
+Spielregeln, Steuerung und Balancing bleiben unverändert.
+
+| Nr. | Vorhaben | Ergebnis |
+| ---: | --- | --- |
+| 1 | Expedition inszenieren | Startanflug, Missionsabschluss und kurze Übergänge verbinden Menü, Spiel und Ergebnis. |
+| 2 | Weltformen differenzieren | Jede Welt erhält eine an ihrer Silhouette erkennbare Formensprache. |
+| 3 | Illustrative Stilrichtung erproben | Eine vollständige Beispielwelt erhält Textur, Licht und Formen als stimmiges Art-Paket. |
+| 4 | Schiff zur Hauptfigur machen | Das ausgerüstete Schiff steht in Einstieg, Spiel und Ergebnis sichtbar im Mittelpunkt. |
+| 5 | HUD als Cockpit gestalten | Spielwerte wirken wie Instrumente des Schiffs und bleiben im Spiel sofort lesbar. |
+| 6 | Seltene Fänge inszenieren | Seltene Relikte erhalten einen kurzen, klar abgestuften Höhepunkt. |
+
+### Umsetzungsstand: erster Durchlauf
+
+Am 24. September 2026 wurden die sechs Vorhaben auf dem vorhandenen Grafik-
+Update aufgebaut: Der Menüstart geht mit einem Tauch-Übergang in die
+Weltinformation; der anschließende Jagdstart und das kurze Verweilen vor dem
+Ergebnis verwenden bereits vorhandene Expeditionseffekte. Neue, statische
+Weltkonturen liegen nur in den äußeren Spielfeldbereichen. Das ausgerüstete
+Schiff erscheint nun zusätzlich auf dem Solo-Ergebnis. Das HUD erhält eine
+dezente Instrumentenskala, und legendäre Fänge bekommen einen facettierten
+Siegelrand. Es handelt sich um eine erste zusammenhängende Laufzeitfassung;
+Layout- und Gerätesichtprüfung sowie eine Stiltafel sind noch offen.
+
+### Gemeinsame Leitplanken
+
+- Zuerst Eisring als Musterwelt verwenden: Die vorhandenen Kristallformen
+  bieten eine klar erkennbare Material- und Silhouettenbasis. Falls die
+  Laufzeit- oder Gerätemessung dagegen spricht, die leichteste vorhandene Welt
+  als technische Musterwelt wählen und Eisring anschließend als Art-Prüfung
+  verwenden.
+- Vor Produktionsänderungen für Menü, Countdown, laufendes Spiel und Ergebnis
+  je eine Referenzaufnahme sichern. Entwürfe mit der bestehenden Prüfmatrix
+  für 360, 390 und 402 CSS-Pixel vergleichen.
+- Neue Übergänge und Effekte müssen `prefers-reduced-motion`, Tab-Wechsel,
+  Spielpause und die vorhandenen Touch-Abstände beachten. Bewegungsintensive
+  Sequenzen dürfen Eingaben nicht blockieren.
+- Bildmaterial zuerst mit vorhandenen prozeduralen Formen und Texturen
+  prototypisieren. Externe oder generierte Assets erst nach Stilentscheidung
+  ergänzen und ihre Quelle beziehungsweise Lizenz dokumentieren.
+- Nach jedem Meilenstein Laufzeit, Startzeit und Speicherwirkung gegen eine
+  gemessene Baseline prüfen. Auf schwächeren Geräten muss eine reduzierte
+  Effektstufe die gleiche Spielinformation erhalten.
+
+### Etappe 0: Ausgangslage und Stilentscheid
+
+**Arbeiten:**
+
+1. Aktuelle Szenen und Übergänge in Menü, Spiel, Hangar und Ergebnis anhand
+   vorhandener Screenshots und Codepfade erfassen; bestehende Grafikbausteine
+   wiederverwenden, statt sie erneut zu bauen.
+2. Eine Stiltafel für drei Richtungen erstellen: aktuelle Weltraumoptik
+   weiterentwickeln, körnige illustrative Flächen, oder harte malerische
+   Lichtkanten. Für alle Richtungen dieselbe Eisring-Szene verwenden.
+3. Typografie, Kontrast, Seltenheitsfarben und Bewegungsintensität an den
+   bestehenden Regeln in `docs/ART_STYLE.md` messen. Eine Richtung festlegen,
+   die bestehende Seltenheits- und Zustandsinformationen nicht verfälscht.
+4. Laufzeit- und Speicherbaseline für Menü, laufendes Spiel und Ergebnis
+   erfassen, bevor zusätzliche Animationen oder Texturen hinzukommen.
+
+**Fertig, wenn:** Die Stiltafel auf Handygröße lesbar ist, die Beispielwelt
+eindeutig wiedererkennbar bleibt und die technische Baseline dokumentiert ist.
+Die gewählte Richtung wird anschließend in `docs/ART_STYLE.md` festgehalten.
+
+### Etappe 1: Expedition vom Menü bis zum Ergebnis
+
+**Arbeiten:**
+
+1. Den Startknopf mit einem kurzen Abflug verbinden: Schiff richtet sich aus,
+   Triebwerk leuchtet auf, Kulisse bewegt sich, dann beginnt der Countdown.
+2. Für den Wechsel ins Spiel vorhandene Szenenübergänge erweitern; keine
+   zusätzliche Lade- oder Wartephase einführen.
+3. Für das Ergebnis eine kurze Rückkehr-/Bergungsinszenierung entwerfen, die
+   vor der Ergebnisanzeige endet und bei Niederlage wie bei Erfolg funktioniert.
+4. Abbruch, Zurücknavigation, erneuten Start, reduzierte Bewegung und
+   Hintergrundwechsel der App prüfen. Ohne Animation muss derselbe Ablauf
+   sofort und vollständig bedienbar sein.
+
+**Fertig, wenn:** Eine komplette Runde vom Menü bis zum Ergebnis einen
+zusammenhängenden Übergang hat, keine Aktion verzögert wird und die reduzierte
+Bewegungsvariante keine Information oder Eingabe verliert.
+
+### Etappe 2: Eigene Geometrie pro Welt
+
+**Arbeiten:**
+
+1. Für jede Welt ein kurzes Formblatt mit Silhouette, Oberflächenstruktur,
+   Partikelform und Bewegungsrhythmus anlegen.
+2. Für Eisring zuerst Kristallkanten und gebrochene Ringsegmente ausarbeiten;
+   Glutnebel erhält gestreckte, fließende Gasformen; Nullsektor erhält
+   unterbrochene Linien und kontrollierte Raumverzerrungen. Andere Welten
+   erhalten entsprechend ihrer vorhandenen Identität eigene Formen.
+3. Formunterschiede auch in kleinen Menükarten und im Spiel prüfen. Farbe
+   bleibt Zusatzsignal, nicht einzige Unterscheidung.
+4. Bestehende Parallax- und Planeteneffekte nutzen; nur dort neue Bewegung
+   hinzufügen, wo sie die Welt lesbarer macht.
+
+**Fertig, wenn:** Jede Welt in einer graustufigen Miniatur anhand ihrer
+Kulissensilhouette unterscheidbar ist und sich ihre Gefahren weiter klar vom
+Hintergrund abheben.
+
+### Etappe 3: Illustrativer Art-Test für eine Welt
+
+**Arbeiten:**
+
+1. Die Stilrichtung aus Etappe 0 auf Eisring anwenden: Planet, Ringe,
+   Hintergrund, Sammelrelikte, Partikel und Menükarte als zusammengehöriges
+   Paket gestalten.
+2. Zunächst Shader, Canvas-/Phaser-Zeichnung und vorhandene Texturen nutzen.
+   Zusätzliche Texturen nur für sichtbaren Qualitätsgewinn einführen.
+3. Zwei Kontraststufen erstellen: volle Illustration für Menü und Ergebnis,
+   reduzierte Detaildichte hinter dem aktiven Spielfeld.
+4. Auf 360/390/402 CSS-Pixel sowie im kleinen 320er-Spielviewport prüfen.
+
+**Fertig, wenn:** Die Welt wie eine konsistente Illustration wirkt, Objekte
+und Relikte im Spiel klar lesbar bleiben und Bildgröße, Startzeit sowie
+Speicherverbrauch innerhalb der dokumentierten Gerätegrenzen liegen.
+
+### Etappe 4: Schiff als Hauptfigur
+
+**Arbeiten:**
+
+1. Das tatsächlich ausgerüstete Schiff im Menü und in der Expedition prominent
+   zeigen; Hangarmodell, 2D-Spielschiff und Ergebnisbild in Form und Farben
+   aufeinander abstimmen.
+2. Im Ergebnis eine statische Pose mit kurzer Triebwerks-/Aura-Bewegung
+   ergänzen. Kosmetische Ausrüstung muss sichtbar bleiben und darf nicht durch
+   Effekte überdeckt werden.
+3. Zustände wie Beschädigung oder mitgebrachte Beute nur als optionale
+   kosmetische Lesesignale prototypisieren; keine neue Spielmechanik daran
+   koppeln.
+4. Silhouette und Erkennbarkeit bei kleinster Spielgröße, verschiedenen Skins
+   und aktiven Effekten prüfen.
+
+**Fertig, wenn:** Das ausgerüstete Schiff in Menü, Spielfeld und Ergebnis als
+dieselbe Variante erkennbar ist und Effekte seine Silhouette nicht verdecken.
+
+### Etappe 5: Cockpit-HUD
+
+**Arbeiten:**
+
+1. Punkte, Restzeit und Combo als drei Instrumente gruppieren. Die Restzeit
+   bleibt am schnellsten erfassbar und übernimmt die bestehende Warnlogik.
+2. Ein kleines Set wiederverwendbarer Instrumentformen für Ziffern,
+   Statussymbole und Fortschritt erstellen. Rahmen und Leuchtflächen reduzieren,
+   wenn sie nicht der Orientierung dienen.
+3. Die Anzeige auf Welt-Hintergründen, beim Reliktfang, bei Hindernissen und
+   während der letzten Sekunden prüfen.
+4. Kontrast-, Textgrößen- und Touchprüfung bei 320, 360 und 390 CSS-Pixeln
+   durchführen; HUD darf keine Spielobjekte oder sichere Displaybereiche
+   verdecken.
+
+**Fertig, wenn:** Zeit, Punkte und Combo während des Spielens ohne Suchen
+ablesbar sind, Warnzustände zusätzlich durch Form/Text verständlich sind und
+das HUD auf allen geprüften Größen in der Spielfläche bleibt.
+
+### Etappe 6: Seltene Fänge als Höhepunkt
+
+**Arbeiten:**
+
+1. Häufige Fänge kurz halten und seltene Fänge in abgestuften Stufen
+   hervorheben. Wert, Name und Seltenheit müssen während der Animation
+   erkennbar bleiben.
+2. Für seltene Fänge einen sehr kurzen Szenenakzent testen: Hintergrund
+   abdimmen, Relikt hervorheben, Fang-Impact abspielen, dann sofort zur
+   laufenden Runde zurückkehren.
+3. Abfolge und Intensität aufeinander abstimmen, wenn mehrere Fänge schnell
+   hintereinander auftreten; Effekte dürfen nicht aufgestaut werden.
+4. Bewegungsreduktion, ausgeschalteten Ton, kurze Restzeit und kleine Displays
+   prüfen. Der Akzent darf keine Eingabe oder Kollision überdecken.
+
+**Fertig, wenn:** Seltene Fänge deutlich wertiger wirken als häufige, der
+Spielablauf nicht unterbrochen wird und die reduzierte Variante dieselben
+Belohnungsinformationen zeigt.
+
+### Abschluss und Freigabekriterien
+
+Nach jeder Etappe werden Entwurf, betroffene Szenen, bekannte Grenzen und
+Prüfergebnis in diesem Plan oder einem verlinkten Arbeitsbericht festgehalten.
+Die nächste Etappe beginnt erst, wenn die aktuelle im Spiel angesehen wurde.
+Nach Etappe 6 folgen eine konsistente Runde durch alle Welten und Gerätechecks
+für Layout, reduzierte Bewegung, längere Laufzeit und Speicherverbrauch.
+
+**Gesamtziel erreicht, wenn:** Menü, Start, Spiel und Ergebnis als eine
+Expedition erkennbar sind; jede Welt eine eigene Formensprache besitzt; das
+Schiff über die Szenen hinweg konsistent dargestellt wird; das HUD klar bleibt;
+und die Inszenierungen auf unterstützten Gerätegrößen ohne Funktions- oder
+Performanceverlust laufen.
+
 Stand: 17. September 2026
 
 Status: Punkt 7 (3D-Hangar) ist mit `b821357` committed und als v0.1.322 live bestätigt.
