@@ -8,6 +8,19 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 - [x] In allen Modi kuendigt ein winziger Stern blaue und hoehere Relikte
       kurz vor ihrem Erscheinen am tatsaechlichen Spawnort an.
 
+### Klang-Ueberarbeitung (2026-09-24)
+
+- [x] Alle Effekte neu: vorgerendert aus `scripts/render-sfx.mjs`, Summenbus
+      mit Kompressor, alte Oszillator-Toene als Fallback (ADR-0029).
+- [x] Countdown mit Sprachansage „Drei – Zwei – Eins – Los geht's!“
+      (Thorsten-Stimme, CC0); Bildschirmtext `LOS GEHT'S!`.
+- [x] Neue Klaenge fuer Zurueck, Umschalter, verblasste seltene Relikte,
+      Pause/Weiter, getrennten Online-Gegner und freigeschaltete Erfolge.
+- [ ] Lautstaerken und Bass-Klaenge auf dem Handy-Lautsprecher abhoeren und in
+      `src/config/audio.ts` nachstimmen.
+- [ ] Zurueckgestellt: Ansage „Letzte Chance!“ bei 10 Sekunden Restzeit.
+- [ ] Zurueckgestellt: Musik fuer Menue und Run.
+
 ### Endlosmodus (2026-09-24)
 
 - [x] „Jagd“ und „Endlos“ als eigene Starts im Hauptmenue.

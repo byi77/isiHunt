@@ -211,6 +211,7 @@ isiHunt/
 │   └── global/                 Was sonst nur in ~/.claude staende (9.6)
 ├── scripts/
 │   ├── generate-icons.mjs      Zeichnet die App-Icons (npm run icons)
+│   ├── render-sfx.mjs          Synthetisiert alle Klaenge nach public/assets/audio (ADR-0029)
 │   ├── bump-version.mjs        Patch-Version +1, vom pre-commit-Hook gerufen
 │   ├── check-deploy.mjs        Liegt der lokale Stand wirklich live? (deploy:check)
 │   ├── smoke-test.mjs          Playwright gegen den Dev-Server (npm run smoke)
@@ -228,6 +229,7 @@ isiHunt/
 │   │   ├── GameConfig.ts       Kompatibilitaets-Fassade fuer alte Imports
 │   │   ├── effectVisuals.ts    Visuelle Budgets: Hindernisse, Warnrand, Blenden
 │   │   ├── rarities.ts         Seltenheitsstufen
+│   │   ├── audio.ts            Klang je Ereignis: Datei, Lautstaerke, Summenbus
 │   │   ├── worlds.ts           Welten
 │   │   ├── talents.ts          Talente + Stat-Aufloesung
 │   │   ├── challenge.ts        Duell: Dauer, Spielernamen, Fairness-Regeln
@@ -293,7 +295,8 @@ isiHunt/
 │   │   ├── EffectsQualitySystem.ts Effektstufe voll/sparsam (ADR-0027)
 │   │   ├── EffectsQualitySystem.test.ts
 │   │   ├── audio/SoundModule.ts Provider-Vertrag und Prioritaetskette
-│   │   ├── audio/SampledSoundModule.ts CC0-Sample mit Fallback
+│   │   ├── audio/SampleBank.ts vorgerenderte Klaenge, Ereignis -> Datei (ADR-0029)
+│   │   ├── audio/SampleBank.test.ts
 │   │   ├── LevelUpPresentationSystem.ts reine Level-Up-Belohnungszusammenfassung
 │   │   ├── LevelUpPresentationSystem.test.ts
 │   │   ├── AuthSystem.ts       Alias/PIN-Anmeldung, Sitzungspflege (Phase 2.6)
@@ -1779,7 +1782,7 @@ Ehrlich benannt, damit sie nicht ueberrascht:
 | Kein Object Pooling — jedes Relikt wird neu erzeugt | > 100 gleichzeitige Objekte                         | Pool in `SpawnSystem`                                                                                                                                                                                                                                                                                                                       |
 | Vitest deckt nur `systems/`, nicht Scenes/Entities  | ab Regressionen in Darstellung oder Eingabe         | `npm run playtest` deckt Scene-Fluss, Navigation, Bedienelemente, Steuerung, Kollision, Layout und Persistenz ab (9.3); `npm run test:duel2g` deckt den Zwei-Client-Online-Ablauf ab. Offen bleiben: Touch-Eigenheiten echter Geraete, Game-Feel, Bildrate unter Last sowie reale iPhone-/Safari-Netzwechsel und 3-/4-Spieler-Geräteabnahme |
 | Kollisionstest ist O(n) ueber alle Objekte          | > ~200 Objekte                                      | Raeumliches Gitter                                                                                                                                                                                                                                                                                                                          |
-| Ton nur prozedural, keine Audiodateien              | Musik oder komplexe Klangkulisse                    | Dateien/Audio-Mixer in M4                                                                                                                                                                                                                                                                                                                   |
+| Keine Musik, Klaenge nur als Einzel-Effekte        | Musik oder komplexe Klangkulisse                    | Musik-Loop ueber die SampleBank; Summenbus mit Kompressor steht (ADR-0029)                                                                                                                                                                                                                                                                  |
 | HUD-Layout nutzt 720×variable Portraithoehe         | nie (FIT skaliert)                                  | —                                                                                                                                                                                                                                                                                                                                           |
 | **Bestenliste ist manipulierbar**                   | sobald sie oeffentlich beworben wird                | Runs serverseitig nachrechnen (ADR-0011)                                                                                                                                                                                                                                                                                                    |
 | Sync ueberschreibt, statt zusammenzufuehren         | wenn auf beiden Geraeten regelmaessig gespielt wird | Feldweises Zusammenfuehren monotoner Werte                                                                                                                                                                                                                                                                                                  |

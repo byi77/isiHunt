@@ -1,16 +1,18 @@
 /**
- * Prozedurales Audio-Feedback fuer isiHunt.
+ * Audio-Feedback fuer isiHunt.
  *
- * Es werden keine Dateien geladen: kurze Oszillator-Toene sind sofort da,
- * klein im Bundle und lassen sich je Ereignis gezielt stimmen. iOS gibt den
- * AudioContext erst nach einer Nutzergeste frei; `initialize()` wartet deshalb
- * auf den ersten Tipp und entsperrt ihn dann automatisch.
+ * Hauptweg sind vorgerenderte Klaenge aus `public/assets/audio/` (SampleBank,
+ * ADR-0029). Die frueheren Oszillator-Toene bleiben als Fallback: Sie sind
+ * sofort da, waehrend die Dateien nach einem Kaltstart noch laden. iOS gibt
+ * den AudioContext erst nach einer Nutzergeste frei; `initialize()` wartet
+ * deshalb auf den ersten Tipp, entsperrt ihn dann und laedt die Klaenge vor.
  */
 
+import { MASTER_COMPRESSOR, MASTER_VOLUME } from '@/config/audio';
 import { COMBO_TIERS } from '@/config/GameConfig';
 import { eventBus, GameEvent } from '@/core/EventBus';
 import type { RarityId } from '@/config/rarities';
-import { SampledSoundModule } from '@/audio/SampledSoundModule';
+import { SampleBank } from '@/audio/SampleBank';
 import {
   SoundModuleChain,
   type SoundEvent,
@@ -42,8 +44,10 @@ let audioContext: AudioContext | null = null;
 let initialized = false;
 let resumePromise: Promise<boolean> | null = null;
 let feedbackGate = createFeedbackGate();
+let masterContext: AudioContext | null = null;
+let masterOutput: AudioNode | null = null;
 const soundModules = new SoundModuleChain();
-soundModules.register(new SampledSoundModule(), 100);
+soundModules.register(new SampleBank(), 100);
 
 // Auf iOS bleibt der allererste `resume()`-Aufruf nach einem Kaltstart
 // manchmal dauerhaft in der Warteschleife haengen - kein resolve, kein
@@ -74,6 +78,37 @@ function getAudioContext(): AudioContext | null {
     return audioContext;
   } catch {
     return null;
+  }
+}
+
+/**
+ * Summenbus je Kontext: Lautstaerke -> Kompressor -> Ausgang.
+ *
+ * Wird der Kontext neu erzeugt (nach `closed`), entsteht auch ein neuer Bus;
+ * Knoten eines alten Kontexts lassen sich nicht mit einem neuen verbinden.
+ */
+function getMasterOutput(): AudioNode | null {
+  const context = audioContext;
+  if (!context) return null;
+  if (masterContext === context && masterOutput) return masterOutput;
+
+  try {
+    const gain = context.createGain();
+    gain.gain.value = MASTER_VOLUME;
+    const compressor = context.createDynamicsCompressor();
+    compressor.threshold.value = MASTER_COMPRESSOR.threshold;
+    compressor.knee.value = MASTER_COMPRESSOR.knee;
+    compressor.ratio.value = MASTER_COMPRESSOR.ratio;
+    compressor.attack.value = MASTER_COMPRESSOR.attack;
+    compressor.release.value = MASTER_COMPRESSOR.release;
+    gain.connect(compressor);
+    compressor.connect(context.destination);
+    masterContext = context;
+    masterOutput = gain;
+    return gain;
+  } catch {
+    // Ohne Kompressor lieber ungebremst als stumm.
+    return context.destination;
   }
 }
 
@@ -147,7 +182,7 @@ function playTone(context: AudioContext, spec: ToneSpec): void {
     gain.gain.exponentialRampToValueAtTime(0.0001, start + spec.duration);
 
     oscillator.connect(gain);
-    gain.connect(context.destination);
+    gain.connect(getMasterOutput() ?? context.destination);
     oscillator.start(start);
     oscillator.stop(start + spec.duration + 0.02);
   } catch {
@@ -163,7 +198,12 @@ function unlock(): void {
   const context = getAudioContext();
   if (!context) return;
 
-  void resumeAudioContext();
+  // Vorladen erst nach dem Entsperren: vorher gibt es auf iOS keinen
+  // nutzbaren Kontext zum Dekodieren. Mehrfache Aufrufe sind billig, die
+  // SampleBank laedt jede Datei nur einmal.
+  void resumeAudioContext().then((ready) => {
+    if (ready) soundModules.preload();
+  });
 }
 
 /**
@@ -202,11 +242,25 @@ const RARITY_FREQUENCIES: Readonly<Record<RarityId, number>> = {
   legendary: 860,
 };
 
-export function playUiClick(): void {
+/** `back` klingt tiefer - Zurueck-Knoepfe sollen sich nach "zurueck" anhoeren. */
+export function playUiClick(kind: 'click' | 'back' = 'click'): void {
   if (!allowFeedback('ui')) return;
   HapticsSystem.playFeedback('ui');
-  if (playSoundModule('ui.click')) return;
-  scheduleTone({ frequency: 520, duration: 0.045, type: 'triangle', volume: 0.035 });
+  if (playSoundModule(kind === 'back' ? 'ui.back' : 'ui.click')) return;
+  scheduleTone({
+    frequency: kind === 'back' ? 390 : 520,
+    duration: 0.045,
+    type: 'triangle',
+    volume: 0.035,
+  });
+}
+
+/** Umschalter in den Einstellungen: steigend fuer an, fallend fuer aus. */
+export function playUiToggle(on: boolean): void {
+  if (!allowFeedback('ui')) return;
+  HapticsSystem.playFeedback('ui');
+  if (playSoundModule('ui.toggle', { toggleOn: on })) return;
+  scheduleTone({ frequency: on ? 660 : 440, duration: 0.09, type: 'triangle', volume: 0.05 });
 }
 
 function playSoundModule(event: SoundEvent, payload?: SoundEventPayload): boolean {
@@ -217,6 +271,8 @@ function playCollected(rarityId: RarityId): void {
   const feedbackKind = feedbackKindForRarity(rarityId);
   if (!allowFeedback(feedbackKind)) return;
   HapticsSystem.playFeedback(feedbackKind);
+  if (playSoundModule('collect', { rarityId })) return;
+
   const frequency = RARITY_FREQUENCIES[rarityId];
   const epicTier =
     rarityId === 'legendary'
@@ -286,6 +342,7 @@ function playCollected(rarityId: RarityId): void {
 export function playWorldSelect(spaceVariant: number): void {
   if (!allowFeedback('ui')) return;
   HapticsSystem.playFeedback('ui');
+  if (playSoundModule('world.select', { spaceVariant })) return;
   const root = 300 + Math.max(0, spaceVariant) * 42;
   playSequence([
     { frequency: root, duration: 0.055, type: 'triangle', volume: 0.026 },
@@ -294,9 +351,13 @@ export function playWorldSelect(spaceVariant: number): void {
 }
 
 function playComboTier(combo: number): void {
-  if (!COMBO_TIERS.some((tier) => tier.minCombo === combo) || combo === 0) return;
+  // Stufe 0 (minCombo 0) ist "keine Serie" und bleibt stumm; die erste
+  // hoerbare Stufe ist damit Index 1.
+  const comboTier = COMBO_TIERS.findIndex((tier) => tier.minCombo === combo);
+  if (comboTier < 1 || combo === 0) return;
   if (!allowFeedback('combo')) return;
   HapticsSystem.playFeedback('combo');
+  if (playSoundModule('combo.tier', { comboTier })) return;
 
   const frequency = 620 + combo * 3;
   playSequence([
@@ -305,18 +366,35 @@ function playComboTier(combo: number): void {
   ]);
 }
 
-function playRunStarted(): void {
-  if (!allowFeedback('run-start')) return;
-  HapticsSystem.playFeedback('run-start');
+/**
+ * Countdown-Ansage "Drei - Zwei - Eins - Los geht's!".
+ *
+ * Laeuft am Feedback-Gate vorbei: Die Stufen liegen 700 ms auseinander und
+ * duerfen weder einander noch von einem fruehen Fang verdraengt werden. Der
+ * Klang zum Start kam frueher an `RunStarted`; er haengt jetzt an Stufe 0,
+ * damit Ansage und Startsignal nicht uebereinander liegen.
+ */
+function playCountdown(step: number): void {
+  if (playSoundModule('countdown', { countdownStep: step })) return;
+  if (step !== 0) return;
   playSequence([
     { frequency: 440, duration: 0.08, type: 'triangle', volume: 0.035 },
     { frequency: 660, duration: 0.14, delay: 0.08, type: 'triangle', volume: 0.04 },
   ]);
 }
 
-function playRunEnded(levelsGained: number): void {
+function playRunStarted(): void {
+  if (!allowFeedback('run-start')) return;
+  HapticsSystem.playFeedback('run-start');
+}
+
+function playRunEnded(levelsGained: number, achievementsUnlocked: number): void {
   if (!allowFeedback('run-end')) return;
   HapticsSystem.playFeedback('run-end');
+  // Der Erfolgsklang ist in der Config verzoegert und folgt dem Run-Ende-Klang.
+  // Ohne Datei bleibt er aus - ein prozeduraler Ersatz waere nur Laerm.
+  if (achievementsUnlocked > 0) playSoundModule('achievement');
+  if (playSoundModule('run.end', { levelsGained })) return;
   if (levelsGained > 0) {
     playSequence([
       { frequency: 523, duration: 0.1, type: 'triangle', volume: 0.04 },
@@ -335,6 +413,7 @@ function playRunEnded(levelsGained: number): void {
 function playObstacleHit(kind: 'brake' | 'penalty'): void {
   if (!allowFeedback('obstacle')) return;
   HapticsSystem.playFeedback('obstacle');
+  if (playSoundModule('obstacle.hit', { obstacleKind: kind })) return;
   scheduleTone({
     frequency: kind === 'penalty' ? 190 : 240,
     duration: 0.12,
@@ -359,11 +438,25 @@ const onCollected: (payload: { rarityId: RarityId }) => void = ({ rarityId }) =>
   playCollected(rarityId);
 const onComboChanged: (payload: { combo: number }) => void = ({ combo }) => playComboTier(combo);
 const onRunStarted = (): void => playRunStarted();
-const onRunEnded: (payload: { progression: { levelsGained: number } }) => void = ({
-  progression,
-}) => playRunEnded(progression.levelsGained);
+const onRunEnded: (payload: {
+  progression: { levelsGained: number; unlockedAchievementIds: readonly string[] };
+}) => void = ({ progression }) =>
+  playRunEnded(progression.levelsGained, progression.unlockedAchievementIds.length);
 const onObstacleHit: (payload: { kind: 'brake' | 'penalty' }) => void = ({ kind }) =>
   playObstacleHit(kind);
+const onCountdownTick: (payload: { step: number }) => void = ({ step }) => playCountdown(step);
+// Die folgenden Klaenge haben keinen prozeduralen Fallback und kein Gate: Sie
+// sind selten, leise und ohne Datei besser stumm als durch Piepser ersetzt.
+const onMissed: (payload: { rarityId: RarityId }) => void = ({ rarityId }) =>
+  void playSoundModule('collect.missed', { rarityId });
+const onRunPaused: (payload: { reason: 'manual' | 'interrupted' }) => void = ({ reason }) => {
+  // Bei "interrupted" geht die App gerade in den Hintergrund und der Kontext
+  // wird angehalten - ein Klang dort wuerde abgeschnitten oder beim
+  // Zurueckkehren verspaetet nachklingen.
+  if (reason === 'manual') playSoundModule('run.pause');
+};
+const onRunResumed = (): void => void playSoundModule('run.resume');
+const onOpponentDisconnected = (): void => void playSoundModule('duel.opponent-left');
 const onVisibilityChange = (): void => {
   if (document.visibilityState === 'hidden') {
     if (audioContext?.state === 'running') {
@@ -385,6 +478,11 @@ function registerEventListeners(): void {
   eventBus.onEvent(GameEvent.RunStarted, onRunStarted);
   eventBus.onEvent(GameEvent.RunEnded, onRunEnded);
   eventBus.onEvent(GameEvent.ObstacleHit, onObstacleHit);
+  eventBus.onEvent(GameEvent.CountdownTick, onCountdownTick);
+  eventBus.onEvent(GameEvent.Missed, onMissed);
+  eventBus.onEvent(GameEvent.RunPaused, onRunPaused);
+  eventBus.onEvent(GameEvent.RunResumed, onRunResumed);
+  eventBus.onEvent(GameEvent.OpponentDisconnected, onOpponentDisconnected);
 }
 
 function unregisterEventListeners(): void {
@@ -393,6 +491,11 @@ function unregisterEventListeners(): void {
   eventBus.offEvent(GameEvent.RunStarted, onRunStarted);
   eventBus.offEvent(GameEvent.RunEnded, onRunEnded);
   eventBus.offEvent(GameEvent.ObstacleHit, onObstacleHit);
+  eventBus.offEvent(GameEvent.CountdownTick, onCountdownTick);
+  eventBus.offEvent(GameEvent.Missed, onMissed);
+  eventBus.offEvent(GameEvent.RunPaused, onRunPaused);
+  eventBus.offEvent(GameEvent.RunResumed, onRunResumed);
+  eventBus.offEvent(GameEvent.OpponentDisconnected, onOpponentDisconnected);
 }
 
 /**
@@ -445,6 +548,7 @@ export function initialize(): void {
   soundModules.initialize({
     isEnabled: soundEnabled,
     getAudioContext,
+    getOutput: getMasterOutput,
   });
   window.addEventListener('pointerdown', unlock, true);
   // `click` feuert erst nach einem vollstaendigen Tap-Zyklus und zaehlt auf
@@ -541,7 +645,9 @@ export function setEnabled(enabled: boolean): void {
   // zu verwerfen. Der Web-Audio-Ausgang folgt der iPhone-Hardwarelautstärke;
   // ein kurzer Bestätigungston macht das Einschalten unmittelbar hörbar.
   void resumeAudioContext().then((ready) => {
-    if (ready)
-      playTone(context, { frequency: 660, duration: 0.09, type: 'triangle', volume: 0.05 });
+    if (!ready) return;
+    soundModules.preload();
+    if (playSoundModule('ui.toggle', { toggleOn: true })) return;
+    playTone(context, { frequency: 660, duration: 0.09, type: 'triangle', volume: 0.05 });
   });
 }

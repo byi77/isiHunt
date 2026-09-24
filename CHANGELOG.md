@@ -9,6 +9,18 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Ton
+
+- Alle Klaenge sind neu: moderne, vorgerenderte Effekte fuer Knoepfe,
+  Weltwechsel, jeden Fang je Seltenheit, Combo-Stufen, Hindernisse und das
+  Run-Ende. Der Countdown zaehlt jetzt hoerbar „Drei – Zwei – Eins – Los
+  geht's!“, auf dem Bildschirm steht `LOS GEHT'S!`.
+- Neu hoerbar: Zurueck-Knopf, Umschalter an/aus, verblasste seltene Relikte,
+  Pause und Weiter, ein getrennter Online-Gegner und freigeschaltete Erfolge.
+- Ein Kompressor auf der Summe verhindert Uebersteuern, wenn mehrere Klaenge
+  zusammenfallen. Bis die Dateien nach einem Kaltstart geladen sind, klingen
+  die frueheren Toene.
+
 ### Spielgefuehl
 
 - In Jagd, Endlos und Duellen zeigt ein kleiner Stern kurz vorher den

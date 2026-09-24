@@ -1648,3 +1648,47 @@ Belege und zeigt pro Profil nur die beste Serie.
   Gutschriften mit neuen Ereignis-IDs.
 - Die Gates und Ertragsfaktoren sind vorlaeufig und brauchen echte
   Erfolgsquoten und Economy-Messungen vor einer Balance-Freigabe.
+
+---
+
+## ADR-0029 — Vorgerenderte Klaenge als Hauptweg, Oszillator-Toene als Fallback
+
+**Datum:** 2026-09-24 · **Status:** Angenommen
+
+### Kontext
+
+Bis v0.1.382 bestand der Ton aus kurzen WebAudio-Oszillator-Toenen und einem
+einzelnen CC0-Klick. Das war sofort verfuegbar und kostete keine Bytes, klang
+aber nach Piepser. Gewuenscht war ein moderner Klang und eine gesprochene
+Countdown-Ansage "Drei - Zwei - Eins - Los geht's!". Sprache laesst sich nicht
+prozedural erzeugen; ein Dateipfad war also ohnehin noetig.
+
+### Entscheidung
+
+Alle Effekte sind vorgerenderte WAV-Dateien (22,05 kHz, mono) aus
+scripts/render-sfx.mjs. Das Skript synthetisiert sie selbst und ist die
+Quelle der Wahrheit; es ist deterministisch. Die Stimme stammt von Piper mit
+der CC0-Stimme Thorsten (Sprecher "neutral", ohne Nachbearbeitung). Die
+SampleBank spielt sie ueber einen Summenbus mit Kompressor. Die frueheren
+Oszillator-Toene bleiben als Fallback, solange eine Datei noch laedt.
+
+**Gegenposition:** Zur Laufzeit synthetisieren - null Download, sofort da,
+Tonhoehe frei berechenbar. Verworfen, weil Hall und viele Schichten auf
+schwachen Handys in der Frame-Schleife Rechenzeit kosten und der Offline-Render
+aller Klaenge in Node rund zwoelf Sekunden brauchte (gemessen, 2026-09-24).
+Tonhoehen-Variation bleibt trotzdem dynamisch: ueber playbackRate.
+
+**WAV statt MP3/AAC:** MP3 bringt Encoder-Vorlauf (Stille am Anfang), der
+Taps und den 700-ms-Countdown verschieben wuerde, und braucht einen Encoder als
+neue Abhaengigkeit. WAV dekodiert ueberall ohne Formatfrage. Preis: rund
+1 MB, die der Service Worker vorab cached.
+
+### Konsequenzen
+
+- Ein neuer oder geaenderter Klang heisst: Skript aendern, neu rendern, Hash
+  in docs/SOUND_ASSETS.md nachtragen. SampleBank.test.ts prueft, dass jede
+  in src/config/audio.ts genannte Datei existiert.
+- Nach einem Kaltstart sind die ersten Klaenge bis zum Ende des Vorladens
+  prozedural; die Countdown-Zahlen bleiben in dieser Zeit stumm.
+- Lautstaerken sind ein Schreibtisch-Stand und werden in src/config/audio.ts
+  auf dem Geraet nachgestimmt.

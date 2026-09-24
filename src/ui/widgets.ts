@@ -126,6 +126,11 @@ export function createButton(
     accent?: number;
     fontSize?: number;
     variant?: 'primary' | 'secondary';
+    /**
+     * Klang beim Ausloesen. `none` fuer Knoepfe, die ihren Klang selbst
+     * waehlen - etwa Umschalter, die fuer an und aus verschieden klingen.
+     */
+    sound?: 'click' | 'back' | 'none';
   } = {},
 ): ButtonHandle {
   const canvasWidth = scene.game.canvas.getBoundingClientRect().width || GAME_WIDTH;
@@ -265,7 +270,7 @@ export function createButton(
     if (!enabled || !isPressed) return;
     isPressed = false;
     press(false);
-    SoundSystem.playUiClick();
+    if (options.sound !== 'none') SoundSystem.playUiClick(options.sound ?? 'click');
     onClick();
   });
 
@@ -350,6 +355,7 @@ export function createBackButton(
       height: 60,
       accent: 0x9aa3bd,
       fontSize: FontSize.tiny,
+      sound: 'back',
     },
   );
   button.container.setScrollFactor(0).setDepth(Depth.Overlay + 1);

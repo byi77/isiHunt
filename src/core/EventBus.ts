@@ -23,6 +23,12 @@ export const GameEvent = {
   Collected: 'run:collected',
   Missed: 'run:missed',
   ObstacleHit: 'run:obstacle-hit',
+  /**
+   * Eine Countdown-Zahl erscheint (3, 2, 1) bzw. "LOS GEHT'S!" (0). Feuert
+   * nur beim Wechsel der Zahl - der Online-Countdown tickt oefter, als sich
+   * die angezeigte Sekunde aendert, und die Ansage darf nicht stottern.
+   */
+  CountdownTick: 'run:countdown-tick',
   RunStarted: 'run:started',
   RunEnded: 'run:ended',
   RunPaused: 'run:paused',
@@ -105,6 +111,7 @@ export interface GameEventPayloads {
   };
   [GameEvent.Missed]: { rarityId: RarityId };
   [GameEvent.ObstacleHit]: { kind: 'brake' | 'penalty' };
+  [GameEvent.CountdownTick]: { step: number };
   [GameEvent.RunStarted]: { worldId: string; durationMs: number };
   [GameEvent.RunEnded]: { stats: RunStats; progression: ProgressionResult };
   /**

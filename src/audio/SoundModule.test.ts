@@ -5,6 +5,7 @@ import { SoundModuleChain, type SoundModule } from '@/audio/SoundModule';
 const context = {
   isEnabled: () => true,
   getAudioContext: () => null,
+  getOutput: () => null,
 };
 
 function module(id: string, result: boolean): SoundModule {
@@ -43,5 +44,21 @@ describe('SoundModuleChain', () => {
     expect(first.shutdown).toHaveBeenCalledOnce();
     expect(replacement.initialize).toHaveBeenCalledOnce();
     expect(chain.ids()).toEqual(['sample']);
+  });
+
+  it('reicht preload() an alle Provider weiter und uebersteht einen werfenden', () => {
+    const chain = new SoundModuleChain();
+    const broken = {
+      ...module('broken', false),
+      preload: vi.fn(() => {
+        throw new Error('kaputt');
+      }),
+    };
+    const healthy = { ...module('healthy', false), preload: vi.fn() };
+    chain.register(broken, 10);
+    chain.register(healthy, 0);
+
+    expect(() => chain.preload()).not.toThrow();
+    expect(healthy.preload).toHaveBeenCalledOnce();
   });
 });

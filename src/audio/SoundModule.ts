@@ -9,19 +9,41 @@
  */
 
 export type SoundEvent =
-  'ui.click' | 'world.select' | 'collect' | 'combo.tier' | 'run.start' | 'run.end' | 'obstacle.hit';
+  | 'ui.click'
+  | 'ui.back'
+  | 'ui.toggle'
+  | 'world.select'
+  | 'collect'
+  | 'collect.missed'
+  | 'combo.tier'
+  | 'countdown'
+  | 'run.end'
+  | 'run.pause'
+  | 'run.resume'
+  | 'obstacle.hit'
+  | 'duel.opponent-left'
+  | 'achievement';
 
 export interface SoundEventPayload {
   readonly rarityId?: string;
   readonly spaceVariant?: number;
-  readonly combo?: number;
+  /** 1-basierte Combo-Stufe (Index in COMBO_TIERS). */
+  readonly comboTier?: number;
   readonly levelsGained?: number;
   readonly obstacleKind?: 'brake' | 'penalty';
+  /** 3, 2, 1 - und 0 fuer "Los geht's!". */
+  readonly countdownStep?: number;
+  readonly toggleOn?: boolean;
 }
 
 export interface SoundModuleContext {
   readonly isEnabled: () => boolean;
   readonly getAudioContext: () => AudioContext | null;
+  /**
+   * Summenbus (Kompressor), an den jeder Provider anschliesst - nicht direkt
+   * an `destination`, sonst uebersteuern gleichzeitige Klaenge.
+   */
+  readonly getOutput: () => AudioNode | null;
 }
 
 export interface SoundModule {
@@ -34,6 +56,12 @@ export interface SoundModule {
   handles(event: SoundEvent): boolean;
   /** true = abgespielt; false = naechster Provider darf uebernehmen. */
   play(event: SoundEvent, payload?: SoundEventPayload): boolean;
+  /**
+   * Laedt Assets vorab, sobald der AudioContext laeuft. Ohne das kaeme der
+   * erste Countdown eines Runs nach Kaltstart stumm, weil die Stimme erst
+   * beim ersten Abspielversuch geladen wuerde.
+   */
+  preload?(): void;
 }
 
 /** Priorisierte Kette fuer austauschbare Soundmodule. */
@@ -82,6 +110,16 @@ export class SoundModuleChain {
       }
     }
     return false;
+  }
+
+  preload(): void {
+    for (const module of this.modules) {
+      try {
+        module.preload?.();
+      } catch {
+        // Ein fehlgeschlagenes Vorladen ist kein Fehler: play() laedt spaeter nach.
+      }
+    }
   }
 
   ids(): readonly string[] {

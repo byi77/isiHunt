@@ -421,7 +421,7 @@ export class ChallengeScene extends Phaser.Scene {
         ChallengeSystem.clear();
         this.scene.start(SceneKey.Menu);
       },
-      { width: 300, height: 72, accent: 0x9aa3bd, fontSize: FontSize.small },
+      { width: 300, height: 72, accent: 0x9aa3bd, fontSize: FontSize.small, sound: 'back' },
     );
   }
 }

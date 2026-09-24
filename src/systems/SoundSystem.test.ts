@@ -133,6 +133,10 @@ beforeEach(async () => {
   window.localStorage.clear();
   vi.resetModules();
   vi.stubGlobal('AudioContext', FakeAudioContext);
+  // Die SampleBank laedt nach dem Entsperren vor. Ohne Stub ginge das als
+  // echter Netzaufruf an jsdoms localhost - die Klaenge bleiben hier bewusst
+  // ungeladen, damit der prozedurale Fallback beobachtbar ist.
+  vi.stubGlobal('fetch', () => Promise.reject(new Error('offline')));
 
   SoundSystem = await import('@/systems/SoundSystem');
   SaveSystem = await import('@/systems/SaveSystem');
@@ -183,6 +187,11 @@ describe('initialize / shutdown - Regel-4-Guard', () => {
     expect(eventBus.listenerCount(GameEvent.ComboChanged)).toBe(0);
     expect(eventBus.listenerCount(GameEvent.RunStarted)).toBe(0);
     expect(eventBus.listenerCount(GameEvent.RunEnded)).toBe(0);
+    expect(eventBus.listenerCount(GameEvent.CountdownTick)).toBe(0);
+    expect(eventBus.listenerCount(GameEvent.Missed)).toBe(0);
+    expect(eventBus.listenerCount(GameEvent.RunPaused)).toBe(0);
+    expect(eventBus.listenerCount(GameEvent.RunResumed)).toBe(0);
+    expect(eventBus.listenerCount(GameEvent.OpponentDisconnected)).toBe(0);
   });
 
   it('registriert Listener bei doppeltem initialize() nicht doppelt', () => {
@@ -435,5 +444,51 @@ describe('setEnabled', () => {
     SoundSystem.setEnabled(true);
 
     expect(SoundSystem.isEnabled()).toBe(true);
+  });
+});
+
+describe('Countdown - Ansage mit Fallback', () => {
+  async function wokenContext(): Promise<FakeAudioContext> {
+    const instance = new FakeAudioContext();
+    vi.stubGlobal('AudioContext', function SingletonAudioContext() {
+      return instance;
+    });
+    SaveSystem.update((data) => {
+      data.soundEnabled = true;
+    });
+    SoundSystem.initialize();
+    window.dispatchEvent(new PointerEvent('pointerdown'));
+    await Promise.resolve();
+    return instance;
+  }
+
+  it("spielt bei 'Los geht's!' den alten Startton, solange die Stimme nicht geladen ist", async () => {
+    await wokenContext();
+    const startSpy = vi.spyOn(FakeOscillatorNode.prototype, 'start');
+
+    eventBus.emitEvent(GameEvent.CountdownTick, { step: 0 });
+
+    expect(startSpy).toHaveBeenCalled();
+    startSpy.mockRestore();
+  });
+
+  it('bleibt bei den Zahlen ohne geladene Stimme still statt zu piepsen', async () => {
+    await wokenContext();
+    const startSpy = vi.spyOn(FakeOscillatorNode.prototype, 'start');
+
+    eventBus.emitEvent(GameEvent.CountdownTick, { step: 3 });
+
+    expect(startSpy).not.toHaveBeenCalled();
+    startSpy.mockRestore();
+  });
+
+  it('spielt beim RunStarted keinen zweiten Startton mehr', async () => {
+    await wokenContext();
+    const startSpy = vi.spyOn(FakeOscillatorNode.prototype, 'start');
+
+    eventBus.emitEvent(GameEvent.RunStarted, { worldId: 'meadow', durationMs: 90_000 });
+
+    expect(startSpy).not.toHaveBeenCalled();
+    startSpy.mockRestore();
   });
 });

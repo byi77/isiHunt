@@ -17,6 +17,7 @@ import { CHALLENGE_DURATION_MS } from '@/config/challenge';
 import { RARE_SPAWN_WARNING, SCENE_TRANSITION } from '@/config/effectVisuals';
 import {
   COMBO_GRACE_MS,
+  COUNTDOWN_GO_LABEL,
   COUNTDOWN_STEP_MS,
   COUNTDOWN_STEPS,
   DEBUG_ENABLED,
@@ -485,7 +486,7 @@ export class GameScene extends Phaser.Scene {
 
     const dtSec = delta / 1000;
 
-    // Die Einblendung 3-2-1-LOS bleibt bestehen, darf aber nicht wie ein
+    // Die Einblendung 3-2-1-LOS GEHT'S bleibt bestehen, darf aber nicht wie ein
     // kaputter Touch-Start wirken. Bewegung ist bereits waehrend des Countdowns
     // aktiv; Spawns, Timer und Wertung beginnen weiterhin erst mit `running`.
     if (this.phase === 'countdown') {
@@ -797,11 +798,8 @@ export class GameScene extends Phaser.Scene {
     let step = COUNTDOWN_STEPS;
 
     const tick = () => {
-      if (step > 0) {
-        label.setText(String(step));
-      } else {
-        label.setText('LOS!');
-      }
+      label.setText(step > 0 ? String(step) : COUNTDOWN_GO_LABEL);
+      eventBus.emitEvent(GameEvent.CountdownTick, { step });
 
       label.setScale(1.6).setAlpha(1);
       this.tweens.add({ targets: label, scale: 1, duration: 260, ease: 'Back.Out' });
@@ -828,7 +826,7 @@ export class GameScene extends Phaser.Scene {
    * eigene Geraeteuhr um (`clockOffsetMs` ist positiv, wenn die Serveruhr
    * vorgeht - `NetworkDuelSystem.measureClockOffset`). Ein Tick alle
    * `COUNTDOWN_STEP_MS` zeigt die verbleibenden ganzen Sekunden, exakt beim
-   * Erreichen der Zielzeit erscheint "LOS!" - unabhaengig davon, wie viele
+   * Erreichen der Zielzeit erscheint COUNTDOWN_GO_LABEL - unabhaengig davon, wie viele
    * Sekunden das tatsaechlich waren (der Server-Vorlauf ist
    * `ONLINE_DUEL_START_LEAD_MS`, aber diese Funktion selbst kennt und
    * braucht diesen Wert nicht, sie zaehlt nur bis zur uebergebenen Zeit).
@@ -839,13 +837,21 @@ export class GameScene extends Phaser.Scene {
     clockOffsetMs: number,
   ): void {
     const localStartAt = startAtServerMs - clockOffsetMs;
+    // Der Tick laeuft oefter, als sich die Sekunde aendert (siehe unten). Die
+    // Ansage darf nur beim Wechsel kommen, sonst hiesse es "drei, drei, zwei".
+    let announcedStep: number | null = null;
 
     const tick = () => {
       const remainingMs = localStartAt - Date.now();
       const remainingSeconds = Math.ceil(remainingMs / 1000);
 
       if (remainingMs > 0) {
-        label.setText(String(Math.max(1, remainingSeconds)));
+        const step = Math.max(1, remainingSeconds);
+        label.setText(String(step));
+        if (step !== announcedStep) {
+          announcedStep = step;
+          eventBus.emitEvent(GameEvent.CountdownTick, { step });
+        }
         label.setScale(1.6).setAlpha(1);
         this.tweens.add({ targets: label, scale: 1, duration: 260, ease: 'Back.Out' });
         // Kurzes Intervall statt an Sekundengrenzen auszurichten - einfacher
@@ -855,7 +861,8 @@ export class GameScene extends Phaser.Scene {
         return;
       }
 
-      label.setText('LOS!');
+      label.setText(COUNTDOWN_GO_LABEL);
+      eventBus.emitEvent(GameEvent.CountdownTick, { step: 0 });
       label.setScale(1.6).setAlpha(1);
       this.tweens.add({ targets: label, scale: 1, duration: 260, ease: 'Back.Out' });
       this.tweens.add({ targets: label, alpha: 0, duration: 300, delay: 200 });

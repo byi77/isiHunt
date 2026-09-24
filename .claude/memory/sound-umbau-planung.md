@@ -1,21 +1,20 @@
 ---
 name: sound-umbau-planung
-description: "Stand der Sound-Ueberarbeitung (Planungsphase, noch kein Code) - Countdown-Ansage, Stimmenwahl, Zurueckgestelltes"
+description: "Stand der Sound-Ueberarbeitung - umgesetzt 2026-09-24 (ADR-0029), offen: Geraete-Abhoeren, \"Letzte Chance\", Musik"
 metadata:
   node_type: memory
   type: project
   originSessionId: 1fe2cde8-7922-4458-ab57-99ccadb3ccc1
-  modified: 2026-09-24T13:33:55.462Z
+  modified: 2026-09-24T15:55:23.715Z
 ---
 
-Sound-Ueberarbeitung von isiHunt, Planungsphase seit 2026-09-24 - Nutzer will ausdruecklich noch keine Codeaenderungen.
+Sound-Ueberarbeitung von isiHunt, umgesetzt am 2026-09-24 (ADR-0029, docs/SOUND_ASSETS.md).
 
-- Countdown-Ansage komplett deutsch: "Drei" - "Zwei" - "Eins" - "Los geht's!"; Bildschirmtext `LOS!` wird `LOS GEHT'S!` (GameScene, beide Countdown-Pfade).
-- Stimme: Piper + Thorsten (CC0), Speaker "neutral" aus `de_DE-thorsten_emotional-medium`, **roh ohne FX-Nachbearbeitung** - Urteil des Nutzers: "war ok" (nicht begeistert; ElevenLabs Starter bleibt Option, falls mehr Hype gewuenscht).
-- Eigene Stimme nur im Notfall.
-- Zurueckgestellt: Ansage "Letzte Chance!" bei 10 s (kein Showstopper), Musik (ganz hinten).
-- Online-Countdown tickt alle <=700 ms, Anzeige in ganzen Sekunden -> Stimme nur bei Zahlwechsel ausloesen.
-- GameScene/HudScene/ResultScene werden parallel im Endlos-Modus-Chat geaendert -> Countdown-Hook erst nach dessen Commit.
+- Alle Effekte vorgerendert aus `scripts/render-sfx.mjs` (deterministisch), SampleBank + Summenbus, Oszillator-Toene als Fallback.
+- Countdown-Stimme: Piper + Thorsten emotional, Sprecher "neutral", roh - Nutzerurteil "war ok" (nicht begeistert). ElevenLabs Starter bleibt Option fuer mehr Hype. Eigene Stimme nur im Notfall.
+- Countdown-Variante a (nur Stimme, ohne Klangunterlage) umgesetzt - Nutzer hat a/b nie ausdruecklich beantwortet, a war seine letzte explizite Wahl.
+- Zurueckgestellt (Nutzerwunsch): Ansage "Letzte Chance!" bei 10 s, Musik (ganz hinten).
+- Offen: Lautstaerken in `src/config/audio.ts` sind Schreibtisch-Werte, Abhoeren auf dem Handy steht aus.
 
-**Why:** Entscheidungen aus der Planungsrunde, damit eine spaetere Sitzung nicht neu verhandelt.
-**How to apply:** Beim Umsetzen diese Wahl uebernehmen; Hoerproben-Skript lag nur im Scratchpad (nicht versioniert), bei Bedarf neu erzeugen.
+**Why:** Entscheidungen aus Planung + Hoertests, damit spaetere Sitzungen nicht neu verhandeln.
+**How to apply:** Bei Klang-Nachbesserungen `render-sfx.mjs` aendern, neu rendern, Hashes in SOUND_ASSETS.md nachtragen.

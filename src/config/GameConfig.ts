@@ -80,9 +80,11 @@ export const PLAYFIELD_PADDING_X = 60;
 /** Laenge eines Solo-Runs in Millisekunden. Das Duell rechnet eigen (config/challenge.ts). */
 export const RUN_DURATION_MS = 90_000;
 
-/** Countdown vor dem Start (3 - 2 - 1 - LOS). */
+/** Countdown vor dem Start (3 - 2 - 1 - LOS GEHT'S), jede Stufe mit Sprachansage. */
 export const COUNTDOWN_STEPS = 3;
 export const COUNTDOWN_STEP_MS = 700;
+/** Schlusswort des Countdowns - passt zur Ansage "Los geht's!" (config/audio.ts). */
+export const COUNTDOWN_GO_LABEL = "LOS GEHT'S!";
 
 // --- Spielfigur -------------------------------------------------------------
 

@@ -152,9 +152,10 @@ export class SettingsScene extends Phaser.Scene {
       () => {
         const enabled = !HapticsSystem.isEnabled();
         HapticsSystem.setEnabled(enabled);
+        SoundSystem.playUiToggle(enabled);
         hapticsButton.setLabel(enabled ? 'HAPTIK: AN' : 'HAPTIK: AUS');
       },
-      { width: 360, height: 64, accent: world.accent, fontSize: FontSize.body },
+      { width: 360, height: 64, accent: world.accent, fontSize: FontSize.body, sound: 'none' },
     );
     addContent(hapticsButton.container);
     addContent(
@@ -192,9 +193,10 @@ export class SettingsScene extends Phaser.Scene {
       effectsLabel(),
       () => {
         EffectsQualitySystem.setQuality(EffectsQualitySystem.isFull() ? 'reduced' : 'full');
+        SoundSystem.playUiToggle(EffectsQualitySystem.isFull());
         effectsButton.setLabel(effectsLabel());
       },
-      { width: 360, height: 64, accent: world.accent, fontSize: FontSize.body },
+      { width: 360, height: 64, accent: world.accent, fontSize: FontSize.body, sound: 'none' },
     );
     addContent(effectsButton.container);
     addContent(

@@ -581,16 +581,24 @@ Spiel weiterlaeuft.
 
 ## 4.1 Ton
 
-Ton ist Rueckmeldung, kein Dauerteppich. `src/systems/SoundSystem.ts` erzeugt
-kurze WebAudio-Oszillator-Toene ohne Audiodateien:
+Ton ist Rueckmeldung, kein Dauerteppich. Die Klaenge sind vorgerendert
+(`scripts/render-sfx.mjs`, ADR-0029) und in C-Dur-Pentatonik gestimmt, damit
+alles, was gleichzeitig klingt, zueinander passt. Dateien und Lizenzen:
+`docs/SOUND_ASSETS.md`.
 
-| Ereignis    | Klangidee                                                                    |
-| ----------- | ---------------------------------------------------------------------------- |
-| Button      | kurzer, trockener Dreieckston                                                |
-| Reliktfang  | steigende Tonhoehe je Seltenheit; seltene Relikte bekommen einen zweiten Ton |
-| Combo-Stufe | zweistufiger, hoeherer Signalton                                             |
-| Run-Start   | kurzer Aufwaertston                                                          |
-| Run-Ende    | ruhiger Abschluss; Levelaufstieg bekommt eine eigene Aufwaertfolge           |
+| Ereignis          | Klangidee                                                                          |
+| ----------------- | ---------------------------------------------------------------------------------- |
+| Button            | weicher Tap mit kurzem Transienten; Zurueck tiefer und fallend                     |
+| Umschalter        | zwei Blips, steigend fuer an, fallend fuer aus                                     |
+| Weltwechsel       | Swoosh plus Glocke, die je Welt hoeher gestimmt ist                                |
+| Countdown         | Sprachansage "Drei - Zwei - Eins - Los geht's!" (Thorsten-Stimme, CC0)             |
+| Reliktfang        | Grau dumpf, Glas-Pling, Kristall, Glocken-Arpeggio, Chor-Pad, Legendaer mit Sub-Drop und Glitzer; Grau/Gewoehnlich leicht in der Tonhoehe gestreut |
+| Combo-Stufe       | Riser in eine Glocke, je Stufe hoeher, ab Stufe 4 mit Glitzer                      |
+| Hindernis         | Bremse als "Tape-Stop", Strafe als digitaler Glitch                                |
+| Relikt verblasst  | leiser Hauch nach unten, nur ab Selten                                             |
+| Pause / Weiter    | Filterfahrt nach unten bzw. oben ("Einfrieren", "Auftauen")                        |
+| Run-Ende          | warmer Akkord; Levelaufstieg bekommt eine Brass-Fanfare mit Glocken                |
+| Erfolg            | Glissando in eine helle Glocke, 1,2 s nach dem Run-Ende-Klang                      |
 
 Die sechs Seltenheitsfarben bleiben visuell unantastbar; Ton ergaenzt sie nur.
 Der Ton ist in den Einstellungen abschaltbar und wird im Spielstand gespeichert.
@@ -599,9 +607,10 @@ Auf iOS wird der AudioContext erst nach der ersten Nutzergeste entsperrt.
 Der Ergebnisbildschirm verstärkt einen Levelaufstieg nicht mit mehr Partikeln,
 sondern mit Hierarchie: `LEVEL-UP!`, erreichte Stufe, XP-Restwert,
 Level-Coins, aktuelle Coins und unmittelbare Freischaltungen stehen in einem
-gemeinsamen Belohnungspanel. Die Aufwärtsfolge im Ton bleibt kurz und endet
-innerhalb der 800-ms-Grenze; zusätzliche lizenzierte Audio-Assets sind erst
-nach dem P5-12-Lizenz- und Adapter-Gate erlaubt.
+gemeinsamen Belohnungspanel. Die Levelaufstieg-Fanfare ueberschreitet mit
+ihrem Nachhall die fruehere 800-ms-Grenze bewusst (Hoertest 2026-09-24); ihr
+Kern ist nach rund einer Sekunde vorbei. Fremde Audio-Assets brauchen weiterhin
+einen Lizenzeintrag in `docs/SOUND_ASSETS.md`.
 
 ## 5. Schrift
 

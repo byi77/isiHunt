@@ -1522,7 +1522,7 @@ export class OnlineDuelScene extends Phaser.Scene {
         GAME_HEIGHT - 140,
         label,
         () => void this.leaveDuelAndReturn(onBeforeMenu),
-        { width: 300, height: 72, accent: 0x9aa3bd, fontSize: FontSize.small },
+        { width: 300, height: 72, accent: 0x9aa3bd, fontSize: FontSize.small, sound: 'back' },
       ).container,
     );
   }
