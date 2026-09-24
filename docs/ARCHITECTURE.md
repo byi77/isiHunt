@@ -1025,11 +1025,10 @@ externe Sprite-, Partikel- und 3D-Provider: der CC0-Surveyor liefert eine
 externe 2D-Form, die Prismaflut nutzt sechs CC0-Kenney-Flame-Frames als
 Overlay, und neun CC0-OBJ-Modelle stehen fuer die Shopvorschau bereit. Die
 3D-Modelle werden ueber `threeDAssetForId()` gefunden und von
-`ThreeDShipPreview` lazy geladen. Im Solo-Run liegt die Vorschau als
-transparente DOM-Canvas-Schicht auf der Phaser-Spielerposition. Der Renderer
-verwendet Straight Alpha, transparentes Clear-Alpha und leert Farbe, Tiefe und
-Stencil vor jedem Frame, damit die separate WebGL-Schicht keinen dunklen
-Canvas-Rahmen ueber Planeten legt. Profil und Ergebnis bleiben beim 2D-Pfad.
+`ThreeDShipPreview` lazy geladen. Der Hangar zeigt die interaktive 3D-Vorschau.
+Im Spielfeld bleibt das Schiff auf der transparenten 2D-Textur, weil eine
+separate WebGL-DOM-Canvas auf einigen Browser-/GPU-Kombinationen als dunkles
+Rechteck komponiert wurde. Profil und Ergebnis bleiben ebenfalls beim 2D-Pfad.
 Besitz-IDs, Shopdaten, Save-Sync,
 Trefferlogik und Progressionsregeln bleiben davon unabhaengig. Fehlt ein
 Asset, WebGL oder die Ladeverbindung, bleibt die prozedurale Zeichnung aktiv;

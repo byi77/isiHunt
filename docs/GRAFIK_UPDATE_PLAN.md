@@ -743,8 +743,9 @@ Möglicher Einstieg nächste Woche:
 
 ### Rendering-Korrektur: 24. September 2026
 
-Das 3D-Schiff im Solo-Spiel wird als transparente WebGL-DOM-Canvas über dem
-Phaser-Spielfeld dargestellt. Straight Alpha und ein explizit transparenter
-Clear vor jedem Frame verhindern, dass die Canvasfläche als dunkles Quadrat
-über dem Planeten erscheint. Die Korrektur ist in
-`src/ui/threeDShipPreview.ts` umgesetzt.
+Die transparente WebGL-DOM-Canvas zeigte im Solo-Spiel weiterhin ein dunkles
+Rechteck über dem Planeten. Clear-Alpha und Straight Alpha reichten nicht aus.
+Die Spielszene verwendet daher wieder die detaillierte, transparente
+2D-Schiffstextur; die interaktive 3D-Vorschau bleibt im Hangar. Der 3D-Overlay-
+Pfad im Spiel ist ausgesetzt, bis seine Komposition browser- und GPU-übergreifend
+zuverlässig funktioniert.

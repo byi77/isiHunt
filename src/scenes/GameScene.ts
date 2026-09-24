@@ -68,7 +68,6 @@ import { GameBackdrop } from '@/ui/GameBackdrop';
 import type { HudScene } from '@/scenes/HudScene';
 import { Depth } from '@/ui/depth';
 import { shipAuraAssetId, shipAuraIndex, shipHullTint, shipTint } from '@/config/shop';
-import { threeDAssetForId } from '@/ui/egoAssets';
 import { planetTextureForVariant, playerTextureForShape } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
 import { createVignette, floatingScore } from '@/ui/widgets';
@@ -277,7 +276,11 @@ export class GameScene extends Phaser.Scene {
       versteckeKosmetik ? this.world.accent : shipTint(save, this.world.accent),
       versteckeKosmetik ? undefined : playerTextureForShape(save.shipShape),
       versteckeKosmetik ? 0xffffff : shipHullTint(save),
-      versteckeKosmetik ? undefined : threeDAssetForId(save.shipShape),
+      // Die separate Three.js-DOM-Canvas kann je nach Browser/GPU trotz
+      // transparentem Clear als dunkles Rechteck komponiert werden. Im
+      // Spielfeld bleibt deshalb die detaillierte, transparente 2D-Textur;
+      // die interaktive 3D-Vorschau bleibt im Hangar erhalten.
+      undefined,
     );
     this.collectionEffects = new CollectionEffects(
       this,

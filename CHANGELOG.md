@@ -11,10 +11,10 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ### Behoben
 
-- **Dunkles Quadrat um das 3D-Spielerschiff entfernt.** Das transparente
-  WebGL-Overlay nutzt jetzt Straight Alpha und leert den Zeichenpuffer vor
-  jedem Frame explizit transparent. So bleibt der Planet hinter dem Schiff
-  sichtbar.
+- **Dunkles Quadrat um das Spielerschiff umgangen.** Im Spielfeld nutzt das
+  Schiff wieder seine transparente, detaillierte 2D-Textur. Die separate
+  Three.js-DOM-Canvas bleibt auf die Hangar-Vorschau beschraenkt, bis die
+  transparente Komposition in allen Browsern und GPUs verlaesslich arbeitet.
 
 ### Hinzugefuegt
 
