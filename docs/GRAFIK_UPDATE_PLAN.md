@@ -748,4 +748,6 @@ Rechteck über dem Planeten. Clear-Alpha und Straight Alpha reichten nicht aus.
 Die Spielszene verwendet daher wieder die detaillierte, transparente
 2D-Schiffstextur; die interaktive 3D-Vorschau bleibt im Hangar. Der 3D-Overlay-
 Pfad im Spiel ist ausgesetzt, bis seine Komposition browser- und GPU-übergreifend
-zuverlässig funktioniert.
+zuverlässig funktioniert. Nachdem das Rechteck auch in v0.1.374 noch sichtbar
+war, wurde als verbleibende Quelle der Phaser-preFX-Glow am Schiff identifiziert
+und entfernt; die separate Aura bleibt bestehen.

@@ -1028,7 +1028,10 @@ Overlay, und neun CC0-OBJ-Modelle stehen fuer die Shopvorschau bereit. Die
 `ThreeDShipPreview` lazy geladen. Der Hangar zeigt die interaktive 3D-Vorschau.
 Im Spielfeld bleibt das Schiff auf der transparenten 2D-Textur, weil eine
 separate WebGL-DOM-Canvas auf einigen Browser-/GPU-Kombinationen als dunkles
-Rechteck komponiert wurde. Profil und Ergebnis bleiben ebenfalls beim 2D-Pfad.
+Rechteck komponiert wurde. Auch der Phaser-preFX-Glow ist dort deaktiviert:
+Sein Zwischenpuffer verursachte denselben Fehler auf bestimmten mobilen
+WebGL-Treibern; den sichtbaren Schein zeichnet weiterhin das separate
+Aura-Bild. Profil und Ergebnis bleiben ebenfalls beim 2D-Pfad.
 Besitz-IDs, Shopdaten, Save-Sync,
 Trefferlogik und Progressionsregeln bleiben davon unabhaengig. Fehlt ein
 Asset, WebGL oder die Ladeverbindung, bleibt die prozedurale Zeichnung aktiv;

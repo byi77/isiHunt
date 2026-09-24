@@ -15,6 +15,8 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   Schiff wieder seine transparente, detaillierte 2D-Textur. Die separate
   Three.js-DOM-Canvas bleibt auf die Hangar-Vorschau beschraenkt, bis die
   transparente Komposition in allen Browsern und GPUs verlaesslich arbeitet.
+  Zusaetzlich entfaellt der Phaser-preFX-Glow direkt auf dem Schiffsbild; sein
+  Zwischenpuffer war die verbleibende Quelle des dunklen Rechtecks.
 
 ### Hinzugefuegt
 

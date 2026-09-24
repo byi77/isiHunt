@@ -43,11 +43,9 @@ import {
   TALENT_SPEED_STREAK_TALENT_LENGTH,
   TALENT_SPEED_STREAK_WIDTH,
 } from '@/config/GameConfig';
-import { GLOW_FX } from '@/config/effectVisuals';
 import { talentMaxRank, type PlayerStats, type TalentId } from '@/config/talents';
 import type { SeriesAgility } from '@/systems/ScoreSystem';
 import { Depth } from '@/ui/depth';
-import { applyGlow } from '@/ui/effectsFx';
 import { auraAssetForId, type Ego3DAsset } from '@/ui/egoAssets';
 import {
   applyTintShift,
@@ -99,8 +97,6 @@ export class Player extends Phaser.GameObjects.Container {
   private readonly enginePlume: Phaser.GameObjects.Image;
   private readonly engineCore: Phaser.GameObjects.Image;
   private readonly aura: Phaser.GameObjects.Image;
-  /** Leuchtshader am Rumpf; `null` im Canvas-Renderer oder bei sparsamer Stufe. */
-  private readonly coreGlow: Phaser.FX.Glow | null;
   /** Rueckrechnung hochaufgeloester Schiffstexturen auf die gewohnte Groesse. */
   private readonly coreBase: number;
   private readonly threeDPreview: ThreeDShipPreview | null = null;
@@ -219,7 +215,9 @@ export class Player extends Phaser.GameObjects.Container {
     this.coreBase = shipDisplayScale(textureKey);
     this.core.setScale(this.coreBase);
     this.hullColor = hullColor;
-    this.coreGlow = applyGlow(this.core, accentColor, GLOW_FX.playerOuter, GLOW_FX.playerInner);
+    // Kein Phaser-preFX direkt auf dem Spielerbild: Der Zwischenspeicher des
+    // Glow-Shaders kann auf mobilen WebGL-Treibern als dunkles Rechteck
+    // sichtbar werden. Das separate, transparente Aura-Bild liefert den Schein.
 
     this.orbit = new ShipOrbit(scene);
     this.orbit.update(false);
@@ -697,7 +695,6 @@ export class Player extends Phaser.GameObjects.Container {
     this.accentColor = color;
     this.aura.setTint(color);
     this.halo.setTint(color);
-    if (this.coreGlow) this.coreGlow.color = color;
     if (this.seriesTier === null) this.trail.setParticleTint(color);
   }
 
