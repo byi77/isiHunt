@@ -896,12 +896,14 @@ export class HudScene extends Phaser.Scene {
     combo,
     multiplier,
     speedFactor,
+    rescueReady,
   }: {
     combo: number;
     multiplier: number;
     speedFactor: number;
+    rescueReady?: boolean;
   }): void => {
-    this.comboText.setText(`SERIE ${Math.max(0, combo)}`);
+    this.comboText.setText(`SERIE ${Math.max(0, combo)}${rescueReady ? ' ★' : ''}`);
     this.multiplierText.setText(
       `×${multiplier.toLocaleString('de-DE', { maximumFractionDigits: 2 })}`,
     );

@@ -11,6 +11,9 @@ export const ENDLESS_TALENT_CHOICES = 3;
 export const ENDLESS_XP_BONUS_PER_ROUND = 0.04;
 export const ENDLESS_COIN_BONUS_PER_ROUND = 2;
 export const ENDLESS_SCORE_BONUS_PER_ROUND = 0.02;
+export const ENDLESS_DIFFICULTY_ROUND_8 = 1.6;
+export const ENDLESS_DIFFICULTY_ROUND_9 = 2.1;
+export const ENDLESS_DIFFICULTY_ROUND_10 = 2.8;
 
 export const ENDLESS_TALENTS: readonly TalentId[] = [
   'reach',
@@ -31,7 +34,15 @@ export interface EndlessState {
   totalScore: number;
   totalXp: number;
   totalCoins: number;
+  rescueUsed?: boolean;
   talents: TalentRanks;
+}
+
+export function endlessDifficultyScale(round: number): number {
+  if (round >= 10) return ENDLESS_DIFFICULTY_ROUND_10;
+  if (round >= 9) return ENDLESS_DIFFICULTY_ROUND_9;
+  if (round >= 8) return ENDLESS_DIFFICULTY_ROUND_8;
+  return 1;
 }
 
 export function endlessGate(round: number): number {

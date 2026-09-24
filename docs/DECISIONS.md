@@ -1692,3 +1692,22 @@ neue Abhaengigkeit. WAV dekodiert ueberall ohne Formatfrage. Preis: rund
   prozedural; die Countdown-Zahlen bleiben in dieser Zeit stumm.
 - Lautstaerken sind ein Schreibtisch-Stand und werden in src/config/audio.ts
   auf dem Geraet nachgestimmt.
+
+## ADR-0030 — Einmalige Serienrettung und Endlos-Schwelle ab Runde 8
+
+### Entscheidung
+
+Erreicht die Fangserie 6, sichert ein einmaliger Rettungsring ihren ersten
+Timer-Ablauf. Der aktuelle Serienwert bleibt stehen und ein doppelt so langes
+Fangfenster beginnt. In Endlos wird der Verbrauch im Serienzustand ueber alle
+30-Sekunden-Runden getragen. Ab Runde 8 erhoeht ein eigener Faktor nur fuer
+Endlos die vorhandenen Spawn-Regeln: 1,6 in Runde 8, 2,1 in Runde 9 und 2,8
+ab Runde 10. Hindernisse bremsen weiter ohne Punkt- oder Zeitabzug.
+
+### Grund
+
+Ein hoher Serienwert soll nach einem einzigen verpassten Fangfenster eine
+zweite Chance erhalten. Der Einsatz ist sichtbar und endlich; danach gilt
+wieder der normale Zerfall. Der spaete Schwierigkeitssprung laesst die ersten
+Runden leicht und setzt die Herausforderung in der bereits vorhandenen
+Welt-Skalierung um, ohne Gate- oder Belohnungsdaten umzudeuten.

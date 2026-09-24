@@ -8,6 +8,12 @@
 4. Alle zwei Runden wechselt die Welt. Hindernisse bremsen im Endlosmodus, ziehen aber weder Zeit noch Punkte ab. Die Weltboni und ein eigener Rundenbonus erhöhen Punkte und XP; der Coinbonus steigt mit der Rundennummer.
 5. Bei verfehltem Gate endet die Serie. Auch diese letzte Runde wird ausgezahlt. Der Ergebnisbildschirm zeigt die erreichte Runde und den Gesamtstand; „Nochmal“ startet eine neue Serie. Die Rangliste zeigt je Spieler die beste Serie.
 
+Ab Runde 8 zieht die Schwierigkeit stark an: 1,6-facher Weltfaktor in Runde 8,
+2,1-facher in Runde 9 und 2,8-facher ab Runde 10. Das verkuerzt die sichtbare
+Zeit der Relikte und erhoeht die Hindernischance. Der einmalige Serien-Rettungsring
+ab Serie 6 bleibt ueber die gesamte Endlos-Serie verbraucht, auch nach einem
+Checkpoint.
+
 ## Vorläufige Balance
 
 | Runde | Runden-Zuwachs | Kumuliertes Gate | Welt                                             |

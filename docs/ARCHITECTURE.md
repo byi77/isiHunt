@@ -643,7 +643,13 @@ Gate, endet die Serie nach der Gutschrift dieser Runde.
 
 `config/endless.ts` berechnet den kumulierten Gate-Stand, Welt und
 Belohnungsfaktoren. Das HUD addiert den bisherigen Serienstand zu den Punkten
-der laufenden Runde; fuer Profilbuchung und Plausibilitaet bleibt jede Runde
+der laufenden Runde. Der Zustand traegt auch den verbrauchten Serien-Rettungsring
+ueber Scene-Restarts hinweg. `ScoreSystem` entscheidet beim Ablauf des
+Fangfensters einmalig ueber die Rettung; `GameScene` meldet die Verfuegbarkeit
+ueber `ComboChanged` und zeigt den Rettungsmoment im Spielfeld. In
+Endlos-Runde 8, 9 und ab 10 multipliziert `config/endless.ts` den
+Welt-Schwierigkeitsfaktor fuer `SpawnSystem`; die normalen Modi behalten ihren
+Weltfaktor. Fuer Profilbuchung und Plausibilitaet bleibt jede Runde
 ein eigener Beleg. Der
 `ProgressionSystem`-Coinanteil ist auf 30 Sekunden skaliert. Die normale
 Abschlusspraemie aus `RunBonusSystem` gilt nicht fuer Endlos, weil ihre
@@ -1782,7 +1788,7 @@ Ehrlich benannt, damit sie nicht ueberrascht:
 | Kein Object Pooling — jedes Relikt wird neu erzeugt | > 100 gleichzeitige Objekte                         | Pool in `SpawnSystem`                                                                                                                                                                                                                                                                                                                       |
 | Vitest deckt nur `systems/`, nicht Scenes/Entities  | ab Regressionen in Darstellung oder Eingabe         | `npm run playtest` deckt Scene-Fluss, Navigation, Bedienelemente, Steuerung, Kollision, Layout und Persistenz ab (9.3); `npm run test:duel2g` deckt den Zwei-Client-Online-Ablauf ab. Offen bleiben: Touch-Eigenheiten echter Geraete, Game-Feel, Bildrate unter Last sowie reale iPhone-/Safari-Netzwechsel und 3-/4-Spieler-Geräteabnahme |
 | Kollisionstest ist O(n) ueber alle Objekte          | > ~200 Objekte                                      | Raeumliches Gitter                                                                                                                                                                                                                                                                                                                          |
-| Keine Musik, Klaenge nur als Einzel-Effekte        | Musik oder komplexe Klangkulisse                    | Musik-Loop ueber die SampleBank; Summenbus mit Kompressor steht (ADR-0029)                                                                                                                                                                                                                                                                  |
+| Keine Musik, Klaenge nur als Einzel-Effekte         | Musik oder komplexe Klangkulisse                    | Musik-Loop ueber die SampleBank; Summenbus mit Kompressor steht (ADR-0029)                                                                                                                                                                                                                                                                  |
 | HUD-Layout nutzt 720×variable Portraithoehe         | nie (FIT skaliert)                                  | —                                                                                                                                                                                                                                                                                                                                           |
 | **Bestenliste ist manipulierbar**                   | sobald sie oeffentlich beworben wird                | Runs serverseitig nachrechnen (ADR-0011)                                                                                                                                                                                                                                                                                                    |
 | Sync ueberschreibt, statt zusammenzufuehren         | wenn auf beiden Geraeten regelmaessig gespielt wird | Feldweises Zusammenfuehren monotoner Werte                                                                                                                                                                                                                                                                                                  |

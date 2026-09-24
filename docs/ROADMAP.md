@@ -35,6 +35,8 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
       stellt die Wertung aus geprueften Rundenbelegen bereit.
 - [x] Supabase-Phase 2.68 wurde am 2026-09-24 live eingespielt; Marker und
       Ranglisten-RPC wurden geprueft.
+- [x] Runde 8 bis 10 steigert Hindernisdichte und Relikt-Tempo deutlich;
+      ein einmaliger Serien-Rettungsring ab Serie 6 gilt auch ueber Checkpoints.
 - [ ] Gate-Erfolgsquoten, Economy und laengere Serien mit echten Spielern und
       Mobilgeraeten pruefen. Werte und Testmatrix: [Einbauplan](ENDLOS_EINBAUPLAN.md).
 

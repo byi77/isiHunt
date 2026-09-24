@@ -68,6 +68,8 @@ export interface GameEventPayloads {
     multiplier: number;
     /** Tempobonus der Serie als Faktor - 1 heisst keiner. Siehe SERIES_AGILITY_TIERS. */
     speedFactor: number;
+    /** Einmalige Rettung ab Serie 6 ist in diesem Run noch verfuegbar. */
+    rescueReady?: boolean;
   };
   /**
    * Der Rest des Serienfensters, jeden Frame.

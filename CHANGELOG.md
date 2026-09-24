@@ -9,6 +9,14 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Spielregeln
+
+- Ab Serie 6 rettet eine einmalige Wiedergeburt die Serie beim ersten Ablauf
+  des Fangfensters und oeffnet es erneut. In Endlos gilt sie einmal fuer die
+  gesamte Checkpoint-Serie.
+- Endlos-Runde 8, 9 und 10 erhoehen schrittweise Hindernisdichte und
+  Relikt-Tempo deutlich; Gates und Belohnungen bleiben unveraendert.
+
 ### Ton
 
 - Alle Klaenge sind neu: moderne, vorgerenderte Effekte fuer Knoepfe,

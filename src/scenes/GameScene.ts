@@ -44,6 +44,7 @@ import {
   ENDLESS_DOUBLE_TALENT_EVERY,
   ENDLESS_ROUND_MS,
   ENDLESS_TALENT_CHOICES,
+  endlessDifficultyScale,
   endlessTotalGate,
   endlessRewards,
   endlessTalentChoices,
@@ -240,6 +241,7 @@ export class GameScene extends Phaser.Scene {
             totalScore: 0,
             totalXp: 0,
             totalCoins: 0,
+            rescueUsed: false,
             talents: {},
           })
         : null;
@@ -370,6 +372,8 @@ export class GameScene extends Phaser.Scene {
         (this.endlessState ? endlessRewards(this.endlessState.round).xpMultiplier : 1),
       this.stats.seriesMultiplierBonus,
       this.stats.critChance,
+      undefined,
+      this.endlessState?.rescueUsed ?? false,
     );
 
     // Nur im Duell wird geseedet - beide Spieler bekommen dieselbe Abfolge.
@@ -381,7 +385,8 @@ export class GameScene extends Phaser.Scene {
       this.playfield,
       this.world.modifier,
       this.world.obstacleMode,
-      this.world.difficultyScale,
+      this.world.difficultyScale *
+        (this.endlessState ? endlessDifficultyScale(this.endlessState.round) : 1),
       Boolean(challenge),
       this.stats.rarityPromotionChance,
     );
@@ -522,7 +527,18 @@ export class GameScene extends Phaser.Scene {
   }
 
   private updateCombo(deltaMs: number): void {
-    const { comboReset } = this.scoring.update(deltaMs);
+    const { comboReset, comboRevived } = this.scoring.update(deltaMs);
+    if (comboRevived) {
+      if (this.endlessState) this.endlessState.rescueUsed = true;
+      this.player.pulse(Palette.goldHex);
+      floatingScore(this, this.player.x, this.player.y, 'WIEDERGEBURT', Palette.goldHex);
+      eventBus.emitEvent(GameEvent.ComboChanged, {
+        combo: this.scoring.currentCombo,
+        multiplier: this.scoring.currentMultiplier,
+        speedFactor: agilityForSeries(this.scoring.currentCombo).speedFactor,
+        rescueReady: false,
+      });
+    }
     if (comboReset) {
       eventBus.emitEvent(GameEvent.ComboChanged, { combo: 0, multiplier: 1, speedFactor: 1 });
       this.player.setSeriesTrail(null);
@@ -757,6 +773,7 @@ export class GameScene extends Phaser.Scene {
       combo: outcome.combo,
       multiplier: outcome.multiplier,
       speedFactor: agility.speedFactor,
+      rescueReady: this.scoring.rescueReady,
     });
     orb.destroy();
   }
@@ -1130,6 +1147,7 @@ export class GameScene extends Phaser.Scene {
           totalScore: state.totalScore,
           totalXp: state.totalXp,
           totalCoins: state.totalCoins,
+          rescueUsed: state.rescueUsed,
           talents: { ...state.talents },
         },
       } satisfies GameSceneData);

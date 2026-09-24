@@ -249,6 +249,8 @@ export const WORLD_LIFETIME_SCALE_PER_DIFFICULTY = 0.35;
  * andere Stellschraube. Das Talent "Ausdauer" verlaengert ihn zusaetzlich.
  */
 export const COMBO_GRACE_MS = 900;
+export const SERIES_RESCUE_MIN_COMBO = 6;
+export const SERIES_RESCUE_GRACE_MULTIPLIER = 2;
 
 export const SERIES_RAISING_MIN_RARITY_INDEX = Balance.SERIES_RAISING_MIN_RARITY_INDEX;
 export const COMBO_TIERS = Balance.COMBO_TIERS;

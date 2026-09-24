@@ -159,6 +159,11 @@ Rundenlaenge fest bleibt. Alle zwei Runden folgt die naechste Welt. Die letzte
 Welt bleibt nach ihrer Ankunft aktiv. Hindernisse bremsen, ziehen in diesem
 Modus aber weder Zeit noch Punkte ab.
 
+Ab Runde 8 steigt die Schwierigkeit deutlich: Der Faktor fuer Hindernisse und
+Relikt-Lebensdauer betraegt in Runde 8 das 1,6-Fache, in Runde 9 das 2,1-Fache
+und ab Runde 10 das 2,8-Fache des jeweiligen Weltwerts. Gates und verdiente
+Belohnungen bleiben dabei erhalten.
+
 Pro Runde nach der ersten steigen die Fangpunkte um 2 %, die Fang-XP um 4 %
 und die Coin-Praemie um 2. Der Basis-Coinanteil wird von 90 auf 30 Sekunden
 skaliert; Welt-, Seltenheits- und Sammelboni bleiben erhalten. Auch eine Runde
@@ -219,6 +224,14 @@ Spiels:
   nicht.
 - Fängst du im Fenster gar nichts, fällt die Serie auf **0**.
 - **Ein verpasstes Relikt bricht die Serie NICHT.**
+
+Ab Serie 6 gibt es pro Jagd oder Duell eine einmalige Wiedergeburt: Laeuft das
+Fangfenster ab, bleibt die Serie erhalten und das Fenster oeffnet sich fuer die
+doppelte normale Dauer erneut. Ein Stern an der Serienanzeige zeigt die noch
+verfuegbare Rettung; beim Einsatz erscheint ein deutlicher Hinweis. Im
+Endlosmodus gilt die Rettung einmal fuer die gesamte Checkpoint-Serie, nicht
+erneut in jeder 30-Sekunden-Runde. Weitere ablaufende Fenster beenden die
+Serie wie gewohnt.
 
 **Warum diese Trennung.** Farbige Relikte machen nur 38 % aus und erscheinen im
 Schnitt alle 1,6 s (Rundenanfang) bis 0,9 s (Rundenende) — oft zu selten für

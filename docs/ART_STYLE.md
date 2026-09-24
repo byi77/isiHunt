@@ -586,19 +586,19 @@ Ton ist Rueckmeldung, kein Dauerteppich. Die Klaenge sind vorgerendert
 alles, was gleichzeitig klingt, zueinander passt. Dateien und Lizenzen:
 `docs/SOUND_ASSETS.md`.
 
-| Ereignis          | Klangidee                                                                          |
-| ----------------- | ---------------------------------------------------------------------------------- |
-| Button            | weicher Tap mit kurzem Transienten; Zurueck tiefer und fallend                     |
-| Umschalter        | zwei Blips, steigend fuer an, fallend fuer aus                                     |
-| Weltwechsel       | Swoosh plus Glocke, die je Welt hoeher gestimmt ist                                |
-| Countdown         | Sprachansage "Drei - Zwei - Eins - Los geht's!" (Thorsten-Stimme, CC0)             |
-| Reliktfang        | Grau dumpf, Glas-Pling, Kristall, Glocken-Arpeggio, Chor-Pad, Legendaer mit Sub-Drop und Glitzer; Grau/Gewoehnlich leicht in der Tonhoehe gestreut |
-| Combo-Stufe       | Riser in eine Glocke, je Stufe hoeher, ab Stufe 4 mit Glitzer                      |
-| Hindernis         | Bremse als "Tape-Stop", Strafe als digitaler Glitch                                |
-| Relikt verblasst  | leiser Hauch nach unten, nur ab Selten                                             |
-| Pause / Weiter    | Filterfahrt nach unten bzw. oben ("Einfrieren", "Auftauen")                        |
-| Run-Ende          | warmer Akkord; Levelaufstieg bekommt eine Brass-Fanfare mit Glocken                |
-| Erfolg            | Glissando in eine helle Glocke, 1,2 s nach dem Run-Ende-Klang                      |
+| Ereignis         | Klangidee                                                                                                                                          |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Button           | weicher Tap mit kurzem Transienten; Zurueck tiefer und fallend                                                                                     |
+| Umschalter       | zwei Blips, steigend fuer an, fallend fuer aus                                                                                                     |
+| Weltwechsel      | Swoosh plus Glocke, die je Welt hoeher gestimmt ist                                                                                                |
+| Countdown        | Sprachansage "Drei - Zwei - Eins - Los geht's!" (Thorsten-Stimme, CC0)                                                                             |
+| Reliktfang       | Grau dumpf, Glas-Pling, Kristall, Glocken-Arpeggio, Chor-Pad, Legendaer mit Sub-Drop und Glitzer; Grau/Gewoehnlich leicht in der Tonhoehe gestreut |
+| Combo-Stufe      | Riser in eine Glocke, je Stufe hoeher, ab Stufe 4 mit Glitzer                                                                                      |
+| Hindernis        | Bremse als "Tape-Stop", Strafe als digitaler Glitch                                                                                                |
+| Relikt verblasst | leiser Hauch nach unten, nur ab Selten                                                                                                             |
+| Pause / Weiter   | Filterfahrt nach unten bzw. oben ("Einfrieren", "Auftauen")                                                                                        |
+| Run-Ende         | warmer Akkord; Levelaufstieg bekommt eine Brass-Fanfare mit Glocken                                                                                |
+| Erfolg           | Glissando in eine helle Glocke, 1,2 s nach dem Run-Ende-Klang                                                                                      |
 
 Die sechs Seltenheitsfarben bleiben visuell unantastbar; Ton ergaenzt sie nur.
 Der Ton ist in den Einstellungen abschaltbar und wird im Spielstand gespeichert.
@@ -878,3 +878,11 @@ naheliegende Rechnung. Nur beim `Container` fallen Zeichenkoordinaten
 (`src/ui/hitDebug.ts`). Das Werkzeug zeichnet jede Trefferflaeche, markiert
 jeden Tipp und meldet `<<< WIDERSPRUCH`, wenn Phaser ein anderes Objekt liefert,
 als die Geometrie hergibt.
+
+# Serien-Rettung
+
+Ab Serie 6 kennzeichnet ein kleiner goldener Stern an der Serienzahl die noch
+verfuegbare Wiedergeburt. Beim einmaligen Einsatz blitzt die Spielfigur gold
+auf; der kurze Schriftzug „WIEDERGEBURT“ erscheint direkt an ihr. Das
+Serienfenster zeigt danach die komplette verlaengerte Restzeit und laeuft
+gleichmaessig leer. Der Effekt nutzt vorhandene Farben und Fang-Feedback.

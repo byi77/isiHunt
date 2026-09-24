@@ -23,6 +23,8 @@ import {
   COMBO_TIERS,
   PLAYER_ACCEL_RESPONSE,
   SERIES_AGILITY_TIERS,
+  SERIES_RESCUE_GRACE_MULTIPLIER,
+  SERIES_RESCUE_MIN_COMBO,
   SERIES_RAISING_MIN_RARITY_INDEX,
   SERIES_TRAIL_TIERS,
 } from '@/config/GameConfig';
@@ -136,6 +138,7 @@ export class ScoreSystem {
   private bestCombo = 0;
   private bestMultiplier = 1;
   private comboTimerMs = 0;
+  private comboWindowDurationMs = 0;
   private missed = 0;
   private xpGained = 0;
   private crits = 0;
@@ -157,24 +160,33 @@ export class ScoreSystem {
      * Vorzeichenfehler fiele erst im Spiel auf.
      */
     private readonly roll: () => number = Math.random,
+    private rescueUsed = false,
   ) {}
 
   /** Muss jeden Frame aufgerufen werden, damit die Serie zerfallen kann. */
-  update(deltaMs: number): { comboReset: boolean } {
+  update(deltaMs: number): { comboReset: boolean; comboRevived: boolean } {
     // Am Timer entlang pruefen, nicht an der Serie: Ein weisser Fang haelt das
     // Fenster offen, auch wenn die Serie dabei auf 0 stehen bleibt. Ein
     // `combo === 0`-Guard wuerde diesen Zustand nie ablaufen lassen.
-    if (this.comboTimerMs <= 0) return { comboReset: false };
+    if (this.comboTimerMs <= 0) return { comboReset: false, comboRevived: false };
 
     this.comboTimerMs -= deltaMs;
-    if (this.comboTimerMs > 0) return { comboReset: false };
+    if (this.comboTimerMs > 0) return { comboReset: false, comboRevived: false };
+
+    if (this.rescueReady) {
+      this.rescueUsed = true;
+      this.comboTimerMs = this.comboGraceMs * SERIES_RESCUE_GRACE_MULTIPLIER;
+      this.comboWindowDurationMs = this.comboTimerMs;
+      return { comboReset: false, comboRevived: true };
+    }
 
     const hatteSerie = this.combo > 0;
     this.combo = 0;
     this.comboTimerMs = 0;
+    this.comboWindowDurationMs = 0;
     // Nur melden, wenn tatsaechlich eine Serie zerfiel - sonst feuerte jedes
     // auslaufende Weiss-Fenster ein ComboChanged auf 0, das nichts aendert.
-    return { comboReset: hatteSerie };
+    return { comboReset: hatteSerie, comboRevived: false };
   }
 
   registerCollect(rarity: RarityDef): CollectOutcome {
@@ -188,6 +200,7 @@ export class ScoreSystem {
     if (raisesSeries) this.combo += 1;
 
     this.comboTimerMs = this.comboGraceMs;
+    this.comboWindowDurationMs = this.comboGraceMs;
     this.bestCombo = Math.max(this.bestCombo, this.combo);
     this.collected[rarity.id] += 1;
 
@@ -247,7 +260,7 @@ export class ScoreSystem {
     // Bewusst ohne Phaser.Math.Clamp: der Import zog die komplette Engine samt
     // Canvas-Erkennung herein und machte die Datei ausserhalb des Browsers
     // unbenutzbar. Siehe Regel 6 in CLAUDE.md - systems/ kennt Phaser nicht.
-    return Math.min(Math.max(this.comboTimerMs / this.comboGraceMs, 0), 1);
+    return Math.min(Math.max(this.comboTimerMs / this.comboWindowDurationMs, 0), 1);
   }
 
   get currentScore(): number {
@@ -256,6 +269,10 @@ export class ScoreSystem {
 
   get currentCombo(): number {
     return this.combo;
+  }
+
+  get rescueReady(): boolean {
+    return this.combo >= SERIES_RESCUE_MIN_COMBO && !this.rescueUsed;
   }
 
   get currentMultiplier(): number {
