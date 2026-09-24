@@ -11,6 +11,7 @@ import Phaser from 'phaser';
 
 import { FINAL_SECONDS } from '@/config/effectVisuals';
 import { COMBO_TIERS, GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
+import type { RarityId } from '@/config/rarities';
 import { getWorld } from '@/config/worlds';
 import { eventBus, GameEvent } from '@/core/EventBus';
 import { SceneKey } from '@/scenes/SceneKey';
@@ -20,6 +21,12 @@ import { FontSize, Palette, textStyle } from '@/ui/theme';
 import { calculateHudLayout } from '@/ui/hudLayout';
 import { enterScene } from '@/ui/sceneTransition';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
+import {
+  worldGoalProgress,
+  worldGoalProgressFromRarity,
+  type WorldGoal,
+  type WorldGoalMetrics,
+} from '@/systems/WorldGoalSystem';
 import type { BarHandle, ButtonHandle } from '@/ui/widgets';
 import { createBar, createButton, createPanel } from '@/ui/widgets';
 import type { ActiveTalentLine } from '@/types';
@@ -111,6 +118,8 @@ export interface HudSceneData {
   scoreToBeat?: number | null;
   /** Die aktiven Talentverstaerkungen, je eine Zeile. Leer = keine aktiv. */
   talentLines?: readonly ActiveTalentLine[];
+  /** Solo-Jagd: das optionale Weltziel fuer diese Runde. */
+  worldGoal?: WorldGoal;
   /** Anzeigenamen aller Spieler, indiziert nach dem Server-Slot. */
   opponentLabels?: (string | null)[];
   /** Eigener Server-Slot im Netzwerk-Duell. */
@@ -173,6 +182,15 @@ export class HudScene extends Phaser.Scene {
   private timerBar!: BarHandle;
   private accent = 0xffffff;
   private scoreToBeat: number | null = null;
+  private worldGoal: WorldGoal | null = null;
+  private worldGoalMetrics: WorldGoalMetrics = {
+    totalCollected: 0,
+    rarePlus: 0,
+    epicPlus: 0,
+    bestCombo: 0,
+    score: 0,
+  };
+  private worldGoalComplete = false;
   private hasOvertaken = false;
   private mode: RunMode = 'solo';
   private endlessScoreOffset = 0;
@@ -196,6 +214,15 @@ export class HudScene extends Phaser.Scene {
     const world = getWorld(data.worldId);
     this.accent = world.accent;
     this.scoreToBeat = data.scoreToBeat ?? null;
+    this.worldGoal = data.worldGoal ?? null;
+    this.worldGoalMetrics = {
+      totalCollected: 0,
+      rarePlus: 0,
+      epicPlus: 0,
+      bestCombo: 0,
+      score: 0,
+    };
+    this.worldGoalComplete = false;
     this.hasOvertaken = false;
     this.mode = data.mode ?? 'solo';
     this.endlessScoreOffset = data.endlessScoreOffset ?? 0;
@@ -416,6 +443,10 @@ export class HudScene extends Phaser.Scene {
           textStyle(FontSize.small, Palette.ink),
         )
         .setOrigin(0, 0);
+    } else if (this.worldGoal) {
+      this.targetText = this.add
+        .text(60, 40, '', textStyle(FontSize.small, Palette.ink))
+        .setOrigin(0, 0);
     }
 
     // Netzwerk-Duell: links oben, damit die Gegnerinfo nicht mehr mit der
@@ -538,6 +569,7 @@ export class HudScene extends Phaser.Scene {
         .setFontSize(l.font(11));
       this.fit(text, l.width);
     }
+    this.updateWorldGoal();
     this.drawPlate(l.headerHeight);
     this.multiplierBurstText.setFontSize(l.font(19));
     // Bewusst gross: Der Schriftzug soll die obere Spielfeldhaelfte fuellen,
@@ -789,7 +821,30 @@ export class HudScene extends Phaser.Scene {
     this.emphasize(this.scoreText);
 
     this.checkOvertake(score);
+    if (this.worldGoal) {
+      this.worldGoalMetrics = { ...this.worldGoalMetrics, score };
+      this.updateWorldGoal();
+    }
   };
+
+  private updateWorldGoal(): void {
+    if (!this.worldGoal || !this.targetText) return;
+    const current = worldGoalProgress(this.worldGoal, this.worldGoalMetrics);
+    const complete = current >= this.worldGoal.target;
+    const value = Math.min(current, this.worldGoal.target).toLocaleString('de-DE');
+    this.targetText
+      .setText(
+        complete
+          ? `${this.worldGoal.title} · ERREICHT`
+          : `${this.worldGoal.title} · ${value}/${this.worldGoal.target.toLocaleString('de-DE')} ${this.worldGoal.unit}`,
+      )
+      .setColor(complete ? Palette.gold : Palette.ink);
+    this.fit(this.targetText, this.layout.width);
+    if (complete && !this.worldGoalComplete) {
+      this.worldGoalComplete = true;
+      this.emphasize(this.targetText);
+    }
+  }
 
   /** Der Moment, in dem die Vorlage des Gegners faellt - einmalig gefeiert. */
   private checkOvertake(score: number): void {
@@ -818,14 +873,27 @@ export class HudScene extends Phaser.Scene {
    * bleibt die Zeile unsichtbar.
    */
   private readonly onCollected = ({
+    rarityId,
     xpGained,
     crit,
     awardedPoints,
   }: {
+    rarityId: RarityId;
     xpGained?: number;
     crit: boolean;
     awardedPoints: number;
   }): void => {
+    if (this.worldGoal) {
+      this.worldGoalMetrics = {
+        ...this.worldGoalMetrics,
+        totalCollected: this.worldGoalMetrics.totalCollected + 1,
+        rarePlus:
+          this.worldGoalMetrics.rarePlus + worldGoalProgressFromRarity('rarePlus', rarityId),
+        epicPlus:
+          this.worldGoalMetrics.epicPlus + worldGoalProgressFromRarity('epicPlus', rarityId),
+      };
+      this.updateWorldGoal();
+    }
     if (crit) this.showCritBurst(awardedPoints);
     if (xpGained === undefined) return;
     this.xpTotal += xpGained;
@@ -903,6 +971,13 @@ export class HudScene extends Phaser.Scene {
     speedFactor: number;
     rescueReady?: boolean;
   }): void => {
+    if (this.worldGoal?.metric === 'combo') {
+      this.worldGoalMetrics = {
+        ...this.worldGoalMetrics,
+        bestCombo: Math.max(this.worldGoalMetrics.bestCombo, combo),
+      };
+      this.updateWorldGoal();
+    }
     this.comboText.setText(`SERIE ${Math.max(0, combo)}${rescueReady ? ' ★' : ''}`);
     this.multiplierText.setText(
       `×${multiplier.toLocaleString('de-DE', { maximumFractionDigits: 2 })}`,

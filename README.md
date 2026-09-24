@@ -21,7 +21,7 @@ Achievement-System fuer alle, die dranbleiben.
 - **Ketten zaehlen.** Sammelst du ohne Pause weiter, steigt der Multiplikator
   bis x5. Ein zu langes Zoegern setzt ihn zurueck.
 - **Fortschritt bleibt.** XP → Charakterlevel → Coin-basierte Talente → neue Welten und
-  Erfolge.
+  Erfolge. Jede Welt hat zudem ein eigenes Ziel fuer einzelne Jagden.
 - **Duell gegen den Bot.** Ein 90-Sekunden-Lauf gegen einen mittelstarken Bot;
   vor dem Start verteilst du zehn temporaere Talentpunkte. Ein Sieg bringt den
   zentral konfigurierten XP-/Coin-Bonus.
@@ -29,8 +29,8 @@ Achievement-System fuer alle, die dranbleiben.
   einer gemeinsamen Lobby. Der Host laedt duellbereite Spieler ein, startet
   nach der Talent-Bestaetigung aller Teilnehmer und sieht waehrend des Runs
   die Gegnerpunkte live.
-- **Bestenliste und Geraetewechsel.** Optional; der normale Run funktioniert
-  ohne Konto und ohne Passwort.
+- **Bestenliste und Geraetewechsel.** Online-Funktionen sind optional; jedes
+  Spielen erfordert ein Konto mit Spielername und PIN.
 
 Details: [docs/GAME_DESIGN.md](docs/GAME_DESIGN.md)
 
@@ -145,15 +145,16 @@ Der Test benoetigt die Werte in `.env` und einen ausgefuehrten Supabase-Stand
 inklusive der Duel2G-Migrationen. Er prueft Netzwerk- und Spiellogik, ersetzt
 aber keinen einzelnen echten Handytest fuer Touch, Safari/PWA und Mobilfunk.
 
-### Online-Funktionen (optional)
+### Konto und Online-Funktionen
 
-Bestenliste und Spielstand-Abgleich brauchen ein Supabase-Projekt. **Ohne
-Zugangsdaten laeuft das Spiel vollstaendig** — auch ohne Konto und ohne
-Internetverbindung kann gespielt werden. Spielstaende werden lokal gespeichert;
-Internet wird nur fuer Registrierung, Login und die optionalen Online-Funktionen
-gebraucht. Das Online-Duell mit Bereitschaftslobby und Einladungen setzt ein
-konfiguriertes Supabase-Backend, eine Anmeldung und einen Spielernamen voraus;
-`VS BOT` bleibt lokal spielbar.
+Zum Spielen ist ein Konto mit Spielername und PIN erforderlich. Beim ersten
+Start fuehrt das Spiel zur Kontoanlage; nach erfolgreichem Login startet die
+erste Jagd direkt. Registrierung und Login brauchen eine Verbindung zum
+konfigurierten Supabase-Projekt. Spielstaende werden zusaetzlich lokal
+gespeichert. Bestenliste und Spielstand-Abgleich nutzen dasselbe Backend; das
+Online-Duell mit Bereitschaftslobby und Einladungen setzt ebenfalls eine
+Anmeldung und einen Spielernamen voraus. `VS BOT` bleibt lokal spielbar, benoetigt
+aber wie alle Spielmodi zuvor den Konto-Login.
 
 Zum Einrichten:
 

@@ -17,6 +17,7 @@ import * as DebugSystem from '@/systems/DebugSystem';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
+import { getNextGoal } from '@/systems/NextGoalSystem';
 import { enterScene, transitionTo } from '@/ui/sceneTransition';
 import { createButton, createSceneBackdrop } from '@/ui/widgets';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
@@ -71,7 +72,9 @@ export class ResultScene extends Phaser.Scene {
         content.sections[0].title = content.headlineReward;
       }
     }
-    new ResultView(this, content, world.accent, [
+    const save = SaveSystem.load();
+    const talentReady = save.talentPoints > 0 && getNextGoal(save).kind === 'talent';
+    const actions = [
       {
         label: 'NOCHMAL',
         run: () => {
@@ -91,7 +94,27 @@ export class ResultScene extends Phaser.Scene {
           transitionTo(this, SceneKey.Menu);
         },
       },
-    ]);
+    ];
+    if (talentReady) {
+      actions.splice(1, 0, {
+        label: 'TALENT VERBESSERN',
+        run: () => {
+          this.scene.start(SceneKey.Talents, {
+            returnTo: SceneKey.Result,
+            returnData: {
+              stats,
+              progression,
+              alreadySynced: true,
+              endlessRound: data?.endlessRound,
+              endlessTotalScore: data?.endlessTotalScore,
+              endlessTotalXp: data?.endlessTotalXp,
+              endlessTotalCoins: data?.endlessTotalCoins,
+            } satisfies ResultSceneData,
+          });
+        },
+      });
+    }
+    new ResultView(this, content, world.accent, actions);
     if (!serverSettled && !data?.alreadySynced) ProgressSyncSystem.enqueueRun(stats, progression);
     // Fuer eingeloggte Scores muss das zugehoerige Progress-Event zuerst
     // serverseitig akzeptiert sein; die Bestenliste bleibt dadurch kein
@@ -113,7 +136,7 @@ export class ResultScene extends Phaser.Scene {
           });
         })
         .finally(() => this.submitLeaderboardScore(stats));
-    } else if (!data?.endlessRound) {
+    } else if (!data?.endlessRound && !data?.alreadySynced) {
       this.submitLeaderboardScore(stats);
     }
     this.uploadSave();

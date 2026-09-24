@@ -78,8 +78,8 @@ function nextShopTarget(
  * Liefert genau eine Prioritaet:
  *
  * 1. Ein Talent, das sofort gekauft werden kann.
- * 2. Ein nahe liegendes naechstes Gebiet.
- * 3. Der naechste Talent-Rang bzw. die naechste kaufbare Form.
+ * 2. Der naechste Talent-Rang.
+ * 3. Ein nahe liegendes naechstes Gebiet bzw. eine kaufbare Form.
  * 4. Ein stabiler Tages-/Run-Fallback, wenn die sichtbaren Systeme fertig sind.
  *
  * Es gibt keine versteckten Talentvoraussetzungen. Die Reihenfolge dient nur
@@ -97,6 +97,19 @@ export function getNextGoal(save: SaveData): NextGoal {
     };
   }
 
+  if (talent) {
+    return {
+      kind: 'talent',
+      title: `Noch 1 Talentpunkt bis ${talent.name}`,
+      detail:
+        talent.nextRank === 1
+          ? `Dein erstes Talent: Spiele weiter, dann kannst du ${talent.name} freischalten.`
+          : `Level weiter, dann kannst du Rang ${talent.nextRank} kaufen.`,
+      current: save.talentPoints,
+      target: 1,
+    };
+  }
+
   const world = nextWorldTarget(save);
   if (world && world.missingLevels <= 2) {
     return {
@@ -105,16 +118,6 @@ export function getNextGoal(save: SaveData): NextGoal {
       detail: `Spiele weiter, um Level ${world.level} zu erreichen und die Welt zu oeffnen.`,
       current: save.level,
       target: world.level,
-    };
-  }
-
-  if (talent) {
-    return {
-      kind: 'talent',
-      title: `Noch 1 Talentpunkt bis ${talent.name}`,
-      detail: `Level weiter, dann kannst du Rang ${talent.nextRank} kaufen.`,
-      current: save.talentPoints,
-      target: 1,
     };
   }
 

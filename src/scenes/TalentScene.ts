@@ -34,6 +34,8 @@ import {
 
 export interface TalentSceneData {
   returnTo?: SceneKeyValue;
+  /** Optionaler Inhalt fuer die Rueckkehr zu einem Ergebnisbildschirm. */
+  returnData?: object;
   /**
    * Scrollstand aus dem vorherigen Aufbau.
    *
@@ -47,6 +49,7 @@ export interface TalentSceneData {
 
 export class TalentScene extends Phaser.Scene {
   private returnTo: SceneKeyValue = SceneKey.Profile;
+  private returnData?: object;
   private busy = false;
   private feedbackText!: Phaser.GameObjects.Text;
   private resetDialogObjects: Phaser.GameObjects.GameObject[] = [];
@@ -58,6 +61,7 @@ export class TalentScene extends Phaser.Scene {
 
   create(data: TalentSceneData = {}): void {
     this.returnTo = data.returnTo ?? SceneKey.Profile;
+    this.returnData = data.returnData;
     this.scrollOffset = data.scrollOffset ?? 0;
     SafeAreaSystem.showStatic('TALENTBAUM');
 
@@ -74,7 +78,7 @@ export class TalentScene extends Phaser.Scene {
     );
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
 
-    createBackButton(this, () => this.scene.start(this.returnTo));
+    createBackButton(this, () => this.returnFromTalentTree());
     const layout = createMenuLayout();
     const sections = layout.sections;
     const walletY = sections.next(30);
@@ -335,7 +339,11 @@ export class TalentScene extends Phaser.Scene {
       this.feedbackText.setText(error).setColor(Palette.gold);
       return;
     }
-    this.scene.restart({ returnTo: this.returnTo, scrollOffset: this.scrollOffset });
+    this.scene.restart({
+      returnTo: this.returnTo,
+      returnData: this.returnData,
+      scrollOffset: this.scrollOffset,
+    });
   }
 
   private openResetConfirmation(): void {
@@ -440,6 +448,14 @@ export class TalentScene extends Phaser.Scene {
       this.feedbackText.setText(error).setColor(Palette.gold);
       return;
     }
-    this.scene.restart({ returnTo: this.returnTo, scrollOffset: this.scrollOffset });
+    this.scene.restart({
+      returnTo: this.returnTo,
+      returnData: this.returnData,
+      scrollOffset: this.scrollOffset,
+    });
+  }
+
+  private returnFromTalentTree(): void {
+    this.scene.start(this.returnTo, this.returnData);
   }
 }

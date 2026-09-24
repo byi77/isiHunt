@@ -524,16 +524,21 @@ export class MenuView {
       'world',
     );
     const worldFeature: Record<WorldDef['modifier'], string> = {
-      none: 'Einstieg',
+      none: 'Keine Hindernisse',
       inertia: 'Trägheit',
-      short_lived: 'Schnelle Relikte',
-      blink: 'Blinkende Relikte',
+      short_lived: 'Kurze Fangzeit',
+      blink: 'Relikte blinken',
       rare_bonus: 'Seltene Funde',
     };
-    const subtitle =
-      nextWorld && nextWorld.unlockLevel > this.save.level
-        ? `Nächste: ${nextWorld.name} · Level ${nextWorld.unlockLevel}`
-        : `Welt ${selectedIndex + 1} / ${WORLDS.length} · ${worldFeature[this.world.modifier]} · Wischen`;
+    const scoreBonus = Math.round((this.world.scoreMultiplier - 1) * 100);
+    const xpBonus = Math.round((this.world.xpMultiplier - 1) * 100);
+    const feature = worldFeature[this.world.modifier];
+    const nextLockedWorld = nextWorld && nextWorld.unlockLevel > this.save.level ? nextWorld : null;
+    const subtitle = nextLockedWorld
+      ? `${feature} · ${scoreBonus ? `+${scoreBonus}% Punkte · ` : ''}Nächste: ${nextLockedWorld.name} (Level ${nextLockedWorld.unlockLevel})`
+      : scoreBonus === 0 && xpBonus === 0
+        ? `Welt ${selectedIndex + 1}/${WORLDS.length} · Keine Hindernisse · Basisbeute`
+        : `Welt ${selectedIndex + 1}/${WORLDS.length} · ${feature} · Punkte +${scoreBonus}% · XP +${xpBonus}%`;
     this.label(GAME_WIDTH / 2, worldSubtitleY, subtitle, 12, innerWidth, Palette.inkDim, true);
   }
 
@@ -572,12 +577,13 @@ export class MenuView {
     const half = (innerWidth - gap) / 2;
     const third = (innerWidth - gap * 2) / 3;
     const action = (key: MenuAction) => () => this.callbacks.onAction(key);
+    const firstHunt = this.save.totalRuns === 0;
     this.button(
       margin + half / 2,
       primaryY,
       half,
       primaryHeight,
-      'JAGD',
+      firstHunt ? 'ERSTE JAGD' : 'JAGD',
       action('jagd'),
       this.layout.compact ? 17 : 19,
       true,

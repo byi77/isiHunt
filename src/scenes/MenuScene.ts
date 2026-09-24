@@ -749,12 +749,7 @@ export class MenuScene extends Phaser.Scene {
   private handleMenuAction(action: MenuAction): void {
     switch (action) {
       case 'jagd':
-        transitionTo(
-          this,
-          SceneKey.WorldInfo,
-          { worldId: this.selectedWorld.id, mode: 'jagd' satisfies WorldInfoMode },
-          'dive',
-        );
+        void this.startHunt(this.selectedWorld.id);
         break;
       case 'endless':
         transitionTo(this, SceneKey.Game, { worldId: WORLDS[0]!.id, mode: 'endless' }, 'dive');
@@ -815,6 +810,18 @@ export class MenuScene extends Phaser.Scene {
     }
     this.transitionWorldBackdrop(world);
     SoundSystem.playWorldSelect(world.spaceVariant);
+  }
+
+  /** Die Jagd startet direkt; Weltinfos und Bonusrunden bleiben optional. */
+  private async startHunt(worldId: string): Promise<void> {
+    const effectRun = await CloudSystem.startRewardEffectRun(worldId);
+    if (!this.scene.isActive()) return;
+    transitionTo(
+      this,
+      SceneKey.Game,
+      { worldId, rewardEffects: effectRun.ok ? (effectRun.value ?? undefined) : undefined },
+      'dive',
+    );
   }
 
   private transitionWorldBackdrop(world: WorldDef): void {

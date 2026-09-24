@@ -5,6 +5,7 @@ import Phaser from 'phaser';
 import { GAME_WIDTH } from '@/config/GameConfig';
 import { RARITIES } from '@/config/rarities';
 import { WORLDS, getWorld } from '@/config/worlds';
+import { getWorldGoal } from '@/systems/WorldGoalSystem';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
@@ -95,9 +96,9 @@ export class CollectionScene extends Phaser.Scene {
     } else {
       WORLDS.forEach((entry, index) => {
         const x = index % 2 === 0 ? 190 : 530;
-        const y = 280 + Math.floor(index / 2) * 170;
+        const y = 270 + Math.floor(index / 2) * 200;
         const unlocked = entry.unlockLevel <= save.level;
-        createPanel(this, x, y, 300, 154, unlocked ? entry.accent : Palette.panelBorder, {
+        createPanel(this, x, y, 300, 186, unlocked ? entry.accent : Palette.panelBorder, {
           alpha: unlocked ? 0.62 : 0.3,
           radius: 16,
         });
@@ -108,7 +109,7 @@ export class CollectionScene extends Phaser.Scene {
         this.add
           .text(
             x - 40,
-            y - 17,
+            y - 48,
             entry.name,
             textStyle(FontSize.small, unlocked ? Palette.ink : Palette.inkDim, {
               fontStyle: 'bold',
@@ -119,11 +120,41 @@ export class CollectionScene extends Phaser.Scene {
         this.add
           .text(
             x - 40,
-            y + 23,
-            unlocked ? 'Freigeschaltet' : `Ab Level ${entry.unlockLevel}`,
+            y - 19,
+            unlocked
+              ? entry.plannedModifier
+              : `Ab Level ${entry.unlockLevel} · ${entry.plannedModifier}`,
             textStyle(FontSize.tiny, Palette.inkDim),
           )
-          .setOrigin(0, 0.5);
+          .setOrigin(0, 0)
+          .setWordWrapWidth(178)
+          .setLineSpacing(1);
+        const worldGoal = getWorldGoal(entry.id);
+        this.add
+          .text(
+            x - 40,
+            y + 17,
+            `${worldGoal.title}: ${worldGoal.description}`,
+            textStyle(FontSize.tiny, unlocked ? Palette.ink : Palette.inkDim),
+          )
+          .setOrigin(0, 0)
+          .setWordWrapWidth(178)
+          .setLineSpacing(1);
+        const scoreBonus = Math.round((entry.scoreMultiplier - 1) * 100);
+        const xpBonus = Math.round((entry.xpMultiplier - 1) * 100);
+        this.add
+          .text(
+            x - 40,
+            y + 68,
+            scoreBonus === 0 && xpBonus === 0
+              ? 'Basisbelohnung'
+              : `+${scoreBonus}% Punkte · +${xpBonus}% XP`,
+            textStyle(FontSize.tiny, unlocked ? toCss(entry.accent) : Palette.inkDim, {
+              fontStyle: 'bold',
+            }),
+          )
+          .setOrigin(0, 0.5)
+          .setWordWrapWidth(178);
       });
     }
   }

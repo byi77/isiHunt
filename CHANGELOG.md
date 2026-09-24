@@ -9,6 +9,18 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Spieler-Einstieg und Jagd
+
+- Der erste Start zeigt die Kontoanlage mit Spielername und PIN; danach fuehrt
+  `ERSTE JAGD` direkt ins Spiel. Beim ersten Countdown erklaert eine kurze
+  Geste die Touch-Steuerung, ohne den Lauf mit einem Tutorial zu unterbrechen.
+- Zehn optionale Weltziele geben jeder Jagd einen konkreten Grund, eine Welt
+  erneut zu spielen. Ziel und Fortschritt erscheinen in der Jagd und im
+  Ergebnis; ein erreichbares Talentziel wird dort direkt angeboten.
+- Menue, Weltenauswahl und Weltinfo zeigen Weltmechanik, Bonus und naechste
+  Freischaltung frueher. Die Weltziele geben keinen zusaetzlichen
+  Waehrungsbonus und speichern keinen separaten Fortschritt.
+
 ### Rangliste
 
 - Jagd und Endlos synchronisieren offene Laufbelege vor dem Laden der

@@ -1,7 +1,7 @@
 # Game Design Document — isiHunt
 
 **Version:** 0.1
-**Stand:** 2026-08-30 · Produktstand siehe `package.json`/`version.json`
+**Stand:** 2026-09-25 · Produktstand siehe `package.json`
 **Status:** lebendes Dokument — jede Balancing- oder Regelaenderung wird hier
 zuerst beschrieben, dann implementiert.
 
@@ -19,7 +19,9 @@ zuerst beschrieben, dann implementiert.
 Diese vier Saetze entscheiden jeden Zweifelsfall. Was ihnen widerspricht,
 kommt nicht ins Spiel.
 
-1. **In 5 Sekunden verstanden.** Keine Tutorial-Texte. Wer die Farben sieht,
+1. **In 5 Sekunden verstanden.** Nach dem Pflicht-Login mit Spielername und
+   PIN fuehrt `ERSTE JAGD` ohne vorgeschaltete Tutorialseite ins Spiel. Eine
+   kurze Geste im ersten Countdown zeigt die Steuerung; wer die Farben sieht,
    weiss, was wertvoll ist.
 2. **In 90 Sekunden gespielt.** Ein Run passt in die Bahnfahrt, die
    Kaffeepause, die Werbepause.
@@ -507,6 +509,32 @@ galt schon zum Zeitpunkt der Modifikatoren (`inertia`, `short_lived`,
 Schwierigkeit. Die groessere Varianz aus M3 (eigene Weltregeln je Zone) steht
 weiterhin aus.
 
+Jede Welt hat zusaetzlich einen **Weltauftrag pro Jagd**. Er ist vorab in der
+Sammlung und in der Weltinfo sichtbar, waehrend des Runs als Fortschritt im HUD
+und danach mit dem erreichten Stand auf dem Ergebnisbildschirm. Der Auftrag
+ist ein freiwilliges Meisterschaftsziel; normale Run-Belohnungen und
+Weltenboni bleiben davon unabhaengig. Es gibt dafuer keine neue Waehrung und
+keine versteckte Progression.
+
+| Welt          | Weltauftrag                           |
+| ------------- | ------------------------------------- |
+| Sternenweide  | 110 Relikte in einer Jagd fangen      |
+| Eisring       | Eine Serie von 16 erreichen           |
+| Glutnebel     | 8 seltene oder bessere Relikte fangen |
+| Nullsektor    | 3 epische oder bessere Relikte fangen |
+| Sonnenkrone   | 14 seltene oder bessere Relikte fangen|
+| Mondschmiede  | Eine Serie von 25 erreichen           |
+| Kristallbruch | 155 Relikte in einer Jagd fangen      |
+| Sturmgrenze   | 5 epische oder bessere Relikte fangen |
+| Lichtkern     | 24 seltene oder bessere Relikte fangen|
+| Horizonttor   | 20.000 Punkte in einer Jagd erreichen |
+
+Die Auftraege verwenden nur Runwerte, die ohnehin berechnet werden. Der
+aktuelle Auftrag wird nicht dauerhaft gespeichert: Er setzt einen klaren
+Fokus fuer die naechste Jagd, waehrend Rekorde, Erfolge und Sammlung den
+Langzeitfortschritt tragen. Schwellen sind erste Designwerte und muessen mit
+echten Spielern auf Erreichbarkeit geprueft werden.
+
 ### 7.4 Erfolge
 
 62 Erfolge in mehreren Gruppen: erste Male, Combo-Schwellen, Tagesläufe,
@@ -699,7 +727,7 @@ darf nicht als Geschenk direkt unter dem Daumen erscheinen.
 | Nicht drin                           | Begruendung                                                                                          |
 | ------------------------------------ | ---------------------------------------------------------------------------------------------------- |
 | Gegner / Schaden                     | Es gibt keine Lebenspunkte. Hindernisse bremsen oder ziehen im normalen Lauf nur wenige Sekunden ab. |
-| Tutorial                             | Wenn es eins braucht, ist das Design gescheitert (Designziel 1).                                     |
+| Tutorial                             | Kein eigener Tutorial-Modus; kurze Hinweise erscheinen nur im passenden Spielmoment.                 |
 | Werbung / Kaeufe                     | Vorerst kein Monetarisierungsdruck. Beeinflusst sonst das Balancing.                                 |
 | Oeffentliches Ranked                 | Erst nach serverseitiger Laufpruefung sowie Datenschutz- und Moderationskonzept.                     |
 | Querformat                           | Das Spiel ist fuer eine Hand gebaut.                                                                 |

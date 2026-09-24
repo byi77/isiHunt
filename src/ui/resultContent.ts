@@ -6,6 +6,7 @@ import { accessibleRarityLabel } from '@/systems/AccessibilitySystem';
 import { achievementCategory } from '@/systems/AchievementProgressSystem';
 import { getLevelUpRewardSummary } from '@/systems/LevelUpPresentationSystem';
 import { getNextGoal } from '@/systems/NextGoalSystem';
+import { getWorldGoal, worldGoalMetrics, worldGoalProgress } from '@/systems/WorldGoalSystem';
 import { getLevelProgress } from '@/systems/ProgressionSystem';
 import type { ChallengeState, ProgressionResult, RunStats, SaveData } from '@/types';
 import type { ResultContent, ResultSection } from './ResultView';
@@ -19,6 +20,9 @@ export function soloResultContent(
   const level = getLevelProgress(save);
   const reward = getLevelUpRewardSummary(save, progression);
   const goal = getNextGoal(save);
+  const worldGoal = getWorldGoal(stats.worldId);
+  const worldMetrics = worldGoalMetrics(stats);
+  const worldGoalCurrent = worldGoalProgress(worldGoal, worldMetrics);
   const sections: ResultSection[] = [
     {
       title: `+${stats.xpGained.toLocaleString('de-DE')} XP · +${progression.coinsGained.toLocaleString('de-DE')} Coins`,
@@ -31,7 +35,28 @@ export function soloResultContent(
       progress: level.ratio,
       highlight: true,
     },
+    {
+      title: 'DEIN NÄCHSTES ZIEL',
+      lines: [goal.title, goal.detail],
+      progress:
+        goal.current !== undefined && goal.target
+          ? Math.max(0, Math.min(1, goal.current / goal.target))
+          : undefined,
+      highlight: true,
+    },
   ];
+  if (stats.endlessRound === undefined)
+    sections.push({
+      title: `WELTZIEL · ${worldGoal.title.toUpperCase()}`,
+      lines: [
+        worldGoal.description,
+        worldGoalCurrent >= worldGoal.target
+          ? 'Geschafft! Diese Welt ist gemeistert.'
+          : `${Math.min(worldGoalCurrent, worldGoal.target).toLocaleString('de-DE')} / ${worldGoal.target.toLocaleString('de-DE')} ${worldGoal.unit}`,
+      ],
+      progress: Math.max(0, Math.min(1, worldGoalCurrent / worldGoal.target)),
+      highlight: worldGoalCurrent >= worldGoal.target,
+    });
   if (reward.isLevelUp)
     sections.push({
       title: `LEVEL-UP · Stufe ${reward.level}`,
@@ -88,7 +113,6 @@ export function soloResultContent(
       ],
       highlight: true,
     });
-  sections.push({ title: 'NAECHSTES ZIEL', lines: [goal.title, goal.detail] });
   sections.push({
     title: 'AUSBEUTE',
     lines: RARITIES.map(

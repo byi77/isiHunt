@@ -23,6 +23,7 @@ import * as CloudSystem from '@/systems/CloudSystem';
 import * as BoostedRunSession from '@/systems/BoostedRunSession';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
+import { getWorldGoal } from '@/systems/WorldGoalSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import { enterScene, transitionTo } from '@/ui/sceneTransition';
@@ -132,6 +133,15 @@ export class WorldInfoScene extends Phaser.Scene {
         world.accent,
         '🎁 BELOHNUNG',
         describeBonus(world),
+      );
+      const goal = getWorldGoal(world.id);
+      this.buildInfoCard(
+        sections.next(96),
+        cardWidth,
+        96,
+        world.accent,
+        `WELTZIEL · ${goal.title.toUpperCase()}`,
+        goal.description,
       );
     }
 

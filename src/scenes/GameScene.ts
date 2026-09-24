@@ -67,6 +67,7 @@ import * as ProgressionSystem from '@/systems/ProgressionSystem';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as BoostedRunSession from '@/systems/BoostedRunSession';
 import { calculateRunBonus } from '@/systems/RunBonusSystem';
+import { getWorldGoal } from '@/systems/WorldGoalSystem';
 import { PerformanceMonitor } from '@/systems/PerformanceSystem';
 import type { PerformanceReport } from '@/systems/PerformanceSystem';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
@@ -402,6 +403,7 @@ export class GameScene extends Phaser.Scene {
       playerLabel: isChallengeMode ? ChallengeSystem.playerLabel(this.playerIndex) : null,
       scoreToBeat: isChallengeMode ? ChallengeSystem.scoreToBeat() : null,
       talentLines: usesTalents ? activeTalentLines(this.stats) : [],
+      worldGoal: this.mode === 'solo' ? getWorldGoal(this.world.id) : undefined,
       showOpponentLive: challenge?.kind === 'duel-online',
       localPlayerIndex:
         challenge?.kind === 'duel-online' ? challenge.online?.localPlayerIndex : undefined,
@@ -806,6 +808,20 @@ export class GameScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(Depth.Overlay);
 
+    const firstHuntHint =
+      this.mode === 'solo' && SaveSystem.load().totalRuns === 0
+        ? this.add
+            .text(
+              GAME_WIDTH / 2,
+              GAME_HEIGHT / 2 + 66,
+              'ZIEH ZUM RELIKT',
+              textStyle(FontSize.small, Palette.ink, { fontStyle: 'bold' }),
+            )
+            .setOrigin(0.5)
+            .setDepth(Depth.Overlay)
+            .setStroke('#07121f', 5)
+        : null;
+
     const online = this.challenge?.kind === 'duel-online' ? this.challenge.online : null;
     if (online?.startAtServerMs !== null && online?.startAtServerMs !== undefined) {
       this.runOnlineCountdown(label, online.startAtServerMs, online.clockOffsetMs);
@@ -823,6 +839,7 @@ export class GameScene extends Phaser.Scene {
 
       if (step <= 0) {
         this.tweens.add({ targets: label, alpha: 0, duration: 300, delay: 200 });
+        if (firstHuntHint) this.tweens.add({ targets: firstHuntHint, alpha: 0, duration: 450 });
         this.startRun();
         return;
       }

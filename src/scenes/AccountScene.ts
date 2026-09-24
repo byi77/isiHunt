@@ -61,9 +61,10 @@ export class AccountScene extends Phaser.Scene {
       this.scene.start(SceneKey.Profile);
       return;
     }
-    // Einloggen ist immer der sichere Standard. Ein neues Profil wird nur
-    // bewusst über den kleineren zweiten Button angelegt.
-    this.mode = data.mode ?? 'signIn';
+    // Beim Erststart ist ein neues Profil der haeufigste Fall und fuehrt
+    // direkt zum Spielen. Bestehende Spieler koennen weiterhin ueber den
+    // sekundären Knopf zum Login wechseln.
+    this.mode = data.mode ?? (this.firstStart ? 'signUp' : 'signIn');
     // Der eigene Begrüßungsbereich ersetzt beim Erststart die schmale
     // Safe-Area-Überschrift, damit keine zweite Überschrift über dem Logo steht.
     if (this.firstStart) SafeAreaSystem.hide();
@@ -130,7 +131,9 @@ export class AccountScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         236,
-        'Willkommen bei isiHunt!\nHast du schon ein Profil? Dann logge dich ein.\nNoch keines? Lege unten ein neues Profil an.',
+        this.mode === 'signUp'
+          ? 'Erstelle dein Profil mit Name und PIN. Danach startet deine erste Jagd.'
+          : 'Melde dich mit deinem Namen und deiner PIN an. Danach geht es zur Jagd.',
         textStyle(FontSize.small, Palette.ink),
       )
       .setOrigin(0.5)

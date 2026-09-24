@@ -1,7 +1,22 @@
 # Roadmap — isiHunt
 
-**Stand:** 2026-09-24 · Produktstand siehe `package.json`/`version.json` · Die detaillierte und verbindliche Aufgabenreihenfolge
+**Stand:** 2026-09-25 · Produktstand siehe `package.json` · Die detaillierte und verbindliche Aufgabenreihenfolge
 steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
+
+### Erste Jagd und Weltziele (2026-09-25)
+
+- [x] Beim ersten Start Konto mit Spielername und PIN anlegen oder zu Login
+      wechseln; nach erfolgreichem Einstieg direkt `ERSTE JAGD` starten.
+- [x] Erste Steuerungsgeste waehrend des Countdowns zeigen, ohne vorgeschaltete
+      Tutorialseite.
+- [x] Pro Welt ein sichtbares Jagdziel samt Live-Fortschritt und Ergebnisstand;
+      die Weltziele nutzen bereits vorhandene Laufwerte und veraendern keine
+      serverseitig verbuchten Belohnungen.
+- [x] Ergebnisbildschirm hebt das naechste Talentziel hervor und bietet bei
+      verfuegbarem Talentpunkt den direkten Weg zur Verbesserung.
+- [ ] Weltziele und ersten Konto-/Spielstart mit neuen Spielern auf echten
+      Mobilgeraeten beobachten und danach Schwierigkeit, Lesbarkeit und Tempo
+      anpassen.
 
 ## Bereits spielbar
 
