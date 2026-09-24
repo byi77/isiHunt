@@ -749,3 +749,18 @@ aus den prozeduralen Canvas-Atlas-Frames. `MenuView` nutzt jetzt die vorhandenen
 transparenten WebP-Planetentexturen als Kugeloberfläche; deren vier Eckpixel
 haben Alpha 0. Atmosphärenrand und Ringe bleiben erhalten. Die früheren
 Änderungen am 3D-Spieloverlay und am Rumpf-Glow betrafen andere Screens.
+
+### Aura-Texturen: deckenden Bildhintergrund entfernt
+
+Der dunkle rechteckige Bereich blieb auch nach dem Planetentexturwechsel
+sichtbar. Ursache war die ausgerüstete Flammen-Aura in der festen
+Menü-Schiffsvorschau: Alle sechs `cc0-flame`-PNG-Frames hatten einen schwarzen,
+vollständig deckenden Hintergrund (Alpha überall 255). `MenuView` skaliert
+diese Textur auf die Vorschaugröße und färbt sie passend zum Schiff ein; dadurch
+wurde die komplette quadratische Spritefläche über Planet und Schiff gelegt.
+
+Die sechs Frames unter `public/assets/ego/aura/` verwenden jetzt die
+ursprüngliche Graustufenhelligkeit als Alphakanal auf weißer RGB-Basis. Schwarz
+ist transparent, helle Flammenpixel bleiben sichtbar und lassen sich weiterhin
+per Phaser-Tint einfärben. Damit ist die Ursache in den Quelldateien behoben,
+statt nur die Planetendarstellung zu verändern.
