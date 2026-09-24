@@ -85,6 +85,7 @@ export interface EndlessLeaderboardEntry {
   rank: number;
   playerName: string;
   score: number;
+  totalScore: number;
   rounds: number;
   createdAt: string;
   isOwn: boolean;
@@ -819,6 +820,7 @@ export async function fetchEndlessLeaderboard(): Promise<CloudResult<EndlessLead
       rank: Math.max(1, finiteNonNegative(row.rank, 1)),
       playerName: String(row.player_name),
       score: finiteNonNegative(row.score),
+      totalScore: finiteNonNegative(row.total_score, finiteNonNegative(row.score)),
       rounds: Math.max(1, finiteNonNegative(row.rounds, 1)),
       createdAt: String(row.created_at),
       isOwn: row.is_own === true,

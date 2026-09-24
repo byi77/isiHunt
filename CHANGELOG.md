@@ -9,6 +9,17 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Rangliste
+
+- Jagd und Endlos synchronisieren offene Laufbelege vor dem Laden der
+  Rangliste. Wenn ein Upload aussteht, kennzeichnet die Ansicht die Punkte
+  als bisher bestaetigten Serverstand.
+- Der Datenbank-Cooldown blockiert 30-Sekunden-Endlosrunden und gebuendelt
+  nachgelieferte Checkpoints nicht mehr.
+- Der Debug-Report nennt wieder die aktuelle erwartete Datenbankversion.
+- Die Endlos-Rangliste zeigt die beste Serie als Rangwert und die Punkte aus
+  allen Endlos-Serien als zweite, beschriftete Zahl.
+
 ### Spielregeln
 
 - Ab Serie 6 rettet eine einmalige Wiedergeburt die Serie beim ersten Ablauf

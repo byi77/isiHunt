@@ -13,6 +13,7 @@ import { getWorld, WORLDS } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as CloudSystem from '@/systems/CloudSystem';
+import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import type {
   DuelLeaderboardEntry,
   EndlessLeaderboardEntry,
@@ -150,7 +151,7 @@ export class LeaderboardScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         sectionY + 20,
-        'Bester Gesamtstand einer Serie',
+        'Beste Serie rechts · Gesamt aller Serien darunter',
         textStyle(FontSize.tiny, Palette.inkDim),
       )
       .setOrigin(0.5);
@@ -290,6 +291,22 @@ export class LeaderboardScene extends Phaser.Scene {
     this.clearList();
     this.statusText.setText('Wird geladen ...').setColor(Palette.inkDim);
 
+    if (this.mode !== 'duel' && ProgressSyncSystem.pendingLeaderboardCount(this.mode) > 0) {
+      this.statusText.setText('Offene Punkte werden synchronisiert ...');
+      try {
+        await ProgressSyncSystem.flush();
+      } catch (error) {
+        console.warn('[LeaderboardScene] Lauf-Synchronisierung unterbrochen.', error);
+      }
+      if (requestId !== this.requestId || !this.scene.isActive()) return;
+    }
+    const pendingScores =
+      this.mode === 'duel' ? 0 : ProgressSyncSystem.pendingLeaderboardCount(this.mode);
+    const scoreStatus =
+      pendingScores > 0
+        ? `${pendingScores} Laufbeleg${pendingScores === 1 ? '' : 'e'} offen · nur bestaetigte Punkte`
+        : '';
+
     if (this.mode === 'duel') {
       const result = await CloudSystem.fetchDuelLeaderboard();
 
@@ -322,10 +339,14 @@ export class LeaderboardScene extends Phaser.Scene {
         return;
       }
       if (result.value.length === 0) {
-        this.showEmpty('Noch keine Endlos-Serie gewertet.\nStarte Endlos und sammle Punkte.');
+        this.showEmpty(
+          pendingScores > 0
+            ? `${pendingScores} Endlos-Runde${pendingScores === 1 ? '' : 'n'} warten auf den Upload.\nDie Rangliste zeigt nur bestaetigte Punkte.`
+            : 'Noch keine Endlos-Serie gewertet.\nStarte Endlos und sammle Punkte.',
+        );
         return;
       }
-      this.statusText.setText('');
+      this.statusText.setText(scoreStatus).setColor(Palette.danger);
       this.renderEndlessList(result.value);
       return;
     }
@@ -343,11 +364,15 @@ export class LeaderboardScene extends Phaser.Scene {
 
     if (result.value.length === 0) {
       const scope = this.filter ? 'dieser Welt' : 'den Welten';
-      this.showEmpty(`Noch kein Eintrag in ${scope}.\nSpiel einen Run mit Namen und sei dabei.`);
+      this.showEmpty(
+        pendingScores > 0
+          ? `${pendingScores} Jagdlauf${pendingScores === 1 ? '' : 'e'} warten auf den Upload.\nDie Rangliste zeigt nur bestaetigte Punkte.`
+          : `Noch kein Eintrag in ${scope}.\nSpiel einen Run mit Namen und sei dabei.`,
+      );
       return;
     }
 
-    this.statusText.setText('');
+    this.statusText.setText(scoreStatus).setColor(Palette.danger);
     this.renderList(result.value);
   }
 
@@ -517,9 +542,17 @@ export class LeaderboardScene extends Phaser.Scene {
         this.add
           .text(
             GAME_WIDTH - 76,
-            y,
+            y - 9,
             entry.score.toLocaleString('de-DE'),
             textStyle(FontSize.small, Palette.ink, { fontStyle: 'bold' }),
+          )
+          .setOrigin(1, 0.5),
+        this.add
+          .text(
+            GAME_WIDTH - 76,
+            y + 14,
+            `GESAMT ${entry.totalScore.toLocaleString('de-DE')}`,
+            textStyle(FontSize.tiny, Palette.inkDim),
           )
           .setOrigin(1, 0.5),
       );

@@ -661,7 +661,20 @@ Serienkennung. Eine eindeutige Kombination aus Profil, Serie und Runde
 verhindert doppelte Buchungen. Phase 2.68 prueft den vorherigen Checkpoint
 gegen die Summe der Serienpunkte und berechnet die Endlos-Rangliste aus den
 serverseitig angenommenen Belegen. Pro Profil zaehlt nur die beste Serie;
-die normale Jagd-Bestenliste bleibt getrennt.
+die normale Jagd-Bestenliste bleibt getrennt. Phase 2.70 liefert zusaetzlich
+die Summe aller angenommenen Endlos-Serienpunkte je Profil. `CloudSystem`
+uebergibt beide Felder getrennt an das HUD der Rangliste: Bestserie fuer
+Rang und Hauptzahl, Gesamtpunkte als zweite Zahl.
+Der Trigger `enforce_progress_event_cooldown` nimmt ab Phase 2.69
+Endlos-Belege aus dem allgemeinen Mindestabstand fuer 60- bis 120-Sekunden-Runs
+aus. Die Runden sind 30 Sekunden lang und koennen aus der Offline-Outbox
+gebuendelt eintreffen. Reihenfolge, Talentgrenzen und Gates bleiben im
+`submit_endless_round`-RPC geprueft. Fuer Jagd und Tageslauf gilt der bisherige
+Mindestabstand weiter.
+Vor dem Laden der Jagd- und Endlos-Rangliste wartet `LeaderboardScene` auf die
+laufende `ProgressSyncSystem`-Outbox. Bleiben Eintraege offen, kennzeichnet
+die Ansicht den Serverstand als unvollstaendig; sie zeigt keinen lokal
+geschaetzten Rang.
 
 ## 4.1 Determinismus im Duell
 

@@ -23,6 +23,7 @@ const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY?.trim() ?? '';
 
 export const BACKEND_URL = url;
 export const BACKEND_ANON_KEY = anonKey;
+export const BACKEND_SCHEMA_VERSION = 70;
 
 /** Sind beide Werte gesetzt? Steuert, ob Online-Knoepfe ueberhaupt erscheinen. */
 export const isBackendConfigured = url.length > 0 && anonKey.length > 0;

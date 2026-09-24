@@ -169,7 +169,11 @@ und die Coin-Praemie um 2. Der Basis-Coinanteil wird von 90 auf 30 Sekunden
 skaliert; Welt-, Seltenheits- und Sammelboni bleiben erhalten. Auch eine Runde
 mit verfehltem Gate wird verbucht, bevor die Serie endet. Bereits verdiente
 Belohnungen gehen nicht verloren. Die Endlos-Rangliste zeigt den besten
-kumulierten Serienstand je angemeldetem Profil; Jagd und Duelle bleiben getrennt.
+kumulierten Serienstand je angemeldetem Profil als Rangwert und daneben die
+Summe aller bestaetigten Endlos-Serienpunkte. Jagd und Duelle bleiben getrennt.
+Beim Oeffnen der Jagd- oder Endlos-Rangliste werden offene Laufbelege zuerst
+synchronisiert. Bleiben Belege wegen einer Netz- oder Serverstoerung offen,
+zeigt die Rangliste ausdruecklich nur die bisher bestaetigten Punkte.
 
 ## 5. Seltenheitsstufen
 

@@ -1711,3 +1711,48 @@ zweite Chance erhalten. Der Einsatz ist sichtbar und endlich; danach gilt
 wieder der normale Zerfall. Der spaete Schwierigkeitssprung laesst die ersten
 Runden leicht und setzt die Herausforderung in der bereits vorhandenen
 Welt-Skalierung um, ohne Gate- oder Belohnungsdaten umzudeuten.
+
+## ADR-0031 — Endlos-Belege umgehen den allgemeinen Upload-Cooldown
+
+### Befund
+
+Der Debug-Report vom 24.09.2026 zeigt fuer einen 30-Sekunden-Endloslauf die
+SQL-Ablehnung „Fortschrittslauf zu schnell eingereicht“. Der Trigger aus Phase
+2.29 erzwingt mindestens 60 Sekunden zwischen serverseitig eingegangenen
+Laufbelegen. Ein spaeterer Retry wurde angenommen; bis dahin fehlten die
+Punkte in der Rangliste. Bei offline gespielten Runden trifft das Problem
+auch nach laengerer Spielzeit auf, weil die Outbox sie gebuendelt sendet.
+
+### Entscheidung
+
+Phase 2.69 nimmt nur Belege mit Endlos-Serienkennung und Rundennummer vom
+allgemeinen Upload-Cooldown aus. `submit_endless_round` prueft weiterhin
+Weltfolge, Rundendauer, Talente, den vorigen Checkpoint und die eindeutige
+Kombination aus Profil, Serie und Runde. Jagd- und Tageslauf-Belege behalten
+den bisherigen Mindestabstand.
+
+### Grenze
+
+Ein aus dem Client nachgelieferter Run hat keinen vom Server beobachteten
+Startzeitpunkt. Ein Empfangsabstand kann daher keine echte Spieldauer
+beweisen. Fuer staerkere Betrugsresistenz braucht Endlos einen serverseitigen
+Rundenstart oder eine andere verifizierbare Laufspur; das ist ein eigenes
+Vorhaben. Der Checkpoint-Beleg bleibt bis dahin die vorhandene Schranke.
+
+## ADR-0032 — Endlos-Rangliste trennt Bestserie und gesamte Endlos-Punkte
+
+### Befund
+
+Ein Profil hatte laut Rundenbelegen 124.548 Punkte in seiner besten
+24-Runden-Serie und 167.899 Punkte ueber fuenf Serien. Die Rangliste zeigte
+124.548 ohne zweite Zahl. Die Addition war richtig, aber „Gesamtstand“ konnte
+als Summe aller Serien verstanden werden.
+
+### Entscheidung
+
+Die Endlos-Rangliste sortiert weiter nach der besten einzelnen Serie. Sie
+zeigt direkt darunter die Summe aller serverseitig angenommenen Endlos-Punkte
+des Profils. Beide Zahlen stammen aus denselben `profile_progress_events`;
+Phase 2.70 gibt sie getrennt zurueck. So bleibt die Leistung einer einzelnen
+Checkpoint-Serie der Wettbewerbsmassstab, waehrend auch der gesamte
+Spielaufwand sichtbar wird.

@@ -21,6 +21,7 @@ import {
   SAVE_VERSION,
 } from '@/config/GameConfig';
 import { BALANCE_BASELINES } from '@/config/balance';
+import { BACKEND_SCHEMA_VERSION } from '@/config/backend';
 import { isIos, isStandalone } from '@/core/display';
 import { eventBus, GameEvent } from '@/core/EventBus';
 import { requestPortraitOrientationLock } from '@/core/orientation';
@@ -189,7 +190,7 @@ DebugSystem.setStateDiagnosticsProvider(() => {
     `Level=${save.level} XP=${save.xp} Gesamt-XP=lokal nicht separat gespeichert`,
     `Coins=${save.coins} Bestwert=${save.bestScore} Runs=${save.totalRuns}`,
     `OutboxEvents=${sync.pendingEvents} ältestesEvent=${oldest} Tagesbonus=${sync.pendingDaily} BotSiege=${sync.pendingBotVictories} abgelehnt=${sync.rejectedEvents}`,
-    `SpielstandVersion=${SAVE_VERSION} SchemaErwartung=66 (Serverzeit nicht abgefragt)`,
+    `SpielstandVersion=${SAVE_VERSION} SchemaErwartung=${BACKEND_SCHEMA_VERSION} (Serverzeit nicht abgefragt)`,
     `BalanceQuelle=balance-data.json Baseline=${BALANCE_BASELINES.capturedAt}`,
   ].join('  ');
 });

@@ -856,6 +856,15 @@ export function pendingCount(): number {
   return readOutbox(AuthSystem.currentUserId()).length;
 }
 
+/** Offene Belege, die den Punktestand der jeweiligen Rangliste aendern koennen. */
+export function pendingLeaderboardCount(mode: 'hunt' | 'endless'): number {
+  return readOutbox(AuthSystem.currentUserId()).filter((event) =>
+    mode === 'endless'
+      ? event.endlessRound !== undefined
+      : event.endlessRound === undefined && !event.dailyKey,
+  ).length;
+}
+
 export interface SyncDiagnostics {
   readonly pendingEvents: number;
   readonly oldestPendingAt: number | null;

@@ -87,13 +87,13 @@ Auf einer leeren Datenbank in dieser Reihenfolge einspielen:
 
 `phase_2_51_luck_balance.sql` aktualisiert anschliessend ausschliesslich die
 Balance-Konfiguration fuer Glueckstreffer. Der Strukturmarker bleibt bei 50.
-Seitdem wurden die Folgephasen bis **2.68** eingespielt. Der verknuepfte
-Supabase-Stand wurde am 2026-09-24 mit `schema_version = 68`, den drei
+Seitdem wurden die Folgephasen bis **2.70** eingespielt. Der verknuepfte
+Supabase-Stand wurde am 2026-09-24 mit `schema_version = 70`, den drei
 Endlos-Spalten sowie `submit_endless_round` und `get_endless_leaderboard` geprueft.
 
 Der verknuepfte Supabase-Stand wird mit
 `supabase/verify_migration_state.sql` geprueft. Nach den aktuellen Phasen muss
-der Marker auf `schema_version = 68` stehen. Die Pruefung findet unter anderem
+der Marker auf `schema_version = 70` stehen. Die Pruefung findet unter anderem
 `sync_profile_cosmetics`, `duel_result_slot`, `start_bot_match`,
 `claim_bot_victory_bonus`, `bot_match_retention_count` und
 `prune_bot_victory_claims` in der erwarteten Signatur.
@@ -107,6 +107,15 @@ verhindert doppelte Buchungen.
 Phase 2.68 verwendet die Summe der Serienpunkte fuer die Checkpoint-Pruefung.
 Die eigene Endlos-Rangliste berechnet pro Profil die beste Serie ausschliesslich
 aus angenommenen Rundenbelegen; die normale Jagd-Rangliste bleibt getrennt.
+
+Phase 2.69 korrigiert den Upload-Cooldown: Endlos-Belege duerfen als
+30-Sekunden-Runden und als gebuendelte Offline-Nachlieferung direkt
+aufeinander folgen. Der allgemeine Mindestabstand fuer Jagd und Tageslauf
+bleibt bestehen.
+
+Phase 2.70 erweitert die Endlos-Rangliste um `total_score`: alle
+serverseitig angenommenen Endlos-Punkte des Profils. `score` bleibt der
+Bestwert einer einzelnen Serie und bestimmt weiterhin den Rang.
 
 - Der Host startet die Talentphase erst ab zwei Teilnehmern.
 - Jeder Teilnehmer bestaetigt seinen temporaeren Talent-Build.

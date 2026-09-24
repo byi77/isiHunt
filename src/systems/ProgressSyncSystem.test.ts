@@ -119,6 +119,25 @@ function createProgression(overrides: Partial<ProgressionResult> = {}): Progress
 }
 
 describe('enqueueRun', () => {
+  it('zaehlt offene Ranglisten-Belege nach Spielmodus', () => {
+    signedIn = true;
+    ProgressSyncSystem.enqueueRun(createRun({ score: 100 }), createProgression());
+    ProgressSyncSystem.enqueueRun(
+      createRun({
+        score: 250,
+        endlessRound: 2,
+        endlessSessionId: '11111111-1111-4111-8111-111111111111',
+        endlessTalents: {},
+      }),
+      createProgression(),
+    );
+    ProgressSyncSystem.enqueueRun(createRun({ score: 50 }), createProgression(), '2026-08-17');
+
+    expect(ProgressSyncSystem.pendingLeaderboardCount('hunt')).toBe(1);
+    expect(ProgressSyncSystem.pendingLeaderboardCount('endless')).toBe(1);
+    expect(ProgressSyncSystem.pendingCount()).toBe(3);
+  });
+
   it('legt ohne Anmeldung kein Ereignis an', () => {
     signedIn = false;
 
