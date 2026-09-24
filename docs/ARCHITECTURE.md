@@ -662,9 +662,9 @@ verhindert doppelte Buchungen. Phase 2.68 prueft den vorherigen Checkpoint
 gegen die Summe der Serienpunkte und berechnet die Endlos-Rangliste aus den
 serverseitig angenommenen Belegen. Pro Profil zaehlt nur die beste Serie;
 die normale Jagd-Bestenliste bleibt getrennt. Phase 2.70 liefert zusaetzlich
-die Summe aller angenommenen Endlos-Serienpunkte je Profil. `CloudSystem`
-uebergibt beide Felder getrennt an das HUD der Rangliste: Bestserie fuer
-Rang und Hauptzahl, Gesamtpunkte als zweite Zahl.
+die Summe aller angenommenen Endlos-Serienpunkte je Profil. Die Rangliste
+verwendet ausschliesslich `score`, also das Endergebnis der besten einzelnen
+Serie. `total_score` wird nicht angezeigt.
 Der Trigger `enforce_progress_event_cooldown` nimmt ab Phase 2.69
 Endlos-Belege aus dem allgemeinen Mindestabstand fuer 60- bis 120-Sekunden-Runs
 aus. Die Runden sind 30 Sekunden lang und koennen aus der Offline-Outbox

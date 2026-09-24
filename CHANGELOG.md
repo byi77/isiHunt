@@ -17,8 +17,9 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 - Der Datenbank-Cooldown blockiert 30-Sekunden-Endlosrunden und gebuendelt
   nachgelieferte Checkpoints nicht mehr.
 - Der Debug-Report nennt wieder die aktuelle erwartete Datenbankversion.
-- Die Endlos-Rangliste zeigt die beste Serie als Rangwert und die Punkte aus
-  allen Endlos-Serien als zweite, beschriftete Zahl.
+- Die Endlos-Rangliste zeigt als einzigen Punktwert das Endergebnis der besten
+  einzelnen Serie. Die zuvor ergaenzte Summe ueber alle Serien entfaellt aus
+  der Anzeige.
 
 ### Spielregeln
 

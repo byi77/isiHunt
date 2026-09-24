@@ -151,7 +151,7 @@ export class LeaderboardScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         sectionY + 20,
-        'Beste Serie rechts · Gesamt aller Serien darunter',
+        'Bestes Endergebnis einer Endlos-Serie',
         textStyle(FontSize.tiny, Palette.inkDim),
       )
       .setOrigin(0.5);
@@ -542,17 +542,9 @@ export class LeaderboardScene extends Phaser.Scene {
         this.add
           .text(
             GAME_WIDTH - 76,
-            y - 9,
+            y,
             entry.score.toLocaleString('de-DE'),
             textStyle(FontSize.small, Palette.ink, { fontStyle: 'bold' }),
-          )
-          .setOrigin(1, 0.5),
-        this.add
-          .text(
-            GAME_WIDTH - 76,
-            y + 14,
-            `GESAMT ${entry.totalScore.toLocaleString('de-DE')}`,
-            textStyle(FontSize.tiny, Palette.inkDim),
           )
           .setOrigin(1, 0.5),
       );

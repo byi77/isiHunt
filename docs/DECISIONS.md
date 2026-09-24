@@ -1756,3 +1756,19 @@ des Profils. Beide Zahlen stammen aus denselben `profile_progress_events`;
 Phase 2.70 gibt sie getrennt zurueck. So bleibt die Leistung einer einzelnen
 Checkpoint-Serie der Wettbewerbsmassstab, waehrend auch der gesamte
 Spielaufwand sichtbar wird.
+
+## ADR-0033 — Endlos-Rangliste zeigt ausschliesslich das Serien-Endergebnis
+
+### Befund
+
+Die zweite Zahl aus ADR-0032 bezeichnet Punkte ueber mehrere Serien. Sie
+entspricht nicht dem Wert auf dem Ergebnisbildschirm und verwirrt den Vergleich
+mit einer gerade abgeschlossenen Endlos-Serie.
+
+### Entscheidung
+
+ADR-0032 wird fuer die Anzeige abgeloest. Die Rangliste zeigt pro Profil nur
+die beste einzelne Serie. Ihr `score` ist die Summe der Rundenpunkte derselben
+Serienkennung und entspricht dem Endergebnis einschliesslich der waehrend der
+Serie vergebenen Punkteboni. Das RPC-Feld `total_score` bleibt in Phase 2.70
+verfuegbar, wird aber nicht an die Ranglistenansicht uebergeben.

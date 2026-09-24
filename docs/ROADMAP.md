@@ -38,8 +38,8 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 - [x] Phase 2.69 beseitigt den 60-Sekunden-Konflikt beim Upload von
       30-Sekunden-Endlosrunden. Offene Belege werden vor der Rangliste
       synchronisiert und als ausstehend markiert.
-- [x] Phase 2.70 zeigt in der Endlos-Rangliste Bestserie und Gesamtpunkte
-      aller Serien getrennt.
+- [x] Die Endlos-Rangliste zeigt als einzigen Punktwert das Endergebnis der
+      besten einzelnen Serie; die serverseitige Gesamtsumme bleibt ungenutzt.
 - [x] Runde 8 bis 10 steigert Hindernisdichte und Relikt-Tempo deutlich;
       ein einmaliger Serien-Rettungsring ab Serie 6 gilt auch ueber Checkpoints.
 - [ ] Gate-Erfolgsquoten, Economy und laengere Serien mit echten Spielern und

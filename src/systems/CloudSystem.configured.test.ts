@@ -279,7 +279,7 @@ describe('Anmeldepruefung scheitert selbst am Netz', () => {
  * dessen Ausfall ebenso in ein Ergebnisobjekt uebersetzen.
  */
 describe('ohne Anmeldepflicht: Netzfehler bleibt ein Ergebnisobjekt', () => {
-  it('trennt in Endlos beste Serie und alle Serienpunkte', async () => {
+  it('uebernimmt nur das Endergebnis der besten Endlos-Serie', async () => {
     signIn();
     const client = CloudSystem.getSupabaseClient()!;
     vi.spyOn(client, 'rpc').mockResolvedValue({
@@ -301,8 +301,9 @@ describe('ohne Anmeldepflicht: Netzfehler bleibt ein Ergebnisobjekt', () => {
 
     expect(result).toMatchObject({
       ok: true,
-      value: [{ score: 124_548, totalScore: 167_899, rounds: 24 }],
+      value: [{ score: 124_548, rounds: 24 }],
     });
+    expect(result.ok && result.value[0]).not.toHaveProperty('totalScore');
   });
 
   it('fetchLeaderboard', async () => {
