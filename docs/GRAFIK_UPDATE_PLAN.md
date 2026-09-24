@@ -743,9 +743,9 @@ Möglicher Einstieg nächste Woche:
 
 ### Rendering-Korrektur: 24. September 2026
 
-Das Quadrat auf dem Screenshot lag im Hauptmenü, nicht in der Jagd: `MenuView`
-legte ein großes, getöntes `TextureKey.Glow` hinter den Planeten. Auf manchen
-Mobilgeräten wurde die quadratische Texturfläche sichtbar. Dieses Sprite ist
-entfernt; Atmosphärenrand und Ring des Planeten bleiben erhalten. Die früheren
-Änderungen am 3D-Spieloverlay und am Rumpf-Glow betrafen andere Screens und
-konnten diesen Menüfehler daher nicht beheben.
+Das Quadrat auf dem Screenshot lag im Hauptmenü, nicht in der Jagd. Das
+Menü-Glow-Sprite zu entfernen reichte nicht aus: Die Kugel selbst kam weiterhin
+aus den prozeduralen Canvas-Atlas-Frames. `MenuView` nutzt jetzt die vorhandenen
+transparenten WebP-Planetentexturen als Kugeloberfläche; deren vier Eckpixel
+haben Alpha 0. Atmosphärenrand und Ringe bleiben erhalten. Die früheren
+Änderungen am 3D-Spieloverlay und am Rumpf-Glow betrafen andere Screens.

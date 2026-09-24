@@ -138,9 +138,9 @@ Punkt 3 ergänzt `config/worldVisuals.ts` (rein visuelle Weltprofile),
 `ui/spatialPlanet.ts` (Phaser-Ansicht mit geteilten Ringen und fester Beleuchtung).
 Texturen werden pro Welt wiederverwendet. Bewegung bleibt in der Ansicht;
 Listener werden beim Zerstören der Ansicht entfernt. Weltregeln bleiben in `worlds.ts`.
-`MenuView` legt kein groß skaliertes `TextureKey.Glow` mehr hinter den
-Planeten: Dessen quadratische Spritefläche wurde auf manchen mobilen Renderern
-sichtbar; Atmosphärenrand und planetarer Rim bleiben erhalten.
+`MenuView` verwendet fuer die Planetenoberflaeche die transparenten WebP-
+Texturen statt der prozeduralen Canvas-Atlas-Frames. So bleibt die Kugel in
+mobilen Renderern rund; Atmosphaerenrand und planetarer Rim bleiben erhalten.
 Ein Entwicklungsbuild kann mit `?worldPreview=0` bis `9` die Welten im Hauptmenü
 ansehen, ohne sie im Spielstand freizuschalten oder die Weltenauswahl zu speichern.
 Die Menüansicht zeigt dafür ein virtuelles Level 100. Die Option existiert nicht

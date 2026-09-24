@@ -19,7 +19,7 @@ import {
   SHIP_ANIMATIONS,
   stehendesBild,
 } from '@/ui/shipAnimations';
-import { playerTextureForShape, TextureKey } from '@/ui/textures';
+import { planetTextureForVariant, playerTextureForShape, TextureKey } from '@/ui/textures';
 import { Palette, textStyle } from '@/ui/theme';
 import { createButton, createPanel } from '@/ui/widgets';
 import type { ButtonHandle } from '@/ui/widgets';
@@ -441,6 +441,9 @@ export class MenuView {
       planetY,
       planetSize,
       this.world.spaceVariant,
+      false,
+      undefined,
+      planetTextureForVariant(this.world.spaceVariant),
     );
     // Kein quadratisches Glow-Sprite hinter dem Planeten: Auf manchen
     // mobilen Renderern bleibt dessen quadratische Texturfläche sichtbar.

@@ -34,14 +34,16 @@ export function createSpatialPlanet(
   variant: number,
   animated = true,
   resolution: number = PLANET_RENDER.resolution,
+  surfaceTexture?: string,
 ): Phaser.GameObjects.Container {
   const visual = worldVisual(variant);
   const lowMemory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory;
-  const frames =
-    animated && !prefersReducedMotion() && !(lowMemory && lowMemory <= 2)
+  const frames = surfaceTexture
+    ? 1
+    : animated && !prefersReducedMotion() && !(lowMemory && lowMemory <= 2)
       ? PLANET_RENDER.frames
       : 1;
-  const key = atlas(scene, variant, frames, resolution);
+  const key = surfaceTexture ?? atlas(scene, variant, frames, resolution);
   const root = scene.add.container(x, y).setSize(diameter, diameter);
   root.setData('layoutRole', 'worldPlanet');
   const ringed = ['ice', 'rift', 'gate', 'moons'].includes(visual.ring);
