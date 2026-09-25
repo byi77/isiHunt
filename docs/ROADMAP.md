@@ -26,7 +26,8 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
       141 bis 154 % der XP der Startwelt (ADR-0034).
 - [x] Drei Sterne je Welt als serverseitig gepruefte Erfolge; Anzeige in
       Menue, Weltinfo, Sammlung und Erfolgsliste.
-- [ ] Migration `phase_2_71_world_stars.sql` einspielen.
+- [x] Migration `phase_2_71_world_stars.sql` eingespielt (2026-09-25,
+      Schemastand 71 auf dem Server geprueft).
 - [ ] Sterneschwellen und Weltauftraege mit echten Spielern pruefen; die
       Seltene-Beute-Auftraege (Glutnebel, Sonnenkrone, Lichtkern) wirken zu
       leicht.
