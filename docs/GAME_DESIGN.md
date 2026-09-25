@@ -58,7 +58,7 @@ Geraeten.
 Relikt erscheint  →  Spieler bewegt sich hin  →  eingesammelt
         │                                             │
         │                                    Punkte × Multiplikator
-        │                              Serie +1 (farbig), Fenster neu
+        │                  Serie +1 (farbig) / +0,2 (weiss), Fenster neu
         ↓
    verblasst (verpasst — Serie bleibt, aber Zeit war verloren)
 ```
@@ -165,10 +165,17 @@ Welt bleibt nach ihrer Ankunft aktiv. Hindernisse bremsen, ziehen in diesem
 Modus aber weder Zeit noch Punkte ab.
 
 **Die Serie laeuft ueber den Checkpoint weiter.** Wer mit Serie 12 ein Gate
-erreicht, beginnt die naechste Runde mit Serie 12. Nach dem Countdown steht sie
+erreicht, beginnt die naechste Runde mit Serie 12, samt angefangener weisser
+Teilstufe. Das HUD zeigt sie schon im Countdown. Nach dem Countdown steht sie
 3 Sekunden unter Schutz: Das Serienfenster ist eingefroren und kann nicht
 ablaufen. Danach bleibt ein volles Fenster, um den ersten Fang zu setzen.
 Ohne mitgenommene Serie gibt es keinen Schutz.
+
+**Kein versehentliches Ende.** "SERIE BEENDEN" am Checkpoint fragt in einem
+eigenen Fenster nach; hervorgehoben ist "WEITERSPIELEN". Im Pausenmenue braucht
+"RUN VERLASSEN" im Endlosmodus einen zweiten Tipp - dort endet die Serie, und
+die laufende Runde wird nicht gewertet. Bereits gebuchte Runden bleiben in
+beiden Faellen erhalten.
 
 **Spaete Runden werden knapper, ohne mehr Hindernisse.** Das Serienfenster
 schrumpft je Runde nach der ersten um 3 % (hoechstens auf 60 %), die
@@ -238,13 +245,15 @@ ohne die grauen und weissen Fänge wertlos zu machen.
 Die Serie hat **zwei getrennte Stufen** — das ist der taktische Kern des
 Spiels:
 
-|              | Wirkung                                                                |
-| ------------ | ---------------------------------------------------------------------- |
-| **Halten**   | Jeder Fang setzt das Zeitfenster neu (Basis **0,9 s**)                 |
-| **Steigern** | Nur ein **farbiger** Fang (ungewöhnlich und seltener) erhöht die Serie |
+|              | Wirkung                                                                                    |
+| ------------ | ------------------------------------------------------------------------------------------ |
+| **Halten**   | Jeder Fang setzt das Zeitfenster neu (Basis **0,9 s**)                                     |
+| **Steigern** | Ein **farbiger** Fang (ungewöhnlich und seltener) erhöht die Serie um 1, ein weißer um 0,2 |
 
-- Weiße Relikte (schlicht, gewöhnlich) **halten** die Serie, steigern sie aber
-  nicht.
+- Weiße Relikte (schlicht, gewöhnlich) **halten** die Serie und steigern sie um
+  ein Fünftel: Fünf weiße Fänge ergeben eine volle Stufe. Das HUD zeigt die
+  Teilstufe als Nachkommastelle ("SERIE 12,4"), am Fang steigt "+0,2 SERIE"
+  auf. Eine angefangene Teilstufe verfällt mit der Serie.
 - Fängst du im Fenster gar nichts, fällt die Serie auf **0**.
 - **Ein verpasstes Relikt bricht die Serie NICHT.**
 
@@ -267,6 +276,15 @@ doppelt so lang. Pro Fenster erschienen 2,9 bis 5,3 neue Relikte — die Serie
 riss praktisch nie. Im automatisierten Playtest lief sie regelmäßig über 180
 Fänge ohne einen einzigen Abriss; es gab nie etwas zu entscheiden. Nach der
 Umstellung: beste Serie ~19, rund **11 Abrisse pro Runde**.
+
+**Warum Weiß seit 2026-09-25 wieder zählt, aber nur ein Fünftel.** Weiße und
+graue Relikte sind 62 % aller Spawns. Ein Fang, der für die Serie nichts
+brachte, fühlte sich für die Mehrheit der Fänge wertlos an. Ein Fünftel hält
+die Entscheidung am Leben: Ein farbiges Relikt ist weiterhin fünfmal so viel
+Serie wert. Intern bleibt die Serie eine ganze Zahl mit Zähler für die
+Teilstufe, damit Stufen, Rettung, Erfolge und die Serverprüfung
+"Serie ≤ Fänge" unverändert gelten. Die Auswirkung auf Punkte und
+Serienlängen ist **nicht gemessen** (`npm run balance:worlds`).
 
 Dass ein Verpassen die Serie nicht bricht, bleibt eine bewusste Abweichung vom
 Arcade-Standard. Begruendung: Auf dem Handy sind Fehlgriffe oft Geraet- statt

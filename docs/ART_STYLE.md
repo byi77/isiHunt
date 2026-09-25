@@ -514,6 +514,7 @@ Bewegung ist Sprache — sie sagt dem Spieler, was passiert ist.
 | Glueckstreffer              | _KRITISCH_ schlaegt ein, steht, reisst auf und verweht                                          | 90 + 110 + 220 ms                    |
 | Serie erreicht 16           | Farbstoss in Weltfarbe ueber das ganze Bild, hoechstens 28 %                                    | 40 + 260 ms                          |
 | Serienfenster laeuft aus    | Serienspalte wird rot, Balken laeuft leer                                                       | ab 25 % Restfenster                  |
+| Weisser Fang (+0,2 Serie)   | _+0,2 SERIE_ steigt weiss unter dem Punkte-Label auf, Serienanzeige kurz hervorgehoben          | wie Punkte-Label                     |
 | Endlos-Serienschutz         | Tuerkiser Ring um die Figur schrumpft und verblasst, flackert zum Schluss; Serienbalken tuerkis | 3000 ms, letztes Drittel 160-ms-Takt |
 | Ergebnis mit Praemie        | Kopfzahl zaehlt hoch, `Cubic.easeOut`, dann kurzer Pop auf 112 %                                | 260 + 1100 + 240 ms                  |
 | Update liegt bereit         | Goldener Balken in der Kopfzeile, Glimmen pulsiert 35 % ↔ 100 %                                 | 900 ms, endlos                       |

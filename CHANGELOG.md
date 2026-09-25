@@ -19,6 +19,12 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   Runde.
 - Spaete Runden werden knapper, ohne mehr Hindernisse: Das Serienfenster und
   die Sichtdauer der Relikte schrumpfen je Runde.
+- Die mitgenommene Serie steht schon im Countdown oben im HUD; der Schutz
+  beginnt erst mit dem Rundenstart.
+- "SERIE BEENDEN" am Checkpoint fragt nach, "RUN VERLASSEN" im Pausenmenue
+  braucht in Endlos einen zweiten Tipp.
+- Weisse und graue Relikte steigern die Serie um 0,2 (fuenf = eine Stufe),
+  sichtbar als "SERIE 12,4" und "+0,2 SERIE" am Fang. Gilt in allen Modi.
 - Server: Migration 2.72 zieht Plausibilitaetsgrenze und Gate-Pruefung mit
   und erlaubt eine beste Serie oberhalb der Faenge einer Runde, soweit sie
   aus der Vorrunde stammt. Die Rangliste bleibt bestehen.
