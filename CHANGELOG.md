@@ -9,6 +9,20 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Endlos: Serie und Rundenfaktor
+
+- Die Serie reisst am Checkpoint nicht mehr ab, sondern laeuft in der
+  naechsten Runde weiter. Nach dem Countdown schuetzt ein tuerkiser Ring sie
+  3 Sekunden lang; das HUD zeigt "SCHUTZ" und die Restzeit.
+- Runde N zaehlt jeden Punkt N-fach (vorher +2 % je Runde). Das Rundenziel
+  waechst mit demselben Faktor; der Checkpoint nennt den Faktor der naechsten
+  Runde.
+- Spaete Runden werden knapper, ohne mehr Hindernisse: Das Serienfenster und
+  die Sichtdauer der Relikte schrumpfen je Runde.
+- Server: Migration 2.72 zieht Plausibilitaetsgrenze und Gate-Pruefung mit
+  und erlaubt eine beste Serie oberhalb der Faenge einer Runde, soweit sie
+  aus der Vorrunde stammt. Die Rangliste bleibt bestehen.
+
 ### Spieler-Einstieg und Jagd
 
 - Der erste Start zeigt die Kontoanlage mit Spielername und PIN; danach fuehrt

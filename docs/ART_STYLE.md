@@ -499,27 +499,28 @@ Atmosphaerenrand und Orbit gelesen. Die Texture-Keys bleiben dabei stabil.
 
 Bewegung ist Sprache — sie sagt dem Spieler, was passiert ist.
 
-| Ereignis                    | Bewegung                                                           | Dauer                    |
-| --------------------------- | ------------------------------------------------------------------ | ------------------------ |
-| Relikt erscheint            | Skalierung 0 → 1, `Back.Out`                                       | 220 ms                   |
-| Blaues oder hoeheres Relikt | Winziger Stern blitzt am Spawnort auf und zerfaellt                | bis 420 ms vor Spawn     |
-| Relikt laeuft ab            | Alpha + Skalierung sinken                                          | letzte 700 ms            |
-| Fang                        | Relikt zieht sich zusammen, Splitter, Schockwelle, Zahl steigt auf | 160 / 480 / 420 / 750 ms |
-| Seltener Fang (ab episch)   | zusaetzlich Kamera-Ruckler + Aufblitzen, groessere Schockwelle     | 180 ms                   |
-| Punktestand aendert sich    | kurzer Pop auf 112 %                                               | 180 ms                   |
-| Figur im Stillstand         | Pulsieren 94 % ↔ 106 %                                             | 1100 ms                  |
-| Figur in Bewegung           | Lichtspur ab 60 px/s                                               | 420 ms Nachleuchten      |
-| Seltenes Relikt liegt da    | Strahlenkranz dreht gegenlaeufig zum Relikt                        | endlos                   |
-| Vorlage im Duell ueberholt  | _UEBERHOLT!_ blendet auf und wieder aus                            | 240 ms + 700 ms          |
-| Glueckstreffer              | _KRITISCH_ schlaegt ein, steht, reisst auf und verweht             | 90 + 110 + 220 ms        |
-| Serie erreicht 16           | Farbstoss in Weltfarbe ueber das ganze Bild, hoechstens 28 %       | 40 + 260 ms              |
-| Serienfenster laeuft aus    | Serienspalte wird rot, Balken laeuft leer                          | ab 25 % Restfenster      |
-| Ergebnis mit Praemie        | Kopfzahl zaehlt hoch, `Cubic.easeOut`, dann kurzer Pop auf 112 %   | 260 + 1100 + 240 ms      |
-| Update liegt bereit         | Goldener Balken in der Kopfzeile, Glimmen pulsiert 35 % ↔ 100 %    | 900 ms, endlos           |
-| Seltenes Relikt erscheint   | Lichtriss oeffnet und schliesst sich, Ring weitet sich (ab episch) | 180 + 60 + 160 ms        |
-| Letzte 10 Sekunden          | Roter Randschein schlaegt je Sekunde an und klingt ab              | 1000 ms Takt             |
-| Szenenwechsel               | Ausblenden bzw. Heranfahren, Einblenden aus dem Grundton           | 200/260 + 240 ms         |
-| Freischaltung im Ergebnis   | Bild dreht sich aus der Kante auf                                  | 460 ms, je +120 ms       |
+| Ereignis                    | Bewegung                                                                                        | Dauer                                |
+| --------------------------- | ----------------------------------------------------------------------------------------------- | ------------------------------------ |
+| Relikt erscheint            | Skalierung 0 → 1, `Back.Out`                                                                    | 220 ms                               |
+| Blaues oder hoeheres Relikt | Winziger Stern blitzt am Spawnort auf und zerfaellt                                             | bis 420 ms vor Spawn                 |
+| Relikt laeuft ab            | Alpha + Skalierung sinken                                                                       | letzte 700 ms                        |
+| Fang                        | Relikt zieht sich zusammen, Splitter, Schockwelle, Zahl steigt auf                              | 160 / 480 / 420 / 750 ms             |
+| Seltener Fang (ab episch)   | zusaetzlich Kamera-Ruckler + Aufblitzen, groessere Schockwelle                                  | 180 ms                               |
+| Punktestand aendert sich    | kurzer Pop auf 112 %                                                                            | 180 ms                               |
+| Figur im Stillstand         | Pulsieren 94 % ↔ 106 %                                                                          | 1100 ms                              |
+| Figur in Bewegung           | Lichtspur ab 60 px/s                                                                            | 420 ms Nachleuchten                  |
+| Seltenes Relikt liegt da    | Strahlenkranz dreht gegenlaeufig zum Relikt                                                     | endlos                               |
+| Vorlage im Duell ueberholt  | _UEBERHOLT!_ blendet auf und wieder aus                                                         | 240 ms + 700 ms                      |
+| Glueckstreffer              | _KRITISCH_ schlaegt ein, steht, reisst auf und verweht                                          | 90 + 110 + 220 ms                    |
+| Serie erreicht 16           | Farbstoss in Weltfarbe ueber das ganze Bild, hoechstens 28 %                                    | 40 + 260 ms                          |
+| Serienfenster laeuft aus    | Serienspalte wird rot, Balken laeuft leer                                                       | ab 25 % Restfenster                  |
+| Endlos-Serienschutz         | Tuerkiser Ring um die Figur schrumpft und verblasst, flackert zum Schluss; Serienbalken tuerkis | 3000 ms, letztes Drittel 160-ms-Takt |
+| Ergebnis mit Praemie        | Kopfzahl zaehlt hoch, `Cubic.easeOut`, dann kurzer Pop auf 112 %                                | 260 + 1100 + 240 ms                  |
+| Update liegt bereit         | Goldener Balken in der Kopfzeile, Glimmen pulsiert 35 % ↔ 100 %                                 | 900 ms, endlos                       |
+| Seltenes Relikt erscheint   | Lichtriss oeffnet und schliesst sich, Ring weitet sich (ab episch)                              | 180 + 60 + 160 ms                    |
+| Letzte 10 Sekunden          | Roter Randschein schlaegt je Sekunde an und klingt ab                                           | 1000 ms Takt                         |
+| Szenenwechsel               | Ausblenden bzw. Heranfahren, Einblenden aus dem Grundton                                        | 200/260 + 240 ms                     |
+| Freischaltung im Ergebnis   | Bild dreht sich aus der Kante auf                                                               | 460 ms, je +120 ms                   |
 
 **Der Update-Hinweis darf aus dem Raster fallen.** Bis v0.1.341 war er ein
 gewoehnlicher Sekundaerknopf in der Kopfzeile - dieselbe graue Flaeche,

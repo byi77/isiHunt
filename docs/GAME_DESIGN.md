@@ -148,9 +148,12 @@ das lokale Bot-Duell bleibt der direkte Einzelgeraet-Weg.
 Im Hauptmenue stehen **Jagd** und **Endlos** nebeneinander. Eine Endlos-Serie
 beginnt immer in der Sternenweide. Jede Runde dauert 30 Sekunden. Der sichtbare
 Punktestand laeuft ueber die ganze Serie weiter; Ueberschuesse helfen beim
-naechsten Gate. Die ersten vier Runden erhoehen das Gesamtziel um 500, 700,
-900 und 1.100 Punkte (Gates 500, 1.200, 2.100, 3.200). Runde 5 erhoeht es
-um 1.300 Punkte, danach steigt der Rundenzuwachs um 300 Punkte je Runde.
+naechsten Gate. **Runde N zaehlt jeden Punkt N-fach** (Runde 14: ×14,
+Runde 21: ×21). Das Rundenziel waechst mit demselben Faktor, damit das Gate
+nicht zur Formsache wird: Das Grundziel betraegt 500, 700, 900 und 1.100
+Punkte in den ersten vier Runden, 1.300 in Runde 5 und danach 300 mehr je
+Runde - multipliziert mit der Rundennummer. Die Gesamtziele lauten damit 500,
+1.900, 4.600, 9.000, 15.500, 25.100 (Runde 1 bis 6).
 Diese Startwerte sind noch nicht mit echten Spielern
 ausbalanciert; der [Einbauplan](ENDLOS_EINBAUPLAN.md) nennt die offenen Messungen.
 
@@ -161,12 +164,25 @@ Rundenlaenge fest bleibt. Alle zwei Runden folgt die naechste Welt. Die letzte
 Welt bleibt nach ihrer Ankunft aktiv. Hindernisse bremsen, ziehen in diesem
 Modus aber weder Zeit noch Punkte ab.
 
+**Die Serie laeuft ueber den Checkpoint weiter.** Wer mit Serie 12 ein Gate
+erreicht, beginnt die naechste Runde mit Serie 12. Nach dem Countdown steht sie
+3 Sekunden unter Schutz: Das Serienfenster ist eingefroren und kann nicht
+ablaufen. Danach bleibt ein volles Fenster, um den ersten Fang zu setzen.
+Ohne mitgenommene Serie gibt es keinen Schutz.
+
+**Spaete Runden werden knapper, ohne mehr Hindernisse.** Das Serienfenster
+schrumpft je Runde nach der ersten um 3 % (hoechstens auf 60 %), die
+Sichtdauer der Relikte um 2,5 % (hoechstens auf 65 %). Beides wirkt zusaetzlich
+zum Weltwert und zur Schwierigkeit ab Runde 8. Die mitgenommene Serie wird
+dadurch immer schwerer zu halten - der hoehere Punktefaktor ist der Lohn
+dafuer. Beide Werte sind Startwerte ohne Messung.
+
 Ab Runde 8 steigt die Schwierigkeit deutlich: Der Faktor fuer Hindernisse und
 Relikt-Lebensdauer betraegt in Runde 8 das 1,6-Fache, in Runde 9 das 2,1-Fache
 und ab Runde 10 das 2,8-Fache des jeweiligen Weltwerts. Gates und verdiente
 Belohnungen bleiben dabei erhalten.
 
-Pro Runde nach der ersten steigen die Fangpunkte um 2 %, die Fang-XP um 4 %
+Pro Runde nach der ersten steigen die Fang-XP um 4 %
 und die Coin-Praemie um 2. Der Basis-Coinanteil wird von 90 auf 30 Sekunden
 skaliert; Welt-, Seltenheits- und Sammelboni bleiben erhalten. Auch eine Runde
 mit verfehltem Gate wird verbucht, bevor die Serie endet. Bereits verdiente
@@ -541,18 +557,18 @@ Weltinfo sichtbar, waehrend des Runs als Fortschritt im HUD und danach mit dem
 erreichten Stand auf dem Ergebnisbildschirm. Seit 2026-09-25 ist er zugleich
 der dritte Stern der Welt (Abschnitt 7.3a).
 
-| Welt          | Weltauftrag                           |
-| ------------- | ------------------------------------- |
-| Sternenweide  | 110 Relikte in einer Jagd fangen      |
-| Eisring       | Eine Serie von 16 erreichen           |
-| Glutnebel     | 8 seltene oder bessere Relikte fangen |
-| Nullsektor    | 3 epische oder bessere Relikte fangen |
-| Sonnenkrone   | 14 seltene oder bessere Relikte fangen|
-| Mondschmiede  | Eine Serie von 25 erreichen           |
-| Kristallbruch | 155 Relikte in einer Jagd fangen      |
-| Sturmgrenze   | 5 epische oder bessere Relikte fangen |
-| Lichtkern     | 24 seltene oder bessere Relikte fangen|
-| Horizonttor   | 40.000 Punkte in einer Jagd erreichen |
+| Welt          | Weltauftrag                            |
+| ------------- | -------------------------------------- |
+| Sternenweide  | 110 Relikte in einer Jagd fangen       |
+| Eisring       | Eine Serie von 16 erreichen            |
+| Glutnebel     | 8 seltene oder bessere Relikte fangen  |
+| Nullsektor    | 3 epische oder bessere Relikte fangen  |
+| Sonnenkrone   | 14 seltene oder bessere Relikte fangen |
+| Mondschmiede  | Eine Serie von 25 erreichen            |
+| Kristallbruch | 155 Relikte in einer Jagd fangen       |
+| Sturmgrenze   | 5 epische oder bessere Relikte fangen  |
+| Lichtkern     | 24 seltene oder bessere Relikte fangen |
+| Horizonttor   | 40.000 Punkte in einer Jagd erreichen  |
 
 Die Auftraege verwenden nur Runwerte, die ohnehin berechnet werden; Punkte
 zaehlen ohne Abschlusspraemie. Horizonttor stand bis 2026-09-25 auf 20.000 -
@@ -570,11 +586,11 @@ Texte in `src/systems/WorldGoalSystem.ts`.
 
 Jede Welt vergibt drei Sterne:
 
-| Stern | Bedingung                             |
-| ----- | ------------------------------------- |
-| ★     | erste Punkteschwelle in einer Jagd    |
-| ★★    | zweite Punkteschwelle in einer Jagd   |
-| ★★★   | Weltauftrag erfuellt                  |
+| Stern | Bedingung                           |
+| ----- | ----------------------------------- |
+| ★     | erste Punkteschwelle in einer Jagd  |
+| ★★    | zweite Punkteschwelle in einer Jagd |
+| ★★★   | Weltauftrag erfuellt                |
 
 | Welt          | ★      | ★★     | Rang-Aufschlag |
 | ------------- | ------ | ------ | -------------- |

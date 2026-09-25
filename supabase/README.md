@@ -27,6 +27,16 @@ gerechneten Abschlussbonus für jeden Lauf mit mindestens einem Relikt. Nach
 leistungsabhängigen Abschlussboni und erhöht ihre Deckel. Nach Phase 2.62
 erwartet `verify_migration_state.sql` Schema **62**.
 
+## Endlos-Rundenfaktor (Phase 2.72)
+
+`phase_2_72_endless_round_multiplier.sql` passt `submit_endless_round` an den
+Client ab v0.1.393 an: Runde N zaehlt Punkte N-fach, das nachgerechnete
+Vorrunden-Gate ebenso. Die neue Funktion `max_plausible_endless_score` erlaubt
+eine beste Serie oberhalb der Faenge der Runde, hoechstens um die beste Serie
+der Vorrunde (die Serie laeuft ueber den Checkpoint weiter).
+`max_plausible_score` bleibt unveraendert. Nach Phase 2.72 erwartet
+`verify_migration_state.sql` Schema **72**.
+
 ## Reihenfolge
 
 **Der Zahlenteil im Dateinamen ist die Reihenfolge, nicht die

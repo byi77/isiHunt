@@ -33,6 +33,18 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
       leicht.
 - [ ] Endlos-Gates nach den neuen Weltfaktoren neu einmessen.
 
+### Endlos: Serie und Rundenfaktor (2026-09-25)
+
+- [x] Die Serie laeuft ueber den Checkpoint weiter; 3 Sekunden sichtbarer
+      Schutz nach dem Countdown.
+- [x] Runde N zaehlt Punkte N-fach, das Rundenziel waechst mit.
+- [x] Spaete Runden: kuerzeres Serienfenster und kuerzer sichtbare Relikte
+      statt mehr Hindernisse.
+- [x] Migration `phase_2_72_endless_round_multiplier.sql` eingespielt
+      (2026-09-25, Schemastand 72 auf dem Server geprueft).
+- [ ] Schrumpfwerte (3 % Fenster, 2,5 % Sichtdauer je Runde) mit echten
+      Spielern pruefen.
+
 ## Bereits spielbar
 
 - [x] In allen Modi kuendigt ein winziger Stern blaue und hoehere Relikte
