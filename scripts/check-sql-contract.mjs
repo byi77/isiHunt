@@ -410,9 +410,9 @@ requireText(verification, 'daily_key', 'Live-Verifikation Tagesbonus');
 requireText(verification, 'upsert_save', 'Live-Verifikation Save-CAS');
 requireText(verification, 'duel_rooms', 'Live-Verifikation Duell');
 requireText(migrationVerification, 'schema_version', 'Live-Verifikation Migrationsmarker');
-requireText(migrationVerification, 'schema_version = 71', 'Live-Verifikation Phase 2.71');
+requireText(migrationVerification, 'schema_version = 72', 'Live-Verifikation Phase 2.72');
 const backendConfig = readFileSync(resolve(root, 'src/config/backend.ts'), 'utf8');
-requireText(backendConfig, 'BACKEND_SCHEMA_VERSION = 71', 'Debug-Report Schema-Erwartung');
+requireText(backendConfig, 'BACKEND_SCHEMA_VERSION = 72', 'Debug-Report Schema-Erwartung');
 requireText(rewardCodeCoreMigration, 'reward_codes', 'Reward-Code-Katalog');
 requireText(rewardCodeCoreMigration, 'reward_redemptions', 'Reward-Einloesbelege');
 requireText(rewardCodeCoreMigration, 'reward_code_attempts', 'Reward-Rate-Limits');
@@ -495,6 +495,26 @@ requireText(
   'Sterne im Erfolgsblock von submit_progress_event',
 );
 requireText(worldStarsMigration, 'schema_version = 71', 'Migrationsmarker Phase 2.71');
+const endlessMultiplierMigration = readFileSync(
+  resolve(sqlDir, 'phase_2_72_endless_round_multiplier.sql'),
+  'utf8',
+);
+requireText(
+  endlessMultiplierMigration,
+  'max_plausible_endless_score(',
+  'Endlos-Plausibilitaet mit mitgenommener Serie Phase 2.72',
+);
+requireText(
+  endlessMultiplierMigration,
+  '* greatest(1, p_round)',
+  'Endlos-Punktemultiplikator x Runde Phase 2.72',
+);
+requireText(
+  endlessMultiplierMigration,
+  'end * gate.round_number',
+  'Endlos-Gate x Runde Phase 2.72',
+);
+requireText(endlessMultiplierMigration, 'schema_version = 72', 'Migrationsmarker Phase 2.72');
 const rewardCodePresetMigration = readFileSync(
   resolve(sqlDir, 'phase_2_63_reward_code_preset_grants.sql'),
   'utf8',
