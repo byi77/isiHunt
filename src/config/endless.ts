@@ -10,7 +10,19 @@ export const ENDLESS_DOUBLE_TALENT_EVERY = 4;
 export const ENDLESS_TALENT_CHOICES = 3;
 export const ENDLESS_XP_BONUS_PER_ROUND = 0.04;
 export const ENDLESS_COIN_BONUS_PER_ROUND = 2;
-export const ENDLESS_SCORE_BONUS_PER_ROUND = 0.02;
+/**
+ * Runde N zaehlt jeden Punkt N-fach. Damit das Ziel nicht zur Formsache wird,
+ * waechst es mit demselben Faktor (`endlessGate`) - die Zahlen werden gross,
+ * die Huerde bleibt relativ gleich. Den Druck erzeugen stattdessen das
+ * schrumpfende Serienfenster und kuerzer sichtbare Relikte.
+ */
+export const ENDLESS_SCORE_MULTIPLIER_PER_ROUND = 1;
+/** Die aus der Vorrunde mitgenommene Serie kann so lange nicht reissen. */
+export const ENDLESS_SERIES_SHIELD_MS = 3_000;
+export const ENDLESS_SERIES_GRACE_SHRINK_PER_ROUND = 0.03;
+export const ENDLESS_SERIES_GRACE_FLOOR = 0.6;
+export const ENDLESS_LIFETIME_SHRINK_PER_ROUND = 0.025;
+export const ENDLESS_LIFETIME_FLOOR = 0.65;
 export const ENDLESS_DIFFICULTY_ROUND_8 = 1.6;
 export const ENDLESS_DIFFICULTY_ROUND_9 = 2.1;
 export const ENDLESS_DIFFICULTY_ROUND_10 = 2.8;
@@ -35,6 +47,8 @@ export interface EndlessState {
   totalXp: number;
   totalCoins: number;
   rescueUsed?: boolean;
+  /** Serie am Ende der Vorrunde - sie laeuft in der naechsten weiter. */
+  carriedCombo?: number;
   talents: TalentRanks;
 }
 
@@ -45,12 +59,13 @@ export function endlessDifficultyScale(round: number): number {
   return 1;
 }
 
+/** Punkteziel dieser Runde, bereits mit dem Rundenmultiplikator gerechnet. */
 export function endlessGate(round: number): number {
   const index = Math.max(1, Math.floor(round)) - 1;
-  return (
+  const base =
     ENDLESS_EASY_GATES[index] ??
-    ENDLESS_LATER_GATE_BASE + (index - ENDLESS_EASY_GATES.length) * ENDLESS_LATER_GATE_STEP
-  );
+    ENDLESS_LATER_GATE_BASE + (index - ENDLESS_EASY_GATES.length) * ENDLESS_LATER_GATE_STEP;
+  return base * endlessRewards(round).scoreMultiplier;
 }
 
 /** Gesamtstand, der am Ende dieser Runde mindestens erreicht sein muss. */
@@ -72,10 +87,22 @@ export function endlessRewards(round: number): {
 } {
   const extra = Math.max(0, Math.floor(round) - 1);
   return {
-    scoreMultiplier: 1 + extra * ENDLESS_SCORE_BONUS_PER_ROUND,
+    scoreMultiplier: 1 + extra * ENDLESS_SCORE_MULTIPLIER_PER_ROUND,
     xpMultiplier: 1 + extra * ENDLESS_XP_BONUS_PER_ROUND,
     bonusCoins: extra * ENDLESS_COIN_BONUS_PER_ROUND,
   };
+}
+
+/** Faktor auf das Serienfenster: spaete Runden verzeihen weniger. */
+export function endlessSeriesGraceScale(round: number): number {
+  const extra = Math.max(0, Math.floor(round) - 1);
+  return Math.max(ENDLESS_SERIES_GRACE_FLOOR, 1 - extra * ENDLESS_SERIES_GRACE_SHRINK_PER_ROUND);
+}
+
+/** Faktor auf die Sichtdauer der Relikte - ohne ein einziges Hindernis mehr. */
+export function endlessLifetimeScale(round: number): number {
+  const extra = Math.max(0, Math.floor(round) - 1);
+  return Math.max(ENDLESS_LIFETIME_FLOOR, 1 - extra * ENDLESS_LIFETIME_SHRINK_PER_ROUND);
 }
 
 export function endlessTalentChoices(ranks: TalentRanks): TalentId[] {

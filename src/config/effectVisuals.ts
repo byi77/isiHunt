@@ -113,3 +113,21 @@ export const UNLOCK_SHOWCASE = {
   staggerMs: 120,
   delayMs: 320,
 } as const;
+
+/**
+ * Serienschutz im Endlosmodus: ein Ring in der Tageslauf-Farbe um die Figur,
+ * der mit der Restzeit schrumpft und verblasst. Gold ist schon die
+ * Wiedergeburt, Rot die Warnung - der Schutz braucht einen dritten Ton.
+ */
+export const SERIES_SHIELD_VISUALS = {
+  /** Ringradius relativ zum Fangradius, am Anfang und am Ende des Schutzes. */
+  radiusStart: 1.35,
+  radiusEnd: 1.05,
+  lineWidth: 4,
+  alphaMin: 0.35,
+  alphaMax: 0.9,
+  /** Letzte Sekunde: der Ring flackert, damit sein Ende nicht ueberrascht. */
+  blinkBelowRatio: 0.34,
+  blinkPeriodMs: 160,
+  fillAlpha: 0.08,
+} as const;

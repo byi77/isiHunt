@@ -143,6 +143,7 @@ export class ScoreSystem {
   private xpGained = 0;
   private crits = 0;
   private collected: Record<RarityId, number> = emptyRarityCounts();
+  private readonly shieldTotalMs: number;
 
   constructor(
     private readonly comboGraceMs: number,
@@ -161,10 +162,33 @@ export class ScoreSystem {
      */
     private readonly roll: () => number = Math.random,
     private rescueUsed = false,
-  ) {}
+    /** Serie aus der Endlos-Vorrunde; sie startet mit offenem Fenster. */
+    initialCombo = 0,
+    /** Solange er laeuft, steht das Fenster still und die Serie kann nicht reissen. */
+    private shieldMs = 0,
+  ) {
+    if (initialCombo > 0) {
+      this.combo = initialCombo;
+      this.bestCombo = initialCombo;
+      this.comboTimerMs = comboGraceMs;
+      this.comboWindowDurationMs = comboGraceMs;
+      this.bestMultiplier = multiplierForComboWithTalent(initialCombo, seriesMultiplierBonus);
+    } else {
+      // Ohne Serie gibt es nichts zu schuetzen - sonst zeigte das HUD einen
+      // Schutz, der nichts bewirkt.
+      this.shieldMs = 0;
+    }
+    this.shieldTotalMs = this.shieldMs;
+  }
 
   /** Muss jeden Frame aufgerufen werden, damit die Serie zerfallen kann. */
   update(deltaMs: number): { comboReset: boolean; comboRevived: boolean } {
+    // Der Schutz friert das Fenster ein, statt es nur aufzufuellen: So bleibt
+    // nach seinem Ende genau das Fenster, das ein frischer Fang auch gaebe.
+    if (this.shieldMs > 0) {
+      this.shieldMs = Math.max(0, this.shieldMs - deltaMs);
+      return { comboReset: false, comboRevived: false };
+    }
     // Am Timer entlang pruefen, nicht an der Serie: Ein weisser Fang haelt das
     // Fenster offen, auch wenn die Serie dabei auf 0 stehen bleibt. Ein
     // `combo === 0`-Guard wuerde diesen Zustand nie ablaufen lassen.
@@ -261,6 +285,11 @@ export class ScoreSystem {
     // Canvas-Erkennung herein und machte die Datei ausserhalb des Browsers
     // unbenutzbar. Siehe Regel 6 in CLAUDE.md - systems/ kennt Phaser nicht.
     return Math.min(Math.max(this.comboTimerMs / this.comboWindowDurationMs, 0), 1);
+  }
+
+  /** Restanteil des Serienschutzes, 1 = gerade begonnen, 0 = keiner. */
+  get shieldRatio(): number {
+    return this.shieldTotalMs > 0 ? this.shieldMs / this.shieldTotalMs : 0;
   }
 
   get currentScore(): number {

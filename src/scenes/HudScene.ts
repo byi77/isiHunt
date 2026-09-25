@@ -154,6 +154,8 @@ export class HudScene extends Phaser.Scene {
   private lastCritBurstAt = Number.NEGATIVE_INFINITY;
   /** Der leerlaufende Balken unter der Serienzeile. */
   private comboWindowBar!: BarHandle;
+  /** Der Balken zeigt gerade den Endlos-Serienschutz statt des Fensters. */
+  private shieldShown = false;
   /** Warnt die Serienzeile gerade? Verhindert ein Tween je Frame. */
   private comboWarning = false;
   /** Schon gefeiert? Der Jackpot-Moment gehoert einmal je Serie. */
@@ -238,6 +240,7 @@ export class HudScene extends Phaser.Scene {
     this.lastAgilityPercent = 0;
     this.lastCritBurstAt = Number.NEGATIVE_INFINITY;
     this.comboWarning = false;
+    this.shieldShown = false;
     this.jackpotCelebrated = false;
     this.xpTotal = 0;
     this.pauseOverlay = [];
@@ -913,7 +916,36 @@ export class HudScene extends Phaser.Scene {
    * `comboWarning` merkt sich den Zustand, damit die Faerbung einmal je
    * Wechsel passiert und nicht bei jedem gemeldeten Hundertstel.
    */
-  private readonly onComboWindow = ({ ratio, combo }: { ratio: number; combo: number }): void => {
+  private readonly onComboWindow = ({
+    ratio,
+    combo,
+    shieldRatio = 0,
+  }: {
+    ratio: number;
+    combo: number;
+    shieldRatio?: number;
+  }): void => {
+    // Waehrend des Endlos-Schutzes zeigt der Balken dessen Restzeit in der
+    // Schutzfarbe - das eingefrorene Serienfenster haette nichts zu sagen.
+    if (shieldRatio > 0) {
+      this.shieldShown = true;
+      this.comboWindowBar.setRatio(shieldRatio);
+      this.comboWindowBar.container.setAlpha(1);
+      this.comboWindowBar.setTint(Palette.dailyHex);
+      this.comboText.setText(`SERIE ${Math.max(0, combo)} · SCHUTZ`);
+      this.comboText.setColor(Palette.daily);
+      this.fit(this.comboText, this.layout.columnWidth);
+      return;
+    }
+    if (this.shieldShown) {
+      this.shieldShown = false;
+      this.comboWarning = false;
+      this.comboWindowBar.setTint(this.accent);
+      this.comboText.setText(`SERIE ${Math.max(0, combo)}`);
+      this.comboText.setColor(Palette.inkDim);
+      this.fit(this.comboText, this.layout.columnWidth);
+    }
+
     this.comboWindowBar.setRatio(ratio);
     // Ohne laufendes Fenster verschwindet der Balken ganz. Ein dauerhaft
     // leerer Balken sagt nichts und nimmt der Serienspalte die Ruhe.

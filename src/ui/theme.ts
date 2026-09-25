@@ -41,6 +41,7 @@ export const Palette = {
   medalLockedLight: 0xaeb6c7,
   medalCore: 0x13212c,
   medalShadow: 0x050817,
+  daily: '#46d7c3',
   dailyHex: 0x46d7c3,
   achievementHex: 0xc084fc,
 } as const;

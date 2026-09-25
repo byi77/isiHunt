@@ -559,3 +559,30 @@ describe('Gluecktreffer', () => {
     }
   });
 });
+
+describe('ScoreSystem - Endlos-Serie ueber den Checkpoint', () => {
+  const SHIELD_MS = 3_000;
+
+  it('startet mit der mitgenommenen Serie', () => {
+    const score = new ScoreSystem(COMBO_GRACE_MS, 1, 1, 0, 0, undefined, true, 8, SHIELD_MS);
+    expect(score.currentCombo).toBe(8);
+    expect(score.currentMultiplier).toBe(multiplierForCombo(8));
+  });
+
+  it('laesst die Serie waehrend des Schutzes nicht reissen, danach schon', () => {
+    const score = new ScoreSystem(COMBO_GRACE_MS, 1, 1, 0, 0, undefined, true, 8, SHIELD_MS);
+    expect(score.shieldRatio).toBe(1);
+    expect(score.update(SHIELD_MS - 1).comboReset).toBe(false);
+    expect(score.currentCombo).toBe(8);
+    expect(score.update(1).comboReset).toBe(false);
+    expect(score.shieldRatio).toBe(0);
+    // Nach dem Schutz bleibt ein volles Fenster, dann zerfaellt die Serie.
+    expect(score.update(COMBO_GRACE_MS + 1).comboReset).toBe(true);
+    expect(score.currentCombo).toBe(0);
+  });
+
+  it('zeigt ohne mitgenommene Serie keinen Schutz', () => {
+    const score = new ScoreSystem(COMBO_GRACE_MS, 1, 1, 0, 0, undefined, false, 0, SHIELD_MS);
+    expect(score.shieldRatio).toBe(0);
+  });
+});

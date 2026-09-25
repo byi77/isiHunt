@@ -84,6 +84,8 @@ export interface GameEventPayloads {
     ratio: number;
     /** Die Serie, die gerade auf dem Spiel steht. */
     combo: number;
+    /** Restanteil des Endlos-Serienschutzes; 0 oder fehlend heisst keiner. */
+    shieldRatio?: number;
   };
   [GameEvent.TimerChanged]: { remainingMs: number; totalMs: number };
   [GameEvent.Collected]: {

@@ -14,7 +14,11 @@ import {
   ONLINE_DUEL_SCORE_BROADCAST_INTERVAL_MS,
 } from '@/config/onlineDuel';
 import { CHALLENGE_DURATION_MS } from '@/config/challenge';
-import { RARE_SPAWN_WARNING, SCENE_TRANSITION } from '@/config/effectVisuals';
+import {
+  RARE_SPAWN_WARNING,
+  SCENE_TRANSITION,
+  SERIES_SHIELD_VISUALS,
+} from '@/config/effectVisuals';
 import {
   COMBO_GRACE_MS,
   COUNTDOWN_GO_LABEL,
@@ -43,8 +47,11 @@ import { getWorld } from '@/config/worlds';
 import {
   ENDLESS_DOUBLE_TALENT_EVERY,
   ENDLESS_ROUND_MS,
+  ENDLESS_SERIES_SHIELD_MS,
   ENDLESS_TALENT_CHOICES,
   endlessDifficultyScale,
+  endlessLifetimeScale,
+  endlessSeriesGraceScale,
   endlessTotalGate,
   endlessRewards,
   endlessTalentChoices,
@@ -181,6 +188,12 @@ export class GameScene extends Phaser.Scene {
   private scoring!: ScoreSystem;
   /** Zuletzt gemeldeter Stand des Serienfensters - haelt das Ereignis knapp. */
   private lastComboWindowRatio = 0;
+  private lastShieldRatio = 0;
+  /** Sichtbarer Serienschutz im Endlosmodus, null ausserhalb davon. */
+  private shieldRing: Phaser.GameObjects.Graphics | null = null;
+  private shieldElapsedMs = 0;
+  /** Endlos: spaete Runden zeigen Relikte kuerzer, statt mehr Bomben zu legen. */
+  private lifetimeFactor = 1;
 
   private collectibles: Collectible[] = [];
   private pendingCollectibles: {
@@ -362,8 +375,15 @@ export class GameScene extends Phaser.Scene {
 
     this.input_ = new InputController(this);
     this.lastComboWindowRatio = 0;
+    this.lastShieldRatio = 0;
+    this.shieldElapsedMs = 0;
+    const endlessRound = this.endlessState?.round;
+    this.lifetimeFactor = endlessRound ? endlessLifetimeScale(endlessRound) : 1;
+    const carriedCombo = this.endlessState?.carriedCombo ?? 0;
     this.scoring = new ScoreSystem(
-      this.stats.comboGraceMs,
+      Math.round(
+        this.stats.comboGraceMs * (endlessRound ? endlessSeriesGraceScale(endlessRound) : 1),
+      ),
       this.stats.scoreMultiplier *
         this.world.scoreMultiplier *
         (this.endlessState ? endlessRewards(this.endlessState.round).scoreMultiplier : 1),
@@ -375,7 +395,11 @@ export class GameScene extends Phaser.Scene {
       this.stats.critChance,
       undefined,
       this.endlessState?.rescueUsed ?? false,
+      carriedCombo,
+      carriedCombo > 0 ? ENDLESS_SERIES_SHIELD_MS : 0,
     );
+    this.shieldRing =
+      this.scoring.shieldRatio > 0 ? this.add.graphics().setDepth(Depth.Player - 1) : null;
 
     // Nur im Duell wird geseedet - beide Spieler bekommen dieselbe Abfolge.
     // Solo bleibt jeder Run eine neue Jagd.
@@ -501,6 +525,9 @@ export class GameScene extends Phaser.Scene {
     if (this.phase === 'countdown') {
       this.updatePlayer(dtSec);
       this.player.updateTalentVisuals(delta, [], 0);
+      // Der Ring steht schon im Countdown: Man soll sehen, dass die Serie
+      // geschuetzt in die Runde geht, bevor sie laeuft.
+      this.updateShieldRing(0);
       return;
     }
 
@@ -556,16 +583,22 @@ export class GameScene extends Phaser.Scene {
     // Sekunde, von denen das HUD die meisten auf denselben Zustand
     // abbildete. Ein Hundertstel ist feiner als der Balken darstellen kann.
     const ratio = this.scoring.comboTimerRatio;
+    const shieldRatio = this.scoring.shieldRatio;
     if (
       Math.abs(ratio - this.lastComboWindowRatio) >= 0.01 ||
-      (ratio === 0 && this.lastComboWindowRatio !== 0)
+      (ratio === 0 && this.lastComboWindowRatio !== 0) ||
+      Math.abs(shieldRatio - this.lastShieldRatio) >= 0.01 ||
+      (shieldRatio === 0 && this.lastShieldRatio !== 0)
     ) {
       this.lastComboWindowRatio = ratio;
+      this.lastShieldRatio = shieldRatio;
       eventBus.emitEvent(GameEvent.ComboWindowChanged, {
         ratio,
         combo: this.scoring.currentCombo,
+        shieldRatio,
       });
     }
+    this.updateShieldRing(deltaMs);
   }
 
   private updateCollectibles(dtSec: number, deltaMs: number): void {
@@ -681,14 +714,10 @@ export class GameScene extends Phaser.Scene {
     } = {},
   ): void {
     this.collectibles.push(
-      new Collectible(
-        this,
-        x,
-        y,
-        rarity,
-        planetTextureForVariant(this.world.spaceVariant),
-        options,
-      ),
+      new Collectible(this, x, y, rarity, planetTextureForVariant(this.world.spaceVariant), {
+        ...options,
+        lifetimeScale: (options.lifetimeScale ?? 1) * this.lifetimeFactor,
+      }),
     );
   }
 
@@ -922,6 +951,49 @@ export class GameScene extends Phaser.Scene {
       worldId: this.world.id,
       durationMs: this.totalMs,
     });
+    this.announceCarriedSeries();
+  }
+
+  /** Die mitgenommene Endlos-Serie steht ab dem Start im HUD und an der Figur. */
+  private announceCarriedSeries(): void {
+    const combo = this.scoring.currentCombo;
+    if (combo <= 0) return;
+    const agility = agilityForSeries(combo);
+    this.player.setSeriesTrail(trailTierForSeries(combo));
+    this.player.setSeriesAgility(agility);
+    eventBus.emitEvent(GameEvent.ComboChanged, {
+      combo,
+      multiplier: this.scoring.currentMultiplier,
+      speedFactor: agility.speedFactor,
+      rescueReady: this.scoring.rescueReady,
+    });
+    floatingScore(this, this.player.x, this.player.y, 'SERIE GESCHUETZT', Palette.dailyHex);
+  }
+
+  private updateShieldRing(deltaMs: number): void {
+    const ring = this.shieldRing;
+    if (!ring) return;
+    const ratio = this.scoring.shieldRatio;
+    if (ratio <= 0) {
+      ring.destroy();
+      this.shieldRing = null;
+      return;
+    }
+    this.shieldElapsedMs += deltaMs;
+    const v = SERIES_SHIELD_VISUALS;
+    const blinkOff =
+      ratio < v.blinkBelowRatio &&
+      !prefersReducedMotion() &&
+      Math.floor(this.shieldElapsedMs / v.blinkPeriodMs) % 2 === 1;
+    const radius =
+      this.player.collectRadius * (v.radiusEnd + (v.radiusStart - v.radiusEnd) * ratio);
+    const alpha = blinkOff ? v.alphaMin : v.alphaMin + (v.alphaMax - v.alphaMin) * ratio;
+    ring
+      .clear()
+      .fillStyle(Palette.dailyHex, v.fillAlpha)
+      .fillCircle(this.player.x, this.player.y, radius)
+      .lineStyle(v.lineWidth, Palette.dailyHex, alpha)
+      .strokeCircle(this.player.x, this.player.y, radius);
   }
 
   private endRun(): void {
@@ -1081,6 +1153,7 @@ export class GameScene extends Phaser.Scene {
     ProgressSyncSystem.enqueueRun(stats, progression);
     void ProgressSyncSystem.flush();
     state.totalScore += stats.score;
+    state.carriedCombo = this.scoring.currentCombo;
     state.totalXp += stats.xpGained;
     state.totalCoins += progression.coinsGained;
     this.endlessLastStats = stats;
@@ -1142,7 +1215,7 @@ export class GameScene extends Phaser.Scene {
       .text(
         GAME_WIDTH / 2,
         GAME_HEIGHT / 2 - 120,
-        `Gesamt: ${state.totalScore.toLocaleString('de-DE')} Punkte\n+${this.endlessLastStats!.xpGained.toLocaleString('de-DE')} XP · +${this.endlessLastProgression!.coinsGained} Coins\nNaechste Welt: ${endlessWorld(state.round + 1).name}\nNaechstes Ziel: ${endlessTotalGate(state.round + 1).toLocaleString('de-DE')}`,
+        `Gesamt: ${state.totalScore.toLocaleString('de-DE')} Punkte\n+${this.endlessLastStats!.xpGained.toLocaleString('de-DE')} XP · +${this.endlessLastProgression!.coinsGained} Coins\nNaechste Welt: ${endlessWorld(state.round + 1).name}\nNaechstes Ziel: ${endlessTotalGate(state.round + 1).toLocaleString('de-DE')} · Punkte ×${endlessRewards(state.round + 1).scoreMultiplier}`,
         textStyle(FontSize.small, Palette.ink, { align: 'center' }),
       )
       .setOrigin(0.5)
@@ -1167,6 +1240,7 @@ export class GameScene extends Phaser.Scene {
           totalXp: state.totalXp,
           totalCoins: state.totalCoins,
           rescueUsed: state.rescueUsed,
+          carriedCombo: state.carriedCombo,
           talents: { ...state.talents },
         },
       } satisfies GameSceneData);
@@ -1188,7 +1262,7 @@ export class GameScene extends Phaser.Scene {
         return;
       }
       detail.setText(
-        `+${this.endlessLastStats!.xpGained.toLocaleString('de-DE')} XP · +${this.endlessLastProgression!.coinsGained} Coins\nGesamt: ${state.totalScore.toLocaleString('de-DE')} Punkte\n${endlessWorld(state.round + 1).name}: ${endlessTotalGate(state.round + 1).toLocaleString('de-DE')} Punkte\nTalent waehlen (${remaining} frei)`,
+        `+${this.endlessLastStats!.xpGained.toLocaleString('de-DE')} XP · +${this.endlessLastProgression!.coinsGained} Coins\nGesamt: ${state.totalScore.toLocaleString('de-DE')} Punkte\n${endlessWorld(state.round + 1).name}: ${endlessTotalGate(state.round + 1).toLocaleString('de-DE')} Punkte · ×${endlessRewards(state.round + 1).scoreMultiplier}\nTalent waehlen (${remaining} frei)`,
       );
       const options = Phaser.Utils.Array.Shuffle([...available]).slice(0, ENDLESS_TALENT_CHOICES);
       options.forEach((id, index) => {
