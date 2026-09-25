@@ -216,6 +216,7 @@ isiHunt/
 │   ├── check-deploy.mjs        Liegt der lokale Stand wirklich live? (deploy:check)
 │   ├── smoke-test.mjs          Playwright gegen den Dev-Server (npm run smoke)
 │   ├── playtest.mjs            Sieben Test-Suiten im Browser (npm run playtest)
+│   ├── measure-worlds.mjs      Ertrag je Welt mit Bots messen (npm run balance:worlds)
 │   ├── check-ios-support.mjs   iOS-Mindestversion aus dem Build (npm run ios:check)
 │   ├── check-sql-contract.mjs  SQL-Verträge der Integrity-Migration (sql:check)
 │   ├── sync-balance-sql.mjs    JSON-Balance in die Supabase-Migration spiegeln
@@ -231,6 +232,7 @@ isiHunt/
 │   │   ├── rarities.ts         Seltenheitsstufen
 │   │   ├── audio.ts            Klang je Ereignis: Datei, Lautstaerke, Summenbus
 │   │   ├── worlds.ts           Welten
+│   │   ├── worldStars.ts       Drei Sterne je Welt und Weltauftrag (ADR-0034)
 │   │   ├── talents.ts          Talente + Stat-Aufloesung
 │   │   ├── challenge.ts        Duell: Dauer, Spielernamen, Fairness-Regeln
 │   │   ├── backend.ts          Zugang zum Online-Dienst, Grenzwerte
@@ -1348,6 +1350,7 @@ sich also nicht per URL umgehen.
 | `production-check.mjs`  | nein  | prueft Canvas, Titel, Version — soll den echten Stand sehen |
 | `smoke-test.mjs`        | nein  | prueft nur auf Konsolenfehler                               |
 | `duel2g-playtest.mjs`   | nein  | behandelt `Account` bereits als moeglichen Startbildschirm  |
+| `measure-worlds.mjs`    | ja    | wartet auf `Menu`, bevor es `Game` je Welt startet          |
 
 Das ist die Stelle, an der eine neue Einstiegsbedingung zuerst weh tut: Die
 Unit-Tests bleiben gruen, weil sie `BootScene` gar nicht laden — beim Umbau

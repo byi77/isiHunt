@@ -2,6 +2,7 @@
 
 import { type AchievementDef } from '@/config/achievements';
 import { unlockedWorlds } from '@/config/worlds';
+import { WORLD_GOAL_TEXT, parseWorldStarAchievementId } from '@/config/worldStars';
 import type { SaveData } from '@/types';
 
 export type AchievementCategory =
@@ -73,7 +74,9 @@ export function achievementCategory(achievement: AchievementDef): AchievementCat
   ) {
     return id === 'legendary_3_run' ? 'special' : 'collection';
   }
-  if (id.startsWith('level_') || id.startsWith('world_traveller')) return 'worlds';
+  if (id.startsWith('level_') || id.startsWith('world_traveller') || id.startsWith('star_')) {
+    return 'worlds';
+  }
   if (id.startsWith('playtime_')) return 'playtime';
   if (id.startsWith('talents_')) return 'talents';
   if (id.startsWith('runs_') || id.startsWith('clean_run_') || id === 'first_hunt') {
@@ -196,6 +199,22 @@ function progressFor(
       unit: 'Welten',
       trackable: true,
     };
+  }
+
+  // Sterne haengen an einem einzelnen Run; der Spielstand kennt keinen
+  // Fortschritt dorthin, nur das Ziel.
+  const worldStar = parseWorldStarAchievementId(id);
+  if (worldStar) {
+    const { def, star } = worldStar;
+    if (star === 3) {
+      return {
+        current: 0,
+        target: def.goal.target,
+        unit: WORLD_GOAL_TEXT[def.goal.metric].unit,
+        trackable: false,
+      };
+    }
+    return { current: 0, target: def.scores[star - 1]!, unit: 'Punkte', trackable: false };
   }
 
   if (id.startsWith('playtime_')) {

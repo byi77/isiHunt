@@ -8,6 +8,7 @@
  */
 
 import { WORLD_REWARDS } from './balance';
+import { WORLD_RARE_PROMOTION_CHANCE } from './GameConfig';
 
 export interface WorldDef {
   readonly id: string;
@@ -48,6 +49,14 @@ export interface WorldDef {
   readonly scoreMultiplier: number;
   /** XP wachsen flacher als Punkte, damit das Endgame nicht davonrast. */
   readonly xpMultiplier: number;
+  /**
+   * Chance, ein Relikt um eine Seltenheitsstufe anzuheben - zusaetzlich zum
+   * `rare_bonus`-Modifikator. Hoehere Welten sollen sichtbar bessere Beute
+   * bringen: Ein reiner Prozentaufschlag auf die Wertung glich die geringere
+   * Fangzahl nicht aus, gemessen lieferte Horizonttor 21 % weniger XP je Run
+   * als die Startwelt (Messung vom 2026-09-25).
+   */
+  readonly lootPromotion: number;
 }
 
 export const WORLDS: readonly WorldDef[] = [
@@ -207,6 +216,11 @@ export const DEFAULT_WORLD_ID = WORLDS[0]!.id;
 
 export function getWorld(id: string): WorldDef {
   return WORLDS.find((w) => w.id === id) ?? WORLDS[0]!;
+}
+
+/** Gesamte Aufwertungschance der Welt, wie der Spieler sie erlebt - inklusive `rare_bonus`. */
+export function worldLootPromotion(world: WorldDef): number {
+  return world.lootPromotion + (world.modifier === 'rare_bonus' ? WORLD_RARE_PROMOTION_CHANCE : 0);
 }
 
 export function unlockedWorlds(level: number): readonly WorldDef[] {

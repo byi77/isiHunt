@@ -1,7 +1,13 @@
 import type { RarityId } from '@/config/rarities';
 import type { RunStats } from '@/types';
+import {
+  WORLD_GOAL_TEXT,
+  getWorldStars,
+  worldGoalValue,
+  type WorldGoalMetric,
+} from '@/config/worldStars';
 
-export type WorldGoalMetric = 'collected' | 'rarePlus' | 'epicPlus' | 'combo' | 'score';
+export type { WorldGoalMetric } from '@/config/worldStars';
 
 export interface WorldGoal {
   readonly title: string;
@@ -19,90 +25,42 @@ export interface WorldGoalMetrics {
   readonly score: number;
 }
 
-const WORLD_GOALS: Readonly<Record<string, WorldGoal>> = {
-  silberhain: {
-    title: 'Sternenspur',
-    description: 'Fange 110 Relikte in einer Jagd.',
-    metric: 'collected',
-    target: 110,
-    unit: 'Relikte',
-  },
-  frostzinne: {
-    title: 'Eisbrecher',
-    description: 'Erreiche eine Serie von 16.',
-    metric: 'combo',
-    target: 16,
-    unit: 'Serie',
-  },
-  glutmark: {
-    title: 'Glutfang',
-    description: 'Fange 8 seltene oder bessere Relikte.',
-    metric: 'rarePlus',
-    target: 8,
-    unit: 'seltene Funde',
-  },
-  __LEERENBLÜTE__: {
-    title: 'Rissfinder',
-    description: 'Fange 3 epische oder bessere Relikte.',
-    metric: 'epicPlus',
-    target: 3,
-    unit: 'epische Funde',
-  },
-  sonnenhort: {
-    title: 'Kronenbeute',
-    description: 'Fange 14 seltene oder bessere Relikte.',
-    metric: 'rarePlus',
-    target: 14,
-    unit: 'seltene Funde',
-  },
-  mondschmiede: {
-    title: 'Mondkette',
-    description: 'Erreiche eine Serie von 25.',
-    metric: 'combo',
-    target: 25,
-    unit: 'Serie',
-  },
-  kristallbruch: {
-    title: 'Splitterflug',
-    description: 'Fange 155 Relikte in einer Jagd.',
-    metric: 'collected',
-    target: 155,
-    unit: 'Relikte',
-  },
-  sturmgrenze: {
-    title: 'Sturmleuchten',
-    description: 'Fange 5 epische oder bessere Relikte.',
-    metric: 'epicPlus',
-    target: 5,
-    unit: 'epische Funde',
-  },
-  lichtkern: {
-    title: 'Kernsammler',
-    description: 'Fange 24 seltene oder bessere Relikte.',
-    metric: 'rarePlus',
-    target: 24,
-    unit: 'seltene Funde',
-  },
-  horizonttor: {
-    title: 'Horizontrekord',
-    description: 'Erreiche 20.000 Punkte in einer Jagd.',
-    metric: 'score',
-    target: 20_000,
-    unit: 'Punkte',
-  },
+// Metrik und Ziel stehen in `balance-data.json` (`worldStars`), weil der
+// Weltauftrag zugleich der dritte Stern ist und der Server ihn nachprueft.
+// Hier bleibt nur, was der Spieler liest.
+const WORLD_GOAL_TITLES: Readonly<Record<string, string>> = {
+  silberhain: 'Sternenspur',
+  frostzinne: 'Eisbrecher',
+  glutmark: 'Glutfang',
+  __LEERENBLÜTE__: 'Rissfinder',
+  sonnenhort: 'Kronenbeute',
+  mondschmiede: 'Mondkette',
+  kristallbruch: 'Splitterflug',
+  sturmgrenze: 'Sturmleuchten',
+  lichtkern: 'Kernsammler',
+  horizonttor: 'Horizontrekord',
 };
 
 export function getWorldGoal(worldId: string): WorldGoal {
-  return WORLD_GOALS[worldId] ?? WORLD_GOALS.silberhain!;
+  const stars = getWorldStars(worldId) ?? getWorldStars('silberhain')!;
+  const { metric, target } = stars.goal;
+  const text = WORLD_GOAL_TEXT[metric];
+  return {
+    title: WORLD_GOAL_TITLES[stars.worldId] ?? WORLD_GOAL_TITLES.silberhain!,
+    description: text.describe(target.toLocaleString('de-DE')),
+    metric,
+    target,
+    unit: text.unit,
+  };
 }
 
 export function worldGoalMetrics(stats: RunStats): WorldGoalMetrics {
   return {
-    totalCollected: stats.totalCollected,
-    rarePlus: stats.collected.rare + stats.collected.epic + stats.collected.legendary,
-    epicPlus: stats.collected.epic + stats.collected.legendary,
-    bestCombo: stats.bestCombo,
-    score: stats.score - (stats.bonus?.score ?? 0),
+    totalCollected: worldGoalValue('collected', stats),
+    rarePlus: worldGoalValue('rarePlus', stats),
+    epicPlus: worldGoalValue('epicPlus', stats),
+    bestCombo: worldGoalValue('combo', stats),
+    score: worldGoalValue('score', stats),
   };
 }
 

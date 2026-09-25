@@ -63,16 +63,78 @@
     "maxXpRuns": 2.3
   },
   "worlds": {
-    "silberhain": { "scoreMultiplier": 1, "xpMultiplier": 1 },
-    "frostzinne": { "scoreMultiplier": 1.04, "xpMultiplier": 1.02 },
-    "glutmark": { "scoreMultiplier": 1.08, "xpMultiplier": 1.04 },
-    "__LEERENBLÜTE__": { "scoreMultiplier": 1.12, "xpMultiplier": 1.06 },
-    "sonnenhort": { "scoreMultiplier": 1.16, "xpMultiplier": 1.08 },
-    "mondschmiede": { "scoreMultiplier": 1.2, "xpMultiplier": 1.11 },
-    "kristallbruch": { "scoreMultiplier": 1.26, "xpMultiplier": 1.15 },
-    "sturmgrenze": { "scoreMultiplier": 1.33, "xpMultiplier": 1.19 },
-    "lichtkern": { "scoreMultiplier": 1.39, "xpMultiplier": 1.22 },
-    "horizonttor": { "scoreMultiplier": 1.45, "xpMultiplier": 1.25 }
+    "silberhain": { "scoreMultiplier": 1, "xpMultiplier": 1, "lootPromotion": 0 },
+    "frostzinne": { "scoreMultiplier": 1.25, "xpMultiplier": 1.18, "lootPromotion": 0.06 },
+    "glutmark": { "scoreMultiplier": 1.35, "xpMultiplier": 1.22, "lootPromotion": 0.08 },
+    "__LEERENBLÜTE__": { "scoreMultiplier": 1.4, "xpMultiplier": 1.25, "lootPromotion": 0.12 },
+    "sonnenhort": { "scoreMultiplier": 1.45, "xpMultiplier": 1.26, "lootPromotion": 0.02 },
+    "mondschmiede": { "scoreMultiplier": 1.65, "xpMultiplier": 1.4, "lootPromotion": 0.22 },
+    "kristallbruch": { "scoreMultiplier": 1.85, "xpMultiplier": 1.55, "lootPromotion": 0.25 },
+    "sturmgrenze": { "scoreMultiplier": 1.95, "xpMultiplier": 1.58, "lootPromotion": 0.28 },
+    "lichtkern": { "scoreMultiplier": 2.15, "xpMultiplier": 1.68, "lootPromotion": 0.14 },
+    "horizonttor": { "scoreMultiplier": 2.4, "xpMultiplier": 1.8, "lootPromotion": 0.38 }
+  },
+  "worldStars": {
+    "silberhain": {
+      "slug": "sternenweide",
+      "scores": [8000, 16000],
+      "goal": { "metric": "collected", "target": 110 },
+      "rankOffset": 0
+    },
+    "frostzinne": {
+      "slug": "eisring",
+      "scores": [9000, 18000],
+      "goal": { "metric": "combo", "target": 16 },
+      "rankOffset": 0
+    },
+    "glutmark": {
+      "slug": "glutnebel",
+      "scores": [10000, 20000],
+      "goal": { "metric": "rarePlus", "target": 8 },
+      "rankOffset": 0
+    },
+    "__LEERENBLÜTE__": {
+      "slug": "nullsektor",
+      "scores": [10500, 21000],
+      "goal": { "metric": "epicPlus", "target": 3 },
+      "rankOffset": 1
+    },
+    "sonnenhort": {
+      "slug": "sonnenkrone",
+      "scores": [11000, 22000],
+      "goal": { "metric": "rarePlus", "target": 14 },
+      "rankOffset": 1
+    },
+    "mondschmiede": {
+      "slug": "mondschmiede",
+      "scores": [12000, 23000],
+      "goal": { "metric": "combo", "target": 25 },
+      "rankOffset": 1
+    },
+    "kristallbruch": {
+      "slug": "kristallbruch",
+      "scores": [13000, 26000],
+      "goal": { "metric": "collected", "target": 155 },
+      "rankOffset": 2
+    },
+    "sturmgrenze": {
+      "slug": "sturmgrenze",
+      "scores": [13500, 27000],
+      "goal": { "metric": "epicPlus", "target": 5 },
+      "rankOffset": 2
+    },
+    "lichtkern": {
+      "slug": "lichtkern",
+      "scores": [14000, 28000],
+      "goal": { "metric": "rarePlus", "target": 24 },
+      "rankOffset": 2
+    },
+    "horizonttor": {
+      "slug": "horizonttor",
+      "scores": [15000, 30000],
+      "goal": { "metric": "score", "target": 40000 },
+      "rankOffset": 3
+    }
   },
   "progression": {
     "maxLevel": 100,

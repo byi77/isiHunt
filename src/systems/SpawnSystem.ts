@@ -110,7 +110,7 @@ export class SpawnSystem {
      * vom Bewegungsverlauf des vorherigen Spielers abhängen.
      */
     private readonly synchronizedPositions = false,
-    /** Zusatzchance aus dem Spürsinn-Talent; im Duell bleibt sie 0. */
+    /** Zusatzchance aus Spürsinn-Talent und Weltbeute (`WorldDef.lootPromotion`). */
     private readonly rarityPromotionChance = 0,
   ) {}
 

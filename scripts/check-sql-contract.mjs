@@ -410,9 +410,9 @@ requireText(verification, 'daily_key', 'Live-Verifikation Tagesbonus');
 requireText(verification, 'upsert_save', 'Live-Verifikation Save-CAS');
 requireText(verification, 'duel_rooms', 'Live-Verifikation Duell');
 requireText(migrationVerification, 'schema_version', 'Live-Verifikation Migrationsmarker');
-requireText(migrationVerification, 'schema_version = 70', 'Live-Verifikation Phase 2.70');
+requireText(migrationVerification, 'schema_version = 71', 'Live-Verifikation Phase 2.71');
 const backendConfig = readFileSync(resolve(root, 'src/config/backend.ts'), 'utf8');
-requireText(backendConfig, 'BACKEND_SCHEMA_VERSION = 70', 'Debug-Report Schema-Erwartung');
+requireText(backendConfig, 'BACKEND_SCHEMA_VERSION = 71', 'Debug-Report Schema-Erwartung');
 requireText(rewardCodeCoreMigration, 'reward_codes', 'Reward-Code-Katalog');
 requireText(rewardCodeCoreMigration, 'reward_redemptions', 'Reward-Einloesbelege');
 requireText(rewardCodeCoreMigration, 'reward_code_attempts', 'Reward-Rate-Limits');
@@ -487,6 +487,14 @@ const endlessTotalsMigration = readFileSync(
 );
 requireText(endlessTotalsMigration, 'total_score bigint', 'Endlos-Gesamtpunkte');
 requireText(endlessTotalsMigration, 'schema_version = 70', 'Migrationsmarker Phase 2.70');
+const worldStarsMigration = readFileSync(resolve(sqlDir, 'phase_2_71_world_stars.sql'), 'utf8');
+requireText(worldStarsMigration, 'progress_world_star_is_valid(', 'Sternpruefung Phase 2.71');
+requireText(
+  worldStarsMigration,
+  'or public.progress_world_star_is_valid(',
+  'Sterne im Erfolgsblock von submit_progress_event',
+);
+requireText(worldStarsMigration, 'schema_version = 71', 'Migrationsmarker Phase 2.71');
 const rewardCodePresetMigration = readFileSync(
   resolve(sqlDir, 'phase_2_63_reward_code_preset_grants.sql'),
   'utf8',

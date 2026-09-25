@@ -21,6 +21,18 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   Freischaltung frueher. Die Weltziele geben keinen zusaetzlichen
   Waehrungsbonus und speichern keinen separaten Fortschritt.
 
+### Welten lohnen sich
+
+- Hoehere Welten bringen sichtbar bessere Beute: 6 bis 38 Prozent der Relikte
+  erscheinen eine Seltenheitsstufe hoeher. Punkte- und XP-Bonus steigen bis
+  +140 bzw. +80 Prozent - vorher zahlte das Horizonttor gemessen weniger als
+  die Sternenweide.
+- Jede Welt vergibt drei Sterne: zwei Punkteschwellen und den Weltauftrag.
+  Sterne sind Erfolge mit Coin-Praemie, werden vom Server geprueft und
+  erscheinen in Menue, Weltinfo, Sammlung und Erfolgsliste.
+- Der Weltauftrag im Horizonttor steigt auf 40.000 Punkte.
+- `npm run balance:worlds` misst den Ertrag je Welt mit Bots.
+
 ### Rangliste
 
 - Jagd und Endlos synchronisieren offene Laufbelege vor dem Laden der

@@ -1772,3 +1772,53 @@ die beste einzelne Serie. Ihr `score` ist die Summe der Rundenpunkte derselben
 Serienkennung und entspricht dem Endergebnis einschliesslich der waehrend der
 Serie vergebenen Punkteboni. Das RPC-Feld `total_score` bleibt in Phase 2.70
 verfuegbar, wird aber nicht an die Ranglistenansicht uebergeben.
+
+## ADR-0034 — Hoehere Welten zahlen ueber Beute, Faktoren und Sterne
+
+**Datum:** 2026-09-25
+
+### Befund
+
+Die Frage „warum sollte man eine schwerere Welt spielen?“ liess sich aus dem
+Spiel heraus nicht beantworten. Eine Messung mit der echten `GameScene` im
+Simulationstakt (drei Bot-Profile, ohne Talente, 297 Runs) zeigte, dass sie
+im Gegenteil schadete: Horizonttor brachte 66 bis 85 Prozent der XP eines
+Sternenweide-Runs, trotz +25 Prozent XP-Bonus. Kuerzere Fenster und
+Hindernisse kosteten rund 20 Prozent der Faenge. Die einzige Welt ueber der
+Startwelt war die Sonnenkrone mit doppelter Chance auf seltene Relikte.
+
+### Entscheidung
+
+1. **Bessere Beute.** Jede Welt ab Eisring wertet einen Teil der Relikte um
+   eine Seltenheitsstufe auf (`worlds.<id>.lootPromotion`, 6 bis 38 Prozent).
+   Der Wurf lief schon vorher fuer jedes Relikt (Spuersinn, Duell-Seed); die
+   Zufallsfolge bleibt dadurch unveraendert.
+2. **Faktoren, die den Fangverlust ueberkompensieren.** XP bis +80, Punkte bis
+   +140 Prozent. Nachgemessen: Horizonttor 141 bis 154 Prozent XP.
+3. **Drei Sterne je Welt**, gebucht als Erfolge `star_<welt>_<n>`: zwei
+   Punkteschwellen und der Weltauftrag. Die Zahlen stehen in
+   `balance-data.json` (`worldStars`), der Server liest sie aus
+   `balance_config()` und prueft sie in `progress_world_star_is_valid`
+   (Phase 2.71).
+
+### Verworfene Alternativen
+
+- **Nur die Faktoren anheben.** Behebt die Rechnung, aber die Welten blieben
+  inhaltlich gleich - nur schwerer, mit groesserer Zahl. Genau diese
+  unsichtbaren Prozente waren die Diagnose.
+- **Sterne nur lokal speichern.** Kein Server-Umbau, aber ein
+  Profilabgleich ersetzt den lokalen Stand; Sterne waeren nicht
+  geraeteuebergreifend und ohne Belohnung gewesen.
+- **Eigene Sternpruefung per Achievement-Signatur.**
+  `progress_achievement_is_valid` kennt weder Welt noch Punkte noch Serie des
+  Runs. Statt ihre Signatur zu aendern (auch `submit_endless_round` ruft sie
+  auf), kommt eine zweite Funktion hinzu, die nur `submit_progress_event`
+  aufruft.
+
+### Folgen
+
+- Endlos nutzt dieselben Weltfaktoren; die Gates werden ab Runde 3 leichter.
+- Die Messung beruht auf Bots, die keinen Hindernissen ausweichen und
+  blinkende Relikte weiter sehen. Fuer echte Spieler ist nichts gemessen.
+- `npm run balance:worlds` misst jede weitere Welt-Aenderung gegen eine
+  eingefrorene Kopie des Projekts.

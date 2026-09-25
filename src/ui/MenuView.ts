@@ -5,6 +5,7 @@ import { GAME_WIDTH } from '@/config/GameConfig';
 import { getShipShape, shipAuraAssetId, shipAuraIndex, shipTint } from '@/config/shop';
 import { WORLDS } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
+import { worldStarCount, worldStarLabel } from '@/config/worldStars';
 import { isIos, isStandalone } from '@/core/display';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import type { SaveData } from '@/types';
@@ -517,7 +518,7 @@ export class MenuView {
       worldTitleY,
       innerWidth,
       44 * unit,
-      `${this.world.name}  ⓘ`,
+      `${this.world.name}  ${worldStarLabel(worldStarCount(this.save.unlockedAchievements, this.world.id))}  ⓘ`,
       () => this.callbacks.onAction('info'),
       this.layout.compact ? 20 : 24,
       false,

@@ -1,6 +1,6 @@
 {
   "name": "isihunt",
-  "version": "0.1.390",
+  "version": "0.1.391",
   "private": true,
   "type": "module",
   "description": "isiHunt - ein farbenfroher 2D-Arcade-Collector fuer mobile Browser",
@@ -30,6 +30,7 @@
     "balance:sync": "node scripts/sync-balance-sql.mjs",
     "balance:check": "node scripts/sync-balance-sql.mjs --check",
     "balance:report": "node --experimental-strip-types scripts/balance-report.mjs",
+    "balance:worlds": "node scripts/measure-worlds.mjs",
     "balance:inventory": "node scripts/check-balance-inventory.mjs",
     "scene:guards": "node scripts/check-scene-await-guards.mjs",
     "save:version": "node scripts/check-save-version.mjs",

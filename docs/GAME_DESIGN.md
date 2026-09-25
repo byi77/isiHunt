@@ -472,18 +472,45 @@ Seit Phase 3 sind die Raumzonen sichtbar umbenannt: Sternenweide, Eisring,
 Glutnebel, Nullsektor und Sonnenkrone. Die Welt-IDs bleiben fuer bestehende
 Spielstaende stabil.
 
-| Welt          | Ab Level | Herausforderung                        | Schwierigkeit | Punkte-Bonus | XP-Bonus |
-| ------------- | -------- | -------------------------------------- | ------------- | ------------ | -------- |
-| Sternenweide  | 1        | keine - die Lernzone                   | 1,00          | +0 %         | +0 %     |
-| Eisring       | 3        | Trägheit, bremsende Hindernisse        | 1,03          | +4 %         | +2 %     |
-| Glutnebel     | 6        | kürzere Fenster, bremsende Hindernisse | 1,06          | +8 %         | +4 %     |
-| Nullsektor    | 10       | Blinkeffekt, Zeitverlust-Hindernisse   | 1,09          | +12 %        | +6 %     |
-| Sonnenkrone   | 15       | seltene Planeten, Zeitverlust          | 1,12          | +16 %        | +8 %     |
-| Mondschmiede  | 22       | stärkere Trägheit, Zeitverlust         | 1,16          | +20 %        | +11 %    |
-| Kristallbruch | 30       | kurze Fenster, viele Hindernisse       | 1,28          | +26 %        | +15 %    |
-| Sturmgrenze   | 40       | Blinken, Trägheit, harte Hindernisse   | 1,42          | +33 %        | +19 %    |
-| Lichtkern     | 55       | seltene Planeten, viele Hindernisse    | 1,56          | +39 %        | +22 %    |
-| Horizonttor   | 75       | kürzeste Fenster, höchste Dichte       | 1,70          | +45 %        | +25 %    |
+| Welt          | Ab Level | Herausforderung                        | Schwierigkeit | Punkte-Bonus | XP-Bonus | Beute\* |
+| ------------- | -------- | -------------------------------------- | ------------- | ------------ | -------- | ------- |
+| Sternenweide  | 1        | keine - die Lernzone                   | 1,00          | +0 %         | +0 %     | 0 %     |
+| Eisring       | 3        | Trägheit, bremsende Hindernisse        | 1,03          | +25 %        | +18 %    | 6 %     |
+| Glutnebel     | 6        | kürzere Fenster, bremsende Hindernisse | 1,06          | +35 %        | +22 %    | 8 %     |
+| Nullsektor    | 10       | Blinkeffekt, Zeitverlust-Hindernisse   | 1,09          | +40 %        | +25 %    | 12 %    |
+| Sonnenkrone   | 15       | seltene Planeten, Zeitverlust          | 1,12          | +45 %        | +26 %    | 20 %    |
+| Mondschmiede  | 22       | stärkere Trägheit, Zeitverlust         | 1,16          | +65 %        | +40 %    | 22 %    |
+| Kristallbruch | 30       | kurze Fenster, viele Hindernisse       | 1,28          | +85 %        | +55 %    | 25 %    |
+| Sturmgrenze   | 40       | Blinken, Trägheit, harte Hindernisse   | 1,42          | +95 %        | +58 %    | 28 %    |
+| Lichtkern     | 55       | seltene Planeten, viele Hindernisse    | 1,56          | +115 %       | +68 %    | 32 %    |
+| Horizonttor   | 75       | kürzeste Fenster, höchste Dichte       | 1,70          | +140 %       | +80 %    | 38 %    |
+
+\* Anteil der Relikte, die um eine Seltenheitsstufe aufgewertet werden
+(`lootPromotion`), bei Sonnenkrone und Lichtkern einschließlich der 18 % ihres
+Modifikators `rare_bonus`. Aus Grau wird Weiß, aus Episch Legendär; Legendär
+bleibt Legendär.
+
+**Warum die Welten so viel mehr zahlen (2026-09-25).** Bis dahin lag der
+XP-Bonus bei höchstens +25 %. Eine Messung mit der echten Spielszene
+(`npm run balance:worlds`: drei Bot-Profile, ohne Talente, 297 Runs) ergab,
+dass höhere Welten _weniger_ einbrachten als die Startwelt: Horizonttor lieferte
+66 bis 85 % der XP und 52 bis 84 % der Punkte eines Sternenweide-Runs. Kürzere
+Fenster und Hindernisse kosteten rund 20 % der Fänge, der Prozentaufschlag
+glich das nicht aus. Wer nach Ertrag spielte, blieb in der Lernzone. Einzige
+Ausnahme war die Sonnenkrone - die einzige Welt, deren Belohnung aus
+_besserer Beute_ bestand statt aus einem Aufschlag.
+
+Daraus folgen zwei Hebel: sichtbar bessere Beute je Welt und Faktoren, die den
+Fangverlust tatsächlich überkompensieren. Nachgemessen (8 Runs je Welt und
+Bot) liefert Horizonttor jetzt 141 bis 154 % der XP und 149 bis 207 % der
+Punkte. Die Kurve steigt insgesamt, Nullsektor und Sonnenkrone liegen noch
+leicht darunter - bei einem Standardfehler von 5 bis 8 % nicht von Rauschen zu
+unterscheiden. Die Bots weichen keinen Hindernissen aus und sehen blinkende
+Relikte weiter; für echte Spieler sind die Werte **nicht gemessen**.
+
+Die Faktoren gelten auch in Endlos, das dieselben Welten durchläuft. Die
+Endlos-Gates werden dadurch ab Runde 3 leichter; sie waren ohnehin noch nicht
+mit echten Spielern ausbalanciert (Abschnitt 4.2).
 
 Die Spalte **Schwierigkeit** (`difficultyScale`) wirkt an zwei Stellen: Sie
 skaliert die Hindernis-Wahrscheinlichkeit und kürzt das Sichtfenster jedes
@@ -510,11 +537,9 @@ Schwierigkeit. Die groessere Varianz aus M3 (eigene Weltregeln je Zone) steht
 weiterhin aus.
 
 Jede Welt hat zusaetzlich einen **Weltauftrag pro Jagd**. Er ist vorab in der
-Sammlung und in der Weltinfo sichtbar, waehrend des Runs als Fortschritt im HUD
-und danach mit dem erreichten Stand auf dem Ergebnisbildschirm. Der Auftrag
-ist ein freiwilliges Meisterschaftsziel; normale Run-Belohnungen und
-Weltenboni bleiben davon unabhaengig. Es gibt dafuer keine neue Waehrung und
-keine versteckte Progression.
+Weltinfo sichtbar, waehrend des Runs als Fortschritt im HUD und danach mit dem
+erreichten Stand auf dem Ergebnisbildschirm. Seit 2026-09-25 ist er zugleich
+der dritte Stern der Welt (Abschnitt 7.3a).
 
 | Welt          | Weltauftrag                           |
 | ------------- | ------------------------------------- |
@@ -527,19 +552,71 @@ keine versteckte Progression.
 | Kristallbruch | 155 Relikte in einer Jagd fangen      |
 | Sturmgrenze   | 5 epische oder bessere Relikte fangen |
 | Lichtkern     | 24 seltene oder bessere Relikte fangen|
-| Horizonttor   | 20.000 Punkte in einer Jagd erreichen |
+| Horizonttor   | 40.000 Punkte in einer Jagd erreichen |
 
-Die Auftraege verwenden nur Runwerte, die ohnehin berechnet werden. Der
-aktuelle Auftrag wird nicht dauerhaft gespeichert: Er setzt einen klaren
-Fokus fuer die naechste Jagd, waehrend Rekorde, Erfolge und Sammlung den
-Langzeitfortschritt tragen. Schwellen sind erste Designwerte und muessen mit
-echten Spielern auf Erreichbarkeit geprueft werden.
+Die Auftraege verwenden nur Runwerte, die ohnehin berechnet werden; Punkte
+zaehlen ohne Abschlusspraemie. Horizonttor stand bis 2026-09-25 auf 20.000 -
+mit dem neuen Punktefaktor von 2,4 waere das weit unter dem zweiten Stern
+gelegen. Die uebrigen Schwellen sind erste Designwerte und muessen mit echten
+Spielern auf Erreichbarkeit geprueft werden. **Offener Befund:** Die Bots
+fingen je Run rund 35 seltene oder bessere Relikte; die Auftraege fuer
+Glutnebel (8), Sonnenkrone (14) und Lichtkern (24) sind damit vermutlich zu
+leicht. Ob das auch fuer Menschen gilt, ist nicht gemessen.
+
+Quelle: `src/config/balance-data.json` unter `worldStars` (Metrik und Ziel),
+Texte in `src/systems/WorldGoalSystem.ts`.
+
+### 7.3a Sterne je Welt
+
+Jede Welt vergibt drei Sterne:
+
+| Stern | Bedingung                             |
+| ----- | ------------------------------------- |
+| ★     | erste Punkteschwelle in einer Jagd    |
+| ★★    | zweite Punkteschwelle in einer Jagd   |
+| ★★★   | Weltauftrag erfuellt                  |
+
+| Welt          | ★      | ★★     | Rang-Aufschlag |
+| ------------- | ------ | ------ | -------------- |
+| Sternenweide  | 8.000  | 16.000 | 0              |
+| Eisring       | 9.000  | 18.000 | 0              |
+| Glutnebel     | 10.000 | 20.000 | 0              |
+| Nullsektor    | 10.500 | 21.000 | 1              |
+| Sonnenkrone   | 11.000 | 22.000 | 1              |
+| Mondschmiede  | 12.000 | 23.000 | 1              |
+| Kristallbruch | 13.000 | 26.000 | 2              |
+| Sturmgrenze   | 13.500 | 27.000 | 2              |
+| Lichtkern     | 14.000 | 28.000 | 2              |
+| Horizonttor   | 15.000 | 30.000 | 3              |
+
+**Warum Sterne.** Die Frage „warum eine schwerere Welt spielen?“ hatte bis
+dahin keine gute Antwort, und fuer eine schon gespielte Welt gab es keinen
+Grund zur Rueckkehr. Sterne beantworten beides mit einem erprobten Muster:
+Leere Sterne in alten Welten ziehen zurueck, leere Sterne in neuen Welten
+ziehen nach vorn. Die Sammlung zaehlt sie zusammen („3 von 30 ★“).
+
+**Warum als Erfolge.** Jeder Stern ist ein Erfolg `star_<welt>_<1..3>` mit
+einmaliger Coin-Praemie. Damit gehen Sterne denselben Weg wie jeder Erfolg:
+Der Server prueft und bucht sie, der Profilabgleich traegt sie auf alle
+Geraete. Rang = Stern + Rang-Aufschlag der Welt, damit ein Stern im Horizonttor
+mehr zahlt als einer in der Sternenweide.
+
+**Wie die Schwellen entstanden.** ★★ liegt bei rund 90 % eines guten
+Bot-Runs der jeweiligen Welt, ★ bei rund 45 %. Gemessen ist das nur an Bots;
+wie schwer ★★ fuer echte Spieler ist, ist **nicht bekannt**.
+
+Endlos-Runden vergeben keine Sterne: Sie dauern 30 statt 90 Sekunden und
+laufen serverseitig ueber `submit_endless_round`.
+
+Quelle: `src/config/balance-data.json` (`worldStars`), `src/config/worldStars.ts`,
+serverseitig `supabase/phase_2_71_world_stars.sql`.
 
 ### 7.4 Erfolge
 
-62 Erfolge in mehreren Gruppen: erste Male, Combo-Schwellen, Tagesläufe,
+92 Erfolge in mehreren Gruppen: erste Male, Combo-Schwellen, Tagesläufe,
 Rarität-Sammelmengen je Stufe, Punktschwellen, Level, Gesamtsammelmenge,
-Run-Sammelmenge, Run-Anzahl, Spielzeit, Talentränge und Weltenfreischaltung.
+Run-Sammelmenge, Run-Anzahl, Spielzeit, Talentränge, Weltenfreischaltung und
+seit 2026-09-25 die 30 Welt-Sterne (Abschnitt 7.3a).
 Sie werden nach jedem Run geprueft und wirken rueckwirkend — wer die
 Bedingung schon erfuellt hat, bekommt sie beim naechsten Run.
 

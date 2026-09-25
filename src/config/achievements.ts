@@ -2,6 +2,14 @@
 
 import type { RunStats, SaveData } from '@/types';
 import { achievementCoinReward } from '@/config/balance';
+import { WORLDS } from '@/config/worlds';
+import {
+  WORLD_GOAL_TEXT,
+  WORLD_STARS,
+  earnsWorldStar,
+  worldStarAchievementId,
+  type WorldStarDef,
+} from '@/config/worldStars';
 
 export interface AchievementDef {
   readonly id: string;
@@ -37,6 +45,33 @@ const totalRelics = (save: SaveData): number =>
 
 const totalTalentRanks = (save: SaveData): number =>
   Object.values(save.talents).reduce((sum, rank) => sum + rank, 0);
+
+/**
+ * Die drei Sterne einer Welt als Erfolge.
+ *
+ * Der Rang steigt mit Stern und Welt (`rankOffset`), damit spaete Welten auch
+ * bei der Einmalpraemie mehr zahlen - sonst waere der Stern in der
+ * Sternenweide genauso viel wert wie der im Horizonttor.
+ */
+function worldStarAchievements(def: WorldStarDef): AchievementDef[] {
+  const worldName = WORLDS.find((w) => w.id === def.worldId)?.name ?? def.worldId;
+  const format = (n: number): string => n.toLocaleString('de-DE');
+  const descriptions = [
+    `${worldName}: Erreiche ${format(def.scores[0])} Punkte in einer Jagd.`,
+    `${worldName}: Erreiche ${format(def.scores[1])} Punkte in einer Jagd.`,
+    `${worldName}: ${WORLD_GOAL_TEXT[def.goal.metric].describe(format(def.goal.target))}`,
+  ];
+  return descriptions.map((description, index) => {
+    const star = index + 1;
+    return achievement(
+      worldStarAchievementId(def, star),
+      `${worldName} ${'★'.repeat(star)}`,
+      description,
+      star + def.rankOffset,
+      (_save, run) => earnsWorldStar(def, star, run),
+    );
+  });
+}
 
 export const ACHIEVEMENTS: readonly AchievementDef[] = [
   achievement(
@@ -449,6 +484,8 @@ export const ACHIEVEMENTS: readonly AchievementDef[] = [
     4,
     (save) => save.level >= 75,
   ),
+
+  ...WORLD_STARS.flatMap((def) => worldStarAchievements(def)),
 ];
 
 export const ACHIEVEMENT_BY_ID: Readonly<Record<string, AchievementDef>> = Object.fromEntries(

@@ -14,7 +14,7 @@
 import Phaser from 'phaser';
 
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
-import { getWorld } from '@/config/worlds';
+import { getWorld, worldLootPromotion } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as AuthSystem from '@/systems/AuthSystem';
@@ -24,6 +24,7 @@ import * as BoostedRunSession from '@/systems/BoostedRunSession';
 import * as ProgressSyncSystem from '@/systems/ProgressSyncSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { getWorldGoal } from '@/systems/WorldGoalSystem';
+import { getWorldStars, worldStarCount, worldStarLabel } from '@/config/worldStars';
 import * as SaveSystem from '@/systems/SaveSystem';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import { enterScene, transitionTo } from '@/ui/sceneTransition';
@@ -66,7 +67,9 @@ function describeBonus(world: WorldDef): string {
   const scorePercent = Math.round((world.scoreMultiplier - 1) * 100);
   const xpPercent = Math.round((world.xpMultiplier - 1) * 100);
   if (scorePercent === 0 && xpPercent === 0) return 'Keine zusaetzliche Belohnung - die Lernzone.';
-  return `+${scorePercent}% Punkte und +${xpPercent}% Erfahrung gegenueber der ersten Welt.`;
+  const lootPercent = Math.round(worldLootPromotion(world) * 100);
+  const loot = lootPercent > 0 ? ` ${lootPercent}% der Relikte eine Stufe seltener.` : '';
+  return `+${scorePercent}% Punkte, +${xpPercent}% Erfahrung.${loot}`;
 }
 
 export class WorldInfoScene extends Phaser.Scene {
@@ -135,13 +138,20 @@ export class WorldInfoScene extends Phaser.Scene {
         describeBonus(world),
       );
       const goal = getWorldGoal(world.id);
+      const stars = getWorldStars(world.id);
+      const starCount = worldStarCount(save.unlockedAchievements, world.id);
+      // Zwei Zeilen Text brauchen mehr Hoehe als die einzeilige Weltziel-Karte
+      // davor - bei 96 px lief der Text in den Titel.
+      const starCardHeight = 130;
       this.buildInfoCard(
-        sections.next(96),
+        sections.next(starCardHeight),
         cardWidth,
-        96,
+        starCardHeight,
         world.accent,
-        `WELTZIEL · ${goal.title.toUpperCase()}`,
-        goal.description,
+        `STERNE ${worldStarLabel(starCount)} · ${goal.title.toUpperCase()}`,
+        stars
+          ? `★ ${stars.scores[0].toLocaleString('de-DE')} · ★★ ${stars.scores[1].toLocaleString('de-DE')} Punkte\n★★★ ${goal.description}`
+          : goal.description,
       );
     }
 

@@ -389,7 +389,9 @@ export class GameScene extends Phaser.Scene {
       this.world.difficultyScale *
         (this.endlessState ? endlessDifficultyScale(this.endlessState.round) : 1),
       Boolean(challenge),
-      this.stats.rarityPromotionChance,
+      // Die Weltbeute gilt auch im Duell: Alle Teilnehmer spielen dieselbe
+      // Welt, und der Aufwertungswurf wird ohnehin immer gezogen.
+      this.stats.rarityPromotionChance + this.world.lootPromotion,
     );
 
     // HUD als eigene Scene parallel starten - siehe Kommentar in EventBus.ts.

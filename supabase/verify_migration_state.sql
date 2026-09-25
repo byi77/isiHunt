@@ -1,14 +1,14 @@
 -- Read-only Nachweis fuer den produktiven Migrationsstand.
--- Erwartet genau eine Zeile mit schema_version = 70.
+-- Erwartet genau eine Zeile mit schema_version = 71.
 
 do $$
 begin
   if not exists (
     select 1
     from public.isihunt_schema_state
-    where singleton = true and schema_version = 70
+    where singleton = true and schema_version = 71
   ) then
-    raise exception 'Erwartet schema_version = 70';
+    raise exception 'Erwartet schema_version = 71';
   end if;
 end;
 $$;

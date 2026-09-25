@@ -5,7 +5,7 @@ import Phaser from 'phaser';
 import { GAME_WIDTH } from '@/config/GameConfig';
 import { RARITIES } from '@/config/rarities';
 import { WORLDS, getWorld } from '@/config/worlds';
-import { getWorldGoal } from '@/systems/WorldGoalSystem';
+import { STARS_PER_WORLD, worldStarCount, worldStarLabel } from '@/config/worldStars';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
@@ -49,7 +49,10 @@ export class CollectionScene extends Phaser.Scene {
         ? `${Object.values(save.collected)
             .reduce((sum, count) => sum + count, 0)
             .toLocaleString('de-DE')} Relikte gesammelt`
-        : `${WORLDS.filter((entry) => entry.unlockLevel <= save.level).length} von ${WORLDS.length} Welten freigeschaltet`;
+        : `${WORLDS.filter((entry) => entry.unlockLevel <= save.level).length} von ${WORLDS.length} Welten · ${WORLDS.reduce(
+            (sum, entry) => sum + worldStarCount(save.unlockedAchievements, entry.id),
+            0,
+          )} von ${WORLDS.length * STARS_PER_WORLD} ★`;
     this.add
       .text(GAME_WIDTH / 2, 177, summary, textStyle(FontSize.small, Palette.inkDim))
       .setOrigin(0.5);
@@ -108,6 +111,16 @@ export class CollectionScene extends Phaser.Scene {
           .setTint(unlocked ? 0xffffff : 0x26333a);
         this.add
           .text(
+            x - 88,
+            y + 56,
+            worldStarLabel(worldStarCount(save.unlockedAchievements, entry.id)),
+            textStyle(FontSize.tiny, unlocked ? toCss(entry.accent) : Palette.inkDim, {
+              fontStyle: 'bold',
+            }),
+          )
+          .setOrigin(0.5);
+        this.add
+          .text(
             x - 40,
             y - 48,
             entry.name,
@@ -121,21 +134,11 @@ export class CollectionScene extends Phaser.Scene {
           .text(
             x - 40,
             y - 19,
-            unlocked
-              ? entry.plannedModifier
-              : `Ab Level ${entry.unlockLevel} · ${entry.plannedModifier}`,
+            // Gesperrte Welten zeigen nur die Schwelle: Der Modifikatortext
+            // bricht dort auf vier Zeilen um und laeuft in die Belohnung.
+            // Der Weltauftrag steht als dritter Stern in der Weltinfo.
+            unlocked ? entry.plannedModifier : `Ab Level ${entry.unlockLevel}`,
             textStyle(FontSize.tiny, Palette.inkDim),
-          )
-          .setOrigin(0, 0)
-          .setWordWrapWidth(178)
-          .setLineSpacing(1);
-        const worldGoal = getWorldGoal(entry.id);
-        this.add
-          .text(
-            x - 40,
-            y + 17,
-            `${worldGoal.title}: ${worldGoal.description}`,
-            textStyle(FontSize.tiny, unlocked ? Palette.ink : Palette.inkDim),
           )
           .setOrigin(0, 0)
           .setWordWrapWidth(178)
@@ -145,16 +148,16 @@ export class CollectionScene extends Phaser.Scene {
         this.add
           .text(
             x - 40,
-            y + 68,
+            y + 46,
             scoreBonus === 0 && xpBonus === 0
               ? 'Basisbelohnung'
-              : `+${scoreBonus}% Punkte · +${xpBonus}% XP`,
+              : `+${scoreBonus}% Punkte\n+${xpBonus}% XP`,
             textStyle(FontSize.tiny, unlocked ? toCss(entry.accent) : Palette.inkDim, {
               fontStyle: 'bold',
             }),
           )
-          .setOrigin(0, 0.5)
-          .setWordWrapWidth(178);
+          .setOrigin(0, 0)
+          .setLineSpacing(1);
       });
     }
   }
