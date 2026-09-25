@@ -70,6 +70,8 @@ export interface GameEventPayloads {
     speedFactor: number;
     /** Einmalige Rettung ab Serie 6 ist in diesem Run noch verfuegbar. */
     rescueReady?: boolean;
+    /** Weisse Faenge auf dem Weg zur naechsten Stufe; das HUD zeigt sie als Nachkomma. */
+    holdProgress?: number;
   };
   /**
    * Der Rest des Serienfensters, jeden Frame.

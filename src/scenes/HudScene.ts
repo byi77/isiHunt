@@ -21,6 +21,7 @@ import { FontSize, Palette, textStyle } from '@/ui/theme';
 import { calculateHudLayout } from '@/ui/hudLayout';
 import { enterScene } from '@/ui/sceneTransition';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
+import { seriesDisplayValue } from '@/systems/ScoreSystem';
 import {
   worldGoalProgress,
   worldGoalProgressFromRarity,
@@ -112,6 +113,17 @@ export interface HudSceneData {
   endlessRound?: number;
   endlessGate?: number;
   endlessScoreOffset?: number;
+  /**
+   * Endlos: die aus der Vorrunde mitgenommene Serie. Steht schon im
+   * Countdown oben, statt erst mit dem Rundenstart nachzukommen.
+   */
+  carriedSeries?: {
+    combo: number;
+    multiplier: number;
+    speedFactor: number;
+    rescueReady: boolean;
+    holdProgress: number;
+  };
   /** Im Duell: wer gerade spielt. Sonst null. */
   playerLabel?: string | null;
   /** Im Duell ab Durchgang zwei: die Vorlage des Gegners. Sonst null. */
@@ -156,6 +168,8 @@ export class HudScene extends Phaser.Scene {
   private comboWindowBar!: BarHandle;
   /** Der Balken zeigt gerade den Endlos-Serienschutz statt des Fensters. */
   private shieldShown = false;
+  /** Weisse Faenge seit der letzten Serienstufe, fuer die Nachkommastelle. */
+  private holdProgress = 0;
   /** Warnt die Serienzeile gerade? Verhindert ein Tween je Frame. */
   private comboWarning = false;
   /** Schon gefeiert? Der Jackpot-Moment gehoert einmal je Serie. */
@@ -241,6 +255,7 @@ export class HudScene extends Phaser.Scene {
     this.lastCritBurstAt = Number.NEGATIVE_INFINITY;
     this.comboWarning = false;
     this.shieldShown = false;
+    this.holdProgress = 0;
     this.jackpotCelebrated = false;
     this.xpTotal = 0;
     this.pauseOverlay = [];
@@ -477,6 +492,12 @@ export class HudScene extends Phaser.Scene {
 
     this.registerEvents();
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => this.unregisterEvents());
+
+    if (data.carriedSeries && data.carriedSeries.combo > 0) {
+      this.onCombo(data.carriedSeries);
+      // Der Schutz beginnt erst nach dem Countdown und steht bis dahin voll.
+      this.onComboWindow({ ratio: 1, combo: data.carriedSeries.combo, shieldRatio: 1 });
+    }
   }
 
   // --- Pause ----------------------------------------------------------------
@@ -722,17 +743,33 @@ export class HudScene extends Phaser.Scene {
     );
     content.add(resume.container);
     y += 56 * u;
+    // Im Endlosmodus kostet ein Fehltipp hier die ganze Serie. Der erste Tipp
+    // fragt deshalb nur nach, erst der zweite bricht ab.
+    let quitArmed = this.mode !== 'endless';
     const quit = createButton(
       this,
       0,
       y + 22 * u,
       this.mode === 'challenge' ? 'DUELL ABBRECHEN' : 'RUN VERLASSEN',
-      () => eventBus.emitEvent(GameEvent.AbortRequested, undefined),
+      () => {
+        if (!quitArmed) {
+          quitArmed = true;
+          quit.setLabel('WIRKLICH VERLASSEN?');
+          return;
+        }
+        eventBus.emitEvent(GameEvent.AbortRequested, undefined);
+      },
       { width, height: 44 * u, fontSize: this.layout.font(12) },
     );
     content.add(quit.container);
     y += 58 * u;
-    paragraph('Ein abgebrochener Run wird nicht gewertet.', 10, Palette.danger);
+    paragraph(
+      this.mode === 'endless'
+        ? 'Die Serie endet, diese Runde wird nicht gewertet.'
+        : 'Ein abgebrochener Run wird nicht gewertet.',
+      10,
+      Palette.danger,
+    );
     content.y = (GAME_HEIGHT - y) / 2;
     const panel = createPanel(
       this,
@@ -932,7 +969,7 @@ export class HudScene extends Phaser.Scene {
       this.comboWindowBar.setRatio(shieldRatio);
       this.comboWindowBar.container.setAlpha(1);
       this.comboWindowBar.setTint(Palette.dailyHex);
-      this.comboText.setText(`SERIE ${Math.max(0, combo)} · SCHUTZ`);
+      this.comboText.setText(`${this.seriesLabel(combo)} · SCHUTZ`);
       this.comboText.setColor(Palette.daily);
       this.fit(this.comboText, this.layout.columnWidth);
       return;
@@ -941,7 +978,7 @@ export class HudScene extends Phaser.Scene {
       this.shieldShown = false;
       this.comboWarning = false;
       this.comboWindowBar.setTint(this.accent);
-      this.comboText.setText(`SERIE ${Math.max(0, combo)}`);
+      this.comboText.setText(this.seriesLabel(combo));
       this.comboText.setColor(Palette.inkDim);
       this.fit(this.comboText, this.layout.columnWidth);
     }
@@ -992,17 +1029,27 @@ export class HudScene extends Phaser.Scene {
     });
   }
 
+  /** "SERIE 12,4" - weisse Teilstufen als Nachkomma, damit jeder Fang sichtbar zaehlt. */
+  private seriesLabel(combo: number): string {
+    const value = seriesDisplayValue(Math.max(0, combo), this.holdProgress);
+    return `SERIE ${value.toLocaleString('de-DE', { maximumFractionDigits: 1 })}`;
+  }
+
   private readonly onCombo = ({
     combo,
     multiplier,
     speedFactor,
     rescueReady,
+    holdProgress = 0,
   }: {
     combo: number;
     multiplier: number;
     speedFactor: number;
     rescueReady?: boolean;
+    holdProgress?: number;
   }): void => {
+    const holdAdvanced = holdProgress !== this.holdProgress;
+    this.holdProgress = holdProgress;
     if (this.worldGoal?.metric === 'combo') {
       this.worldGoalMetrics = {
         ...this.worldGoalMetrics,
@@ -1010,7 +1057,8 @@ export class HudScene extends Phaser.Scene {
       };
       this.updateWorldGoal();
     }
-    this.comboText.setText(`SERIE ${Math.max(0, combo)}${rescueReady ? ' ★' : ''}`);
+    this.comboText.setText(`${this.seriesLabel(combo)}${rescueReady ? ' ★' : ''}`);
+    if (holdAdvanced && holdProgress > 0) this.emphasize(this.comboText);
     this.multiplierText.setText(
       `×${multiplier.toLocaleString('de-DE', { maximumFractionDigits: 2 })}`,
     );

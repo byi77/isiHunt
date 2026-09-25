@@ -250,6 +250,13 @@ export const WORLD_LIFETIME_SCALE_PER_DIFFICULTY = 0.35;
  */
 export const COMBO_GRACE_MS = 900;
 export const SERIES_RESCUE_MIN_COMBO = 6;
+/**
+ * Weisse und graue Faenge steigern die Serie in Fuenfteln: fuenf davon sind
+ * eine Stufe. Ein farbiges Relikt bleibt fuenfmal so viel wert - die Wahl
+ * "farbig holen statt weiss nehmen" bleibt bestehen, aber kein Fang ist mehr
+ * wertlos fuer die Serie. Das HUD zeigt jeden Schritt als +0,2.
+ */
+export const SERIES_HOLD_CATCHES_PER_STEP = 5;
 export const SERIES_RESCUE_GRACE_MULTIPLIER = 2;
 
 export const SERIES_RAISING_MIN_RARITY_INDEX = Balance.SERIES_RAISING_MIN_RARITY_INDEX;

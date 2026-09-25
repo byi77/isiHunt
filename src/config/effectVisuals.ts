@@ -131,3 +131,10 @@ export const SERIES_SHIELD_VISUALS = {
   blinkPeriodMs: 160,
   fillAlpha: 0.08,
 } as const;
+
+/** Weisser Fang, der die Serie um ein Fuenftel steigert. */
+export const SERIES_HOLD_VISUALS = {
+  /** Unter dem Punkte-Label, damit beide Zahlen lesbar bleiben. */
+  labelOffsetY: 28,
+  color: 0xffffff,
+} as const;

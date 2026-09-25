@@ -17,6 +17,7 @@ import { CHALLENGE_DURATION_MS } from '@/config/challenge';
 import {
   RARE_SPAWN_WARNING,
   SCENE_TRANSITION,
+  SERIES_HOLD_VISUALS,
   SERIES_SHIELD_VISUALS,
 } from '@/config/effectVisuals';
 import {
@@ -397,9 +398,14 @@ export class GameScene extends Phaser.Scene {
       this.endlessState?.rescueUsed ?? false,
       carriedCombo,
       carriedCombo > 0 ? ENDLESS_SERIES_SHIELD_MS : 0,
+      this.endlessState?.carriedHoldProgress ?? 0,
     );
     this.shieldRing =
       this.scoring.shieldRatio > 0 ? this.add.graphics().setDepth(Depth.Player - 1) : null;
+    if (carriedCombo > 0) {
+      this.player.setSeriesTrail(trailTierForSeries(carriedCombo));
+      this.player.setSeriesAgility(agilityForSeries(carriedCombo));
+    }
 
     // Nur im Duell wird geseedet - beide Spieler bekommen dieselbe Abfolge.
     // Solo bleibt jeder Run eine neue Jagd.
@@ -426,6 +432,16 @@ export class GameScene extends Phaser.Scene {
       endlessRound: this.endlessState?.round,
       endlessGate: this.endlessState ? endlessTotalGate(this.endlessState.round) : undefined,
       endlessScoreOffset: this.endlessState?.totalScore,
+      carriedSeries:
+        this.scoring.currentCombo > 0
+          ? {
+              combo: this.scoring.currentCombo,
+              multiplier: this.scoring.currentMultiplier,
+              speedFactor: agilityForSeries(this.scoring.currentCombo).speedFactor,
+              rescueReady: this.scoring.rescueReady,
+              holdProgress: this.scoring.currentHoldProgress,
+            }
+          : undefined,
       playerLabel: isChallengeMode ? ChallengeSystem.playerLabel(this.playerIndex) : null,
       scoreToBeat: isChallengeMode ? ChallengeSystem.scoreToBeat() : null,
       talentLines: usesTalents ? activeTalentLines(this.stats) : [],
@@ -568,6 +584,7 @@ export class GameScene extends Phaser.Scene {
         multiplier: this.scoring.currentMultiplier,
         speedFactor: agilityForSeries(this.scoring.currentCombo).speedFactor,
         rescueReady: false,
+        holdProgress: this.scoring.currentHoldProgress,
       });
     }
     if (comboReset) {
@@ -782,6 +799,15 @@ export class GameScene extends Phaser.Scene {
     // The bounded effect layer owns the visual tail; no orphaned orb tween.
     this.player.pulse(orb.rarity.color);
     this.player.setSeriesTrail(trailTierForSeries(outcome.combo));
+    if (outcome.holdStep) {
+      floatingScore(
+        this,
+        orb.x,
+        orb.y + SERIES_HOLD_VISUALS.labelOffsetY,
+        outcome.comboIncreased ? '+1 SERIE' : '+0,2 SERIE',
+        SERIES_HOLD_VISUALS.color,
+      );
+    }
 
     eventBus.emitEvent(GameEvent.Collected, {
       rarityId: orb.rarity.id,
@@ -807,6 +833,7 @@ export class GameScene extends Phaser.Scene {
       multiplier: outcome.multiplier,
       speedFactor: agility.speedFactor,
       rescueReady: this.scoring.rescueReady,
+      holdProgress: outcome.holdProgress,
     });
     orb.destroy();
   }
@@ -954,19 +981,12 @@ export class GameScene extends Phaser.Scene {
     this.announceCarriedSeries();
   }
 
-  /** Die mitgenommene Endlos-Serie steht ab dem Start im HUD und an der Figur. */
+  /**
+   * Der Schutz der mitgenommenen Serie beginnt jetzt. HUD und Figur zeigen
+   * die Serie schon seit dem Countdown (`carriedSeries`, `create`).
+   */
   private announceCarriedSeries(): void {
-    const combo = this.scoring.currentCombo;
-    if (combo <= 0) return;
-    const agility = agilityForSeries(combo);
-    this.player.setSeriesTrail(trailTierForSeries(combo));
-    this.player.setSeriesAgility(agility);
-    eventBus.emitEvent(GameEvent.ComboChanged, {
-      combo,
-      multiplier: this.scoring.currentMultiplier,
-      speedFactor: agility.speedFactor,
-      rescueReady: this.scoring.rescueReady,
-    });
+    if (this.scoring.currentCombo <= 0) return;
     floatingScore(this, this.player.x, this.player.y, 'SERIE GESCHUETZT', Palette.dailyHex);
   }
 
@@ -1154,6 +1174,7 @@ export class GameScene extends Phaser.Scene {
     void ProgressSyncSystem.flush();
     state.totalScore += stats.score;
     state.carriedCombo = this.scoring.currentCombo;
+    state.carriedHoldProgress = this.scoring.currentHoldProgress;
     state.totalXp += stats.xpGained;
     state.totalCoins += progression.coinsGained;
     this.endlessLastStats = stats;
@@ -1241,6 +1262,7 @@ export class GameScene extends Phaser.Scene {
           totalCoins: state.totalCoins,
           rescueUsed: state.rescueUsed,
           carriedCombo: state.carriedCombo,
+          carriedHoldProgress: state.carriedHoldProgress,
           talents: { ...state.talents },
         },
       } satisfies GameSceneData);
@@ -1290,13 +1312,91 @@ export class GameScene extends Phaser.Scene {
       GAME_HEIGHT - 84,
       'SERIE BEENDEN',
       () => {
-        clearChoices();
-        for (const object of objects) object.destroy();
-        this.finishEndless();
+        // Der Knopf liegt direkt unter den Talentwahlen; ein verrutschter
+        // Daumen beendete die Serie ohne Rueckweg. Deshalb erst fragen.
+        for (const handle of [...choiceHandles, exit]) handle.setEnabled(false);
+        this.confirmEndlessExit(
+          () => {
+            clearChoices();
+            exit.container.destroy(true);
+            for (const object of objects) object.destroy();
+            this.finishEndless();
+          },
+          () => {
+            for (const handle of [...choiceHandles, exit]) handle.setEnabled(true);
+          },
+        );
       },
       { width: GAME_WIDTH - 130, height: 42 },
     );
     exit.container.setDepth(Depth.Overlay + 2);
+  }
+
+  /** Rueckfrage vor dem Beenden einer Endlos-Serie am Checkpoint. */
+  private confirmEndlessExit(onConfirm: () => void, onCancel: () => void): void {
+    const depth = Depth.Overlay + 3;
+    const shade = this.add
+      .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, 0x050914, 0.7)
+      .setOrigin(0)
+      .setDepth(depth)
+      .setInteractive();
+    const panel = createPanel(
+      this,
+      GAME_WIDTH / 2,
+      GAME_HEIGHT / 2,
+      GAME_WIDTH - 90,
+      300,
+      Palette.dangerHex,
+      { alpha: 0.98 },
+    ).setDepth(depth + 1);
+    const title = this.add
+      .text(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2 - 105,
+        'SERIE WIRKLICH BEENDEN?',
+        textStyle(FontSize.heading, Palette.danger, { fontStyle: 'bold' }),
+      )
+      .setOrigin(0.5)
+      .setDepth(depth + 2);
+    const detail = this.add
+      .text(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2 - 35,
+        'Die Serie ist danach vorbei und\nkann nicht fortgesetzt werden.\nVerdiente Punkte, XP und Coins bleiben.',
+        textStyle(FontSize.small, Palette.ink, { align: 'center' }),
+      )
+      .setOrigin(0.5)
+      .setDepth(depth + 2);
+    const buttons: ReturnType<typeof createButton>[] = [];
+    const close = () => {
+      for (const handle of buttons) handle.container.destroy(true);
+      for (const object of [shade, panel, title, detail]) object.destroy();
+    };
+    buttons.push(
+      createButton(
+        this,
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2 + 45,
+        'WEITERSPIELEN',
+        () => {
+          close();
+          onCancel();
+        },
+        { width: GAME_WIDTH - 150, height: 50, variant: 'primary' },
+      ),
+      createButton(
+        this,
+        GAME_WIDTH / 2,
+        GAME_HEIGHT / 2 + 110,
+        'JA, BEENDEN',
+        () => {
+          close();
+          onConfirm();
+        },
+        { width: GAME_WIDTH - 150, height: 42 },
+      ),
+    );
+    for (const handle of buttons) handle.container.setDepth(depth + 2);
   }
 
   /**

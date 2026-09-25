@@ -6,9 +6,9 @@
  * 1. **Halten.** Jeder zeitnahe Fang setzt das Zeitfenster neu. Laeuft es ab,
  *    faellt die Serie auf 0. Verpasste Relikte brechen sie NICHT, kosten aber
  *    Zeit und machen den Zerfall dadurch zur echten Gefahr.
- * 2. **Steigern.** Erhoeht wird die Serie nur von farbigen Relikten
- *    (ungewoehnlich und seltener). Weisse halten sie am Leben, ohne sie zu
- *    steigern.
+ * 2. **Steigern.** Ein farbiges Relikt (ungewoehnlich und seltener) steigert
+ *    die Serie um eine Stufe, ein weisses oder graues um ein Fuenftel
+ *    (`SERIES_HOLD_CATCHES_PER_STEP`). Bis 2026-09-25 hielten weisse sie nur.
  *
  * Aus der Trennung entsteht die Taktik: Ist kein farbiges Relikt in
  * Reichweite, bevor das Fenster ablaeuft, rettet ein weisses die Kette - man
@@ -23,6 +23,7 @@ import {
   COMBO_TIERS,
   PLAYER_ACCEL_RESPONSE,
   SERIES_AGILITY_TIERS,
+  SERIES_HOLD_CATCHES_PER_STEP,
   SERIES_RESCUE_GRACE_MULTIPLIER,
   SERIES_RESCUE_MIN_COMBO,
   SERIES_RAISING_MIN_RARITY_INDEX,
@@ -39,6 +40,10 @@ export interface CollectOutcome {
   multiplier: number;
   comboIncreased: boolean;
   multiplierIncreased: boolean;
+  /** Weisse Faenge auf dem Weg zur naechsten Stufe, 0 bis `SERIES_HOLD_CATCHES_PER_STEP - 1`. */
+  holdProgress: number;
+  /** Der Fang war weiss und hat die Serie um einen Bruchteil gesteigert. */
+  holdStep: boolean;
   /** Anzahl zeitnah gefangener Relikte in Folge. */
   sameRarityStreak: number;
   /** Wahr, sobald die Kette erstmals einen sichtbaren Punktebonus gibt. */
@@ -84,6 +89,11 @@ export function multiplierForComboWithTalent(combo: number, seriesMultiplierBonu
  */
 export function raritySteigertSerie(id: RarityId): boolean {
   return RARITY_IDS.indexOf(id) >= SERIES_RAISING_MIN_RARITY_INDEX;
+}
+
+/** Die Serie so, wie das HUD sie zeigt: jede weisse Teilstufe als Nachkomma. */
+export function seriesDisplayValue(combo: number, holdProgress: number): number {
+  return combo + holdProgress / SERIES_HOLD_CATCHES_PER_STEP;
 }
 
 /** Tempo- und Reaktionsbonus, den eine laufende Serie gerade traegt. */
@@ -135,6 +145,8 @@ export function trailTierForSeries(series: number): (typeof SERIES_TRAIL_TIERS)[
 export class ScoreSystem {
   private score = 0;
   private combo = 0;
+  /** Weisse Faenge seit der letzten Stufe - siehe `SERIES_HOLD_CATCHES_PER_STEP`. */
+  private holdProgress = 0;
   private bestCombo = 0;
   private bestMultiplier = 1;
   private comboTimerMs = 0;
@@ -166,9 +178,14 @@ export class ScoreSystem {
     initialCombo = 0,
     /** Solange er laeuft, steht das Fenster still und die Serie kann nicht reissen. */
     private shieldMs = 0,
+    initialHoldProgress = 0,
   ) {
     if (initialCombo > 0) {
       this.combo = initialCombo;
+      this.holdProgress = Math.max(
+        0,
+        Math.min(SERIES_HOLD_CATCHES_PER_STEP - 1, Math.floor(initialHoldProgress)),
+      );
       this.bestCombo = initialCombo;
       this.comboTimerMs = comboGraceMs;
       this.comboWindowDurationMs = comboGraceMs;
@@ -204,8 +221,9 @@ export class ScoreSystem {
       return { comboReset: false, comboRevived: true };
     }
 
-    const hatteSerie = this.combo > 0;
+    const hatteSerie = this.combo > 0 || this.holdProgress > 0;
     this.combo = 0;
+    this.holdProgress = 0;
     this.comboTimerMs = 0;
     this.comboWindowDurationMs = 0;
     // Nur melden, wenn tatsaechlich eine Serie zerfiel - sonst feuerte jedes
@@ -221,7 +239,17 @@ export class ScoreSystem {
     // Reichweite hat, nimmt ein weisses und rettet die Kette, ohne
     // aufzusteigen. Begruendung bei SERIES_RAISING_MIN_RARITY_INDEX.
     const raisesSeries = raritySteigertSerie(rarity.id);
-    if (raisesSeries) this.combo += 1;
+    let holdCompletedStep = false;
+    if (raisesSeries) {
+      this.combo += 1;
+    } else {
+      this.holdProgress += 1;
+      if (this.holdProgress >= SERIES_HOLD_CATCHES_PER_STEP) {
+        this.holdProgress = 0;
+        this.combo += 1;
+        holdCompletedStep = true;
+      }
+    }
 
     this.comboTimerMs = this.comboGraceMs;
     this.comboWindowDurationMs = this.comboGraceMs;
@@ -260,8 +288,10 @@ export class ScoreSystem {
       xpGained: xp,
       combo: this.combo,
       multiplier,
-      comboIncreased: raisesSeries,
+      comboIncreased: raisesSeries || holdCompletedStep,
       multiplierIncreased: multiplier > previousMultiplier,
+      holdProgress: this.holdProgress,
+      holdStep: !raisesSeries,
       sameRarityStreak: this.combo,
       streakBonus,
       crit,
@@ -298,6 +328,11 @@ export class ScoreSystem {
 
   get currentCombo(): number {
     return this.combo;
+  }
+
+  /** Weisse Faenge auf dem Weg zur naechsten Stufe. */
+  get currentHoldProgress(): number {
+    return this.holdProgress;
   }
 
   get rescueReady(): boolean {

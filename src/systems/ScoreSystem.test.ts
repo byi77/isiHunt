@@ -13,6 +13,7 @@ import {
   COMBO_MULTIPLIER_PER_EXTRA_SERIES,
   COMBO_TIERS,
   PLAYER_ACCEL_RESPONSE,
+  SERIES_HOLD_CATCHES_PER_STEP,
   PLAYER_BASE_SPEED,
   SERIES_AGILITY_TIERS,
   SERIES_TRAIL_BASE_ALPHA,
@@ -33,6 +34,7 @@ import {
   multiplierForCombo,
   multiplierForComboWithTalent,
   ScoreSystem,
+  seriesDisplayValue,
   trailTierForSeries,
 } from '@/systems/ScoreSystem';
 
@@ -242,7 +244,34 @@ describe('ScoreSystem - Serie: halten vs. steigern', () => {
     expect(system.registerCollect(RARE!).combo).toBe(2);
   });
 
-  it('steigert die Serie NICHT bei einem weissen Fang', () => {
+  it('steigert die Serie nach SERIES_HOLD_CATCHES_PER_STEP weissen Faengen um eine Stufe', () => {
+    const system = createSystem();
+    system.registerCollect(RARE!);
+    for (let i = 1; i < SERIES_HOLD_CATCHES_PER_STEP; i++) {
+      const teil = system.registerCollect(i % 2 === 0 ? POOR! : COMMON!);
+      expect(teil.combo).toBe(1);
+      expect(teil.holdProgress).toBe(i);
+      expect(teil.holdStep).toBe(true);
+    }
+    const stufe = system.registerCollect(POOR!);
+    expect(stufe.combo).toBe(2);
+    expect(stufe.comboIncreased).toBe(true);
+    expect(stufe.holdProgress).toBe(0);
+  });
+
+  it('zeigt weisse Teilstufen als Nachkomma und verliert sie beim Reissen', () => {
+    const system = createSystem();
+    system.registerCollect(RARE!);
+    system.registerCollect(POOR!);
+    system.registerCollect(POOR!);
+    expect(seriesDisplayValue(system.currentCombo, system.currentHoldProgress)).toBeCloseTo(
+      1 + 2 / SERIES_HOLD_CATCHES_PER_STEP,
+    );
+    expect(system.update(COMBO_GRACE_MS + 1).comboReset).toBe(true);
+    expect(system.currentHoldProgress).toBe(0);
+  });
+
+  it('steigert die Serie NICHT um eine ganze Stufe bei einem weissen Fang', () => {
     const system = createSystem();
     system.registerCollect(RARE!);
     system.registerCollect(RARE!);
@@ -288,9 +317,15 @@ describe('ScoreSystem - Serie: halten vs. steigern', () => {
 
   it('meldet keinen Zerfall, wenn nie eine Serie bestand', () => {
     const system = createSystem();
-    system.registerCollect(POOR!);
 
     expect(system.update(COMBO_GRACE_MS).comboReset).toBe(false);
+  });
+
+  it('meldet den Zerfall auch einer reinen Weiss-Teilstufe, damit das HUD 0,2 abraeumt', () => {
+    const system = createSystem();
+    system.registerCollect(POOR!);
+
+    expect(system.update(COMBO_GRACE_MS).comboReset).toBe(true);
   });
 
   it('zaehlt weisse Faenge weiterhin fuer Punkte und Statistik', () => {

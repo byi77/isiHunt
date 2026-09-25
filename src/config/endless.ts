@@ -49,6 +49,8 @@ export interface EndlessState {
   rescueUsed?: boolean;
   /** Serie am Ende der Vorrunde - sie laeuft in der naechsten weiter. */
   carriedCombo?: number;
+  /** Weisse Teilstufe der mitgenommenen Serie. */
+  carriedHoldProgress?: number;
   talents: TalentRanks;
 }
 
