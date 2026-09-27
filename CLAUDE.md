@@ -259,15 +259,15 @@ npm run ios:check                 # iOS-Mindestversion aus dem Build
 
 Was die Suiten abdecken:
 
-| Suite      | Prueft                                                         |
-| ---------- | -------------------------------------------------------------- |
-| `screens`  | Jeder Menue-Bildschirm oeffnet ohne Konsolenfehler             |
-| `nav`      | Menuewege hin und zurueck, per echtem Klick auf den Knopf      |
-| `controls` | Ueberlappende, verrutschte oder zu kleine Knoepfe; Scrollen    |
-| `layout`   | Canvas-Ueberstand ueber 19 Geraeteformate                      |
-| `ios`      | Dieselbe Seite in echtem WebKit statt in Chromium              |
-| `progress` | Levelaufstieg, Muenzen, Erfolge, Spielstand ueber ein Neuladen |
-| `modes`    | Solo in drei Welten, Tageslauf, Bot-Duell                      |
+| Suite      | Prueft                                                                                     |
+| ---------- | ------------------------------------------------------------------------------------------ |
+| `screens`  | Jeder Menue-Bildschirm oeffnet ohne Konsolenfehler                                         |
+| `nav`      | Menuewege hin und zurueck, per echtem Klick auf den Knopf                                  |
+| `controls` | Ueberlappende, verrutschte oder zu kleine Knoepfe; Scrollen; Versionsnummer nicht verdeckt |
+| `layout`   | Canvas-Ueberstand ueber 19 Geraeteformate                                                  |
+| `ios`      | Dieselbe Seite in echtem WebKit statt in Chromium                                          |
+| `progress` | Levelaufstieg, Muenzen, Erfolge, Spielstand ueber ein Neuladen                             |
+| `modes`    | Solo in drei Welten, Tageslauf, Bot-Duell                                                  |
 
 **`--sim` waehrend der Arbeit, echter Lauf vor dem Ausliefern.** Mit `--sim`
 wird die 90-Sekunden-Runde nicht abgewartet, sondern gerechnet: `GameScene`

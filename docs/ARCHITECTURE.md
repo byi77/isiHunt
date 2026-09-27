@@ -1376,15 +1376,15 @@ Unit-Tests bleiben gruen, weil sie `BootScene` gar nicht laden — beim Umbau
 ergaenzt, geht **alle** Skripte mit `page.goto` durch, nicht nur das
 naechstliegende, und faehrt `npm run release:check` vor dem Push.
 
-| Suite      | Deckt ab                                                             |
-| ---------- | -------------------------------------------------------------------- |
-| `screens`  | Profil, Talente, Erfolge, Einstellungen, Rangliste, Wartung          |
-| `nav`      | Menuewege hin und zurueck, per echtem Klick auf den Knopf            |
-| `controls` | Ueberlappung, Lage, Groesse der Tippziele, Scrollen langer Menues    |
-| `layout`   | Canvas-Ueberstand und unterster Knopf ueber 19 Geraeteformate        |
-| `ios`      | Dieselben Pruefungen in echtem WebKit statt in Chromium              |
-| `progress` | Levelaufstieg, Muenzen, Erfolge, Bestwert, Spielstand ueber Neuladen |
-| `modes`    | Solo in drei Welten, Tageslauf, Bot-Duell                            |
+| Suite      | Deckt ab                                                                    |
+| ---------- | --------------------------------------------------------------------------- |
+| `screens`  | Profil, Talente, Erfolge, Einstellungen, Rangliste, Wartung                 |
+| `nav`      | Menuewege hin und zurueck, per echtem Klick auf den Knopf                   |
+| `controls` | Ueberlappung, Lage, Groesse der Tippziele, Scrollen, Versionsnummer obenauf |
+| `layout`   | Canvas-Ueberstand und unterster Knopf ueber 19 Geraeteformate               |
+| `ios`      | Dieselben Pruefungen in echtem WebKit statt in Chromium                     |
+| `progress` | Levelaufstieg, Muenzen, Erfolge, Bestwert, Spielstand ueber Neuladen        |
+| `modes`    | Solo in drei Welten, Tageslauf, Bot-Duell                                   |
 
 Einzeln zu fahren ueber `--only=nav,controls` (kommagetrennt).
 `--watch` oeffnet ein sichtbares Fenster mit gebremster Eingabe.

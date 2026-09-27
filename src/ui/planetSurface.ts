@@ -24,8 +24,19 @@ function terrain(longitude: number, latitude: number, type: WorldVisual['surface
       return Math.round((0.5 + a * 0.2 + b * 0.2) * 5) / 5;
     case 'storm':
       return 0.48 + Math.sin(latitude * 20 + a * 3 + b) * 0.27 + c * 0.05;
-    case 'core':
-      return 0.7 + Math.sin(longitude * 10 + latitude * 16) * b * 0.28;
+    case 'core': {
+      // Glutflecken auf heller Kugel. Vorher `sin(10 Laenge + 16 Breite) * b`:
+      // Das Produkt zweier Wellen ergab ein gleichmaessiges Schachbrett.
+      // Baender schieden aus, weil die Gaswelt Glutnebel (`glutmark`) schon warme Baender traegt.
+      const spot = Math.pow(
+        Math.max(
+          0,
+          Math.sin(longitude * 5 + latitude * 3 + a) * Math.cos(latitude * 6 - longitude * 2),
+        ),
+        5,
+      );
+      return clamp(0.74 - spot * 0.55 + c * 0.05 + a * 0.06);
+    }
     case 'gate':
       return 0.22 + Math.pow(Math.max(0, b), 12) * 0.35 + a * 0.1;
   }

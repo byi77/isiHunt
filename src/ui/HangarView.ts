@@ -697,17 +697,21 @@ export class HangarView {
       this.selection.auras !== this.save.shipAura;
     this.name.textContent = `${trying ? 'Anprobe' : 'Ausgerüstet'} · ${getShipShape(this.selection.shapes).name} · ${getShipColor(this.selection.colors).name} · ${getShipAura(this.selection.auras).name}`;
     this.equippedSummary.textContent = `Getragen: ${getShipShape(this.save.shipShape).name} · ${getShipColor(this.save.shipColor).name} · ${getShipAura(this.save.shipAura).name}`;
+    // Nur bei einer Anprobe unterscheidet sich das Getragene vom Gezeigten.
+    // Sonst wiederholte die Zeile woertlich die goldene darueber. `visibility`
+    // statt `hidden`: Die Zeile behaelt ihren Platz, nichts springt beim Wechsel.
+    this.equippedSummary.style.visibility = trying ? 'visible' : 'hidden';
     this.status.textContent = `${item.name}: ${cosmeticStatusText(this.save, this.tab, item.id, isEquipped)}${level > this.save.level ? ` · ab Level ${level}` : ''}`;
     this.description.textContent =
       'description' in item
         ? item.description
-        : 'Weltfarbe: heller Rumpf, Effekte in der Farbe der Raumzone. Andere Farben faerben auch den Rumpf.';
+        : 'Weltfarbe: heller Rumpf, Effekte in der Farbe der Raumzone. Andere Farben färben auch den Rumpf.';
     this.buy.textContent = isEquipped
-      ? 'Bereits ausgeruestet'
+      ? 'Bereits ausgerüstet'
       : level > this.save.level
         ? `Ab Level ${level}`
         : isOwned
-          ? `${item.name} ausruesten`
+          ? `${item.name} ausrüsten`
           : `Kaufen · ${item.cost.toLocaleString('de-DE')} Coins`;
     this.buy.disabled =
       isEquipped || level > this.save.level || (!isOwned && this.save.coins < item.cost);

@@ -284,7 +284,9 @@
         position: fixed;
         right: calc(env(safe-area-inset-right, 0px) + 6px);
         bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
-        z-index: 10;
+        /* Ueber jeder DOM-Ebene des Spiels: Der Hangar (z-index 100) verdeckte
+           die Nummer bis auf "01". Klicks gehen ohnehin durch. */
+        z-index: 1000;
         pointer-events: none;
         color: #9aa3bd;
         opacity: 0.55;

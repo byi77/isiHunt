@@ -1365,6 +1365,39 @@ async function suiteControls() {
             : 'alle >= 44 CSS-px',
       );
 
+      // Die Versionsnummer muss auf jeder Seite obenauf liegen - ohne sie ist
+      // ein Fehlerbericht vom Geraet wertlos (CLAUDE.md). Der Hangar (DOM,
+      // z-index 100) verdeckte sie bis v0.1.401 bis auf "01". Ein Treffertest
+      // taugt nicht: `#version` hat pointer-events none und wird von
+      // elementFromPoint uebersprungen. Verglichen werden deshalb die
+      // z-index-Werte aller positionierten Ebenen, die sie ueberlappen.
+      const verdecker = await page.evaluate(() => {
+        const version = document.getElementById('version');
+        if (!version) return ['#version fehlt'];
+        const box = version.getBoundingClientRect();
+        const eigene = Number(getComputedStyle(version).zIndex) || 0;
+        const treffer = [];
+        for (const el of document.body.querySelectorAll('*')) {
+          if (el === version || el.contains(version)) continue;
+          const style = getComputedStyle(el);
+          if (style.position !== 'fixed' && style.position !== 'absolute') continue;
+          if (style.visibility === 'hidden' || style.display === 'none') continue;
+          const z = Number(style.zIndex);
+          if (!Number.isFinite(z) || z < eigene) continue;
+          const r = el.getBoundingClientRect();
+          const ueberlappt =
+            r.left < box.right && r.right > box.left && r.top < box.bottom && r.bottom > box.top;
+          if (ueberlappt && r.width > 0 && r.height > 0)
+            treffer.push(`${el.id ? '#' + el.id : el.className || el.tagName} (z ${z})`);
+        }
+        return treffer;
+      });
+      record(
+        `${key}: Versionsnummer sichtbar`,
+        verdecker.length === 0,
+        verdecker.length ? `verdeckt von ${verdecker.slice(0, 2).join(', ')}` : 'obenauf',
+      );
+
       await page.screenshot({ path: `${shotDir}/controls-${key.toLowerCase()}.png` });
       vorige = key;
     }

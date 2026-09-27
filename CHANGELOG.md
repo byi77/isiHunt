@@ -39,6 +39,15 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   leerer Fläche.
 - Einstellungen: Karte "PROFIL & GERÄTE" ohne Leerfläche; die Hinweise unter
   den Schaltern sind nicht mehr gesperrt gesetzt.
+- Die Versionsnummer war im Hangar bis auf "01" verdeckt (Hangar-Ebene lag
+  darüber). Sie liegt jetzt über jeder Ebene; der Playtest prüft das auf
+  jeder Seite.
+- Hangar: "Getragen: …" erscheint nur noch bei einer Anprobe – vorher
+  wiederholte die Zeile wörtlich die goldene darüber. Knopftexte mit
+  Umlauten ("Bereits ausgerüstet").
+- Lichtkern: Die Planetenoberfläche zeigte ein gleichmäßiges Schachbrett
+  (Produkt zweier Sinuswellen). Jetzt Glutflecken auf heller Kugel –
+  bewusst keine Bänder, damit sie sich von Glutnebel unterscheidet.
 - Knöpfe mit Relief: weicher Schatten, Glanz oben, Abschattung unten;
   gedrückt sinken sie ein. Die Knopfgrafik wird einmal vorberechnet – das
   Menü zeichnet dadurch schneller als vorher.

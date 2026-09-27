@@ -48,6 +48,12 @@ Gedrückt verlieren sie Schatten und den größten Teil des Glanzes und sinken
 ein. Die Verläufe laufen weich aus; ein einzelnes hartes Glanzband wirkt wie
 ein Streifen und ist verworfen.
 
+**Planetenoberflächen müssen sich unterscheiden.** Zehn Welten tragen zehn
+Oberflächentypen (`planetSurface.ts`); warme Welten teilen sich keine Form.
+Glutnebel (`gas`) trägt Bänder, Lichtkern (`core`) Glutflecken auf heller
+Kugel. Regelmäßige Muster wie ein Schachbrett aus zwei multiplizierten Wellen
+sind ausgeschlossen – sie lesen sich als Textur, nicht als Himmelskörper.
+
 **Sperrung nur für Versalien.** Zeichenabstand (`setLetterSpacing`) bekommen
 Überschriften und Labels in Großbuchstaben. Erklärende Hinweise in normaler
 Schreibweise bleiben ungesperrt; gesperrt lasen sie sich wie „S p i e l t ö n e“.
