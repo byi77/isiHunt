@@ -44,6 +44,9 @@ describe('Ergebnisdarstellung', () => {
     // darunter las sich auf dem Geraet wie ein Anzeigefehler.
     for (const section of content.sections) expect(section.title).not.toBe(content.headlineReward);
     expect(content.badge).toBe('NEUER BESTWERT');
+    // Rumpf wie im Run: Weltfarbe heisst weisser Rumpf (`shipHullTint`), nicht
+    // ein ganz in die Weltfarbe getauchtes Schiff.
+    expect(content.heroShip?.tint).toBe(0xffffff);
     expect(content.score).toBe('123.456.789');
     expect({ save, stats, progression }).toEqual(before);
   });

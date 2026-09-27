@@ -2,7 +2,13 @@ import { ShipOrbit } from '@/ui/shipOrbit';
 import Phaser from 'phaser';
 
 import { GAME_WIDTH } from '@/config/GameConfig';
-import { getShipShape, shipAuraAssetId, shipAuraIndex, shipTint } from '@/config/shop';
+import {
+  getShipShape,
+  shipAuraAssetId,
+  shipAuraIndex,
+  shipHullTint,
+  shipTint,
+} from '@/config/shop';
 import { WORLDS } from '@/config/worlds';
 import type { WorldDef } from '@/config/worlds';
 import { worldStarCount, worldStarLabel } from '@/config/worldStars';
@@ -122,7 +128,11 @@ export class MenuView {
         : reduced
           ? stehendesBild(animation)
           : animation(this.elapsed);
+    // Rumpf und Schein getrennt wie im Run (Player.ts): Bei Weltfarbe bleibt
+    // der Rumpf weiss und metallisch, nur Halo und Aura tragen die Weltfarbe.
+    // Vorher stand hier ein ganz in Gruen getauchtes, flach wirkendes Schiff.
     const tint = applyTintShift(shipTint(this.save, this.world.accent), frame.tint);
+    const hullTint = applyTintShift(shipHullTint(this.save), frame.tint);
     const size = this.layout.shipSize;
     const bob = reduced ? 0 : Math.sin(this.elapsed / 1100) * 2 * this.layout.unit;
     this.hero.y = bob;
@@ -132,7 +142,7 @@ export class MenuView {
       this.ship
         .setScale(base * Math.min(1.15, frame.scaleX), base * Math.min(1.15, frame.scaleY))
         .setRotation(frame.rotation)
-        .setTint(tint)
+        .setTint(hullTint)
         .setAlpha(frame.alpha);
     }
     this.halo?.setTint(tint);

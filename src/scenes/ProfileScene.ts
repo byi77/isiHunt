@@ -29,7 +29,7 @@ import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import * as SyncStatusSystem from '@/systems/SyncStatusSystem';
 import { clearPendingRewardRedemption, prepareRewardRedemption } from '@/systems/RewardCodeSystem';
-import { shipTint } from '@/config/shop';
+import { shipHullTint } from '@/config/shop';
 import { formatPlayTime } from '@/ui/format';
 import { playerTextureForShape, shipDisplayScale, TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
@@ -106,7 +106,7 @@ export class ProfileScene extends Phaser.Scene {
     addContent(
       this.add
         .image(GAME_WIDTH / 2, profileY - 210, playerTextureForShape(save.shipShape))
-        .setTint(shipTint(save, world.accent))
+        .setTint(shipHullTint(save))
         .setScale(0.82 * shipDisplayScale(playerTextureForShape(save.shipShape))),
     );
 

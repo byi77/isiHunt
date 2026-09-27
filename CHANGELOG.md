@@ -31,6 +31,9 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
   "VOLL AUSGEBAUT".
 - Die Zurück-Zone der Unterseiten trägt die Weltfarbe statt eines
   marineblauen Blocks.
+- Das Schiff sieht in Menü, Profil und Ergebnis aus wie im Run:
+  weiß-metallischer Rumpf, nur der Schein in Weltfarbe. Vorher war es dort
+  flach grün eingefärbt.
 
 ### Endlos: Serie und Rundenfaktor
 

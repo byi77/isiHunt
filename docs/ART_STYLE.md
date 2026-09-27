@@ -34,6 +34,13 @@ Breite nur unlesbar klein passt; die Seite selbst heißt weiter Einstellungen.
 Neue Monoline-Symbole: Pokal (Erfolge), Verzweigung (Talente), Podest
 (Rangliste), Regler (Optionen).
 
+**Bildsprache: plastisch.** Logo, Planeten und das Schiff im Run haben Licht,
+Schatten und Glanz; daran richtet sich alles Weitere aus. Das Schiff zeigt
+deshalb überall denselben Rumpf wie im Run: `shipHullTint` für den Rumpf
+(weiß-metallisch bei Weltfarbe, sonst die gekaufte Farbe), `shipTint` nur für
+Halo und Aura. Menü, Profil und Ergebnis hatten den ganzen Rumpf in die
+Weltfarbe getaucht und ihn damit flach wirken lassen.
+
 ## Grafische Modernisierung: Informationsansichten (24.09.2026)
 
 Ein tatsächlicher Ausrüstwechsel setzt einen kurzen Lichtimpuls an der
