@@ -20,6 +20,7 @@ import {
 import {
   BACK_ZONE_VISUALS,
   BACKDROP_EDGE_FADE,
+  BUTTON_RELIEF,
   GHOST_BUTTON_VISUALS,
   LEADING_ICON_VISUALS,
 } from '@/config/effectVisuals';
@@ -120,6 +121,90 @@ export function makeAlignedHitArea(
   return hitArea;
 }
 
+/** Rand um die gebackene Knopftextur, damit der halbe Rahmenstrich hineinpasst. */
+const RELIEF_PAD = 1;
+
+interface ReliefSpec {
+  width: number;
+  height: number;
+  radius: number;
+  fill: number;
+  pressedFill: number;
+  gloss: number;
+  borderColor: number;
+  borderAlpha: number;
+}
+
+/**
+ * Backt Relief und Rahmen eines Knopfes einmal in eine Textur und liefert
+ * ihren Schluessel. Gleiche Knoepfe teilen sich die Textur.
+ *
+ * Plastisch wie Logo, Planeten und Schiff (ART_STYLE "Bildsprache"):
+ * Schlagschatten, Grundflaeche, Glanz oben, Abschattung unten. Die Verlaeufe
+ * sind gestapelte Flaechen an derselben Kante - `fillGradientStyle` taugt
+ * nicht fuer abgerundete Formen, und eine einzelne Flaeche gab ein hartes
+ * Band. Gedrueckt verliert der Knopf Schatten und den groessten Teil des
+ * Glanzes: Er sinkt ein.
+ */
+function bakeButtonRelief(scene: Phaser.Scene, spec: ReliefSpec, pressed: boolean): string {
+  const R = BUTTON_RELIEF;
+  const { width, height, radius } = spec;
+  const key = [
+    'btn-relief',
+    Math.round(width * 10),
+    Math.round(height * 10),
+    Math.round(radius * 10),
+    spec.fill,
+    spec.pressedFill,
+    spec.gloss,
+    spec.borderColor,
+    spec.borderAlpha,
+    pressed ? 1 : 0,
+  ].join('-');
+  if (scene.textures.exists(key)) return key;
+
+  const g = scene.make.graphics({ x: 0, y: 0 }, false);
+  const left = RELIEF_PAD;
+  const top = RELIEF_PAD;
+  if (!pressed) {
+    g.fillStyle(0x000000, R.dropAlpha);
+    g.fillRoundedRect(left, top + R.dropOffset, width, height, radius);
+  }
+  g.fillStyle(pressed ? spec.pressedFill : spec.fill);
+  g.fillRoundedRect(left, top, width, height, radius);
+  const innerRadius = Math.max(0, radius - R.inset);
+  const glossTotal = spec.gloss * (pressed ? 0.4 : 1);
+  for (let step = 0; step < R.steps; step++) {
+    const reach = height * R.glossHeight * (1 - step / R.steps);
+    g.fillStyle(0xffffff, glossTotal / R.steps);
+    g.fillRoundedRect(left + R.inset, top + R.inset, width - R.inset * 2, reach, {
+      tl: Math.min(innerRadius, reach / 2),
+      tr: Math.min(innerRadius, reach / 2),
+      bl: 0,
+      br: 0,
+    });
+  }
+  for (let step = 0; step < R.steps; step++) {
+    const reach = height * R.shadeHeight * (1 - step / R.steps);
+    g.fillStyle(0x000000, R.shadeAlpha / R.steps);
+    g.fillRoundedRect(left, top + height - reach, width, reach, {
+      tl: 0,
+      tr: 0,
+      bl: Math.min(radius, reach / 2),
+      br: Math.min(radius, reach / 2),
+    });
+  }
+  g.lineStyle(1.5, spec.borderColor, spec.borderAlpha);
+  g.strokeRoundedRect(left, top, width, height, radius);
+  g.generateTexture(
+    key,
+    Math.ceil(width + RELIEF_PAD * 2),
+    Math.ceil(height + R.dropOffset + RELIEF_PAD * 2),
+  );
+  g.destroy();
+  return key;
+}
+
 export function createButton(
   scene: Phaser.Scene,
   x: number,
@@ -172,28 +257,36 @@ export function createButton(
   let isPressed = false;
 
   const radius = Math.min(height / 4, 22);
-  const bg = scene.add.graphics();
+  // Ghost: eine einzige Flaeche nur beim Druecken - bleibt ein Graphics.
+  // Alle anderen: Relief und Rahmen einmal als Textur gebacken. Als Graphics
+  // zerlegte Phaser die abgerundeten Flaechen in jedem Frame neu; im Menue
+  // stieg die Framezeit unter 6-facher CPU-Drosselung von ~28 auf ~110 ms.
+  const ghostBg = ghost ? scene.add.graphics() : null;
+  const relief: ReliefSpec = {
+    width,
+    height,
+    radius,
+    fill: primary ? accent : Palette.buttonSurface,
+    pressedFill: primary ? accent : Palette.buttonHover,
+    gloss: primary ? BUTTON_RELIEF.glossPrimary : BUTTON_RELIEF.glossSecondary,
+    borderColor: primary ? accent : (options.accent ?? Palette.panelBorder),
+    borderAlpha: primary || options.accent === undefined ? 1 : 0.5,
+  };
+  const reliefBg = ghost ? null : scene.add.image(0, 0, bakeButtonRelief(scene, relief, false));
   const paintBackground = (highlighted: boolean): void => {
-    bg.clear();
-    if (ghost) {
-      if (highlighted) bg.fillStyle(Palette.buttonHover, GHOST_BUTTON_VISUALS.pressedAlpha);
-      else return;
-    } else {
-      bg.fillStyle(primary ? accent : highlighted ? Palette.buttonHover : Palette.buttonSurface);
+    if (ghostBg) {
+      ghostBg.clear();
+      if (!highlighted) return;
+      ghostBg.fillStyle(Palette.buttonHover, GHOST_BUTTON_VISUALS.pressedAlpha);
+      ghostBg.fillRoundedRect(-width / 2, -height / 2, width, height, radius);
+      return;
     }
-    bg.fillRoundedRect(-width / 2, -height / 2, width, height, radius);
+    const key = bakeButtonRelief(scene, relief, highlighted);
+    const frame = scene.textures.get(key).get();
+    reliefBg!.setTexture(key).setOrigin(0.5, (RELIEF_PAD + height / 2) / frame.height);
   };
   paintBackground(false);
-
-  const border = scene.add.graphics();
-  if (!ghost) {
-    border.lineStyle(
-      1.5,
-      primary ? accent : (options.accent ?? Palette.panelBorder),
-      primary || options.accent === undefined ? 1 : 0.5,
-    );
-    border.strokeRoundedRect(-width / 2, -height / 2, width, height, radius);
-  }
+  const bg = (ghostBg ?? reliefBg)!;
 
   const leadingIcon = !ghost && options.icon !== undefined;
   const iconSize = Math.min(height * LEADING_ICON_VISUALS.size, LEADING_ICON_VISUALS.maxSize);
@@ -242,7 +335,7 @@ export function createButton(
     if (text.width > room) text.setFontSize(Math.floor((requested * room) / text.width));
   };
   fitLabel();
-  const visuals = scene.add.container(0, 0, glyph ? [bg, border, glyph, text] : [bg, border, text]);
+  const visuals = scene.add.container(0, 0, glyph ? [bg, glyph, text] : [bg, text]);
 
   container.add(visuals);
   container.setSize(width, height);

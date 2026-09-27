@@ -34,6 +34,23 @@ export const GHOST_BUTTON_VISUALS = {
   pressedAlpha: 0.55,
 } as const;
 
+/**
+ * Relief gerahmter Knoepfe (primaer und sekundaer). Hoehenanteile beziehen
+ * sich auf die Knopfhoehe, Deckkraft auf Weiss (Glanz) bzw. Schwarz.
+ */
+export const BUTTON_RELIEF = {
+  dropOffset: 4,
+  dropAlpha: 0.32,
+  inset: 2,
+  glossHeight: 0.46,
+  glossPrimary: 0.26,
+  glossSecondary: 0.07,
+  shadeHeight: 0.4,
+  shadeAlpha: 0.2,
+  /** Stufen je Verlauf; mehr wirkt weicher, kostet aber Zeichenbefehle je Knopf. */
+  steps: 8,
+} as const;
+
 /** Symbol links in einem gerahmten Knopf; Masse in Spielpixeln. */
 export const LEADING_ICON_VISUALS = {
   size: 0.42,

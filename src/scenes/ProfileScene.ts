@@ -36,6 +36,7 @@ import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   attachVerticalScroll,
   createBackButton,
+  createBar,
   createButton,
   createMenuLayout,
   createPanel,
@@ -44,6 +45,12 @@ import {
 } from '@/ui/widgets';
 import type { ButtonHandle } from '@/ui/widgets';
 import { createTextInput } from '@/ui/textInput';
+
+/**
+ * Abstand der Schiffsmitte ueber der Kartenmitte. Der Ring (PlayerHalo,
+ * Radius ~66 bei Faktor 1,15) reichte bei 210 bis in die ZULETZT-Zeile.
+ */
+const PROFILE_SHIP_OFFSET = 234;
 
 export interface ProfileSceneData {
   firstStart?: boolean;
@@ -97,7 +104,7 @@ export class ProfileScene extends Phaser.Scene {
 
     addContent(
       this.add
-        .image(GAME_WIDTH / 2, profileY - 210, TextureKey.PlayerHalo)
+        .image(GAME_WIDTH / 2, profileY - PROFILE_SHIP_OFFSET, TextureKey.PlayerHalo)
         .setTint(world.accent)
         .setScale(1.15)
         .setAlpha(0.8),
@@ -105,7 +112,11 @@ export class ProfileScene extends Phaser.Scene {
 
     addContent(
       this.add
-        .image(GAME_WIDTH / 2, profileY - 210, playerTextureForShape(save.shipShape))
+        .image(
+          GAME_WIDTH / 2,
+          profileY - PROFILE_SHIP_OFFSET,
+          playerTextureForShape(save.shipShape),
+        )
         .setTint(shipHullTint(save))
         .setScale(0.82 * shipDisplayScale(playerTextureForShape(save.shipShape))),
     );
@@ -364,7 +375,7 @@ export class ProfileScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          profileY + 230,
+          profileY + 200,
           levelProgress.xpNeeded === 0
             ? `Level ${levelProgress.level}  ·  MAX LEVEL`
             : `Level ${levelProgress.level}  ·  ${levelProgress.xpInLevel} / ${levelProgress.xpNeeded} XP`,
@@ -372,6 +383,20 @@ export class ProfileScene extends Phaser.Scene {
         )
         .setOrigin(0.5),
     );
+
+    // Der XP-Stand war nur eine blasse Textzeile ueber einer leeren Flaeche.
+    // Derselbe Balken wie im Ergebnis macht ihn zum eigenen Block.
+    const xpBarWidth = 420;
+    const xpBar = createBar(
+      this,
+      GAME_WIDTH / 2 - xpBarWidth / 2,
+      profileY + 222,
+      xpBarWidth,
+      8,
+      world.accent,
+    );
+    xpBar.setRatio(levelProgress.xpNeeded === 0 ? 1 : levelProgress.ratio);
+    addContent(xpBar.container);
 
     if (statsVisible) {
       const totalRelics = Object.values(save.collected).reduce((sum, count) => sum + count, 0);

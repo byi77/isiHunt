@@ -41,6 +41,17 @@ deshalb überall denselben Rumpf wie im Run: `shipHullTint` für den Rumpf
 Halo und Aura. Menü, Profil und Ergebnis hatten den ganzen Rumpf in die
 Weltfarbe getaucht und ihn damit flach wirken lassen.
 
+**Knöpfe mit Relief.** Primäre und sekundäre Knöpfe tragen einen weichen
+Schlagschatten (4 Spielpixel), oben einen auslaufenden Glanz (Gold 26 %,
+dunkle Knöpfe 7 %) und unten eine leichte Abschattung (`BUTTON_RELIEF`).
+Gedrückt verlieren sie Schatten und den größten Teil des Glanzes und sinken
+ein. Die Verläufe laufen weich aus; ein einzelnes hartes Glanzband wirkt wie
+ein Streifen und ist verworfen.
+
+**Sperrung nur für Versalien.** Zeichenabstand (`setLetterSpacing`) bekommen
+Überschriften und Labels in Großbuchstaben. Erklärende Hinweise in normaler
+Schreibweise bleiben ungesperrt; gesperrt lasen sie sich wie „S p i e l t ö n e“.
+
 ## Grafische Modernisierung: Informationsansichten (24.09.2026)
 
 Ein tatsächlicher Ausrüstwechsel setzt einen kurzen Lichtimpuls an der

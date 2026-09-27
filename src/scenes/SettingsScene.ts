@@ -27,6 +27,9 @@ import {
   PAGE_CONTENT_TOP,
 } from '@/ui/widgets';
 
+/** Hoehe der Karte PROFIL & GERAETE; Innenraender siehe create. */
+const PROFILE_CARD_HEIGHT = 280;
+
 export class SettingsScene extends Phaser.Scene {
   constructor() {
     super(SceneKey.Settings);
@@ -54,23 +57,32 @@ export class SettingsScene extends Phaser.Scene {
     const sections = layout.sections;
     // Vermessene Innenränder: Alle Texte bleiben mindestens 42 px von der
     // Kartenkante und mindestens 14 px von einer Buttonkante entfernt.
-    const profileY = sections.next(350);
+    // 280 statt 350: Zwischen Beschreibung und Knopf stand eine leere Flaeche.
+    const profileY = sections.next(PROFILE_CARD_HEIGHT);
     const soundY = sections.next(350);
     const graphicsY = sections.next(230);
     const legalY = sections.next(430);
 
     addContent(
-      createPanel(this, GAME_WIDTH / 2, profileY, GAME_WIDTH - 120, 350, world.accent, {
-        alpha: 0.58,
-        radius: 20,
-      }),
+      createPanel(
+        this,
+        GAME_WIDTH / 2,
+        profileY,
+        GAME_WIDTH - 120,
+        PROFILE_CARD_HEIGHT,
+        world.accent,
+        {
+          alpha: 0.58,
+          radius: 20,
+        },
+      ),
     );
 
     addContent(
       this.add
         .text(
           GAME_WIDTH / 2,
-          profileY - 135,
+          profileY - 85,
           'PROFIL & GERÄTE',
           textStyle(FontSize.body, Palette.gold),
         )
@@ -82,7 +94,7 @@ export class SettingsScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          profileY - 76,
+          profileY - 35,
           'Name, Level, Statistik und Mehrgeräte-Anmeldung an einem Ort.',
           textStyle(FontSize.small, Palette.ink),
         )
@@ -98,7 +110,7 @@ export class SettingsScene extends Phaser.Scene {
       createButton(
         this,
         GAME_WIDTH / 2,
-        profileY + 85,
+        profileY + 60,
         'PROFIL ÖFFNEN',
         () => this.scene.start(SceneKey.Profile),
         { width: 460, height: 76, accent: world.accent, fontSize: FontSize.small },
@@ -140,8 +152,7 @@ export class SettingsScene extends Phaser.Scene {
           'Spieltöne und Effekte',
           textStyle(FontSize.tiny, Palette.inkDim),
         )
-        .setOrigin(0.5)
-        .setLetterSpacing(2),
+        .setOrigin(0.5),
     );
 
     const hapticsButton = createButton(
@@ -166,8 +177,7 @@ export class SettingsScene extends Phaser.Scene {
           'Vibration bei Treffern und Aktionen',
           textStyle(FontSize.tiny, Palette.inkDim),
         )
-        .setOrigin(0.5)
-        .setLetterSpacing(2),
+        .setOrigin(0.5),
     );
 
     addContent(
@@ -207,8 +217,7 @@ export class SettingsScene extends Phaser.Scene {
           'Sparsam schont schwache Geräte',
           textStyle(FontSize.tiny, Palette.inkDim),
         )
-        .setOrigin(0.5)
-        .setLetterSpacing(2),
+        .setOrigin(0.5),
     );
 
     addContent(

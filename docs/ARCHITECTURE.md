@@ -38,6 +38,15 @@ Streifenfarbe, damit die Zurueck-Zone daran anschliesst, und nimmt optional
 eine `BackdropDim` fuer Scenes mit deckender Abdunklung (Menue). Sichtwerte
 dafuer stehen in `config/effectVisuals.ts`.
 
+Relief und Rahmen gerahmter Knoepfe werden einmal per `generateTexture`
+gebacken (`bakeButtonRelief`, Schluessel aus Groesse, Farben und
+Druckzustand) und als Image gezeichnet. Als Graphics zerlegte Phaser die rund
+zwanzig abgerundeten Flaechen je Knopf in jedem Frame neu: Gemessen im Menue
+unter 6-facher CPU-Drosselung (Chromium, 390x844, je drei Laeufe) stieg die
+Framezeit von ~22 auf ~110 ms; gebacken liegt sie bei ~18 ms, also unter dem
+alten Stand, weil auch der Rahmen nicht mehr je Frame entsteht. Der
+Druckzustand wird beim ersten Druecken gebacken.
+
 Die Orbital-3D-Modelle verwenden `shipN-preview.svg` als gemeinsame 2D-Ansicht
 für Shop, Menü, Spiel und Ergebnis. `playerTextureForShape()` löst die
 `threeDAssetId` auf den eigens geladenen Fallback-Texture-Key auf; `shipDisplayScale()`

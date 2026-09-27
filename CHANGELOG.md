@@ -34,6 +34,14 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 - Das Schiff sieht in Menü, Profil und Ergebnis aus wie im Run:
   weiß-metallischer Rumpf, nur der Schein in Weltfarbe. Vorher war es dort
   flach grün eingefärbt.
+- Profil: Der Ring ums Schiff lag über der Zeile "ZULETZT"; der XP-Stand
+  hat jetzt einen Fortschrittsbalken statt einer blassen Textzeile über
+  leerer Fläche.
+- Einstellungen: Karte "PROFIL & GERÄTE" ohne Leerfläche; die Hinweise unter
+  den Schaltern sind nicht mehr gesperrt gesetzt.
+- Knöpfe mit Relief: weicher Schatten, Glanz oben, Abschattung unten;
+  gedrückt sinken sie ein. Die Knopfgrafik wird einmal vorberechnet – das
+  Menü zeichnet dadurch schneller als vorher.
 
 ### Endlos: Serie und Rundenfaktor
 
