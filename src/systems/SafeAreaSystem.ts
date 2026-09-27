@@ -1,5 +1,6 @@
 /**
- * Kleine Anzeige in der oberen Safe Area.
+ * Kleine Anzeige in der oberen Safe Area: Laufband im Menue, Titel der Seite,
+ * im Run leer.
  *
  * In installierten iOS-Apps liegt der Text unterhalb des Systemblurs. Der
  * dazwischenliegende Bereich bleibt transparent und zeigt den Welt-Hintergrund.
@@ -66,11 +67,6 @@ export function showMenuTicker(): void {
   tickerTimer = window.setInterval(showNextTickerItem, 3800);
 }
 
-export function showRunTimer(remainingMs: number): void {
-  stopTicker();
-  write(`${Math.max(0, Math.ceil(remainingMs / 1000))} SEKUNDEN`);
-}
-
 export function showStatic(message: string): void {
   stopTicker();
   write(message);
@@ -84,21 +80,18 @@ export function hide(): void {
 // Als benannte, modulweite Referenzen statt Inline-Arrow-Functions - nur so
 // ist die Funktionsreferenz bei `offEvent` dieselbe wie bei `onEvent`
 // (CODE_STYLE.md 1.4, dasselbe Muster wie GameScene/HudScene).
-const onRunStarted: (payload: { durationMs: number }) => void = ({ durationMs }) =>
-  showRunTimer(durationMs);
-const onTimerChanged: (payload: { remainingMs: number }) => void = ({ remainingMs }) =>
-  showRunTimer(remainingMs);
+// Im Run bleibt die Zeile leer. Sie zeigte die Restzeit als dritte Anzeige
+// neben HUD-Zahl und Zeitbalken; die Wiederholung machte den Kopf nur voller.
+const onRunStarted = (): void => hide();
 const onRunEnded = (): void => showStatic('RUN BEENDET');
 
 function registerGameEvents(): void {
   eventBus.onEvent(GameEvent.RunStarted, onRunStarted);
-  eventBus.onEvent(GameEvent.TimerChanged, onTimerChanged);
   eventBus.onEvent(GameEvent.RunEnded, onRunEnded);
 }
 
 function unregisterGameEvents(): void {
   eventBus.offEvent(GameEvent.RunStarted, onRunStarted);
-  eventBus.offEvent(GameEvent.TimerChanged, onTimerChanged);
   eventBus.offEvent(GameEvent.RunEnded, onRunEnded);
 }
 

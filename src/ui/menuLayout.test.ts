@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { calculateMenuLayout } from './menuLayout';
+import { calculateMenuLayout, MENU_PLANET_MAX } from './menuLayout';
 
 describe('Menü in tatsächlichen Bildschirm-Pixeln', () => {
   for (const [width, height] of [
@@ -17,8 +17,7 @@ describe('Menü in tatsächlichen Bildschirm-Pixeln', () => {
         const rows = [
           [layout.primaryY, layout.primaryHeight],
           [layout.secondaryY, layout.rowHeight],
-          [layout.tertiaryY, layout.rowHeight],
-          [layout.settingsY, layout.rowHeight],
+          [layout.navY, layout.navHeight],
         ];
         let previousBottom = layout.worldBottom;
         for (const [y, h] of rows) {
@@ -36,8 +35,13 @@ describe('Menü in tatsächlichen Bildschirm-Pixeln', () => {
         );
         expect(layout.shipSize).toBeGreaterThanOrEqual(layout.planetSize * 0.6);
         expect(layout.planetSize).toBeLessThanOrEqual(
-          Math.min((layout.compact ? 118 : 176) * layout.unit, width! * 0.48 * layout.unit),
+          Math.min(
+            (layout.compact ? MENU_PLANET_MAX.compact : MENU_PLANET_MAX.regular) * layout.unit,
+            width! * 0.52 * layout.unit,
+          ),
         );
+        // Fuenf Kacheln in einer Leiste: jede muss die Touch-Mindestbreite halten.
+        expect((layout.innerWidth * scale - 4 * layout.gap * scale) / 5).toBeGreaterThanOrEqual(44);
       });
     }
   }

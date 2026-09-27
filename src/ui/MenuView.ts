@@ -13,7 +13,7 @@ import { Depth } from '@/ui/depth';
 import { auraAssetForId } from '@/ui/egoAssets';
 import { calculateMenuLayout } from '@/ui/menuLayout';
 import { createSpatialPlanet } from '@/ui/spatialPlanet';
-import { createSceneIcon, type UiIcon } from '@/ui/iconography';
+import type { UiIcon } from '@/ui/iconography';
 import type { MenuLayout } from '@/ui/menuLayout';
 import {
   AURA_FRAME_RUHE,
@@ -236,20 +236,9 @@ export class MenuView {
       height,
       fontSize: this.layout.font(size),
       variant: primary ? 'primary' : 'secondary',
+      icon,
     });
     this.root.add(handle.container);
-    if (icon) {
-      this.root.add(
-        createSceneIcon(
-          this.scene,
-          icon,
-          x - width / 2 + 23 * this.layout.unit,
-          y,
-          19 * this.layout.unit,
-          primary ? Palette.buttonInkHex : Palette.inkDimHex,
-        ),
-      );
-    }
     return handle;
   }
 
@@ -568,15 +557,14 @@ export class MenuView {
       primaryY,
       primaryHeight,
       secondaryY,
-      tertiaryY,
-      settingsY,
+      navY,
+      navHeight,
       rowHeight,
       installHeight,
       installY,
       unit,
     } = this.layout;
     const half = (innerWidth - gap) / 2;
-    const third = (innerWidth - gap * 2) / 3;
     const action = (key: MenuAction) => () => this.callbacks.onAction(key);
     const firstHunt = this.save.totalRuns === 0;
     this.button(
@@ -619,45 +607,34 @@ export class MenuView {
       'Duell',
       action('duel'),
     );
-    this.button(
-      margin + third / 2,
-      tertiaryY,
-      third,
-      rowHeight,
-      'Erfolge',
-      action('achievements'),
-      13,
-    );
-    this.button(GAME_WIDTH / 2, tertiaryY, third, rowHeight, 'Talente', action('talents'), 13);
-    this.button(
-      GAME_WIDTH - margin - third / 2,
-      tertiaryY,
-      third,
-      rowHeight,
-      'Rangliste',
-      action('leaderboard'),
-      13,
-    );
-    this.button(
-      margin + half / 2,
-      settingsY,
-      half,
-      rowHeight,
-      'Einstellungen',
-      action('settings'),
-      13,
-    );
-    this.button(
-      GAME_WIDTH - margin - half / 2,
-      settingsY,
-      half,
-      rowHeight,
-      'Shop',
-      action('shop'),
-      14,
-      false,
-      'shop',
-    );
+    // "Optionen" statt "Einstellungen": Das lange Wort passt in ein Fuenftel
+    // der Breite nur noch in unlesbar kleiner Schrift. Die Seite selbst heisst
+    // weiter Einstellungen.
+    const tabs: readonly [string, MenuAction, UiIcon][] = [
+      ['Erfolge', 'achievements', 'trophy'],
+      ['Talente', 'talents', 'talent'],
+      ['Rangliste', 'leaderboard', 'leaderboard'],
+      ['Shop', 'shop', 'shop'],
+      ['Optionen', 'settings', 'settings'],
+    ];
+    const tabWidth = (innerWidth - gap * (tabs.length - 1)) / tabs.length;
+    tabs.forEach(([label, key, icon], index) => {
+      const handle = createButton(
+        this.scene,
+        margin + tabWidth / 2 + index * (tabWidth + gap),
+        navY,
+        label,
+        action(key),
+        {
+          width: tabWidth,
+          height: navHeight,
+          fontSize: this.layout.font(11),
+          variant: 'ghost',
+          icon,
+        },
+      );
+      this.root.add(handle.container);
+    });
     if (installHeight > 0) {
       this.label(
         GAME_WIDTH / 2,

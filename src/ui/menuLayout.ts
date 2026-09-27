@@ -1,3 +1,6 @@
+/** Groesste Planetenkante im Menue, in CSS-Pixeln. */
+export const MENU_PLANET_MAX = { compact: 138, regular: 208 } as const;
+
 /** Bildschirm-Pixel zuerst: FIT darf die Touchflächen nicht unter 44 px drücken. */
 export function calculateMenuLayout(
   canvasWidth: number,
@@ -18,9 +21,12 @@ export function calculateMenuLayout(
   const installHeight = showInstallHint ? (compact ? 32 : 40) : 0;
   const bottom = Math.max(compact ? 18 : 24, bottomInset + 12);
   const lastBottom = canvasHeight - bottom - (showInstallHint ? installHeight + gap : 0);
-  const settingsY = lastBottom - rowHeight / 2;
-  const tertiaryY = settingsY - rowHeight - gap;
-  const secondaryY = tertiaryY - rowHeight - gap;
+  // Fuenf Nebenziele als eine rahmenlose Symbolleiste statt zwei Kastenreihen:
+  // Sie stehen nicht mehr gleichrangig neben den Spielmodi, und die frei
+  // werdende Zeile geht an Schiff und Planet.
+  const navHeight = compact ? 50 : 58;
+  const navY = lastBottom - navHeight / 2;
+  const secondaryY = navY - navHeight / 2 - gap - rowHeight / 2;
   const primaryY = secondaryY - rowHeight / 2 - gap - primaryHeight / 2;
   const worldTop = profileTop + profileHeight + gap;
   const worldBottom = primaryY - primaryHeight / 2 - gap;
@@ -32,10 +38,14 @@ export function calculateMenuLayout(
   // auf kleinen Geraeten umkehrt.
   const planetSize = Math.max(
     18,
-    Math.min(compact ? 118 : 176, canvasWidth * 0.48, heroHeight * (compact ? 0.84 : 0.7)),
+    Math.min(
+      compact ? MENU_PLANET_MAX.compact : MENU_PLANET_MAX.regular,
+      canvasWidth * 0.52,
+      heroHeight * (compact ? 0.84 : 0.7),
+    ),
   );
   const planetY = worldTop + heroHeight * 0.46;
-  const shipSize = Math.min(compact ? 82 : 108, planetSize * 0.62);
+  const shipSize = Math.min(compact ? 96 : 128, planetSize * 0.62);
   const shipY = Math.min(heroBottom - shipSize * 0.95 - 4, planetY + planetSize * 0.3);
   const innerWidth = canvasWidth - margin * 2;
 
@@ -60,8 +70,8 @@ export function calculateMenuLayout(
     primaryY: primaryY * unit,
     primaryHeight: primaryHeight * unit,
     secondaryY: secondaryY * unit,
-    tertiaryY: tertiaryY * unit,
-    settingsY: settingsY * unit,
+    navY: navY * unit,
+    navHeight: navHeight * unit,
     rowHeight: rowHeight * unit,
     installY: (lastBottom + gap + installHeight / 2) * unit,
     installHeight: installHeight * unit,

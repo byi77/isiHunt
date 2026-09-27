@@ -5,7 +5,7 @@ import { worldVisual } from '@/config/worldVisuals';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import { Depth } from './depth';
 import { createSpatialPlanet } from './spatialPlanet';
-import { paintSafeAreaBackdrop } from './widgets';
+import { addBackdropEdgeFade, paintSafeAreaBackdrop } from './widgets';
 import { createWorldEtching } from './worldEtching';
 
 function hash(x: number, y: number, seed: number): number {
@@ -127,6 +127,7 @@ export class GameBackdrop {
     ).setAlpha(V.planetAlpha);
     this.root.add(planet);
     this.root.add(createWorldEtching(scene, width, height, world.spaceVariant, world.accent));
+    addBackdropEdgeFade(scene, this.root, width, height, V.top, V.bottom);
   }
 
   update(delta: number, playerX: number, playerY: number): void {

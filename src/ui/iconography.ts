@@ -6,7 +6,19 @@ type Line = { kind: 'line'; points: readonly number[] };
 type Rect = { kind: 'rect'; x: number; y: number; width: number; height: number };
 type Stroke = Circle | Line | Rect;
 
-export type UiIcon = 'back' | 'world' | 'time' | 'coins' | 'xp' | 'rank' | 'shop' | 'profile';
+export type UiIcon =
+  | 'back'
+  | 'world'
+  | 'time'
+  | 'coins'
+  | 'xp'
+  | 'rank'
+  | 'shop'
+  | 'profile'
+  | 'trophy'
+  | 'talent'
+  | 'leaderboard'
+  | 'settings';
 
 const ICONS: Record<UiIcon, readonly Stroke[]> = {
   back: [
@@ -48,6 +60,33 @@ const ICONS: Record<UiIcon, readonly Stroke[]> = {
   profile: [
     { kind: 'circle', x: 12, y: 8, radius: 4 },
     { kind: 'line', points: [4, 21, 4, 18, 8, 14, 16, 14, 20, 18, 20, 21] },
+  ],
+  trophy: [
+    { kind: 'line', points: [7, 4, 17, 4, 17, 9, 15, 13, 9, 13, 7, 9, 7, 4] },
+    { kind: 'line', points: [7, 6, 4, 6, 4, 9, 7, 11] },
+    { kind: 'line', points: [17, 6, 20, 6, 20, 9, 17, 11] },
+    { kind: 'line', points: [12, 13, 12, 18] },
+    { kind: 'line', points: [8, 20, 16, 20] },
+  ],
+  talent: [
+    { kind: 'circle', x: 12, y: 5, radius: 2 },
+    { kind: 'circle', x: 6, y: 19, radius: 2 },
+    { kind: 'circle', x: 18, y: 19, radius: 2 },
+    { kind: 'line', points: [12, 7, 12, 12] },
+    { kind: 'line', points: [6, 17, 12, 12, 18, 17] },
+  ],
+  leaderboard: [
+    { kind: 'rect', x: 3, y: 12, width: 6, height: 9 },
+    { kind: 'rect', x: 9, y: 6, width: 6, height: 15 },
+    { kind: 'rect', x: 15, y: 15, width: 6, height: 6 },
+  ],
+  settings: [
+    { kind: 'line', points: [4, 7, 6.5, 7] },
+    { kind: 'line', points: [11.5, 7, 20, 7] },
+    { kind: 'circle', x: 9, y: 7, radius: 2.5 },
+    { kind: 'line', points: [4, 17, 12.5, 17] },
+    { kind: 'line', points: [17.5, 17, 20, 17] },
+    { kind: 'circle', x: 15, y: 17, radius: 2.5 },
   ],
 };
 

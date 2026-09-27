@@ -17,6 +17,12 @@ import {
   SCROLL_INERTIA_MIN_SPEED,
   SCROLL_POINTER_VELOCITY_SMOOTHING,
 } from '@/config/GameConfig';
+import {
+  BACK_ZONE_VISUALS,
+  BACKDROP_EDGE_FADE,
+  GHOST_BUTTON_VISUALS,
+  LEADING_ICON_VISUALS,
+} from '@/config/effectVisuals';
 import type { WorldDef } from '@/config/worlds';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
@@ -24,7 +30,7 @@ import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import * as SoundSystem from '@/systems/SoundSystem';
 import { ensureTouchTarget, prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import { createSpatialPlanet } from '@/ui/spatialPlanet';
-import { createSceneIcon } from '@/ui/iconography';
+import { createSceneIcon, type UiIcon } from '@/ui/iconography';
 
 export interface ButtonHandle {
   container: Phaser.GameObjects.Container;
@@ -125,7 +131,18 @@ export function createButton(
     height?: number;
     accent?: number;
     fontSize?: number;
-    variant?: 'primary' | 'secondary';
+    /**
+     * `ghost`: rahmenlose Kachel fuer Nebenziele, Symbol ueber kleiner
+     * Beschriftung. Nur beim Druecken bekommt sie eine Flaeche - so tritt sie
+     * hinter die Knoepfe mit Rahmen zurueck, ohne an Trefferflaeche zu verlieren.
+     */
+    variant?: 'primary' | 'secondary' | 'ghost';
+    /**
+     * Bei `ghost` ueber der Beschriftung, sonst links vor ihr. Die Schrift
+     * rueckt dann aus der Mitte, damit das Symbol nie auf dem ersten
+     * Buchstaben liegt (so geschehen bei "ERSTE JAGD" auf 320 px).
+     */
+    icon?: UiIcon;
     /**
      * Klang beim Ausloesen. `none` fuer Knoepfe, die ihren Klang selbst
      * waehlen - etwa Umschalter, die fuer an und aus verschieden klingen.
@@ -143,6 +160,7 @@ export function createButton(
   const height = target.height;
   const accent = options.accent ?? Palette.goldHex;
   const primary = options.variant === 'primary';
+  const ghost = options.variant === 'ghost';
 
   // Buttons liegen immer über normalen Texten und Statusanzeigen. Dadurch
   // kann eine Meldung niemals die sichtbare Schaltfläche oder deren
@@ -157,29 +175,60 @@ export function createButton(
   const bg = scene.add.graphics();
   const paintBackground = (highlighted: boolean): void => {
     bg.clear();
-    bg.fillStyle(primary ? accent : highlighted ? Palette.buttonHover : Palette.buttonSurface);
+    if (ghost) {
+      if (highlighted) bg.fillStyle(Palette.buttonHover, GHOST_BUTTON_VISUALS.pressedAlpha);
+      else return;
+    } else {
+      bg.fillStyle(primary ? accent : highlighted ? Palette.buttonHover : Palette.buttonSurface);
+    }
     bg.fillRoundedRect(-width / 2, -height / 2, width, height, radius);
   };
   paintBackground(false);
 
   const border = scene.add.graphics();
-  border.lineStyle(
-    1.5,
-    primary ? accent : (options.accent ?? Palette.panelBorder),
-    primary || options.accent === undefined ? 1 : 0.5,
-  );
-  border.strokeRoundedRect(-width / 2, -height / 2, width, height, radius);
+  if (!ghost) {
+    border.lineStyle(
+      1.5,
+      primary ? accent : (options.accent ?? Palette.panelBorder),
+      primary || options.accent === undefined ? 1 : 0.5,
+    );
+    border.strokeRoundedRect(-width / 2, -height / 2, width, height, radius);
+  }
 
+  const leadingIcon = !ghost && options.icon !== undefined;
+  const iconSize = Math.min(height * LEADING_ICON_VISUALS.size, LEADING_ICON_VISUALS.maxSize);
+  const iconX = -width / 2 + iconSize / 2 + LEADING_ICON_VISUALS.inset;
+  // Links reserviert: Einzug, Symbol, Luft zur Schrift.
+  const iconReserve = leadingIcon ? LEADING_ICON_VISUALS.inset + iconSize + 8 : 0;
   const text = scene.add
     .text(
-      0,
-      0,
+      iconReserve / 2,
+      ghost ? height * GHOST_BUTTON_VISUALS.labelOffset : 0,
       label,
       textStyle(options.fontSize ?? FontSize.body, primary ? Palette.buttonInk : Palette.ink, {
         fontStyle: 'bold',
       }),
     )
     .setOrigin(0.5);
+  const glyph = !options.icon
+    ? null
+    : ghost
+      ? createSceneIcon(
+          scene,
+          options.icon,
+          0,
+          height * GHOST_BUTTON_VISUALS.iconOffset,
+          height * GHOST_BUTTON_VISUALS.iconSize,
+          Palette.inkDimHex,
+        )
+      : createSceneIcon(
+          scene,
+          options.icon,
+          iconX,
+          0,
+          iconSize,
+          primary ? Palette.buttonInkHex : Palette.inkDimHex,
+        );
 
   // Alles Sichtbare liegt in einer eigenen Gruppe INNERHALB des Containers.
   // Nur sie wird beim Druecken gestaucht - der Container selbst behaelt seine
@@ -188,11 +237,12 @@ export function createButton(
   const fitLabel = (): void => {
     const requested = options.fontSize ?? FontSize.body;
     text.setFontSize(requested);
-    if (text.width > width - 24)
-      text.setFontSize(Math.floor((requested * (width - 24)) / text.width));
+    // Die Ghost-Kachel hat keinen Rahmen, den die Schrift freihalten muesste.
+    const room = width - (ghost ? GHOST_BUTTON_VISUALS.labelPadding : 24) - iconReserve;
+    if (text.width > room) text.setFontSize(Math.floor((requested * room) / text.width));
   };
   fitLabel();
-  const visuals = scene.add.container(0, 0, [bg, border, text]);
+  const visuals = scene.add.container(0, 0, glyph ? [bg, border, glyph, text] : [bg, border, text]);
 
   container.add(visuals);
   container.setSize(width, height);
@@ -332,17 +382,21 @@ export function createBackButton(
   // Gemeinsame, feste Fusszone aller Unterseiten. Sie liegt bewusst ueber dem
   // normalen Inhalt: Kein Scroll-Inhalt und kein spaeter hinzugefuegter
   // Button kann den Zurueck-Knopf verdecken oder unter ihm auftauchen.
-  scene.add
-    .rectangle(
-      GAME_WIDTH / 2,
-      GAME_HEIGHT - BACK_BUTTON_RESERVED_HEIGHT / 2,
-      GAME_WIDTH,
-      BACK_BUTTON_RESERVED_HEIGHT,
-      Palette.backdrop,
-      0.94,
-    )
-    .setDepth(Depth.Overlay)
-    .setScrollFactor(0);
+  //
+  // Farbe ist die untere Randfarbe der Welt: Ein marineblauer Block stand
+  // sonst neben den weltfarbenen DOM-Streifen und schnitt die Seite unten ab.
+  const zoneTop = GAME_HEIGHT - BACK_BUTTON_RESERVED_HEIGHT;
+  const { fade, alpha } = BACK_ZONE_VISUALS;
+  const zone = scene.add.graphics().setDepth(Depth.Overlay).setScrollFactor(0);
+  if (scene.game.renderer.type === Phaser.WEBGL) {
+    zone.fillGradientStyle(worldBottom, worldBottom, worldBottom, worldBottom, 0, 0, alpha, alpha);
+    zone.fillRect(0, zoneTop, GAME_WIDTH, fade);
+    zone.fillStyle(worldBottom, alpha);
+    zone.fillRect(0, zoneTop + fade, GAME_WIDTH, BACK_BUTTON_RESERVED_HEIGHT - fade);
+  } else {
+    zone.fillStyle(worldBottom, alpha);
+    zone.fillRect(0, zoneTop, GAME_WIDTH, BACK_BUTTON_RESERVED_HEIGHT);
+  }
 
   const button = createButton(
     scene,
@@ -728,10 +782,61 @@ export function createPanel(
  * Wird bei jedem Weltwechsel neu gesetzt - der Aufruf sitzt deshalb in
  * `createWorldBackdrop`, das ohnehin jede Scene beim Aufbau ruft.
  */
-export function paintSafeAreaBackdrop(top: number, bottom: number): void {
+export function paintSafeAreaBackdrop(top: number, bottom: number, dim?: BackdropDim): void {
+  worldBottom = dim ? mixColor(bottom, dim.color, dim.alpha) : bottom;
   const style = document.documentElement.style;
-  style.setProperty('--world-top', toCss(top));
-  style.setProperty('--world-bottom', toCss(bottom));
+  style.setProperty('--world-top', toCss(dim ? mixColor(top, dim.color, dim.alpha) : top));
+  style.setProperty('--world-bottom', toCss(worldBottom));
+}
+
+/**
+ * Zuletzt gemalte untere Streifenfarbe. Die Zurueck-Zone uebernimmt sie, damit
+ * sie unten nahtlos an die DOM-Streifen anschliesst. Startwert wie in
+ * `index.html`, falls eine Scene ohne Welthintergrund einen Zurueck-Knopf baut.
+ */
+let worldBottom: number = Palette.backdrop;
+
+/**
+ * Eine Abdunklung, die eine Scene deckend ueber ihren Welthintergrund legt.
+ *
+ * Die DOM-Streifen neben dem Canvas muessen sie mitbekommen: Im Menue lag
+ * der Canvas unter 62 % Abdunklung, die Streifen im reinen Weltverlauf - sie
+ * leuchteten links und rechts wie ein Rahmen.
+ */
+export interface BackdropDim {
+  color: number;
+  alpha: number;
+}
+
+function mixColor(base: number, over: number, alpha: number): number {
+  const channel = (shift: number): number =>
+    Math.round(((base >> shift) & 0xff) * (1 - alpha) + ((over >> shift) & 0xff) * alpha);
+  return (channel(16) << 16) | (channel(8) << 8) | channel(0);
+}
+
+/**
+ * Laesst den Canvasrand in die Farbe der DOM-Streifen auslaufen.
+ *
+ * Muss die oberste Schicht des Hintergrunds sein, sonst hellen Schein und
+ * Wolken den Rand danach wieder auf. Nur unter WebGL: Der Canvas-Rueckfall
+ * kennt keine Verlaufsfuellung und zoege stattdessen einen deckenden Balken.
+ */
+export function addBackdropEdgeFade(
+  scene: Phaser.Scene,
+  parent: Phaser.GameObjects.Container,
+  width: number,
+  height: number,
+  top: number,
+  bottom: number,
+): void {
+  if (scene.game.renderer.type !== Phaser.WEBGL) return;
+  const fade = BACKDROP_EDGE_FADE.width;
+  const edges = scene.add.graphics();
+  edges.fillGradientStyle(top, top, bottom, bottom, 1, 0, 1, 0);
+  edges.fillRect(0, 0, fade, height);
+  edges.fillGradientStyle(top, top, bottom, bottom, 0, 1, 0, 1);
+  edges.fillRect(width - fade, 0, fade, height);
+  parent.add(edges);
 }
 
 /**
@@ -749,6 +854,7 @@ export function createWorldBackdrop(
   bottom: number,
   accent: number,
   spaceVariant = 0,
+  dim?: BackdropDim,
 ): Phaser.GameObjects.Container {
   const backdrop = scene.add.container(0, 0).setDepth(Depth.Backdrop);
 
@@ -770,7 +876,7 @@ export function createWorldBackdrop(
   //
   // Warum am Seitenkoerper und nicht im Canvas: Ausserhalb des Canvas kann
   // Phaser nicht zeichnen. Die Farbe muss ins DOM.
-  paintSafeAreaBackdrop(top, bottom);
+  paintSafeAreaBackdrop(top, bottom, dim);
 
   // Jede Raumzone bekommt eine eigene, feste Himmelskomposition. Die Formen
   // bleiben bewusst weich und transparent: Sie geben Orientierung, ohne
@@ -889,6 +995,7 @@ export function createWorldBackdrop(
     }
   }
 
+  addBackdropEdgeFade(scene, backdrop, width, height, top, bottom);
   return backdrop;
 }
 

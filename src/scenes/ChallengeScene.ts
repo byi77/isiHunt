@@ -355,7 +355,7 @@ export class ChallengeScene extends Phaser.Scene {
             ]
           : []),
         {
-          label: 'ZUM MENUE',
+          label: 'ZUM MENÜ',
           run: () => {
             ChallengeSystem.clear();
             this.scene.start(SceneKey.Menu);

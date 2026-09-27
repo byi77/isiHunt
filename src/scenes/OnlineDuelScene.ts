@@ -1315,7 +1315,7 @@ export class OnlineDuelScene extends Phaser.Scene {
       this.resultView = new ResultView(this, content, this.world.accent, [
         ...(rematch ? [{ label: 'REMATCH', run: () => this.enterRematchDraft() }] : []),
         {
-          label: 'ZUM MENUE',
+          label: 'ZUM MENÜ',
           run: () => {
             void this.leaveDuelAndReturn(() => this.stopResultPolling());
           },

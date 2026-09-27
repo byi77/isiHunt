@@ -290,7 +290,7 @@ export class HangarView {
       },
       { signal: this.abort.signal },
     );
-    const backButton = this.button('Zum Menue', () => this.callbacks.back());
+    const backButton = this.button('Zum Menü', () => this.callbacks.back());
     backButton.classList.add('hangar-icon-button');
     backButton.prepend(createDomIcon('back'));
     footer.append(this.buy, backButton);

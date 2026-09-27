@@ -240,25 +240,28 @@ export class TalentScene extends Phaser.Scene {
         )
         .setOrigin(0.5),
     );
-    content.add(
-      this.add
-        .text(
-          405,
-          y - 10,
-          `AKTUELL RANG ${rank} · NÄCHSTER ${talent.perRank}`,
-          textStyle(FontSize.tiny, Palette.gold),
-        )
-        .setWordWrapWidth(180)
-        .setAlign('center')
-        .setOrigin(0.5, 0),
-    );
+    // Den aktuellen Rang nennt schon die Zeile darueber. Mit ihm zusammen
+    // brach der Text auf drei Zeilen um und lief unter die Rang-Pips.
+    const nextRank = this.add
+      .text(
+        405,
+        y - 10,
+        rank >= talent.maxRank ? 'VOLL AUSGEBAUT' : `NÄCHSTER ${talent.perRank}`,
+        textStyle(FontSize.tiny, Palette.gold),
+      )
+      .setWordWrapWidth(180)
+      .setAlign('center')
+      .setOrigin(0.5, 0);
+    content.add(nextRank);
     // Rang-Pips machen den Ausbau sofort sichtbar: Jeder Kauf fuellt einen
     // weiteren Abschnitt, statt nur die kleine Zahl im Rangtext zu veraendern.
+    // Sie ruecken unter den Text, falls ein kuenftiger `perRank` doch umbricht.
     const pipStartX = 378;
+    const pipY = Math.max(y + 48, nextRank.y + nextRank.height + 8);
     for (let pip = 0; pip < talent.maxRank; pip += 1) {
       content.add(
         this.add
-          .rectangle(pipStartX + pip * 11, y + 48, 8, 8, pip < rank ? Palette.goldHex : 0x66708c)
+          .rectangle(pipStartX + pip * 11, pipY, 8, 8, pip < rank ? Palette.goldHex : 0x66708c)
           .setAlpha(pip < rank ? 1 : 0.34)
           .setStrokeStyle(1, accent, 0.55),
       );

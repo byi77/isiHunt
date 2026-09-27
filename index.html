@@ -224,7 +224,7 @@
         position: relative;
       }
 
-      /* Nur die eigentliche 32-px-Laufzeile ist dunkel. Der Bereich zwischen
+      /* Nur die eigentliche 32-px-Laufzeile ist abgedunkelt. Der Bereich zwischen
          iOS-Systemblur und Laufzeile bleibt transparent, sodass dort der
          Welt-Hintergrund weiterlaeuft statt eines blauen Leerfelds. */
       #safe-area-content {
@@ -240,7 +240,10 @@
         box-sizing: border-box;
         padding: 0 18px;
         overflow: hidden;
-        background: #0b1020;
+        /* Laeuft nach unten in die Welt aus. Ein deckender Balken schnitt
+           jede Seite oben ab wie ein Fremdkoerper; der dunkle Kopf reicht fuer
+           die Lesbarkeit des Textes. */
+        background: linear-gradient(to bottom, rgba(11, 16, 32, 0.78), rgba(11, 16, 32, 0));
         color: #f4f1e8;
         font-size: 12px;
         font-weight: 700;

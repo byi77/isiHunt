@@ -25,12 +25,14 @@ export function soloResultContent(
   const worldGoalCurrent = worldGoalProgress(worldGoal, worldMetrics);
   const sections: ResultSection[] = [
     {
-      title: `+${stats.xpGained.toLocaleString('de-DE')} XP · +${progression.coinsGained.toLocaleString('de-DE')} Coins`,
+      // Die Belohnung selbst steht schon im Kopf (`headlineReward`); diese
+      // Karte erklaert nur, wohin sie gefuehrt hat.
+      title: 'FORTSCHRITT',
       lines: [
         `Kontostand: ${save.coins.toLocaleString('de-DE')} Coins`,
         level.xpNeeded === 0
           ? 'Maximales Level erreicht'
-          : `${level.xpInLevel} / ${level.xpNeeded} XP bis zum naechsten Level`,
+          : `${level.xpInLevel} / ${level.xpNeeded} XP bis zum nächsten Level`,
       ],
       progress: level.ratio,
       highlight: true,
@@ -79,7 +81,7 @@ export function soloResultContent(
   for (const aura of reward.availableAuraNames)
     sections.push({
       title: 'NEUE OPTIK IM SHOP',
-      lines: [aura, 'Jetzt zum Kauf verfuegbar'],
+      lines: [aura, 'Jetzt zum Kauf verfügbar'],
       highlight: true,
       visual: { kind: 'aura' },
     });
@@ -103,7 +105,7 @@ export function soloResultContent(
   const bonus = stats.bonus;
   if (bonus && bonus.entries.length > 0)
     sections.push({
-      title: `ABSCHLUSSPRAEMIE · +${bonus.score.toLocaleString('de-DE')} Punkte · +${bonus.xp.toLocaleString('de-DE')} XP`,
+      title: `ABSCHLUSSPRÄMIE · +${bonus.score.toLocaleString('de-DE')} Punkte · +${bonus.xp.toLocaleString('de-DE')} XP`,
       lines: [
         ...bonus.entries.map(
           (entry) =>
@@ -167,7 +169,7 @@ export function challengeResultContent(
       highlight: !reward.localOnly,
       lines: [
         `+${reward.coins} Coins - +${reward.xp} XP`,
-        ...(reward.localOnly ? ['Nur auf diesem Geraet - nicht im Konto gesichert.'] : []),
+        ...(reward.localOnly ? ['Nur auf diesem Gerät - nicht im Konto gesichert.'] : []),
       ],
     });
   const scores = state.rounds.map((round) => round.score);
@@ -184,9 +186,7 @@ export function challengeResultContent(
       : winner === null
         ? 'UNENTSCHIEDEN'
         : `${labels[winner] ?? `Spieler ${winner + 1}`} gewinnt`,
-    subtitle: daily
-      ? 'Morgen wartet der naechste Lauf auf dich.'
-      : 'Bereit fuer die naechste Runde?',
+    subtitle: daily ? 'Morgen wartet der nächste Lauf auf dich.' : 'Bereit für die nächste Runde?',
     sections,
   };
 }

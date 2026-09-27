@@ -71,7 +71,7 @@ export function installResultPreview(scene: Phaser.Scene, mode: string): void {
           },
         ]),
     {
-      label: 'ZUM MENUE',
+      label: 'ZUM MENÜ',
       run: () => {
         window.location.search = '?layoutAudit';
       },

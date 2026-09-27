@@ -40,21 +40,26 @@ beforeEach(() => {
 });
 
 describe('initialize / shutdown', () => {
-  it('registriert Listener, die auf RunStarted reagieren', () => {
+  // Im Run bleibt die Laufzeile leer: Die Restzeit stand dort als dritte
+  // Anzeige neben HUD-Zahl und Zeitbalken.
+  it('leert die Laufzeile bei RunStarted, statt die Restzeit zu wiederholen', () => {
     SafeAreaSystem.initialize();
+    SafeAreaSystem.showStatic('JAGE DAS LICHT');
 
     eventBus.emitEvent(GameEvent.RunStarted, { worldId: 'meadow', durationMs: 5000 });
+    eventBus.emitEvent(GameEvent.TimerChanged, { remainingMs: 4000, totalMs: 5000 });
 
-    expect(document.getElementById('safe-area-content')?.textContent).toBe('5 SEKUNDEN');
+    expect(document.getElementById('safe-area-content')?.textContent).toBe('');
   });
 
   it('meldet Listener bei shutdown() ab - kein Text-Update mehr danach', () => {
     SafeAreaSystem.initialize();
+    SafeAreaSystem.showStatic('JAGE DAS LICHT');
     SafeAreaSystem.shutdown();
 
     eventBus.emitEvent(GameEvent.RunStarted, { worldId: 'meadow', durationMs: 5000 });
 
-    expect(document.getElementById('safe-area-content')?.textContent).toBe('');
+    expect(document.getElementById('safe-area-content')?.textContent).toBe('JAGE DAS LICHT');
   });
 
   it('registriert Listener bei doppeltem initialize() nicht doppelt', () => {

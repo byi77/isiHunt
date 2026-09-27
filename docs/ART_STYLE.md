@@ -1,5 +1,39 @@
 # Art Style Guide — isiHunt
 
+## Rahmen, Rangstufen und Menüleiste (27.09.2026)
+
+**Kein sichtbarer Rahmen um das Spielfeld.** Ist das Fenster breiter als 9:16
+(Safari mit Adress- und Werkzeugleiste), stehen links und rechts DOM-Streifen
+im Weltverlauf. Der Canvas läuft an beiden Seiten über 56 Spielpixel in genau
+diese Randfarbe aus (`BACKDROP_EDGE_FADE`, nur WebGL). Legt eine Scene eine
+deckende Abdunklung über ihren Hintergrund – das Menü mit 62 % –, bekommen die
+Streifen dieselbe Abdunklung (`BackdropDim`). Die Laufzeile oben ist ein
+Verlauf, der nach unten in die Welt ausläuft, kein deckender Balken; im Run
+bleibt sie leer, die Restzeit steht nur im HUD.
+
+**Die Zurück-Zone** der Unterseiten trägt die untere Randfarbe der Welt statt
+Marineblau und läuft oben über 24 Spielpixel ein (`BACK_ZONE_VISUALS`).
+
+**Drei Rangstufen für Aktionen:**
+
+| Stufe    | Aussehen                                 | Verwendung                           |
+| -------- | ---------------------------------------- | ------------------------------------ |
+| primär   | Goldfläche                               | Spielstart (Jagd, Endlos), Nochmal   |
+| sekundär | Fläche mit Rahmen                        | weitere Modi, Zurück, Seitenaktionen |
+| `ghost`  | ohne Fläche und Rahmen, Symbol über Text | Nebenziele in der Menüleiste         |
+
+Eine `ghost`-Kachel zeigt ihre Fläche nur beim Drücken; ihre Trefferfläche ist
+die volle Kachel. Symbole in gerahmten Knöpfen stehen links, die Schrift weicht
+ihnen aus und liegt nie darunter.
+
+**Hauptmenü:** Jagd und Endlos bleiben gleichrangig in Gold. Tageslauf und
+Duell sind sekundär. Erfolge, Talente, Rangliste, Shop und Optionen stehen als
+eine `ghost`-Leiste am unteren Rand; die gewonnene Zeile geht an Planet und
+Schiff. Die Kachel heißt „Optionen“, weil „Einstellungen“ in ein Fünftel der
+Breite nur unlesbar klein passt; die Seite selbst heißt weiter Einstellungen.
+Neue Monoline-Symbole: Pokal (Erfolge), Verzweigung (Talente), Podest
+(Rangliste), Regler (Optionen).
+
 ## Grafische Modernisierung: Informationsansichten (24.09.2026)
 
 Ein tatsächlicher Ausrüstwechsel setzt einen kurzen Lichtimpuls an der

@@ -99,6 +99,14 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 - [ ] Echte Geräte, 2D/3D-Dauertest und alle übrigen Abnahmekriterien aus
       [Einbauplan](GRAFIK_MODERNISIERUNG_EINBAUPLAN.md) prüfen.
 
+### Grafik: Rahmen und Menüleiste (2026-09-27)
+
+- [x] Kein sichtbarer Rahmen um das Spielfeld im Safari-Browser; Laufzeile als Verlauf, im Run leer.
+- [x] Menü mit drei Rangstufen: Gold für Jagd/Endlos, Rahmen für Tageslauf/Duell, Symbolleiste für den Rest.
+- [x] Ergebnis ohne doppelte Belohnungszeile; Talentkarten ohne überdeckten Text; Zurück-Zone in Weltfarbe.
+- [ ] Auf echtem iPhone prüfen: Streifen im Safari-Browser, leere Laufzeile im Run, Lesbarkeit der Symbolleiste.
+- [ ] Offen: einheitliche Bildsprache (Logo, Planet, Schiff), Info-Seiten, Lichtkern-Oberfläche.
+
 - [x] Eigene Spielfeldkulisse mit strukturierten Weltennebeln, drei
       Sternlagen, sanfter Parallaxe und hochaufgeloestem Randplaneten.
 

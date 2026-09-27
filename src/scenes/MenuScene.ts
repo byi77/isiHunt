@@ -8,6 +8,7 @@
 import Phaser from 'phaser';
 
 import { SYNC_RETRY_DELAYS_MS } from '@/config/backend';
+import { MENU_BACKDROP_DIM_ALPHA } from '@/config/effectVisuals';
 import {
   DAILY_LOGIN_BONUS_COINS,
   DEBUG_ENABLED,
@@ -46,6 +47,7 @@ import {
   createVignette,
   createWorldBackdrop,
 } from '@/ui/widgets';
+import type { BackdropDim } from '@/ui/widgets';
 import { enterScene, transitionTo } from '@/ui/sceneTransition';
 
 /**
@@ -62,6 +64,10 @@ let lastSyncStartedAt = 0;
 export class MenuScene extends Phaser.Scene {
   private selectedWorld!: WorldDef;
   private worldBackdrop!: Phaser.GameObjects.Container;
+  private readonly backdropDim: BackdropDim = {
+    color: Palette.backdrop,
+    alpha: MENU_BACKDROP_DIM_ALPHA,
+  };
   private menuView: MenuView | null = null;
   private worldPreview = false;
   private savePromptObjects: Phaser.GameObjects.GameObject[] = [];
@@ -120,6 +126,7 @@ export class MenuScene extends Phaser.Scene {
       this.selectedWorld.bgBottom,
       this.selectedWorld.accent,
       this.selectedWorld.spaceVariant,
+      this.backdropDim,
     );
     createDriftLayers(this, GAME_WIDTH, GAME_HEIGHT, this.selectedWorld.spaceVariant);
     createAmbientMotes(this, GAME_WIDTH, GAME_HEIGHT, this.selectedWorld.accent);
@@ -139,7 +146,7 @@ export class MenuScene extends Phaser.Scene {
     }
 
     this.add
-      .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, Palette.backdrop, 0.62)
+      .rectangle(0, 0, GAME_WIDTH, GAME_HEIGHT, this.backdropDim.color, this.backdropDim.alpha)
       .setOrigin(0)
       .setDepth(Depth.Backdrop + 1);
     this.menuView = new MenuView(
@@ -834,6 +841,7 @@ export class MenuScene extends Phaser.Scene {
       world.bgBottom,
       world.accent,
       world.spaceVariant,
+      this.backdropDim,
     );
     if (prefersReducedMotion()) {
       previous.destroy(true);

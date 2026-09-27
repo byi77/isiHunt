@@ -1121,7 +1121,8 @@ async function suiteNavigation() {
       // fiel in zwei Audits als "vorbestehend" durch (Audit 2026-08-23).
       ['TALENTE', 'Talents'],
       ['ERFOLGE', 'Achievements'],
-      ['EINSTELLUNGEN', 'Settings'],
+      // Im Menue heisst die Kachel seit der Symbolleiste 'Optionen'.
+      ['OPTIONEN', 'Settings'],
     ];
 
     for (const [label, ziel] of WEGE) {

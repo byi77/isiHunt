@@ -9,6 +9,29 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Grafik: Rahmen, Menüleiste und Aufräumen
+
+- Im Safari-Browser wirkte das Spielfeld wie gerahmt: Die Streifen links und
+  rechts hatten eine andere Helligkeit als der Canvasrand. Der Rand läuft
+  jetzt in die Streifenfarbe aus; im Menü bekommen die Streifen dieselbe
+  Abdunklung wie das Spielfeld.
+- Die Laufzeile oben ist kein schwarzer Balken mehr, sondern ein Verlauf. Im
+  Run bleibt sie leer – die Restzeit stand dort als dritte Anzeige neben
+  HUD-Zahl und Zeitbalken.
+- Hauptmenü: Erfolge, Talente, Rangliste, Shop und Optionen stehen in einer
+  rahmenlosen Symbolleiste statt in zwei Kastenreihen; Planet und Schiff sind
+  größer. Jagd und Endlos bleiben gleichrangig.
+- Symbole in Knöpfen lagen auf 320 px über dem ersten Buchstaben ("ERSTE
+  JAGD", Weltname); die Schrift weicht ihnen jetzt aus.
+- Ergebnis: Die Belohnungszeile stand zweimal untereinander; die Karte
+  darunter heißt jetzt "FORTSCHRITT". Umlaute dort und in "ZUM MENÜ"
+  vereinheitlicht.
+- Talentbaum: "AKTUELL RANG 0" wiederholte die Zeile darüber und ließ den
+  Text unter die Rangkästchen laufen. Voll ausgebaute Talente zeigen
+  "VOLL AUSGEBAUT".
+- Die Zurück-Zone der Unterseiten trägt die Weltfarbe statt eines
+  marineblauen Blocks.
+
 ### Endlos: Serie und Rundenfaktor
 
 - Die Serie reisst am Checkpoint nicht mehr ab, sondern laeuft in der

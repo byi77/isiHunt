@@ -4,6 +4,46 @@
  * an diesen Werten - Kollision, Punkte und Zeiten stehen in `GameConfig.ts`.
  */
 
+/**
+ * Seitlicher Auslauf des Welthintergrunds in seine reine Randfarbe.
+ *
+ * Ist das Browserfenster breiter als 9:16 (Safari mit Adress- und
+ * Werkzeugleiste), stehen links und rechts DOM-Streifen im reinen Verlauf,
+ * waehrend der Canvasrand von Schein und Farbwolken aufgehellt ist - die Naht
+ * sah aus wie ein Rahmen. Breite in Spielpixeln (Spielfeld 720 breit).
+ */
+export const BACKDROP_EDGE_FADE = {
+  width: 56,
+} as const;
+
+/** Feste Zurueck-Zone der Unterseiten: weicher Einlauf, dann fast deckend. */
+export const BACK_ZONE_VISUALS = {
+  fade: 24,
+  alpha: 0.94,
+} as const;
+
+/**
+ * Rahmenlose Kachel (`createButton` mit `variant: 'ghost'`). Lagen relativ zur
+ * Kachelhoehe, damit Symbol und Beschriftung mit dem Menue mitskalieren.
+ */
+export const GHOST_BUTTON_VISUALS = {
+  iconOffset: -0.16,
+  iconSize: 0.4,
+  labelOffset: 0.26,
+  labelPadding: 6,
+  pressedAlpha: 0.55,
+} as const;
+
+/** Symbol links in einem gerahmten Knopf; Masse in Spielpixeln. */
+export const LEADING_ICON_VISUALS = {
+  size: 0.42,
+  maxSize: 40,
+  inset: 18,
+} as const;
+
+/** Deckkraft der Abdunklung zwischen Welthintergrund und Hauptmenue. */
+export const MENU_BACKDROP_DIM_ALPHA = 0.62;
+
 /** Hindernisse lesen sich als Schatten, nicht als Licht (ART_STYLE 1.2). */
 export const OBSTACLE_VISUALS = {
   bodyAlpha: 0.92,

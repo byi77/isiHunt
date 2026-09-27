@@ -38,8 +38,11 @@ describe('Ergebnisdarstellung', () => {
     for (const id of progression.unlockedAchievementIds)
       expect(labels).toContain(ACHIEVEMENT_BY_ID[id]!.name);
     expect(labels).toContain('Prismaflut');
-    expect(labels).toContain('Jetzt zum Kauf verfuegbar');
-    expect(content.sections[0]!.title).toContain('+1.500 Coins');
+    expect(labels).toContain('Jetzt zum Kauf verfügbar');
+    expect(content.headlineReward).toContain('+1.500 Coins');
+    // Die Belohnung steht im Kopf; eine Karte mit derselben Zeile direkt
+    // darunter las sich auf dem Geraet wie ein Anzeigefehler.
+    for (const section of content.sections) expect(section.title).not.toBe(content.headlineReward);
     expect(content.badge).toBe('NEUER BESTWERT');
     expect(content.score).toBe('123.456.789');
     expect({ save, stats, progression }).toEqual(before);
@@ -101,7 +104,7 @@ describe('Ergebnisdarstellung', () => {
     const content = challengeResultContent(state, labels, 0);
     expect(content.sections[0]!.highlight).toBe(false);
     expect(content.sections[0]!.lines).toContain(
-      'Nur auf diesem Geraet - nicht im Konto gesichert.',
+      'Nur auf diesem Gerät - nicht im Konto gesichert.',
     );
     labels.forEach((name, index) => {
       expect(content.sections[index + 1]!.title).toContain(name);

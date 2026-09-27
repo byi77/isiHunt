@@ -30,6 +30,14 @@ erzeugt keinen eigenen Fortschrittszustand. Der Hangar-Fotoexport rastert
 bereits geladene Texturen lokal auf ein 1080er Canvas und startet einen
 PNG-Download ohne Serveraufruf.
 
+`createButton` kennt neben `primary` und `secondary` die Variante `ghost`
+(rahmenlose Kachel, Symbol ueber Text) und nimmt ein optionales `icon`; die
+Schrift raeumt dem Symbol Platz ein, statt dass Scenes Symbole frei darueber
+legen. `paintSafeAreaBackdrop` merkt sich die zuletzt gemalte untere
+Streifenfarbe, damit die Zurueck-Zone daran anschliesst, und nimmt optional
+eine `BackdropDim` fuer Scenes mit deckender Abdunklung (Menue). Sichtwerte
+dafuer stehen in `config/effectVisuals.ts`.
+
 Die Orbital-3D-Modelle verwenden `shipN-preview.svg` als gemeinsame 2D-Ansicht
 für Shop, Menü, Spiel und Ergebnis. `playerTextureForShape()` löst die
 `threeDAssetId` auf den eigens geladenen Fallback-Texture-Key auf; `shipDisplayScale()`
@@ -290,7 +298,7 @@ isiHunt/
 │   ├── systems/                Regeln ohne Darstellung
 │   │   ├── SaveSystem.ts       localStorage, versioniert
 │   │   ├── SaveSystem.test.ts
-│   │   ├── SafeAreaSystem.ts   Safe-Area-Laufband und Run-Restzeit
+│   │   ├── SafeAreaSystem.ts   Safe-Area-Laufband (im Run leer)
 │   │   ├── SafeAreaSystem.test.ts
 │   │   ├── SoundSystem.ts      Audio-Fassade, Settings und Fallback
 │   │   ├── SoundSystem.test.ts
