@@ -26,7 +26,7 @@ Hochformat.
 | Warum so und nicht anders?  | `docs/DECISIONS.md`    |
 | Was kommt als naechstes?    | `docs/ROADMAP.md`      |
 
-## Die neun Regeln
+## Die elf Regeln
 
 Vollstaendig begruendet in `docs/CODE_STYLE.md`. Kurzfassung:
 
@@ -49,8 +49,12 @@ Vollstaendig begruendet in `docs/CODE_STYLE.md`. Kurzfassung:
 9. **Jeder Commit zieht die Version hoch, jeder Push liefert sie aus.** Die
    Hooks erledigen das; nach dem Push wird der Deploy geprueft. Ein
    Fehlerbericht ohne Versionsnummer ist wertlos.
-10. Mach die Arbeit niemals selbst, delegiere immer zu Sub-Agenten.
-11. Nutze nicht immer Opus 5.5, sondern wechsel auf günstigere Modele für einfachere Aufgaben.
+10. **Umfangreiche Arbeit an Sub-Agenten, kleine Änderungen direkt.** Lange
+    Ausgaben, viele Dateien, Testläufe und Suchen gehen an einen Agenten; eine
+    gezielte Änderung erledigt der Hauptagent selbst. Grund: Tokens sparen —
+    ein Agent kostet schon beim Start zehntausende Tokens.
+11. **Günstigere Modelle für einfache Aufgaben.** Nicht jede Aufgabe braucht
+    das stärkste Modell. Grund: Tokens und Kosten sparen.
 
 ## Kein Code ohne Dokument
 

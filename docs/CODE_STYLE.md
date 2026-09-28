@@ -7,7 +7,7 @@ Werkzeuge erzwingen die Formatierung (Prettier) und einen Teil der Regeln
 
 ---
 
-## 1. Die neun Regeln
+## 1. Die elf Regeln
 
 ### 1.1 Keine magischen Zahlen ausserhalb von `config/`
 
@@ -226,6 +226,59 @@ Damit ist die Kette geschlossen: Sie meldet sich jetzt von selbst.
 Bewusst uebergehen: `git commit --no-verify` bzw. `git push --no-verify`. Die
 CI-Pruefungen laufen trotzdem. Merge-, Rebase- und Amend-Commits ueberspringt
 der pre-commit-Hook selbst — sie gehoeren zu einem bereits vergebenen Stand.
+
+### 1.10 Umfangreiche Arbeit an Sub-Agenten, kleine Änderungen direkt
+
+Festgelegt vom Projektinhaber am 2026-09-28. **Grund: Tokens sparen.**
+
+Ein Sub-Agent beginnt ohne Vorwissen und lädt zuerst die ganze Grundausstattung
+(Anweisungen, Werkzeugbeschreibungen). Gemessen am 2026-09-28 laut
+Agentenbericht:
+
+| Aufgabe                            | Modell | Tokens des Agenten |
+| ---------------------------------- | ------ | ------------------ |
+| eine Zeile in `CLAUDE.md` ändern   | haiku  | 40.070             |
+| zwei Abschnitte in dieses Dokument | haiku  | 42.629             |
+| `/finish`-Kette (zwei Anläufe)     | sonnet | 52.485 + 58.228    |
+
+Die erste Fassung ("niemals selbst, immer delegieren") verfehlte ihren Zweck
+bei kleinen Aufgaben: Eine einzelne Änderung kostet den Hauptagenten einen
+Werkzeugaufruf, der Agent zehntausende Tokens - plus die Nachprüfung. Deshalb:
+
+- **Delegieren**, wenn die Zwischenschritte den Hauptkontext aufblähen würden:
+  Testläufe mit langer Ausgabe, Suchen über viele Dateien, Umbauten an vielen
+  Stellen, Befehlsketten wie `/finish`. Der Hauptkontext wird bei jeder
+  weiteren Antwort mitbezahlt; was im Agenten bleibt, nicht.
+- **Direkt erledigen**, was in wenigen Werkzeugaufrufen gezielt geht: eine
+  Zeile, ein Abschnitt, eine Rückfrage.
+
+Ungeprüft ist, ab welcher Größe sich das Delegieren rechnet; die Tabelle oben
+ist die einzige Messung.
+
+Bewährt hat sich beim Delegieren (Sitzung vom 2026-09-28):
+
+- **Der Auftrag nennt den erwarteten Zustand und verlangt Abbruch bei
+  Abweichung.** Die Auslieferung von v0.1.403 sollte genau drei geänderte
+  Dateien vorfinden; der Agent fand vier (`CLAUDE.md`) und hielt an, statt
+  sie ungefragt mitzunehmen.
+- **Das Ergebnis eines Sub-Agenten ist eine Behauptung, kein Beleg**
+  (Regel 1.8). Der Koordinator prüft es mit einem eigenen Werkzeugaufruf nach,
+  etwa `git log`, `git diff` oder `npm run deploy:check`.
+
+### 1.11 Günstigere Modelle für einfache Aufgaben
+
+Festgelegt vom Projektinhaber am 2026-09-28. **Grund: Tokens und Kosten
+sparen.** Nicht jede Aufgabe braucht das stärkste Modell. Ausgangspunkt für
+die Wahl, wenn delegiert wird (1.10):
+
+| Aufgabe                                                                    | Modell                  |
+| -------------------------------------------------------------------------- | ----------------------- |
+| Mechanisch, exakt vorgegeben, aber umfangreich (viele gleiche Ersetzungen) | haiku                   |
+| Abarbeiten mit Abbruchkriterien (Auslieferungskette, Suche)                | sonnet                  |
+| Entwurf, Diagnose, Abwägung, Gestaltung                                    | das stärkste verfügbare |
+
+Wird eine Aufgabe unterwegs schwieriger als gedacht, gibt der Agent sie
+zurück, statt sie mit dem schwächeren Modell zu Ende zu raten.
 
 ## 2. Namenskonventionen
 
