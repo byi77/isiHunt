@@ -8,6 +8,9 @@ import { Depth } from './depth';
 import { createSpatialPlanet } from './spatialPlanet';
 import { addBackdropEdgeFade, paintSafeAreaBackdrop } from './widgets';
 import { WorldAtmosphere } from './worldAtmosphere';
+import { BackdropDistortion } from './backdropDistortion';
+import { DISTORTION } from '@/config/postFx';
+import * as EffectsQualitySystem from '@/systems/EffectsQualitySystem';
 import { createWorldEtching } from './worldEtching';
 
 function hash(x: number, y: number, seed: number): number {
@@ -89,6 +92,7 @@ export class GameBackdrop {
   private readonly nebula: Phaser.GameObjects.Image;
   private readonly atmosphere: WorldAtmosphere;
   private readonly planet: Phaser.GameObjects.Container;
+  private readonly distortion: BackdropDistortion | null;
   private elapsed = 0;
   private offsetX = 0;
   private offsetY = 0;
@@ -151,6 +155,9 @@ export class GameBackdrop {
     this.root.add(this.atmosphere.front);
     this.root.add(createWorldEtching(scene, width, height, world.spaceVariant, world.accent));
     addBackdropEdgeFade(scene, this.root, width, height, top, bottom);
+    this.distortion = EffectsQualitySystem.isFull()
+      ? new BackdropDistortion(scene, this.root, DISTORTION.mode[world.spaceVariant] ?? 'none')
+      : null;
   }
 
   /**
@@ -173,6 +180,7 @@ export class GameBackdrop {
     }
     const dt = Math.min(Math.max(delta, 0), V.maxDeltaMs);
     this.atmosphere.update(dt);
+    this.distortion?.update(dt);
     this.elapsed = (this.elapsed + dt) % V.driftPeriodMs;
     const follow = 1 - Math.exp((-V.followResponse * dt) / 1000);
     this.offsetX += ((playerX / this.width - 0.5) * 2 - this.offsetX) * follow;

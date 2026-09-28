@@ -71,3 +71,22 @@ export const GRADING = {
   /** Wie weit die Saettigung beim Treffer faellt (0..1). */
   hitDesaturate: 0.7,
 } as const;
+
+/**
+ * Verzerrung der Kulisse, nur auf der vollen Stufe (Index = `spaceVariant`).
+ *
+ * Nur die Kulisse, nie Relikte oder Schiff: Eine verzerrte Kamera zeichnete
+ * Relikte neben der Stelle, an der sie eingesammelt werden.
+ *
+ * - `haze`: Hitzeflimmern ueber eine weiche Rauschtextur, Staerke pulsiert.
+ * - `tremor`: Der Raum zittert in kurzen Stoessen (Nullsektor).
+ * - `lens`: Atmende Linse ueber die ganze Kulisse (Horizonttor).
+ */
+export const DISTORTION = {
+  mode: ['none', 'none', 'haze', 'tremor', 'haze', 'none', 'none', 'none', 'none', 'lens'],
+  haze: { amount: 0.0045, periodMs: 2_600 },
+  tremor: { amount: 0.009, everyMs: 4_200, durationMs: 600 },
+  /** Barrel: 1 ist unverzerrt. */
+  lens: { amount: 0.05, periodMs: 7_000 },
+  noiseSize: 256,
+} as const;
