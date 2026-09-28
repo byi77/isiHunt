@@ -147,3 +147,9 @@ export const RELIC_SHINE = {
   repeatDelayMs: 1_600,
   colorFactor: [1.5, 1.4, 1.2, 1],
 } as const;
+
+/**
+ * Unschaerfe der Spielszene, solange pausiert ist - nur auf der vollen Stufe.
+ * Das Pausebild liegt in der HUD-Szene und bleibt scharf.
+ */
+export const PAUSE_BLUR = { quality: 1, x: 2, y: 2, strength: 1.4, steps: 4 } as const;

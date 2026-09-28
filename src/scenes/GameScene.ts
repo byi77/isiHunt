@@ -94,6 +94,7 @@ import { Depth } from '@/ui/depth';
 import * as EffectsQualitySystem from '@/systems/EffectsQualitySystem';
 import { FrameRateGuard } from '@/systems/FrameRateGuard';
 import { applyBloom, CameraGrading } from '@/ui/postFx';
+import { PAUSE_BLUR } from '@/config/postFx';
 import { lightingEnabled, SceneLighting } from '@/ui/sceneLighting';
 import { worldShipAura } from '@/config/worldShipAura';
 import { shipAuraAssetId, shipAuraIndex, shipHullTint, shipTint } from '@/config/shop';
@@ -224,6 +225,24 @@ export class GameScene extends Phaser.Scene {
   private lighting: SceneLighting | null = null;
   /** Farbstimmung und Treffer-Entsaettigung; `null` unterhalb der vollen Stufe. */
   private grading: CameraGrading | null = null;
+  private pauseBlur: Phaser.Filters.Blur | null = null;
+  /** Klassenfeld, damit `off` dieselbe Referenz trifft (Regel 4). */
+  private readonly blurOnPause = (): void => {
+    if (!EffectsQualitySystem.isFull() || this.pauseBlur) return;
+    const b = PAUSE_BLUR;
+    this.pauseBlur = this.cameras.main.filters.external.addBlur(
+      b.quality,
+      b.x,
+      b.y,
+      b.strength,
+      0xffffff,
+      b.steps,
+    );
+  };
+  private readonly unblurOnResume = (): void => {
+    this.pauseBlur?.destroy();
+    this.pauseBlur = null;
+  };
   private remainingMs = 0;
   private totalMs = 0;
   private mode: RunMode = 'solo';
@@ -350,6 +369,8 @@ export class GameScene extends Phaser.Scene {
 
     this.backdrop = new GameBackdrop(this, GAME_WIDTH, GAME_HEIGHT, this.world);
     this.removeBloom = applyBloom(this.cameras.main, this.world.spaceVariant);
+    this.events.on(Phaser.Scenes.Events.PAUSE, this.blurOnPause);
+    this.events.on(Phaser.Scenes.Events.RESUME, this.unblurOnResume);
     this.grading = EffectsQualitySystem.isFull()
       ? new CameraGrading(this.cameras.main, this.world.spaceVariant)
       : null;
@@ -1680,6 +1701,9 @@ export class GameScene extends Phaser.Scene {
     this.lighting = null;
     this.grading?.destroy();
     this.grading = null;
+    this.events.off(Phaser.Scenes.Events.PAUSE, this.blurOnPause);
+    this.events.off(Phaser.Scenes.Events.RESUME, this.unblurOnResume);
+    this.pauseBlur = null;
     this.backdrop?.destroy();
     this.collectionEffects?.destroy();
     this.clearPendingCollectibles();
