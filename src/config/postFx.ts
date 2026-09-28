@@ -55,3 +55,19 @@ export const LIGHTING = {
   /** Selbstschatten ueber die Texturhelligkeit: gibt dem Planeten Relief. */
   selfShadow: { penumbra: 0.5, flatThreshold: 1 / 3 },
 } as const;
+
+/**
+ * Farbstimmung der Spielkamera, nur auf der vollen Stufe.
+ *
+ * Kleine Anhebungen von Saettigung und Kontrast je Welt (Index =
+ * `spaceVariant`); grosse Werte kippen Rarity-Farben und damit die Lesbarkeit.
+ * Beim Hindernistreffer entsaettigt das Bild kurz - ein Gefuehl von "das tat
+ * weh", zusaetzlich zu Wackeln und Zahl, nie statt ihnen.
+ */
+export const GRADING = {
+  saturation: [0.1, 0.05, 0.2, 0.15, 0.15, 0, 0.1, 0.1, 0.1, 0.1],
+  contrast: [0.08, 0.08, 0.1, 0.1, 0.06, 0.08, 0.08, 0.1, 0.04, 0.08],
+  hitMs: 350,
+  /** Wie weit die Saettigung beim Treffer faellt (0..1). */
+  hitDesaturate: 0.7,
+} as const;

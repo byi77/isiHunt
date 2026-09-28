@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { BLOOM_BY_QUALITY, BLOOM_WORLD_STRENGTH } from '@/config/postFx';
+import { BLOOM_BY_QUALITY, BLOOM_WORLD_STRENGTH, GRADING } from '@/config/postFx';
 import * as EffectsQualitySystem from '@/systems/EffectsQualitySystem';
 
 /**
@@ -28,4 +28,47 @@ export function applyBloom(
     blendAmount: base.blendAmount * strength,
   });
   return () => bloom?.parallelFilters.destroy();
+}
+
+/**
+ * Farbstimmung je Welt und kurzes Entsaettigen beim Hindernistreffer.
+ *
+ * Ein einziger ColorMatrix-Filter auf der Kamera; die Matrix wird nur neu
+ * berechnet, solange ein Treffer abklingt.
+ */
+export class CameraGrading {
+  private readonly filter: Phaser.Filters.ColorMatrix;
+  private readonly saturation: number;
+  private readonly contrast: number;
+  private hitRestMs = 0;
+
+  constructor(camera: Phaser.Cameras.Scene2D.Camera, spaceVariant: number) {
+    this.saturation = GRADING.saturation[spaceVariant] ?? 0;
+    this.contrast = GRADING.contrast[spaceVariant] ?? 0;
+    this.filter = camera.filters.external.addColorMatrix();
+    this.apply(0);
+  }
+
+  hit(): void {
+    this.hitRestMs = GRADING.hitMs;
+    this.apply(1);
+  }
+
+  update(deltaMs: number): void {
+    if (this.hitRestMs <= 0) return;
+    this.hitRestMs = Math.max(0, this.hitRestMs - Math.max(0, deltaMs));
+    this.apply(this.hitRestMs / GRADING.hitMs);
+  }
+
+  destroy(): void {
+    this.filter.destroy();
+  }
+
+  /** @param hit Treffer-Anteil 1 (gerade getroffen) bis 0 (abgeklungen). */
+  private apply(hit: number): void {
+    const matrix = this.filter.colorMatrix;
+    matrix.reset();
+    matrix.saturate(this.saturation - hit * GRADING.hitDesaturate, true);
+    matrix.contrast(this.contrast, true);
+  }
 }
