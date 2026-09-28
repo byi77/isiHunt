@@ -120,6 +120,26 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
       (grosse additive Flaechen), Lesbarkeit der Relikte vor dem Tor.
 - [ ] Im Bild noch nicht gesehen: Blitz der Sturmgrenze, Eisglanz, Standbild
       bei reduzierter Bewegung.
+- [x] Weltaura am Schiff: je Welt eigene umlaufende Elemente, eigene
+      Triebwerksfarbe und eigene Spur; gilt auch im Duell.
+- [x] Triebwerksflamme in Schichten mit Flackern, Schockdiamanten und
+      Nachbrenner-Stoss.
+- [ ] Ungeprueft: Weltaura im Duell, Weltaura unter dem 3D-Schiff (DOM-Overlay
+      liegt darueber), Schockdiamanten und Nachbrenner im Bild, voller
+      Playtest (bewusst uebersprungen).
+- [ ] Offen: eigene Duesenpositionen je Schiffsform (Mehrfach-Triebwerke).
+
+### Engine - Phaser 4 (geplant 2026-09-28)
+
+- [ ] Phase 1: Migration auf 4.2.1 ohne neue Effekte - Punktlisten als
+      `Vector2`, `preFX` zu Filtern, drei Masken zum Mask-Filter,
+      `camera.matrix` in `layoutAudit`, nur noch WebGL mit DOM-Hinweis.
+- [ ] Phase 2: Effektstufen sparsam/mittel/voll, Standard voll mit
+      automatischem Herabstufen (nur abwaerts), Lesbarkeitspruefung.
+- [ ] Phase 3: Bloom, Licht durch Schiff und Relikte, Vignette, Farbstimmung,
+      Hitzeflimmern/Verzerrung, lebender Nebel, Schatten, Uebergaenge.
+- [ ] Phase 4: voller Playtest, Bildrate auf echtem Handy je Stufe,
+      `ios:check`, Duell mit zwei Geraeten.
 
 ### Grafik-Update - Grafikrunde 3 (2026-09-24)
 

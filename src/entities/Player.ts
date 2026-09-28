@@ -59,6 +59,8 @@ import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import { shipFlightPose, shipExhaustOffset, type ShipFlightPose } from '@/ui/shipFlight';
 import { ShipOrbit } from '@/ui/shipOrbit';
 import { ThreeDShipPreview } from '@/ui/threeDShipPreview';
+import { EngineFlame } from '@/ui/engineFlame';
+import { WorldShipAura } from '@/ui/worldShipAura';
 
 /**
  * Wie lange der Fangimpuls den Schein behaelt, bevor die Aura ihn
@@ -94,8 +96,8 @@ function talentRankRatio(stats: PlayerStats, id: TalentId): number {
 export class Player extends Phaser.GameObjects.Container {
   private readonly core: Phaser.GameObjects.Image;
   private readonly halo: Phaser.GameObjects.Image;
-  private readonly enginePlume: Phaser.GameObjects.Image;
-  private readonly engineCore: Phaser.GameObjects.Image;
+  /** Mehrschichtige Triebwerksflamme an der Duese. */
+  private readonly engine: EngineFlame;
   private readonly aura: Phaser.GameObjects.Image;
   /** Rueckrechnung hochaufgeloester Schiffstexturen auf die gewohnte Groesse. */
   private readonly coreBase: number;
@@ -157,6 +159,8 @@ export class Player extends Phaser.GameObjects.Container {
   /** Neigung aus der Bewegung, getrennt von der Drehung der Aura. */
   private flightPose: ShipFlightPose = { bank: 0, pitch: 0 };
   private readonly orbit: ShipOrbit;
+  /** Weltaura um den Rumpf und Weltspur dahinter - siehe `setWorldStyle()`. */
+  private worldAura: WorldShipAura | null = null;
   /**
    * Solange > 0, gehoert der Schein dem Fangimpuls, nicht der Aura.
    *
@@ -221,25 +225,14 @@ export class Player extends Phaser.GameObjects.Container {
 
     this.orbit = new ShipOrbit(scene);
     this.orbit.update(false);
-    this.enginePlume = scene.add
-      .image(0, 34, TextureKey.Glow)
-      .setOrigin(0.5, 0.15)
-      .setTint(0x8edcff)
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setDisplaySize(18, 28)
-      .setAlpha(0.7);
-    this.engineCore = scene.add
-      .image(0, 34, TextureKey.Glow)
-      .setTint(0xe8f8ff)
-      .setBlendMode(Phaser.BlendModes.ADD)
-      .setDisplaySize(9, 14)
-      .setAlpha(0.9);
+    this.engine = new EngineFlame(scene);
+    const rest = shipExhaustOffset(0, 1);
+    this.engine.update(0, rest.x, rest.y, 0, 1, 0, 1, true);
     this.add([
       this.aura,
       this.halo,
       this.orbit.back,
-      this.enginePlume,
-      this.engineCore,
+      ...this.engine.parts,
       this.core,
       this.orbit.front,
     ]);
@@ -470,6 +463,21 @@ export class Player extends Phaser.GameObjects.Container {
     }
   }
 
+  /**
+   * Legt die Weltaura an: umlaufende Elemente, Triebwerksfarbe und Spur der Welt.
+   *
+   * Getrennt von `setAura()`, weil sie zur Welt gehoert, nicht zum Kauf - sie
+   * gilt deshalb auch im Duell, wo gekaufte Auren verborgen bleiben.
+   */
+  setWorldStyle(spaceVariant: number): void {
+    this.worldAura?.destroy();
+    const aura = new WorldShipAura(this.scene, spaceVariant);
+    this.worldAura = aura;
+    this.addAt(aura.back, this.getIndex(this.halo) + 1);
+    this.addAt(aura.front, this.getIndex(this.core) + 1);
+    this.engine.setColor(aura.engineColor);
+  }
+
   setWorldInertia(factor: number): void {
     this.inertiaFactor = Phaser.Math.Clamp(factor, 0.35, 1);
   }
@@ -562,16 +570,27 @@ export class Player extends Phaser.GameObjects.Container {
     this.applyAura();
     const exhaust = shipExhaustOffset(this.core.rotation, this.core.scaleY / this.coreBase);
     const thrust = prefersReducedMotion() ? 0 : Math.min(1, speed / this.stats.moveSpeed);
-    this.enginePlume
-      .setPosition(exhaust.x, exhaust.y)
-      .setRotation(this.core.rotation)
-      .setDisplaySize(18 + thrust * 6, 28 + thrust * 42)
-      .setAlpha(this.core.alpha * (0.65 + thrust * 0.2));
-    this.engineCore
-      .setPosition(exhaust.x, exhaust.y)
-      .setRotation(this.core.rotation)
-      .setAlpha(this.core.alpha * 0.9);
+    this.engine.update(
+      dtSec * 1000,
+      exhaust.x,
+      exhaust.y,
+      this.core.rotation,
+      this.core.scaleY / this.coreBase,
+      thrust,
+      this.core.alpha,
+      prefersReducedMotion(),
+    );
     this.trail.setPosition(this.x + exhaust.x, this.y + exhaust.y);
+    this.worldAura?.update(
+      dtSec * 1000,
+      this.x,
+      this.y,
+      this.velocity.x,
+      this.velocity.y,
+      thrust,
+      exhaust.x,
+      exhaust.y,
+    );
   }
 
   /**
@@ -882,6 +901,7 @@ export class Player extends Phaser.GameObjects.Container {
     this.reachRing.destroy();
     this.magnetField.destroy();
     this.speedStreaks.destroy();
+    this.worldAura?.destroy();
     super.destroy(fromScene);
   }
 

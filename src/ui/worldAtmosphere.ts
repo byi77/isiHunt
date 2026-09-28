@@ -21,7 +21,7 @@ import { TextureKey } from './textures';
  * reduzierte Bewegung dieselbe Szene ohne Sonderweg bedienen.
  */
 
-const Key = {
+export const AtmosphereTexture = {
   Soft: 'atmo-soft',
   Flake: 'atmo-flake',
   Streak: 'atmo-streak',
@@ -33,7 +33,9 @@ const Key = {
   Rift: 'atmo-rift',
   Moon: 'atmo-moon',
   Rock: 'atmo-rock',
+  Diamond: 'atmo-diamond',
 } as const;
+const Key = AtmosphereTexture;
 
 interface Mote {
   img: Phaser.GameObjects.Image;
@@ -86,7 +88,8 @@ function fadeEdges(ctx: CanvasRenderingContext2D, width: number, height: number)
   ctx.globalCompositeOperation = 'source-over';
 }
 
-function createTextures(scene: Phaser.Scene): void {
+/** Legt alle Kulissen-Texturen an; mehrfacher Aufruf ist billig. */
+export function createAtmosphereTextures(scene: Phaser.Scene): void {
   canvasTexture(scene, Key.Soft, 32, 32, (ctx) => {
     const g = ctx.createRadialGradient(16, 16, 0, 16, 16, 16);
     g.addColorStop(0, 'rgba(255,255,255,1)');
@@ -259,6 +262,21 @@ function createTextures(scene: Phaser.Scene): void {
     }
   });
 
+  // Schlanker Splitter, Spitze nach rechts - wie Streak nach der Richtung gedreht.
+  canvasTexture(scene, Key.Diamond, 40, 14, (ctx) => {
+    const g = ctx.createLinearGradient(0, 0, 40, 0);
+    g.addColorStop(0, 'rgba(255,255,255,0.35)');
+    g.addColorStop(1, 'rgba(255,255,255,1)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.moveTo(0, 7);
+    ctx.lineTo(24, 1);
+    ctx.lineTo(40, 7);
+    ctx.lineTo(24, 13);
+    ctx.closePath();
+    ctx.fill();
+  });
+
   canvasTexture(scene, Key.Rock, 24, 24, (ctx) => {
     const rand = seeded(19);
     ctx.fillStyle = '#fff';
@@ -328,7 +346,7 @@ export class WorldAtmosphere {
     private readonly height: number,
     world: WorldDef,
   ) {
-    createTextures(scene);
+    createAtmosphereTextures(scene);
     this.def = worldAtmosphere(world.spaceVariant);
     this.rand = seeded(world.spaceVariant + 1);
     this.back = scene.add.container(0, 0).setName('world-atmosphere-back');

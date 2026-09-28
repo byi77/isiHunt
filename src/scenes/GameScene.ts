@@ -373,6 +373,7 @@ export class GameScene extends Phaser.Scene {
       versteckeKosmetik ? undefined : shipAuraAssetId(save),
     );
     this.player.setWorldInertia(this.world.modifier === 'inertia' ? WORLD_INERTIA_FACTOR : 1);
+    this.player.setWorldStyle(this.world.spaceVariant);
 
     this.input_ = new InputController(this);
     this.lastComboWindowRatio = 0;

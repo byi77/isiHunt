@@ -376,6 +376,33 @@ am Rand oder oben, nicht in der Spielfeldmitte. Gefaerbt wird per Tint auf
 weissen Texturen. Reduzierte Bewegung zeigt das Startbild ohne Bewegung und
 ohne Blitz.
 
+**Weltaura und Triebwerk, 28.09.2026:** Die Welt zeigt sich auch am Schiff.
+Jede Welt legt eigene Elemente um den Rumpf, faerbt die Triebwerksflamme und
+hinterlaesst eine eigene Spur:
+
+| Welt          | Aura am Schiff                        | Spur                    |
+| ------------- | ------------------------------------- | ----------------------- |
+| Sternenweide  | drei kreisende Lichtpollen            | Pollen                  |
+| Eisring       | sechs Kristalle auf gekippter Bahn    | Schneeflocken           |
+| Glutnebel     | lodernde Glutzungen                   | aufsteigende Funken     |
+| Nullsektor    | dunkler Hof, Teilchen spiralen hinein | Teilchen werden gesogen |
+| Sonnenkrone   | zwei gegenlaeufige Strahlenkronen     | goldene Funken          |
+| Mondschmiede  | zwei Monde vor und hinter dem Rumpf   | taumelnde Truemmer      |
+| Kristallbruch | vier schnell kreisende Splitter       | Splitter                |
+| Sturmgrenze   | zuckende Blitzboegen                  | Funkenschlag            |
+| Lichtkern     | Lichtwellen vom Schiff aus            | Lichttropfen            |
+| Horizonttor   | zwei gegenlaeufige Torringe           | Sprungstreifen          |
+
+Regeln: Aura-Elemente bleiben ausserhalb des Rumpfs und nah am Fangradius,
+damit dieser lesbar bleibt. Der Rumpf behaelt seine gekaufte Form und Farbe;
+die Weltaura ergaenzt die gekaufte Aura, sie ersetzt sie nicht.
+
+Die Triebwerksflamme hat Schichten statt eines Lichtflecks: Hitzeschein,
+Aussenflamme in Weltfarbe, weissheisse Innenflamme, heller Duesenkern und ab
+55 % Schub drei Schockdiamanten. Das Flackern ist eine Summe unharmonischer
+Sinuswellen; beim Anfahren schiesst die Flamme bis zu 70 % laenger aus.
+Reduzierte Bewegung zeigt eine ruhige Flamme ohne Flackern und Stoss.
+
 **Fang-Anzeigen, 19.09.2026:** Die Punktzahl steht in der Seltenheitsfarbe;
 ab epischen Relikten bleibt das Seltenheitssymbol sichtbar. Glückstreffer
 zeigen eine grössere goldene Zahl mit x3-Hinweis und stärkerer Ausdehnung.

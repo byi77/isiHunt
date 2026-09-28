@@ -28,6 +28,27 @@ gesetzt; neu gezeichnet wird allein der Blitz der Sturmgrenze, wenn er
 einschlaegt. Der Zufall ist je Welt fest geseedet, damit Screenshots
 vergleichbar bleiben.
 
+Am Schiff selbst (2026-09-28) arbeiten zwei weitere Module, beide im
+Spieler-Container und beide nur ueber `Player.move()` getaktet:
+
+- `ui/worldShipAura.ts` (Werte in `config/worldShipAura.ts`): Weltaura um den
+  Rumpf und Weltspur dahinter. `Player.setWorldStyle(spaceVariant)` legt sie
+  an; `GameScene` ruft das direkt nach `setWorldInertia()` auf. Die Aura haengt
+  mit `back` (hinter dem Rumpf) und `front` (davor) im Container; Elemente auf
+  einer Umlaufbahn wechseln nur beim Seitenwechsel den Container. Die Spur
+  liegt in einem eigenen Container in Weltkoordinaten (`Depth.Player - 2`) mit
+  hoechstens `wakeMax` wiederverwendeten Bildern. Die Weltaura ist unabhaengig
+  von der gekauften Aura (`setAura()`) und gilt deshalb auch im Duell.
+- `ui/engineFlame.ts` (Werte in `config/engineFlame.ts`): Triebwerksflamme aus
+  Hitzeschein, Aussen- und Innenflamme, Duesenkern und Schockdiamanten, dazu
+  ein Nachbrenner-Stoss bei steigendem Schub. Sie ersetzt die frueheren zwei
+  Glow-Bilder `enginePlume`/`engineCore`. Die Farbe setzt `setWorldStyle()`.
+  Alle Schiffsformen teilen einen Duesenpunkt (`shipExhaustOffset`);
+  Mehrfach-Triebwerke je Form gibt es nicht.
+
+`worldAtmosphere.ts` exportiert dafuer `AtmosphereTexture` und
+`createAtmosphereTextures()`; beide Schiffsmodule nutzen dieselben Texturen.
+
 Grafikrunde 3 ergaenzt `ui/worldEtching.ts`: Die Funktion zeichnet einmalig
 pro Szene geometrische Weltkonturen in die aeusseren Spielfeldbereiche. Sie
 verwendet weder Timer noch Frame-Listener. `GameBackdrop` besitzt und zerstoert

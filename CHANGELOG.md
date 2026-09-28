@@ -9,6 +9,17 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Grafik: Weltaura und Triebwerk
+
+- Das Schiff trägt jetzt die Welt: Lichtpollen in der Sternenweide,
+  Eiskristalle im Eisring, Glutzungen im Glutnebel, ein Sog im Nullsektor,
+  eine Strahlenkrone in der Sonnenkrone, kreisende Monde in der Mondschmiede,
+  Splitter im Kristallbruch, Blitzbögen in der Sturmgrenze, Lichtwellen im
+  Lichtkern und Torringe im Horizonttor. Hinter dem Schiff bleibt eine
+  passende Spur zurück. Gekaufte Auren und Farben bleiben erhalten.
+- Neue Triebwerksflamme: Hitzeschein, farbige Außenflamme, weißheißer Kern
+  und bei voller Fahrt helle Schockknoten. Beim Anfahren schießt sie kurz auf.
+
 ### Grafik: Bewegte Welten
 
 - Die zehn Welten sahen im Run fast gleich aus: derselbe tiefblaue
