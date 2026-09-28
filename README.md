@@ -180,7 +180,7 @@ ein Duell unter Bekannten unerheblich, fuer eine oeffentliche Rangliste nicht
 |          |                                                                   |
 | -------- | ----------------------------------------------------------------- |
 | Sprache  | TypeScript (strict)                                               |
-| Engine   | [Phaser 3](https://phaser.io/)                                    |
+| Engine   | [Phaser 4](https://phaser.io/) (nur WebGL)                        |
 | Build    | [Vite](https://vite.dev/)                                         |
 | Backend  | [Supabase](https://supabase.com/) — optional                      |
 | Ziel     | Mobile Browser (Hochformat), spaeter per Capacitor als App        |

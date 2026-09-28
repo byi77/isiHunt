@@ -49,6 +49,54 @@ Spieler-Container und beide nur ueber `Player.move()` getaktet:
 `worldAtmosphere.ts` exportiert dafuer `AtmosphereTexture` und
 `createAtmosphereTextures()`; beide Schiffsmodule nutzen dieselben Texturen.
 
+### Phaser 4 und Effektstufen (2026-09-29, ADR-0035)
+
+Das Spiel laeuft auf Phaser 4.2.1 und **nur unter WebGL** (`type: Phaser.WEBGL`).
+`core/webglSupport.ts` prueft vor dem Start, ob der Browser WebGL liefert, und
+ersetzt sonst den Ladehinweis `#boot` durch eine Erklaerung - Phaser startet
+dann gar nicht erst.
+
+Zwei Helfer kapseln, was sich zwischen Phaser 3 und 4 geaendert hat:
+
+- `ui/clipMask.ts` (`ClipMask`): rechteckiger Ausschnitt ueber den externen
+  Mask-Filter. `GeometryMask` wirkt in v4 nur noch im Canvas-Renderer und
+  brach unter WebGL still. Talentbaum, Ergebnis und Fang-Effekte nutzen den
+  Helfer; die Pixelprobe `maskLeak()` im Playtest (`screens`) prueft ihn.
+- `ui/graphicsPoints.ts` (`asPoints`): v4 typisiert `fillPoints`/`strokePoints`
+  auf `Vector2[]`, liest aber nur `x`/`y`.
+
+**Effektstufen.** `systems/EffectsQualitySystem.ts` kennt `reduced`, `medium`
+und `full` (Standard) plus `effectsQualityAutoLowered` im Spielstand.
+`systems/FrameRateGuard.ts` ist reine Rechnung ohne Phaser: `GameScene`
+fuettert je Frame das `delta` ein; nach der Aufwaermzeit und zwei langsamen
+Median-Fenstern in Folge senkt `lowerAutomatically()` die Stufe um eins,
+wirksam ab der naechsten Szene. Werte in `config/effectQuality.ts`.
+
+**Effekte der vollen Stufe**, alle Werte in `config/postFx.ts`:
+
+| Modul                      | Traeger                         | Inhalt                                        |
+| -------------------------- | ------------------------------- | --------------------------------------------- |
+| `ui/postFx.ts`             | Spielkamera (externe Filter)    | `applyBloom` (auch mittel), `CameraGrading`   |
+| `ui/sceneLighting.ts`      | `scene.lights`                  | Licht am Schiff, Pool fuer epische/legendaere |
+| `ui/backdropDistortion.ts` | Kulissen-Container (intern)     | Displacement, Barrel, Pixelate                |
+| `ui/starDust.ts`           | `SpriteGPULayer` in der Kulisse | funkelnder Sternenstaub, einmal befuellt      |
+| `GameBackdrop`             | `NoiseSimplex3D`                | lebender Nebel                                |
+| `ui/effectsFx.ts`          | einzelne Bilder                 | Glow (ab mittel), Glanz, Schiffsschatten      |
+| `ui/sceneTransition.ts`    | Kamera (Wipe)                   | `enterScene(scene, 'rise' \| 'sweep')`        |
+
+Relikte, Hindernisse und HUD werden **nie** verzerrt oder beleuchtet:
+Verzerrung haengt am Kulissen-Container, Licht nur an Nebel und Randplanet
+(`GameBackdrop.lightTargets()`). Bloom und Farbstimmung liegen auf der
+Spielkamera; das HUD hat eine eigene Szene und Kamera. `GameScene.cleanup()`
+entfernt Bloom, Licht, Farbstimmung und die Pause-Handler.
+
+**Lesbarkeit.** `npm run readability:check` misst je Welt den WCAG-Kontrast
+zwischen Relikt-/Hindernis-Kern und seiner Umgebung im echten Bild, mit
+gesaetem Spawn und selbst getaktetem Spiel, und vergleicht ihn mit
+`scripts/readability-baseline.json` (Toleranz 5 Prozent). Nicht Teil von
+`verify` - es braucht einen Browser. Grenze der Messung: Sind Relikte
+dunkler als ihr Grund (Nullsektor, Lichtkern), erhoeht ein hellerer Grund den
+gemessenen Kontrast.
 Grafikrunde 3 ergaenzt `ui/worldEtching.ts`: Die Funktion zeichnet einmalig
 pro Szene geometrische Weltkonturen in die aeusseren Spielfeldbereiche. Sie
 verwendet weder Timer noch Frame-Listener. `GameBackdrop` besitzt und zerstoert

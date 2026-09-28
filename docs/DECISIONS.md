@@ -1823,10 +1823,10 @@ Startwelt war die Sonnenkrone mit doppelter Chance auf seltene Relikte.
 - `npm run balance:worlds` misst jede weitere Welt-Aenderung gegen eine
   eingefrorene Kopie des Projekts.
 
-## ADR-0035 — Phaser 4 und Effektstufen (Entwurf)
+## ADR-0035 — Phaser 4 und Effektstufen
 
-**Datum:** 2026-09-28 · **Status:** Entwurf auf `feat/phaser4`, wird mit dem
-Abschluss von Phase 1 endgueltig.
+**Datum:** 2026-09-28 · **Status:** gilt seit 2026-09-29 (Phasen 1 bis 3 auf
+`main`).
 
 ### Befund
 
@@ -1888,3 +1888,20 @@ Ein Probelauf mit 4.2.1 in einer getrennten Arbeitskopie ergab:
   `package.json`.
 - Auf dem Handy ist der Branch nur ueber `npm run dev` im WLAN pruefbar; Pages
   liefert nur `main` aus.
+
+### Nachtrag 2026-09-29: Was bei der Umsetzung auffiel
+
+- **Filter rechnen mit GL-Ausrichtung.** Der Schiffsschatten mit `y = +7`
+  lag ueber der Nase; nach unten braucht es `y = -7`.
+- **Licht ohne Normal-Map faellt flach ein.** Phasers Standardhoehe
+  (`radius * 0.1`) liess das Licht in 200 px Abstand unsichtbar; die Lichter
+  stehen jetzt deutlich hoeher (`LIGHTING.ship.z`).
+- **Die Lesbarkeitspruefung hat zweimal angeschlagen**, beide Male im
+  Lichtkern: mit starkem Bloom und mit abgedunkelter Grundhelligkeit. Die
+  zuerst vermutete Ursache (Relikt-Lichter) war es nicht; gemessen wurde die
+  Grundhelligkeit.
+- **Die erste Lesbarkeitsmessung streute um 24 Prozent** zwischen zwei
+  Laeufen. Erst gesaeter Spawn und selbst getaktetes Spiel brachten sie auf
+  1,5 Prozent; die Toleranz steht deshalb auf 5 Prozent.
+- **Nicht gemessen:** die Grafiklast auf echten Handys. Der Bildraten-
+  Waechter arbeitet mit einer vorlaeufigen Schwelle (ROADMAP).

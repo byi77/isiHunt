@@ -9,6 +9,20 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Grafik: Phaser 4 und volle Effekte
+
+- Das Spiel läuft jetzt auf Phaser 4. Ohne WebGL erscheint ein Hinweis statt
+  eines schwarzen Bildschirms.
+- Neue Effektstufen in den Einstellungen: SPARSAM, MITTEL und VOLL (Standard).
+  Kommt ein Gerät nicht mit, senkt das Spiel die Stufe selbst und sagt das in
+  den Einstellungen.
+- Auf VOLL: Bloom, Licht vom Schiff und von seltenen Relikten, Farbstimmung
+  je Welt, kurzes Entsättigen bei Treffern, Hitzeflimmern, Raumzittern und
+  Glitch in der Kulisse, eine atmende Linse im Horizonttor, lebender Nebel,
+  funkelnder Sternenstaub, ein Schatten unter dem Schiff, Glanz auf
+  legendären Relikten, Wischblenden beim Einflug und zum Ergebnis sowie ein
+  unscharfer Hintergrund in der Pause.
+
 ### Grafik: Weltaura und Triebwerk
 
 - Das Schiff trägt jetzt die Welt: Lichtpollen in der Sternenweide,

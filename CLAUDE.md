@@ -13,7 +13,7 @@ verblassen. Ein Run dauert 90 Sekunden; Level, Talente und Erfolge tragen den
 Langzeitfortschritt. Duelle laufen lokal gegen den Bot oder online in einer
 Lobby fuer zwei bis vier Geraete.
 
-**Stack:** TypeScript (strict) · Phaser 3 · Vite · Ziel: mobiler Browser,
+**Stack:** TypeScript (strict) · Phaser 4 (nur WebGL) · Vite · Ziel: mobiler Browser,
 Hochformat.
 
 ## Vor dem ersten Handgriff lesen
@@ -144,6 +144,15 @@ Supabase-Migration dieselben Zahlen nennen. Nach einer Balance-Aenderung
 npm run test          # einmalig
 npm run test:watch    # laeuft mit
 ```
+
+```bash
+npm run readability:check              # Kontrast Relikt/Kulisse je Welt
+npm run readability:check -- --update  # Basis neu messen (nur bewusst)
+```
+
+Nach jeder Aenderung an Effekten, Kulisse oder Weltfarben fahren - nicht Teil
+von `verify`, weil es einen Browser braucht (`docs/ARCHITECTURE.md`,
+"Phaser 4 und Effektstufen").
 
 ### Die beiden Skills
 

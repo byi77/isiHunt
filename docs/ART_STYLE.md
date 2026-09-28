@@ -403,6 +403,33 @@ Aussenflamme in Weltfarbe, weissheisse Innenflamme, heller Duesenkern und ab
 Sinuswellen; beim Anfahren schiesst die Flamme bis zu 70 % laenger aus.
 Reduzierte Bewegung zeigt eine ruhige Flamme ohne Flackern und Stoss.
 
+**Effekte mit Phaser 4, 29.09.2026 (ADR-0035):** Drei Stufen, waehlbar in den
+Einstellungen: SPARSAM (keine Leuchtfilter, halbe Kulissen-Teilchen), MITTEL
+(Stand vor Phaser 4 plus zartes Bloom), VOLL (Standard, alles unten). Ein
+Geraet, das nicht mitkommt, wird automatisch eine Stufe herabgesetzt.
+
+Auf VOLL:
+
+- **Bloom** laesst Schiff, Triebwerk, Aura und helle Relikte ueberstrahlen; die
+  dunkle Kulisse leuchtet nicht mit. Staerke je Welt, Sonnenkrone am staerksten,
+  Nullsektor gedaempft.
+- **Licht**: Das Schiff hellt Randplanet und Nebel in seiner Triebwerksfarbe
+  auf, epische und legendaere Relikte werfen Licht in ihrer Seltenheitsfarbe.
+- **Farbstimmung**: leicht mehr Saettigung und Kontrast je Welt; ein
+  Hindernistreffer entsaettigt das Bild fuer 350 ms.
+- **Kulisse in Bewegung**: Hitzeflimmern (Glutnebel, Sonnenkrone), Raumzittern
+  und kurzer Glitch (Nullsektor), Glitch (Sturmgrenze), atmende Linse
+  (Horizonttor), lebender Nebel aus GPU-Rauschen, funkelnder Sternenstaub.
+- **Schiff und Relikte**: weicher Schatten unter dem Rumpf, wandernder
+  Glanzstreif auf legendaeren Relikten.
+- **Uebergaenge**: Das Spielfeld schiebt sich beim Welteinflug von unten
+  herein, das Ergebnis von links; die Pause stellt das Spiel unscharf.
+
+Regeln: Relikte, Hindernisse, Schiff und HUD werden nie verzerrt oder
+beleuchtet - sie muessen ueberall gleich lesbar sein. Die Spielfeldmitte
+bleibt ruhig: Der lebende Nebel wurde nach dem ersten Screenshot auf gut die
+Haelfte zurueckgenommen, weil er das ganze Feld bedeckte. Jede Aenderung an
+Effektwerten laeuft gegen `npm run readability:check`.
 **Fang-Anzeigen, 19.09.2026:** Die Punktzahl steht in der Seltenheitsfarbe;
 ab epischen Relikten bleibt das Seltenheitssymbol sichtbar. Glückstreffer
 zeigen eine grössere goldene Zahl mit x3-Hinweis und stärkerer Ausdehnung.

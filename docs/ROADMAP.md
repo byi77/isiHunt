@@ -129,17 +129,27 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
       Playtest (bewusst uebersprungen).
 - [ ] Offen: eigene Duesenpositionen je Schiffsform (Mehrfach-Triebwerke).
 
-### Engine - Phaser 4 (geplant 2026-09-28)
+### Engine - Phaser 4 (2026-09-28/29, ADR-0035)
 
-- [ ] Phase 1: Migration auf 4.2.1 ohne neue Effekte - Punktlisten als
-      `Vector2`, `preFX` zu Filtern, drei Masken zum Mask-Filter,
-      `camera.matrix` in `layoutAudit`, nur noch WebGL mit DOM-Hinweis.
-- [ ] Phase 2: Effektstufen sparsam/mittel/voll, Standard voll mit
-      automatischem Herabstufen (nur abwaerts), Lesbarkeitspruefung.
-- [ ] Phase 3: Bloom, Licht durch Schiff und Relikte, Vignette, Farbstimmung,
-      Hitzeflimmern/Verzerrung, lebender Nebel, Schatten, Uebergaenge.
-- [ ] Phase 4: voller Playtest, Bildrate auf echtem Handy je Stufe,
-      `ios:check`, Duell mit zwei Geraeten.
+- [x] Phase 1: Migration auf 4.2.1 ohne neue Effekte - Punktlisten als
+      `Vector2`, `preFX` zu Filtern, drei Masken zum Mask-Filter (mit
+      Pixelprobe im Playtest), `camera.matrix` in `layoutAudit`, nur noch
+      WebGL mit DOM-Hinweis. Bildvergleich v3/v4 ueber alle Welten gleich.
+- [x] Phase 2: Effektstufen sparsam/mittel/voll, Standard voll mit
+      automatischem Herabstufen (nur abwaerts), `npm run readability:check`.
+- [x] Phase 3: Bloom, Licht durch Schiff und Relikte, Farbstimmung und
+      Treffer-Entsaettigung, Hitzeflimmern/Raumzittern/Linse, lebender Nebel,
+      Schiffsschatten, Glanz auf legendaeren Relikten, Glitch, Wischblenden,
+      Pause-Unschaerfe, Sternenstaub auf der GPU.
+- [x] Kurzer Test auf dem Handy (2026-09-29): sah gut aus.
+- [ ] Bildrate auf echten Handys je Stufe messen und die Schwelle des
+      Bildraten-Waechters (`FRAME_GUARD.slowFrameMs`, vorlaeufig 25 ms)
+      danach festlegen.
+- [ ] Voller Playtest ueber die Phase-3-Effekte (zweimal bewusst
+      uebersprungen), Duell mit zwei Geraeten.
+- [ ] Im Bild noch nicht gesehen: Wischblende zum Ergebnis, Stufe MITTEL.
+- [ ] Lichtkern hat den knappsten Helligkeitskontrast der Relikte (1,34 bei
+      Grenze 1,26) - Reliktfarbe dort pruefen.
 
 ### Grafik-Update - Grafikrunde 3 (2026-09-24)
 
