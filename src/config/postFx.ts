@@ -89,6 +89,12 @@ export const DISTORTION = {
   /** Barrel: 1 ist unverzerrt. */
   lens: { amount: 0.05, periodMs: 7_000 },
   noiseSize: 256,
+  /**
+   * Glitch: Die Kulisse verpixelt kurz (Nullsektor, Sturmgrenze). Pixelgroesse
+   * ist 2 + `amount`; zwischen den Stoessen ist der Filter aus und kostet nichts.
+   */
+  glitchWorlds: [false, false, false, true, false, false, false, true, false, false],
+  glitch: { amount: 6, everyMs: 5_300, durationMs: 140 },
 } as const;
 
 /**

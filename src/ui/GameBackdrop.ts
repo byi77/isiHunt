@@ -180,7 +180,12 @@ export class GameBackdrop {
     this.root.add(createWorldEtching(scene, width, height, world.spaceVariant, world.accent));
     addBackdropEdgeFade(scene, this.root, width, height, top, bottom);
     this.distortion = EffectsQualitySystem.isFull()
-      ? new BackdropDistortion(scene, this.root, DISTORTION.mode[world.spaceVariant] ?? 'none')
+      ? new BackdropDistortion(
+          scene,
+          this.root,
+          DISTORTION.mode[world.spaceVariant] ?? 'none',
+          DISTORTION.glitchWorlds[world.spaceVariant] ?? false,
+        )
       : null;
   }
 

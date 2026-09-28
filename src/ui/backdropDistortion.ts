@@ -48,24 +48,30 @@ function noiseTexture(scene: Phaser.Scene): string {
 export class BackdropDistortion {
   private readonly displacement?: Phaser.Filters.Displacement;
   private readonly barrel?: Phaser.Filters.Barrel;
+  private readonly pixelate?: Phaser.Filters.Pixelate;
   private elapsed = 0;
 
   constructor(
     scene: Phaser.Scene,
     target: Phaser.GameObjects.Container,
     private readonly mode: (typeof D.mode)[number],
+    glitch: boolean,
   ) {
-    if (mode === 'none') return;
+    if (mode === 'none' && !glitch) return;
     target.enableFilters();
     const filters = target.filters!.internal;
     if (mode === 'lens') this.barrel = filters.addBarrel(1);
-    else this.displacement = filters.addDisplacement(noiseTexture(scene), 0, 0);
+    else if (mode !== 'none')
+      this.displacement = filters.addDisplacement(noiseTexture(scene), 0, 0);
+    if (glitch) this.pixelate = filters.addPixelate(D.glitch.amount).setActive(false);
     this.update(0);
   }
 
   update(deltaMs: number): void {
     this.elapsed += Math.max(0, deltaMs);
     const t = this.elapsed;
+    // Versetzt zum Raumzittern, damit Glitch und Zittern nicht immer zusammenfallen.
+    this.pixelate?.setActive((t + D.glitch.everyMs / 2) % D.glitch.everyMs < D.glitch.durationMs);
     if (this.mode === 'haze' && this.displacement) {
       const phase = (t / D.haze.periodMs) * Math.PI * 2;
       this.displacement.x = D.haze.amount * (0.6 + 0.4 * Math.sin(phase));
