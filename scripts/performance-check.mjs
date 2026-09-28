@@ -17,6 +17,11 @@ const SAVE_KEY = 'isihunt.save.v1';
 
 function makeSave() {
   return {
+    // Sparsame Effektstufe: Das Gate prueft Simulation und Objektzahlen, nicht
+    // das Rendering. Seit den Phaser-4-Effekten (ADR-0035) rendert der CI-Runner
+    // ohne GPU jeden Frame so langsam, dass der frame-getaktete Countdown nicht
+    // mehr in 90 s durchlief - der Deploy scheiterte am 2026-09-29 zweimal hier.
+    effectsQuality: 'reduced',
     version: 9,
     level: 1,
     xp: 0,
@@ -130,27 +135,48 @@ try {
     undefined,
     { timeout: 25_000, polling: 250 },
   );
-  await page.waitForFunction(
-    () => window.isiHunt?.scene?.getScene('Game')?.phase === 'running',
-    undefined,
-    // Phaser's mobile emulation can suspend requestAnimationFrame while the
-    // countdown scene is being promoted. Interval polling keeps this gate
-    // independent of that browser scheduling detail.
-    //
-    // Das Zeitlimit ist bewusst gross und sagt nichts ueber die Leistung
-    // aus. Der Countdown haengt an Phasers Zeitgeber, und der zaehlt in
-    // FRAMES, nicht in Wanduhrzeit: Ein headless gerenderter Chromium ohne
-    // GPU schafft je nach Maschine nur wenige Bilder pro Sekunde. Gemessen
-    // am 2026-09-19 auf einem Entwicklungsrechner brauchten 2,1 Sekunden
-    // Countdown 28 Sekunden real; das damalige Limit von 25 s brach drei
-    // Sekunden zu frueh ab, waehrend die CI gruen blieb.
-    //
-    // Bewertet wird die Startzeit deshalb nicht mehr hier, sondern ueber
-    // `PERFORMANCE_BUDGETS.startupMs` - und die Messung endet jetzt vor dem
-    // Countdown. Dieses Limit muss nur noch grosszuegig genug sein, damit
-    // der Lauf auch auf langsamer Hardware ueberhaupt zustande kommt.
-    { timeout: 90_000, polling: 250 },
-  );
+  await page
+    .waitForFunction(
+      () => window.isiHunt?.scene?.getScene('Game')?.phase === 'running',
+      undefined,
+      // Phaser's mobile emulation can suspend requestAnimationFrame while the
+      // countdown scene is being promoted. Interval polling keeps this gate
+      // independent of that browser scheduling detail.
+      //
+      // Das Zeitlimit ist bewusst gross und sagt nichts ueber die Leistung
+      // aus. Der Countdown haengt an Phasers Zeitgeber, und der zaehlt in
+      // FRAMES, nicht in Wanduhrzeit: Ein headless gerenderter Chromium ohne
+      // GPU schafft je nach Maschine nur wenige Bilder pro Sekunde. Gemessen
+      // am 2026-09-19 auf einem Entwicklungsrechner brauchten 2,1 Sekunden
+      // Countdown 28 Sekunden real; das damalige Limit von 25 s brach drei
+      // Sekunden zu frueh ab, waehrend die CI gruen blieb.
+      //
+      // Bewertet wird die Startzeit deshalb nicht mehr hier, sondern ueber
+      // `PERFORMANCE_BUDGETS.startupMs` - und die Messung endet jetzt vor dem
+      // Countdown. Dieses Limit muss nur noch grosszuegig genug sein, damit
+      // der Lauf auch auf langsamer Hardware ueberhaupt zustande kommt.
+      { timeout: 90_000, polling: 250 },
+    )
+    .catch(async (error) => {
+      // Ohne diese Ausgabe meldete die CI nur "Timeout" - Fehler und Bildrate
+      // lagen im Skript, kamen aber nie ins Log.
+      const state = await page
+        .evaluate(() => {
+          const game = window.isiHunt;
+          const gl = game?.renderer?.gl;
+          const info = gl?.getExtension('WEBGL_debug_renderer_info');
+          return {
+            phase: game?.scene?.getScene('Game')?.phase,
+            fps: Math.round(game?.loop?.actualFps ?? 0),
+            frame: game?.loop?.frame,
+            renderer: game?.renderer?.type,
+            gpu: info ? gl.getParameter(info.UNMASKED_RENDERER_WEBGL) : 'unbekannt',
+          };
+        })
+        .catch((e) => ({ evaluateFailed: String(e) }));
+      console.error('Countdown lief nicht durch:', JSON.stringify(state), errors.slice(0, 5));
+      throw error;
+    });
 
   let result;
   if (sim) {
