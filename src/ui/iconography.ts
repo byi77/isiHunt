@@ -1,5 +1,6 @@
 /** Gemeinsame, selbst gezeichnete Monoline-Icons fuer Phaser und DOM. */
 import type Phaser from 'phaser';
+import { asPoints } from './graphicsPoints';
 
 type Circle = { kind: 'circle'; x: number; y: number; radius: number };
 type Line = { kind: 'line'; points: readonly number[] };
@@ -114,10 +115,12 @@ export function createSceneIcon(
       );
     } else {
       icon.strokePoints(
-        Array.from({ length: stroke.points.length / 2 }, (_, index) => ({
-          x: stroke.points[index * 2]! * scale,
-          y: stroke.points[index * 2 + 1]! * scale,
-        })),
+        asPoints(
+          Array.from({ length: stroke.points.length / 2 }, (_, index) => ({
+            x: stroke.points[index * 2]! * scale,
+            y: stroke.points[index * 2 + 1]! * scale,
+          })),
+        ),
       );
     }
   }

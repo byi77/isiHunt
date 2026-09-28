@@ -21,6 +21,7 @@ import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
+import { ClipMask } from '@/ui/clipMask';
 import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import {
   attachVerticalScroll,
@@ -162,11 +163,16 @@ export class TalentScene extends Phaser.Scene {
 
     const contentBottom = resetY + 105;
     const listTop = rowTop - rowStep / 2;
-    const clip = this.add.graphics().setVisible(false);
-    clip.fillStyle(0xffffff).fillRect(0, listTop, GAME_WIDTH, layout.contentBottom - listTop);
-    const mask = clip.createGeometryMask();
-    content.setMask(mask);
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => mask.destroy());
+    const clipRect = new Phaser.Geom.Rectangle(
+      0,
+      listTop,
+      GAME_WIDTH,
+      layout.contentBottom - listTop,
+    );
+    const clip = new ClipMask(this, content).set(clipRect);
+    // Dieselbe Geometrie fuer Layoutpruefung und Pixelprobe im Playtest.
+    content.setData('layoutClipRect', clipRect);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => clip.destroy());
     const buttons = content.list
       .filter(
         (object): object is Phaser.GameObjects.Container =>

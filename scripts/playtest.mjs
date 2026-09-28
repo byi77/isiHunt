@@ -533,6 +533,94 @@ function toScreen(page, gx, gy) {
   );
 }
 
+/**
+ * Prueft, ob maskierte Listen wirklich abgeschnitten werden.
+ *
+ * Warum eine Pixelprobe: Unter Phaser 4 wirkt `GeometryMask` nur noch im
+ * Canvas-Renderer. Im Probelauf ragte der Talentbaum unter den Zurueck-Knopf,
+ * und trotzdem blieb jede bestehende Pruefung gruen - keine Konsolenfehler,
+ * alle Knoepfe an ihrem Platz (ADR-0035). Die Probe haengt in jeden Container
+ * mit `layoutClipRect` eine magentafarbene Flaeche, die weit ueber den
+ * Ausschnitt hinausreicht, und zaehlt magentafarbene Pixel ausserhalb.
+ * Magenta kommt im Spiel sonst nicht vor.
+ */
+async function maskLeak(page, sceneKey) {
+  const clips = await page.evaluate((k) => {
+    const scene = window.isiHunt.scene.getScene(k);
+    const found = [];
+    const walk = (list) => {
+      for (const object of list) {
+        const rect = object.getData?.('layoutClipRect');
+        if (rect && object.list) {
+          const probe = scene.add.graphics().setName('mask-probe');
+          probe.fillStyle(0xff00ff, 1).fillRect(-4000, -4000, 9000, 12000);
+          object.add(probe);
+          found.push({ x: rect.x, y: rect.y, width: rect.width, height: rect.height });
+        }
+        if (object.list) walk(object.list);
+      }
+    };
+    walk(scene.children.list);
+    return found;
+  }, sceneKey);
+  if (clips.length === 0) return { ok: false, detail: 'kein Container mit layoutClipRect' };
+
+  await page.waitForTimeout(250);
+  const png = await page.locator('canvas').first().screenshot();
+  const { outside, within } = await page.evaluate(
+    async ([data, rects]) => {
+      const image = new window.Image();
+      image.src = `data:image/png;base64,${data}`;
+      await image.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(image, 0, 0);
+      const pixels = ctx.getImageData(0, 0, image.width, image.height).data;
+      const sx = image.width / window.isiHunt.scale.width;
+      const sy = image.height / window.isiHunt.scale.height;
+      // Zwei Pixel Spielraum gegen Kantenglaettung am Maskenrand.
+      const inside = (px, py) =>
+        rects.some(
+          (r) =>
+            px >= r.x * sx - 2 &&
+            px <= (r.x + r.width) * sx + 2 &&
+            py >= r.y * sy - 2 &&
+            py <= (r.y + r.height) * sy + 2,
+        );
+      let outside = 0;
+      let within = 0;
+      for (let py = 0; py < image.height; py++) {
+        for (let px = 0; px < image.width; px++) {
+          const i = (py * image.width + px) * 4;
+          if (pixels[i] > 200 && pixels[i + 1] < 70 && pixels[i + 2] > 200) {
+            if (inside(px, py)) within++;
+            else outside++;
+          }
+        }
+      }
+      return { outside, within };
+    },
+    [png.toString('base64'), clips],
+  );
+  await page.evaluate((k) => {
+    const scene = window.isiHunt.scene.getScene(k);
+    const walk = (list) => {
+      for (const object of [...list]) {
+        if (object.name === 'mask-probe') object.destroy();
+        else if (object.list) walk(object.list);
+      }
+    };
+    walk(scene.children.list);
+  }, sceneKey);
+  // Auch innen pruefen: Eine Maske, die alles verdeckt, waere aussen ebenfalls dicht.
+  let detail = `${outside} Pixel ausserhalb`;
+  if (within === 0) detail = 'Ausschnitt zeigt nichts - Maske verdeckt alles';
+  else if (outside === 0) detail = `${clips.length} Ausschnitt(e) dicht, innen sichtbar`;
+  return { ok: outside === 0 && within > 0, detail };
+}
+
 /** Klickt einen Punkt der Spielflaeche mit einem echten Mausklick. */
 async function clickGamePoint(page, gx, gy) {
   const { sx, sy } = await toScreen(page, gx, gy);
@@ -707,6 +795,10 @@ async function suiteScreens() {
       await page.waitForTimeout(700);
       await page.screenshot({ path: `${shotDir}/screen-${key.toLowerCase()}.png` });
 
+      if (key === 'Talents') {
+        const leak = await maskLeak(page, key);
+        record('Talentbaum: Liste bleibt in ihrem Ausschnitt', leak.ok, leak.detail);
+      }
       if (key === 'Collection') {
         await page.evaluate(() =>
           window.isiHunt.scene.getScene('Collection').scene.restart({ tab: 'worlds' }),

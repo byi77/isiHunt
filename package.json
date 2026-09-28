@@ -1,6 +1,6 @@
 {
   "name": "isihunt",
-  "version": "0.1.407",
+  "version": "0.1.408",
   "private": true,
   "type": "module",
   "description": "isiHunt - ein farbenfroher 2D-Arcade-Collector fuer mobile Browser",
@@ -47,7 +47,7 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.112.3",
     "@types/three": "^0.185.4",
-    "phaser": "^3.88.0",
+    "phaser": "^4.2.1",
     "three": "^0.185.1"
   },
   "devDependencies": {

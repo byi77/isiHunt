@@ -9,6 +9,7 @@ import {
   type EffectBox,
   type Point,
 } from './collectionMotion';
+import { ClipMask } from './clipMask';
 import { Depth } from './depth';
 import { textStyle } from './theme';
 
@@ -57,8 +58,7 @@ interface Capture {
 /** One graphics layer and at most eight labels; no emitter/tween per catch. */
 export class CollectionEffects {
   private readonly graphics: Phaser.GameObjects.Graphics;
-  private readonly clip: Phaser.GameObjects.Graphics;
-  private readonly mask: Phaser.Display.Masks.GeometryMask;
+  private readonly clip: ClipMask;
   private captures: Capture[] = [];
 
   constructor(
@@ -69,9 +69,7 @@ export class CollectionEffects {
   ) {
     // Live targets and hazards always draw over the decoration.
     this.graphics = scene.add.graphics().setDepth(Depth.Collectible - 1);
-    this.clip = scene.add.graphics().setVisible(false);
-    this.mask = this.clip.createGeometryMask();
-    this.graphics.setMask(this.mask);
+    this.clip = new ClipMask(scene, this.graphics);
   }
 
   add(origin: Point, rarity: RarityDef, points: number, crit = false): void {
@@ -141,15 +139,12 @@ export class CollectionEffects {
     const bounds = this.bounds();
     const target = this.target();
     this.graphics.clear();
-    this.clip
-      .clear()
-      .fillStyle(0xffffff)
-      .fillRect(
-        bounds.left,
-        bounds.top,
-        Math.max(0, bounds.right - bounds.left),
-        Math.max(0, bounds.bottom - bounds.top),
-      );
+    this.clip.set({
+      x: bounds.left,
+      y: bounds.top,
+      width: Math.max(0, bounds.right - bounds.left),
+      height: Math.max(0, bounds.bottom - bounds.top),
+    });
     const occupied: EffectBox[] = [
       { left: target.x - 58, right: target.x + 58, top: target.y - 58, bottom: target.y + 58 },
     ];
@@ -288,8 +283,6 @@ export class CollectionEffects {
   destroy(): void {
     for (const capture of this.captures) capture.label.destroy();
     this.captures = [];
-    this.graphics.clearMask();
-    this.mask.destroy();
     this.clip.destroy();
     this.graphics.destroy();
   }

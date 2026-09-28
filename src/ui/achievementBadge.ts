@@ -13,12 +13,13 @@
 import type Phaser from 'phaser';
 
 import type { AchievementCategory } from '@/systems/AchievementProgressSystem';
+import { asPoints } from '@/ui/graphicsPoints';
 import { Palette } from '@/ui/theme';
 
 type Point = { x: number; y: number };
 
 function polygon(g: Phaser.GameObjects.Graphics, points: Point[]): void {
-  g.fillPoints(points, true);
+  g.fillPoints(asPoints(points), true);
 }
 
 function starPoints(

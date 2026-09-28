@@ -158,8 +158,11 @@ export const GLOW_FX = {
   playerInner: 0,
   relicOuter: 5,
   relicInner: 0.5,
-  /** Shaderguete: Phaser-Standard ist 0.1; kleiner ist billiger. */
-  quality: 0.1,
+  /**
+   * Shaderguete als Stichprobenzahl (Phaser 4, Standard 10; kleiner ist
+   * billiger). Phaser 3 nahm hier einen Bruch (0.1) - keine lineare Umrechnung.
+   */
+  quality: 10,
   distance: 10,
 } as const;
 

@@ -62,12 +62,10 @@ export function installLayoutAudit(game: Phaser.Game): void {
     const scenes = game.scene.getScenes(true);
     for (const scene of scenes) {
       const camera = scene.cameras.main;
-      // Phaser nutzt diese Matrix beim Rendern, exportiert sie aber nicht im Camera-Typ.
-      const cameraMatrix = (
-        camera as unknown as {
-          matrix: Phaser.GameObjects.Components.TransformMatrix;
-        }
-      ).matrix;
+      // Seit Phaser 4 enthaelt `matrixCombined` Position, Zoom, Drehung und den
+      // Bildlauf der Kamera. Objekte mit Scroll-Faktor != 1 laufen weniger mit;
+      // der Anteil, der ihnen nicht gilt, kommt deshalb wieder dazu.
+      const cameraMatrix = camera.matrixCombined;
       const screenBox = (bounds: Phaser.Geom.Rectangle, scrollX = 1, scrollY = 1) => {
         const corners = [
           [bounds.left, bounds.top],
@@ -75,7 +73,10 @@ export function installLayoutAudit(game: Phaser.Game): void {
           [bounds.right, bounds.bottom],
           [bounds.left, bounds.bottom],
         ].map(([x, y]) =>
-          cameraMatrix.transformPoint(x! - camera.scrollX * scrollX, y! - camera.scrollY * scrollY),
+          cameraMatrix.transformPoint(
+            x! + camera.scrollX * (1 - scrollX),
+            y! + camera.scrollY * (1 - scrollY),
+          ),
         );
         const left = canvas.left + Math.min(...corners.map((p) => p.x)) * sx;
         const top = canvas.top + Math.min(...corners.map((p) => p.y)) * sy;

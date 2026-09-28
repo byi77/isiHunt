@@ -35,6 +35,7 @@ import { AccountScene } from '@/scenes/AccountScene';
 import { AchievementsScene } from '@/scenes/AchievementsScene';
 import { CollectionScene } from '@/scenes/CollectionScene';
 import { BootScene } from '@/scenes/BootScene';
+import { showNoWebGL, supportsWebGL } from '@/core/webglSupport';
 import { ChallengeScene } from '@/scenes/ChallengeScene';
 import { DuelSelectScene } from '@/scenes/DuelSelectScene';
 import { GameScene } from '@/scenes/GameScene';
@@ -64,7 +65,9 @@ import { Palette } from '@/ui/theme';
 
 function createGameConfig(): Phaser.Types.Core.GameConfig {
   return {
-    type: Phaser.AUTO,
+    // Nur WebGL (ADR-0035): Masken und Effekte sind Filter, die es im
+    // Canvas-Renderer nicht gibt. Ohne WebGL startet das Spiel gar nicht erst.
+    type: Phaser.WEBGL,
     // Nicht `game`: dessen Padding (sichere Flaeche + Laufband) zieht Phaser
     // beim Messen nicht ab und skaliert den Canvas dadurch 32 px zu hoch -
     // der Pause-Knopf landet unter dem sichtbaren Rand. `game-canvas` fuellt
@@ -383,6 +386,10 @@ async function startGame(): Promise<void> {
   // iOS kann die PWA-Fensterhoehe erst nach dem ersten Layout-Frame
   // korrigieren. Erst danach darf GAME_HEIGHT fuer Phaser festgelegt werden.
   await waitForViewportToSettle();
+  if (!supportsWebGL()) {
+    showNoWebGL();
+    return;
+  }
   configureGameHeight();
   installLetterSpacingGuard();
   game = new Phaser.Game(createGameConfig());

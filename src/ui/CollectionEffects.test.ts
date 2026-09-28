@@ -13,15 +13,17 @@ it('caps burst allocations, expires quiet effects, and releases its mask', () =>
   let liveLabels = 0;
   const mask = { destroy: vi.fn() };
   const graphic = () => {
-    const methods: Record<string, unknown> = { createGeometryMask: () => mask };
+    const methods: Record<string, unknown> = { filters: { external: { addMask: () => mask } } };
     const chain: Record<string, unknown> = new Proxy(methods, {
       get: (target, key: string) => target[key] ?? (() => chain),
     });
     return chain;
   };
   const graphics = vi.fn(graphic);
+  const madeGraphics = vi.fn(graphic);
   const scene = {
     game: { canvas: { getBoundingClientRect: () => ({ width: 390 }) } },
+    make: { graphics: madeGraphics },
     add: {
       graphics,
       text: () => {
@@ -53,7 +55,8 @@ it('caps burst allocations, expires quiet effects, and releases its mask', () =>
   );
   for (let i = 0; i < 50; i++) effects.add({ x: 300, y: 500 }, RARITIES[i % 6]!, 100);
   expect(liveLabels).toBe(COLLECTION_VISUALS.maxActive);
-  expect(graphics).toHaveBeenCalledTimes(2);
+  expect(graphics).toHaveBeenCalledTimes(1);
+  expect(madeGraphics).toHaveBeenCalledTimes(1);
   effects.update(COLLECTION_VISUALS.lifetimeMs);
   expect(liveLabels).toBe(0);
   effects.add({ x: 300, y: 500 }, RARITIES[5]!, 1000);
@@ -76,7 +79,7 @@ it('laesst eine gefangene Punktzahl wachsen und dabei verwehen', async () => {
 
   const mask = { destroy: vi.fn() };
   const graphic = () => {
-    const methods: Record<string, unknown> = { createGeometryMask: () => mask };
+    const methods: Record<string, unknown> = { filters: { external: { addMask: () => mask } } };
     const chain: Record<string, unknown> = new Proxy(methods, {
       get: (target, key: string) => target[key] ?? (() => chain),
     });
@@ -86,6 +89,7 @@ it('laesst eine gefangene Punktzahl wachsen und dabei verwehen', async () => {
   const zustand = { scale: 1, alpha: 1, y: 0 };
   const scene = {
     game: { canvas: { getBoundingClientRect: () => ({ width: 390 }) } },
+    make: { graphics: vi.fn(graphic) },
     add: {
       graphics: vi.fn(graphic),
       text: () => {

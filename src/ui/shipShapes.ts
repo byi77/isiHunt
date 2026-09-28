@@ -33,6 +33,7 @@
  */
 
 import type Phaser from 'phaser';
+import { asPoints } from './graphicsPoints';
 
 /** Kantenlaenge jeder Figurentextur - das Koordinatensystem aller Zeichnungen. */
 export const SHIP_TEXTURE_SIZE = 96;
@@ -65,19 +66,13 @@ const v = (x: number, y: number): { x: number; y: number } => ({ x, y });
 /** Vollflaechig, in der Grundhelligkeit. */
 function voll(g: G, punkte: [number, number][]): void {
   g.fillStyle(0xffffff, 1);
-  g.fillPoints(
-    punkte.map(([x, y]) => v(x, y)),
-    true,
-  );
+  g.fillPoints(asPoints(punkte.map(([x, y]) => v(x, y))), true);
 }
 
 /** Abgesetzte Flaeche - Kanzel, Kabine, Kopf. */
 function akzent(g: G, punkte: [number, number][], alpha = 0.55): void {
   g.fillStyle(0xffffff, alpha);
-  g.fillPoints(
-    punkte.map(([x, y]) => v(x, y)),
-    true,
-  );
+  g.fillPoints(asPoints(punkte.map(([x, y]) => v(x, y))), true);
 }
 
 /** Spiegelt eine Punktliste an der Mittelachse - halbiert den Schreibaufwand. */
@@ -101,7 +96,7 @@ function stern(g: G, mx: number, my: number, aussen: number, innen: number, zack
     punkte.push(v(mx + Math.cos(winkel) * r, my + Math.sin(winkel) * r));
   }
   g.fillStyle(0xffffff, 1);
-  g.fillPoints(punkte, true);
+  g.fillPoints(asPoints(punkte), true);
 }
 
 /**
@@ -256,7 +251,7 @@ function brustzeichen(g: G, mx: number, my: number): void {
     RUMPF_MITTEL,
   );
   g.lineStyle(0.8, NAHT, 0.6);
-  g.strokePoints([v(mx, my - 4), v(mx + 3.5, my), v(mx, my + 4), v(mx - 3.5, my)], true);
+  g.strokePoints(asPoints([v(mx, my - 4), v(mx + 3.5, my), v(mx, my + 4), v(mx - 3.5, my)]), true);
 }
 
 /** Ein Vogel mit ausgebreiteten Schwingen. `spitz` steuert die Fluegelform. */
@@ -780,10 +775,7 @@ type P = [number, number];
 /** Flaeche in einem der Rumpftoene. */
 function flaeche(g: G, punkte: P[], farbe: number, alpha = 1): void {
   g.fillStyle(farbe, alpha);
-  g.fillPoints(
-    punkte.map(([x, y]) => v(x, y)),
-    true,
-  );
+  g.fillPoints(asPoints(punkte.map(([x, y]) => v(x, y))), true);
 }
 
 /** Flaeche und ihr Spiegelbild. */
@@ -823,10 +815,7 @@ function kanzel(g: G, mx: number, oben: number, breite: number, hoehe: number): 
   ];
   flaeche(g, glas, GLAS);
   g.lineStyle(1, 0xffffff, 0.9);
-  g.strokePoints(
-    glas.map(([x, y]) => v(x, y)),
-    true,
-  );
+  g.strokePoints(asPoints(glas.map(([x, y]) => v(x, y))), true);
   // Rahmenstrebe quer durch die Kanzel.
   g.lineStyle(0.9, 0xffffff, 0.55);
   g.lineBetween(mx - h * 0.9, oben + hoehe * 0.62, mx + h * 0.9, oben + hoehe * 0.62);

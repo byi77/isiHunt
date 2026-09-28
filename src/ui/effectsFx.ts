@@ -1,9 +1,8 @@
 /**
  * Leuchtshader und kurze Zierde, die an der Effektstufe haengen.
  *
- * Phasers `preFX` gibt es nur unter WebGL; im Canvas-Rueckfall ist das Feld
- * leer. Jeder Aufruf hier prueft deshalb selbst und gibt `null` zurueck,
- * statt dass der Aufrufer den Renderer kennen muss.
+ * Seit Phaser 4 laeuft das Spiel nur noch unter WebGL (ADR-0035); Leuchten ist
+ * ein Filter. Die Effektstufe bleibt die einzige Bedingung.
  */
 
 import Phaser from 'phaser';
@@ -18,7 +17,7 @@ import { TextureKey } from '@/ui/textures';
  * Legt einen Leuchtshader um ein Bild - nur bei voller Effektstufe.
  *
  * Bewusst nur fuer wenige Objekte gleichzeitig (Figur, epische und
- * legendaere Relikte): Jeder `preFX` rendert sein Objekt in einen eigenen
+ * legendaere Relikte): Jeder Filter rendert sein Objekt in einen eigenen
  * Zwischenpuffer. Ein Shader je Relikt waere bei zwanzig Relikten zwanzig
  * zusaetzliche Durchgaenge pro Frame.
  */
@@ -27,17 +26,21 @@ export function applyGlow(
   color: number,
   outerStrength: number,
   innerStrength: number,
-): Phaser.FX.Glow | null {
-  if (!EffectsQualitySystem.isFull() || !image.preFX) return null;
-  image.preFX.padding = GLOW_FX.distance;
-  return image.preFX.addGlow(
+): Phaser.Filters.Glow | null {
+  if (!EffectsQualitySystem.isFull()) return null;
+  image.enableFilters();
+  const glow = image.filters!.internal.addGlow(
     color,
     outerStrength,
     innerStrength,
+    1,
     false,
     GLOW_FX.quality,
     GLOW_FX.distance,
   );
+  // Ohne Polster schneidet der Zwischenpuffer den Schein an der Bildkante ab.
+  glow.setPaddingOverride(null);
+  return glow;
 }
 
 /**

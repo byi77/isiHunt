@@ -7,6 +7,7 @@ import { createBar, createButton, createPanel } from '@/ui/widgets';
 import type { ButtonHandle } from '@/ui/widgets';
 import { createUnlockVisual, spinInUnlock, type UnlockVisual } from '@/ui/unlockShowcase';
 import { playerTextureForShape } from '@/ui/textures';
+import { ClipMask } from '@/ui/clipMask';
 
 export interface ResultSection {
   title: string;
@@ -54,8 +55,7 @@ export class ResultView {
   private buttons: ButtonHandle[] = [];
   private root!: Phaser.GameObjects.Container;
   private body!: Phaser.GameObjects.Container;
-  private maskShape!: Phaser.GameObjects.Graphics;
-  private mask!: Phaser.Display.Masks.GeometryMask;
+  private clip?: ClipMask;
   private scroll = 0;
   private maxScroll = 0;
   private top = 0;
@@ -121,8 +121,7 @@ export class ResultView {
     this.rollTween = undefined;
     this.root?.destroy();
     this.buttons = [];
-    this.mask?.destroy();
-    this.maskShape?.destroy();
+    this.clip?.destroy();
     this.drag = null;
     const canvas = this.scene.game.canvas.getBoundingClientRect();
     const unit = GAME_WIDTH / Math.max(1, canvas.width);
@@ -190,12 +189,12 @@ export class ResultView {
     this.bottom = actionTop - 26 * unit;
     this.body = this.scene.add.container(0, this.top);
     this.root.add(this.body);
-    this.maskShape = this.scene.make.graphics({ x: 0, y: 0 });
-    this.maskShape
-      .fillStyle(0xffffff)
-      .fillRect(0, this.top, GAME_WIDTH, Math.max(0, this.bottom - this.top));
-    this.mask = this.maskShape.createGeometryMask();
-    this.body.setMask(this.mask);
+    this.clip = new ClipMask(this.scene, this.body).set({
+      x: 0,
+      y: this.top,
+      width: GAME_WIDTH,
+      height: Math.max(0, this.bottom - this.top),
+    });
     this.body.setData(
       'layoutClipRect',
       new Phaser.Geom.Rectangle(0, this.top, GAME_WIDTH, Math.max(0, this.bottom - this.top)),
@@ -359,7 +358,6 @@ export class ResultView {
     this.rollTween = undefined;
     this.scene.tweens.killTweensOf(this.root);
     this.root.destroy();
-    this.mask.destroy();
-    this.maskShape.destroy();
+    this.clip?.destroy();
   }
 }

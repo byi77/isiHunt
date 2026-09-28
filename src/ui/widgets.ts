@@ -481,15 +481,10 @@ export function createBackButton(
   const zoneTop = GAME_HEIGHT - BACK_BUTTON_RESERVED_HEIGHT;
   const { fade, alpha } = BACK_ZONE_VISUALS;
   const zone = scene.add.graphics().setDepth(Depth.Overlay).setScrollFactor(0);
-  if (scene.game.renderer.type === Phaser.WEBGL) {
-    zone.fillGradientStyle(worldBottom, worldBottom, worldBottom, worldBottom, 0, 0, alpha, alpha);
-    zone.fillRect(0, zoneTop, GAME_WIDTH, fade);
-    zone.fillStyle(worldBottom, alpha);
-    zone.fillRect(0, zoneTop + fade, GAME_WIDTH, BACK_BUTTON_RESERVED_HEIGHT - fade);
-  } else {
-    zone.fillStyle(worldBottom, alpha);
-    zone.fillRect(0, zoneTop, GAME_WIDTH, BACK_BUTTON_RESERVED_HEIGHT);
-  }
+  zone.fillGradientStyle(worldBottom, worldBottom, worldBottom, worldBottom, 0, 0, alpha, alpha);
+  zone.fillRect(0, zoneTop, GAME_WIDTH, fade);
+  zone.fillStyle(worldBottom, alpha);
+  zone.fillRect(0, zoneTop + fade, GAME_WIDTH, BACK_BUTTON_RESERVED_HEIGHT - fade);
 
   const button = createButton(
     scene,
@@ -911,8 +906,7 @@ function mixColor(base: number, over: number, alpha: number): number {
  * Laesst den Canvasrand in die Farbe der DOM-Streifen auslaufen.
  *
  * Muss die oberste Schicht des Hintergrunds sein, sonst hellen Schein und
- * Wolken den Rand danach wieder auf. Nur unter WebGL: Der Canvas-Rueckfall
- * kennt keine Verlaufsfuellung und zoege stattdessen einen deckenden Balken.
+ * Wolken den Rand danach wieder auf.
  */
 export function addBackdropEdgeFade(
   scene: Phaser.Scene,
@@ -922,7 +916,6 @@ export function addBackdropEdgeFade(
   top: number,
   bottom: number,
 ): void {
-  if (scene.game.renderer.type !== Phaser.WEBGL) return;
   const fade = BACKDROP_EDGE_FADE.width;
   const edges = scene.add.graphics();
   edges.fillGradientStyle(top, top, bottom, bottom, 1, 0, 1, 0);
