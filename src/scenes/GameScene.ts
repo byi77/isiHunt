@@ -353,7 +353,7 @@ export class GameScene extends Phaser.Scene {
     this.grading = EffectsQualitySystem.isFull()
       ? new CameraGrading(this.cameras.main, this.world.spaceVariant)
       : null;
-    enterScene(this);
+    enterScene(this, 'rise');
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
     this.finalSeconds = new FinalSecondsWarning(this, GAME_WIDTH, GAME_HEIGHT);
 

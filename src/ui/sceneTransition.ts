@@ -15,9 +15,17 @@ import Phaser from 'phaser';
 
 import { SCENE_TRANSITION } from '@/config/effectVisuals';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
+import * as EffectsQualitySystem from '@/systems/EffectsQualitySystem';
 import { Palette } from '@/ui/theme';
 
 export type LeaveStyle = 'fade' | 'dive';
+
+/**
+ * `rise`: von unten nach oben herein (Einflug in die Welt), `sweep`: von
+ * links nach rechts (Ergebnis). Beide nur auf der vollen Effektstufe - sonst
+ * bleibt es bei der Blende aus dem Grundton.
+ */
+export type EnterStyle = 'fade' | 'rise' | 'sweep';
 
 /** Scenes, die gerade ausblenden - ein zweiter Tipp startet nichts doppelt. */
 const leaving = new WeakSet<Phaser.Scene>();
@@ -28,11 +36,26 @@ function blendColor(): { r: number; g: number; b: number } {
   return { r: c.red, g: c.green, b: c.blue };
 }
 
-/** Blendet eine gerade aufgebaute Scene aus dem Grundton ein. */
-export function enterScene(scene: Phaser.Scene): void {
+/** Blendet eine gerade aufgebaute Scene ein. */
+export function enterScene(scene: Phaser.Scene, style: EnterStyle = 'fade'): void {
   if (prefersReducedMotion()) return;
+  const camera = scene.cameras.main;
+  if (style !== 'fade' && EffectsQualitySystem.isFull()) {
+    // Reveal-Modus: Gewischte Flaechen zeigen das Bild, der Rest bleibt leer.
+    const wipe = camera.filters.external.addWipe(SCENE_TRANSITION.wipeEdge, 0, 0, 1);
+    if (style === 'rise') wipe.setBottomToTop();
+    else wipe.setLeftToRight();
+    scene.tweens.add({
+      targets: wipe,
+      progress: { from: 0, to: 1 },
+      duration: SCENE_TRANSITION.wipeMs,
+      ease: 'Cubic.Out',
+      onComplete: () => wipe.destroy(),
+    });
+    return;
+  }
   const { r, g, b } = blendColor();
-  scene.cameras.main.fadeIn(SCENE_TRANSITION.inMs, r, g, b);
+  camera.fadeIn(SCENE_TRANSITION.inMs, r, g, b);
 }
 
 /**

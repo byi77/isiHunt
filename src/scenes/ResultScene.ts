@@ -43,7 +43,7 @@ export class ResultScene extends Phaser.Scene {
   }
 
   create(data: ResultSceneData): void {
-    enterScene(this);
+    enterScene(this, 'sweep');
     if (data.boostedFinish) {
       void this.createBoostedResult(data);
       return;

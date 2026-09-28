@@ -141,6 +141,12 @@ export const FINAL_SECONDS = {
 export const SCENE_TRANSITION = {
   outMs: 200,
   inMs: 240,
+  /**
+   * Wischblende auf der vollen Effektstufe (Phaser-4-Filter, ADR-0035):
+   * Dauer und Breite der weichen Kante (Anteil der Bildbreite).
+   */
+  wipeMs: 520,
+  wipeEdge: 0.18,
   /** Beim Start einer Jagd faehrt die Kamera leicht auf das Ziel zu. */
   diveZoom: 1.1,
   diveMs: 260,
