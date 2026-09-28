@@ -1822,3 +1822,69 @@ Startwelt war die Sonnenkrone mit doppelter Chance auf seltene Relikte.
   blinkende Relikte weiter sehen. Fuer echte Spieler ist nichts gemessen.
 - `npm run balance:worlds` misst jede weitere Welt-Aenderung gegen eine
   eingefrorene Kopie des Projekts.
+
+## ADR-0035 — Phaser 4 und Effektstufen (Entwurf)
+
+**Datum:** 2026-09-28 · **Status:** Entwurf auf `feat/phaser4`, wird mit dem
+Abschluss von Phase 1 endgueltig.
+
+### Befund
+
+Die Grafik-Offensive (bewegte Welten, Weltaura, Triebwerk) stoesst unter
+Phaser 3.90 an eine Grenze: Bloom, dynamisches Licht, Verzerrung und
+Farbstimmung gibt es nur ueber eigene Shader-Pipelines. Phaser 4.2.1 bringt
+sie als Filter fuer jedes Objekt und jede Kamera (`AddEffectBloom`,
+`lights.enable()`/`setLighting`, `Displacement`, `GradientMap`, `Vignette`,
+Noise-Objekte).
+
+Ein Probelauf mit 4.2.1 in einer getrennten Arbeitskopie ergab:
+
+- 30 Typfehler in 5 Dateien, 25 davon gleichartig: `strokePoints`/`fillPoints`
+  verlangen `Vector2[]` statt `{ x, y }`. Dazu `preFX` in `effectsFx.ts`.
+- Vitest 734/734 gruen, Build ok, `ios:check` bleibt bei iOS 16.4.
+- Das Phaser-Bundle waechst von 1447 auf 1645 kB (ungepackt).
+- **`GeometryMask` bricht still.** Sie gilt in v4 nur noch im Canvas-Renderer.
+  Im Talentbaum ragt Inhalt unter den Zurueck-Knopf, der Playtest `screens` +
+  `nav` blieb trotzdem 20/20 gruen. Betroffen: `CollectionEffects`,
+  `ResultView`, `TalentScene`.
+- `camera.matrix` (in `layoutAudit.ts`) enthaelt in v4 die Kameraposition
+  nicht mehr.
+
+### Entscheidung
+
+1. **Upgrade auf Phaser 4.2.1**, zuerst ohne neue Effekte. Phase 1 gilt erst
+   als fertig, wenn alle Bildschirme und alle zehn Welten im
+   Screenshot-Vergleich wie unter v3 aussehen.
+2. **Nur noch WebGL.** `type: Phaser.WEBGL`; ohne WebGL erscheint ein
+   DOM-Hinweis statt eines schwarzen Bildschirms. Masken und Effekte haben
+   damit genau einen Weg.
+3. **Drei Effektstufen: sparsam, mittel, voll. Standard voll.** Faellt die
+   Bildrate im Run anhaltend ab (Median ueber mehrere Sekunden), stuft das
+   Spiel eine Stufe herab, wirksam ab der naechsten Szene, nie automatisch
+   hinauf. Die Einstellungen zeigen die Herabstufung an. Schwellwerte werden
+   auf echten Geraeten gemessen, nicht geschaetzt.
+4. **Masken bekommen einen Regressionstest per Pixelprobe**, bevor sie
+   repariert werden - der Probelauf zeigte, dass die vorhandenen Tests den
+   Bruch nicht sehen.
+
+### Verworfene Alternativen
+
+- **Bei Phaser 3 bleiben und Effekte selbst als Pipeline bauen.** Kein
+  Engine-Wechsel, aber jeder Shader muesste spaeter fuer v4 neu geschrieben
+  werden, und Pipelines sind der in v4 am staerksten umgebaute Teil.
+- **Canvas-Rueckfall behalten.** Rettet Geraete ohne WebGL, deren Anzahl
+  unbekannt ist. Kostet einen zweiten Weg fuer jede Maske und jeden Effekt,
+  den kein Test abdeckt (Playwright laeuft mit WebGL).
+- **Standard mittel.** Sicher auf schwachen Geraeten, aber die meisten Spieler
+  oeffnen die Einstellungen nie und saehen die volle Fassung nicht.
+
+### Folgen
+
+- `SaveData.effectsQuality` bekommt den Wert `'medium'`; der Abgleich in
+  `SaveSystem` muss ihn annehmen. Die automatische Herabstufung braucht ein
+  neues Feld (keine Migration noetig).
+- Der Branch soll kurz leben: Der pre-commit-Hook zaehlt auf beiden Seiten die
+  Version hoch, jeder Abgleich mit `main` erzeugt einen Konflikt in
+  `package.json`.
+- Auf dem Handy ist der Branch nur ueber `npm run dev` im WLAN pruefbar; Pages
+  liefert nur `main` aus.
