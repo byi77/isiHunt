@@ -113,3 +113,31 @@ export const LIVING_NEBULA = {
   /** Langsames Abdriften (Zellen je Sekunde). */
   driftPerSecond: 0.02,
 } as const;
+
+/**
+ * Weicher Schatten unter dem Schiffsrumpf, nur auf der vollen Stufe.
+ * Er hebt das Schiff vom Spielfeld ab; Relikte bekommen keinen, weil jeder
+ * Schatten einen eigenen Zwischenpuffer kostet.
+ */
+export const SHIP_SHADOW = {
+  x: 0,
+  /**
+   * Negativ = nach unten: Filter rechnen in Phaser 4 mit GL-Ausrichtung
+   * (y waechst nach oben). Mit +7 lag der Schatten ueber der Nase
+   * (Screenshot 2026-09-29).
+   */
+  y: -7,
+  decay: 0.08,
+  power: 1,
+  color: 0x000000,
+  samples: 6,
+  intensity: 0.7,
+} as const;
+
+/** Glanzstreif ueber legendaere Relikte, nur auf der vollen Stufe. */
+export const RELIC_SHINE = {
+  radius: 0.35,
+  durationMs: 1_400,
+  repeatDelayMs: 1_600,
+  colorFactor: [1.5, 1.4, 1.2, 1],
+} as const;

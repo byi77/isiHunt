@@ -60,6 +60,7 @@ import { shipFlightPose, shipExhaustOffset, type ShipFlightPose } from '@/ui/shi
 import { ShipOrbit } from '@/ui/shipOrbit';
 import { ThreeDShipPreview } from '@/ui/threeDShipPreview';
 import { EngineFlame } from '@/ui/engineFlame';
+import { applyDropShadow } from '@/ui/effectsFx';
 import { WorldShipAura } from '@/ui/worldShipAura';
 
 /**
@@ -218,6 +219,8 @@ export class Player extends Phaser.GameObjects.Container {
     this.core = scene.add.image(0, 0, textureKey).setTint(hullColor);
     this.coreBase = shipDisplayScale(textureKey);
     this.core.setScale(this.coreBase);
+    // Hebt den Rumpf vom Spielfeld ab; nur auf der vollen Effektstufe.
+    applyDropShadow(this.core);
     this.hullColor = hullColor;
     // Kein Phaser-preFX direkt auf dem Spielerbild: Der Zwischenspeicher des
     // Glow-Shaders kann auf mobilen WebGL-Treibern als dunkles Rechteck

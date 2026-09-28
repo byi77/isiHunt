@@ -8,6 +8,7 @@
 import Phaser from 'phaser';
 
 import { GLOW_FX, RARE_ARRIVAL, RARE_SPAWN_WARNING } from '@/config/effectVisuals';
+import { RELIC_SHINE, SHIP_SHADOW } from '@/config/postFx';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import * as EffectsQualitySystem from '@/systems/EffectsQualitySystem';
 import { Depth } from '@/ui/depth';
@@ -147,4 +148,28 @@ export function playRareSpawnWarning(
     scene.tweens.killTweensOf(parts);
     for (const part of parts) part.destroy();
   };
+}
+
+/**
+ * Laesst einen Glanzstreif ueber ein Bild wandern - nur auf der vollen Stufe.
+ * Der Streif raeumt sich mit dem Bild selbst ab (Tween und Textur).
+ */
+export function applyShine(image: Phaser.GameObjects.Image): void {
+  if (!EffectsQualitySystem.isFull() || prefersReducedMotion()) return;
+  Phaser.Actions.AddEffectShine(image, {
+    radius: RELIC_SHINE.radius,
+    duration: RELIC_SHINE.durationMs,
+    repeatDelay: RELIC_SHINE.repeatDelayMs,
+    colorFactor: [...RELIC_SHINE.colorFactor],
+  });
+}
+
+/** Weicher Schatten unter einem Bild - nur auf der vollen Stufe. */
+export function applyDropShadow(image: Phaser.GameObjects.Image): void {
+  if (!EffectsQualitySystem.isFull()) return;
+  const s = SHIP_SHADOW;
+  image.enableFilters();
+  image
+    .filters!.internal.addShadow(s.x, s.y, s.decay, s.power, s.color, s.samples, s.intensity)
+    .setPaddingOverride(null);
 }

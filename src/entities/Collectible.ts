@@ -19,7 +19,7 @@ import {
 } from '@/config/GameConfig';
 import { RARITY_IDS, type RarityDef } from '@/config/rarities';
 import { Depth } from '@/ui/depth';
-import { applyGlow, playRareArrival } from '@/ui/effectsFx';
+import { applyGlow, applyShine, playRareArrival } from '@/ui/effectsFx';
 import { TextureKey } from '@/ui/textures';
 import type { TextureKeyValue } from '@/ui/textures';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
@@ -140,6 +140,7 @@ export class Collectible extends Phaser.GameObjects.Container {
     // Ruckler und doppelte Splitter beim Fang.
     if (rarity.points >= RARITY_IMPACT_MIN_POINTS) {
       applyGlow(this.orb, rarity.color, GLOW_FX.relicOuter, GLOW_FX.relicInner);
+      if (rarity.id === 'legendary') applyShine(this.orb);
       playRareArrival(scene, x, y, rarity.color);
     }
 
