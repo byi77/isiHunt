@@ -9,7 +9,7 @@ import { createSpatialPlanet } from './spatialPlanet';
 import { addBackdropEdgeFade, paintSafeAreaBackdrop } from './widgets';
 import { WorldAtmosphere } from './worldAtmosphere';
 import { BackdropDistortion } from './backdropDistortion';
-import { DISTORTION } from '@/config/postFx';
+import { DISTORTION, LIVING_NEBULA as N } from '@/config/postFx';
 import * as EffectsQualitySystem from '@/systems/EffectsQualitySystem';
 import { createWorldEtching } from './worldEtching';
 
@@ -93,6 +93,7 @@ export class GameBackdrop {
   private readonly atmosphere: WorldAtmosphere;
   private readonly planet: Phaser.GameObjects.Container;
   private readonly distortion: BackdropDistortion | null;
+  private readonly livingNebula: Phaser.GameObjects.NoiseSimplex3D | null = null;
   private elapsed = 0;
   private offsetX = 0;
   private offsetY = 0;
@@ -122,6 +123,29 @@ export class GameBackdrop {
       .setDisplaySize(width * 1.08, height * 1.06)
       .setAlpha(V.nebulaAlpha);
     this.root.add(this.nebula);
+    if (EffectsQualitySystem.isFull()) {
+      const visual = worldVisual(world.spaceVariant);
+      this.livingNebula = scene.add
+        .noisesimplex3d(
+          {
+            noiseCells: [...N.cells],
+            noiseIterations: N.iterations,
+            noiseWarpAmount: N.warpAmount,
+            noiseValuePower: N.valuePower,
+            noiseColorStart: 0x000000,
+            // Additiv gemischt: Eine abgedunkelte Zielfarbe wirkt wie Deckkraft,
+            // die das Rauschobjekt selbst nicht hat.
+            noiseColorEnd: mixColor(0x000000, visual.rim, N.alpha),
+            noiseSeed: [world.spaceVariant + 1, 7, 13],
+          },
+          width / 2,
+          height / 2,
+          width,
+          height,
+        )
+        .setBlendMode(Phaser.BlendModes.ADD);
+      this.root.add(this.livingNebula);
+    }
 
     for (let layer = 0; layer < V.starCounts.length; layer++) {
       const stars = scene.add.graphics();
@@ -181,6 +205,11 @@ export class GameBackdrop {
     const dt = Math.min(Math.max(delta, 0), V.maxDeltaMs);
     this.atmosphere.update(dt);
     this.distortion?.update(dt);
+    if (this.livingNebula) {
+      this.livingNebula.noiseFlow += (N.flowPerSecond * dt) / 1000;
+      const offset = this.livingNebula.noiseOffset;
+      offset[0] = (offset[0] ?? 0) + (N.driftPerSecond * dt) / 1000;
+    }
     this.elapsed = (this.elapsed + dt) % V.driftPeriodMs;
     const follow = 1 - Math.exp((-V.followResponse * dt) / 1000);
     this.offsetX += ((playerX / this.width - 0.5) * 2 - this.offsetX) * follow;

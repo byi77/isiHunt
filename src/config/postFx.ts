@@ -90,3 +90,26 @@ export const DISTORTION = {
   lens: { amount: 0.05, periodMs: 7_000 },
   noiseSize: 256,
 } as const;
+
+/**
+ * Lebender Nebel: GPU-Rauschen ueber dem statischen Canvas-Nebel, nur auf der
+ * vollen Stufe. Kostet einen Shader-Durchgang ueber die ganze Flaeche je
+ * Frame - deshalb wenige Oktaven und niedrige Deckkraft. Die Spielfeldmitte
+ * bleibt durch `valuePower` duenn: Nur die hellsten Schwaden bleiben sichtbar.
+ */
+export const LIVING_NEBULA = {
+  /**
+   * Helligkeitsanteil der Schwaden. Zuerst 0,22 mit `valuePower` 3,2: Die
+   * Schwaden bedeckten das ganze Feld, die Mitte war nicht mehr ruhig
+   * (Screenshot-Vergleich 2026-09-29).
+   */
+  alpha: 0.12,
+  cells: [3, 5, 2],
+  iterations: 3,
+  warpAmount: 0.6,
+  valuePower: 4.5,
+  /** Wie schnell das Feld sich wandelt (Flow-Einheiten je Sekunde). */
+  flowPerSecond: 0.05,
+  /** Langsames Abdriften (Zellen je Sekunde). */
+  driftPerSecond: 0.02,
+} as const;
