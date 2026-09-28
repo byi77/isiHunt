@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { getLastRunReport, PERFORMANCE_BUDGETS } from '@/systems/PerformanceSystem';
 
 /** Opt-in-Werkzeug: misst sichtbare Darstellung und tatsächliche rechteckige Trefferflächen. */
 export function installLayoutAudit(game: Phaser.Game): void {
@@ -16,14 +17,39 @@ export function installLayoutAudit(game: Phaser.Game): void {
     maxWidth: '100vw',
     maxHeight: '70vh',
     overflow: 'auto',
+    // `body` sperrt Markieren und Gesten fuers Spiel (index.html). Hier muss
+    // man den Bericht auf dem Handy markieren und scrollen koennen.
+    userSelect: 'text',
+    webkitUserSelect: 'text',
+    touchAction: 'auto',
   });
   const title = document.createElement('summary');
   title.textContent = 'Layoutprüfung';
   const refresh = document.createElement('button');
   refresh.textContent = 'Neu messen';
+  const share = document.createElement('button');
+  share.textContent = 'Teilen';
+  const summary = document.createElement('div');
+  summary.id = 'isihunt-layout-summary';
+  Object.assign(summary.style, { font: 'bold 13px monospace', margin: '6px 0' });
   const report = document.createElement('pre');
   report.id = 'isihunt-layout-report';
-  panel.append(title, refresh, report);
+  panel.append(title, refresh, share, summary, report);
+
+  // Auf iOS oeffnet das Teilen-Menue (Nachricht, Notizen, Mail); ohne
+  // Web-Share landet der Bericht in der Zwischenablage. Markieren allein
+  // reichte nicht: Der Bericht ist mehrere Bildschirme lang.
+  share.addEventListener('click', () => {
+    const text = `${summary.textContent ?? ''}\n\n${report.textContent ?? ''}`;
+    if (typeof navigator.share === 'function') {
+      navigator.share({ title: 'isiHunt Layoutprüfung', text }).catch(() => undefined);
+      return;
+    }
+    navigator.clipboard?.writeText(text).then(
+      () => (share.textContent = 'Kopiert'),
+      () => (share.textContent = 'Kopieren fehlgeschlagen'),
+    );
+  });
   document.body.append(panel);
 
   const capture = (): void => {
@@ -141,12 +167,21 @@ export function installLayoutAudit(game: Phaser.Game): void {
       };
       walk(scene.children.list);
     }
+    // Die drei Werte, die ueber die Bildrate entscheiden, als eine Zeile -
+    // damit reicht zur Not ein Screenshot.
+    const lastRun = getLastRunReport();
+    summary.textContent = lastRun
+      ? `Letzter Run: P95 ${lastRun.frameP95Ms.toFixed(1)} ms (Budget ${PERFORMANCE_BUDGETS.frameP95Ms}) · ` +
+        `zu langsam ${(lastRun.frameOverBudgetRatio * 100).toFixed(1)} % ` +
+        `(Budget ${PERFORMANCE_BUDGETS.frameOverBudgetRatio * 100} %) · ${lastRun.passed ? 'OK' : 'NICHT OK'}`
+      : 'Noch kein Run gemessen - erst eine Jagd spielen.';
     report.textContent = JSON.stringify(
       {
         capturedAt: new Date().toISOString(),
         viewport: { width: innerWidth, height: innerHeight },
         canvas: canvas.toJSON(),
         scenes: scenes.map((scene) => scene.scene.key),
+        lastRun,
         performance: scenes
           .map((scene) => ({
             scene: scene.scene.key,

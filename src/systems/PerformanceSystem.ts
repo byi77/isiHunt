@@ -136,6 +136,19 @@ export function evaluatePerformance(
   };
 }
 
+/**
+ * Bericht des zuletzt beendeten Runs, modulweit statt am Monitor.
+ *
+ * Der Monitor gehoert der GameScene und endet mit ihr, sobald das Ergebnis
+ * erscheint. Die Layoutpruefung auf dem Handy (DEV) fand danach nichts mehr;
+ * messen ging nur mitten im Run. Hier ueberlebt der Bericht den Szenenwechsel.
+ */
+let lastRunReport: PerformanceReport | null = null;
+
+export function getLastRunReport(): PerformanceReport | null {
+  return lastRunReport;
+}
+
 /** Sammelt nur in DEV Messwerte; im Release entsteht kein Mess-Overhead. */
 export class PerformanceMonitor {
   private createdAt = performance.now();
@@ -196,6 +209,7 @@ export class PerformanceMonitor {
       peakDynamicObjects: this.peakDynamicObjects,
       peakParticleGroups: this.peakParticleGroups,
     });
+    lastRunReport = this.report;
     return this.report;
   }
 

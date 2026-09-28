@@ -4,6 +4,7 @@ import {
   PERFORMANCE_BUDGETS,
   PerformanceMonitor,
   evaluatePerformance,
+  getLastRunReport,
   percentile,
 } from '@/systems/PerformanceSystem';
 
@@ -55,5 +56,20 @@ describe('PerformanceSystem', () => {
     expect(report?.frameCount).toBe(1);
     expect(report?.peakDynamicObjects).toBe(3);
     expect(report?.peakParticleGroups).toBe(2);
+  });
+
+  // Die GameScene endet mit dem Run - ihr Monitor mit ihr. Die Layoutpruefung
+  // auf dem Handy fand danach keinen Bericht mehr; gemessen werden konnte nur
+  // mitten im Run.
+  it('behaelt den Bericht des letzten Runs ueber das Ende der Scene hinaus', () => {
+    const monitor = new PerformanceMonitor();
+    monitor.markSetupDone();
+    monitor.markRunStarted();
+    monitor.recordFrame(16, 3, 1);
+    monitor.recordFrame(40, 4, 1);
+    const report = monitor.finishRun();
+
+    expect(report).not.toBeNull();
+    expect(getLastRunReport()).toEqual(report);
   });
 });

@@ -49,6 +49,8 @@ Vollstaendig begruendet in `docs/CODE_STYLE.md`. Kurzfassung:
 9. **Jeder Commit zieht die Version hoch, jeder Push liefert sie aus.** Die
    Hooks erledigen das; nach dem Push wird der Deploy geprueft. Ein
    Fehlerbericht ohne Versionsnummer ist wertlos.
+10. Mach die Arbeit niemals selbst, delegiere immer zu Sub-Agenten.
+11. Nutze nicht immer Opus 5.5, sondern wechsel auf günstigere Modele für einfachere Aufgaben.
 
 ## Kein Code ohne Dokument
 
