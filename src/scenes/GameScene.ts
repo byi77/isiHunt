@@ -93,6 +93,9 @@ import type { HudScene } from '@/scenes/HudScene';
 import { Depth } from '@/ui/depth';
 import * as EffectsQualitySystem from '@/systems/EffectsQualitySystem';
 import { FrameRateGuard } from '@/systems/FrameRateGuard';
+import { applyBloom } from '@/ui/postFx';
+import { lightingEnabled, SceneLighting } from '@/ui/sceneLighting';
+import { worldShipAura } from '@/config/worldShipAura';
 import { shipAuraAssetId, shipAuraIndex, shipHullTint, shipTint } from '@/config/shop';
 import { planetTextureForVariant, playerTextureForShape } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
@@ -215,6 +218,10 @@ export class GameScene extends Phaser.Scene {
    * umzuschalten saehe wie ein Fehler aus.
    */
   private frameGuard = new FrameRateGuard();
+  /** Entfernt den Bloom der Spielkamera; `null` ohne Bloom. */
+  private removeBloom: (() => void) | null = null;
+  /** Licht von Schiff und seltenen Relikten; `null` unterhalb der vollen Stufe. */
+  private lighting: SceneLighting | null = null;
   private remainingMs = 0;
   private totalMs = 0;
   private mode: RunMode = 'solo';
@@ -340,6 +347,7 @@ export class GameScene extends Phaser.Scene {
     );
 
     this.backdrop = new GameBackdrop(this, GAME_WIDTH, GAME_HEIGHT, this.world);
+    this.removeBloom = applyBloom(this.cameras.main, this.world.spaceVariant);
     enterScene(this);
     createVignette(this, GAME_WIDTH, GAME_HEIGHT);
     this.finalSeconds = new FinalSecondsWarning(this, GAME_WIDTH, GAME_HEIGHT);
@@ -384,6 +392,14 @@ export class GameScene extends Phaser.Scene {
     );
     this.player.setWorldInertia(this.world.modifier === 'inertia' ? WORLD_INERTIA_FACTOR : 1);
     this.player.setWorldStyle(this.world.spaceVariant);
+    this.lighting = lightingEnabled()
+      ? new SceneLighting(
+          this,
+          this.backdrop.lightTargets(),
+          worldShipAura(this.world.spaceVariant).engine,
+          this.world.spaceVariant,
+        )
+      : null;
 
     this.input_ = new InputController(this);
     this.lastComboWindowRatio = 0;
@@ -583,6 +599,7 @@ export class GameScene extends Phaser.Scene {
     this.player.move(dtSec, direction, this.playfield);
     this.playerPosition.set(this.player.x, this.player.y);
     this.player.updateThreeD(dtSec * 1000);
+    this.lighting?.update(this.player.x, this.player.y, this.collectibles);
   }
 
   private updateCombo(deltaMs: number): void {
@@ -1650,6 +1667,10 @@ export class GameScene extends Phaser.Scene {
   }
 
   private cleanup(): void {
+    this.removeBloom?.();
+    this.removeBloom = null;
+    this.lighting?.destroy();
+    this.lighting = null;
     this.backdrop?.destroy();
     this.collectionEffects?.destroy();
     this.clearPendingCollectibles();

@@ -88,6 +88,7 @@ export class GameBackdrop {
   private readonly stars: Phaser.GameObjects.Graphics[] = [];
   private readonly nebula: Phaser.GameObjects.Image;
   private readonly atmosphere: WorldAtmosphere;
+  private readonly planet: Phaser.GameObjects.Container;
   private elapsed = 0;
   private offsetX = 0;
   private offsetY = 0;
@@ -137,7 +138,7 @@ export class GameBackdrop {
     }
     this.root.add(this.atmosphere.back);
 
-    const planet = createSpatialPlanet(
+    const planet = (this.planet = createSpatialPlanet(
       scene,
       width * (world.spaceVariant % 2 === 0 ? 0.97 : 0.03),
       height * 0.73,
@@ -145,11 +146,22 @@ export class GameBackdrop {
       world.spaceVariant,
       false,
       V.planetResolution,
-    ).setAlpha(V.planetAlpha);
+    ).setAlpha(V.planetAlpha));
     this.root.add(planet);
     this.root.add(this.atmosphere.front);
     this.root.add(createWorldEtching(scene, width, height, world.spaceVariant, world.accent));
     addBackdropEdgeFade(scene, this.root, width, height, top, bottom);
+  }
+
+  /**
+   * Was dynamisches Licht beleuchten darf: Nebel und Randplanet. Sterne und
+   * leuchtende Teilchen bleiben aussen vor - sie sind selbst Licht.
+   */
+  lightTargets(): Phaser.GameObjects.GameObject[] {
+    const planetImages = this.planet.list.filter(
+      (child) => child instanceof Phaser.GameObjects.Image,
+    );
+    return [this.nebula, ...planetImages];
   }
 
   update(delta: number, playerX: number, playerY: number): void {
