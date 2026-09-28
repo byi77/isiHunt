@@ -77,6 +77,7 @@ function createSave(overrides: Partial<SaveData> = {}): SaveData {
     soundEnabled: true,
     hapticsEnabled: true,
     effectsQuality: 'full',
+    effectsQualityAutoLowered: false,
     playerName: '',
     cloudId: null,
     ...overrides,

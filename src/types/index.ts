@@ -3,7 +3,7 @@
 import type { RarityId } from '@/config/rarities';
 import type { TalentRanks } from '@/config/talents';
 
-export type EffectsQuality = 'full' | 'reduced';
+export type EffectsQuality = 'full' | 'medium' | 'reduced';
 
 /**
  * Persistenter Spielstand (localStorage).
@@ -74,10 +74,13 @@ export interface SaveData {
   /** Haptisches Feedback ist separat vom Ton schaltbar. */
   hapticsEnabled: boolean;
   /**
-   * Leuchtshader und Zierde wie der Lichtriss seltener Relikte. `reduced`
-   * ist der Ausweg fuer schwache Geraete; spielrelevante Anzeigen bleiben.
+   * Effektstufe (ADR-0035). `reduced` ist der Ausweg fuer schwache Geraete,
+   * `medium` der Stand vor den Phaser-4-Effekten, `full` mit Bloom und Licht.
+   * Spielrelevante Anzeigen haengen an keiner Stufe.
    */
   effectsQuality: EffectsQuality;
+  /** Ob das Spiel die Stufe selbst gesenkt hat, weil das Geraet nicht mitkam. */
+  effectsQualityAutoLowered: boolean;
 
   /** Anzeigename im Profil und in der Bestenliste. Leer beim ersten Start. */
   playerName: string;

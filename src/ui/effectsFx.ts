@@ -27,7 +27,7 @@ export function applyGlow(
   outerStrength: number,
   innerStrength: number,
 ): Phaser.Filters.Glow | null {
-  if (!EffectsQualitySystem.isFull()) return null;
+  if (!EffectsQualitySystem.atLeast('medium')) return null;
   image.enableFilters();
   const glow = image.filters!.internal.addGlow(
     color,
@@ -51,7 +51,7 @@ export function applyGlow(
  * Zufallsfolge der Duellanten bleibt dabei gleich.
  */
 export function playRareArrival(scene: Phaser.Scene, x: number, y: number, color: number): void {
-  if (prefersReducedMotion() || !EffectsQualitySystem.isFull()) return;
+  if (prefersReducedMotion() || !EffectsQualitySystem.atLeast('medium')) return;
   const a = RARE_ARRIVAL;
 
   const rift = scene.add
@@ -123,7 +123,7 @@ export function playRareSpawnWarning(
       ease: 'Cubic.Out',
     });
 
-    if (EffectsQualitySystem.isFull()) {
+    if (EffectsQualitySystem.atLeast('medium')) {
       for (let index = 0; index < 4; index += 1) {
         const angle = (index * Math.PI) / 2;
         const shard = scene.add

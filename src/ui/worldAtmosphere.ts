@@ -5,7 +5,9 @@ import {
   type AtmosphereMotif,
   type WorldAtmosphereDef,
 } from '@/config/worldAtmosphere';
+import { ATMOSPHERE_PARTICLE_SHARE } from '@/config/effectQuality';
 import type { WorldDef } from '@/config/worlds';
+import * as EffectsQualitySystem from '@/systems/EffectsQualitySystem';
 import { TextureKey } from './textures';
 
 /**
@@ -369,7 +371,8 @@ export class WorldAtmosphere {
     this.focusX = width * fx;
     this.focusY = height * fy;
     this.buildLayers();
-    const count = Math.min(this.def.particles, T.maxParticles);
+    const share = ATMOSPHERE_PARTICLE_SHARE[EffectsQualitySystem.current()];
+    const count = Math.round(Math.min(this.def.particles, T.maxParticles) * share);
     for (let i = 0; i < count; i++) this.addMote(i, count);
     this.nextEvent = this.eventDelay();
     this.update(0);

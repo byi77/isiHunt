@@ -94,6 +94,7 @@ export function createDefaultSave(): SaveData {
     soundEnabled: true,
     hapticsEnabled: true,
     effectsQuality: 'full',
+    effectsQualityAutoLowered: false,
     playerName: '',
     pendingPlayerName: null,
     cloudId: null,
@@ -263,9 +264,15 @@ function reconcile(raw: Partial<SaveData>): SaveData {
     hapticsEnabled:
       typeof source.hapticsEnabled === 'boolean' ? source.hapticsEnabled : base.hapticsEnabled,
     effectsQuality:
-      source.effectsQuality === 'full' || source.effectsQuality === 'reduced'
+      source.effectsQuality === 'full' ||
+      source.effectsQuality === 'medium' ||
+      source.effectsQuality === 'reduced'
         ? source.effectsQuality
         : base.effectsQuality,
+    effectsQualityAutoLowered:
+      typeof source.effectsQualityAutoLowered === 'boolean'
+        ? source.effectsQualityAutoLowered
+        : base.effectsQualityAutoLowered,
     playerName,
     pendingPlayerName,
     cloudId: nullableStringOr(source.cloudId, base.cloudId),
@@ -335,6 +342,7 @@ function resetForTalentPointEconomy(save: SaveData): SaveData {
     soundEnabled: save.soundEnabled,
     hapticsEnabled: save.hapticsEnabled,
     effectsQuality: save.effectsQuality,
+    effectsQualityAutoLowered: save.effectsQualityAutoLowered,
   };
 }
 
@@ -553,6 +561,7 @@ export function clearLocalProfile(): SaveData {
   fresh.soundEnabled = current.soundEnabled;
   fresh.hapticsEnabled = current.hapticsEnabled;
   fresh.effectsQuality = current.effectsQuality;
+  fresh.effectsQualityAutoLowered = current.effectsQualityAutoLowered;
   clearCloudAccessToken();
   save(fresh);
   return fresh;

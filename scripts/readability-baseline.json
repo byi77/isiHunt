@@ -1,0 +1,45 @@
+{
+  "measuredAt": "2026-09-28T21:27:44.861Z",
+  "worlds": {
+    "silberhain": {
+      "median": 2.0834970213410653,
+      "objects": 50
+    },
+    "frostzinne": {
+      "median": 6.247628703430819,
+      "objects": 57
+    },
+    "glutmark": {
+      "median": 1.5737173345093711,
+      "objects": 46
+    },
+    "__LEERENBLÜTE__": {
+      "median": 1.2512673709055033,
+      "objects": 49
+    },
+    "sonnenhort": {
+      "median": 4.721847390675538,
+      "objects": 44
+    },
+    "mondschmiede": {
+      "median": 2.0705806681416554,
+      "objects": 47
+    },
+    "kristallbruch": {
+      "median": 4.975855514011846,
+      "objects": 40
+    },
+    "sturmgrenze": {
+      "median": 1.6122844967480048,
+      "objects": 43
+    },
+    "lichtkern": {
+      "median": 1.32158797175379,
+      "objects": 32
+    },
+    "horizonttor": {
+      "median": 5.44439750842002,
+      "objects": 33
+    }
+  }
+}

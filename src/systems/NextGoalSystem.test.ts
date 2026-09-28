@@ -40,6 +40,7 @@ function save(overrides: Partial<SaveData> = {}): SaveData {
     soundEnabled: false,
     hapticsEnabled: false,
     effectsQuality: 'full',
+    effectsQualityAutoLowered: false,
     playerName: 'Test',
     cloudId: null,
     ...overrides,

@@ -91,6 +91,8 @@ import { enterScene, fadeOutAlongside, leaveScene } from '@/ui/sceneTransition';
 import { GameBackdrop } from '@/ui/GameBackdrop';
 import type { HudScene } from '@/scenes/HudScene';
 import { Depth } from '@/ui/depth';
+import * as EffectsQualitySystem from '@/systems/EffectsQualitySystem';
+import { FrameRateGuard } from '@/systems/FrameRateGuard';
 import { shipAuraAssetId, shipAuraIndex, shipHullTint, shipTint } from '@/config/shop';
 import { planetTextureForVariant, playerTextureForShape } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
@@ -207,6 +209,12 @@ export class GameScene extends Phaser.Scene {
   private playerPosition = new Phaser.Math.Vector2();
 
   private phase: RunPhase = 'countdown';
+  /**
+   * Misst, ob das Geraet die Effektstufe schafft (ADR-0035). Wird je Run neu
+   * angelegt; eine Senkung wirkt erst ab der naechsten Szene - mitten im Run
+   * umzuschalten saehe wie ein Fehler aus.
+   */
+  private frameGuard = new FrameRateGuard();
   private remainingMs = 0;
   private totalMs = 0;
   private mode: RunMode = 'solo';
@@ -241,6 +249,8 @@ export class GameScene extends Phaser.Scene {
   create(data: GameSceneData): void {
     SafeAreaSystem.hide();
     const save = SaveSystem.load();
+    // Die Scene-Instanz ueberlebt `restart`; ein Waechter je Run.
+    this.frameGuard = new FrameRateGuard();
 
     // Messbeginn: hier faengt der Aufbau dieser Scene an. Vorher liegt nur
     // die Boot-/Asset-Ladezeit aller registrierten Scenes, die kein
@@ -558,6 +568,7 @@ export class GameScene extends Phaser.Scene {
     this.updateTimer(delta);
     this.finalSeconds.update(this.remainingMs, delta);
     this.checkOpponentAlive();
+    if (this.frameGuard.sample(delta)) EffectsQualitySystem.lowerAutomatically();
     this.performanceMonitor?.recordFrame(
       delta,
       this.collectibles.length + this.obstacles.length,

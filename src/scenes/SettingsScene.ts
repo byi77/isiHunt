@@ -26,6 +26,14 @@ import {
   createSceneBackdrop,
   PAGE_CONTENT_TOP,
 } from '@/ui/widgets';
+import type { EffectsQuality } from '@/types';
+
+/** Anzeigenamen der Effektstufen im Schalter. */
+const EFFECT_LABELS: Record<EffectsQuality, string> = {
+  full: 'VOLL',
+  medium: 'MITTEL',
+  reduced: 'SPARSAM',
+};
 
 /** Hoehe der Karte PROFIL & GERAETE; Innenraender siehe create. */
 const PROFILE_CARD_HEIGHT = 280;
@@ -194,31 +202,32 @@ export class SettingsScene extends Phaser.Scene {
         .setLetterSpacing(3),
     );
 
-    const effectsLabel = (): string =>
-      EffectsQualitySystem.isFull() ? 'EFFEKTE: VOLL' : 'EFFEKTE: SPARSAM';
+    const effectsLabel = (): string => `EFFEKTE: ${EFFECT_LABELS[EffectsQualitySystem.current()]}`;
+    // Wurde automatisch gesenkt, sagt der Hinweis das - sonst wundert man
+    // sich, warum die Wahl nicht mehr auf VOLL steht.
+    const effectsHint = (): string =>
+      EffectsQualitySystem.wasLoweredAutomatically()
+        ? 'Automatisch gesenkt - dein Gerät kam nicht mit'
+        : 'Sparsam und Mittel schonen schwache Geräte';
     const effectsButton = createButton(
       this,
       GAME_WIDTH / 2,
       graphicsY + 5,
       effectsLabel(),
       () => {
-        EffectsQualitySystem.setQuality(EffectsQualitySystem.isFull() ? 'reduced' : 'full');
-        SoundSystem.playUiToggle(EffectsQualitySystem.isFull());
+        const next = EffectsQualitySystem.nextManual();
+        EffectsQualitySystem.setQuality(next);
+        SoundSystem.playUiToggle(next !== 'reduced');
         effectsButton.setLabel(effectsLabel());
+        effectsHintText.setText(effectsHint());
       },
       { width: 360, height: 64, accent: world.accent, fontSize: FontSize.body, sound: 'none' },
     );
     addContent(effectsButton.container);
-    addContent(
-      this.add
-        .text(
-          GAME_WIDTH / 2,
-          graphicsY + 62,
-          'Sparsam schont schwache Geräte',
-          textStyle(FontSize.tiny, Palette.inkDim),
-        )
-        .setOrigin(0.5),
-    );
+    const effectsHintText = this.add
+      .text(GAME_WIDTH / 2, graphicsY + 62, effectsHint(), textStyle(FontSize.tiny, Palette.inkDim))
+      .setOrigin(0.5);
+    addContent(effectsHintText);
 
     addContent(
       createPanel(this, GAME_WIDTH / 2, legalY, GAME_WIDTH - 120, 430, world.accent, {
