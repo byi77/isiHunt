@@ -12,6 +12,22 @@ zeigt die Kulisse mit HUD und Schiff ohne laufende Simulation; `worldPreview`
 waehlt 0 bis 9. Dieser Pfad ist wie die bestehende HUD-Vorschau nur im Dev-Build
 aktiv. Der grosse Randplanet nutzt ein statisches 256-Pixel-Bild pro Welt.
 
+Die bewegte Weltstimmung (2026-09-28) liegt in `ui/worldAtmosphere.ts`, ihre
+Werte in `config/worldAtmosphere.ts`: je Welt ein Motiv, eine Beimischung der
+Weltfarbe in den Grundverlauf, eine Sternfarbe und Budgets fuer Teilchenzahl,
+Tempo und Deckkraft (hoechstens `maxParticles` = 48 je Welt). `GameBackdrop`
+erzeugt die Klasse, haengt ihre zwei Container `back` (hinter dem Randplaneten)
+und `front` (davor, weiterhin hinter allen Spielobjekten) in den eigenen
+Kulissen-Container und ruft `update(delta)` aus seinem eigenen `update` auf -
+bei reduzierter Bewegung nicht, dann bleibt das Startbild stehen. Es gibt
+keine Timer, Tweens oder Frame-Listener; Blitz und Eisglanz zaehlen ihre
+Abstaende selbst im `delta` herunter. Die elf Texturen (`atmo-*`) entstehen
+einmal je Sitzung auf einem Canvas, sind weiss und werden getintet. Pro Frame
+werden nur Position, Drehung, Skalierung und Deckkraft vorhandener Bilder
+gesetzt; neu gezeichnet wird allein der Blitz der Sturmgrenze, wenn er
+einschlaegt. Der Zufall ist je Welt fest geseedet, damit Screenshots
+vergleichbar bleiben.
+
 Grafikrunde 3 ergaenzt `ui/worldEtching.ts`: Die Funktion zeichnet einmalig
 pro Szene geometrische Weltkonturen in die aeusseren Spielfeldbereiche. Sie
 verwendet weder Timer noch Frame-Listener. `GameBackdrop` besitzt und zerstoert

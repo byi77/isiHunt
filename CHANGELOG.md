@@ -9,6 +9,18 @@ Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
 
 ## [Unreleased]
 
+### Grafik: Bewegte Welten
+
+- Die zehn Welten sahen im Run fast gleich aus: derselbe tiefblaue
+  Hintergrund, dieselben Sterne, nur die Nebeltönung wechselte. Jetzt hat jede
+  Welt ihre eigene Grundfarbe, eigene Sternfarbe und ein eigenes bewegtes
+  Motiv – Nordlicht in der Sternenweide, Schneekristalle im Eisring,
+  Glutfunken im Glutnebel, ein Strudel am Raumriss im Nullsektor, ein
+  drehender Strahlenkranz in der Sonnenkrone, kreisende Monde in der
+  Mondschmiede, rasende Splitter im Kristallbruch, Blitze in der Sturmgrenze,
+  Lichtwellen im Lichtkern und ein Sprungtor im Horizonttor.
+- Bei reduzierter Bewegung bleibt die Kulisse stehen.
+
 ### Grafik: Rahmen, Menüleiste und Aufräumen
 
 - Im Safari-Browser wirkte das Spielfeld wie gerahmt: Die Streifen links und

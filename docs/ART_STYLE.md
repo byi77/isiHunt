@@ -351,6 +351,31 @@ Ein grosser angeschnittener Kulissenplanet am Rand vermittelt Massstab.
 Die Spielfeldmitte bleibt ruhig; Kulisse hat keine Sammelmarkierungen.
 Reduzierte Bewegung stellt Sterne und Nebel statisch dar.
 
+**Bewegte Welten, 28.09.2026:** Das gemeinsame Tiefblau reichte nicht - im
+Run sahen Welt 1 und Welt 10 fast gleich aus. Jede Welt mischt jetzt 55 bis
+70 % ihrer eigenen Hintergrundfarbe (`bgTop`/`bgBottom`) in den Grundverlauf,
+die Sterne tragen eine Weltfarbe, und ein eigenes Motiv bewegt sich hinter dem
+Spiel:
+
+| Welt          | Motiv                                                            |
+| ------------- | ---------------------------------------------------------------- |
+| Sternenweide  | Nordlicht-Vorhaenge oben, langsam steigende Lichtpollen          |
+| Eisring       | fallende, drehende Schneekristalle, Eisglanz am Rand             |
+| Glutnebel     | flackernd steigende Glutfunken, Hitzeschlieren                   |
+| Nullsektor    | Raumriss am Rand, Staub im Strudel, Sterne fallen kurz aus       |
+| Sonnenkrone   | drehender Strahlenkranz von oben, sinkender Goldstaub            |
+| Mondschmiede  | Monde auf sichtbaren Umlaufbahnen, taumelnde Truemmer            |
+| Kristallbruch | schnelle diagonale Splitterstreifen                              |
+| Sturmgrenze   | Windschlieren, dunkle Wolkenbaender, Blitz mit Wetterleuchten    |
+| Lichtkern     | Lichtwellen vom Kern unten, Staub stroemt zum Kern               |
+| Horizonttor   | drehendes Tor oben, Sterne ziehen als Sprungstreifen nach aussen |
+
+Regeln fuer die Motive: Teilchen sind klein, weich und gedaempft - nie ein
+harter Leuchtpunkt in Reliktgroesse. Zentren (Riss, Krone, Kern, Tor) liegen
+am Rand oder oben, nicht in der Spielfeldmitte. Gefaerbt wird per Tint auf
+weissen Texturen. Reduzierte Bewegung zeigt das Startbild ohne Bewegung und
+ohne Blitz.
+
 **Fang-Anzeigen, 19.09.2026:** Die Punktzahl steht in der Seltenheitsfarbe;
 ab epischen Relikten bleibt das Seltenheitssymbol sichtbar. Glückstreffer
 zeigen eine grössere goldene Zahl mit x3-Hinweis und stärkerer Ausdehnung.

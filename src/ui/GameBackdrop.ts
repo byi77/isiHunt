@@ -1,16 +1,29 @@
 import Phaser from 'phaser';
 import { PLAYFIELD_VISUALS as V } from '@/config/playfieldVisuals';
 import type { WorldDef } from '@/config/worlds';
+import { worldAtmosphere } from '@/config/worldAtmosphere';
 import { worldVisual } from '@/config/worldVisuals';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import { Depth } from './depth';
 import { createSpatialPlanet } from './spatialPlanet';
 import { addBackdropEdgeFade, paintSafeAreaBackdrop } from './widgets';
+import { WorldAtmosphere } from './worldAtmosphere';
 import { createWorldEtching } from './worldEtching';
 
 function hash(x: number, y: number, seed: number): number {
   const value = Math.sin(x * 127.1 + y * 311.7 + seed * 74.7) * 43758.5453;
   return value - Math.floor(value);
+}
+
+/** Mischt zwei Farben; `t` = 0 liefert `from`, 1 liefert `to`. */
+function mixColor(from: number, to: number, t: number): number {
+  const a = Phaser.Display.Color.IntegerToRGB(from);
+  const b = Phaser.Display.Color.IntegerToRGB(to);
+  return Phaser.Display.Color.GetColor(
+    Math.round(a.r + (b.r - a.r) * t),
+    Math.round(a.g + (b.g - a.g) * t),
+    Math.round(a.b + (b.b - a.b) * t),
+  );
 }
 
 function noise(x: number, y: number, seed: number): number {
@@ -74,6 +87,7 @@ export class GameBackdrop {
   private readonly root: Phaser.GameObjects.Container;
   private readonly stars: Phaser.GameObjects.Graphics[] = [];
   private readonly nebula: Phaser.GameObjects.Image;
+  private readonly atmosphere: WorldAtmosphere;
   private elapsed = 0;
   private offsetX = 0;
   private offsetY = 0;
@@ -86,11 +100,17 @@ export class GameBackdrop {
   ) {
     this.root = scene.add.container(0, 0).setDepth(Depth.Backdrop);
     this.root.setName('game-backdrop');
+    // Jede Welt faerbt das Tiefblau mit ihrer eigenen Grundfarbe ein - vorher
+    // teilten alle zehn Welten denselben Verlauf.
+    const mood = worldAtmosphere(world.spaceVariant);
+    const top = mixColor(V.top, world.bgTop, mood.tintMix);
+    const bottom = mixColor(V.bottom, world.bgBottom, mood.tintMix);
     const base = scene.add.graphics();
-    base.fillGradientStyle(V.top, V.top, V.bottom, V.bottom, 1);
+    base.fillGradientStyle(top, top, bottom, bottom, 1);
     base.fillRect(0, 0, width, height);
     this.root.add(base);
-    paintSafeAreaBackdrop(V.top, V.bottom);
+    paintSafeAreaBackdrop(top, bottom);
+    this.atmosphere = new WorldAtmosphere(scene, width, height, world);
 
     this.nebula = scene.add
       .image(width / 2, height / 2, nebulaTexture(scene, world.spaceVariant))
@@ -104,10 +124,10 @@ export class GameBackdrop {
         const x = hash(i, layer, world.spaceVariant) * (width + 48) - 24;
         const y = hash(layer, i + 19, world.spaceVariant) * (height + 48) - 24;
         const brightness = 0.45 + hash(i, 31, layer) * 0.55;
-        stars.fillStyle(0xcbdce5, V.starAlpha[layer]! * brightness);
+        stars.fillStyle(mood.starTint, V.starAlpha[layer]! * brightness);
         stars.fillCircle(x, y, V.starRadius[layer]!);
         if (layer === 2 && i % 5 === 0) {
-          stars.lineStyle(0.7, 0xcbdce5, 0.12);
+          stars.lineStyle(0.7, mood.starTint, 0.12);
           stars.lineBetween(x - 3, y, x + 3, y);
           stars.lineBetween(x, y - 3, x, y + 3);
         }
@@ -115,6 +135,7 @@ export class GameBackdrop {
       this.stars.push(stars);
       this.root.add(stars);
     }
+    this.root.add(this.atmosphere.back);
 
     const planet = createSpatialPlanet(
       scene,
@@ -126,8 +147,9 @@ export class GameBackdrop {
       V.planetResolution,
     ).setAlpha(V.planetAlpha);
     this.root.add(planet);
+    this.root.add(this.atmosphere.front);
     this.root.add(createWorldEtching(scene, width, height, world.spaceVariant, world.accent));
-    addBackdropEdgeFade(scene, this.root, width, height, V.top, V.bottom);
+    addBackdropEdgeFade(scene, this.root, width, height, top, bottom);
   }
 
   update(delta: number, playerX: number, playerY: number): void {
@@ -138,6 +160,7 @@ export class GameBackdrop {
       return;
     }
     const dt = Math.min(Math.max(delta, 0), V.maxDeltaMs);
+    this.atmosphere.update(dt);
     this.elapsed = (this.elapsed + dt) % V.driftPeriodMs;
     const follow = 1 - Math.exp((-V.followResponse * dt) / 1000);
     this.offsetX += ((playerX / this.width - 0.5) * 2 - this.offsetX) * follow;

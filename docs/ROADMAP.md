@@ -110,6 +110,17 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
 - [x] Eigene Spielfeldkulisse mit strukturierten Weltennebeln, drei
       Sternlagen, sanfter Parallaxe und hochaufgeloestem Randplaneten.
 
+### Grafik-Update - Bewegte Welten (2026-09-28)
+
+- [x] Jede der zehn Welten hat im Run eine eigene Grundfarbe, eigene
+      Sternfarbe und ein eigenes Bewegungsmotiv (Nordlicht, Schnee, Glut,
+      Strudel, Strahlenkranz, Monde, Splitter, Sturm, Lichtwellen, Sprung).
+- [x] Reduzierte Bewegung zeigt die Motive als Standbild.
+- [ ] Auf echtem Handy pruefen: Bildrate in Sonnenkrone und Horizonttor
+      (grosse additive Flaechen), Lesbarkeit der Relikte vor dem Tor.
+- [ ] Im Bild noch nicht gesehen: Blitz der Sturmgrenze, Eisglanz, Standbild
+      bei reduzierter Bewegung.
+
 ### Grafik-Update - Grafikrunde 3 (2026-09-24)
 
 - [x] Start aus dem Menue mit Tauch-Uebergang; der vorhandene Szenenwechsel
