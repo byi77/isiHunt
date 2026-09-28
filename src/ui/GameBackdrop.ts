@@ -10,6 +10,7 @@ import { addBackdropEdgeFade, paintSafeAreaBackdrop } from './widgets';
 import { WorldAtmosphere } from './worldAtmosphere';
 import { BackdropDistortion } from './backdropDistortion';
 import { DISTORTION, LIVING_NEBULA as N } from '@/config/postFx';
+import { createStarDust } from './starDust';
 import * as EffectsQualitySystem from '@/systems/EffectsQualitySystem';
 import { createWorldEtching } from './worldEtching';
 
@@ -94,6 +95,7 @@ export class GameBackdrop {
   private readonly planet: Phaser.GameObjects.Container;
   private readonly distortion: BackdropDistortion | null;
   private readonly livingNebula: Phaser.GameObjects.NoiseSimplex3D | null = null;
+  private readonly starDust: Phaser.GameObjects.SpriteGPULayer | null = null;
   private elapsed = 0;
   private offsetX = 0;
   private offsetY = 0;
@@ -163,6 +165,10 @@ export class GameBackdrop {
       }
       this.stars.push(stars);
       this.root.add(stars);
+    }
+    if (EffectsQualitySystem.isFull()) {
+      this.starDust = createStarDust(scene, width, height, mood.starTint, world.spaceVariant);
+      this.root.add(this.starDust);
     }
     this.root.add(this.atmosphere.back);
 

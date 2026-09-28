@@ -153,3 +153,16 @@ export const RELIC_SHINE = {
  * Das Pausebild liegt in der HUD-Szene und bleibt scharf.
  */
 export const PAUSE_BLUR = { quality: 1, x: 2, y: 2, strength: 1.4, steps: 4 } as const;
+
+/**
+ * Sternenstaub auf der GPU (`SpriteGPULayer`), nur auf der vollen Stufe.
+ * Tausend und mehr winzige Sterne in einem Zeichenaufruf; das Funkeln rechnet
+ * die GPU, pro Frame faellt auf der CPU nichts an. Ohne Parallaxe: Die Schicht
+ * hat keine Transformation und steht wie ein sehr ferner Hintergrund.
+ */
+export const STAR_DUST = {
+  count: 1_400,
+  scale: { min: 0.05, max: 0.16 },
+  alpha: { min: 0.1, max: 0.55 },
+  twinkleMs: { min: 1_200, max: 4_800 },
+} as const;
