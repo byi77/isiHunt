@@ -13,6 +13,15 @@ export const DEBUG_TOGGLE_TAP_COUNT = 10;
 export const DEBUG_TOGGLE_TAP_WINDOW_MS = 4_000;
 
 /**
+ * So lange darf ein Jagdstart dauern, bevor die Start-Spur erscheint
+ * (`core/startTrace.ts`). Normal sind es unter zwei Sekunden: bis zu 1 s
+ * Server-Abfrage, 0,26 s Ausblenden, der Aufbau der Spielszene. Haengen die
+ * zwei Serveraufrufe davor (je 5 s Timeout), erscheint die Spur schon waehrend
+ * des Wartens - und zeigt genau diesen Schritt als letzten.
+ */
+export const START_TRACE_TIMEOUT_MS = 8_000;
+
+/**
  * Maximale Anzahl Eintraege im rollierenden Event-/Fehler-Ringpuffer.
  *
  * Gewachsen von 50 auf 200, dann 400, jetzt 1000. Der letzte Schritt hat ein

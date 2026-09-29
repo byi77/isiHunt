@@ -36,6 +36,7 @@ import { AchievementsScene } from '@/scenes/AchievementsScene';
 import { CollectionScene } from '@/scenes/CollectionScene';
 import { BootScene } from '@/scenes/BootScene';
 import { showNoWebGL, supportsWebGL } from '@/core/webglSupport';
+import { noteStartError } from '@/core/startTrace';
 import { ChallengeScene } from '@/scenes/ChallengeScene';
 import { DuelSelectScene } from '@/scenes/DuelSelectScene';
 import { GameScene } from '@/scenes/GameScene';
@@ -253,6 +254,7 @@ function installDebugLogging(): void {
   }
 
   window.addEventListener('error', (event) => {
+    noteStartError(event.message);
     DebugSystem.pushLogEntry({
       timestamp: Date.now(),
       kind: 'error',
@@ -263,6 +265,7 @@ function installDebugLogging(): void {
 
   window.addEventListener('unhandledrejection', (event) => {
     const reason = event.reason as unknown;
+    noteStartError(reason instanceof Error ? reason.message : String(reason));
     DebugSystem.pushLogEntry({
       timestamp: Date.now(),
       kind: 'error',

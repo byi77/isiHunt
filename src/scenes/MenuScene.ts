@@ -22,6 +22,7 @@ import type { MenuAction } from '@/ui/MenuView';
 import { checkForUpdate, forceReload } from '@/core/updateCheck';
 import { SceneKey } from '@/scenes/SceneKey';
 import type { WorldInfoMode } from '@/scenes/WorldInfoScene';
+import { beginStartTrace, markStart } from '@/core/startTrace';
 import { Depth } from '@/ui/depth';
 import { installDebugOverlay, removeDebugOverlay } from '@/ui/debugOverlay';
 import { mayEnterGame } from '@/systems/AuthGate';
@@ -48,7 +49,7 @@ import {
   createWorldBackdrop,
 } from '@/ui/widgets';
 import type { BackdropDim } from '@/ui/widgets';
-import { enterScene, transitionTo } from '@/ui/sceneTransition';
+import { enterScene, leaveScene, transitionTo } from '@/ui/sceneTransition';
 
 /**
  * Wann zuletzt ein vollstaendiger Abgleich begonnen hat.
@@ -821,12 +822,22 @@ export class MenuScene extends Phaser.Scene {
 
   /** Die Jagd startet direkt; Weltinfos und Bonusrunden bleiben optional. */
   private async startHunt(worldId: string): Promise<void> {
+    beginStartTrace(`Jagd angetippt (${worldId})`);
     const effectRun = await CloudSystem.startRewardEffectRun(worldId);
-    if (!this.scene.isActive()) return;
-    transitionTo(
+    markStart(`Effekt-Abfrage fertig (${effectRun.ok ? 'ok' : 'Fehler'})`);
+    if (!this.scene.isActive()) {
+      markStart('Menue nicht mehr aktiv - Start abgebrochen');
+      return;
+    }
+    leaveScene(
       this,
-      SceneKey.Game,
-      { worldId, rewardEffects: effectRun.ok ? (effectRun.value ?? undefined) : undefined },
+      () => {
+        markStart('Menue ausgeblendet, Spielszene startet');
+        this.scene.start(SceneKey.Game, {
+          worldId,
+          rewardEffects: effectRun.ok ? (effectRun.value ?? undefined) : undefined,
+        });
+      },
       'dive',
     );
   }

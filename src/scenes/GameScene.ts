@@ -93,6 +93,7 @@ import type { HudScene } from '@/scenes/HudScene';
 import { Depth } from '@/ui/depth';
 import * as EffectsQualitySystem from '@/systems/EffectsQualitySystem';
 import { FrameRateGuard } from '@/systems/FrameRateGuard';
+import { finishStartTrace, markStart } from '@/core/startTrace';
 import { applyBloom, CameraGrading } from '@/ui/postFx';
 import { PAUSE_BLUR } from '@/config/postFx';
 import { lightingEnabled, SceneLighting } from '@/ui/sceneLighting';
@@ -279,6 +280,13 @@ export class GameScene extends Phaser.Scene {
     const save = SaveSystem.load();
     // Die Scene-Instanz ueberlebt `restart`; ein Waechter je Run.
     this.frameGuard = new FrameRateGuard();
+    markStart('Spielszene: Aufbau beginnt');
+    // Erst ein wirklich gezeichnetes Bild beweist den Start - ein Absturz im
+    // Zeichnen liesse die Szene sonst aktiv, aber eingefroren zurueck.
+    this.events.once(Phaser.Scenes.Events.RENDER, () => {
+      markStart('Spielszene: erstes Bild gezeichnet');
+      finishStartTrace();
+    });
 
     // Messbeginn: hier faengt der Aufbau dieser Scene an. Vorher liegt nur
     // die Boot-/Asset-Ladezeit aller registrierten Scenes, die kein
@@ -368,6 +376,7 @@ export class GameScene extends Phaser.Scene {
     );
 
     this.backdrop = new GameBackdrop(this, GAME_WIDTH, GAME_HEIGHT, this.world);
+    markStart('Spielszene: Kulisse steht');
     this.removeBloom = applyBloom(this.cameras.main, this.world.spaceVariant);
     this.events.on(Phaser.Scenes.Events.PAUSE, this.blurOnPause);
     this.events.on(Phaser.Scenes.Events.RESUME, this.unblurOnResume);
@@ -418,6 +427,7 @@ export class GameScene extends Phaser.Scene {
     );
     this.player.setWorldInertia(this.world.modifier === 'inertia' ? WORLD_INERTIA_FACTOR : 1);
     this.player.setWorldStyle(this.world.spaceVariant);
+    markStart('Spielszene: Schiff steht');
     this.lighting = lightingEnabled()
       ? new SceneLighting(
           this,
