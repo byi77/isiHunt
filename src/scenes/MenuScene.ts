@@ -5,6 +5,7 @@
  * Fortschrittszahlen liegen im Profil und unterbrechen den Start nicht.
  */
 
+import { RunStartSystem } from '@/systems/RunStartSystem';
 import Phaser from 'phaser';
 
 import { SYNC_RETRY_DELAYS_MS } from '@/config/backend';
@@ -63,6 +64,8 @@ import { enterScene, leaveScene, transitionTo } from '@/ui/sceneTransition';
 let lastSyncStartedAt = 0;
 
 export class MenuScene extends Phaser.Scene {
+  private readonly runStart = new RunStartSystem();
+  private startError: Phaser.GameObjects.Text | null = null;
   private selectedWorld!: WorldDef;
   private worldBackdrop!: Phaser.GameObjects.Container;
   private readonly backdropDim: BackdropDim = {
@@ -88,7 +91,9 @@ export class MenuScene extends Phaser.Scene {
     super(SceneKey.Menu);
   }
 
-  create(): void {
+  create(data: { startError?: string } = {}): void {
+    this.runStart.release();
+    this.startError = null;
     const resultPreview = new URLSearchParams(window.location.search).get('resultPreview');
     if (DEBUG_ENABLED && resultPreview !== null) {
       void import('@/ui/resultPreview').then(({ installResultPreview }) => {
@@ -108,6 +113,20 @@ export class MenuScene extends Phaser.Scene {
       return;
     }
     SafeAreaSystem.showMenuTicker();
+    if (data.startError) {
+      const unit = GAME_WIDTH / this.game.canvas.getBoundingClientRect().width;
+      this.startError = this.add
+        .text(
+          GAME_WIDTH / 2,
+          GAME_HEIGHT - 210,
+          data.startError,
+          textStyle(12 * unit, Palette.gold),
+        )
+        .setOrigin(0.5)
+        .setWordWrapWidth(GAME_WIDTH - 70)
+        .setAlign('center')
+        .setDepth(Depth.Overlay);
+    }
     const save = SaveSystem.load();
     const unlocked = WORLDS.filter((w) => w.unlockLevel <= save.level);
     this.selectedWorld =
@@ -755,6 +774,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private handleMenuAction(action: MenuAction): void {
+    if (this.runStart.busy) return;
     switch (action) {
       case 'jagd':
         void this.startHunt(this.selectedWorld.id);
@@ -810,6 +830,7 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private handleWorldSelection(world: WorldDef): void {
+    if (this.runStart.busy) return;
     this.selectedWorld = world;
     if (!this.worldPreview) {
       SaveSystem.update((data) => {
@@ -822,11 +843,35 @@ export class MenuScene extends Phaser.Scene {
 
   /** Die Jagd startet direkt; Weltinfos und Bonusrunden bleiben optional. */
   private async startHunt(worldId: string): Promise<void> {
+    if (!this.runStart.acquire()) return;
+    this.startError?.destroy();
+    this.startError = null;
     beginStartTrace(`Jagd angetippt (${worldId})`);
+    const accountId = AuthSystem.currentUserId();
     const effectRun = await CloudSystem.startRewardEffectRun(worldId);
     markStart(`Effekt-Abfrage fertig (${effectRun.ok ? 'ok' : 'Fehler'})`);
     if (!this.scene.isActive()) {
       markStart('Menue nicht mehr aktiv - Start abgebrochen');
+      return;
+    }
+    if (accountId !== AuthSystem.currentUserId()) {
+      this.runStart.release();
+      return;
+    }
+    if (!effectRun.ok) {
+      this.runStart.release();
+      const unit = GAME_WIDTH / this.game.canvas.getBoundingClientRect().width;
+      this.startError = this.add
+        .text(
+          GAME_WIDTH / 2,
+          GAME_HEIGHT - 210,
+          effectRun.error,
+          textStyle(12 * unit, Palette.gold),
+        )
+        .setOrigin(0.5)
+        .setWordWrapWidth(GAME_WIDTH - 70)
+        .setAlign('center')
+        .setDepth(Depth.Overlay);
       return;
     }
     leaveScene(

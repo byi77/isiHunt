@@ -21,7 +21,7 @@ function makeSave() {
     // das Rendering. Seit den Phaser-4-Effekten (ADR-0035) rendert der CI-Runner
     // ohne GPU jeden Frame so langsam, dass der frame-getaktete Countdown nicht
     // mehr in 90 s durchlief - der Deploy scheiterte am 2026-09-29 zweimal hier.
-    effectsQuality: 'reduced',
+    effectsQuality: sim ? 'reduced' : 'full',
     version: 9,
     level: 1,
     xp: 0,
@@ -128,7 +128,9 @@ try {
     timeout: 25_000,
   });
   await page.evaluate(() => {
-    window.isiHunt.scene.start('Game', { mode: 'solo', worldId: 'silberhain' });
+    window.isiHunt.scene
+      .getScene('Menu')
+      .scene.start('Game', { mode: 'solo', worldId: 'silberhain' });
   });
   await page.waitForFunction(
     () => window.isiHunt?.scene?.getScene('Game')?.scene?.isActive() === true,
@@ -187,7 +189,9 @@ try {
       const maxFrames = 60 * 120;
       let frames = 0;
 
+      const rawDelta = game.loop.rawDelta;
       game.loop.sleep();
+      game.loop.rawDelta = step;
       while (scene?.phase === 'running' && frames < maxFrames) {
         const orbs = (scene.collectibles ?? []).filter((orb) => orb?.active && !orb.isCollected);
         if (orbs.length > 0 && scene.player) {
@@ -207,6 +211,7 @@ try {
           await new Promise((resolvePromise) => setTimeout(resolvePromise, 0));
       }
 
+      game.loop.rawDelta = rawDelta;
       game.loop.wake();
       return {
         frames,
@@ -272,6 +277,11 @@ try {
   console.log(JSON.stringify({ mode: sim ? 'sim' : 'realtime', ...result, resources }, null, 2));
   if (errors.length > 0) throw new Error(`Browserfehler: ${errors.join(' | ')}`);
   if (!result.report.passed) process.exitCode = 1;
+  const active = await page.evaluate(() =>
+    window.isiHunt.scene.getScenes(true).map((scene) => scene.scene.key),
+  );
+  if (active.includes('Menu') && active.includes('Game'))
+    throw new Error('Menu und Game laufen gleichzeitig.');
 } finally {
   await browser?.close();
   server?.kill();

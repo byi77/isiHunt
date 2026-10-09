@@ -6,6 +6,7 @@
  * balken), bekommt ein kleines Handle-Objekt mit `set*`-Methoden zurueck.
  */
 
+import { accessibleButton } from '@/ui/SceneAccessibility';
 import Phaser from 'phaser';
 
 import {
@@ -409,12 +410,18 @@ export function createButton(
     press(true);
   });
 
+  const activate = (): void => {
+    if (!enabled || !container.input?.enabled || !scene.scene.isActive()) return;
+    if (options.sound !== 'none') SoundSystem.playUiClick(options.sound ?? 'click');
+    onClick();
+  };
+  const semantic = accessibleButton(scene, container, label, width, height, activate);
+
   container.on('pointerup', () => {
     if (!enabled || !isPressed) return;
     isPressed = false;
     press(false);
-    if (options.sound !== 'none') SoundSystem.playUiClick(options.sound ?? 'click');
-    onClick();
+    activate();
   });
 
   /**
@@ -448,6 +455,7 @@ export function createButton(
       else container.disableInteractive();
     },
     setLabel(value: string) {
+      semantic.setAttribute('aria-label', value);
       text.setText(value);
       fitLabel();
       container.setData('uiButton', { label: value, width, height });
@@ -755,6 +763,27 @@ export function attachVerticalScroll(
 
   scene.input.on('pointerdown', onPointerDown);
   scene.input.on('pointermove', onPointerMove);
+  const keyboardScroll = (event: KeyboardEvent): void => {
+    if (
+      !scene.scene.isActive() ||
+      !scene.input.enabled ||
+      event.target instanceof HTMLInputElement ||
+      event.target instanceof HTMLTextAreaElement ||
+      event.target instanceof HTMLSelectElement
+    )
+      return;
+    const direction = event.key === 'PageDown' ? 1 : event.key === 'PageUp' ? -1 : 0;
+    if (!direction) return;
+    event.preventDefault();
+    scrollVelocity = 0;
+    setScrollOffset(
+      scrollOffset + direction * (options.dragZoneBottom - options.dragZoneTop) * 0.8,
+    );
+  };
+  window.addEventListener('keydown', keyboardScroll);
+  scene.events.once(Phaser.Scenes.Events.SHUTDOWN, () =>
+    window.removeEventListener('keydown', keyboardScroll),
+  );
   scene.input.on('pointerup', releasePointer);
   scene.input.on('pointerupoutside', releasePointer);
   scene.input.on('wheel', onWheel);

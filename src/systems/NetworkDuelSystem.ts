@@ -26,11 +26,7 @@
 
 import type { RealtimeChannel, SupabaseClient } from '@supabase/supabase-js';
 
-import {
-  BACKEND_TIMEOUT_MS,
-  DUEL_RESULT_RETRY_DELAYS_MS,
-  SYNC_CODE_ALPHABET,
-} from '@/config/backend';
+import { DUEL_RESULT_RETRY_DELAYS_MS, SYNC_CODE_ALPHABET } from '@/config/backend';
 import {
   CHALLENGE_DEFAULT_PLAYER_COUNT,
   CHALLENGE_MAX_PLAYER_COUNT,
@@ -45,7 +41,8 @@ import {
   ONLINE_DUEL_PRESENCE_GRACE_MS,
 } from '@/config/onlineDuel';
 import * as CloudSystem from '@/systems/CloudSystem';
-import type { CloudResult } from '@/systems/CloudSystem';
+import type { CloudResult } from '@/systems/BackendTransport';
+import { withTimeout as withBackendTimeout } from '@/systems/BackendTransport';
 import * as AuthSystem from '@/systems/AuthSystem';
 import * as DebugSystem from '@/systems/DebugSystem';
 
@@ -1950,56 +1947,8 @@ export function unsubscribeFromRoom(): void {
 
 // --- Hilfsfunktionen ---------------------------------------------------------
 
-/**
- * Legt ein Zeitlimit ueber eine Anfrage - identisches Muster zu
- * `CloudSystem.withTimeout`, hier dupliziert statt importiert, weil
- * `withTimeout` in CloudSystem nicht exportiert ist und ein Export nur fuer
- * diesen einen Wiederverwendungsfall den Modulschnitt unnoetig aufweichen
- * wuerde.
- *
- * Protokolliert Erfolg UND Fehlschlag im Debug-Ringpuffer (nicht nur
- * console.warn im Fehlerfall) - dieselbe Luecke wie bei `CloudSystem.
- * withTimeout` vor 2026-08-18, hier aber uebersehen, weil die Kopie separat
- * gepflegt wird. Ein Zwei-Geraete-Testbericht ohne einen einzigen
- * NetworkDuelSystem-Eintrag hat das aufgedeckt: unklar, ob create_duel_room/
- * join_duel_room/get_server_time ueberhaupt liefen, weil weder Erfolg noch
- * (sichtbarer) Fehlschlag geloggt wurden.
- */
-async function withTimeout<T>(operation: PromiseLike<T>, label: string): Promise<CloudResult<T>> {
-  const startedAt = Date.now();
-  const requestCorrelationId = `duel-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  let timeoutId: number | undefined;
-  try {
-    const timeout = new Promise<never>((_, reject) => {
-      timeoutId = window.setTimeout(
-        () => reject(new Error('Zeitüberschreitung')),
-        BACKEND_TIMEOUT_MS,
-      );
-    });
-    const value = await Promise.race([operation, timeout]);
-    DebugSystem.markServerContact();
-    DebugSystem.logRpcResponse(label, value, requestCorrelationId);
-    DebugSystem.pushLogEntry({
-      timestamp: Date.now(),
-      kind: 'event',
-      label: `duel:${label}`,
-      detail: `ok ${Date.now() - startedAt}ms correlation=${requestCorrelationId}`,
-    });
-    return { ok: true, value };
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : 'Unbekannter Fehler';
-    DebugSystem.pushLogEntry({
-      timestamp: Date.now(),
-      kind: 'error',
-      label: `duel:${label}`,
-      detail: `fehlgeschlagen ${Date.now() - startedAt}ms correlation=${requestCorrelationId}: ${reason}`,
-    });
-    console.warn(`[NetworkDuelSystem] ${label} fehlgeschlagen:`, error);
-    return { ok: false, error: `${label}: ${reason}` };
-  } finally {
-    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
-  }
-}
+const withTimeout = <T>(operation: PromiseLike<T>, label: string): Promise<CloudResult<T>> =>
+  withBackendTimeout(operation, label, 'duel');
 
 /** Gueltigkeit eines Raum-Codes, fuer die Anzeige im UI ("gueltig fuer X Minuten"). */
 export function roomCodeTtlMinutes(): number {

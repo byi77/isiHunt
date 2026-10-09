@@ -19,8 +19,8 @@ export class FrameRateGuard {
   constructor(private readonly limits: typeof FRAME_GUARD = FRAME_GUARD) {}
 
   /** @returns `true` genau einmal, sobald herabgestuft werden sollte. */
-  sample(deltaMs: number): boolean {
-    if (this.fired || !(deltaMs > 0) || deltaMs > this.limits.ignoreFrameMs) return false;
+  sample(deltaMs: number, visible = true): boolean {
+    if (this.fired || !visible || !Number.isFinite(deltaMs) || !(deltaMs > 0)) return false;
     this.elapsed += deltaMs;
     if (this.elapsed <= this.limits.warmupMs) return false;
     this.window.push(deltaMs);

@@ -62,6 +62,8 @@ const watch = argv.includes('--watch');
  * Grenzen stehen bei `simulateUntilDone()`.
  */
 const sim = argv.includes('--sim');
+const quality = argv.find((arg) => arg.startsWith('--quality='))?.slice(10) ?? 'full';
+if (!['full', 'medium', 'reduced'].includes(quality)) throw new Error('Unbekannte Effektstufe');
 const onlyArg = argv.find((a) => a.startsWith('--only='));
 const only = onlyArg ? onlyArg.split('=')[1].split(',') : null;
 const positional = argv.filter((a) => !a.startsWith('--'));
@@ -95,6 +97,7 @@ const SAVE_KEY = 'isihunt.save.v1';
 
 function makeSave(overrides = {}) {
   return {
+    effectsQuality: quality,
     version: 1,
     level: 1,
     xp: 0,
@@ -213,7 +216,7 @@ function record(name, ok, detail) {
   const geplant = Object.keys(DAUER).filter((k) => runSuite(k));
   const minuten = geplant.reduce((a, k) => a + DAUER[k][sim ? 1 : 0], 0);
   console.log(`
-Playtest: ${geplant.join(', ')}${sim ? ' (simuliert)' : ''}`);
+Playtest: ${geplant.join(', ')}${sim ? ' (simuliert)' : ''} — Effekte ${quality}`);
   const gerundet = Math.max(1, Math.round(minuten));
   console.log(
     `Geschaetzte Dauer: ~${gerundet} ${gerundet === 1 ? 'Minute' : 'Minuten'}` +
@@ -324,7 +327,7 @@ async function waitForScene(page, key, timeoutMs = SCENE_TIMEOUT_MS) {
 }
 
 /** Wartet, bis die GameScene wirklich laeuft - erkennbar am ersten Relikt. */
-async function waitForRunLive(page, timeoutMs = 25000) {
+async function waitForRunLive(page, timeoutMs = 90000) {
   await page.waitForFunction(
     () => {
       const s = window.isiHunt?.scene?.getScene('Game');
@@ -410,6 +413,8 @@ async function simulateUntilDone(page, onFirstScore = null) {
     game.loop.sleep();
 
     const STEP = 1000 / 60;
+    const rawDelta = game.loop.rawDelta;
+    game.loop.rawDelta = STEP;
     // Sicherheitsgrenze: doppelte Rundenlaenge. Ohne sie wuerde ein Fehler in
     // der Abbruchbedingung zu einer Endlosschleife im Browser fuehren.
     const maxFrames = 60 * 240;
@@ -441,6 +446,7 @@ async function simulateUntilDone(page, onFirstScore = null) {
       if (frames % 900 === 0) await new Promise((r) => setTimeout(r, 0));
     }
 
+    game.loop.rawDelta = rawDelta;
     return {
       score: scene.scoring?.currentScore ?? 0,
       frames,
@@ -641,7 +647,7 @@ async function switchScene(page, von, nach, data) {
     ([v, n, d]) => {
       const scene = window.isiHunt.scene.getScene(v);
       if (scene) scene.scene.start(n, d);
-      else window.isiHunt.scene.start(n, d);
+      else throw new Error(`Scene ${v} fehlt beim Wechsel nach ${n}`);
     },
     [von, nach, data ?? undefined],
   );
@@ -678,6 +684,27 @@ function collectInteractive(page, sceneKey) {
       dig(o, 0);
       return t || `(${o.type})`;
     };
+    if (key === 'Settings') {
+      const canvas = window.isiHunt.canvas.getBoundingClientRect();
+      const sx = window.isiHunt.scale.width / canvas.width;
+      const sy = window.isiHunt.scale.height / canvas.height;
+      return [...document.querySelectorAll('.isihunt-settings button')]
+        .filter((button) => {
+          const rect = button.getBoundingClientRect();
+          return rect.top >= canvas.top && rect.bottom <= canvas.bottom;
+        })
+        .map((button) => {
+          const rect = button.getBoundingClientRect();
+          return {
+            label: button.textContent.trim().slice(0, 24),
+            type: 'DOM',
+            x: (rect.left + rect.width / 2 - canvas.left) * sx,
+            y: (rect.top + rect.height / 2 - canvas.top) * sy,
+            w: rect.width * sx,
+            h: rect.height * sy,
+          };
+        });
+    }
     const out = [];
     const walk = (list, depth) => {
       for (const o of list ?? []) {
@@ -856,7 +883,11 @@ async function suiteModes() {
     try {
       await waitForScene(page, 'Menu');
       await page.evaluate(
-        (w) => window.isiHunt.scene.start('Game', { mode: 'solo', worldId: w }),
+        (w) =>
+          window.isiHunt.scene
+            .getScenes(true)
+            .find((scene) => scene.scene.key !== 'Hud')
+            .scene.start('Game', { mode: 'solo', worldId: w }),
         worldId,
       );
       await waitForRunLive(page);
@@ -914,7 +945,10 @@ async function suiteModes() {
       const ok = await page.evaluate((m) => {
         const g = window.isiHunt;
         try {
-          g.scene.start('WorldInfo', { worldId: 'silberhain', mode: m });
+          g.scene
+            .getScenes(true)
+            .find((scene) => scene.scene.key !== 'Hud')
+            .scene.start('WorldInfo', { worldId: 'silberhain', mode: m });
           return true;
         } catch {
           return false;
@@ -1151,8 +1185,13 @@ async function suiteIos() {
     );
     try {
       await waitForScene(page, 'Menu', 25000);
-      await page.evaluate(() => window.isiHunt.scene.start('Game', { mode: 'solo' }));
-      await waitForRunLive(page, 30000);
+      await page.evaluate(() =>
+        window.isiHunt.scene
+          .getScenes(true)
+          .find((scene) => scene.scene.key !== 'Hud')
+          .scene.start('Game', { mode: 'solo' }),
+      );
+      await waitForRunLive(page, 90000);
       const score = await playUntilDone(page);
       await waitForScene(page, 'Result', RESULT_TIMEOUT_MS);
       record(
@@ -1378,7 +1417,9 @@ async function suiteControls() {
       const items = await collectInteractive(page, key);
       const spielHoehe = await page.evaluate(() => window.isiHunt.scale.height);
 
-      const knoepfe = items.filter((i) => i.type === 'Container' && i.w > 0 && i.h > 0);
+      const knoepfe = items.filter(
+        (i) => (i.type === 'Container' || i.type === 'DOM') && i.w > 0 && i.h > 0,
+      );
       const rect = (i) => ({
         l: i.x - i.w / 2,
         r: i.x + i.w / 2,
@@ -1592,7 +1633,12 @@ async function suiteProgress() {
     await waitForScene(page, 'Menu');
     const before = await readSave(page);
 
-    await page.evaluate(() => window.isiHunt.scene.start('Game', { mode: 'solo' }));
+    await page.evaluate(() =>
+      window.isiHunt.scene
+        .getScenes(true)
+        .find((scene) => scene.scene.key !== 'Hud')
+        .scene.start('Game', { mode: 'solo' }),
+    );
     await waitForRunLive(page);
     const score = await playUntilDone(page);
     await waitForScene(page, 'Result', RESULT_TIMEOUT_MS);
@@ -1656,7 +1702,12 @@ async function suiteProgress() {
   );
   try {
     await waitForScene(p2, 'Menu');
-    await p2.evaluate(() => window.isiHunt.scene.start('Talents', { returnTo: 'Menu' }));
+    await p2.evaluate(() =>
+      window.isiHunt.scene
+        .getScenes(true)
+        .find((scene) => scene.scene.key !== 'Hud')
+        .scene.start('Talents', { returnTo: 'Menu' }),
+    );
     await waitForScene(p2, 'Talents', 10000);
     await p2.waitForTimeout(800);
     await p2.screenshot({ path: `${shotDir}/progress-talents.png` });

@@ -854,3 +854,39 @@ describe('AUDIT_2026-09-05_REAUDIT Befund 6: Retry fuer den Tagesbonus', () => {
     expect(SaveSystem.load().pendingDailyKey).toBeNull();
   });
 });
+
+it('retains the next offline run beyond the former 64-event limit', () => {
+  signedIn = true;
+  for (let i = 0; i < 65; i++)
+    expect(ProgressSyncSystem.enqueueRun(createRun(), createProgression())).not.toBeNull();
+  expect(ProgressSyncSystem.pendingCount()).toBe(65);
+});
+
+it('keeps oversized invalid-event quarantine parseable', () => {
+  signedIn = true;
+  window.localStorage.setItem(
+    `isihunt.progress-events.v2.${signedInUserId}`,
+    JSON.stringify([{ bad: 'x'.repeat(300000) }]),
+  );
+  ProgressSyncSystem.pendingCount();
+  const raw = window.localStorage.getItem(`isihunt.progress-events.invalid.v1.${signedInUserId}`)!;
+  expect(() => JSON.parse(raw)).not.toThrow();
+  expect(raw.length).toBeLessThanOrEqual(256 * 1024);
+});
+
+it('retains and visibly marks a run during storage failure, then persists it when storage recovers', async () => {
+  signedIn = true;
+  const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+    throw new Error('quota');
+  });
+  const eventId = ProgressSyncSystem.enqueueRun(createRun(), createProgression());
+  expect(eventId).not.toBeNull();
+  expect(ProgressSyncSystem.pendingCount()).toBe(1);
+  expect(ProgressSyncSystem.hasVolatileData()).toBe(true);
+  const status = await import('@/systems/SyncStatusSystem');
+  expect(status.dataSyncStatusLabel()).toContain('SEITE OFFEN LASSEN');
+  spy.mockRestore();
+  expect(ProgressSyncSystem.pendingCount()).toBe(1);
+  expect(ProgressSyncSystem.hasVolatileData()).toBe(false);
+  expect(readOutbox()).toHaveLength(1);
+});

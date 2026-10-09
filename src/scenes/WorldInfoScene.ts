@@ -81,6 +81,7 @@ export class WorldInfoScene extends Phaser.Scene {
   }
 
   create(data: { worldId: string; mode: WorldInfoMode }): void {
+    this.boostedBusy = false;
     const world = getWorld(data.worldId);
     const mode = data.mode;
     const save = SaveSystem.load();
@@ -201,6 +202,16 @@ export class WorldInfoScene extends Phaser.Scene {
       () => void this.startMode(worldId, mode),
       { width: 460, height: 82, accent, fontSize: FontSize.large },
     );
+    this.boostedStatus = this.add
+      .text(
+        GAME_WIDTH / 2,
+        GAME_HEIGHT - 260,
+        '',
+        textStyle((12 * GAME_WIDTH) / this.game.canvas.getBoundingClientRect().width, Palette.gold),
+      )
+      .setOrigin(0.5, 1)
+      .setWordWrapWidth(GAME_WIDTH - 100)
+      .setAlign('center');
     if (mode === 'jagd' && AuthSystem.isSignedIn()) void this.offerBoostedRun(worldId);
 
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
@@ -235,6 +246,7 @@ export class WorldInfoScene extends Phaser.Scene {
       accent: 0xd7a93b,
       fontSize: FontSize.small,
     });
+    this.boostedStatus?.destroy();
     this.boostedStatus = this.add
       .text(
         GAME_WIDTH / 2,
@@ -269,8 +281,18 @@ export class WorldInfoScene extends Phaser.Scene {
       this.boostedStatus?.setText(result.error).setColor(Palette.gold);
       return;
     }
+    const accountId = AuthSystem.currentUserId();
     const effectRun = await CloudSystem.startRewardEffectRun(worldId);
     if (!this.scene.isActive()) return;
+    if (!effectRun.ok) {
+      this.boostedBusy = false;
+      this.boostedStatus?.setText(effectRun.error).setColor(Palette.gold);
+      return;
+    }
+    if (accountId !== AuthSystem.currentUserId()) {
+      this.boostedBusy = false;
+      return;
+    }
     BoostedRunSession.clearStart();
     transitionTo(
       this,
@@ -286,9 +308,21 @@ export class WorldInfoScene extends Phaser.Scene {
 
   /** Loest je nach Modus genau den Zustandsaufbau aus, den der Zielbildschirm erwartet. */
   private async startMode(worldId: string, mode: WorldInfoMode): Promise<void> {
+    if (this.boostedBusy || !this.scene.isActive()) return;
     if (mode === 'jagd') {
+      this.boostedBusy = true;
+      const accountId = AuthSystem.currentUserId();
       const effectRun = await CloudSystem.startRewardEffectRun(worldId);
       if (!this.scene.isActive()) return;
+      if (accountId !== AuthSystem.currentUserId()) {
+        this.boostedBusy = false;
+        return;
+      }
+      if (!effectRun.ok) {
+        this.boostedBusy = false;
+        this.boostedStatus?.setText(effectRun.error).setColor(Palette.gold);
+        return;
+      }
       transitionTo(
         this,
         SceneKey.Game,

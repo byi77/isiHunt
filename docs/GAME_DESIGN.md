@@ -850,3 +850,8 @@ darf nicht als Geschenk direkt unter dem Daumen erscheinen.
 - [ ] Serverseitige Laufpruefung als Voraussetzung fuer Ranked-Duelle?
 - [ ] Datenschutz, Moderation und Reichweite der Spieler-Lobby ausserhalb des
       privaten/familiären Kreises?
+
+
+## Praezisierung der Run-Grenzen (09.10.2026)
+
+Ein Relikt, dessen Sichtdauer im aktuellen Simulationsschritt endet, wird als verpasst gewertet und kann in diesem Schritt nicht mehr eingesammelt werden. Begrenzte Effektrechte werden je bestaetigtem Start verwendet; wiederholte Tipps oder Transportwiederholungen erzeugen keinen weiteren Verbrauch fuer denselben Start. Offline-Fortschrittsbelege werden nicht nach einer festen Anzahl gespielter Runs verworfen.

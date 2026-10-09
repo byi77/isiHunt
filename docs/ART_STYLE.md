@@ -1025,3 +1025,8 @@ verfuegbare Wiedergeburt. Beim einmaligen Einsatz blitzt die Spielfigur gold
 auf; der kurze Schriftzug „WIEDERGEBURT“ erscheint direkt an ihr. Das
 Serienfenster zeigt danach die komplette verlaengerte Restzeit und laeuft
 gleichmaessig leer. Der Effekt nutzt vorhandene Farben und Fang-Feedback.
+
+
+## Lesbare Unterseiten und Tastaturfokus (09.10.2026)
+
+Modernisierte Unterseiten rechnen in CSS-Pixeln: Beschreibungen mindestens 12 Pixel, Haupttexte 14 Pixel, Bedienelemente mindestens 44 Pixel hoch. Einstellungen verwenden responsive Karten; Talentkarten trennen Beschreibung, Rang und Kaufaktion. Semantische Canvas-Buttons zeichnen bei Tastaturfokus einen hellen Rahmen ueber ihrer sichtbaren Flaeche. Hintergrund, Weltfarben und Spielobjekte behalten ihre bestehende Gestaltung.

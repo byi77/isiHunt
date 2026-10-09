@@ -362,3 +362,15 @@ sind in `TODO.md` gelistet und blockieren M4.1/M6/M7 nicht.
 - Erst ein stabiles gemeinsames Profil, dann Freunde, Ranked und Push.
 - Jede konkrete Aufgabe, Entscheidung und Priorität gehört in die
   [`TODO.md`](../TODO.md).
+
+## Audit-Nacharbeit vom 09.10.2026
+
+- [x] Doppelte Starts sperren, Bonusanfragen kontogebunden und mit stabiler Request-ID wiederholen.
+- [x] Offline-Belege ohne fixe 64er-Grenze erhalten, Schreibfehler sichtbar und in der Sitzung wiederholbar halten.
+- [x] Ablauf vor Fang pruefen und Diagnose-JSON ohne Textabschneiden begrenzen.
+- [x] Rohe sichtbare Frameabstaende messen; leere Berichte und dauerhaft sehr langsame Frames korrekt behandeln.
+- [x] Einstellungen und Talentkarten lesbar anordnen; gemeinsame Knoepfe semantisch und per Tastatur bedienen.
+- [x] Transport-, Start- und Update-Zustaendigkeiten herausloesen, 3D-Materialarbeit nur bei Aenderungen ausfuehren.
+- [x] Browserchecks mit genau einer Hauptszene; Standardtests unter Node 26 stabilisieren.
+- [x] Reale Render-Matrix fuer zehn Welten, drei Effektstufen und 2D-Jagd/3D-Hangar bereitstellen.
+- [ ] Leistungsbudgets auf echten Mobilgeraeten abnehmen. Emulation und Software-WebGL ersetzen diese Messung nicht; `npm run performance:matrix -- --enforce` erzwingt die Budgets beim entsprechenden Messlauf.

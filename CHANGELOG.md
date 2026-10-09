@@ -1,13 +1,29 @@
 # Changelog
 
-Alle nennenswerten Aenderungen an isiHunt.
+All notable changes to isiHunt.
 
-Format nach [Keep a Changelog](https://keepachangelog.com/de/1.1.0/),
-Versionierung nach [Semantic Versioning](https://semver.org/lang/de/).
+Based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+using [Semantic Versioning](https://semver.org/).
 
 ---
 
 ## [Unreleased]
+
+### Fixed — six-pass audit follow-up (2026-10-09)
+
+- Prevent repeated start taps from consuming multiple effect rights. Persist account-bound request IDs and confirmed effects through retries; display unresolved start errors instead of silently dropping bonuses.
+- Retain offline run receipts beyond the old 64-entry limit. Keep failed writes in session memory, retry persistence, and warn before leaving an unsaved run.
+- Resolve collectible expiry before collisions and preserve valid JSON when limiting diagnostic records.
+- Measure visible frame intervals using the raw loop delta. Reject empty performance reports and detect sustained stalls above 250 ms.
+- Make the standard test command work with Node webstorage enabled by default; stop previous main scenes in browser tests.
+
+### Changed — interface and maintenance
+
+- Replace the settings canvas with responsive HTML cards, 12–14 px descriptions and 44 px controls. Enlarge and rearrange talent cards.
+- Add native semantic controls, Enter/Space activation, visible keyboard focus, clipped/disabled control filtering and Page Up/Down scrolling to shared canvas buttons.
+- Share backend client/timeout handling; extract run-start, collectible-update and bounded-JSON responsibilities into focused modules.
+- Cache 3D material tint/opacity updates and the hull-etching color. Add a real 60-case render matrix covering all worlds, effect levels, 2D gameplay and the 3D hangar.
+- Real device performance acceptance remains separate from software-rendered browser coverage.
 
 ### Grafik: Phaser 4 und volle Effekte
 

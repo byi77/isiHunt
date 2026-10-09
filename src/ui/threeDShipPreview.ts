@@ -57,6 +57,9 @@ export class ThreeDShipPreview {
   private yaw = 0;
   private tilt = 0;
   private elapsed = 0;
+  private appliedTint: number | null = null;
+  private appliedAlpha: number | null = null;
+  private etchingWhite: ThreeRuntime.Color | null = null;
   private appearance = { scaleX: 1, scaleY: 1, rotation: 0, alpha: 1 };
   private readonly contextLost = (event: Event): void => {
     event.preventDefault();
@@ -120,7 +123,11 @@ export class ThreeDShipPreview {
 
   setAppearance(tint: number, frame: typeof this.appearance): void {
     this.appearance = frame;
-    if (this.model) this.applyTint(this.model, tint);
+    if (this.model && (this.appliedTint !== tint || this.appliedAlpha !== frame.alpha)) {
+      this.applyTint(this.model, tint);
+      this.appliedTint = tint;
+      this.appliedAlpha = frame.alpha;
+    }
   }
 
   setModel(asset: Ego3DAsset | undefined, tint: number): void {
@@ -154,7 +161,11 @@ export class ThreeDShipPreview {
     }
 
     if (this.model !== null && previousAssetId === asset.id) {
-      this.applyTint(this.model, tint);
+      if (this.appliedTint !== tint || this.appliedAlpha !== this.appearance.alpha) {
+        this.applyTint(this.model, tint);
+        this.appliedTint = tint;
+        this.appliedAlpha = this.appearance.alpha;
+      }
       this.canvas.style.display = 'block';
       this.onAvailabilityChange(true);
       this.render();
@@ -356,6 +367,8 @@ export class ThreeDShipPreview {
 
         this.fitModel(model);
         this.applyTint(model, this.requestedTint);
+        this.appliedTint = this.requestedTint;
+        this.appliedAlpha = this.appearance.alpha;
         // Rotate around the fitted centre, not the OBJ export origin.
         const pivot = new this.runtime!.Group();
         pivot.add(model);
@@ -605,7 +618,7 @@ export class ThreeDShipPreview {
       mesh.userData[key] = etching;
     }
     const material = etching.material as LineBasicMaterial;
-    material.color.setHex(tint).lerp(new THREE.Color(0xf3fbff), 0.5);
+    material.color.setHex(tint).lerp((this.etchingWhite ??= new THREE.Color(0xf3fbff)), 0.5);
     material.opacity = 0.46 * this.appearance.alpha;
   }
 
@@ -614,6 +627,8 @@ export class ThreeDShipPreview {
     this.scene?.remove(this.model);
     this.disposeObject(this.model);
     this.model = null;
+    this.appliedTint = null;
+    this.appliedAlpha = null;
     this.engine = null;
     this.engineRing = null;
   }

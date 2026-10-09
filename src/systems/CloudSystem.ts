@@ -1,32 +1,18 @@
 /**
- * Bestenliste und Spielstand-Abgleich ueber Supabase.
- *
- * ## Zwei Grundsaetze
- *
- * **1. Das Netz darf das Spiel nie aufhalten.** Jede Funktion hier gibt ein
- * Ergebnisobjekt zurueck und wirft nie. Kein Fehlschlag - kein Empfang, kein
- * Dienst, keine Zugangsdaten - darf dazu fuehren, dass man nicht mehr spielen
- * kann. Online ist eine Zugabe, kein Bestandteil der Schleife.
- *
- * **2. Das Netz darf den Start nicht erzwingen.** Ohne Login bleibt der lokale
- * Spielstand gültig. Wer dasselbe Profil auf mehreren Geräten nutzen möchte,
- * kann sich freiwillig über Supabase Auth anmelden.
- *
- * Spielstaende werden nach einem Solo-Run automatisch hochgeladen. Ein
- * Netzwerkfehler bleibt dabei folgenlos: Der lokale Stand ist die Quelle, und
- * der naechste Start bzw. eine neue Verbindung versucht den Upload erneut.
- * Sobald ein Cloud-Stand weiter ist, entscheidet aber immer der Spieler.
+ * Leaderboards and profile synchronization through Supabase.
+ * Progress receipts survive offline failures and calls return CloudResult.
+ * Starts that consume limited effect rights fail closed on unknown replies.
+ * Profile replacements retain the existing explicit synchronization decisions.
  */
 
-import { createClient } from '@supabase/supabase-js';
+import * as RewardEffectRunSession from './RewardEffectRunSession';
+import { getSupabaseClient, isAvailable, withTimeout } from '@/systems/BackendTransport';
+import type { CloudResult } from '@/systems/BackendTransport';
+export type { CloudResult } from '@/systems/BackendTransport';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 import {
-  BACKEND_ANON_KEY,
-  BACKEND_TIMEOUT_MS,
-  BACKEND_URL,
   BOT_MATCH_START_RETRY_DELAYS_MS,
-  isBackendConfigured,
   LEADERBOARD_LIMIT,
   SYNC_CODE_ALPHABET,
   SYNC_CODE_LENGTH,
@@ -55,7 +41,6 @@ import type { TalentId, TalentRanks } from '@/config/talents';
  * nicht faengt, reisst das Spiel mit. Ein Ergebnisobjekt zwingt dazu, den
  * Fehlerfall anzusehen.
  */
-export type CloudResult<T> = { ok: true; value: T } | { ok: false; error: string };
 
 export interface LeaderboardEntry {
   playerName: string;
@@ -632,81 +617,8 @@ function totalXpForSave(save: SaveData): number {
 
 // --- Client ------------------------------------------------------------------
 
-let client: SupabaseClient | null = null;
-
-export function getSupabaseClient(): SupabaseClient | null {
-  if (!isBackendConfigured) return null;
-
-  client ??= createClient(BACKEND_URL, BACKEND_ANON_KEY, {
-    auth: {
-      persistSession: true,
-      autoRefreshToken: true,
-    },
-  });
-
-  return client;
-}
-
-function getClient(): SupabaseClient | null {
-  return getSupabaseClient();
-}
-
-export function isAvailable(): boolean {
-  return isBackendConfigured;
-}
-
-/**
- * Legt ein Zeitlimit ueber eine Anfrage.
- *
- * Supabase bricht von sich aus nicht ab. Ohne Limit wartet der Sync-Bildschirm
- * bei schlechtem Empfang unbegrenzt auf eine Antwort, die nie kommt.
- */
-/**
- * Jeder Backend-Aufruf laeuft hier durch - der zentrale Punkt, um Erfolg UND
- * Fehlschlag automatisch im Debug-Ringpuffer festzuhalten, ohne bei jedem
- * neuen Bug erneut manuell Logging nachruesten zu muessen. Vorher wurde nur
- * der Fehlerfall geloggt (via console.warn); "kein Fehler-Log" war dadurch
- * mehrfach mit "kein Problem" verwechselbar - siehe TODO.md, Boost-Bug
- * 2026-08-18, drei Diagnoserunden bis zur echten Ursache. Bewusst ohne
- * Nutzlast (Session-Token o.ae. duerfen nicht im Klartext im Ringpuffer
- * landen) - nur Label, Erfolg/Fehlschlag und Dauer.
- */
-async function withTimeout<T>(operation: PromiseLike<T>, label: string): Promise<CloudResult<T>> {
-  const startedAt = Date.now();
-  const requestCorrelationId = `cloud-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  let timeoutId: number | undefined;
-  try {
-    const timeout = new Promise<never>((_, reject) => {
-      timeoutId = window.setTimeout(
-        () => reject(new Error('Zeitüberschreitung')),
-        BACKEND_TIMEOUT_MS,
-      );
-    });
-
-    const value = await Promise.race([operation, timeout]);
-    DebugSystem.markServerContact();
-    DebugSystem.logRpcResponse(label, value, requestCorrelationId);
-    DebugSystem.pushLogEntry({
-      timestamp: Date.now(),
-      kind: 'event',
-      label: `cloud:${label}`,
-      detail: `ok ${Date.now() - startedAt}ms correlation=${requestCorrelationId}`,
-    });
-    return { ok: true, value };
-  } catch (error) {
-    const reason = error instanceof Error ? error.message : 'Unbekannter Fehler';
-    DebugSystem.pushLogEntry({
-      timestamp: Date.now(),
-      kind: 'error',
-      label: `cloud:${label}`,
-      detail: `fehlgeschlagen ${Date.now() - startedAt}ms correlation=${requestCorrelationId}: ${reason}`,
-    });
-    console.warn(`[CloudSystem] ${label} fehlgeschlagen:`, error);
-    return { ok: false, error: `${label}: ${reason}` };
-  } finally {
-    if (timeoutId !== undefined) window.clearTimeout(timeoutId);
-  }
-}
+const getClient = getSupabaseClient;
+export { getSupabaseClient, isAvailable } from '@/systems/BackendTransport';
 
 // --- Bestenliste -------------------------------------------------------------
 
@@ -1581,24 +1493,47 @@ export async function finishBoostedRun(
 export async function startRewardEffectRun(
   worldId: string,
 ): Promise<CloudResult<RewardRunEffects | null>> {
-  const authenticated = await requireAuthenticatedClient();
-  if (!authenticated.ok) return { ok: true, value: null };
-  const requestId = crypto.randomUUID();
-  const result = await withTimeout(
-    authenticated.value.functions.invoke('boosted-run', {
-      body: { action: 'startEffects', requestId, worldId },
-    }),
-    'Effektbonus starten',
-  );
-  if (!result.ok || result.value.error) return { ok: true, value: null };
-  const body = recordFrom(result.value.data);
-  const raw = recordFrom(body?.effects);
-  if (!body?.ok || !raw) return { ok: true, value: null };
-  const effects: Partial<Record<'speed' | 'magnetism' | 'combo_grace', number>> = {};
-  for (const effect of ['speed', 'magnetism', 'combo_grace'] as const) {
-    if (raw[effect] === 1.3) effects[effect] = 1.3;
-  }
-  return Object.keys(effects).length ? { ok: true, value: effects } : { ok: true, value: null };
+  const client = getClient();
+  if (!client) return { ok: true, value: null };
+  const auth = await withTimeout(client.auth.getUser(), 'Effektbonus-Profil prüfen');
+  if (!auth.ok) return auth;
+  if (auth.value.error) return { ok: false, error: auth.value.error.message };
+  const user = auth.value.data.user;
+  if (!user) return { ok: true, value: null };
+  return RewardEffectRunSession.start(user.id, worldId, async (requestId) => {
+    const result = await withTimeout(
+      client.functions.invoke('boosted-run', {
+        body: { action: 'startEffects', requestId, worldId },
+      }),
+      'Effektbonus starten',
+    );
+    if (!result.ok) return result;
+    let body = recordFrom(result.value.data);
+    if (result.value.error) {
+      const context = result.value.error.context;
+      if (context instanceof Response) {
+        try {
+          body = recordFrom(await context.clone().json());
+        } catch {
+          /* Unknown transport response remains an error. */
+        }
+      }
+      if (body?.code === 'unavailable' && body.retryable === false)
+        return { ok: true, value: null };
+      return { ok: false, error: result.value.error.message };
+    }
+    if (body?.code === 'unavailable' && body.retryable === false) return { ok: true, value: null };
+    const raw = recordFrom(body?.effects);
+    if (!body?.ok || !raw)
+      return { ok: false, error: 'Effektbonus nicht bestätigt. Bitte erneut versuchen.' };
+    const effects: Partial<Record<'speed' | 'magnetism' | 'combo_grace', number>> = {};
+    for (const [key, factor] of Object.entries(raw)) {
+      if (!['speed', 'magnetism', 'combo_grace'].includes(key) || factor !== 1.3)
+        return { ok: false, error: 'Unbekannter Effektbonus.' };
+      effects[key as keyof typeof effects] = 1.3;
+    }
+    return { ok: true, value: Object.keys(effects).length ? effects : null };
+  });
 }
 
 /** Lädt den gemeinsamen Profilstand des angemeldeten Benutzers. */

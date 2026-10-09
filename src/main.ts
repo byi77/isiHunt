@@ -421,3 +421,9 @@ async function startGame(): Promise<void> {
 
 registerOfflineAppShell();
 void startGame();
+
+window.addEventListener('beforeunload', (event) => {
+  if (!ProgressSyncSystem.hasVolatileData()) return;
+  event.preventDefault();
+  event.returnValue = '';
+});

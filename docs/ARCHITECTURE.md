@@ -1910,3 +1910,14 @@ Ehrlich benannt, damit sie nicht ueberrascht:
 | HUD-Layout nutzt 720×variable Portraithoehe         | nie (FIT skaliert)                                  | —                                                                                                                                                                                                                                                                                                                                           |
 | **Bestenliste ist manipulierbar**                   | sobald sie oeffentlich beworben wird                | Runs serverseitig nachrechnen (ADR-0011)                                                                                                                                                                                                                                                                                                    |
 | Sync ueberschreibt, statt zusammenzufuehren         | wenn auf beiden Geraeten regelmaessig gespielt wird | Feldweises Zusammenfuehren monotoner Werte                                                                                                                                                                                                                                                                                                  |
+
+
+## Audit-Fixes vom 09.10.2026
+
+BackendTransport kapselt Client und Zeitlimit fuer Cloud und Duell. RunStartSystem serialisiert vorbereitete Starts; RewardEffectRunSession haelt kontogebundene Request-IDs und bestaetigte Effekte bis zum tatsaechlichen Laufstart. RunUpdateSystem entscheidet den Ablauf vor der Kollision. BoundedJsonSystem begrenzt Diagnosearrays durch ganze Eintraege. Fortschrittsbelege bleiben bis zur Speichergrenze als einzelne Eintraege erhalten; fehlgeschlagene Schreibversuche bleiben in der Sitzung sichtbar und werden erneut gespeichert.
+
+Die Bildratenmessung nutzt rohe Frameabstaende bei sichtbarem Dokument und fokussiertem Loop. Leere Messreihen bestehen kein Gate. Browserchecks stoppen die vorherige Hauptszene und pruefen aktive Szenen. Die Render-Matrix umfasst zehn Welten, drei Effektstufen und 2D/3D; simulierte Integrationschecks ersetzen keine Geraetemessung.
+
+Die gemeinsame Canvas-Button-Schicht erhaelt native semantische Buttons, Tastaturaktivierung und sichtbaren Fokus. Ausgeblendete, gesperrte oder abgeschnittene Ziele sind nicht fokussierbar. Einstellungen nutzen eine responsive DOM-Ansicht; Talentkarten berechnen Schrift und Abstaende in CSS-Pixeln.
+
+Die Render-Matrix misst 2D-Jagd und die echte 3D-Hangarvorschau separat: Im Spiel selbst wird auch fuer 3D-Schiffe bewusst die transparente 2D-Textur verwendet. 3D-Messungen pruefen deshalb das geladene Modell im Hangar, nicht einen vermeintlichen 3D-Renderer in der Jagd.

@@ -77,7 +77,12 @@ const save = {
 };
 
 // Sichtbar statt headless: Wer die Pruefung startet, soll zusehen koennen.
-const browser = await chromium.launch({ headless: false });
+const browser = await chromium.launch({
+  headless: process.argv.includes('--headless'),
+  args: process.argv.includes('--gpu')
+    ? ['--enable-gpu', ...(process.platform === 'win32' ? ['--use-angle=d3d11'] : [])]
+    : [],
+});
 const context = await browser.newContext({ ...devices['iPhone 13'] });
 const page = await context.newPage();
 const errors = [];
@@ -163,9 +168,23 @@ try {
   await page.waitForFunction(() => window.isiHunt?.scene?.isActive('Menu'), undefined, {
     timeout: 30000,
   });
+  console.log(
+    'Renderer:',
+    await page.evaluate(() => {
+      const gl = window.isiHunt.renderer.gl;
+      const extension = gl.getExtension('WEBGL_debug_renderer_info');
+      return extension
+        ? gl.getParameter(extension.UNMASKED_RENDERER_WEBGL)
+        : gl.getParameter(gl.RENDERER);
+    }),
+  );
   for (const worldId of WORLD_IDS) {
+    console.log(`Measuring ${worldId}`);
     await page.evaluate((w) => {
       window.isiHunt.loop.wake();
+      for (const scene of window.isiHunt.scene.getScenes(true)) {
+        window.isiHunt.scene.stop(scene.scene.key);
+      }
       window.isiHunt.scene.start('Game', { mode: 'solo', worldId: w });
     }, worldId);
     // Gleiche Spawns in jedem Lauf: Solo-Runs sind ungeseedet, und zwei Laeufe
@@ -174,7 +193,7 @@ try {
     await page.waitForFunction(
       () => window.isiHunt.scene.getScene('Game')?.phase === 'countdown',
       undefined,
-      { timeout: 30000 },
+      { timeout: 90000 },
     );
     await page.evaluate(
       (w) => window.isiHunt.scene.getScene('Game').spawner.rng.sow([`lesbarkeit-${w}`]),
@@ -183,11 +202,17 @@ try {
     await page.waitForFunction(
       () => window.isiHunt.scene.getScene('Game')?.phase === 'running',
       undefined,
-      { timeout: 30000 },
+      { timeout: 90000 },
     );
     // Ab hier taktet das Skript selbst: gleiche Spielzeit bis zu jeder
     // Aufnahme, unabhaengig davon, wie schnell der Rechner gerade ist.
-    await page.evaluate(() => window.isiHunt.loop.sleep());
+    const rawDelta = await page.evaluate((step) => {
+      const loop = window.isiHunt.loop;
+      loop.sleep();
+      const previous = loop.rawDelta;
+      loop.rawDelta = step;
+      return previous;
+    }, STEP_MS);
     let playedMs = 0;
     const ratios = [];
     for (const at of SHOTS_MS) {
@@ -203,15 +228,41 @@ try {
         [frames, STEP_MS],
       );
       playedMs += frames * STEP_MS;
-      const png = await page.locator('canvas').first().screenshot();
+      const canvasBox = await page.evaluate(() => {
+        const canvas = window.isiHunt.canvas;
+        if (!canvas?.isConnected) throw new Error('Game canvas is detached.');
+        const { x, y, width, height } = canvas.getBoundingClientRect();
+        return { x, y, width, height };
+      });
+      if (!canvasBox || canvasBox.width <= 0 || canvasBox.height <= 0) {
+        throw new Error(`No visible game canvas in ${worldId}.`);
+      }
+      const png = await page.screenshot({ clip: canvasBox, timeout: 120000 });
       ratios.push(...(await measure(png)));
+      console.log(`  ${at}ms: ${ratios.length} contrast samples`);
     }
-    await page.evaluate(() => window.isiHunt.loop.wake());
+    await page.evaluate((previous) => {
+      window.isiHunt.loop.rawDelta = previous;
+      window.isiHunt.loop.wake();
+    }, rawDelta);
     measured[worldId] = { median: median(ratios), objects: ratios.length };
     console.log(
       `${worldId.padEnd(16)} Median-Kontrast ${measured[worldId].median.toFixed(2)} (${ratios.length} Objekte)`,
     );
   }
+} catch (error) {
+  console.error(
+    'Readability diagnostics:',
+    await page
+      .evaluate(() => ({
+        canvases: document.querySelectorAll('canvas').length,
+        scenes: window.isiHunt?.scene.getScenes(true).map((scene) => scene.scene.key),
+        phase: window.isiHunt?.scene.getScene('Game')?.phase,
+      }))
+      .catch(() => null),
+    errors,
+  );
+  throw error;
 } finally {
   await browser.close();
   server.kill();

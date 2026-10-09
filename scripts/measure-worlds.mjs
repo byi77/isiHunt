@@ -31,7 +31,7 @@
 
 import { chromium, devices } from 'playwright';
 import { cpSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { isAbsolute, relative, resolve } from 'node:path';
 import { spawn } from 'node:child_process';
 
 const root = resolve(import.meta.dirname, '..');
@@ -52,6 +52,10 @@ const WORLD_IDS =
 
 // --- Eingefrorene Kopie ----------------------------------------------------------
 const snapshot = resolve(root, '.cache', 'measure-worlds-snapshot');
+const snapshotRelative = relative(root, snapshot);
+if (isAbsolute(snapshotRelative) || snapshotRelative.startsWith('..')) {
+  throw new Error('Snapshot path is outside the project.');
+}
 rmSync(snapshot, { recursive: true, force: true });
 mkdirSync(snapshot, { recursive: true });
 for (const entry of ['src', 'public'])
@@ -149,6 +153,9 @@ try {
         for (let attempt = 0; attempt < 3 && !started; attempt++) {
           await page.evaluate((w) => {
             window.isiHunt.loop.wake();
+            for (const scene of window.isiHunt.scene.getScenes(true)) {
+              window.isiHunt.scene.stop(scene.scene.key);
+            }
             window.isiHunt.scene.start('Game', { mode: 'solo', worldId: w });
           }, worldId);
           started = await page
@@ -158,7 +165,7 @@ try {
                 return s && window.isiHunt.scene.isActive('Game') && s.phase === 'running';
               },
               undefined,
-              { timeout: 20000 },
+              { timeout: 90000 },
             )
             .then(
               () => true,
@@ -193,6 +200,8 @@ async function simulateRun(bot) {
   };
   game.loop.sleep();
   const STEP = 1000 / 60;
+  const rawDelta = game.loop.rawDelta;
+  game.loop.rawDelta = STEP;
   const seen = new WeakMap();
   let target = null;
   let frame = 0;
@@ -227,6 +236,7 @@ async function simulateRun(bot) {
     frame++;
     if (frame % 900 === 0) await new Promise((r) => setTimeout(r, 0));
   }
+  game.loop.rawDelta = rawDelta;
   game.loop.wake();
   const stats = captured?.stats;
   if (!stats) return { error: `kein Ergebnis (phase=${scene.phase})` };

@@ -32,12 +32,6 @@ export const FRAME_GUARD = {
   slowFrameMs: 25,
   /** So viele langsame Fenster in Folge loesen das Herabstufen aus. */
   slowWindows: 2,
-  /**
-   * Laengere Frames werden ignoriert: Ein verdeckter Tab oder ein
-   * eingehender Anruf liefert ein riesiges `delta`, das nichts ueber die
-   * Rechenlast sagt.
-   */
-  ignoreFrameMs: 250,
 } as const;
 
 /** Anteil der Kulissen-Teilchen je Stufe. */

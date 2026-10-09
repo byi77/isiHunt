@@ -7,6 +7,9 @@
  * die gesamte Anzeige in HudScene. Diese Scene rendert bewusst KEIN HUD.
  */
 
+import * as AuthSystem from '@/systems/AuthSystem';
+import * as RewardEffectRunSession from '@/systems/RewardEffectRunSession';
+import { tickCollectibles } from '@/systems/RunUpdateSystem';
 import Phaser from 'phaser';
 
 import {
@@ -185,6 +188,8 @@ function activeTalentLines(stats: PlayerStats): ActiveTalentLine[] {
 }
 
 export class GameScene extends Phaser.Scene {
+  private rewardEffectsForStart?: GameSceneData['rewardEffects'];
+  private rewardAccountForStart: string | null = null;
   private world!: WorldDef;
   private stats!: PlayerStats;
   private player!: Player;
@@ -339,6 +344,9 @@ export class GameScene extends Phaser.Scene {
       ),
       data.rewardEffects,
     );
+
+    this.rewardEffectsForStart = data.rewardEffects;
+    this.rewardAccountForStart = AuthSystem.currentUserId();
 
     // Kosmetik ist eine andere Frage als Spielvorteil.
     //
@@ -618,15 +626,18 @@ export class GameScene extends Phaser.Scene {
     this.player.updateTalentVisuals(delta, this.collectibles, this.scoring.comboTimerRatio);
     this.updateObstacles(delta);
     this.updateSpawning(delta);
-    this.updateTimer(delta);
-    this.finalSeconds.update(this.remainingMs, delta);
-    this.checkOpponentAlive();
-    if (this.frameGuard.sample(delta)) EffectsQualitySystem.lowerAutomatically();
+
+    const rawDelta = this.game.loop.rawDelta;
+    const measurable = document.visibilityState === 'visible' && this.game.loop.inFocus;
+    if (measurable && this.frameGuard.sample(rawDelta)) EffectsQualitySystem.lowerAutomatically();
     this.performanceMonitor?.recordFrame(
-      delta,
+      measurable ? rawDelta : Number.NaN,
       this.collectibles.length + this.obstacles.length,
       this.children.list.filter((child) => child.type === 'ParticleEmitter').length,
     );
+    this.updateTimer(delta);
+    this.finalSeconds.update(this.remainingMs, delta);
+    this.checkOpponentAlive();
   }
 
   // --- Update-Schritte ------------------------------------------------------
@@ -687,31 +698,21 @@ export class GameScene extends Phaser.Scene {
   private updateCollectibles(dtSec: number, deltaMs: number): void {
     const magnetSource = this.stats.magnetRadius > 0 ? this.playerPosition : null;
 
-    // Rueckwaerts iterieren: wir entfernen waehrend des Durchlaufs aus dem Array.
-    for (let i = this.collectibles.length - 1; i >= 0; i--) {
-      const orb = this.collectibles[i];
-      if (!orb) continue;
-
-      if (orb.isCollected) continue;
-
-      orb.tick(
-        dtSec,
-        deltaMs,
-        this.playfield,
-        magnetSource,
-        this.stats.magnetRadius,
-        this.stats.magnetPullSpeed,
-      );
-
-      if (this.isTouching(orb)) {
-        this.collect(orb, i);
-        continue;
-      }
-
-      if (orb.isExpired) {
-        this.miss(orb, i);
-      }
-    }
+    tickCollectibles(
+      this.collectibles,
+      (orb) =>
+        orb.tick(
+          dtSec,
+          deltaMs,
+          this.playfield,
+          magnetSource,
+          this.stats.magnetRadius,
+          this.stats.magnetPullSpeed,
+        ),
+      (orb) => this.isTouching(orb),
+      (orb, index) => this.collect(orb, index),
+      (orb, index) => this.miss(orb, index),
+    );
   }
 
   private updateSpawning(deltaMs: number): void {
@@ -1038,6 +1039,22 @@ export class GameScene extends Phaser.Scene {
     // und zwar unsichtbar unter dem schon gewechselten Bildschirm.
     if (this.phase === 'ended') return;
 
+    if (
+      this.rewardEffectsForStart &&
+      (this.rewardAccountForStart !== AuthSystem.currentUserId() ||
+        !RewardEffectRunSession.consume(
+          this.rewardAccountForStart,
+          this.world.id,
+          this.rewardEffectsForStart,
+        ))
+    ) {
+      this.scene.stop(SceneKey.Hud);
+      this.scene.start(SceneKey.Menu, {
+        startError: 'Bonusstart nicht gesichert. Bitte erneut starten.',
+      });
+      return;
+    }
+    this.rewardEffectsForStart = undefined;
     this.phase = 'running';
     this.performanceMonitor?.markRunStarted();
     this.spawner.reset();

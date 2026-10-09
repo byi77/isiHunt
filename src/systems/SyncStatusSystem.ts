@@ -9,6 +9,11 @@ export type DataSyncStatus = 'up-to-date' | 'syncing' | 'offline' | 'pending' | 
 
 let currentStatus: DataSyncStatus = 'pending';
 let localSaveFailed = false;
+let outboxSaveFailed = false;
+
+export function setOutboxSaveFailed(failed: boolean): void {
+  outboxSaveFailed = failed;
+}
 
 export function setDataSyncStatus(status: DataSyncStatus): void {
   currentStatus = status;
@@ -34,6 +39,7 @@ export function hasLocalSaveFailure(): boolean {
 
 /** Kurze, profilgeeignete Erklärung ohne technische Begriffe. */
 export function dataSyncStatusLabel(status = currentStatus): string {
+  if (outboxSaveFailed) return 'LAUF NOCH NICHT GESICHERT - SEITE OFFEN LASSEN';
   if (localSaveFailed) return 'SPIELSTAND: LOKAL NICHT GESICHERT';
 
   switch (status) {

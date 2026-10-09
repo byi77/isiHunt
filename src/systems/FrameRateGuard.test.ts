@@ -39,7 +39,7 @@ describe('FrameRateGuard', () => {
 
   it('ignoriert riesige Deltas aus verdeckten Tabs', () => {
     const guard = new FrameRateGuard();
-    for (let i = 0; i < 200; i++) guard.sample(5000);
+    for (let i = 0; i < 200; i++) guard.sample(5000, false);
     expect(run(guard, 60_000, 1000 / 60)).toBe(false);
   });
 
@@ -53,4 +53,8 @@ describe('FrameRateGuard', () => {
     }
     expect(fired).toBe(false);
   });
+});
+
+it('detects sustained visible stalls beyond the smoothed loop threshold', () => {
+  expect(run(new FrameRateGuard(), FRAME_GUARD.warmupMs + measuredMs + 1000, 300)).toBe(true);
 });

@@ -1905,3 +1905,16 @@ Ein Probelauf mit 4.2.1 in einer getrennten Arbeitskopie ergab:
   1,5 Prozent; die Toleranz steht deshalb auf 5 Prozent.
 - **Nicht gemessen:** die Grafiklast auf echten Handys. Der Bildraten-
   Waechter arbeitet mit einer vorlaeufigen Schwelle (ROADMAP).
+
+
+## ADR-0036: Audit-Fixes und belastbare Messungen (09.10.2026)
+
+Status: angenommen durch den Auftrag, alle Audit-Findings zu beheben und auszuliefern.
+
+Bonusstarts werden vor dem Netzaufruf serialisiert und mit kontogebundener persistierter Request-ID wiederholt. Eine unbekannte Antwort startet keinen ungebuchten Ersatzlauf. Bestaetigte Effekte bleiben bis zum tatsaechlichen Laufstart erhalten. Fortschrittsbelege werden nicht nach 64 Runs verworfen; die Browser-Speichergrenze wird sichtbar behandelt und erfolglose Schreibversuche bleiben sichtbar in der Sitzung wiederholbar.
+
+Raw-Delta dient der Messung, Phaser-Delta weiterhin der Simulation. Hintergrundereignisse werden separat ausgeschlossen. Diagnose-JSON wird durch ganze Eintraege begrenzt. Gemeinsamer Transport, Outbox-Helfer und Run-Koordination bekommen eigene testbare Module.
+
+Die UI nutzt native Semantik fuer Canvas-Buttons und CSS-basierte Typografie fuer modernisierte Unterseiten. Render-Messungen fuer Welten, Effektstufen und 3D laufen getrennt vom schnellen Integrations-Gate. Zielgeraete bleiben eine gesonderte Abnahme.
+
+Die Render-Matrix misst 2D-Jagd und die echte 3D-Hangarvorschau separat: Im Spiel selbst wird auch fuer 3D-Schiffe bewusst die transparente 2D-Textur verwendet. 3D-Messungen pruefen deshalb das geladene Modell im Hangar, nicht einen vermeintlichen 3D-Renderer in der Jagd.

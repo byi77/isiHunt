@@ -52,6 +52,7 @@ export class TalentScene extends Phaser.Scene {
   private returnTo: SceneKeyValue = SceneKey.Profile;
   private returnData?: object;
   private busy = false;
+  private cssUnit = 1;
   private feedbackText!: Phaser.GameObjects.Text;
   private resetDialogObjects: Phaser.GameObjects.GameObject[] = [];
   private scrollOffset = 0;
@@ -61,6 +62,8 @@ export class TalentScene extends Phaser.Scene {
   }
 
   create(data: TalentSceneData = {}): void {
+    this.cssUnit = GAME_WIDTH / this.game.canvas.getBoundingClientRect().width;
+    this.busy = false;
     this.returnTo = data.returnTo ?? SceneKey.Profile;
     this.returnData = data.returnData;
     this.scrollOffset = data.scrollOffset ?? 0;
@@ -88,7 +91,7 @@ export class TalentScene extends Phaser.Scene {
         GAME_WIDTH / 2,
         walletY,
         'TALENTPUNKTE ' + save.talentPoints + '  ·  COINS ' + save.coins.toLocaleString('de-DE'),
-        textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
+        textStyle(14 * this.cssUnit, Palette.gold, { fontStyle: 'bold' }),
       )
       .setOrigin(0.5);
     this.add
@@ -96,14 +99,14 @@ export class TalentScene extends Phaser.Scene {
         GAME_WIDTH / 2,
         walletY + 36,
         'Bewegung  ·  Sammeln  ·  Ertrag',
-        textStyle(FontSize.tiny, Palette.inkDim),
+        textStyle(12 * this.cssUnit, Palette.inkDim),
       )
       .setOrigin(0.5);
 
-    const rowTop = sections.next(82);
+    const rowTop = sections.next(82) + 68 * this.cssUnit;
     // Drei Beschreibungszeilen brauchen Platz; die vorhandene Scrollfläche
     // hält die übrigen Talente und die Reset-Aktion erreichbar.
-    const rowStep = 146;
+    const rowStep = 172 * this.cssUnit;
     const content = this.add.container(0, 0);
     const groupOrder: readonly TalentDef['group'][] = ['BEWEGUNG', 'SAMMELN', 'ERTRAG'];
     let nextY = rowTop;
@@ -111,7 +114,7 @@ export class TalentScene extends Phaser.Scene {
       const talents = TALENTS.filter((talent) => talent.group === group);
       if (talents.length === 0) continue;
       this.buildGroupHeader(group, nextY, world.accent, content);
-      nextY += 82;
+      nextY += 102 * this.cssUnit;
       if (talents.length > 1) {
         const path = this.add.graphics();
         path.lineStyle(3, world.accent, 0.35);
@@ -139,7 +142,7 @@ export class TalentScene extends Phaser.Scene {
         width: 380,
         height: 64,
         accent: 0xb782ff,
-        fontSize: FontSize.tiny,
+        fontSize: 12 * this.cssUnit,
       },
     );
     content.add(resetButton.container);
@@ -148,20 +151,22 @@ export class TalentScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          resetY + 48,
+          resetY + 32 * this.cssUnit,
           'Reset ist kostenlos und erstattet alle investierten Talentpunkte.',
-          textStyle(FontSize.tiny, Palette.ink),
+          textStyle(12 * this.cssUnit, Palette.ink),
         )
-        .setOrigin(0.5),
+        .setOrigin(0.5)
+        .setWordWrapWidth(GAME_WIDTH - 100)
+        .setAlign('center'),
     );
     this.feedbackText = this.add
-      .text(GAME_WIDTH / 2, resetY + 82, '', textStyle(FontSize.tiny, Palette.gold))
+      .text(GAME_WIDTH / 2, resetY + 70 * this.cssUnit, '', textStyle(FontSize.tiny, Palette.gold))
       .setOrigin(0.5)
       .setWordWrapWidth(GAME_WIDTH - 100)
       .setAlign('center');
     content.add(this.feedbackText);
 
-    const contentBottom = resetY + 105;
+    const contentBottom = resetY + 105 * this.cssUnit;
     const listTop = rowTop - rowStep / 2;
     const clipRect = new Phaser.Geom.Rectangle(
       0,
@@ -214,8 +219,12 @@ export class TalentScene extends Phaser.Scene {
     const talent = TALENTS.find((entry) => entry.id === id)!;
     const save = SaveSystem.load();
     const rank = save.talents[id] ?? 0;
+    const u = this.cssUnit;
+    const left = 50 + 12 * u;
+    const right = GAME_WIDTH - left;
+    const top = y - 80 * u;
     content.add(
-      createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 100, 128, accent, {
+      createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 100, 160 * u, accent, {
         alpha: 0.5,
         radius: 14,
       }),
@@ -223,66 +232,61 @@ export class TalentScene extends Phaser.Scene {
     content.add(
       this.add
         .text(
-          66,
-          y - 38,
+          left,
+          top + 10 * u,
           talent.name,
-          textStyle(FontSize.body, toCss(accent), { fontStyle: 'bold' }),
+          textStyle(14 * u, toCss(accent), { fontStyle: 'bold' }),
         )
-        .setOrigin(0, 0.5),
+        .setWordWrapWidth(right - left),
     );
     content.add(
       this.add
-        .text(66, y - 10, talent.description, textStyle(FontSize.tiny, Palette.inkDim))
-        .setOrigin(0, 0)
-        .setWordWrapWidth(230),
+        .text(left, top + 36 * u, talent.description, textStyle(12 * u, Palette.inkDim))
+        .setWordWrapWidth(right - left),
+    );
+    content.add(
+      this.add.text(
+        left,
+        top + 90 * u,
+        'RANG ' + rank + '/' + talent.maxRank,
+        textStyle(12 * u, Palette.ink, { fontStyle: 'bold' }),
+      ),
     );
     content.add(
       this.add
         .text(
-          405,
-          y - 38,
-          'RANG ' + rank + '/' + talent.maxRank,
-          textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }),
+          left,
+          top + 111 * u,
+          rank >= talent.maxRank ? 'VOLL AUSGEBAUT' : `NÄCHSTER ${talent.perRank}`,
+          textStyle(12 * u, Palette.gold),
         )
-        .setOrigin(0.5),
+        .setWordWrapWidth(right - left - 104 * u),
     );
-    // Den aktuellen Rang nennt schon die Zeile darueber. Mit ihm zusammen
-    // brach der Text auf drei Zeilen um und lief unter die Rang-Pips.
-    const nextRank = this.add
-      .text(
-        405,
-        y - 10,
-        rank >= talent.maxRank ? 'VOLL AUSGEBAUT' : `NÄCHSTER ${talent.perRank}`,
-        textStyle(FontSize.tiny, Palette.gold),
-      )
-      .setWordWrapWidth(180)
-      .setAlign('center')
-      .setOrigin(0.5, 0);
-    content.add(nextRank);
-    // Rang-Pips machen den Ausbau sofort sichtbar: Jeder Kauf fuellt einen
-    // weiteren Abschnitt, statt nur die kleine Zahl im Rangtext zu veraendern.
-    // Sie ruecken unter den Text, falls ein kuenftiger `perRank` doch umbricht.
-    const pipStartX = 378;
-    const pipY = Math.max(y + 48, nextRank.y + nextRank.height + 8);
     for (let pip = 0; pip < talent.maxRank; pip += 1) {
       content.add(
         this.add
-          .rectangle(pipStartX + pip * 11, pipY, 8, 8, pip < rank ? Palette.goldHex : 0x66708c)
+          .rectangle(
+            left + (4 + pip * 11) * u,
+            top + 145 * u,
+            8 * u,
+            8 * u,
+            pip < rank ? Palette.goldHex : 0x66708c,
+          )
           .setAlpha(pip < rank ? 1 : 0.34)
           .setStrokeStyle(1, accent, 0.55),
       );
     }
     const purchaseButton = createButton(
       this,
-      590,
-      y,
+      right - 46 * u,
+      top + 126 * u,
       rank >= talent.maxRank ? 'MAX' : '1 PUNKT',
       () => void this.purchase(id),
       {
-        width: 140,
-        height: 58,
+        width: 92 * u,
+        height: 44 * u,
         accent: rank >= talent.maxRank ? 0x778099 : accent,
-        fontSize: FontSize.tiny,
+        fontSize: 12 * u,
       },
     );
     content.add(purchaseButton.container);
@@ -296,7 +300,7 @@ export class TalentScene extends Phaser.Scene {
     content: Phaser.GameObjects.Container,
   ): void {
     const label = this.add
-      .text(58, y, group, textStyle(FontSize.small, toCss(accent), { fontStyle: 'bold' }))
+      .text(58, y, group, textStyle(12 * this.cssUnit, toCss(accent), { fontStyle: 'bold' }))
       .setOrigin(0, 0.5)
       .setLetterSpacing(2);
     const line = this.add.rectangle(232, y, 418, 2, accent, 0.62).setOrigin(0, 0.5);

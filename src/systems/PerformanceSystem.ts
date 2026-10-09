@@ -107,9 +107,9 @@ export function evaluatePerformance(
   measurements: PerformanceMeasurements,
   budgets: typeof PERFORMANCE_BUDGETS = PERFORMANCE_BUDGETS,
 ): PerformanceReport {
-  const frameDurationsMs = measurements.frameDurationsMs
-    .filter(Number.isFinite)
-    .map(safeNonNegative);
+  const frameDurationsMs = measurements.frameDurationsMs.filter(
+    (value) => Number.isFinite(value) && value > 0,
+  );
   const frameP95Ms = percentile(frameDurationsMs, 0.95);
   const overBudgetFrames = frameDurationsMs.filter(
     (duration) => duration > budgets.frameP95Ms,
@@ -128,6 +128,10 @@ export function evaluatePerformance(
     peakDynamicObjects,
     peakParticleGroups,
     passed:
+      frameDurationsMs.length > 0 &&
+      Number.isFinite(measurements.startupMs) &&
+      Number.isFinite(measurements.peakDynamicObjects) &&
+      Number.isFinite(measurements.peakParticleGroups) &&
       startupMs <= budgets.startupMs &&
       frameP95Ms <= budgets.frameP95Ms &&
       frameOverBudgetRatio <= budgets.frameOverBudgetRatio &&
@@ -192,7 +196,7 @@ export class PerformanceMonitor {
   }
 
   recordFrame(deltaMs: number, dynamicObjects: number, particleGroups: number): void {
-    if (this.runStartedAt === null) return;
+    if (this.runStartedAt === null || !Number.isFinite(deltaMs) || deltaMs <= 0) return;
     this.frameDurationsMs.push(safeNonNegative(deltaMs));
     this.peakDynamicObjects = Math.max(this.peakDynamicObjects, safeNonNegative(dynamicObjects));
     this.peakParticleGroups = Math.max(this.peakParticleGroups, safeNonNegative(particleGroups));

@@ -114,8 +114,14 @@ export class ResultScene extends Phaser.Scene {
         },
       });
     }
-    new ResultView(this, content, world.accent, actions);
     if (!serverSettled && !data?.alreadySynced) ProgressSyncSystem.enqueueRun(stats, progression);
+    if (ProgressSyncSystem.hasVolatileData())
+      content.sections.unshift({
+        title: 'LAUF NOCH NICHT GESICHERT',
+        lines: ['Bitte die Seite offen lassen, bis der Lauf gespeichert oder synchronisiert ist.'],
+        highlight: true,
+      });
+    new ResultView(this, content, world.accent, actions);
     // Fuer eingeloggte Scores muss das zugehoerige Progress-Event zuerst
     // serverseitig akzeptiert sein; die Bestenliste bleibt dadurch kein
     // unabhaengiger Schreibpfad fuer dieselben Client-Zahlen.

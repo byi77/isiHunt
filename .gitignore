@@ -58,3 +58,6 @@ smoke-screenshot.png
 
 # Lokaler Notizzettel. Was daraus Bestand hat, steht in TODO.md und ROADMAP.md.
 ideen.txt
+
+# Local rendering diagnostics
+render-matrix-report.json

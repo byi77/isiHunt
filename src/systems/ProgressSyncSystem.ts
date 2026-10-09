@@ -1,5 +1,7 @@
 /** Offline-Outbox für Fortschrittsereignisse eines angemeldeten Profils. */
 
+import { boundedJsonArray } from '@/systems/BoundedJsonSystem';
+import * as SyncStatusSystem from '@/systems/SyncStatusSystem';
 import { BOT_VICTORY_MAX_FAILED_ATTEMPTS, SYNC_RETRY_DELAYS_MS } from '@/config/backend';
 import * as AuthSystem from '@/systems/AuthSystem';
 import * as ChallengeSystem from '@/systems/ChallengeSystem';
@@ -19,6 +21,15 @@ const BOT_VICTORY_ATTEMPTS_KEY_PREFIX = 'isihunt.bot-victories.attempts.v1.';
 /** Mehr als ein paar unbestaetigte Bot-Siege deuten auf einen Defekt hin. */
 const BOT_VICTORY_MAX_PENDING = 16;
 const OUTBOX_MAX_EVENTS = 64;
+const volatileEvents = new Map<string, Map<string, StoredProgressEvent>>();
+
+export function hasVolatileData(): boolean {
+  return [...volatileEvents.values()].some((events) => events.size > 0);
+}
+
+function updateVolatileStatus(): void {
+  SyncStatusSystem.setOutboxSaveFailed(hasVolatileData());
+}
 const OUTBOX_MAX_BYTES = 256 * 1024;
 let flushPromise: Promise<void> | null = null;
 let retryTimer: ReturnType<typeof setTimeout> | null = null;
@@ -372,7 +383,7 @@ function quarantineInvalidEvents(accountId: string, events: unknown[]): void {
   try {
     window.localStorage.setItem(
       invalidOutboxKey(accountId),
-      JSON.stringify(events).slice(0, OUTBOX_MAX_BYTES),
+      boundedJsonArray(events, OUTBOX_MAX_BYTES),
     );
   } catch {
     // Quarantene ist nur Diagnosehilfe und darf den Spielfluss nicht blockieren.
@@ -419,7 +430,7 @@ function quarantineRejectedEvents(accountId: string, events: ProgressEvent[]): v
     );
     window.localStorage.setItem(
       rejectedOutboxKey(accountId),
-      JSON.stringify(merged).slice(0, OUTBOX_MAX_BYTES),
+      boundedJsonArray(merged, OUTBOX_MAX_BYTES),
     );
   } catch {
     // Quarantene ist nur Diagnosehilfe und darf den Spielfluss nicht blockieren.
@@ -532,6 +543,13 @@ function migrateArrayOutbox(accountId: string): ProgressEvent[] {
 function readOutbox(accountId: string | null): ProgressEvent[] {
   quarantineLegacyOutbox();
   if (!accountId) return [];
+  const volatile = volatileEvents.get(accountId);
+  if (volatile) {
+    for (const [id, item] of volatile) {
+      if (storeProgressEvent(accountId, item.event, item.queuedAt)) volatile.delete(id);
+    }
+    updateVolatileStatus();
+  }
   const unmigrated = migrateArrayOutbox(accountId);
 
   const entries: Array<{ event: ProgressEvent; queuedAt: number; key: string }> = [];
@@ -564,6 +582,9 @@ function readOutbox(accountId: string | null): ProgressEvent[] {
     }
   }
 
+  for (const item of volatile?.values() ?? []) {
+    entries.push({ ...item, key: eventOutboxKey(accountId, item.event.eventId) });
+  }
   const seen = new Set<string>();
   return entries
     .sort(
@@ -609,16 +630,14 @@ export function enqueueRun(
     createdAt: new Date().toISOString(),
   };
 
-  const pending = readOutbox(accountId);
-  if (pending.length >= OUTBOX_MAX_EVENTS) {
-    console.warn('[ProgressSyncSystem] Neuer Run wegen voller Outbox verworfen.');
-    return null;
+  const queuedAt = nextQueuedAt();
+  if (!storeProgressEvent(accountId, event, queuedAt)) {
+    const pending = volatileEvents.get(accountId) ?? new Map<string, StoredProgressEvent>();
+    pending.set(eventId, { event, queuedAt });
+    volatileEvents.set(accountId, pending);
+    updateVolatileStatus();
   }
-  if (JSON.stringify([...pending, event]).length > OUTBOX_MAX_BYTES) {
-    console.warn('[ProgressSyncSystem] Neuer Run wegen zu grosser Outbox verworfen.');
-    return null;
-  }
-  return storeProgressEvent(accountId, event, nextQueuedAt()) ? eventId : null;
+  return eventId;
 }
 
 /**
@@ -632,12 +651,14 @@ export function enqueueRun(
 function dropSettledEvents(accountId: string, settledIds: Set<string>): ProgressEvent[] {
   const current = readOutbox(accountId);
   for (const eventId of settledIds) {
+    volatileEvents.get(accountId)?.delete(eventId);
     try {
       window.localStorage.removeItem(eventOutboxKey(accountId, eventId));
     } catch {
       // Ein Speicherfehler laesst den Eintrag fuer den naechsten Versuch liegen.
     }
   }
+  updateVolatileStatus();
   dropSettledFromArrayOutbox(accountId, settledIds);
   return current.filter((event) => !settledIds.has(event.eventId));
 }
@@ -831,6 +852,8 @@ export function flush(): Promise<void> {
  */
 export function clearOutbox(): void {
   const accountId = AuthSystem.currentUserId();
+  if (accountId) volatileEvents.delete(accountId);
+  updateVolatileStatus();
   if (accountId) {
     for (const key of storageKeysWithPrefix(eventOutboxPrefix(accountId))) {
       try {

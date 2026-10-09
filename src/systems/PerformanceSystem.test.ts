@@ -73,3 +73,16 @@ describe('PerformanceSystem', () => {
     expect(getLastRunReport()).toEqual(report);
   });
 });
+
+it('rejects reports without finite positive frame measurements', () => {
+  for (const frames of [[], [Number.NaN, Number.POSITIVE_INFINITY], [0, -1]]) {
+    expect(
+      evaluatePerformance({
+        startupMs: 0,
+        frameDurationsMs: frames,
+        peakDynamicObjects: 0,
+        peakParticleGroups: 0,
+      }).passed,
+    ).toBe(false);
+  }
+});
