@@ -1,0 +1,1089 @@
+{
+  "mode": "realtime-render-matrix",
+  "emulatedDevice": "iPhone 16",
+  "physicalDevice": false,
+  "sampleMs": 5000,
+  "rows": [
+    {
+      "worldId": "silberhain",
+      "quality": "full",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.799999999999727,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 7,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "silberhain",
+      "quality": "full",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.700000000000728,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "silberhain",
+      "quality": "medium",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.700000000000728,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 9,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "silberhain",
+      "quality": "medium",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.799999999999272,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "silberhain",
+      "quality": "reduced",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.700000000004366,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 9,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "silberhain",
+      "quality": "reduced",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.700000000004366,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "frostzinne",
+      "quality": "full",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 297,
+        "frameP95Ms": 16.700000000004366,
+        "frameOverBudgetRatio": 0.003367003367003367,
+        "peakDynamicObjects": 9,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "frostzinne",
+      "quality": "full",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.80000000000291,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "frostzinne",
+      "quality": "medium",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.700000000004366,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 8,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "frostzinne",
+      "quality": "medium",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.799999999995634,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "frostzinne",
+      "quality": "reduced",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 7,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "frostzinne",
+      "quality": "reduced",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "glutmark",
+      "quality": "full",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 7,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "glutmark",
+      "quality": "full",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "glutmark",
+      "quality": "medium",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 9,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "glutmark",
+      "quality": "medium",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "glutmark",
+      "quality": "reduced",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 8,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "glutmark",
+      "quality": "reduced",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "__LEERENBLÜTE__",
+      "quality": "full",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 7,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "__LEERENBLÜTE__",
+      "quality": "full",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "__LEERENBLÜTE__",
+      "quality": "medium",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 9,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "__LEERENBLÜTE__",
+      "quality": "medium",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "__LEERENBLÜTE__",
+      "quality": "reduced",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 6,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "__LEERENBLÜTE__",
+      "quality": "reduced",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "sonnenhort",
+      "quality": "full",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 7,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "sonnenhort",
+      "quality": "full",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "sonnenhort",
+      "quality": "medium",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 7,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "sonnenhort",
+      "quality": "medium",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "sonnenhort",
+      "quality": "reduced",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 5,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "sonnenhort",
+      "quality": "reduced",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "mondschmiede",
+      "quality": "full",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 7,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "mondschmiede",
+      "quality": "full",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "mondschmiede",
+      "quality": "medium",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 8,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "mondschmiede",
+      "quality": "medium",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "mondschmiede",
+      "quality": "reduced",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 8,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "mondschmiede",
+      "quality": "reduced",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "kristallbruch",
+      "quality": "full",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 7,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "kristallbruch",
+      "quality": "full",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "kristallbruch",
+      "quality": "medium",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 7,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "kristallbruch",
+      "quality": "medium",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "kristallbruch",
+      "quality": "reduced",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 6,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "kristallbruch",
+      "quality": "reduced",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "sturmgrenze",
+      "quality": "full",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 7,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "sturmgrenze",
+      "quality": "full",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "sturmgrenze",
+      "quality": "medium",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 7,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "sturmgrenze",
+      "quality": "medium",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "sturmgrenze",
+      "quality": "reduced",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 6,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "sturmgrenze",
+      "quality": "reduced",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "lichtkern",
+      "quality": "full",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 6,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "lichtkern",
+      "quality": "full",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "lichtkern",
+      "quality": "medium",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 5,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "lichtkern",
+      "quality": "medium",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "lichtkern",
+      "quality": "reduced",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 6,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "lichtkern",
+      "quality": "reduced",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "horizonttor",
+      "quality": "full",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 8,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "horizonttor",
+      "quality": "full",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "horizonttor",
+      "quality": "medium",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 6,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "horizonttor",
+      "quality": "medium",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.79999999998836,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "horizonttor",
+      "quality": "reduced",
+      "shape": "arrow",
+      "sceneKey": "Game",
+      "active": ["Game", "Hud"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 300,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 6,
+        "peakParticleGroups": 1,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    },
+    {
+      "worldId": "horizonttor",
+      "quality": "reduced",
+      "shape": "cc0-3d-ship-1",
+      "sceneKey": "Shop",
+      "active": ["Shop"],
+      "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+      "report": {
+        "frameCount": 301,
+        "frameP95Ms": 16.70000000001164,
+        "frameOverBudgetRatio": 0,
+        "peakDynamicObjects": 0,
+        "peakParticleGroups": 0,
+        "passed": true
+      },
+      "startupMeasured": false,
+      "browserErrors": []
+    }
+  ],
+  "budgetPassed": true
+}

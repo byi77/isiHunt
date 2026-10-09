@@ -1,0 +1,292 @@
+{
+  "physicalDevice": false,
+  "deviceProfile": "iPhone 16 Home-Screen viewport simulation",
+  "version": "0.1.424",
+  "samples": [
+    {
+      "frames": 1199,
+      "p95Ms": 16.700000000000728,
+      "maxMs": 116.69999999999982,
+      "over25": 0.0008340283569641367,
+      "over50": 1,
+      "timerRedraws": 1219,
+      "textRedraws": 1539,
+      "textRasterMs": 194.30000003427267,
+      "textureUploads": 1596,
+      "drawsPerFrame": 70.89824854045038,
+      "qualityAtEnd": "full",
+      "collected": 36,
+      "quality": "full",
+      "scenario": "full",
+      "durationMs": 20083,
+      "scriptMs": 4572.445,
+      "taskMs": 4857.818
+    },
+    {
+      "frames": 1206,
+      "p95Ms": 16.700000000004366,
+      "maxMs": 16.80000000000291,
+      "over25": 0,
+      "over50": 0,
+      "timerRedraws": 1226,
+      "textRedraws": 1494,
+      "textRasterMs": 149.80000000447035,
+      "textureUploads": 1551,
+      "drawsPerFrame": 60.97346600331675,
+      "qualityAtEnd": "medium",
+      "collected": 34,
+      "quality": "medium",
+      "scenario": "medium",
+      "durationMs": 20110,
+      "scriptMs": 3618.6419999999994,
+      "taskMs": 3888.9549999999995
+    },
+    {
+      "frames": 1207,
+      "p95Ms": 16.70000000001164,
+      "maxMs": 16.80000000000291,
+      "over25": 0,
+      "over50": 0,
+      "timerRedraws": 1227,
+      "textRedraws": 1560,
+      "textRasterMs": 156.00000002793968,
+      "textureUploads": 1625,
+      "drawsPerFrame": 55.75890637945319,
+      "qualityAtEnd": "reduced",
+      "collected": 37,
+      "quality": "reduced",
+      "scenario": "reduced",
+      "durationMs": 20110,
+      "scriptMs": 3646.827,
+      "taskMs": 3941.033000000001
+    },
+    {
+      "frames": 1206,
+      "p95Ms": 16.70000000001164,
+      "maxMs": 16.80000000000291,
+      "over25": 0,
+      "over50": 0,
+      "timerRedraws": 20,
+      "textRedraws": 326,
+      "textRasterMs": 26.899999989196658,
+      "textureUploads": 385,
+      "drawsPerFrame": 69.52487562189054,
+      "qualityAtEnd": "full",
+      "collected": 37,
+      "quality": "full",
+      "scenario": "full_cached_timer",
+      "durationMs": 20101,
+      "scriptMs": 3800.077999999999,
+      "taskMs": 4085.001000000002
+    }
+  ],
+  "renderer": {
+    "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "canvas": [720, 1336],
+    "dpr": 3,
+    "preserveDrawingBuffer": false
+  },
+  "liveDowngrade": {
+    "before": {
+      "quality": "full",
+      "livingNebula": true,
+      "distortion": true,
+      "grading": true,
+      "lighting": true
+    },
+    "after": {
+      "quality": "medium",
+      "livingNebula": true,
+      "distortion": true,
+      "grading": true,
+      "lighting": true
+    }
+  },
+  "uiSamples": [
+    {
+      "frames": 301,
+      "p95Ms": 16.70000000001164,
+      "over25": 0,
+      "taskMs": 570.098999999999,
+      "key": "Menu",
+      "quality": "full"
+    },
+    {
+      "frames": 300,
+      "p95Ms": 16.70000000001164,
+      "over25": 0,
+      "taskMs": 230.95900000000213,
+      "key": "Settings",
+      "quality": "full"
+    },
+    {
+      "frames": 301,
+      "p95Ms": 16.70000000001164,
+      "over25": 0,
+      "taskMs": 258.28200000000123,
+      "key": "Shop",
+      "quality": "full"
+    },
+    {
+      "frames": 300,
+      "p95Ms": 16.79999999998836,
+      "over25": 0,
+      "taskMs": 1158.7920000000017,
+      "key": "Achievements",
+      "quality": "full"
+    },
+    {
+      "frames": 301,
+      "p95Ms": 16.70000000001164,
+      "over25": 0,
+      "taskMs": 924.4880000000002,
+      "key": "Talents",
+      "quality": "full"
+    },
+    {
+      "frames": 300,
+      "p95Ms": 16.79999999998836,
+      "over25": 0,
+      "taskMs": 536.5749999999991,
+      "key": "Profile",
+      "quality": "full"
+    },
+    {
+      "frames": 301,
+      "p95Ms": 16.70000000001164,
+      "over25": 0,
+      "taskMs": 727.1010000000011,
+      "key": "Collection",
+      "quality": "full"
+    },
+    {
+      "frames": 301,
+      "p95Ms": 16.70000000001164,
+      "over25": 0,
+      "taskMs": 554.9719999999993,
+      "key": "Menu",
+      "quality": "reduced"
+    },
+    {
+      "frames": 301,
+      "p95Ms": 16.70000000001164,
+      "over25": 0,
+      "taskMs": 222.2059999999999,
+      "key": "Settings",
+      "quality": "reduced"
+    },
+    {
+      "frames": 300,
+      "p95Ms": 16.70000000001164,
+      "over25": 0,
+      "taskMs": 235.6929999999977,
+      "key": "Shop",
+      "quality": "reduced"
+    },
+    {
+      "frames": 301,
+      "p95Ms": 16.70000000001164,
+      "over25": 0,
+      "taskMs": 1185.848,
+      "key": "Achievements",
+      "quality": "reduced"
+    },
+    {
+      "frames": 301,
+      "p95Ms": 16.79999999998836,
+      "over25": 0,
+      "taskMs": 870.6099999999992,
+      "key": "Talents",
+      "quality": "reduced"
+    },
+    {
+      "frames": 300,
+      "p95Ms": 16.79999999998836,
+      "over25": 0,
+      "taskMs": 481.16599999999823,
+      "key": "Profile",
+      "quality": "reduced"
+    },
+    {
+      "frames": 301,
+      "p95Ms": 16.79999999998836,
+      "over25": 0,
+      "taskMs": 692.3630000000003,
+      "key": "Collection",
+      "quality": "reduced"
+    }
+  ],
+  "navigation": [
+    {
+      "textures": 193,
+      "buttons": 14,
+      "canvases": 1,
+      "heapMb": 77.62908935546875,
+      "active": ["Menu"]
+    },
+    {
+      "textures": 193,
+      "buttons": 14,
+      "canvases": 1,
+      "heapMb": 77.62908935546875,
+      "active": ["Menu"]
+    },
+    {
+      "textures": 193,
+      "buttons": 14,
+      "canvases": 1,
+      "heapMb": 77.62908935546875,
+      "active": ["Menu"]
+    },
+    {
+      "textures": 193,
+      "buttons": 14,
+      "canvases": 1,
+      "heapMb": 77.62908935546875,
+      "active": ["Menu"]
+    },
+    {
+      "textures": 193,
+      "buttons": 14,
+      "canvases": 1,
+      "heapMb": 77.62908935546875,
+      "active": ["Menu"]
+    },
+    {
+      "textures": 193,
+      "buttons": 14,
+      "canvases": 1,
+      "heapMb": 77.62908935546875,
+      "active": ["Menu"]
+    },
+    {
+      "textures": 193,
+      "buttons": 14,
+      "canvases": 1,
+      "heapMb": 77.62908935546875,
+      "active": ["Menu"]
+    },
+    {
+      "textures": 193,
+      "buttons": 14,
+      "canvases": 1,
+      "heapMb": 77.62908935546875,
+      "active": ["Menu"]
+    },
+    {
+      "textures": 193,
+      "buttons": 14,
+      "canvases": 1,
+      "heapMb": 77.62908935546875,
+      "active": ["Menu"]
+    },
+    {
+      "textures": 193,
+      "buttons": 14,
+      "canvases": 1,
+      "heapMb": 77.62908935546875,
+      "active": ["Menu"]
+    }
+  ],
+  "errors": []
+}
