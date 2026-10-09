@@ -117,7 +117,7 @@ export class GameBackdrop {
     base.fillGradientStyle(top, top, bottom, bottom, 1);
     base.fillRect(0, 0, width, height);
     this.root.add(base);
-    paintSafeAreaBackdrop(top, bottom);
+    paintSafeAreaBackdrop(top, bottom, undefined, world.accent);
     this.atmosphere = new WorldAtmosphere(scene, width, height, world);
 
     this.nebula = scene.add

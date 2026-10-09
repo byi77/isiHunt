@@ -5,19 +5,15 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  color: #f4f1e8;
-  background: linear-gradient(155deg, #13212cf5, #0b1020f5);
-  font:
-    14px 'Trebuchet MS',
-    'Segoe UI',
-    sans-serif;
+  gap: var(--ui-gap);
+  padding: var(--ui-gap);
   overflow: hidden;
 }
 .isihunt-hangar * {
   box-sizing: border-box;
 }
 .isihunt-hangar .hangar-content {
-  padding: 12px 16px;
+  padding: var(--ui-padding);
   overflow-y: auto;
   overscroll-behavior: contain;
   flex: 1;
@@ -31,7 +27,6 @@
   flex-wrap: wrap;
 }
 .isihunt-hangar h1 {
-  font-size: 19px;
   margin: 0;
 }
 .isihunt-hangar p {
@@ -40,7 +35,7 @@
   overflow-wrap: anywhere;
 }
 .isihunt-hangar .hangar-balance {
-  color: #ffd479;
+  color: var(--ui-heading);
   display: inline-flex;
   align-items: center;
   gap: 5px;
@@ -59,9 +54,9 @@
   height: clamp(146px, 25vh, 230px);
   margin: 10px 0;
   overflow: hidden;
-  background: radial-gradient(ellipse at 50% 70%, #34475366, transparent 65%);
-  border: 1px solid #344753;
-  border-radius: 16px;
+  background: var(--ui-card);
+  border: var(--ui-border-width) solid var(--accent);
+  border-radius: var(--ui-card-radius);
   touch-action: none;
   cursor: grab;
   outline-offset: -3px;
@@ -71,10 +66,10 @@
 }
 @keyframes hangar-equip-pulse {
   45% {
-    border-color: #ffd479;
+    border-color: var(--ui-heading);
     box-shadow:
-      inset 0 0 36px #ffd47955,
-      0 0 20px #ffd47966;
+      inset 0 0 36px var(--ui-heading-soft),
+      0 0 20px var(--ui-heading-glow);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -104,11 +99,11 @@
   height: 48px;
   top: 67%;
   border-radius: 50%;
-  background: #172734;
-  border: 2px solid #ffd479;
+  background: var(--ui-button);
+  border: 2px solid var(--ui-heading);
   box-shadow:
     0 7px 0 #080f16,
-    0 0 24px #ffd47933;
+    0 0 24px var(--ui-heading-faint);
 }
 .isihunt-hangar .hangar-hull {
   width: 90px;
@@ -140,26 +135,6 @@
   border-radius: 50%;
   box-shadow: 0 0 10px #9bdcff;
 }
-.isihunt-hangar button,
-.isihunt-hangar select {
-  font: inherit;
-  min-height: 44px;
-  border: 1px solid #526574;
-  border-radius: 10px;
-  color: #f4f1e8;
-  background: #172734;
-  padding: 9px 10px;
-  cursor: pointer;
-}
-.isihunt-hangar button:focus-visible,
-.isihunt-hangar select:focus-visible {
-  outline: 2px solid #ffd479;
-  outline-offset: 2px;
-}
-.isihunt-hangar button:disabled {
-  opacity: 0.65;
-  cursor: default;
-}
 .isihunt-hangar .hangar-tabs {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -167,8 +142,8 @@
   margin: 12px 0;
 }
 .isihunt-hangar .hangar-tabs button[aria-pressed='true'] {
-  border-color: #ffd479;
-  color: #ffd479;
+  border-color: var(--ui-heading);
+  color: var(--ui-heading);
 }
 /*
  * Die Auswahlleiste: alle Eintraege als Bild, quer blaetterbar.
@@ -202,10 +177,10 @@
   gap: 3px;
   justify-items: center;
   scroll-snap-align: center;
-  background: #15202a;
-  border: 1px solid #344753;
-  border-radius: 12px;
-  color: #b8c0d9;
+  background: var(--ui-button);
+  border: var(--ui-border-width) solid var(--accent);
+  border-radius: var(--ui-button-radius);
+  color: var(--ui-muted);
 }
 .isihunt-hangar .hangar-tile i {
   width: 40px;
@@ -230,7 +205,7 @@
 .isihunt-hangar .hangar-tile-state {
   font-size: 9px;
   line-height: 1;
-  color: #f4f1e8;
+  color: var(--ui-ink);
 }
 /* Noch nicht gekauft: sichtbar, aber zurueckgenommen. Wer nichts sieht,
    spart auf nichts. */
@@ -238,19 +213,19 @@
   opacity: 0.45;
 }
 .isihunt-hangar .hangar-tile.is-owned {
-  border-color: #6d7488;
-  color: #e6f0ff;
+  border-color: var(--ui-border);
+  color: var(--ui-ink);
 }
 /* Getragen und gerade angesehen sind zwei verschiedene Aussagen und duerfen
    deshalb nicht gleich aussehen. */
 .isihunt-hangar .hangar-tile.is-equipped {
-  border-color: #2fd97a;
-  color: #2fd97a;
+  border-color: var(--ui-success);
+  color: var(--ui-success);
 }
 .isihunt-hangar .hangar-tile.is-active {
-  border-color: #ffd479;
-  color: #ffd479;
-  box-shadow: 0 0 0 2px #ffd47955;
+  border-color: var(--ui-heading);
+  color: var(--ui-heading);
+  box-shadow: 0 0 0 2px var(--ui-heading-soft);
 }
 .isihunt-hangar .hangar-tile.is-active.is-locked {
   opacity: 1;
@@ -258,14 +233,14 @@
 .isihunt-hangar .hangar-name {
   font-size: 17px;
   font-weight: bold;
-  color: #ffd479;
+  color: var(--ui-heading);
 }
 .isihunt-hangar .hangar-equipped-summary {
-  color: #b8c0d9;
+  color: var(--ui-muted);
   font-size: 12px;
 }
 .isihunt-hangar .hangar-status {
-  color: #b8c0d9;
+  color: var(--ui-muted);
 }
 .isihunt-hangar .hangar-tools {
   display: flex;
@@ -283,20 +258,18 @@
 }
 .isihunt-hangar footer {
   flex: none;
-  padding: 10px 16px 26px;
+  padding: var(--ui-padding);
   display: grid;
   gap: 8px;
-  background: #0b1020;
-  border-top: 1px solid #344753;
 }
 .isihunt-hangar footer .hangar-buy {
-  background: #ffd479;
-  color: #15202a;
+  background: var(--ui-button);
+  color: var(--ui-heading);
   font-weight: bold;
 }
 .isihunt-hangar summary {
   min-height: 44px;
   padding: 12px 0;
-  color: #b8c0d9;
+  color: var(--ui-muted);
   cursor: pointer;
 }

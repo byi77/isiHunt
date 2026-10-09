@@ -641,7 +641,7 @@ export class MenuScene extends Phaser.Scene {
         GAME_WIDTH / 2,
         GAME_HEIGHT / 2 + 18,
         `+${DAILY_LOGIN_BONUS_COINS} COINS`,
-        textStyle(FontSize.heading, Palette.ink, { fontStyle: 'bold' }),
+        textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
       )
       .setOrigin(0.5)
       .setDepth(212);

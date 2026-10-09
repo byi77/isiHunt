@@ -45,7 +45,7 @@ export class AdminUsersScene extends Phaser.Scene {
         GAME_WIDTH / 2,
         titleY,
         'PROFIL ÜBER ALIAS BEARBEITEN',
-        textStyle(FontSize.heading, Palette.ink),
+        textStyle(FontSize.heading, Palette.gold),
       )
       .setOrigin(0.5);
     this.add

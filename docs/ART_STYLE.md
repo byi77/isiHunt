@@ -1,5 +1,32 @@
 # Art Style Guide — isiHunt
 
+## Einheitliche Settings-Gestaltung (09.10.2026)
+
+Die Benutzerentscheidung vom 09.10.2026 ersetzt fuer Bedienelemente die
+Goldflaechen und das Button-Relief vom 27.09.: Settings ist die Vorlage fuer
+alle Oberflaechen. Karten sind dunkelblau (`#090e20`, 82 %), Texte hell
+(`#eef2ff`), Hinweise `#d1d8ef`, Ueberschriften gelblich (`#ffe59b`).
+Buttons sind flach, dunkel (`#202b48`), mit heller Schrift und einer Kontur
+in der Weltfarbe. Primaere bzw. ausgewaehlte Aktionen tragen gelbliche
+Schrift und eine staerkere Kontur statt einer deckenden Goldflaeche.
+
+Systemschrift, gemeinsame Radien (Karten 16, Buttons 10 CSS-Pixel),
+44-Pixel-Mindesttrefferflaechen und sichtbarer Tastaturfokus gelten fuer
+DOM und Canvas. Canvas-Radien und Rahmen werden mit der gemessenen
+Canvas-Skalierung umgerechnet. Bestehende responsive Inhaltslayouts
+bleiben erhalten; ein HUD wird nicht zur bildschirmfuellenden Karte.
+
+`src/ui/theme.ts` definiert die Werte und exportiert sie als CSS-Variablen.
+`src/ui/interface.css` stellt die gemeinsamen DOM-Regeln bereit; Settings
+und Hangar behalten nur ihre Layoutregeln. Phaser-Widgets verwenden dieselben
+Werte fuer flache Buttons, Panels, Eingaben und Text. Weltfarbe wird beim
+Szenenaufbau fuer beide Renderer gesetzt. Fachliche Farben fuer Warnungen,
+Seltenheiten und Besitz bleiben unterscheidbar und werden durch Text ergaenzt.
+
+Menue, Shop, Erfolge, Talente, Profil, Ergebnisse, Rangliste, Dialoge und
+Gameplay-HUD folgen dieser Grundlage. Schiffe, Planeten, Abzeichen und
+Spieleffekte behalten ihre plastische Bildsprache.
+
 ## Rahmen, Rangstufen und Menüleiste (27.09.2026)
 
 **Kein sichtbarer Rahmen um das Spielfeld.** Ist das Fenster breiter als 9:16

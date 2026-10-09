@@ -1,3 +1,4 @@
+import { FONT_FAMILY, Palette, toCss } from '@/ui/theme';
 import type Phaser from 'phaser';
 import {
   getShipAura,
@@ -134,7 +135,8 @@ export class HangarView {
       seen(tab: HangarTab): SaveData;
     },
   ) {
-    this.root.className = 'isihunt-hangar';
+    this.root.className = 'isihunt-hangar isihunt-interface';
+    this.root.style.setProperty('--accent', toCss(accent));
     this.root.setAttribute('aria-label', 'Hangar');
     const content = document.createElement('div');
     content.className = 'hangar-content';
@@ -442,7 +444,7 @@ export class HangarView {
     );
     ctx.drawImage(planet, 140, 70, 800, 800);
     ctx.globalAlpha = 1;
-    ctx.strokeStyle = '#ffd479';
+    ctx.strokeStyle = Palette.gold;
     ctx.lineWidth = 5;
     ctx.beginPath();
     ctx.ellipse(540, 690, 290, 80, 0, 0, Math.PI * 2);
@@ -478,11 +480,11 @@ export class HangarView {
       shipCtx.drawImage(ship, 0, 0, 500, 500);
     }
     ctx.drawImage(shipLayer, 290, 270, 500, 500);
-    ctx.fillStyle = '#f4f1e8';
+    ctx.fillStyle = Palette.ink;
     ctx.textAlign = 'center';
-    ctx.font = 'bold 50px Trebuchet MS, sans-serif';
+    ctx.font = `bold 50px ${FONT_FAMILY}`;
     ctx.fillText(getShipShape(this.selection.shapes).name, 540, 920);
-    ctx.font = '28px Trebuchet MS, sans-serif';
+    ctx.font = `28px ${FONT_FAMILY}`;
     ctx.fillText(`${getShipColor(this.selection.colors).name} · ${aura.name}`, 540, 970);
     ctx.fillText(world.name, 540, 1010);
     const link = document.createElement('a');

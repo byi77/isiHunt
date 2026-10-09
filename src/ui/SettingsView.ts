@@ -13,7 +13,7 @@ export class SettingsView {
     openProfile: () => void,
     back: () => void,
   ) {
-    this.root.className = 'isihunt-settings';
+    this.root.className = 'isihunt-settings isihunt-interface';
     this.root.style.setProperty('--accent', `#${accent.toString(16).padStart(6, '0')}`);
     this.root.innerHTML = '<main aria-label="Einstellungen"></main><footer></footer>';
     const main = this.root.querySelector('main')!;

@@ -374,3 +374,7 @@ sind in `TODO.md` gelistet und blockieren M4.1/M6/M7 nicht.
 - [x] Browserchecks mit genau einer Hauptszene; Standardtests unter Node 26 stabilisieren.
 - [x] Reale Render-Matrix fuer zehn Welten, drei Effektstufen und 2D-Jagd/3D-Hangar bereitstellen.
 - [ ] Leistungsbudgets auf echten Mobilgeraeten abnehmen. Emulation und Software-WebGL ersetzen diese Messung nicht; `npm run performance:matrix -- --enforce` erzwingt die Budgets beim entsprechenden Messlauf.
+
+## Einheitliche Settings-Gestaltung (09.10.2026)
+
+- [x] Gemeinsame Settings-basierte Tokens fuer DOM und Phaser; flache Buttons, Karten, Typografie, Hangar und Gameplay-HUD angleichen.

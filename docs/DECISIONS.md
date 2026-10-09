@@ -1918,3 +1918,21 @@ Raw-Delta dient der Messung, Phaser-Delta weiterhin der Simulation. Hintergrunde
 Die UI nutzt native Semantik fuer Canvas-Buttons und CSS-basierte Typografie fuer modernisierte Unterseiten. Render-Messungen fuer Welten, Effektstufen und 3D laufen getrennt vom schnellen Integrations-Gate. Zielgeraete bleiben eine gesonderte Abnahme.
 
 Die Render-Matrix misst 2D-Jagd und die echte 3D-Hangarvorschau separat: Im Spiel selbst wird auch fuer 3D-Schiffe bewusst die transparente 2D-Textur verwendet. 3D-Messungen pruefen deshalb das geladene Modell im Hangar, nicht einen vermeintlichen 3D-Renderer in der Jagd.
+
+
+## ADR-0037 — Settings als gemeinsame UI-Vorlage (09.10.2026)
+
+Status: angenommen durch die Benutzerentscheidung, das Settings-Design auf
+alle Oberflaechen zu uebertragen.
+
+DOM und Phaser bleiben fuer ihre bisherigen Aufgaben bestehen, teilen aber
+dieselben UI-Tokens aus `ui/theme.ts`. Native Oberflaechen lesen exportierte
+CSS-Variablen und gemeinsame Regeln aus `ui/interface.css`. Phaser zeichnet
+flache Buttons und Karten mit derselben Palette und in CSS-Pixeln bestimmten
+Radien. Die bisherige Relief-Gestaltung fuer Controls entfaellt.
+
+Weltkulissen, Schiffsvorschauen, Abzeichen und Gameplay-Effekte bleiben
+plastisch. Semantische Zustandsfarben bleiben erkennbar; Hauptaktionen
+verwenden gelbliche Schrift und Kontur statt einer deckenden Goldflaeche.
+Der native Browsercheck vergleicht die tatsaechlichen Styles von Settings
+und Hangar und prueft weiterhin Tastaturbedienung und DOM-Aufraeumen.

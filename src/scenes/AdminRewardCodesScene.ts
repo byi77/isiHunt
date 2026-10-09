@@ -43,7 +43,7 @@ export class AdminRewardCodesScene extends Phaser.Scene {
     const sections = createMenuLayout(12).sections;
     const titleY = sections.next(130);
     this.add
-      .text(GAME_WIDTH / 2, titleY, 'CODE-GENERATOR', textStyle(FontSize.heading, Palette.ink))
+      .text(GAME_WIDTH / 2, titleY, 'CODE-GENERATOR', textStyle(FontSize.heading, Palette.gold))
       .setOrigin(0.5);
     this.add
       .text(

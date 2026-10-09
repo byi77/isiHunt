@@ -1,5 +1,17 @@
 # Architektur — isiHunt
 
+## Gemeinsame UI-Gestaltung (09.10.2026)
+
+`ui/theme.ts` ist die Quelle der Settings-basierten UI-Tokens. Beim Start
+exportiert `installUiTheme` Farben, Schrift, Radien und Mindestgroessen
+an den Dokumentknoten. `ui/interface.css` nutzt diese Variablen fuer
+DOM-Karten und Controls; Settings und Hangar liefern ihre Layoutregeln.
+`paintSafeAreaBackdrop` setzt zusaetzlich die aktuelle Weltfarbe als
+`--accent`. Phaser-Widgets lesen die gleiche Palette und rechnen
+CSS-Radien ueber die tatsaechliche Canvas-Breite in Spielkoordinaten um.
+Button-Texturen bleiben gecacht, enthalten aber keine Relief-Verlaeufe mehr.
+Die Gameplay-Kulisse und die Spiellogik werden dadurch nicht veraendert.
+
 Die Run-Kulisse liegt in `ui/GameBackdrop.ts`; `config/playfieldVisuals.ts`
 begrenzt Texturaufloesung, Sternzahlen und Bewegung. Nebel werden einmal pro
 Welt auf Canvas gerastert und als Textur wiederverwendet. Drei statisch

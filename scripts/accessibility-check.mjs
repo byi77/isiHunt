@@ -78,6 +78,21 @@ try {
     );
     assert(!sizes.overflow, 'Settings overflow horizontally');
     await page.screenshot({ path: resolve(output, `settings-${viewport.width}.png`) });
+    const settingsDesign = await page.locator('.isihunt-settings').evaluate((root) => {
+      const button = getComputedStyle(root.querySelector('button'));
+      const card = getComputedStyle(root.querySelector('section'));
+      const heading = getComputedStyle(root.querySelector('h2'));
+      return {
+        font: button.fontFamily,
+        background: button.backgroundColor,
+        radius: button.borderRadius,
+        border: button.borderTopColor,
+        card: card.backgroundColor,
+        cardRadius: card.borderRadius,
+        heading: heading.color,
+      };
+    });
+
     const sound = page.getByRole('button', { name: 'TON: AUS', exact: true });
     await sound.focus();
     await page.keyboard.press('Space');
@@ -92,6 +107,32 @@ try {
       (await page.locator('.isihunt-settings').count()) === 0,
       'Settings DOM leaked after exit',
     );
+    await page.getByRole('button', { name: 'Shop', exact: true }).focus();
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => window.isiHunt.scene.isActive('Shop'));
+    const hangarDesign = await page.locator('.isihunt-hangar').evaluate((root) => {
+      const button = getComputedStyle(root.querySelector('footer button:last-child'));
+      const card = getComputedStyle(root.querySelector('.hangar-content'));
+      const heading = getComputedStyle(root.querySelector('h1'));
+      return {
+        font: button.fontFamily,
+        background: button.backgroundColor,
+        radius: button.borderRadius,
+        border: button.borderTopColor,
+        card: card.backgroundColor,
+        cardRadius: card.borderRadius,
+        heading: heading.color,
+      };
+    });
+    assert(
+      JSON.stringify(settingsDesign) === JSON.stringify(hangarDesign),
+      'Hangar and Settings do not share typography, surfaces and controls',
+    );
+    await page.screenshot({ path: resolve(output, `hangar-${viewport.width}.png`) });
+    await page.getByRole('button', { name: 'Zum Menü', exact: true }).focus();
+    await page.keyboard.press('Enter');
+    await page.waitForFunction(() => window.isiHunt.scene.isActive('Menu'));
+    assert((await page.locator('.isihunt-hangar').count()) === 0, 'Hangar DOM leaked after exit');
     await page.evaluate(async () => {
       const save = await import('/src/systems/SaveSystem.ts');
       save.update((data) => {

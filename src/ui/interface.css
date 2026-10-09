@@ -1,0 +1,62 @@
+.isihunt-interface {
+  color-scheme: dark;
+  box-sizing: border-box;
+  color: var(--ui-ink);
+  font: var(--ui-body-size)/1.5 var(--ui-font);
+}
+.isihunt-interface *,
+.isihunt-interface *::before,
+.isihunt-interface *::after {
+  box-sizing: border-box;
+}
+.isihunt-interface section,
+.isihunt-hangar .hangar-content,
+.isihunt-hangar footer {
+  padding: var(--ui-padding);
+  border: var(--ui-border-width) solid var(--accent);
+  border-radius: var(--ui-card-radius);
+  background: var(--ui-card);
+}
+.isihunt-interface h1,
+.isihunt-interface h2 {
+  font-size: var(--ui-heading-size);
+  color: var(--ui-heading);
+  margin: 0 0 10px;
+}
+.isihunt-interface p {
+  font-size: var(--ui-body-size);
+  overflow-wrap: anywhere;
+  margin: 8px 0 12px;
+}
+.isihunt-interface .hint {
+  font-size: var(--ui-hint-size);
+  color: var(--ui-muted);
+}
+.isihunt-interface button,
+.isihunt-interface select {
+  font: inherit;
+  min-height: var(--ui-touch-size);
+  border: var(--ui-border-width) solid var(--accent);
+  border-radius: var(--ui-button-radius);
+  color: var(--ui-ink);
+  background: var(--ui-button);
+  padding: 8px 16px;
+  cursor: pointer;
+}
+.isihunt-interface button:hover:not(:disabled),
+.isihunt-interface button:active:not(:disabled) {
+  background: var(--ui-button-hover);
+}
+.isihunt-interface button[aria-pressed='true'],
+.isihunt-interface .hangar-buy {
+  color: var(--ui-heading);
+  border-color: var(--ui-heading);
+}
+.isihunt-interface button:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+.isihunt-interface :focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 2px;
+}

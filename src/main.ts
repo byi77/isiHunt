@@ -62,7 +62,8 @@ import * as SaveSystem from '@/systems/SaveSystem';
 import * as SoundSystem from '@/systems/SoundSystem';
 import { installDebugOverlay } from '@/ui/debugOverlay';
 import { installLetterSpacingGuard } from '@/ui/letterSpacingGuard';
-import { Palette } from '@/ui/theme';
+import { installUiTheme, Palette } from '@/ui/theme';
+import '@/ui/interface.css';
 
 function createGameConfig(): Phaser.Types.Core.GameConfig {
   return {
@@ -419,6 +420,7 @@ async function startGame(): Promise<void> {
   }
 }
 
+installUiTheme(document.documentElement);
 registerOfflineAppShell();
 void startGame();
 

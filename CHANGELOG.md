@@ -9,6 +9,11 @@ using [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed — unified interface
+
+- Use the settings visual style across menus, hangar, achievements, results, dialogs and gameplay HUD: shared system typography, dark cards, world-colored borders and flat buttons.
+- Share interface tokens between HTML and Phaser; retain ship previews, world artwork, semantic status colors and accessible touch targets.
+
 ### Fixed — six-pass audit follow-up (2026-10-09)
 
 - Prevent repeated start taps from consuming multiple effect rights. Persist account-bound request IDs and confirmed effects through retries; display unresolved start errors instead of silently dropping bonuses.

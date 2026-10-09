@@ -21,14 +21,13 @@ import {
 import {
   BACK_ZONE_VISUALS,
   BACKDROP_EDGE_FADE,
-  BUTTON_RELIEF,
   GHOST_BUTTON_VISUALS,
   LEADING_ICON_VISUALS,
 } from '@/config/effectVisuals';
 import type { WorldDef } from '@/config/worlds';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
-import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
+import { canvasUiPixels, InterfaceStyle, FontSize, Palette, textStyle, toCss } from '@/ui/theme';
 import * as SoundSystem from '@/systems/SoundSystem';
 import { ensureTouchTarget, prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import { createSpatialPlanet } from '@/ui/spatialPlanet';
@@ -122,86 +121,26 @@ export function makeAlignedHitArea(
   return hitArea;
 }
 
-/** Rand um die gebackene Knopftextur, damit der halbe Rahmenstrich hineinpasst. */
-const RELIEF_PAD = 1;
-
-interface ReliefSpec {
+/** Cache flat controls so rounded geometry is not rebuilt on every frame. */
+const BUTTON_TEXTURE_PAD = 2;
+interface FlatButtonSpec {
   width: number;
   height: number;
   radius: number;
-  fill: number;
-  pressedFill: number;
-  gloss: number;
+  borderWidth: number;
   borderColor: number;
-  borderAlpha: number;
 }
-
-/**
- * Backt Relief und Rahmen eines Knopfes einmal in eine Textur und liefert
- * ihren Schluessel. Gleiche Knoepfe teilen sich die Textur.
- *
- * Plastisch wie Logo, Planeten und Schiff (ART_STYLE "Bildsprache"):
- * Schlagschatten, Grundflaeche, Glanz oben, Abschattung unten. Die Verlaeufe
- * sind gestapelte Flaechen an derselben Kante - `fillGradientStyle` taugt
- * nicht fuer abgerundete Formen, und eine einzelne Flaeche gab ein hartes
- * Band. Gedrueckt verliert der Knopf Schatten und den groessten Teil des
- * Glanzes: Er sinkt ein.
- */
-function bakeButtonRelief(scene: Phaser.Scene, spec: ReliefSpec, pressed: boolean): string {
-  const R = BUTTON_RELIEF;
-  const { width, height, radius } = spec;
-  const key = [
-    'btn-relief',
-    Math.round(width * 10),
-    Math.round(height * 10),
-    Math.round(radius * 10),
-    spec.fill,
-    spec.pressedFill,
-    spec.gloss,
-    spec.borderColor,
-    spec.borderAlpha,
-    pressed ? 1 : 0,
-  ].join('-');
+function bakeFlatButton(scene: Phaser.Scene, spec: FlatButtonSpec, pressed: boolean): string {
+  const { width, height, radius, borderWidth, borderColor } = spec;
+  const key = ['btn-flat', width, height, radius, borderWidth, borderColor, pressed].join('-');
   if (scene.textures.exists(key)) return key;
-
+  const pad = Math.ceil(borderWidth / 2) + BUTTON_TEXTURE_PAD;
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
-  const left = RELIEF_PAD;
-  const top = RELIEF_PAD;
-  if (!pressed) {
-    g.fillStyle(0x000000, R.dropAlpha);
-    g.fillRoundedRect(left, top + R.dropOffset, width, height, radius);
-  }
-  g.fillStyle(pressed ? spec.pressedFill : spec.fill);
-  g.fillRoundedRect(left, top, width, height, radius);
-  const innerRadius = Math.max(0, radius - R.inset);
-  const glossTotal = spec.gloss * (pressed ? 0.4 : 1);
-  for (let step = 0; step < R.steps; step++) {
-    const reach = height * R.glossHeight * (1 - step / R.steps);
-    g.fillStyle(0xffffff, glossTotal / R.steps);
-    g.fillRoundedRect(left + R.inset, top + R.inset, width - R.inset * 2, reach, {
-      tl: Math.min(innerRadius, reach / 2),
-      tr: Math.min(innerRadius, reach / 2),
-      bl: 0,
-      br: 0,
-    });
-  }
-  for (let step = 0; step < R.steps; step++) {
-    const reach = height * R.shadeHeight * (1 - step / R.steps);
-    g.fillStyle(0x000000, R.shadeAlpha / R.steps);
-    g.fillRoundedRect(left, top + height - reach, width, reach, {
-      tl: 0,
-      tr: 0,
-      bl: Math.min(radius, reach / 2),
-      br: Math.min(radius, reach / 2),
-    });
-  }
-  g.lineStyle(1.5, spec.borderColor, spec.borderAlpha);
-  g.strokeRoundedRect(left, top, width, height, radius);
-  g.generateTexture(
-    key,
-    Math.ceil(width + RELIEF_PAD * 2),
-    Math.ceil(height + R.dropOffset + RELIEF_PAD * 2),
-  );
+  g.fillStyle(pressed ? Palette.buttonHover : Palette.buttonSurface);
+  g.fillRoundedRect(pad, pad, width, height, radius);
+  g.lineStyle(borderWidth, borderColor, 1);
+  g.strokeRoundedRect(pad, pad, width, height, radius);
+  g.generateTexture(key, Math.ceil(width + pad * 2), Math.ceil(height + pad * 2));
   g.destroy();
   return key;
 }
@@ -237,14 +176,14 @@ export function createButton(
   } = {},
 ): ButtonHandle {
   const canvasWidth = scene.game.canvas.getBoundingClientRect().width || GAME_WIDTH;
-  const minLogicalSize = (44 * GAME_WIDTH) / canvasWidth;
+  const minLogicalSize = canvasUiPixels(InterfaceStyle.minTouchSize, canvasWidth, GAME_WIDTH);
   const target = ensureTouchTarget(
     Math.max(options.width ?? 380, minLogicalSize),
     Math.max(options.height ?? 92, minLogicalSize),
   );
   const width = target.width;
   const height = target.height;
-  const accent = options.accent ?? Palette.goldHex;
+  const accent = options.accent ?? worldAccent;
   const primary = options.variant === 'primary';
   const ghost = options.variant === 'ghost';
 
@@ -257,23 +196,19 @@ export function createButton(
   /** Liegt ein Finger auf diesem Knopf? Siehe `pointerout` weiter unten. */
   let isPressed = false;
 
-  const radius = Math.min(height / 4, 22);
-  // Ghost: eine einzige Flaeche nur beim Druecken - bleibt ein Graphics.
-  // Alle anderen: Relief und Rahmen einmal als Textur gebacken. Als Graphics
-  // zerlegte Phaser die abgerundeten Flaechen in jedem Frame neu; im Menue
-  // stieg die Framezeit unter 6-facher CPU-Drosselung von ~28 auf ~110 ms.
+  const radius = Math.min(
+    height / 2,
+    canvasUiPixels(InterfaceStyle.buttonRadius, canvasWidth, GAME_WIDTH),
+  );
   const ghostBg = ghost ? scene.add.graphics() : null;
-  const relief: ReliefSpec = {
+  const spec: FlatButtonSpec = {
     width,
     height,
     radius,
-    fill: primary ? accent : Palette.buttonSurface,
-    pressedFill: primary ? accent : Palette.buttonHover,
-    gloss: primary ? BUTTON_RELIEF.glossPrimary : BUTTON_RELIEF.glossSecondary,
-    borderColor: primary ? accent : (options.accent ?? Palette.panelBorder),
-    borderAlpha: primary || options.accent === undefined ? 1 : 0.5,
+    borderWidth: canvasUiPixels(InterfaceStyle.borderWidth, canvasWidth, GAME_WIDTH),
+    borderColor: primary ? Palette.goldHex : accent,
   };
-  const reliefBg = ghost ? null : scene.add.image(0, 0, bakeButtonRelief(scene, relief, false));
+  const flatBg = ghost ? null : scene.add.image(0, 0, bakeFlatButton(scene, spec, false));
   const paintBackground = (highlighted: boolean): void => {
     if (ghostBg) {
       ghostBg.clear();
@@ -282,12 +217,10 @@ export function createButton(
       ghostBg.fillRoundedRect(-width / 2, -height / 2, width, height, radius);
       return;
     }
-    const key = bakeButtonRelief(scene, relief, highlighted);
-    const frame = scene.textures.get(key).get();
-    reliefBg!.setTexture(key).setOrigin(0.5, (RELIEF_PAD + height / 2) / frame.height);
+    flatBg!.setTexture(bakeFlatButton(scene, spec, highlighted)).setOrigin(0.5);
   };
   paintBackground(false);
-  const bg = (ghostBg ?? reliefBg)!;
+  const bg = (ghostBg ?? flatBg)!;
 
   const leadingIcon = !ghost && options.icon !== undefined;
   const iconSize = Math.min(height * LEADING_ICON_VISUALS.size, LEADING_ICON_VISUALS.maxSize);
@@ -299,8 +232,8 @@ export function createButton(
       iconReserve / 2,
       ghost ? height * GHOST_BUTTON_VISUALS.labelOffset : 0,
       label,
-      textStyle(options.fontSize ?? FontSize.body, primary ? Palette.buttonInk : Palette.ink, {
-        fontStyle: 'bold',
+      textStyle(options.fontSize ?? FontSize.body, primary ? Palette.gold : Palette.ink, {
+        fontStyle: primary ? 'bold' : 'normal',
       }),
     )
     .setOrigin(0.5);
@@ -321,13 +254,10 @@ export function createButton(
           iconX,
           0,
           iconSize,
-          primary ? Palette.buttonInkHex : Palette.inkDimHex,
+          primary ? Palette.goldHex : Palette.inkDimHex,
         );
 
-  // Alles Sichtbare liegt in einer eigenen Gruppe INNERHALB des Containers.
-  // Nur sie wird beim Druecken gestaucht - der Container selbst behaelt seine
-  // Groesse, und damit behaelt die Trefferflaeche sie auch. Warum das noetig
-  // ist, steht bei `press` weiter unten.
+  // Keep geometry fixed while pressed so edge taps remain inside the target.
   const fitLabel = (): void => {
     const requested = options.fontSize ?? FontSize.body;
     text.setFontSize(requested);
@@ -379,27 +309,8 @@ export function createButton(
 
   container.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains);
 
-  /**
-   * Druckzustand.
-   *
-   * `visuals` wird gestaucht, NIE der Container.
-   *
-   * Phaser rechnet die Trefferflaeche in der Skalierung des Objekts, an dem sie
-   * haengt. Wuerde hier `container.setScale(0.96)` stehen, schruempfte mit dem
-   * Bild auch die Trefferflaeche - und zwar genau in dem Moment, in dem der
-   * Finger schon aufliegt. Ein Tipp nahe am Rand loeste `pointerdown` aus,
-   * fiel dadurch aus der geschrumpften Flaeche heraus und bekam nie ein
-   * `pointerup`. Der Knopf blinkte auf und tat nichts.
-   *
-   * Das ist die eigentliche Ursache dafuer, dass sich die Knoepfe nach der
-   * ersten Korrektur SCHLECHTER anfuehlten als vorher: Die Trefferflaeche wurde
-   * groesser, der beim Druecken verlorene Randstreifen wuchs mit ihr, und der
-   * Streifen liegt genau dort, wo man einen Knopf trifft, wenn man ihn nicht
-   * mittig antippt.
-   */
   const press = (pressed: boolean) => {
     paintBackground(pressed);
-    visuals.setScale(pressed ? 0.98 : 1);
   };
 
   container.on('pointerover', () => enabled && paintBackground(true));
@@ -503,7 +414,7 @@ export function createBackButton(
     {
       width: 196,
       height: 60,
-      accent: 0x9aa3bd,
+      accent: worldAccent,
       fontSize: FontSize.tiny,
       sound: 'back',
     },
@@ -874,14 +785,26 @@ export function createPanel(
   options: { alpha?: number; radius?: number } = {},
 ): Phaser.GameObjects.Container {
   const container = scene.add.container(x, y);
-  const radius = options.radius ?? 18;
+  const canvasWidth = scene.game.canvas.getBoundingClientRect().width || GAME_WIDTH;
+  const radius = Math.min(
+    width / 2,
+    height / 2,
+    canvasUiPixels(InterfaceStyle.cardRadius, canvasWidth, GAME_WIDTH),
+  );
 
   const fill = scene.add.graphics();
-  fill.fillStyle(Palette.panel, options.alpha ?? 0.88);
+  fill.fillStyle(
+    Palette.panel,
+    Math.max(options.alpha ?? InterfaceStyle.cardAlpha, InterfaceStyle.cardAlpha),
+  );
   fill.fillRoundedRect(-width / 2, -height / 2, width, height, radius);
 
   const border = scene.add.graphics();
-  border.lineStyle(1.5, accent, 0.22);
+  border.lineStyle(
+    canvasUiPixels(InterfaceStyle.borderWidth, canvasWidth, GAME_WIDTH),
+    accent === Palette.panelBorder ? worldAccent : accent,
+    1,
+  );
   border.strokeRoundedRect(-width / 2, -height / 2, width, height, radius);
 
   container.add([fill, border]);
@@ -899,9 +822,16 @@ export function createPanel(
  * Wird bei jedem Weltwechsel neu gesetzt - der Aufruf sitzt deshalb in
  * `createWorldBackdrop`, das ohnehin jede Scene beim Aufbau ruft.
  */
-export function paintSafeAreaBackdrop(top: number, bottom: number, dim?: BackdropDim): void {
+export function paintSafeAreaBackdrop(
+  top: number,
+  bottom: number,
+  dim?: BackdropDim,
+  accent: number = Palette.panelBorder,
+): void {
+  worldAccent = accent;
   worldBottom = dim ? mixColor(bottom, dim.color, dim.alpha) : bottom;
   const style = document.documentElement.style;
+  style.setProperty('--accent', toCss(accent));
   style.setProperty('--world-top', toCss(dim ? mixColor(top, dim.color, dim.alpha) : top));
   style.setProperty('--world-bottom', toCss(worldBottom));
 }
@@ -912,6 +842,7 @@ export function paintSafeAreaBackdrop(top: number, bottom: number, dim?: Backdro
  * `index.html`, falls eine Scene ohne Welthintergrund einen Zurueck-Knopf baut.
  */
 let worldBottom: number = Palette.backdrop;
+let worldAccent: number = Palette.panelBorder;
 
 /**
  * Eine Abdunklung, die eine Scene deckend ueber ihren Welthintergrund legt.
@@ -991,7 +922,7 @@ export function createWorldBackdrop(
   //
   // Warum am Seitenkoerper und nicht im Canvas: Ausserhalb des Canvas kann
   // Phaser nicht zeichnen. Die Farbe muss ins DOM.
-  paintSafeAreaBackdrop(top, bottom, dim);
+  paintSafeAreaBackdrop(top, bottom, dim, accent);
 
   // Jede Raumzone bekommt eine eigene, feste Himmelskomposition. Die Formen
   // bleiben bewusst weich und transparent: Sie geben Orientierung, ohne
