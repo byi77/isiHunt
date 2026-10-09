@@ -1,0 +1,985 @@
+{
+  "version": "0.1.425",
+  "physicalDevice": false,
+  "profile": "iPhone 16 standalone viewport model",
+  "instrumentation": "Method timers, text/WebGL counters, 2 ms CPU sampling; real render loop",
+  "samples": [
+    {
+      "timing": {
+        "frames": 1203,
+        "p95Ms": 16.700000000000728,
+        "maxMs": 133.29999999999927,
+        "over25": 2,
+        "over50": 2
+      },
+      "segments": [
+        {
+          "startMs": 0,
+          "frames": 1203,
+          "p95Ms": 16.700000000000728,
+          "maxMs": 133.29999999999927,
+          "over25": 2,
+          "over50": 2
+        },
+        {
+          "startMs": 30000,
+          "frames": 0,
+          "over25": 0,
+          "over50": 0
+        },
+        {
+          "startMs": 60000,
+          "frames": 0,
+          "over25": 0,
+          "over50": 0
+        }
+      ],
+      "hitches": [
+        {
+          "elapsedMs": 61.669999999998254,
+          "deltaMs": 133.29999999999927,
+          "previousEvents": []
+        },
+        {
+          "elapsedMs": 17720.970000000263,
+          "deltaMs": 66.70000000000073,
+          "previousEvents": []
+        }
+      ],
+      "methods": {
+        "Game.updatePlayer": {
+          "calls": 1329,
+          "totalMs": 69.4999999627471,
+          "maxMs": 0.30000000074505806
+        },
+        "Game.updateCombo": {
+          "calls": 1203,
+          "totalMs": 7.4999999944120646,
+          "maxMs": 1.699999999254942
+        },
+        "Game.updateCollectibles": {
+          "calls": 1203,
+          "totalMs": 87.00000000372529,
+          "maxMs": 11.5
+        },
+        "Game.updateSpawning": {
+          "calls": 1203,
+          "totalMs": 9.699999993667006,
+          "maxMs": 1.199999999254942
+        },
+        "Game.updateTimer": {
+          "calls": 1203,
+          "totalMs": 77.09999999590218,
+          "maxMs": 0.40000000037252903
+        },
+        "Game.updateObstacles": {
+          "calls": 1203,
+          "totalMs": 0.7000000011175871,
+          "maxMs": 0.10000000149011612
+        },
+        "Game.updatePendingCollectibles": {
+          "calls": 1203,
+          "totalMs": 4.899999998509884,
+          "maxMs": 1.900000000372529
+        },
+        "Player.talentVisuals": {
+          "calls": 1329,
+          "totalMs": 13.799999995157123,
+          "maxMs": 0.2000000011175871
+        },
+        "Player.move": {
+          "calls": 1329,
+          "totalMs": 64.59999996609986,
+          "maxMs": 0.30000000074505806
+        },
+        "Backdrop.update": {
+          "calls": 1329,
+          "totalMs": 28.600000001490116,
+          "maxMs": 0.2000000011175871
+        },
+        "Lighting.update": {
+          "calls": 1329,
+          "totalMs": 1.700000001117587,
+          "maxMs": 0.10000000149011612
+        },
+        "CollectionEffects.update": {
+          "calls": 1364,
+          "totalMs": 27.699999999254942,
+          "maxMs": 0.599999999627471
+        },
+        "FinalSeconds.update": {
+          "calls": 1203,
+          "totalMs": 6.599999999627471,
+          "maxMs": 0.10000000149011612
+        },
+        "CollectionEffects.add": {
+          "calls": 35,
+          "totalMs": 26.99999999254942,
+          "maxMs": 8.200000001117587
+        },
+        "Render.Player.reachRing": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.Player.magnetField": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.Player.trailLine": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.Player.trailGlowLine": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.Player.speedStreaks": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.CollectionEffects": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.RelicLifetime": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.RelicMagnet": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        }
+      },
+      "textRedraws": 1559,
+      "timerRedraws": 1223,
+      "uploads": 1625,
+      "drawsPerFrame": 73.65087281795512,
+      "events": {
+        "spawn": 36,
+        "collect": 35,
+        "obstacle": 0
+      },
+      "clipCalls": 979,
+      "clipRedraws": 979,
+      "maskUpdates": 1329,
+      "mediaCalls": 13728,
+      "mediaNativeCalls": 13728,
+      "mediaMs": 39.19999998807907,
+      "peakCollectibles": 3,
+      "peakCaptures": 3,
+      "peakChildren": 26,
+      "peakTweens": 15,
+      "stats": {
+        "talentRanks": {
+          "reach": 5,
+          "swiftness": 5,
+          "magnetism": 4,
+          "endurance": 0,
+          "focus": 4,
+          "prospector": 3,
+          "insight": 5,
+          "fortune": 5,
+          "resonance": 3,
+          "shield": 3,
+          "luck": 5
+        },
+        "collectRadius": 72.25,
+        "moveSpeed": 782.75,
+        "magnetRadius": 180,
+        "magnetPullSpeed": 687.75,
+        "runDurationMs": 90000,
+        "comboGraceMs": 1325,
+        "rarityPromotionChance": 0.0975,
+        "xpMultiplier": 1.2625,
+        "scoreMultiplier": 1.2625,
+        "seriesMultiplierBonus": 0.1625,
+        "obstacleResistance": 0.26,
+        "critChance": 0.125
+      },
+      "totalMs": 90000,
+      "phase": "running",
+      "remainingMs": 69784.12999999968,
+      "qualityAtEnd": "full",
+      "runStats": {
+        "worldId": "silberhain",
+        "score": 7221,
+        "bestCombo": 16,
+        "bestMultiplier": 6.1625,
+        "collected": {
+          "poor": 9,
+          "common": 14,
+          "uncommon": 5,
+          "rare": 4,
+          "epic": 2,
+          "legendary": 1
+        },
+        "totalCollected": 35,
+        "missed": 0,
+        "xpGained": 535
+      },
+      "cpuSampleMs": 20192.768,
+      "cpuTopSelf": [
+        {
+          "frame": "(idle) :0",
+          "selfMs": 16873.326
+        },
+        {
+          "frame": "GraphicsWebGLRenderer http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:32250",
+          "selfMs": 862.842
+        },
+        {
+          "frame": "batch http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:103823",
+          "selfMs": 372.538
+        },
+        {
+          "frame": "(program) :0",
+          "selfMs": 287.925
+        },
+        {
+          "frame": "run http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:105559",
+          "selfMs": 176.222
+        },
+        {
+          "frame": "getProgramParameter :0",
+          "selfMs": 91.83
+        },
+        {
+          "frame": "ContainerWebGLRenderer http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:29477",
+          "selfMs": 80.38
+        },
+        {
+          "frame": "bufferSubData :0",
+          "selfMs": 78.217
+        },
+        {
+          "frame": "run http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:104180",
+          "selfMs": 72.545
+        },
+        {
+          "frame": "run http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:104532",
+          "selfMs": 60.933
+        },
+        {
+          "frame": "each http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:124345",
+          "selfMs": 60.792
+        },
+        {
+          "frame": "run http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:109130",
+          "selfMs": 55.226
+        },
+        {
+          "frame": "(garbage collector) :0",
+          "selfMs": 48.289
+        },
+        {
+          "frame": "_processUniformRequest http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:114760",
+          "selfMs": 48.051
+        },
+        {
+          "frame": "set http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:124190",
+          "selfMs": 45.326
+        },
+        {
+          "frame": "applyUniforms http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:99115",
+          "selfMs": 45.303
+        },
+        {
+          "frame": "run http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:107698",
+          "selfMs": 38.265
+        },
+        {
+          "frame": "clear http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:124278",
+          "selfMs": 35.52
+        },
+        {
+          "frame": "(anonymous) http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:99179",
+          "selfMs": 33.255
+        },
+        {
+          "frame": "getX http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:28152",
+          "selfMs": 27.63
+        },
+        {
+          "frame": "run http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:102607",
+          "selfMs": 25.407
+        },
+        {
+          "frame": "renderWebGLStep http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:25769",
+          "selfMs": 25.133
+        },
+        {
+          "frame": "setUniform http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:99082",
+          "selfMs": 25.09
+        },
+        {
+          "frame": "has http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:124245",
+          "selfMs": 25.086
+        },
+        {
+          "frame": "drawElements :0",
+          "selfMs": 22.67
+        }
+      ],
+      "scenario": "full_visual_talents",
+      "wallDurationMs": 20063
+    },
+    {
+      "timing": {
+        "frames": 1203,
+        "p95Ms": 16.700000000004366,
+        "maxMs": 33.29999999999927,
+        "over25": 1,
+        "over50": 0
+      },
+      "segments": [
+        {
+          "startMs": 0,
+          "frames": 1203,
+          "p95Ms": 16.700000000004366,
+          "maxMs": 33.29999999999927,
+          "over25": 1,
+          "over50": 0
+        },
+        {
+          "startMs": 30000,
+          "frames": 0,
+          "over25": 0,
+          "over50": 0
+        },
+        {
+          "startMs": 60000,
+          "frames": 0,
+          "over25": 0,
+          "over50": 0
+        }
+      ],
+      "hitches": [
+        {
+          "elapsedMs": 51.669999999998254,
+          "deltaMs": 33.29999999999927,
+          "previousEvents": []
+        }
+      ],
+      "methods": {
+        "Game.updatePlayer": {
+          "calls": 1331,
+          "totalMs": 64.00000002235174,
+          "maxMs": 0.2000000011175871
+        },
+        "Game.updateCombo": {
+          "calls": 1203,
+          "totalMs": 5.600000003352761,
+          "maxMs": 0.7999999988824129
+        },
+        "Game.updateCollectibles": {
+          "calls": 1203,
+          "totalMs": 53.90000000037253,
+          "maxMs": 2.799999998882413
+        },
+        "Game.updateSpawning": {
+          "calls": 1203,
+          "totalMs": 7.000000001862645,
+          "maxMs": 0.599999999627471
+        },
+        "Game.updateTimer": {
+          "calls": 1203,
+          "totalMs": 69.69999999925494,
+          "maxMs": 0.30000000074505806
+        },
+        "Game.updateObstacles": {
+          "calls": 1203,
+          "totalMs": 0.3000000026077032,
+          "maxMs": 0.10000000149011612
+        },
+        "Game.updatePendingCollectibles": {
+          "calls": 1203,
+          "totalMs": 2.700000001117587,
+          "maxMs": 0.8999999985098839
+        },
+        "Player.talentVisuals": {
+          "calls": 1331,
+          "totalMs": 9.299999989569187,
+          "maxMs": 0.10000000149011612
+        },
+        "Player.move": {
+          "calls": 1331,
+          "totalMs": 59.8000000230968,
+          "maxMs": 0.2000000011175871
+        },
+        "Backdrop.update": {
+          "calls": 1331,
+          "totalMs": 23.50000001862645,
+          "maxMs": 0.19999999925494194
+        },
+        "Lighting.update": {
+          "calls": 1331,
+          "totalMs": 1.9999999962747097,
+          "maxMs": 0.10000000149011612
+        },
+        "CollectionEffects.update": {
+          "calls": 1366,
+          "totalMs": 28.300000006332994,
+          "maxMs": 0.30000000074505806
+        },
+        "FinalSeconds.update": {
+          "calls": 1203,
+          "totalMs": 6.600000005215406,
+          "maxMs": 0.2000000011175871
+        },
+        "CollectionEffects.add": {
+          "calls": 35,
+          "totalMs": 16.600000001490116,
+          "maxMs": 0.8999999985098839
+        },
+        "Render.Player.reachRing": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.Player.magnetField": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.Player.trailLine": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.Player.trailGlowLine": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.Player.speedStreaks": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.CollectionEffects": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.RelicLifetime": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.RelicMagnet": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        }
+      },
+      "textRedraws": 1598,
+      "timerRedraws": 1225,
+      "uploads": 1677,
+      "drawsPerFrame": 73.23358270989193,
+      "events": {
+        "spawn": 35,
+        "collect": 35,
+        "obstacle": 0
+      },
+      "clipCalls": 1008,
+      "clipRedraws": 1,
+      "maskUpdates": 2,
+      "mediaCalls": 13833,
+      "mediaNativeCalls": 13833,
+      "mediaMs": 37.60000001080334,
+      "peakCollectibles": 3,
+      "peakCaptures": 3,
+      "peakChildren": 26,
+      "peakTweens": 15,
+      "stats": {
+        "talentRanks": {
+          "reach": 5,
+          "swiftness": 5,
+          "magnetism": 4,
+          "endurance": 0,
+          "focus": 4,
+          "prospector": 3,
+          "insight": 5,
+          "fortune": 5,
+          "resonance": 3,
+          "shield": 3,
+          "luck": 5
+        },
+        "collectRadius": 72.25,
+        "moveSpeed": 782.75,
+        "magnetRadius": 180,
+        "magnetPullSpeed": 687.75,
+        "runDurationMs": 90000,
+        "comboGraceMs": 1325,
+        "rarityPromotionChance": 0.0975,
+        "xpMultiplier": 1.2625,
+        "scoreMultiplier": 1.2625,
+        "seriesMultiplierBonus": 0.1625,
+        "obstacleResistance": 0.26,
+        "critChance": 0.125
+      },
+      "totalMs": 90000,
+      "phase": "running",
+      "remainingMs": 69934.15999999961,
+      "qualityAtEnd": "full",
+      "runStats": {
+        "worldId": "silberhain",
+        "score": 7089,
+        "bestCombo": 16,
+        "bestMultiplier": 6.1625,
+        "collected": {
+          "poor": 9,
+          "common": 14,
+          "uncommon": 5,
+          "rare": 4,
+          "epic": 2,
+          "legendary": 1
+        },
+        "totalCollected": 35,
+        "missed": 0,
+        "xpGained": 535
+      },
+      "cpuSampleMs": 20049.434,
+      "cpuTopSelf": [
+        {
+          "frame": "(idle) :0",
+          "selfMs": 17058.328
+        },
+        {
+          "frame": "GraphicsWebGLRenderer http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:32250",
+          "selfMs": 773.596
+        },
+        {
+          "frame": "batch http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:103823",
+          "selfMs": 374.067
+        },
+        {
+          "frame": "(program) :0",
+          "selfMs": 236.522
+        },
+        {
+          "frame": "run http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:105559",
+          "selfMs": 148.219
+        },
+        {
+          "frame": "has http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:124245",
+          "selfMs": 63.314
+        },
+        {
+          "frame": "set http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:124190",
+          "selfMs": 59.789
+        },
+        {
+          "frame": "each http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:124345",
+          "selfMs": 57.9
+        },
+        {
+          "frame": "bufferSubData :0",
+          "selfMs": 55.424
+        },
+        {
+          "frame": "applyUniforms http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:99115",
+          "selfMs": 50.275
+        },
+        {
+          "frame": "ContainerWebGLRenderer http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:29477",
+          "selfMs": 47.783
+        },
+        {
+          "frame": "run http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:104532",
+          "selfMs": 45.509
+        },
+        {
+          "frame": "(garbage collector) :0",
+          "selfMs": 45.362
+        },
+        {
+          "frame": "_processUniformRequest http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:114760",
+          "selfMs": 45.29
+        },
+        {
+          "frame": "run http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:104180",
+          "selfMs": 42.888
+        },
+        {
+          "frame": "renderWebGLStep http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:25769",
+          "selfMs": 40.437
+        },
+        {
+          "frame": "(anonymous) http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:99179",
+          "selfMs": 35.156
+        },
+        {
+          "frame": "clear http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:124278",
+          "selfMs": 35.124
+        },
+        {
+          "frame": "getX http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:28152",
+          "selfMs": 32.694
+        },
+        {
+          "frame": "run http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:109130",
+          "selfMs": 32.378
+        },
+        {
+          "frame": "run http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:107698",
+          "selfMs": 30.199
+        },
+        {
+          "frame": "Point http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:32223",
+          "selfMs": 22.739
+        },
+        {
+          "frame": "getCurrentProgramSuite http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:99035",
+          "selfMs": 22.671
+        },
+        {
+          "frame": "MakeGetTexture http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:113275",
+          "selfMs": 22.624
+        },
+        {
+          "frame": "get http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:98871",
+          "selfMs": 22.585
+        }
+      ],
+      "scenario": "full_visual_talents_cached_mask",
+      "wallDurationMs": 20020
+    },
+    {
+      "timing": {
+        "frames": 1206,
+        "p95Ms": 16.799999999995634,
+        "maxMs": 50.099999999998545,
+        "over25": 1,
+        "over50": 1
+      },
+      "segments": [
+        {
+          "startMs": 0,
+          "frames": 1206,
+          "p95Ms": 16.799999999995634,
+          "maxMs": 50.099999999998545,
+          "over25": 1,
+          "over50": 1
+        },
+        {
+          "startMs": 30000,
+          "frames": 0,
+          "over25": 0,
+          "over50": 0
+        },
+        {
+          "startMs": 60000,
+          "frames": 0,
+          "over25": 0,
+          "over50": 0
+        }
+      ],
+      "hitches": [
+        {
+          "elapsedMs": 53.330000000001746,
+          "deltaMs": 50.099999999998545,
+          "previousEvents": []
+        }
+      ],
+      "methods": {
+        "Game.updatePlayer": {
+          "calls": 1334,
+          "totalMs": 45.50000001490116,
+          "maxMs": 0.2000000011175871
+        },
+        "Game.updateCombo": {
+          "calls": 1206,
+          "totalMs": 6.5999999940395355,
+          "maxMs": 0.7000000011175871
+        },
+        "Game.updateCollectibles": {
+          "calls": 1206,
+          "totalMs": 47.59999999217689,
+          "maxMs": 3.099999999627471
+        },
+        "Game.updateSpawning": {
+          "calls": 1206,
+          "totalMs": 5.200000004842877,
+          "maxMs": 0.5
+        },
+        "Game.updateTimer": {
+          "calls": 1206,
+          "totalMs": 67.60000002011657,
+          "maxMs": 0.2000000011175871
+        },
+        "Game.updateObstacles": {
+          "calls": 1206,
+          "totalMs": 0.2999999988824129,
+          "maxMs": 0.09999999962747097
+        },
+        "Game.updatePendingCollectibles": {
+          "calls": 1206,
+          "totalMs": 2.400000002235174,
+          "maxMs": 1
+        },
+        "Player.talentVisuals": {
+          "calls": 1334,
+          "totalMs": 5.7999999932944775,
+          "maxMs": 0.10000000149011612
+        },
+        "Player.move": {
+          "calls": 1334,
+          "totalMs": 41.90000000782311,
+          "maxMs": 0.2000000011175871
+        },
+        "Backdrop.update": {
+          "calls": 1334,
+          "totalMs": 20.199999993667006,
+          "maxMs": 0.10000000149011612
+        },
+        "Lighting.update": {
+          "calls": 1334,
+          "totalMs": 1.099999999627471,
+          "maxMs": 0.10000000149011612
+        },
+        "CollectionEffects.update": {
+          "calls": 1368,
+          "totalMs": 19.700000001117587,
+          "maxMs": 0.2000000011175871
+        },
+        "FinalSeconds.update": {
+          "calls": 1206,
+          "totalMs": 2.9999999962747097,
+          "maxMs": 0.10000000149011612
+        },
+        "CollectionEffects.add": {
+          "calls": 34,
+          "totalMs": 14.40000000409782,
+          "maxMs": 1.300000000745058
+        },
+        "Render.Player.reachRing": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.Player.magnetField": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.Player.trailLine": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.Player.trailGlowLine": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.Player.speedStreaks": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.CollectionEffects": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.RelicLifetime": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        },
+        "Render.RelicMagnet": {
+          "calls": 0,
+          "totalMs": 0,
+          "maxMs": 0
+        }
+      },
+      "textRedraws": 1602,
+      "timerRedraws": 1228,
+      "uploads": 1679,
+      "drawsPerFrame": 74.23217247097844,
+      "events": {
+        "spawn": 35,
+        "collect": 34,
+        "obstacle": 0
+      },
+      "clipCalls": 974,
+      "clipRedraws": 974,
+      "maskUpdates": 1334,
+      "mediaCalls": 13897,
+      "mediaNativeCalls": 1,
+      "mediaMs": 4.299999998882413,
+      "peakCollectibles": 3,
+      "peakCaptures": 3,
+      "peakChildren": 26,
+      "peakTweens": 15,
+      "stats": {
+        "talentRanks": {
+          "reach": 5,
+          "swiftness": 5,
+          "magnetism": 4,
+          "endurance": 0,
+          "focus": 4,
+          "prospector": 3,
+          "insight": 5,
+          "fortune": 5,
+          "resonance": 3,
+          "shield": 3,
+          "luck": 5
+        },
+        "collectRadius": 72.25,
+        "moveSpeed": 782.75,
+        "magnetRadius": 180,
+        "magnetPullSpeed": 687.75,
+        "runDurationMs": 90000,
+        "comboGraceMs": 1325,
+        "rarityPromotionChance": 0.0975,
+        "xpMultiplier": 1.2625,
+        "scoreMultiplier": 1.2625,
+        "seriesMultiplierBonus": 0.1625,
+        "obstacleResistance": 0.26,
+        "critChance": 0.125
+      },
+      "totalMs": 90000,
+      "phase": "running",
+      "remainingMs": 69867.46999999955,
+      "qualityAtEnd": "full",
+      "runStats": {
+        "worldId": "silberhain",
+        "score": 6953,
+        "bestCombo": 16,
+        "bestMultiplier": 6.1625,
+        "collected": {
+          "poor": 9,
+          "common": 13,
+          "uncommon": 5,
+          "rare": 4,
+          "epic": 2,
+          "legendary": 1
+        },
+        "totalCollected": 34,
+        "missed": 0,
+        "xpGained": 531
+      },
+      "cpuSampleMs": 20104.502,
+      "cpuTopSelf": [
+        {
+          "frame": "(idle) :0",
+          "selfMs": 17175.397
+        },
+        {
+          "frame": "GraphicsWebGLRenderer http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:32250",
+          "selfMs": 741.781
+        },
+        {
+          "frame": "batch http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:103823",
+          "selfMs": 341.421
+        },
+        {
+          "frame": "(program) :0",
+          "selfMs": 242.144
+        },
+        {
+          "frame": "run http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:105559",
+          "selfMs": 175.825
+        },
+        {
+          "frame": "has http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:124245",
+          "selfMs": 68.633
+        },
+        {
+          "frame": "run http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:104180",
+          "selfMs": 65.302
+        },
+        {
+          "frame": "bufferSubData :0",
+          "selfMs": 64.66
+        },
+        {
+          "frame": "ContainerWebGLRenderer http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:29477",
+          "selfMs": 54.981
+        },
+        {
+          "frame": "run http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:107698",
+          "selfMs": 52.868
+        },
+        {
+          "frame": "each http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:124345",
+          "selfMs": 50.162
+        },
+        {
+          "frame": "set http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:124190",
+          "selfMs": 49.753
+        },
+        {
+          "frame": "(garbage collector) :0",
+          "selfMs": 40.248
+        },
+        {
+          "frame": "renderWebGLStep http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:25769",
+          "selfMs": 37.751
+        },
+        {
+          "frame": "clear http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:124278",
+          "selfMs": 35.217
+        },
+        {
+          "frame": "(anonymous) http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:99179",
+          "selfMs": 35.146
+        },
+        {
+          "frame": "applyUniforms http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:99115",
+          "selfMs": 33.066
+        },
+        {
+          "frame": "run http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:104532",
+          "selfMs": 30.28
+        },
+        {
+          "frame": "Path.addPoint http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:32231",
+          "selfMs": 30.189
+        },
+        {
+          "frame": "run http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:109130",
+          "selfMs": 29.984
+        },
+        {
+          "frame": "_processUniformRequest http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:114760",
+          "selfMs": 25.199
+        },
+        {
+          "frame": "getY http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:28167",
+          "selfMs": 25.195
+        },
+        {
+          "frame": "setRenderOptions http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:107789",
+          "selfMs": 22.599
+        },
+        {
+          "frame": "setCurrentBatchNode http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:105150",
+          "selfMs": 20.439
+        },
+        {
+          "frame": "multiply http://localhost:5209/node_modules/.vite/deps/phaser.js?v=9a81c2b8:27706",
+          "selfMs": 20.204
+        }
+      ],
+      "scenario": "full_visual_talents_cached_media",
+      "wallDurationMs": 20055
+    }
+  ],
+  "errors": [],
+  "renderer": {
+    "gpu": "ANGLE (NVIDIA, NVIDIA GeForce RTX 5080 (0x00002C02) Direct3D11 vs_5_0 ps_5_0, D3D11)",
+    "canvas": [720, 1336],
+    "preserveDrawingBuffer": false
+  }
+}
