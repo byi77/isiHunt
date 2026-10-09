@@ -1936,3 +1936,23 @@ plastisch. Semantische Zustandsfarben bleiben erkennbar; Hauptaktionen
 verwenden gelbliche Schrift und Kontur statt einer deckenden Goldflaeche.
 Der native Browsercheck vergleicht die tatsaechlichen Styles von Settings
 und Hangar und prueft weiterhin Tastaturbedienung und DOM-Aufraeumen.
+
+
+## ADR-0038 — Lesbare Schrift und gemessene Karten (09.10.2026)
+
+Status: angenommen durch den Benutzerauftrag, Schriftgroessen, Boxen und
+Design zu vereinheitlichen.
+
+Die Settings-Schriftstufen werden in CSS-Pixeln definiert: 16 fuer
+Kartenueberschriften, 14 fuer Fliesstext und Aktionen, 12 fuer Zusatzinfos.
+`uiUnit` und `uiFont` rechnen diese Werte anhand der sichtbaren Canvas-Breite
+in Spielkoordinaten um. Buttons umbrechen statt Schrift zu verkleinern.
+Die kleine Symbolnavigation reserviert auch fuer zwei Zeilen genug Hoehe;
+visueller Umbruch und vollstaendiger zugaenglicher Name bleiben getrennt.
+
+Erfolge und Sammlung wechseln vom engen Raster zu vertikal scrollbaren
+Karten. Talentkarten verwenden ebenfalls gemessene Texthoehen. Das zeigt
+weniger Eintraege gleichzeitig, erhaelt aber lesbare Beschreibungen. Tabs,
+Seitennavigation und Zurueck bleiben ausserhalb der maskierten Listen fest.
+Profil und Ergebnis reservieren passende Innenabstaende fuer diese Stufen.
+Der Browsercheck prueft Schriftminimum und Textgrenzen auf vier Formaten.

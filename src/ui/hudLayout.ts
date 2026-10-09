@@ -11,11 +11,11 @@ export function calculateHudLayout(width: number, height: number, rows = 0, bott
     scoreX: (margin + column / 2) * unit,
     timeX: (width / 2) * unit,
     comboX: (width - margin - column / 2) * unit,
-    headerHeight: (80 + rows * 17) * unit,
-    rowY: (index: number) => (83 + index * 17) * unit,
+    headerHeight: (102 + rows * 17) * unit,
+    rowY: (index: number) => (105 + index * 17) * unit,
     pauseSize: 44 * unit,
     pauseX: (width - margin - 22) * unit,
     pauseY: (height - Math.max(12, bottomInset + 8) - 22) * unit,
-    font: (pixels: number) => Math.round(pixels * unit),
+    font: (pixels: number) => pixels * unit,
   };
 }

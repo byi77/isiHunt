@@ -550,29 +550,24 @@ export class HudScene extends Phaser.Scene {
       this.fit(text, width);
     };
     // Alle Zeilen um die Balkenhoehe nach unten - er liegt jetzt darueber.
-    place(this.worldText, GAME_WIDTH / 2, 9, 10, l.width);
-    place(this.scoreCaption, l.scoreX, 26, 10, l.columnWidth);
-    place(this.timeCaption, l.timeX, 26, 10, l.columnWidth);
-    // Die Punktzahl ist die groesste Zahl im Kopf, die Zeit die kleinste.
-    //
-    // Vorher standen beide auf 24 - gleich gross, obwohl die Zeit ihren
-    // eigenen Balken darueber hat und man sie ohnehin nur streift. Die
-    // Punktzahl ist das, wofuer man spielt; sie darf den Platz bekommen,
-    // den die Zeit nicht braucht.
-    place(this.scoreText, l.scoreX, 38, 28, l.columnWidth);
-    place(this.timerText, l.timeX, 41, 19, l.columnWidth);
-    place(this.comboText, l.comboX, 26, 10, l.columnWidth);
-    place(this.multiplierText, l.comboX, 39, 24, l.columnWidth);
+    place(this.worldText, GAME_WIDTH / 2, 8, 12, l.width);
+    place(this.scoreCaption, l.scoreX, 27, 12, l.columnWidth);
+    place(this.timeCaption, l.timeX, 27, 12, l.columnWidth);
+    // Shared value sizing keeps the three columns aligned.
+    place(this.scoreText, l.scoreX, 42, 24, l.columnWidth);
+    place(this.timerText, l.timeX, 42, 24, l.columnWidth);
+    place(this.comboText, l.comboX, 27, 12, l.columnWidth);
+    place(this.multiplierText, l.comboX, 42, 24, l.columnWidth);
     // Der Fensterbalken sitzt unter dem Multiplikator, in der Breite der
     // Serienspalte. `createBar` zeichnet von links, deshalb der Versatz um
     // eine halbe Spalte.
     const windowBarWidth = l.columnWidth * 0.8;
     this.comboWindowBar.container
-      .setPosition(l.comboX - windowBarWidth / 2, 66 * l.unit)
+      .setPosition(l.comboX - windowBarWidth / 2, 74 * l.unit)
       .setScale(windowBarWidth, l.unit * 0.25);
-    place(this.agilityText, l.comboX, 72, 9, l.columnWidth);
+    place(this.agilityText, l.comboX, 82, 12, l.columnWidth);
     // Links unter der Punktzahl - die Spalte, die sonst leer bleibt.
-    this.xpText.setPosition(l.scoreX - l.columnWidth / 2, 68 * l.unit).setFontSize(l.font(9));
+    this.xpText.setPosition(l.scoreX - l.columnWidth / 2, 82 * l.unit).setFontSize(l.font(12));
     // Der Zeitbalken sitzt ueber den Zahlen, nicht darunter.
     //
     // Unten lag er auf der Kante zum Spielfeld und zwang die Kopfflaeche
@@ -590,7 +585,7 @@ export class HudScene extends Phaser.Scene {
         .setWordWrapWidth(0)
         .setOrigin(0, 0)
         .setPosition(l.margin, l.rowY(row++))
-        .setFontSize(l.font(11));
+        .setFontSize(l.font(12));
       this.fit(text, l.width);
     }
     this.updateWorldGoal();
@@ -1313,7 +1308,7 @@ export class HudScene extends Phaser.Scene {
     // ausser wenn sich etwas Endgueltiges geaendert hat.
     const color = activity === 'left' || activity === 'gone' ? Palette.danger : Palette.inkDim;
 
-    text.setText(lineLabel).setColor(color).setAlpha(1).setFontSize(this.layout.font(11));
+    text.setText(lineLabel).setColor(color).setAlpha(1).setFontSize(this.layout.font(12));
     this.fit(text, this.layout.width);
   }
 

@@ -1,7 +1,4 @@
-/** Übersicht aller Erfolge und ihres aktuellen Fortschritts. */
-
 import Phaser from 'phaser';
-
 import { ACHIEVEMENTS } from '@/config/achievements';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { getWorld } from '@/config/worlds';
@@ -16,11 +13,12 @@ import type { AchievementFilter } from '@/systems/AchievementProgressSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { createAchievementBadge } from '@/ui/achievementBadge';
-import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
+import { ClipMask } from '@/ui/clipMask';
+import { InterfaceStyle, Palette, textStyle, uiFont, uiUnit } from '@/ui/theme';
 import {
+  attachVerticalScroll,
   createBackButton,
   createButton,
-  createMenuLayout,
   createPanel,
   createSceneBackdrop,
 } from '@/ui/widgets';
@@ -34,204 +32,207 @@ export class AchievementsScene extends Phaser.Scene {
     SafeAreaSystem.showStatic('ERFOLGE');
     const save = SaveSystem.load();
     const world = getWorld(save.lastWorldId);
-
     createSceneBackdrop(this, world);
     createBackButton(this, () => this.scene.start(SceneKey.Menu));
-
-    const sections = createMenuLayout().sections;
+    const u = uiUnit(this);
+    const margin = InterfaceStyle.spacing * u;
+    const padding = InterfaceStyle.padding * u;
+    const gap = InterfaceStyle.spacing * u;
+    const width = GAME_WIDTH - margin * 2;
+    const left = margin + padding;
     const unlocked = save.unlockedAchievements.filter((id) =>
-      ACHIEVEMENTS.some((achievement) => achievement.id === id),
+      ACHIEVEMENTS.some((entry) => entry.id === id),
     ).length;
     this.add
       .text(
         GAME_WIDTH / 2,
-        sections.next(30),
+        16 * u,
         `${unlocked} von ${ACHIEVEMENTS.length} freigeschaltet`,
-        textStyle(FontSize.body, toCss(world.accent), { fontStyle: 'bold' }),
+        textStyle(uiFont(this, 'body'), Palette.ink),
       )
       .setOrigin(0.5);
-
     const filter = data.filter ?? 'all';
     const filtered = filterAchievements(ACHIEVEMENTS, save, filter);
-    const filterY = sections.next(90);
-    const filterTabs: readonly { id: AchievementFilter; label: string }[] = [
+    const tabs: readonly { id: AchievementFilter; label: string }[] = [
       { id: 'all', label: 'Alle' },
       { id: 'near', label: 'Bald' },
       { id: 'open', label: 'Offen' },
       { id: 'unlocked', label: 'Erreicht' },
     ];
-    filterTabs.forEach(({ id, label }, index) => {
+    const columns = this.game.canvas.getBoundingClientRect().width >= 600 ? 4 : 2;
+    const tabWidth = (width - gap * (columns - 1)) / columns;
+    tabs.forEach(({ id, label }, index) =>
       createButton(
         this,
-        105 + index * 170,
-        filterY,
+        margin + tabWidth / 2 + (index % columns) * (tabWidth + gap),
+        (60 + Math.floor(index / columns) * 56) * u,
         label,
         () => this.scene.restart({ filter: id, page: 0 }),
         {
-          width: 140,
-          height: 80,
-          fontSize: FontSize.tiny,
+          width: tabWidth,
+          height: 44 * u,
+          fontSize: uiFont(this, 'button'),
           variant: id === filter ? 'primary' : 'secondary',
         },
-      );
-    });
+      ),
+    );
+    const listTop = (columns === 2 ? 150 : 94) * u;
+    const listBottom = GAME_HEIGHT - 130 * u;
+    const content = this.add.container(0, listTop);
+    const clipRect = new Phaser.Geom.Rectangle(
+      0,
+      listTop,
+      GAME_WIDTH,
+      Math.max(0, listBottom - listTop),
+    );
+    const clip = new ClipMask(this, content).set(clipRect);
+    content.setData('layoutClipRect', clipRect);
+    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => clip.destroy());
     const pageSize = 8;
     const pageCount = Math.max(1, Math.ceil(filtered.length / pageSize));
     const page = Math.min(pageCount - 1, Math.max(0, data.page ?? 0));
-    const pageAchievements = filtered.slice(page * pageSize, (page + 1) * pageSize);
+    const entries = filtered.slice(page * pageSize, (page + 1) * pageSize);
     const nextAchievement = getNextAchievement(ACHIEVEMENTS, save);
-    const columnX = [190, 530] as const;
-    const rowTop = sections.next(112);
-    const rowStep = 195;
-    if (pageAchievements.length === 0) {
-      this.add
-        .text(
-          GAME_WIDTH / 2,
-          rowTop + 180,
-          filter === 'near'
-            ? 'Noch kein Erfolg kurz vor dem Ziel.\nSpiele weiter und schau später wieder vorbei.'
-            : 'Hier gibt es derzeit keine Erfolge.',
-          textStyle(FontSize.small, Palette.inkDim),
-        )
-        .setOrigin(0.5)
-        .setAlign('center');
-    }
-    pageAchievements.forEach((achievement, index) => {
-      const column = index < 4 ? 0 : 1;
-      const row = column === 0 ? index : index - 4;
-      const isUnlocked = save.unlockedAchievements.includes(achievement.id);
-      const accent = isUnlocked ? Palette.goldHex : 0x69738d;
-      const x = columnX[column];
-      const y = rowTop + row * rowStep;
-
-      const progress = getAchievementProgress(achievement, save);
-      createPanel(this, x, y, 316, 180, accent, {
-        alpha: isUnlocked ? 0.58 : 0.38,
-        radius: 14,
-      });
-      createAchievementBadge(
-        this,
-        x - 131,
-        y - 4,
-        progress.category,
-        achievement.rank,
-        isUnlocked,
-        22,
+    let top = 0;
+    const addText = (
+      value: string,
+      x: number,
+      y: number,
+      role: 'heading' | 'body' | 'tiny',
+      color: string,
+      wrap: number,
+      bold = false,
+    ) => {
+      const text = this.add.text(
+        x,
+        y,
+        value,
+        textStyle(uiFont(this, role), color, {
+          fontStyle: bold ? 'bold' : 'normal',
+          wordWrap: { width: wrap, useAdvancedWrap: true },
+        }),
       );
-
-      // Der Rahmen folgt der gemessenen Schriftbreite. Mit fester Breite von
-      // 92 px lief schon "RANG 1 · +20" hinaus - die Breite haengt an Rang,
-      // Praemie und der Systemschrift des Geraets, keiner davon ist fest.
-      const rankLabel = this.add
-        .text(
-          x - 94,
-          y - 64,
-          `RANG ${achievement.rank} · +${achievement.coinReward}`,
-          textStyle(FontSize.tiny, isUnlocked ? Palette.gold : Palette.inkDim, {
-            fontStyle: 'bold',
-          }),
-        )
-        .setOrigin(0, 0.5);
-      const rankBadge = this.add.graphics();
-      rankBadge.fillStyle(isUnlocked ? Palette.goldHex : 0x69738d, isUnlocked ? 0.2 : 0.16);
-      rankBadge.lineStyle(1.5, isUnlocked ? Palette.goldHex : 0x69738d, 0.75);
-      const rankWidth = Math.ceil(rankLabel.width) + 20;
-      rankBadge.fillRoundedRect(x - 104, y - 78, rankWidth, 28, 8);
-      rankBadge.strokeRoundedRect(x - 104, y - 78, rankWidth, 28, 8);
-      // Der Rahmen entsteht nach der Schrift, muss aber unter ihr liegen.
-      rankLabel.setDepth(1);
-      const categoryLabel = this.add
-        .text(
-          x + 140,
-          y - 64,
-          nextAchievement?.id === achievement.id
-            ? 'NÄCHSTES ZIEL'
-            : achievementCategoryLabel(progress.category),
-          textStyle(
-            FontSize.tiny,
-            nextAchievement?.id === achievement.id || isUnlocked ? Palette.gold : Palette.inkDim,
-            {
-              fontStyle: 'bold',
-            },
-          ),
-        )
-        .setOrigin(1, 0.5);
-      // Rangrahmen und Kategorie teilen sich eine Zeile. Wird es eng - etwa
-      // "NAECHSTES ZIEL" neben einer dreistelligen Praemie -, gibt die
-      // Kategorie nach: Der Rang ist die haeufiger gesuchte Angabe.
-      const categoryRoom = x + 140 - (x - 104 + rankWidth + 8);
-      if (categoryLabel.width > categoryRoom) {
-        categoryLabel.setFontSize(Math.floor((FontSize.tiny * categoryRoom) / categoryLabel.width));
-      }
-      const nameText = this.add
-        .text(
-          x - 102,
-          y - 35,
-          achievement.name,
-          textStyle(FontSize.tiny, isUnlocked ? Palette.ink : Palette.inkDim, {
-            fontStyle: 'bold',
-          }),
-        )
-        .setOrigin(0, 0)
-        .setWordWrapWidth(230);
-      // Bei freigeschalteten Erfolgen ist die Beschreibung Bestaetigung, bei
-      // gesperrten das eigentliche Ziel - in beiden Faellen keine Dekoration,
-      // die neben Rang und Name verblasst. Nur der Name-Farbverlauf oben
-      // bleibt als alleiniges Sperr-Signal.
-      //
-      // Die Beschreibung folgt direkt unter der tatsaechlichen Namenshoehe
-      // (nameText.height nach dem Zeilenumbruch), statt mit festem Versatz zu
-      // rechnen - ein zweizeiliger Name wuerde sonst von der Beschreibung
-      // ueberlappt.
-      this.add
-        .text(
-          x - 102,
-          nameText.y + nameText.height + 3,
-          achievement.description,
-          textStyle(FontSize.tiny, isUnlocked ? Palette.ink : Palette.inkDim),
-        )
-        .setOrigin(0, 0)
-        .setWordWrapWidth(230)
-        .setLineSpacing(2);
-      this.add
-        .text(
-          x - 102,
-          y + 66,
-          progress.trackable ? `FORTSCHRITT  ${progress.label}` : progress.label,
-          textStyle(14, isUnlocked ? Palette.gold : Palette.inkDim, {
-            fontStyle: 'bold',
-          }),
-        )
-        .setOrigin(0, 0.5)
-        .setWordWrapWidth(230);
+      content.add(text);
+      return text;
+    };
+    for (const achievement of entries) {
+      const done = save.unlockedAchievements.includes(achievement.id);
+      const progress = getAchievementProgress(achievement, save);
+      const textX = left + 52 * u;
+      const textWidth = width - padding * 2 - 52 * u;
+      let y = top + padding;
+      const meta = addText(
+        `RANG ${achievement.rank} · +${achievement.coinReward} Coins`,
+        textX,
+        y,
+        'tiny',
+        Palette.inkDim,
+        textWidth,
+      );
+      y += meta.height + 6 * u;
+      const title = addText(achievement.name, textX, y, 'heading', Palette.gold, textWidth, true);
+      content.add(
+        createAchievementBadge(
+          this,
+          left + 20 * u,
+          y + 20 * u,
+          progress.category,
+          achievement.rank,
+          done,
+          20 * u,
+        ),
+      );
+      y += title.height + 8 * u;
+      const description = addText(
+        achievement.description,
+        textX,
+        y,
+        'body',
+        Palette.ink,
+        textWidth,
+      );
+      y += description.height + gap;
+      const state =
+        achievement.id === nextAchievement?.id
+          ? 'NÄCHSTES ZIEL'
+          : done
+            ? 'ERREICHT'
+            : achievementCategoryLabel(progress.category);
+      const status = addText(
+        state,
+        left,
+        y,
+        'tiny',
+        done ? Palette.success : Palette.inkDim,
+        width - padding * 2,
+        true,
+      );
+      y += status.height + 4 * u;
+      const detail = addText(
+        progress.trackable ? `FORTSCHRITT ${progress.label}` : progress.label,
+        left,
+        y,
+        'tiny',
+        Palette.inkDim,
+        width - padding * 2,
+      );
+      y += detail.height + padding;
+      const height = Math.max(y - top, 108 * u);
+      const panel = createPanel(
+        this,
+        GAME_WIDTH / 2,
+        top + height / 2,
+        width,
+        height,
+        done ? Palette.goldHex : world.accent,
+      );
+      content.addAt(panel, 0);
+      top += height + gap;
+    }
+    if (!entries.length) {
+      addText(
+        filter === 'near'
+          ? 'Noch kein Erfolg kurz vor dem Ziel. Spiele weiter und schau später wieder vorbei.'
+          : 'Hier gibt es derzeit keine Erfolge.',
+        left,
+        padding,
+        'body',
+        Palette.inkDim,
+        width - padding * 2,
+      );
+    }
+    const maxScroll = Math.max(0, top - gap - (listBottom - listTop));
+    attachVerticalScroll(this, {
+      maxScroll,
+      dragZoneTop: listTop,
+      dragZoneBottom: listBottom,
+      onOffsetChange: (offset) => content.setY(listTop - offset),
     });
-
+    const pageY = GAME_HEIGHT - 96 * u;
     this.add
       .text(
         GAME_WIDTH / 2,
-        GAME_HEIGHT - 190,
+        pageY,
         `SEITE ${page + 1} / ${pageCount}`,
-        textStyle(FontSize.tiny, Palette.inkDim),
+        textStyle(uiFont(this, 'tiny'), Palette.inkDim),
       )
       .setOrigin(0.5);
-
     const previous = createButton(
       this,
-      GAME_WIDTH / 2 - 145,
-      GAME_HEIGHT - 190,
+      margin + 22 * u,
+      pageY,
       '‹',
       () => this.scene.restart({ page: page - 1, filter }),
-      { width: 76, height: 64, accent: world.accent, fontSize: FontSize.heading },
+      { width: 44 * u, height: 44 * u, fontSize: uiFont(this, 'heading') },
     );
     previous.setEnabled(page > 0);
-
     const next = createButton(
       this,
-      GAME_WIDTH / 2 + 145,
-      GAME_HEIGHT - 190,
+      GAME_WIDTH - margin - 22 * u,
+      pageY,
       '›',
       () => this.scene.restart({ page: page + 1, filter }),
-      { width: 76, height: 64, accent: world.accent, fontSize: FontSize.heading },
+      { width: 44 * u, height: 44 * u, fontSize: uiFont(this, 'heading') },
     );
     next.setEnabled(page < pageCount - 1);
   }

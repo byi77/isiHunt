@@ -24,7 +24,7 @@ export function calculateMenuLayout(
   // Fuenf Nebenziele als eine rahmenlose Symbolleiste statt zwei Kastenreihen:
   // Sie stehen nicht mehr gleichrangig neben den Spielmodi, und die frei
   // werdende Zeile geht an Schiff und Planet.
-  const navHeight = compact ? 50 : 58;
+  const navHeight = 64;
   const navY = lastBottom - navHeight / 2;
   const secondaryY = navY - navHeight / 2 - gap - rowHeight / 2;
   const primaryY = secondaryY - rowHeight / 2 - gap - primaryHeight / 2;
@@ -75,7 +75,7 @@ export function calculateMenuLayout(
     rowHeight: rowHeight * unit,
     installY: (lastBottom + gap + installHeight / 2) * unit,
     installHeight: installHeight * unit,
-    font: (cssPixels: number) => Math.round(cssPixels * unit),
+    font: (cssPixels: number) => cssPixels * unit,
   };
 }
 

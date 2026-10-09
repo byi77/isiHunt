@@ -1,5 +1,27 @@
 # Art Style Guide — isiHunt
 
+## Typografie und passende Boxen (09.10.2026)
+
+Die gemeinsame Abstufung wird in echten CSS-Pixeln festgelegt: 16 fuer
+Kartenueberschriften, 14 fuer Fliesstext und Aktionen, 12 fuer Zusatzinfos.
+Wichtige Spielwerte duerfen mit 24 bzw. 32 Pixeln hervortreten. Canvas-Text
+wird anhand der gemessenen Canvas-Breite umgerechnet; feste Spielpixel sind
+keine alternative UI-Schriftgroesse. Die kleine Symbolnavigation nutzt 12
+und reserviert 64 Pixel Hoehe fuer Icon und bis zu zwei Beschriftungszeilen.
+
+Erfolgs- und Sammlungskarten stehen als lesbare, vertikal scrollbare Liste.
+Ihre Hoehe folgt den gemessenen umgebrochenen Texten. Die Erfolgsfilter und
+Seitennavigation bleiben fest erreichbar; Filter und Seitengroesse bleiben
+fachlich unveraendert. Karten verwenden 16 Pixel Innenabstand und 12 Pixel
+Zwischenraum. Talentkarten passen ihre Hoehe ebenfalls an den Text an;
+Ueberschriften sind gelblich, Weltfarben stehen an Konturen.
+
+Die Profilboxen reservieren eigene Zeilen fuer Name, Hinweise, Eingabe,
+Fortschritt und Aktionen. Shop-Kacheln werden breiter und zeigen Namen sowie
+Zustaende mit mindestens 12 Pixeln. Buttons umbrechen laengere Beschriftungen
+statt die Schrift beliebig zu verkleinern. HUD-Werte behalten eine bewusste
+Hierarchie; kleine Zusatzzeilen folgen der gemeinsamen 12-Pixel-Stufe.
+
 ## Einheitliche Settings-Gestaltung (09.10.2026)
 
 Die Benutzerentscheidung vom 09.10.2026 ersetzt fuer Bedienelemente die

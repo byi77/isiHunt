@@ -22,7 +22,7 @@ import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
 import { ClipMask } from '@/ui/clipMask';
-import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
+import { FontSize, InterfaceStyle, Palette, textStyle, uiFont, uiUnit } from '@/ui/theme';
 import {
   attachVerticalScroll,
   createBackButton,
@@ -62,7 +62,7 @@ export class TalentScene extends Phaser.Scene {
   }
 
   create(data: TalentSceneData = {}): void {
-    this.cssUnit = GAME_WIDTH / this.game.canvas.getBoundingClientRect().width;
+    this.cssUnit = uiUnit(this);
     this.busy = false;
     this.returnTo = data.returnTo ?? SceneKey.Profile;
     this.returnData = data.returnData;
@@ -97,16 +97,13 @@ export class TalentScene extends Phaser.Scene {
     this.add
       .text(
         GAME_WIDTH / 2,
-        walletY + 36,
+        walletY + 26 * this.cssUnit,
         'Bewegung  ·  Sammeln  ·  Ertrag',
         textStyle(12 * this.cssUnit, Palette.inkDim),
       )
       .setOrigin(0.5);
 
-    const rowTop = sections.next(82) + 68 * this.cssUnit;
-    // Drei Beschreibungszeilen brauchen Platz; die vorhandene Scrollfläche
-    // hält die übrigen Talente und die Reset-Aktion erreichbar.
-    const rowStep = 172 * this.cssUnit;
+    const rowTop = 88 * this.cssUnit;
     const content = this.add.container(0, 0);
     const groupOrder: readonly TalentDef['group'][] = ['BEWEGUNG', 'SAMMELN', 'ERTRAG'];
     let nextY = rowTop;
@@ -114,24 +111,15 @@ export class TalentScene extends Phaser.Scene {
       const talents = TALENTS.filter((talent) => talent.group === group);
       if (talents.length === 0) continue;
       this.buildGroupHeader(group, nextY, world.accent, content);
-      nextY += 102 * this.cssUnit;
-      if (talents.length > 1) {
-        const path = this.add.graphics();
-        path.lineStyle(3, world.accent, 0.35);
-        path.beginPath();
-        path.moveTo(GAME_WIDTH / 2, nextY + 64);
-        path.lineTo(GAME_WIDTH / 2, nextY + (talents.length - 1) * rowStep - 64);
-        path.strokePath();
-        content.add(path);
-      }
+      nextY += 36 * this.cssUnit;
       for (const talent of talents) {
-        this.buildTalentRow(talent.id, nextY, world.accent, content);
-        nextY += rowStep;
+        nextY += this.buildTalentRow(talent.id, nextY, world.accent, content);
+        nextY += InterfaceStyle.spacing * this.cssUnit;
       }
-      nextY += 24;
+      nextY += 16 * this.cssUnit;
     }
 
-    const resetY = nextY;
+    const resetY = nextY + 22 * this.cssUnit;
     const resetButton = createButton(
       this,
       GAME_WIDTH / 2,
@@ -139,8 +127,8 @@ export class TalentScene extends Phaser.Scene {
       'TALENTE ZURÜCKSETZEN',
       () => this.openResetConfirmation(),
       {
-        width: 380,
-        height: 64,
+        width: GAME_WIDTH - 56 * this.cssUnit,
+        height: 44 * this.cssUnit,
         accent: 0xb782ff,
         fontSize: 12 * this.cssUnit,
       },
@@ -160,14 +148,19 @@ export class TalentScene extends Phaser.Scene {
         .setAlign('center'),
     );
     this.feedbackText = this.add
-      .text(GAME_WIDTH / 2, resetY + 70 * this.cssUnit, '', textStyle(FontSize.tiny, Palette.gold))
+      .text(
+        GAME_WIDTH / 2,
+        resetY + 70 * this.cssUnit,
+        '',
+        textStyle(uiFont(this, 'tiny'), Palette.gold),
+      )
       .setOrigin(0.5)
       .setWordWrapWidth(GAME_WIDTH - 100)
       .setAlign('center');
     content.add(this.feedbackText);
 
     const contentBottom = resetY + 105 * this.cssUnit;
-    const listTop = rowTop - rowStep / 2;
+    const listTop = rowTop - 12 * this.cssUnit;
     const clipRect = new Phaser.Geom.Rectangle(
       0,
       listTop,
@@ -212,99 +205,84 @@ export class TalentScene extends Phaser.Scene {
 
   private buildTalentRow(
     id: TalentId,
-    y: number,
+    top: number,
     accent: number,
     content: Phaser.GameObjects.Container,
-  ): void {
+  ): number {
     const talent = TALENTS.find((entry) => entry.id === id)!;
     const save = SaveSystem.load();
     const rank = save.talents[id] ?? 0;
     const u = this.cssUnit;
-    const left = 50 + 12 * u;
-    const right = GAME_WIDTH - left;
-    const top = y - 80 * u;
-    content.add(
-      createPanel(this, GAME_WIDTH / 2, y, GAME_WIDTH - 100, 160 * u, accent, {
-        alpha: 0.5,
-        radius: 14,
-      }),
-    );
-    content.add(
-      this.add
-        .text(
-          left,
-          top + 10 * u,
-          talent.name,
-          textStyle(14 * u, toCss(accent), { fontStyle: 'bold' }),
-        )
-        .setWordWrapWidth(right - left),
-    );
-    content.add(
-      this.add
-        .text(left, top + 36 * u, talent.description, textStyle(12 * u, Palette.inkDim))
-        .setWordWrapWidth(right - left),
-    );
-    content.add(
-      this.add.text(
+    const margin = InterfaceStyle.spacing * u;
+    const padding = InterfaceStyle.padding * u;
+    const left = margin + padding;
+    const width = GAME_WIDTH - margin * 2;
+    const innerWidth = width - padding * 2;
+    let y = top + padding;
+    const addText = (value: string, role: 'heading' | 'body' | 'tiny', color: string): void => {
+      const text = this.add.text(
         left,
-        top + 90 * u,
-        'RANG ' + rank + '/' + talent.maxRank,
-        textStyle(12 * u, Palette.ink, { fontStyle: 'bold' }),
-      ),
+        y,
+        value,
+        textStyle(uiFont(this, role), color, {
+          fontStyle: role === 'heading' ? 'bold' : 'normal',
+          wordWrap: { width: innerWidth, useAdvancedWrap: true },
+        }),
+      );
+      content.add(text);
+      y += text.height + 8 * u;
+    };
+    addText(talent.name, 'heading', Palette.gold);
+    addText(talent.description, 'body', Palette.ink);
+    addText('RANG ' + rank + '/' + talent.maxRank, 'tiny', Palette.inkDim);
+    addText(
+      rank >= talent.maxRank ? 'VOLL AUSGEBAUT' : `NÄCHSTER ${talent.perRank}`,
+      'tiny',
+      Palette.gold,
     );
-    content.add(
-      this.add
-        .text(
-          left,
-          top + 111 * u,
-          rank >= talent.maxRank ? 'VOLL AUSGEBAUT' : `NÄCHSTER ${talent.perRank}`,
-          textStyle(12 * u, Palette.gold),
-        )
-        .setWordWrapWidth(right - left - 104 * u),
-    );
+    const buttonY = y + 22 * u;
     for (let pip = 0; pip < talent.maxRank; pip += 1) {
       content.add(
         this.add
           .rectangle(
             left + (4 + pip * 11) * u,
-            top + 145 * u,
+            buttonY,
             8 * u,
             8 * u,
-            pip < rank ? Palette.goldHex : 0x66708c,
+            pip < rank ? Palette.goldHex : Palette.panelBorder,
           )
-          .setAlpha(pip < rank ? 1 : 0.34)
-          .setStrokeStyle(1, accent, 0.55),
+          .setAlpha(pip < rank ? 1 : 0.5),
       );
     }
     const purchaseButton = createButton(
       this,
-      right - 46 * u,
-      top + 126 * u,
+      GAME_WIDTH - left - 48 * u,
+      buttonY,
       rank >= talent.maxRank ? 'MAX' : '1 PUNKT',
       () => void this.purchase(id),
-      {
-        width: 92 * u,
-        height: 44 * u,
-        accent: rank >= talent.maxRank ? 0x778099 : accent,
-        fontSize: 12 * u,
-      },
+      { width: 96 * u, height: 44 * u, accent },
     );
     content.add(purchaseButton.container);
     purchaseButton.setEnabled(rank < talent.maxRank && save.talentPoints > 0);
+    const height = y + 44 * u + padding - top;
+    content.addAt(createPanel(this, GAME_WIDTH / 2, top + height / 2, width, height, accent), 0);
+    return height;
   }
 
   private buildGroupHeader(
     group: TalentDef['group'],
     y: number,
-    accent: number,
+    _accent: number,
     content: Phaser.GameObjects.Container,
   ): void {
-    const label = this.add
-      .text(58, y, group, textStyle(12 * this.cssUnit, toCss(accent), { fontStyle: 'bold' }))
-      .setOrigin(0, 0.5)
-      .setLetterSpacing(2);
-    const line = this.add.rectangle(232, y, 418, 2, accent, 0.62).setOrigin(0, 0.5);
-    content.add([label, line]);
+    content.add(
+      this.add.text(
+        InterfaceStyle.spacing * this.cssUnit,
+        y,
+        group,
+        textStyle(uiFont(this, 'heading'), Palette.gold, { fontStyle: 'bold' }),
+      ),
+    );
   }
 
   private async purchase(id: TalentId): Promise<void> {

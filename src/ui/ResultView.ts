@@ -2,7 +2,7 @@ import Phaser from 'phaser';
 import { UNLOCK_SHOWCASE } from '@/config/effectVisuals';
 import { GAME_HEIGHT, GAME_WIDTH } from '@/config/GameConfig';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
-import { Palette, textStyle } from '@/ui/theme';
+import { InterfaceStyle, Typography, Palette, textStyle } from '@/ui/theme';
 import { createBar, createButton, createPanel } from '@/ui/widgets';
 import type { ButtonHandle } from '@/ui/widgets';
 import { createUnlockVisual, spinInUnlock, type UnlockVisual } from '@/ui/unlockShowcase';
@@ -125,7 +125,7 @@ export class ResultView {
     this.drag = null;
     const canvas = this.scene.game.canvas.getBoundingClientRect();
     const unit = GAME_WIDTH / Math.max(1, canvas.width);
-    const margin = 16 * unit;
+    const margin = InterfaceStyle.spacing * unit;
     const width = GAME_WIDTH - margin * 2;
     const safeBottom = document.getElementById('safe-bottom')?.getBoundingClientRect().bottom;
     const inset = safeBottom === undefined ? 0 : Math.max(0, canvas.bottom - safeBottom) * unit;
@@ -166,7 +166,7 @@ export class ResultView {
         .setTint(this.content.heroShip.tint);
       this.root.add(ship);
     }
-    const score = addText(this.root, this.content.score, y, 42, Palette.ink, true);
+    const score = addText(this.root, this.content.score, y, Typography.title, Palette.ink, true);
     score.setWordWrapWidth(0);
     // Auch sehr grosse Punktzahlen bleiben innerhalb der festen Kopfbreite.
     // Der Massstab haengt am Endwert, nicht am gerade gezeigten: Sonst
@@ -206,24 +206,24 @@ export class ResultView {
       const card = this.scene.add.container(0, bodyY);
       this.body.add(card);
       const indent = section.visual ? visualSize + 12 * unit : 0;
-      let rowY = 12 * unit;
+      let rowY = InterfaceStyle.padding * unit;
       const title = addText(
         card,
         section.title,
         rowY,
-        14,
-        section.highlight ? Palette.gold : Palette.ink,
+        Typography.heading,
+        Palette.gold,
         true,
-        12 * unit,
+        InterfaceStyle.padding * unit,
         indent,
       );
       rowY += title.height + 8 * unit;
       if (section.progress !== undefined) {
         const bar = createBar(
           this.scene,
-          margin + 12 * unit,
+          margin + InterfaceStyle.padding * unit,
           rowY + 3 * unit,
-          width - 24 * unit,
+          width - InterfaceStyle.padding * 2 * unit,
           6 * unit,
           this.accent,
         );
@@ -232,10 +232,19 @@ export class ResultView {
         rowY += 18 * unit;
       }
       for (const line of section.lines) {
-        const text = addText(card, line, rowY, 14, Palette.inkDim, false, 12 * unit, indent);
+        const text = addText(
+          card,
+          line,
+          rowY,
+          14,
+          Palette.inkDim,
+          false,
+          InterfaceStyle.padding * unit,
+          indent,
+        );
         rowY += text.height + 7 * unit;
       }
-      rowY += 5 * unit;
+      rowY += 9 * unit;
       if (section.visual) rowY = Math.max(rowY, visualSize + 20 * unit);
       const panel = createPanel(
         this.scene,
@@ -249,16 +258,22 @@ export class ResultView {
       card.addAt(panel, 0);
       if (section.visual) {
         const visual = createUnlockVisual(this.scene, section.visual, visualSize);
-        visual.setPosition(margin + 12 * unit + visualSize / 2, rowY / 2);
+        visual.setPosition(margin + InterfaceStyle.padding * unit + visualSize / 2, rowY / 2);
         card.add(visual);
         if (!this.showcasePlayed) spinInUnlock(this.scene, visual, showcaseOrder);
         showcaseOrder += 1;
       }
-      bodyY += rowY + 10 * unit;
+      bodyY += rowY + InterfaceStyle.spacing * unit;
     }
     this.showcasePlayed = true;
-    this.maxScroll = Math.max(0, bodyY - 10 * unit - (this.bottom - this.top));
-    this.indicator = addText(this.root, '', this.bottom + 5 * unit, 11, Palette.inkDim);
+    this.maxScroll = Math.max(0, bodyY - InterfaceStyle.spacing * unit - (this.bottom - this.top));
+    this.indicator = addText(
+      this.root,
+      '',
+      this.bottom + 5 * unit,
+      Typography.tiny,
+      Palette.inkDim,
+    );
     this.setScroll(this.scroll);
     this.actions.forEach((action, index) => {
       const button = createButton(
@@ -270,7 +285,7 @@ export class ResultView {
         {
           width,
           height: 44 * unit,
-          fontSize: 16 * unit,
+          fontSize: Typography.button * unit,
           accent: index === 0 ? Palette.goldHex : this.accent,
           variant: index === 0 ? 'primary' : 'secondary',
         },

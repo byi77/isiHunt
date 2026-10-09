@@ -14,7 +14,15 @@
 import type Phaser from 'phaser';
 import { GAME_WIDTH } from '@/config/GameConfig';
 
-import { FONT_FAMILY, FontSize, InterfaceStyle, Palette, canvasUiPixels, toCss } from '@/ui/theme';
+import {
+  FONT_FAMILY,
+  uiUnit,
+  uiFont,
+  InterfaceStyle,
+  Palette,
+  canvasUiPixels,
+  toCss,
+} from '@/ui/theme';
 
 export interface TextInputHandle {
   element: Phaser.GameObjects.DOMElement;
@@ -87,7 +95,7 @@ export function createTextInput(
 
   Object.assign(input.style, {
     width: `${width}px`,
-    height: '72px',
+    height: `${InterfaceStyle.minTouchSize * uiUnit(scene)}px`,
     boxSizing: 'border-box',
     padding: '0 20px',
     background: toCss(Palette.buttonSurface),
@@ -95,7 +103,7 @@ export function createTextInput(
     borderRadius: `${canvasUiPixels(InterfaceStyle.buttonRadius, scene.game.canvas.getBoundingClientRect().width || GAME_WIDTH, GAME_WIDTH)}px`,
     color: Palette.ink,
     fontFamily: FONT_FAMILY,
-    fontSize: `${FontSize.body}px`,
+    fontSize: `${uiFont(scene, 'body')}px`,
     textAlign: 'center',
     outlineOffset: '2px',
     // Verhindert, dass iOS beim Fokussieren in das Feld hineinzoomt.

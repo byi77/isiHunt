@@ -1,5 +1,17 @@
 # Architektur — isiHunt
 
+## Bildschirmbasierte UI-Masse (09.10.2026)
+
+`Typography`, `uiUnit` und `uiFont` in `ui/theme.ts` definieren die gemeinsamen
+CSS-Schriftstufen und rechnen sie mit der gemessenen Canvas-Breite um.
+Erfolgs- und Sammlungsszenen bauen ihre Karten aus gemessenen Texthoehen;
+`ClipMask` und `attachVerticalScroll` begrenzen den sichtbaren Detailbereich,
+waehrend Tabs, Seitenwechsel und Zurueck ausserhalb der Liste bleiben.
+Talentkarten verwenden denselben gemessenen Stapel. Profil, Ergebnis und
+Hangar nutzen dieselbe Schriftabstufung und gemeinsame Innenabstaende.
+`accessibility:check` prueft die Mindestschrift und Canvas-/Button-Grenzen
+auf vier Bildschirmgroessen auch fuer Erfolge, Sammlung, Profil und Talente.
+
 ## Gemeinsame UI-Gestaltung (09.10.2026)
 
 `ui/theme.ts` ist die Quelle der Settings-basierten UI-Tokens. Beim Start

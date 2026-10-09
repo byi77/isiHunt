@@ -166,13 +166,10 @@
 }
 .isihunt-hangar .hangar-tile {
   flex: none;
-  /* 64px Breite traegt die Silhouette erkennbar und laesst auf einem
-     Hochformat-Handy rund vier Kacheln gleichzeitig sehen - genug, um
-     Nachbarn wahrzunehmen, ohne dass einzelne zu klein zum Treffen werden.
-     Die Gesamthoehe bleibt ueber der 44-px-Marke fuer Tippziele. */
-  width: 64px;
-  min-height: 88px;
-  padding: 6px 2px 4px;
+  /* Wider tiles keep names and ownership states readable. */
+  width: 96px;
+  min-height: 112px;
+  padding: 8px;
   display: grid;
   gap: 3px;
   justify-items: center;
@@ -195,15 +192,16 @@
   border-radius: 8px;
 }
 .isihunt-hangar .hangar-tile span {
-  font-size: 9px;
+  font-size: var(--ui-hint-size);
   line-height: 1.1;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
 }
 .isihunt-hangar .hangar-tile-state {
-  font-size: 9px;
+  font-size: var(--ui-hint-size);
   line-height: 1;
   color: var(--ui-ink);
 }
@@ -231,13 +229,13 @@
   opacity: 1;
 }
 .isihunt-hangar .hangar-name {
-  font-size: 17px;
+  font-size: var(--ui-heading-size);
   font-weight: bold;
   color: var(--ui-heading);
 }
 .isihunt-hangar .hangar-equipped-summary {
   color: var(--ui-muted);
-  font-size: 12px;
+  font-size: var(--ui-hint-size);
 }
 .isihunt-hangar .hangar-status {
   color: var(--ui-muted);
@@ -248,7 +246,7 @@
 }
 .isihunt-hangar .hangar-tools button {
   flex: 1;
-  font-size: 12px;
+  font-size: var(--ui-body-size);
 }
 .isihunt-hangar .hangar-photo-controls {
   display: grid;

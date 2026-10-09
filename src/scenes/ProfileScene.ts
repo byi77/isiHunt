@@ -32,7 +32,7 @@ import { clearPendingRewardRedemption, prepareRewardRedemption } from '@/systems
 import { shipHullTint } from '@/config/shop';
 import { formatPlayTime } from '@/ui/format';
 import { playerTextureForShape, shipDisplayScale, TextureKey } from '@/ui/textures';
-import { FontSize, Palette, textStyle, toCss } from '@/ui/theme';
+import { InterfaceStyle, Palette, textStyle, toCss, uiUnit, uiFont } from '@/ui/theme';
 import {
   attachVerticalScroll,
   createBackButton,
@@ -50,7 +50,7 @@ import { createTextInput } from '@/ui/textInput';
  * Abstand der Schiffsmitte ueber der Kartenmitte. Der Ring (PlayerHalo,
  * Radius ~66 bei Faktor 1,15) reichte bei 210 bis in die ZULETZT-Zeile.
  */
-const PROFILE_SHIP_OFFSET = 234;
+const PROFILE_SHIP_OFFSET = 170;
 
 export interface ProfileSceneData {
   firstStart?: boolean;
@@ -72,7 +72,10 @@ export class ProfileScene extends Phaser.Scene {
     const levelProgress = ProgressionSystem.getLevelProgress(save);
 
     createSceneBackdrop(this, world);
-    const layout = createMenuLayout();
+    const u = uiUnit(this);
+    const cardWidth = GAME_WIDTH - InterfaceStyle.spacing * 2 * u;
+    const innerWidth = cardWidth - InterfaceStyle.padding * 2 * u;
+    const layout = createMenuLayout(InterfaceStyle.spacing * u);
     if (!firstStart) createBackButton(this, () => this.scene.start(SceneKey.Menu));
 
     // Karten und Textinput bewegen sich gemeinsam; Kopfzeile und
@@ -90,13 +93,13 @@ export class ProfileScene extends Phaser.Scene {
     // Safe-Area-Kopfzeile. Diese Seite hatte früher eine zweite Überschrift
     // samt Sonderabstand; der zentrale Stapel verhindert das künftig.
     const sections = layout.sections;
-    const profileY = sections.next(700);
-    const statisticsY = statsVisible ? sections.next(220) : 0;
-    const collectionY = statsVisible ? sections.next(95) : 0;
-    const accountY = !firstStart ? sections.next(300) : 0;
+    const profileY = sections.next(456 * u);
+    const statisticsY = statsVisible ? sections.next(292 * u) : 0;
+    const collectionY = statsVisible ? sections.next(44 * u) : 0;
+    const accountY = !firstStart ? sections.next(280 * u) : 0;
 
     addContent(
-      createPanel(this, GAME_WIDTH / 2, profileY, GAME_WIDTH - 120, 700, world.accent, {
+      createPanel(this, GAME_WIDTH / 2, profileY, cardWidth, 456 * u, world.accent, {
         alpha: 0.62,
         radius: 20,
       }),
@@ -104,9 +107,9 @@ export class ProfileScene extends Phaser.Scene {
 
     addContent(
       this.add
-        .image(GAME_WIDTH / 2, profileY - PROFILE_SHIP_OFFSET, TextureKey.PlayerHalo)
+        .image(GAME_WIDTH / 2, profileY - PROFILE_SHIP_OFFSET * u, TextureKey.PlayerHalo)
         .setTint(world.accent)
-        .setScale(1.15)
+        .setScale(0.65 * u)
         .setAlpha(0.8),
     );
 
@@ -114,38 +117,43 @@ export class ProfileScene extends Phaser.Scene {
       this.add
         .image(
           GAME_WIDTH / 2,
-          profileY - PROFILE_SHIP_OFFSET,
+          profileY - PROFILE_SHIP_OFFSET * u,
           playerTextureForShape(save.shipShape),
         )
         .setTint(shipHullTint(save))
-        .setScale(0.82 * shipDisplayScale(playerTextureForShape(save.shipShape))),
+        .setScale(0.45 * u * shipDisplayScale(playerTextureForShape(save.shipShape))),
     );
 
     addContent(
       this.add
         .text(
           GAME_WIDTH / 2,
-          profileY - 151,
+          profileY - 126 * u,
           `ZULETZT: ${world.name}`,
-          textStyle(FontSize.tiny, Palette.inkDim),
+          textStyle(uiFont(this, 'tiny'), Palette.inkDim),
         )
         .setOrigin(0.5),
     );
 
     addContent(
       this.add
-        .text(GAME_WIDTH / 2, profileY + 26, 'DEIN NAME', textStyle(FontSize.tiny, Palette.inkDim))
+        .text(
+          GAME_WIDTH / 2,
+          profileY - 8 * u,
+          'DEIN NAME',
+          textStyle(uiFont(this, 'tiny'), Palette.inkDim),
+        )
         .setOrigin(0.5)
-        .setLetterSpacing(5),
+        .setLetterSpacing(1),
     );
 
     addContent(
       this.add
         .text(
           GAME_WIDTH / 2,
-          profileY + 48,
-          'NUR BUCHSTABEN UND ZAHLEN · MAX. 4 ZAHLEN',
-          textStyle(12, Palette.inkDim),
+          profileY + 18 * u,
+          'Buchstaben und Zahlen · max. 4 Zahlen',
+          textStyle(uiFont(this, 'tiny'), Palette.inkDim),
         )
         .setOrigin(0.5),
     );
@@ -154,9 +162,9 @@ export class ProfileScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          profileY - 110,
+          profileY - 104 * u,
           `LEVEL ${levelProgress.level}`,
-          textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
+          textStyle(uiFont(this, 'heading'), Palette.gold, { fontStyle: 'bold' }),
         )
         .setOrigin(0.5, 0.5)
         .setLetterSpacing(2),
@@ -166,9 +174,9 @@ export class ProfileScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          profileY - 73,
+          profileY - 80 * u,
           `BESTWERT ${save.bestScore.toLocaleString('de-DE')}`,
-          textStyle(FontSize.small, Palette.ink, { fontStyle: 'bold' }),
+          textStyle(uiFont(this, 'small'), Palette.ink, { fontStyle: 'bold' }),
         )
         .setOrigin(0.5, 0.5),
     );
@@ -177,9 +185,9 @@ export class ProfileScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          profileY - 40,
+          profileY - 56 * u,
           `COINS ${save.coins.toLocaleString('de-DE')}`,
-          textStyle(FontSize.small, Palette.ink),
+          textStyle(uiFont(this, 'small'), Palette.ink),
         )
         .setOrigin(0.5, 0.5),
     );
@@ -189,9 +197,9 @@ export class ProfileScene extends Phaser.Scene {
         this.add
           .text(
             GAME_WIDTH / 2,
-            profileY - 4,
+            profileY - 32 * u,
             SyncStatusSystem.dataSyncStatusLabel(),
-            textStyle(FontSize.tiny, Palette.inkDim, { fontStyle: 'bold' }),
+            textStyle(uiFont(this, 'tiny'), Palette.inkDim, { fontStyle: 'bold' }),
           )
           .setOrigin(0.5, 0.5)
           .setLetterSpacing(1),
@@ -200,7 +208,7 @@ export class ProfileScene extends Phaser.Scene {
 
     let saveButton: ButtonHandle | null = null;
     const status = this.add
-      .text(GAME_WIDTH / 2, profileY + 155, '', textStyle(FontSize.tiny, Palette.inkDim))
+      .text(GAME_WIDTH / 2, profileY + 105 * u, '', textStyle(uiFont(this, 'tiny'), Palette.inkDim))
       .setOrigin(0.5)
       .setWordWrapWidth(GAME_WIDTH - 160)
       .setAlign('center');
@@ -290,10 +298,10 @@ export class ProfileScene extends Phaser.Scene {
       this.scene.start(SceneKey.Menu);
     };
 
-    const input = createTextInput(this, GAME_WIDTH / 2, profileY + 100, {
+    const input = createTextInput(this, GAME_WIDTH / 2, profileY + 64 * u, {
       placeholder: 'Name eingeben',
       maxLength: PLAYER_NAME_MAX_LENGTH,
-      width: 420,
+      width: innerWidth,
       accent: world.accent,
       onSubmit: saveProfile,
     });
@@ -353,10 +361,10 @@ export class ProfileScene extends Phaser.Scene {
     saveButton = createButton(
       this,
       GAME_WIDTH / 2,
-      profileY + 300,
+      profileY + 196 * u,
       firstStart ? "LOS GEHT'S" : 'SPEICHERN',
       saveProfile,
-      { width: 440, accent: world.accent, fontSize: FontSize.large },
+      { width: innerWidth, height: 44 * u, accent: world.accent, fontSize: uiFont(this, 'button') },
     );
     addContent(saveButton.container);
     updateButton();
@@ -375,24 +383,24 @@ export class ProfileScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          profileY + 200,
+          profileY + 145 * u,
           levelProgress.xpNeeded === 0
             ? `Level ${levelProgress.level}  ·  MAX LEVEL`
             : `Level ${levelProgress.level}  ·  ${levelProgress.xpInLevel} / ${levelProgress.xpNeeded} XP`,
-          textStyle(FontSize.tiny, Palette.inkDim),
+          textStyle(uiFont(this, 'tiny'), Palette.inkDim),
         )
         .setOrigin(0.5),
     );
 
     // Der XP-Stand war nur eine blasse Textzeile ueber einer leeren Flaeche.
     // Derselbe Balken wie im Ergebnis macht ihn zum eigenen Block.
-    const xpBarWidth = 420;
+    const xpBarWidth = innerWidth;
     const xpBar = createBar(
       this,
       GAME_WIDTH / 2 - xpBarWidth / 2,
-      profileY + 222,
+      profileY + 166 * u,
       xpBarWidth,
-      8,
+      6 * u,
       world.accent,
     );
     xpBar.setRatio(levelProgress.xpNeeded === 0 ? 1 : levelProgress.ratio);
@@ -413,7 +421,7 @@ export class ProfileScene extends Phaser.Scene {
       ] as const;
 
       addContent(
-        createPanel(this, GAME_WIDTH / 2, statisticsY, GAME_WIDTH - 120, 220, world.accent, {
+        createPanel(this, GAME_WIDTH / 2, statisticsY, cardWidth, 292 * u, world.accent, {
           alpha: 0.52,
           radius: 18,
         }),
@@ -422,27 +430,39 @@ export class ProfileScene extends Phaser.Scene {
         this.add
           .text(
             GAME_WIDTH / 2,
-            statisticsY - 93,
+            statisticsY - 130 * u,
             'STATISTIKEN',
-            textStyle(FontSize.tiny, Palette.inkDim),
+            textStyle(uiFont(this, 'heading'), Palette.gold),
           )
           .setOrigin(0.5)
-          .setLetterSpacing(4),
+          .setLetterSpacing(1),
       );
 
       statistics.forEach(([label, value], index) => {
         const column = index % 2;
         const row = Math.floor(index / 2);
-        const x = column === 0 ? 105 : 405;
-        const y = statisticsY - 60 + row * 43;
+        const x =
+          (InterfaceStyle.spacing + InterfaceStyle.padding) * u +
+          (column * (innerWidth + InterfaceStyle.padding * u)) / 2;
+        const y = statisticsY - 94 * u + row * 58 * u;
         addContent(
           this.add
-            .text(x, y, label, textStyle(14, Palette.inkDim, { fontStyle: 'bold' }))
+            .text(
+              x,
+              y,
+              label,
+              textStyle(uiFont(this, 'tiny'), Palette.inkDim, { fontStyle: 'bold' }),
+            )
             .setOrigin(0, 0.5),
         );
         addContent(
           this.add
-            .text(x, y + 19, value, textStyle(FontSize.small, Palette.ink, { fontStyle: 'bold' }))
+            .text(
+              x,
+              y + 30 * u,
+              value,
+              textStyle(uiFont(this, 'small'), Palette.ink, { fontStyle: 'bold' }),
+            )
             .setOrigin(0, 0.5),
         );
       });
@@ -456,13 +476,18 @@ export class ProfileScene extends Phaser.Scene {
           collectionY,
           'SAMMLUNG ANSEHEN',
           () => this.scene.start(SceneKey.Collection),
-          { width: GAME_WIDTH - 120, height: 80, accent: world.accent, fontSize: FontSize.small },
+          {
+            width: cardWidth,
+            height: 44 * u,
+            accent: world.accent,
+            fontSize: uiFont(this, 'small'),
+          },
         ).container,
       );
     }
 
     if (!firstStart) this.buildAccountSection(world.accent, accountY, addContent);
-    const contentBottom = (!firstStart ? accountY + 150 : profileY + 310) + 40;
+    const contentBottom = (!firstStart ? accountY + 140 * u : profileY + 228 * u) + 16 * u;
     const maxScroll = Math.max(0, contentBottom - layout.contentBottom);
     attachVerticalScroll(this, {
       maxScroll,
@@ -483,8 +508,11 @@ export class ProfileScene extends Phaser.Scene {
     accountY: number,
     addContent: (object: Phaser.GameObjects.GameObject) => void,
   ): void {
+    const u = uiUnit(this);
+    const cardWidth = GAME_WIDTH - InterfaceStyle.spacing * 2 * u;
+    const innerWidth = cardWidth - InterfaceStyle.padding * 2 * u;
     addContent(
-      createPanel(this, GAME_WIDTH / 2, accountY, GAME_WIDTH - 120, 300, accent, {
+      createPanel(this, GAME_WIDTH / 2, accountY, cardWidth, 280 * u, accent, {
         alpha: 0.58,
         radius: 20,
       }),
@@ -494,16 +522,16 @@ export class ProfileScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          accountY - 105,
+          accountY - 116 * u,
           'PROFIL & GERÄTE',
-          textStyle(FontSize.body, Palette.gold),
+          textStyle(uiFont(this, 'heading'), Palette.gold),
         )
         .setOrigin(0.5)
         .setLetterSpacing(2),
     );
 
     this.accountStatus = this.add
-      .text(GAME_WIDTH / 2, accountY + 110, '', textStyle(FontSize.tiny, Palette.inkDim))
+      .text(GAME_WIDTH / 2, accountY + 100 * u, '', textStyle(uiFont(this, 'tiny'), Palette.inkDim))
       .setOrigin(0.5)
       .setWordWrapWidth(GAME_WIDTH - 160)
       .setAlign('center');
@@ -513,26 +541,31 @@ export class ProfileScene extends Phaser.Scene {
       const alias = AuthSystem.currentAlias() ?? 'angemeldetes Profil';
       addContent(
         this.add
-          .text(GAME_WIDTH / 2, accountY - 55, alias, textStyle(FontSize.small, Palette.ink))
+          .text(
+            GAME_WIDTH / 2,
+            accountY - 76 * u,
+            alias,
+            textStyle(uiFont(this, 'small'), Palette.ink),
+          )
           .setOrigin(0.5),
       );
 
       const sync = createButton(
         this,
         GAME_WIDTH / 2,
-        accountY + 5,
+        accountY - 22 * u,
         'PROFIL ABGLEICHEN',
         () => void this.syncAccount(),
-        { width: 440, height: 66, accent, fontSize: FontSize.small },
+        { width: innerWidth, height: 44 * u, accent, fontSize: uiFont(this, 'small') },
       );
       addContent(sync.container);
       const signOut = createButton(
         this,
         GAME_WIDTH / 2,
-        accountY + 70,
+        accountY + 36 * u,
         'ABMELDEN',
         () => void this.signOutAccount(),
-        { width: 360, height: 58, accent: 0x9aa3bd, fontSize: FontSize.tiny },
+        { width: innerWidth, height: 44 * u, accent: 0x9aa3bd, fontSize: uiFont(this, 'tiny') },
       );
       addContent(signOut.container);
 
@@ -544,21 +577,22 @@ export class ProfileScene extends Phaser.Scene {
         this.add
           .text(
             GAME_WIDTH / 2,
-            accountY - 45,
+            accountY - 54 * u,
             'Melde dich auf iPhone und iPad mit demselben Profil an.\nDein Fortschritt wird sicher in deinem Online-Profil gespeichert.',
-            textStyle(FontSize.small, Palette.ink),
+            textStyle(uiFont(this, 'small'), Palette.ink),
           )
           .setOrigin(0.5)
-          .setAlign('center'),
+          .setAlign('center')
+          .setWordWrapWidth(innerWidth),
       );
 
       const accountButton = createButton(
         this,
         GAME_WIDTH / 2,
-        accountY + 40,
+        accountY + 44 * u,
         'ANMELDEN / PROFIL ANLEGEN',
         () => this.scene.start(SceneKey.Account),
-        { width: 460, height: 70, accent, fontSize: FontSize.small },
+        { width: innerWidth, height: 44 * u, accent, fontSize: uiFont(this, 'small') },
       );
       addContent(accountButton.container);
 
@@ -583,12 +617,17 @@ export class ProfileScene extends Phaser.Scene {
     );
     addContent(
       this.add
-        .text(GAME_WIDTH / 2, y - 125, 'BELOHNUNGSCODE', textStyle(FontSize.body, Palette.gold))
+        .text(
+          GAME_WIDTH / 2,
+          y - 125,
+          'BELOHNUNGSCODE',
+          textStyle(uiFont(this, 'body'), Palette.gold),
+        )
         .setOrigin(0.5)
         .setLetterSpacing(2),
     );
     const status = this.add
-      .text(GAME_WIDTH / 2, y + 125, '', textStyle(FontSize.tiny, Palette.inkDim))
+      .text(GAME_WIDTH / 2, y + 125, '', textStyle(uiFont(this, 'tiny'), Palette.inkDim))
       .setOrigin(0.5)
       .setWordWrapWidth(GAME_WIDTH - 160)
       .setAlign('center');
@@ -664,7 +703,7 @@ export class ProfileScene extends Phaser.Scene {
         width: 420,
         height: 58,
         accent,
-        fontSize: FontSize.small,
+        fontSize: uiFont(this, 'small'),
       },
     );
     controls.redeemButton = redeemButton;

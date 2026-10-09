@@ -9,6 +9,10 @@ using [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed — readable interface sizing
+
+- Standardize screen-sized headings, body text, controls and metadata. Reflow achievement, collection, talent and profile cards around readable text; enlarge hangar labels and retain fixed navigation.
+
 ### Changed — unified interface
 
 - Use the settings visual style across menus, hangar, achievements, results, dialogs and gameplay HUD: shared system typography, dark cards, world-colored borders and flat buttons.

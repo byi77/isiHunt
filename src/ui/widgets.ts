@@ -27,7 +27,16 @@ import {
 import type { WorldDef } from '@/config/worlds';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
-import { canvasUiPixels, InterfaceStyle, FontSize, Palette, textStyle, toCss } from '@/ui/theme';
+import {
+  canvasUiPixels,
+  InterfaceStyle,
+  FontSize,
+  uiFont,
+  uiUnit,
+  Palette,
+  textStyle,
+  toCss,
+} from '@/ui/theme';
 import * as SoundSystem from '@/systems/SoundSystem';
 import { ensureTouchTarget, prefersReducedMotion } from '@/systems/AccessibilitySystem';
 import { createSpatialPlanet } from '@/ui/spatialPlanet';
@@ -154,7 +163,10 @@ export function createButton(
   options: {
     width?: number;
     height?: number;
+    /** Optional visual wrapping; the full accessible name stays unchanged. */
+    displayLabel?: string;
     accent?: number;
+    /** Legacy hint; buttons use the shared action or navigation text size. */
     fontSize?: number;
     /**
      * `ghost`: rahmenlose Kachel fuer Nebenziele, Symbol ueber kleiner
@@ -231,8 +243,8 @@ export function createButton(
     .text(
       iconReserve / 2,
       ghost ? height * GHOST_BUTTON_VISUALS.labelOffset : 0,
-      label,
-      textStyle(options.fontSize ?? FontSize.body, primary ? Palette.gold : Palette.ink, {
+      options.displayLabel ?? label,
+      textStyle(uiFont(scene, ghost ? 'tiny' : 'button'), primary ? Palette.gold : Palette.ink, {
         fontStyle: primary ? 'bold' : 'normal',
       }),
     )
@@ -259,11 +271,11 @@ export function createButton(
 
   // Keep geometry fixed while pressed so edge taps remain inside the target.
   const fitLabel = (): void => {
-    const requested = options.fontSize ?? FontSize.body;
+    const requested = uiFont(scene, ghost ? 'tiny' : 'button');
     text.setFontSize(requested);
     // Die Ghost-Kachel hat keinen Rahmen, den die Schrift freihalten muesste.
-    const room = width - (ghost ? GHOST_BUTTON_VISUALS.labelPadding : 24) - iconReserve;
-    if (text.width > room) text.setFontSize(Math.floor((requested * room) / text.width));
+    const room = width - (ghost ? 1 : 16) * uiUnit(scene) - iconReserve;
+    text.setWordWrapWidth(room, true).setAlign('center');
   };
   fitLabel();
   const visuals = scene.add.container(0, 0, glyph ? [bg, glyph, text] : [bg, text]);
@@ -405,31 +417,16 @@ export function createBackButton(
   zone.fillStyle(worldBottom, alpha);
   zone.fillRect(0, zoneTop + fade, GAME_WIDTH, BACK_BUTTON_RESERVED_HEIGHT - fade);
 
+  const u = uiUnit(scene);
   const button = createButton(
     scene,
-    BACK_BUTTON_X,
+    68 * u,
     GAME_HEIGHT - BACK_BUTTON_BOTTOM_OFFSET,
     options.label ?? 'ZURÜCK',
     onClick,
-    {
-      width: 196,
-      height: 60,
-      accent: worldAccent,
-      fontSize: FontSize.tiny,
-      sound: 'back',
-    },
+    { width: 112 * u, height: 44 * u, accent: worldAccent, sound: 'back', icon: 'back' },
   );
   button.container.setScrollFactor(0).setDepth(Depth.Overlay + 1);
-  createSceneIcon(
-    scene,
-    'back',
-    BACK_BUTTON_X - 68,
-    GAME_HEIGHT - BACK_BUTTON_BOTTOM_OFFSET,
-    24,
-    Palette.inkDimHex,
-  )
-    .setScrollFactor(0)
-    .setDepth(Depth.Overlay + 2);
   return button;
 }
 
@@ -455,7 +452,7 @@ export function createBackStatusText(scene: Phaser.Scene, initial = ''): Phaser.
       GAME_WIDTH - 54,
       GAME_HEIGHT - BACK_BUTTON_BOTTOM_OFFSET,
       initial,
-      textStyle(FontSize.tiny, Palette.inkDim),
+      textStyle(uiFont(scene, 'tiny'), Palette.inkDim),
     )
     .setOrigin(1, 0.5)
     .setWordWrapWidth(GAME_WIDTH - 300)

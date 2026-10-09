@@ -378,3 +378,5 @@ sind in `TODO.md` gelistet und blockieren M4.1/M6/M7 nicht.
 ## Einheitliche Settings-Gestaltung (09.10.2026)
 
 - [x] Gemeinsame Settings-basierte Tokens fuer DOM und Phaser; flache Buttons, Karten, Typografie, Hangar und Gameplay-HUD angleichen.
+
+- [x] Schriftstufen in Bildschirm-Pixeln vereinheitlichen; Boxen und Karten an lesbare, umgebrochene Texte anpassen.

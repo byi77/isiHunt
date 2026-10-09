@@ -206,6 +206,66 @@ try {
     console.log(
       `Accessibility ${viewport.width}x${viewport.height}: fonts, targets, Enter/Space, scrolling, cleanup OK`,
     );
+    for (const [key, data] of [
+      ['Menu', {}],
+      ['Achievements', {}],
+      ['Collection', {}],
+      ['Collection', { tab: 'worlds' }],
+      ['Profile', {}],
+      ['Talents', {}],
+    ]) {
+      await page.evaluate(
+        ({ key, data }) => {
+          const game = window.isiHunt;
+          for (const scene of game.scene.getScenes(true)) game.scene.stop(scene.scene.key);
+          game.scene.start(key, data);
+        },
+        { key, data },
+      );
+      await page.waitForFunction((key) => window.isiHunt.scene.isActive(key), key);
+      await page.waitForTimeout(300);
+      const violations = await page.evaluate((key) => {
+        const scene = window.isiHunt.scene.getScene(key);
+        const scale = scene.game.canvas.getBoundingClientRect().width / 720;
+        const all = [];
+        const visit = (object) => {
+          all.push(object);
+          for (const child of object.list ?? []) visit(child);
+        };
+        for (const object of scene.children.list) visit(object);
+        const errors = [];
+        for (const text of all.filter((object) => object.type === 'Text' && object.text)) {
+          const font = parseFloat(text.style.fontSize) * scale;
+          const bounds = text.getBounds();
+          if (font < 11.9) errors.push(`${text.text}: ${font.toFixed(1)} px`);
+          if (bounds.left < -1 || bounds.right > 721) errors.push(`${text.text}: outside canvas`);
+          const button = text.parentContainer?.parentContainer;
+          const size = button?.getData('uiButton');
+          if (size) {
+            const matrix = button.getWorldTransformMatrix();
+            const topLeft = matrix.transformPoint(-size.width / 2, -size.height / 2);
+            const bottomRight = matrix.transformPoint(size.width / 2, size.height / 2);
+            if (
+              bounds.left < topLeft.x - 1 ||
+              bounds.right > bottomRight.x + 1 ||
+              bounds.top < topLeft.y - 1 ||
+              bounds.bottom > bottomRight.y + 1
+            ) {
+              errors.push(`${text.text}: outside button`);
+            }
+          }
+        }
+        return errors;
+      }, key);
+      assert(violations.length === 0, `${key} ${viewport.width}: ${violations.join(' | ')}`);
+      await page.screenshot({
+        path: resolve(
+          output,
+          `${key.toLowerCase()}-${data.tab ?? 'default'}-${viewport.width}.png`,
+        ),
+      });
+    }
+    console.log(`Interface sizing ${viewport.width}: readable fonts and contained labels OK`);
     await page.close();
   }
 } finally {

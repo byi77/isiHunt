@@ -1,3 +1,5 @@
+import { GAME_WIDTH } from '@/config/GameConfig';
+
 /**
  * Visuelle Konstanten der Oberflaeche.
  *
@@ -132,4 +134,27 @@ export function installUiTheme(root: HTMLElement): void {
     padding: `${InterfaceStyle.padding}px`,
   };
   for (const [name, value] of Object.entries(tokens)) root.style.setProperty(`--ui-${name}`, value);
+}
+
+export const Typography = {
+  title: 32,
+  heading: InterfaceStyle.headingSize,
+  large: 24,
+  body: InterfaceStyle.bodySize,
+  small: InterfaceStyle.bodySize,
+  tiny: InterfaceStyle.hintSize,
+  button: InterfaceStyle.bodySize,
+} as const;
+
+export function uiUnit(scene: { game: { canvas: HTMLCanvasElement } }): number {
+  const width = scene.game.canvas.getBoundingClientRect().width;
+  if (!(width > 0)) throw new Error('UI sizing requires a visible canvas');
+  return GAME_WIDTH / width;
+}
+
+export function uiFont(
+  scene: { game: { canvas: HTMLCanvasElement } },
+  role: keyof typeof Typography,
+): number {
+  return Typography[role] * uiUnit(scene);
 }

@@ -312,7 +312,7 @@ export class MenuView {
         (labelLeft + labelRight) / 2,
         headerHeight / 2,
         'JAGE DAS LICHT',
-        10,
+        12,
         labelRight - labelLeft,
         Palette.inkDim,
         true,
@@ -360,9 +360,7 @@ export class MenuView {
       y,
       innerWidth,
       height,
-      // Kurz halten: `createButton` verkleinert die Schrift, sobald der Text
-      // breiter wird als der Knopf - ein langer Hinweis endet also kleiner
-      // gesetzt als der alte, den niemand gesehen hat.
+      // Keep the update action short enough for the shared button typography.
       `UPDATE ${this.updateVersion} LADEN`,
       () => this.callbacks.onAction('update'),
       19,
@@ -638,7 +636,9 @@ export class MenuView {
         {
           width: tabWidth,
           height: navHeight,
-          fontSize: this.layout.font(11),
+          displayLabel:
+            label === 'Rangliste' ? 'Rang-\nliste' : label === 'Optionen' ? 'Optio-\nnen' : label,
+          fontSize: this.layout.font(12),
           variant: 'ghost',
           icon,
         },
