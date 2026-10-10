@@ -13,6 +13,7 @@ import { DISTORTION, LIVING_NEBULA as N } from '@/config/postFx';
 import { createStarDust } from './starDust';
 import * as EffectsQualitySystem from '@/systems/EffectsQualitySystem';
 import { createWorldEtching } from './worldEtching';
+import { createPlayfieldStars } from './playfieldStars';
 
 function hash(x: number, y: number, seed: number): number {
   const value = Math.sin(x * 127.1 + y * 311.7 + seed * 74.7) * 43758.5453;
@@ -89,7 +90,7 @@ function nebulaTexture(scene: Phaser.Scene, variant: number): string {
 /** Eigene Run-Kulisse: alle Ebenen bleiben hinter Relikten und Hindernissen. */
 export class GameBackdrop {
   private readonly root: Phaser.GameObjects.Container;
-  private readonly stars: Phaser.GameObjects.Graphics[] = [];
+  private readonly stars: Phaser.GameObjects.Container[];
   private readonly nebula: Phaser.GameObjects.Image;
   private readonly atmosphere: WorldAtmosphere;
   private readonly planet: Phaser.GameObjects.Container;
@@ -149,23 +150,8 @@ export class GameBackdrop {
       this.root.add(this.livingNebula);
     }
 
-    for (let layer = 0; layer < V.starCounts.length; layer++) {
-      const stars = scene.add.graphics();
-      for (let i = 0; i < V.starCounts[layer]!; i++) {
-        const x = hash(i, layer, world.spaceVariant) * (width + 48) - 24;
-        const y = hash(layer, i + 19, world.spaceVariant) * (height + 48) - 24;
-        const brightness = 0.45 + hash(i, 31, layer) * 0.55;
-        stars.fillStyle(mood.starTint, V.starAlpha[layer]! * brightness);
-        stars.fillCircle(x, y, V.starRadius[layer]!);
-        if (layer === 2 && i % 5 === 0) {
-          stars.lineStyle(0.7, mood.starTint, 0.12);
-          stars.lineBetween(x - 3, y, x + 3, y);
-          stars.lineBetween(x, y - 3, x, y + 3);
-        }
-      }
-      this.stars.push(stars);
-      this.root.add(stars);
-    }
+    this.stars = createPlayfieldStars(scene, width, height, world.spaceVariant, mood.starTint);
+    this.root.add(this.stars);
     if (EffectsQualitySystem.isFull()) {
       this.starDust = createStarDust(scene, width, height, mood.starTint, world.spaceVariant);
       this.root.add(this.starDust);

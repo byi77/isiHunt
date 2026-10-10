@@ -22,6 +22,7 @@ it('caps burst allocations, expires quiet effects, and releases its mask', () =>
   const graphics = vi.fn(graphic);
   const madeGraphics = vi.fn(graphic);
   const scene = {
+    events: { on: vi.fn(), off: vi.fn() },
     game: { canvas: { getBoundingClientRect: () => ({ width: 390 }) } },
     make: { graphics: madeGraphics },
     add: {
@@ -88,6 +89,7 @@ it('laesst eine gefangene Punktzahl wachsen und dabei verwehen', async () => {
   // Der Zustand, auf den es ankommt: Groesse, Deckkraft und Hoehe je Frame.
   const zustand = { scale: 1, alpha: 1, y: 0 };
   const scene = {
+    events: { on: vi.fn(), off: vi.fn() },
     game: { canvas: { getBoundingClientRect: () => ({ width: 390 }) } },
     make: { graphics: vi.fn(graphic) },
     add: {

@@ -35,4 +35,19 @@ describe('AccessibilitySystem', () => {
   it('macht Seltenheit auch ohne Farbe lesbar', () => {
     expect(accessibleRarityLabel('legendary', 'Legendär')).toBe('★ Legendär');
   });
+
+  it('reuses media queries and reads subsequent preference changes', () => {
+    const motion = { matches: false };
+    const query = vi.fn(() => motion);
+    vi.stubGlobal('matchMedia', query);
+    expect(prefersReducedMotion()).toBe(false);
+    motion.matches = true;
+    expect(prefersReducedMotion()).toBe(true);
+    expect(motionDuration(420)).toBe(0);
+    expect(query).toHaveBeenCalledTimes(1);
+    const replacement = vi.fn(() => ({ matches: false }));
+    vi.stubGlobal('matchMedia', replacement);
+    expect(prefersReducedMotion()).toBe(false);
+    expect(replacement).toHaveBeenCalledTimes(1);
+  });
 });

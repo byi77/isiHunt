@@ -69,7 +69,7 @@ export class CollectionEffects {
   ) {
     // Live targets and hazards always draw over the decoration.
     this.graphics = scene.add.graphics().setDepth(Depth.Collectible - 1);
-    this.clip = new ClipMask(scene, this.graphics);
+    this.clip = new ClipMask(scene, this.graphics, true);
   }
 
   add(origin: Point, rarity: RarityDef, points: number, crit = false): void {

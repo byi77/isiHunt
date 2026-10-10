@@ -7,6 +7,7 @@ export const PLAYFIELD_VISUALS = {
   starCounts: [95, 48, 18],
   starAlpha: [0.22, 0.36, 0.52],
   starRadius: [0.65, 0.95, 1.35],
+  starTextureSize: 8,
   parallax: [3, 7, 13],
   driftPeriodMs: 95_000,
   nebulaAlpha: 0.68,

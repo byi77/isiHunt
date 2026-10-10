@@ -1261,7 +1261,13 @@ async function suiteNavigation() {
 
       status(`Navigation: Menue -> ${label}`);
       const buttons = await collectInteractive(page, 'Menu');
-      const treffer = buttons.find((b) => b.label.toUpperCase().startsWith(label));
+      // Zweizeilige Menue-Labels wie "Optio-\nnen" behalten ihren Wortlaut.
+      const treffer = buttons.find((b) =>
+        b.label
+          .replace(/-\s*\n\s*/g, '')
+          .toUpperCase()
+          .startsWith(label),
+      );
       if (!treffer) {
         // Die vorhandenen Beschriftungen mitgeben: Bei einer Umbenennung
         // steht die Ursache dann direkt im Fehlschlag, statt eine

@@ -1906,7 +1906,6 @@ Ein Probelauf mit 4.2.1 in einer getrennten Arbeitskopie ergab:
 - **Nicht gemessen:** die Grafiklast auf echten Handys. Der Bildraten-
   Waechter arbeitet mit einer vorlaeufigen Schwelle (ROADMAP).
 
-
 ## ADR-0036: Audit-Fixes und belastbare Messungen (09.10.2026)
 
 Status: angenommen durch den Auftrag, alle Audit-Findings zu beheben und auszuliefern.
@@ -1918,7 +1917,6 @@ Raw-Delta dient der Messung, Phaser-Delta weiterhin der Simulation. Hintergrunde
 Die UI nutzt native Semantik fuer Canvas-Buttons und CSS-basierte Typografie fuer modernisierte Unterseiten. Render-Messungen fuer Welten, Effektstufen und 3D laufen getrennt vom schnellen Integrations-Gate. Zielgeraete bleiben eine gesonderte Abnahme.
 
 Die Render-Matrix misst 2D-Jagd und die echte 3D-Hangarvorschau separat: Im Spiel selbst wird auch fuer 3D-Schiffe bewusst die transparente 2D-Textur verwendet. 3D-Messungen pruefen deshalb das geladene Modell im Hangar, nicht einen vermeintlichen 3D-Renderer in der Jagd.
-
 
 ## ADR-0037 — Settings als gemeinsame UI-Vorlage (09.10.2026)
 
@@ -1936,7 +1934,6 @@ plastisch. Semantische Zustandsfarben bleiben erkennbar; Hauptaktionen
 verwenden gelbliche Schrift und Kontur statt einer deckenden Goldflaeche.
 Der native Browsercheck vergleicht die tatsaechlichen Styles von Settings
 und Hangar und prueft weiterhin Tastaturbedienung und DOM-Aufraeumen.
-
 
 ## ADR-0038 — Lesbare Schrift und gemessene Karten (09.10.2026)
 
@@ -1956,3 +1953,19 @@ weniger Eintraege gleichzeitig, erhaelt aber lesbare Beschreibungen. Tabs,
 Seitennavigation und Zurueck bleiben ausserhalb der maskierten Listen fest.
 Profil und Ergebnis reservieren passende Innenabstaende fuer diese Stufen.
 Der Browsercheck prueft Schriftminimum und Textgrenzen auf vier Formaten.
+
+## ADR-0039 — Bestaetigte Gameplay-Renderkosten reduzieren (10.10.2026)
+
+Status: angenommen durch den Benutzerauftrag, die Performance-Probleme zu beheben.
+
+Statische Sterngeometrie wird durch kleine wiederverwendete Texturen und
+GPU-Sprite-Puffer ersetzt. Anzahl, Position, Farbe und Parallaxe bleiben
+erhalten. Masken-Caching gilt explizit nur fuer den ortsfesten Fang-Ausschnitt;
+bewegte UI-Masken bleiben dynamisch. Kameraeffekte und Resize invalidieren
+auch den gecachten Ausschnitt.
+
+Die automatische Effektabsenkung ersetzt abweichend von ADR-0035 die schwere
+Kulissen- und Kameradekoration bereits im laufenden Run. Spiellogik und
+Simulationszeit bleiben bestehen. Die Schwellen werden ohne echte
+Geraetemessung nicht neu festgelegt; Desktop-Messungen sind keine Zusage
+einer bestimmten Bildrate auf dem iPhone.

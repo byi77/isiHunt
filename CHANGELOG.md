@@ -9,6 +9,14 @@ using [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed — gameplay rendering overhead (2026-10-10)
+
+- Redraw timer text only when its value or warning color changes.
+- Render static starfields from tiny shared textures and GPU sprite buffers instead of rebuilding circle geometry every frame.
+- Cache the stationary collection mask while refreshing it for camera effects and render-size changes; preserve automatic updates for scrolling UI masks.
+- Apply automatic backdrop and camera effect reductions during the current run without restarting gameplay.
+- Reuse media query objects while retaining live accessibility preference changes.
+
 ### Changed — readable interface sizing
 
 - Standardize screen-sized headings, body text, controls and metadata. Reflow achievement, collection, talent and profile cards around readable text; enlarge hangar labels and retain fixed navigation.

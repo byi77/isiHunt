@@ -1,5 +1,37 @@
 # Architektur — isiHunt
 
+## Gameplay-Performance-Fixes (10.10.2026)
+
+Der HUD-Timer setzt seine Textfarbe nur bei einem Farbwechsel. Statische
+Sternpunkte der Run-Kulisse werden aus vier kleinen weissen Texturen in
+`SpriteGPULayer`-Puffern aufgebaut; Parallaxe bewegt weiterhin drei Container.
+Damit entfaellt das erneute Zerlegen der statischen Sternkreise pro Frame.
+`ui/playfieldStars.ts` kapselt diese Darstellung; Groessen und Sternzahlen
+stehen in `config/playfieldVisuals.ts`.
+
+`ClipMask` bietet fuer den ortsfesten Fang-Ausschnitt einen expliziten Cache.
+Gleiche Rechtecke zeichnen nicht erneut; Kameraaenderungen, laufende
+Kameraeffekte und geaenderte Rendergroessen invalidieren die Maskentextur.
+Andere, insbesondere scrollende UI-Masken behalten automatische Updates.
+Ein Render-Listener der gecachten Maske wird beim Zerstoeren abgemeldet.
+
+Automatische Effektabsenkung baut die dekorative Kulisse und Kameraeffekte
+sofort auf der gespeicherten niedrigeren Stufe neu auf. Spielzustand,
+Restzeit, Relikte, Figur und Wertung werden dabei nicht neu gestartet.
+Bereits vorhandene kleine Relikt-/Schiffsfilter bleiben bis zu ihrem normalen
+Lebensende bestehen; die schweren Kulissen- und Kameraeffekte werden sofort
+ersetzt. Die bestehenden Messschwellen bleiben unveraendert.
+
+Accessibility-Abfragen teilen je Query ein MediaQueryList-Objekt und lesen
+dessen aktuellen `matches`-Wert. Ein Wechsel der nativen matchMedia-Funktion
+invalidiert den Cache; es entstehen keine zusaetzlichen OS-Listener.
+
+`npm run performance:gameplay` prueft mit echter Render-Schleife Timer-
+Rasterungen, Maskenruhe und Kamera-Shake, live geaenderte Motion-Praeferenzen,
+die unveraenderten Sternzahlen und das sofortige Herabstufen ohne Run-Neustart.
+Der Check gehoert zu `release:check`; Frame-Budgets auf dem echten iPhone
+bleiben eine gesonderte Abnahme.
+
 ## Bildschirmbasierte UI-Masse (09.10.2026)
 
 `Typography`, `uiUnit` und `uiFont` in `ui/theme.ts` definieren die gemeinsamen
@@ -94,7 +126,8 @@ und `full` (Standard) plus `effectsQualityAutoLowered` im Spielstand.
 `systems/FrameRateGuard.ts` ist reine Rechnung ohne Phaser: `GameScene`
 fuettert je Frame das `delta` ein; nach der Aufwaermzeit und zwei langsamen
 Median-Fenstern in Folge senkt `lowerAutomatically()` die Stufe um eins,
-wirksam ab der naechsten Szene. Werte in `config/effectQuality.ts`.
+seit ADR-0039 fuer schwere Kulissen- und Kameraeffekte schon im laufenden Run.
+Werte in `config/effectQuality.ts`.
 
 **Effekte der vollen Stufe**, alle Werte in `config/postFx.ts`:
 
@@ -1934,7 +1967,6 @@ Ehrlich benannt, damit sie nicht ueberrascht:
 | HUD-Layout nutzt 720×variable Portraithoehe         | nie (FIT skaliert)                                  | —                                                                                                                                                                                                                                                                                                                                           |
 | **Bestenliste ist manipulierbar**                   | sobald sie oeffentlich beworben wird                | Runs serverseitig nachrechnen (ADR-0011)                                                                                                                                                                                                                                                                                                    |
 | Sync ueberschreibt, statt zusammenzufuehren         | wenn auf beiden Geraeten regelmaessig gespielt wird | Feldweises Zusammenfuehren monotoner Werte                                                                                                                                                                                                                                                                                                  |
-
 
 ## Audit-Fixes vom 09.10.2026
 

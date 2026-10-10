@@ -29,25 +29,68 @@ export interface ClipRect {
 export class ClipMask {
   private readonly shape: Phaser.GameObjects.Graphics;
   private readonly filter: Phaser.Filters.Mask;
+  private rect: ClipRect | null = null;
+  private renderWidth: number;
+  private renderHeight: number;
+  private cameraWasMoving = false;
 
   constructor(
-    scene: Phaser.Scene,
+    private readonly scene: Phaser.Scene,
     target: Phaser.GameObjects.Container | Phaser.GameObjects.Graphics,
+    private readonly cacheStationaryRect = false,
   ) {
     this.shape = scene.make.graphics({ x: 0, y: 0 }, false);
     target.enableFilters();
     this.filter = target.filters!.external.addMask(this.shape);
+    this.renderWidth = scene.game.canvas.width;
+    this.renderHeight = scene.game.canvas.height;
+    if (cacheStationaryRect) {
+      this.filter.autoUpdate = false;
+      scene.events.on('prerender', this.beforeRender);
+    }
   }
 
   /** Setzt den sichtbaren Ausschnitt in Weltkoordinaten. */
   set(rect: ClipRect): this {
+    if (
+      this.cacheStationaryRect &&
+      this.rect?.x === rect.x &&
+      this.rect.y === rect.y &&
+      this.rect.width === rect.width &&
+      this.rect.height === rect.height
+    )
+      return this;
+    this.rect = { ...rect };
     this.shape.clear().fillStyle(0xffffff).fillRect(rect.x, rect.y, rect.width, rect.height);
     this.filter.needsUpdate = true;
     return this;
   }
 
   destroy(): void {
+    if (this.cacheStationaryRect) this.scene.events.off('prerender', this.beforeRender);
     this.filter.destroy();
     this.shape.destroy();
   }
+
+  private readonly beforeRender = (): void => {
+    const camera = this.scene.cameras.main;
+    const moving =
+      camera.shakeEffect.isRunning ||
+      camera.panEffect.isRunning ||
+      camera.zoomEffect.isRunning ||
+      camera.rotateToEffect.isRunning;
+    const { width, height } = this.scene.game.canvas;
+    // Shake veraendert die Matrix erst nach PRE_RENDER; auch das Ende auffrischen.
+    if (
+      camera.dirty ||
+      moving ||
+      this.cameraWasMoving ||
+      width !== this.renderWidth ||
+      height !== this.renderHeight
+    )
+      this.filter.needsUpdate = true;
+    this.cameraWasMoving = moving;
+    this.renderWidth = width;
+    this.renderHeight = height;
+  };
 }

@@ -210,3 +210,69 @@ festzulegen, nicht anhand der Desktop-FPS.
 
 Messdaten: [vollständige Runs](audits/2026-10-10/gameplay-full-runs.json) und
 [kurze Einzelversuche](audits/2026-10-10/gameplay-micro-probes.json).
+
+## Umgesetzte Fixes und Vergleichsmessung (10.10.2026)
+
+Der Benutzerauftrag „fix das“ wird als Runtime-Fix umgesetzt, nicht als weitere
+reine Audit-Veroeffentlichung. Timer-Farbe, ortsfeste Fang-Maske und Media-
+Abfragen vermeiden redundante Arbeit. Die statischen Sternkreise werden
+durch kleine Texturen und GPU-Sprite-Puffer ersetzt. Automatische Absenkung
+ersetzt die schwere Kulissen-/Kameradekoration bereits im laufenden Run.
+
+Zwei weitere vollstaendige 90-Sekunden-Runs wurden nach den Fixes mit
+demselben Messverfahren gefahren. Waehrend dieser Vergleichsmessung wurden
+keine weiteren Browsertests ausgefuehrt oder Runtime-Dateien geaendert.
+Die Vergleichsprofile aggregieren `GraphicsWebGLRenderer` ueber alle
+Call-Stack-Kontexte, nicht nur die Top-25-Liste.
+
+| Messung                                | Voll ohne Talente vorher → nachher | Voll mit Talenten vorher → nachher |
+| -------------------------------------- | ---------------------------------: | ---------------------------------: |
+| Graphics-Self-Time, CPU-Samples        |                 3.641,3 → 724,3 ms |               3.320,9 → 1.138,5 ms |
+| Timer-Neuzeichnungen                   |                         5.479 → 91 |                         5.489 → 91 |
+| WebGL-Textur-Upload-Aufrufe            |                      7.226 → 1.863 |                      7.572 → 2.222 |
+| Neuzeichnungen des Maskenrechtecks     |                          4.915 → 1 |                          5.163 → 1 |
+| Maskentextur-Aktualisierungen nach Fix |                                  1 |                                  1 |
+
+Graphics-Self-Time sank in diesen Profilen um 80,1 beziehungsweise 65,7 Prozent.
+Die Effekte werden mit weniger CPU- und Upload-Arbeit dargestellt; es handelt
+sich nicht um eine gemessene Beschleunigung des echten iPhone. Spawns und
+Fangverlaeufe sind weiterhin kein identischer Replay.
+
+Beide Fix-Runs erreichten das regulaere Ende, p95 blieb bei 16,7 ms und es gab
+keine JavaScript-Seitenfehler. Ein spaeterer 83,4-ms-Frame im Run ohne Talente
+bleibt nicht kausal zugeordnet. Kurze Haenger sind mit diesen Desktop-Profilen
+deshalb nicht als vollstaendig beseitigt nachgewiesen.
+
+Die Browser-Regression prueft normale und kritische Timerfarbe, Maskenruhe,
+Kamera-Shake inklusive dessen Ende, beide Motion-Praeferenzen, Sternzahlen
+sowie voll → mittel → sparsam ohne Wechsel von Figur, Wertung oder Run-Zeit.
+Der Timer-Test wurde ohne Farbguard rot (92 Neuzeichnungen statt sekundenweise)
+und mit Guard gruen. Masken- und Media-Regressionen wurden ebenfalls zuerst
+gegen den unfixed Stand rot gefahren.
+
+Rohdaten: [Fix-Runs](audits/2026-10-10/gameplay-fixed-runs.json) und
+[Vergleichskennzahlen](audits/2026-10-10/gameplay-fix-comparison.json).
+
+### Validierung der Fixes
+
+`npm run verify` bestand mit 71 Testdateien und 770 Tests. Die Gameplay-
+Browserregression bestand auch nach den finalen Aenderungen. Die Messdaten
+tragen die lokale Version 0.1.426 und enthalten die noch uncommitteten Fixes;
+sie beschreiben nicht den damaligen unveraenderten Live-Stand.
+
+Die Lesbarkeitspruefung auf der RTX-5080-GPU bestand im vollstaendigen
+Wiederholungslauf fuer alle zehn Welten. Der erste GPU-Lauf meldete fuer
+Lichtkern 1,23 statt der erforderlichen 1,26; ein isolierter Nachtest ergab
+1,38 und der vollstaendige Wiederholungslauf 1,37. Ein separater Checkout
+des unveraenderten Commits 296c8d6 bestand auf derselben GPU mit 1,36.
+Diese Abweichung ist nicht kausal zugeordnet; die gespeicherte Basis wurde
+nicht veraendert. Der zusaetzliche Software-WebGL-Lauf wurde wegen seiner
+langen Laufzeit abgebrochen und gilt nicht als bestanden.
+
+Alle 90 Playtest-Schritte bestanden ohne `--sim`: 88 Schritte im
+vollstaendigen Lauf, darunter WebKit, Navigation, Persistenz und drei
+Solo-Welten. Nach einer Sitzungsunterbrechung wurden die beiden noch offenen
+Challenge-Runden mit unveraenderten Pruefungen separat nachgeholt; Tageslauf
+und Bot-Duell bestanden jeweils bis zum regulaeren Ende. Der Navigationstest
+normalisiert jetzt zweizeilige Menuewoerter wie "Optio- / nen", bevor er den
+tatsaechlichen Knopf anklickt.

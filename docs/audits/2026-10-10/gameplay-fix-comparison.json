@@ -1,0 +1,47 @@
+{
+  "physicalDevice": false,
+  "beforeVersion": "0.1.425",
+  "afterVersion": "0.1.426 with uncommitted runtime fixes",
+  "samples": [
+    {
+      "scenario": "full_base",
+      "beforeGraphicsMs": 3641.294,
+      "afterGraphicsMs": 724.301,
+      "timerBefore": 5479,
+      "timerAfter": 91,
+      "uploadsBefore": 7226,
+      "uploadsAfter": 1863,
+      "rectBefore": 4915,
+      "rectAfter": 1,
+      "maskAfter": 1,
+      "timing": {
+        "frames": 5389,
+        "p95Ms": 16.70000000001164,
+        "maxMs": 133.39999999999964,
+        "over25": 2,
+        "over50": 2
+      },
+      "collected": 176
+    },
+    {
+      "scenario": "full_visual_talents",
+      "beforeGraphicsMs": 3320.882,
+      "afterGraphicsMs": 1138.546,
+      "timerBefore": 5489,
+      "timerAfter": 91,
+      "uploadsBefore": 7572,
+      "uploadsAfter": 2222,
+      "rectBefore": 5163,
+      "rectAfter": 1,
+      "maskAfter": 1,
+      "timing": {
+        "frames": 5398,
+        "p95Ms": 16.70000000001164,
+        "maxMs": 50,
+        "over25": 1,
+        "over50": 0
+      },
+      "collected": 192
+    }
+  ]
+}

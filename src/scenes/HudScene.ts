@@ -1220,7 +1220,9 @@ export class HudScene extends Phaser.Scene {
     // Zahl und Rand im selben Augenblick umschlagen.
     const isCritical = remainingMs <= FINAL_SECONDS.thresholdMs;
     this.timerBar.setTint(isCritical ? Palette.dangerHex : this.accent);
-    this.timerText.setColor(isCritical ? Palette.danger : Palette.ink);
+    const color = isCritical ? Palette.danger : Palette.ink;
+    // Phaser rastert Text auch bei identischem setColor neu und laedt ihn hoch.
+    if (this.timerText.style.color !== color) this.timerText.setColor(color);
   };
 
   // Schutz gegen doppeltes Aufbauen: Ein zweites `RunPaused` - etwa durch die

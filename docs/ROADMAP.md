@@ -380,3 +380,11 @@ sind in `TODO.md` gelistet und blockieren M4.1/M6/M7 nicht.
 - [x] Gemeinsame Settings-basierte Tokens fuer DOM und Phaser; flache Buttons, Karten, Typografie, Hangar und Gameplay-HUD angleichen.
 
 - [x] Schriftstufen in Bildschirm-Pixeln vereinheitlichen; Boxen und Karten an lesbare, umgebrochene Texte anpassen.
+
+## Gameplay-Performance-Fixes (10.10.2026)
+
+- [x] Redundante Timer-Rasterungen, ortsfeste Masken-Updates und MediaQueryList-Allokationen entfernen.
+- [x] Statische Sterne in kleine gemeinsame Texturen und GPU-Puffer uebertragen; Positionen, Farben und Parallaxe erhalten.
+- [x] Schwere Kulissen-/Kameraeffekte bei automatischer Senkung schon im laufenden Run ersetzen.
+- [x] Regressionen fuer Timerfarbe, Kamerawackler, Motion-Wechsel und beide Senkungsstufen ins Release-Gate aufnehmen.
+- [ ] Bildrate und Game-Feel der Fixes auf dem betroffenen iPhone 16 als Home-Bildschirm-App bestaetigen.

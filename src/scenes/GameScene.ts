@@ -221,8 +221,8 @@ export class GameScene extends Phaser.Scene {
   private phase: RunPhase = 'countdown';
   /**
    * Misst, ob das Geraet die Effektstufe schafft (ADR-0035). Wird je Run neu
-   * angelegt; eine Senkung wirkt erst ab der naechsten Szene - mitten im Run
-   * umzuschalten saehe wie ein Fehler aus.
+   * angelegt; die schwere Dekoration wird bei einer Senkung bereits im Run
+   * ersetzt, ohne die laufende Simulation neu zu starten (ADR-0039).
    */
   private frameGuard = new FrameRateGuard();
   /** Entfernt den Bloom der Spielkamera; `null` ohne Bloom. */
@@ -629,7 +629,13 @@ export class GameScene extends Phaser.Scene {
 
     const rawDelta = this.game.loop.rawDelta;
     const measurable = document.visibilityState === 'visible' && this.game.loop.inFocus;
-    if (measurable && this.frameGuard.sample(rawDelta)) EffectsQualitySystem.lowerAutomatically();
+    if (
+      measurable &&
+      this.frameGuard.sample(rawDelta) &&
+      EffectsQualitySystem.lowerAutomatically()
+    ) {
+      this.refreshReducedEffects();
+    }
     this.performanceMonitor?.recordFrame(
       measurable ? rawDelta : Number.NaN,
       this.collectibles.length + this.obstacles.length,
@@ -641,6 +647,18 @@ export class GameScene extends Phaser.Scene {
   }
 
   // --- Update-Schritte ------------------------------------------------------
+
+  private refreshReducedEffects(): void {
+    // Nur Dekoration ersetzen: der laufende Run und seine Objekte bleiben bestehen.
+    this.removeBloom?.();
+    this.grading?.destroy();
+    this.grading = null;
+    this.lighting?.destroy();
+    this.lighting = null;
+    this.backdrop.destroy();
+    this.backdrop = new GameBackdrop(this, GAME_WIDTH, GAME_HEIGHT, this.world);
+    this.removeBloom = applyBloom(this.cameras.main, this.world.spaceVariant);
+  }
 
   private updatePlayer(dtSec: number): void {
     const direction = this.input_.getDirection(this.player.x, this.player.y);

@@ -12,12 +12,22 @@ export const RARITY_MARKERS: Readonly<Record<RarityId, string>> = {
   legendary: '★',
 };
 
+const mediaQueries = new Map<string, MediaQueryList>();
+let mediaFactory: typeof window.matchMedia | undefined;
+
 function mediaMatches(query: string): boolean {
-  return (
-    typeof window !== 'undefined' &&
-    typeof window.matchMedia === 'function' &&
-    window.matchMedia(query).matches
-  );
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return false;
+  if (mediaFactory !== window.matchMedia) {
+    mediaFactory = window.matchMedia;
+    mediaQueries.clear();
+  }
+  let media = mediaQueries.get(query);
+  if (!media) {
+    media = window.matchMedia(query);
+    mediaQueries.set(query, media);
+  }
+  // Das Objekt bleibt bestehen, matches folgt weiterhin der OS-Einstellung.
+  return media.matches;
 }
 
 export function prefersReducedMotion(): boolean {

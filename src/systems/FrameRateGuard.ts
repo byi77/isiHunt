@@ -6,7 +6,7 @@ import { FRAME_GUARD } from '@/config/effectQuality';
  * Reine Rechnung ohne Phaser: `GameScene` fuettert je Frame das `delta` ein,
  * der Waechter antwortet einmal mit `true`, wenn mehrere Messfenster in Folge
  * einen zu hohen Median hatten. Danach schweigt er fuer den Rest des Runs -
- * das Herabstufen wirkt erst in der naechsten Szene, und zweimal in einem Run
+ * GameScene ersetzt die schwere Dekoration bereits im Run. Zweimal in einem Run
  * wuerde eine Stufe ueberspringen, die das Geraet vielleicht schafft.
  */
 export class FrameRateGuard {
