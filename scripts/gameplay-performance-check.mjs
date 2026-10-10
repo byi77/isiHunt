@@ -61,9 +61,26 @@ try {
     g.scene.start('Game', { mode: 'solo', worldId: 'silberhain' });
     // Dieser Check erzwingt die Senkung spaeter gezielt, unabhaengig von CI-GPU-Tempo.
     g.scene.getScene('Game').frameGuard.sample = () => false;
+    // Countdown ohne Shaderkosten; die folgenden Pruefschritte rendern wirklich.
+    g.loop.sleep();
+    g.loop.rawDelta = 1000 / 60;
+    window.__checkTime = window.performance.now();
+    for (let i = 0; i < 300 && g.scene.getScene('Game').phase !== 'running'; i++) {
+      window.__checkTime += 1000 / 60;
+      g.headlessStep(window.__checkTime, 1000 / 60);
+    }
   });
-  await page.waitForFunction(() => window.isiHunt.scene.getScene('Game').phase === 'running');
-  await page.waitForTimeout(500);
+  assert(await page.evaluate(() => window.isiHunt.scene.getScene('Game').phase === 'running'));
+  const renderFrames = async (frames) => {
+    await page.evaluate((count) => {
+      const g = window.isiHunt;
+      for (let i = 0; i < count; i++) {
+        window.__checkTime += 1000 / 60;
+        g.step(window.__checkTime, 1000 / 60);
+      }
+    }, frames);
+  };
+  await renderFrames(2);
   await page.evaluate(() => {
     const game = window.isiHunt.scene.getScene('Game'),
       hud = window.isiHunt.scene.getScene('Hud');
@@ -82,7 +99,7 @@ try {
     };
     game.events.on('postupdate', () => window.__perfCheck.frames++);
   });
-  await page.waitForTimeout(1500);
+  await renderFrames(8);
   const stable = await page.evaluate(() => window.__perfCheck);
   assert(stable.frames >= 3, 'Echte Frames fehlen');
   assert(stable.timerRedraws <= 3, `Timer rastert ${stable.timerRedraws} Mal statt sekundenweise`);
@@ -103,17 +120,19 @@ try {
     window.__perfCheck.maskUpdates = 0;
     window.isiHunt.scene.getScene('Game').cameras.main.shake(160, 0.004);
   });
-  await page.waitForFunction(
-    () => !window.isiHunt.scene.getScene('Game').cameras.main.shakeEffect.isRunning,
+  await renderFrames(14);
+  assert(
+    await page.evaluate(
+      () => !window.isiHunt.scene.getScene('Game').cameras.main.shakeEffect.isRunning,
+    ),
+    'Kamerawackler endet nicht',
   );
-  const frameAfterShake = await page.evaluate(() => window.__perfCheck.frames);
-  await page.waitForFunction((frame) => window.__perfCheck.frames >= frame + 2, frameAfterShake);
   assert(
     await page.evaluate(() => window.__perfCheck.maskUpdates >= 2),
     'Kamerawackler invalidiert Maske nicht',
   );
   await page.evaluate(() => (window.__perfCheck.maskUpdates = 0));
-  await page.waitForTimeout(300);
+  await renderFrames(3);
   assert.equal(
     await page.evaluate(() => window.__perfCheck.maskUpdates),
     0,
@@ -145,7 +164,7 @@ try {
     };
     return s.remainingMs;
   });
-  await page.waitForTimeout(100);
+  await renderFrames(1);
   const lowered = await page.evaluate(async () => {
     const s = window.isiHunt.scene.getScene('Game'),
       b = window.__runBefore;
@@ -196,7 +215,7 @@ try {
       return true;
     };
   });
-  await page.waitForTimeout(100);
+  await renderFrames(1);
   const reduced = await page.evaluate(async () => {
     const s = window.isiHunt.scene.getScene('Game');
     return (

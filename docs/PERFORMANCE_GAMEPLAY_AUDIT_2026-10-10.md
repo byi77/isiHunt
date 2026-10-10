@@ -276,3 +276,12 @@ Challenge-Runden mit unveraenderten Pruefungen separat nachgeholt; Tageslauf
 und Bot-Duell bestanden jeweils bis zum regulaeren Ende. Der Navigationstest
 normalisiert jetzt zweizeilige Menuewoerter wie "Optio- / nen", bevor er den
 tatsaechlichen Knopf anklickt.
+
+Der erste CI-/Deploy-Lauf von 4172517 wurde korrekt blockiert: Das neue
+Browser-Gate wartete auf den framegetakteten Countdown unter vollen Shadern
+und ueberschritt auf dem Linux-Software-GPU-Runner dessen 30-Sekunden-Frist.
+Die Korrektur betrifft ausschliesslich das Gate: Countdown mit
+`headlessStep`, anschliessend wenige echte `game.step`-Renderframes mit
+festem Zeitschritt fuer die Regressionen. Damit ist es ausdruecklich eine
+Funktionspruefung und keine Echtzeit-Bildratenmessung. Die oben genannten
+90-Sekunden-Profile und Playtest-Runden wurden weiterhin in Echtzeit gefahren.

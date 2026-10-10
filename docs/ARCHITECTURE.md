@@ -29,7 +29,10 @@ invalidiert den Cache; es entstehen keine zusaetzlichen OS-Listener.
 `npm run performance:gameplay` prueft mit echter Render-Schleife Timer-
 Rasterungen, Maskenruhe und Kamera-Shake, live geaenderte Motion-Praeferenzen,
 die unveraenderten Sternzahlen und das sofortige Herabstufen ohne Run-Neustart.
-Der Check gehoert zu `release:check`; Frame-Budgets auf dem echten iPhone
+Der Check taktet wenige echte Renderframes explizit. Nur der Countdown wird
+ohne Rendering vorgezogen, weil volle Shader auf dem Software-GPU-Runner
+den framegetakteten Countdown ueber dessen Wandzeit-Frist hinaus verlaengern.
+Die Pruefung misst keine Bildrate. Der Check gehoert zu `release:check`; Frame-Budgets auf dem echten iPhone
 bleiben eine gesonderte Abnahme.
 
 ## Bildschirmbasierte UI-Masse (09.10.2026)
