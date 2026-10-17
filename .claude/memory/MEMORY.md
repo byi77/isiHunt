@@ -3,4 +3,4 @@
 - [Denken auf Deutsch](denken-auf-deutsch.md) — Denkbloecke auf Deutsch, nicht nur die Antworten
 - [Sound-Umbau](sound-umbau-planung.md) — umgesetzt 2026-09-24 (ADR-0029); offen: Geraete-Abhoeren, "Letzte Chance", Musik
 - [Diagnose-Rueckbau Namensfeld](diagnose-rueckbau-namensfeld.md) — befristete Debug-Ausgabe in Profile/AccountScene nach der Messung entfernen
-- [Phaser-4-Migration](phaser4-migration.md) — geplant 2026-09-28: kein Canvas, Stufen mit Auto-Abstufung, GeometryMask bricht still
+- [Phaser-4-Migration](phaser4-migration.md) — live seit v0.1.420 (2026-09-29); offen: Handy-Bildrate, Waechter-Schwelle; Fallen: Masken, GL-y, CI ohne GPU

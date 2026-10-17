@@ -848,7 +848,17 @@ export class MenuScene extends Phaser.Scene {
     this.startError = null;
     beginStartTrace(`Jagd angetippt (${worldId})`);
     const accountId = AuthSystem.currentUserId();
-    const effectRun = await CloudSystem.startRewardEffectRun(worldId);
+    // Eine Ausnahme liesse `runStart` belegt, und jeder weitere Tipp liefe ins
+    // Leere. Am 2026-09-29 geschah genau das (fehlendes `crypto.randomUUID`
+    // ueber http) - ohne jede Meldung. Ein Wurf wird deshalb zur sichtbaren
+    // Absage wie jede andere.
+    let effectRun: Awaited<ReturnType<typeof CloudSystem.startRewardEffectRun>>;
+    try {
+      effectRun = await CloudSystem.startRewardEffectRun(worldId);
+    } catch (error) {
+      console.warn('[MenuScene] Effekt-Abfrage warf.', error);
+      effectRun = { ok: false, error: 'Bonusstart fehlgeschlagen. Bitte erneut versuchen.' };
+    }
     markStart(`Effekt-Abfrage fertig (${effectRun.ok ? 'ok' : 'Fehler'})`);
     if (!this.scene.isActive()) {
       markStart('Menue nicht mehr aktiv - Start abgebrochen');

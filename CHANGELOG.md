@@ -239,6 +239,12 @@ using [Semantic Versioning](https://semver.org/).
 
 ### Behoben
 
+- **Jagdstart hing ueber http.** Wer das Spiel ueber die Netzwerkadresse des
+  Dev-Servers (`http://192.168.x.x`) oeffnete, konnte keine Jagd starten:
+  `crypto.randomUUID` fehlt ausserhalb sicherer Kontexte, und der Fehler
+  verschwand in der Bonus-Effekt-Abfrage. Alle UUIDs kommen jetzt aus
+  `systems/uuid.ts` mit Ersatz ueber `getRandomValues`; wirft die
+  Effekt-Abfrage trotzdem, startet die Jagd ohne Bonus.
 - **Quadratische Fläche im Hauptmenü entfernt.** Die Menükugel nutzt jetzt
   die transparenten WebP-Planetentexturen statt der prozeduralen Canvas-Atlas-
   Frames. Die Textur-Ecken haben Alpha 0; Atmosphärenrand und Ringe bleiben.

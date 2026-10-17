@@ -31,6 +31,7 @@ import { validateRewardPackage } from '@/systems/RewardPackageSystem';
 import type { RewardPackage } from '@/systems/RewardPackageSystem';
 import type { ProgressEvent, SaveData } from '@/types';
 import type { TalentId, TalentRanks } from '@/config/talents';
+import { createUuid } from '@/systems/uuid';
 
 // --- Ergebnistypen ----------------------------------------------------------
 
@@ -1384,7 +1385,7 @@ export async function fetchBoostBalance(): Promise<CloudResult<BoostBalance>> {
 /** Startet eine serverseitig abgebuchte XP-Bonusrunde idempotent. */
 export async function startBoostedRun(
   worldId: string,
-  requestId: string = crypto.randomUUID(),
+  requestId: string = createUuid(),
 ): Promise<CloudResult<BoostedRunStart>> {
   const authenticated = await requireAuthenticatedClient();
   if (!authenticated.ok) return authenticated;

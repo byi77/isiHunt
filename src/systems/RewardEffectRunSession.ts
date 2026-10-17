@@ -1,4 +1,5 @@
 import type { CloudResult } from './BackendTransport';
+import { createUuid } from '@/systems/uuid';
 
 export type RunEffects = Readonly<Partial<Record<'speed' | 'magnetism' | 'combo_grace', number>>>;
 interface PendingStart {
@@ -57,7 +58,7 @@ export function start(
           error: `Bitte den ausstehenden Start in ${pending.worldId} wiederholen.`,
         };
       if (pending?.effects) return { ok: true, value: pending.effects };
-      pending ??= { worldId, requestId: crypto.randomUUID() };
+      pending ??= { worldId, requestId: createUuid() };
       window.localStorage.setItem(PREFIX + accountId, JSON.stringify(pending));
       const result = await request(pending.requestId);
       if (!result.ok) return result;

@@ -112,6 +112,7 @@ import type {
   RunMode,
   RunStats,
 } from '@/types';
+import { createUuid } from '@/systems/uuid';
 
 export interface GameSceneData {
   worldId: string;
@@ -302,7 +303,7 @@ export class GameScene extends Phaser.Scene {
     this.endlessState =
       this.mode === 'endless'
         ? (data.endlessState ?? {
-            sessionId: crypto.randomUUID(),
+            sessionId: createUuid(),
             round: 1,
             totalScore: 0,
             totalXp: 0,

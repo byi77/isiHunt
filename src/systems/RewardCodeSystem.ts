@@ -1,5 +1,7 @@
 /** Sichere Darstellung von Belohnungscodes; Einloesen bleibt serverseitig. */
 
+import { createUuid } from '@/systems/uuid';
+
 const REWARD_CODE_LENGTH = 12;
 const PENDING_REDEMPTION_PREFIX = 'isihunt.pending-reward-redemption.v1.';
 
@@ -28,16 +30,6 @@ function pendingKey(profileId: string): string {
   return `${PENDING_REDEMPTION_PREFIX}${encodeURIComponent(profileId)}`;
 }
 
-function createRequestId(): string {
-  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  bytes[6] = (bytes[6]! & 0x0f) | 0x40;
-  bytes[8] = (bytes[8]! & 0x3f) | 0x80;
-  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
-}
-
 /** Persistiert die Retry-ID vor dem Netzaufruf und niemals den formatierten Klartext in Logs. */
 export function prepareRewardRedemption(
   profileId: string,
@@ -53,7 +45,7 @@ export function prepareRewardRedemption(
         return { code: normalized, requestId: existing.requestId };
       }
     }
-    const pending = { code: normalized, requestId: createRequestId() };
+    const pending = { code: normalized, requestId: createUuid() };
     window.localStorage.setItem(pendingKey(profileId), JSON.stringify(pending));
     return pending;
   } catch {

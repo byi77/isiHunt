@@ -1,4 +1,5 @@
 import type { BoostedRunFinishInput, BoostedRunStart } from '@/systems/CloudSystem';
+import { createUuid } from '@/systems/uuid';
 
 const START_KEY = 'isihunt.boosted-run-start.v1';
 const FINISH_KEY = 'isihunt.boosted-run-finish.v1';
@@ -39,7 +40,7 @@ function isUuid(value: unknown): value is string {
 }
 
 export function prepareStart(worldId: string): PendingBoostedStart {
-  const pending = { worldId, requestId: crypto.randomUUID() };
+  const pending = { worldId, requestId: createUuid() };
   write(START_KEY, pending);
   return pending;
 }

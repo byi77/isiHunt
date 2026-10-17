@@ -470,6 +470,8 @@ isiHunt/
 │   │   ├── ProgressSyncSystem.ts Offline-Outbox fuer angemeldete Profile
 │   │   ├── ProgressSyncSystem.test.ts
 │   │   ├── SyncStatusSystem.ts Sichtbarer Sync-Status im Menue
+│   │   ├── uuid.ts             UUID v4 auch ohne sicheren Kontext (http im WLAN)
+│   │   ├── uuid.test.ts
 │   │   ├── SyncGateSystem.ts   Darf jetzt abgeglichen werden? (ohne Phaser)
 │   │   ├── SyncGateSystem.test.ts
 │   │   ├── ProgressionSystem.ts XP, Level, Talentpunkte, Erfolge

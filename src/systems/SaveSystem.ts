@@ -27,6 +27,7 @@ import { DEFAULT_WORLD_ID } from '@/config/worlds';
 import { sanitizePlayerName } from '@/config/playerName';
 import * as SyncStatusSystem from '@/systems/SyncStatusSystem';
 import type { SaveData } from '@/types';
+import { createUuid } from '@/systems/uuid';
 
 const TEST_PROFILE_KEY = 'isihunt.admin-test-profile.v1';
 const TEST_PROFILE_BACKUP_KEY = 'isihunt.admin-test-profile-backup.v1';
@@ -100,34 +101,6 @@ export function createDefaultSave(): SaveData {
     cloudId: null,
     cloudUpdatedAt: null,
   };
-}
-
-/**
- * Erzeugt eine UUID v4.
- *
- * `crypto.randomUUID` gibt es nur in sicheren Kontexten. Beim Testen ueber die
- * Netzwerkadresse des Dev-Servers (http://192.168.x.x:5173) ist das nicht
- * gegeben - dort faellt die Funktion sonst mit "undefined is not a function"
- * aus. `getRandomValues` steht dagegen ueberall zur Verfuegung.
- */
-function createUuid(): string {
-  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
-
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-
-  // Version 4 und Variante 1 nach RFC 4122 setzen.
-  bytes[6] = ((bytes[6] ?? 0) & 0x0f) | 0x40;
-  bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80;
-
-  const hex = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
-  return [
-    hex.slice(0, 8),
-    hex.slice(8, 12),
-    hex.slice(12, 16),
-    hex.slice(16, 20),
-    hex.slice(20, 32),
-  ].join('-');
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

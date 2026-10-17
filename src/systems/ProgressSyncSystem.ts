@@ -8,6 +8,7 @@ import * as ChallengeSystem from '@/systems/ChallengeSystem';
 import * as CloudSystem from '@/systems/CloudSystem';
 import * as SaveSystem from '@/systems/SaveSystem';
 import type { ProgressEvent, ProgressionResult, RunStats } from '@/types';
+import { createUuid } from '@/systems/uuid';
 
 const OUTBOX_KEY_PREFIX = 'isihunt.progress-events.v2.';
 const LEGACY_OUTBOX_KEY = 'isihunt.progress-events';
@@ -75,13 +76,6 @@ function scheduleRetry(): void {
     retryTimer = null;
     void flush();
   }, delay);
-}
-
-function createEventId(): string {
-  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
-  const bytes = new Uint8Array(16);
-  crypto.getRandomValues(bytes);
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
 function accountOutboxKey(accountId: string): string {
@@ -611,7 +605,7 @@ export function enqueueRun(
   const accountId = AuthSystem.currentUserId();
   if (!accountId) return null;
 
-  const eventId = createEventId();
+  const eventId = createUuid();
   const event: ProgressEvent = {
     eventId,
     worldId: stats.worldId,

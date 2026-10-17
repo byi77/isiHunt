@@ -1,34 +1,32 @@
 ---
 name: phaser4-migration
-description: Phaser-4.2.1-Migration geplant (2026-09-28) - Entscheidungen des Nutzers und Befunde aus dem Probelauf
+description: Phaser 4.2.1 + Effektstufen + Phase-3-Effekte seit 2026-09-29 live (v0.1.420) - was offen ist und welche Fallen es gab
 metadata:
   node_type: memory
   type: project
   originSessionId: 7981c0a2-a229-48fa-aeca-3b17b431e3ba
-  modified: 2026-09-28T20:08:50.980Z
+  modified: 2026-09-28T23:19:53.965Z
 ---
 
-Der Nutzer will isiHunt von Phaser 3.90 auf 4.2.1 heben und danach "volle
-Huette" an Effekten (Bloom, Licht, Verzerrung, lebender Nebel ...). Plan in
-`docs/ROADMAP.md`, Abschnitt "Engine - Phaser 4", Arbeit auf Branch
-`feat/phaser4`.
+isiHunt laeuft seit 2026-09-29 auf Phaser 4.2.1, nur WebGL, mit Effektstufen
+sparsam/mittel/voll und elf Effekten auf VOLL (ADR-0035, ARCHITECTURE
+"Phaser 4 und Effektstufen"). Live ab v0.1.420. Nutzer-Entscheidungen: kein
+Canvas, Standard VOLL mit automatischem Herabstufen nur abwaerts.
 
-Entscheidungen vom 2026-09-28:
-1. **Kein Canvas mehr** - nur WebGL, bei fehlendem WebGL ein DOM-Hinweis.
-2. **Effektstufen sparsam/mittel/voll, Standard voll**, automatisch nur
-   abwaerts gestuft (Median ueber mehrere Sekunden, wirksam ab naechster
-   Szene), Hinweis in den Einstellungen. Schwellwerte erst nach Messung auf
-   echten Geraeten festlegen.
-3. Weltaura/Triebwerk vorher auf v3 ausliefern, ohne vollen Playtest.
+Offen (ROADMAP "Engine - Phaser 4"): Bildrate auf echten Handys je Stufe
+messen und `FRAME_GUARD.slowFrameMs` (vorlaeufig 25 ms) festlegen; voller
+Playtest ueber die Effekte (vom Nutzer zweimal uebersprungen); Duell mit zwei
+Geraeten; Lichtkern hat den knappsten Relikt-Kontrast.
 
-Probelauf-Befunde (Worktree mit 4.2.1): 30 Typfehler in 5 Dateien (meist
-`strokePoints`/`fillPoints` wollen `Vector2[]`, dazu `preFX`), Tests gruen,
-`ios:check` bleibt 16.4, Phaser-Bundle 1447 -> 1645 kB. **GeometryMask bricht
-still** (nur noch Canvas): Talentbaum-Inhalt ragt unter den Zurueck-Knopf, der
-Playtest bleibt trotzdem gruen. Masken: CollectionEffects, ResultView,
-TalentScene. `camera.matrix` in `layoutAudit.ts` aendert die Bedeutung.
+Fallen, die aufgetreten sind:
+- `GeometryMask` bricht in v4/WebGL still - `ClipMask` + Pixelprobe.
+- Filter rechnen mit GL-Ausrichtung (Schatten y negativ = nach unten).
+- Licht ohne Normal-Map braucht hohes `z`, sonst unsichtbar.
+- CI-Runner rendert ohne GPU; der Countdown zaehlt Frames. Mit vollen
+  Effekten lief `performance:check` in 90 s nicht durch - das Gate laeuft
+  jetzt auf `reduced`. Neue schwere Effekte koennen andere CI-Gates mit
+  echtem Rendering genauso treffen.
 
-**Why:** Grafik-Offensive; der Nutzer hat gegen meine Empfehlung (jetzt nicht
-upgraden) bewusst entschieden.
-**How to apply:** Masken-Regressionstest per Pixelprobe vor dem Fix bauen und
-rot sehen; Phase 1 muss optisch identisch zu v3 sein, bevor Effekte kommen.
+**Why:** Grafik-Offensive des Nutzers, gegen meine urspruengliche Empfehlung.
+**How to apply:** Effektaenderungen immer gegen `npm run readability:check`
+pruefen; bei CI-Timeouts zuerst an Software-Rendering denken.
