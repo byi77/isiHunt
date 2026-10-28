@@ -22,6 +22,7 @@ function makeSave() {
     // ohne GPU jeden Frame so langsam, dass der frame-getaktete Countdown nicht
     // mehr in 90 s durchlief - der Deploy scheiterte am 2026-09-29 zweimal hier.
     effectsQuality: sim ? 'reduced' : 'full',
+    effectsDefaultRevision: 1,
     version: 9,
     level: 1,
     xp: 0,

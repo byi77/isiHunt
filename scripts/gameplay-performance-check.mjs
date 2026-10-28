@@ -43,6 +43,7 @@ try {
         version: 9,
         level: 100,
         effectsQuality: 'full',
+        effectsDefaultRevision: 1,
         soundEnabled: false,
         hapticsEnabled: false,
       }),

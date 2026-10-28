@@ -2018,7 +2018,8 @@ sie im Code steht, nicht nach gemessenen Millisekunden:
   dynamisches Licht (pro Pixel) und volles Bloom (4 statt 2 Weichzeichnerstufen).
 
 Bestehende Spielstaende behalten ihre gewaehlte Stufe; nur neue und
-unvollstaendige Staende starten auf `medium`.
+unvollstaendige Staende starten auf `medium`. _Abgeloest durch ADR-0041:_
+auch bestehende Staende auf `full` wechseln einmalig auf `medium`.
 
 **Messung am Geraet.** Die Einstellung „Bildrate anzeigen“ blendet im Run fps,
 laengsten Frame und Rucklerquote ein (`FrameRateMeter`). Damit wird die
@@ -2028,3 +2029,24 @@ Entscheidung am iPhone ueberprueft, Stufe gegen Stufe.
 loest aus, sobald sich genug Zeit angesammelt hat; bei 120-Hz-Takten mit
 leichtem Zittern um 8,33 ms braucht er mal zwei, mal drei Takte und erzeugt
 damit ungleichmaessige Bildabstaende - das Gegenteil des Ziels.
+
+## ADR-0041 — Mittel auch fuer bestehende Spielstaende (28.10.2026)
+
+Status: angenommen durch den Benutzerauftrag „nimm mittel absofort als
+default - fuer jeden“.
+
+**Kontext.** ADR-0040 machte `medium` nur fuer neue Staende zum Standard. Alte
+Staende stehen auf `full`, weil das frueher der Standard war, nicht weil jemand
+es gewaehlt hat - darunter der Stand auf dem iPhone 18 Pro, das ruckelt. Ob
+ein `full` gewaehlt oder geerbt ist, laesst sich aus dem Stand nicht ablesen.
+
+**Entscheidung.** Der Spielstand traegt `effectsDefaultRevision`
+(`EFFECTS_DEFAULT_REVISION` in `config/effectQuality.ts`, jetzt 1). Ein Stand
+mit kleinerer Zahl und `full` wird beim Einlesen einmalig auf `medium` gesetzt;
+`reduced` bleibt, weil es immer gewaehlt oder vom Frame-Waechter gesetzt war.
+Danach traegt der Stand die aktuelle Zahl, und wer wieder `full` waehlt,
+behaelt es.
+
+**Verworfen: `SAVE_VERSION` erhoehen.** Die Versionskette loest bei
+`SAVE_VERSION - 1` den Reset auf die Talentpunkt-Wirtschaft aus; eine
+Erhoehung nur fuer die Grafik haette jeden aktuellen Stand zurueckgesetzt.

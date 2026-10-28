@@ -22,6 +22,7 @@ import {
   DEFAULT_SHIP_SHAPE,
   shapesEarnedByLegacyLevel,
 } from '@/config/shop';
+import { EFFECTS_DEFAULT_REVISION } from '@/config/effectQuality';
 import { TALENTS } from '@/config/talents';
 import { DEFAULT_WORLD_ID } from '@/config/worlds';
 import { sanitizePlayerName } from '@/config/playerName';
@@ -97,6 +98,7 @@ export function createDefaultSave(): SaveData {
     showFrameRate: false,
     effectsQuality: 'medium',
     effectsQualityAutoLowered: false,
+    effectsDefaultRevision: EFFECTS_DEFAULT_REVISION,
     playerName: '',
     pendingPlayerName: null,
     cloudId: null,
@@ -239,16 +241,7 @@ function reconcile(raw: Partial<SaveData>): SaveData {
       typeof source.hapticsEnabled === 'boolean' ? source.hapticsEnabled : base.hapticsEnabled,
     showFrameRate:
       typeof source.showFrameRate === 'boolean' ? source.showFrameRate : base.showFrameRate,
-    effectsQuality:
-      source.effectsQuality === 'full' ||
-      source.effectsQuality === 'medium' ||
-      source.effectsQuality === 'reduced'
-        ? source.effectsQuality
-        : base.effectsQuality,
-    effectsQualityAutoLowered:
-      typeof source.effectsQualityAutoLowered === 'boolean'
-        ? source.effectsQualityAutoLowered
-        : base.effectsQualityAutoLowered,
+    ...reconcileEffects(source, base),
     playerName,
     pendingPlayerName,
     cloudId: nullableStringOr(source.cloudId, base.cloudId),
@@ -303,6 +296,42 @@ function versionOf(raw: Partial<SaveData>): number {
 }
 
 /**
+ * Effektstufe aus dem Rohstand. "Voll" aus der Zeit vor der aktuellen
+ * Voreinstellung wird einmalig zu "Mittel": Auf dem iPhone 18 Pro ruckelte
+ * "Voll", und alte Staende hatten es nur als damaligen Standard, nicht als
+ * Wahl (ADR-0041). "Sparsam" bleibt - das war immer eine bewusste Wahl oder
+ * eine Absenkung durch den Frame-Waechter.
+ */
+function reconcileEffects(
+  source: Record<string, unknown>,
+  base: SaveData,
+): Pick<SaveData, 'effectsQuality' | 'effectsQualityAutoLowered' | 'effectsDefaultRevision'> {
+  const quality =
+    source.effectsQuality === 'full' ||
+    source.effectsQuality === 'medium' ||
+    source.effectsQuality === 'reduced'
+      ? source.effectsQuality
+      : base.effectsQuality;
+  const autoLowered =
+    typeof source.effectsQualityAutoLowered === 'boolean'
+      ? source.effectsQualityAutoLowered
+      : base.effectsQualityAutoLowered;
+  const revision = nonNegativeInteger(source.effectsDefaultRevision, 0);
+  if (revision < EFFECTS_DEFAULT_REVISION && quality === 'full') {
+    return {
+      effectsQuality: base.effectsQuality,
+      effectsQualityAutoLowered: false,
+      effectsDefaultRevision: EFFECTS_DEFAULT_REVISION,
+    };
+  }
+  return {
+    effectsQuality: quality,
+    effectsQualityAutoLowered: autoLowered,
+    effectsDefaultRevision: Math.max(revision, EFFECTS_DEFAULT_REVISION),
+  };
+}
+
+/**
  * Startet bestehende Teststaende fuer die neue Talentpunkt-Wirtschaft sauber
  * neu. Profilidentitaet und lokale Einstellungen bleiben erhalten; Fortschritt,
  * Besitz und Wirtschaft werden auf den frischen Spielstand gesetzt.
@@ -320,6 +349,7 @@ function resetForTalentPointEconomy(save: SaveData): SaveData {
     showFrameRate: save.showFrameRate,
     effectsQuality: save.effectsQuality,
     effectsQualityAutoLowered: save.effectsQualityAutoLowered,
+    effectsDefaultRevision: save.effectsDefaultRevision,
   };
 }
 
@@ -539,6 +569,7 @@ export function clearLocalProfile(): SaveData {
   fresh.hapticsEnabled = current.hapticsEnabled;
   fresh.effectsQuality = current.effectsQuality;
   fresh.effectsQualityAutoLowered = current.effectsQualityAutoLowered;
+  fresh.effectsDefaultRevision = current.effectsDefaultRevision;
   clearCloudAccessToken();
   save(fresh);
   return fresh;

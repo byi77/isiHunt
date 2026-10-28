@@ -86,6 +86,8 @@ export interface SaveData {
   effectsQuality: EffectsQuality;
   /** Ob das Spiel die Stufe selbst gesenkt hat, weil das Geraet nicht mitkam. */
   effectsQualityAutoLowered: boolean;
+  /** Welche Effekt-Voreinstellung dieser Stand schon gesehen hat (ADR-0041). */
+  effectsDefaultRevision: number;
 
   /** Anzeigename im Profil und in der Bestenliste. Leer beim ersten Start. */
   playerName: string;

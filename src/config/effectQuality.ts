@@ -40,6 +40,13 @@ export const FRAME_GUARD = {
 /** Anteil der Kulissen-Teilchen je Stufe. */
 export const ATMOSPHERE_PARTICLE_SHARE = { reduced: 0.5, medium: 1, full: 1 } as const;
 
+/**
+ * Stand der Effekt-Voreinstellung. Steigt die Zahl, setzt `SaveSystem` jeden
+ * aelteren Spielstand einmalig von "Voll" auf "Mittel" (ADR-0041). Wer danach
+ * wieder "Voll" waehlt, behaelt es - der Stand traegt dann die neue Zahl.
+ */
+export const EFFECTS_DEFAULT_REVISION = 1;
+
 /** Bildratenanzeige im Run (Einstellung "Bildrate anzeigen"). */
 export const FRAME_RATE_METER = {
   /** Eine Anzeige je Sekunde: ruhig genug zum Ablesen, schnell genug fuer Einbrueche. */

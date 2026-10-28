@@ -77,6 +77,8 @@ const save = {
   // `--quality=medium` prueft den Mittelweg, mit dem neue Spielstaende starten -
   // gegen dieselbe Basis, denn Relikte muessen auf jeder Stufe lesbar sein.
   effectsQuality: process.argv.find((arg) => arg.startsWith('--quality='))?.slice(10) ?? 'full',
+  // Ohne die Revision setzt der Spielstand "Voll" einmalig auf "Mittel" (ADR-0041).
+  effectsDefaultRevision: 1,
 };
 
 // Sichtbar statt headless: Wer die Pruefung startet, soll zusehen koennen.

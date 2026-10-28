@@ -75,4 +75,19 @@ describe('EffectsQualitySystem', () => {
       SaveSystem.normalizeForComparison({ ...legacy, effectsQuality: 'medium' }).effectsQuality,
     ).toBe('medium');
   });
+
+  it('setzt "Voll" aus Staenden vor der Mittel-Voreinstellung einmalig auf "Mittel"', () => {
+    const { effectsDefaultRevision: _old, ...before } = SaveSystem.createDefaultSave();
+    const moved = SaveSystem.normalizeForComparison({ ...before, effectsQuality: 'full' });
+    expect(moved.effectsQuality).toBe('medium');
+    expect(moved.effectsDefaultRevision).toBe(1);
+    // Sparsam war eine Wahl oder eine Absenkung - das bleibt.
+    expect(
+      SaveSystem.normalizeForComparison({ ...before, effectsQuality: 'reduced' }).effectsQuality,
+    ).toBe('reduced');
+    // Wer nach der Umstellung wieder "Voll" waehlt, behaelt es.
+    expect(
+      SaveSystem.normalizeForComparison({ ...moved, effectsQuality: 'full' }).effectsQuality,
+    ).toBe('full');
+  });
 });

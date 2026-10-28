@@ -98,6 +98,7 @@ const SAVE_KEY = 'isihunt.save.v1';
 function makeSave(overrides = {}) {
   return {
     effectsQuality: quality,
+    effectsDefaultRevision: 1,
     version: 1,
     level: 1,
     xp: 0,

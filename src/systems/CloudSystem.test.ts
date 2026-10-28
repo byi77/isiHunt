@@ -79,6 +79,7 @@ function createSave(overrides: Partial<SaveData> = {}): SaveData {
     showFrameRate: false,
     effectsQuality: 'full',
     effectsQualityAutoLowered: false,
+    effectsDefaultRevision: 1,
     playerName: '',
     cloudId: null,
     ...overrides,

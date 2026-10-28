@@ -512,6 +512,7 @@ Geraet, das nicht mitkommt, wird automatisch eine Stufe herabgesetzt.
 _Seit 28.10.2026 (ADR-0040):_ MITTEL ist Standard und der Mittelweg - zusaetzlich
 Farbstimmung, Sternstaub, Relikt-Glanz, Schiffsschatten und Pausen-Weichzeichner.
 Nur VOLL behaelt lebenden Nebel, Verzerrung, dynamisches Licht und volles Bloom.
+Seit ADR-0041 gilt das fuer jeden: Alte Staende auf VOLL wechseln einmalig auf MITTEL.
 
 Auf VOLL:
 

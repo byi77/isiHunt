@@ -9,6 +9,10 @@ using [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed — "Mittel" for everyone (2026-10-28)
+
+- Existing saves on "Voll" switch to "Mittel" once; "Sparsam" stays. Picking "Voll" again afterwards sticks (ADR-0041).
+
 ### Changed — graphics middle ground and iPhone Duo (2026-10-28)
 
 - New saves start on "Mittel", now the middle ground: light bloom plus color grading, star dust, relic shine and ship shadow. Living nebula, backdrop distortion, dynamic lighting and full bloom stay "Voll"-only (ADR-0040).
