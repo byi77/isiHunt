@@ -184,9 +184,12 @@ try {
   });
   assert.equal(lowered.quality, 'medium');
   assert(
-    !lowered.liveNebula && !lowered.distortion && !lowered.grading && !lowered.lighting,
+    !lowered.liveNebula && !lowered.distortion && !lowered.lighting,
     'Schwere Effekte bleiben aktiv',
   );
+  // Die Farbstimmung gehoert seit ADR-0040 zur mittleren Stufe: Beim Herabstufen
+  // von voll auf mittel wird sie neu aufgebaut, nicht entfernt.
+  assert(lowered.grading, 'Farbstimmung fehlt nach dem Herabstufen auf mittel');
   assert(
     lowered.sameRun && lowered.remaining <= reduction && reduction - lowered.remaining < 500,
     'Effektwechsel startet Run neu',
