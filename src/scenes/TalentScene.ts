@@ -124,7 +124,7 @@ export class TalentScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       resetY,
-      'TALENTE ZURÜCKSETZEN',
+      'Talente zurücksetzen',
       () => this.openResetConfirmation(),
       {
         width: GAME_WIDTH - 56 * this.cssUnit,
@@ -232,7 +232,7 @@ export class TalentScene extends Phaser.Scene {
       content.add(text);
       y += text.height + 8 * u;
     };
-    addText(talent.name, 'heading', Palette.gold);
+    addText(talent.name, 'heading', Palette.ink);
     addText(talent.description, 'body', Palette.ink);
     addText('RANG ' + rank + '/' + talent.maxRank, 'tiny', Palette.inkDim);
     addText(
@@ -256,11 +256,12 @@ export class TalentScene extends Phaser.Scene {
     }
     const purchaseButton = createButton(
       this,
-      GAME_WIDTH - left - 48 * u,
+      GAME_WIDTH - left - 70 * u,
       buttonY,
-      rank >= talent.maxRank ? 'MAX' : '1 PUNKT',
+      // Mit Verb: "1 PUNKT" nannte nur den Preis, nicht die Handlung.
+      rank >= talent.maxRank ? 'Maximum' : 'Lernen · 1 Punkt',
       () => void this.purchase(id),
-      { width: 96 * u, height: 44 * u, accent },
+      { width: 140 * u, height: 44 * u, accent },
     );
     content.add(purchaseButton.container);
     purchaseButton.setEnabled(rank < talent.maxRank && save.talentPoints > 0);
@@ -280,7 +281,7 @@ export class TalentScene extends Phaser.Scene {
         InterfaceStyle.spacing * this.cssUnit,
         y,
         group,
-        textStyle(uiFont(this, 'heading'), Palette.gold, { fontStyle: 'bold' }),
+        textStyle(uiFont(this, 'heading'), Palette.ink, { fontStyle: 'bold' }),
       ),
     );
   }
@@ -327,7 +328,7 @@ export class TalentScene extends Phaser.Scene {
     if (!this.scene.isActive()) return;
 
     if (error) {
-      this.feedbackText.setText(error).setColor(Palette.gold);
+      this.feedbackText.setText(error).setColor(Palette.danger);
       return;
     }
     this.scene.restart({
@@ -371,7 +372,7 @@ export class TalentScene extends Phaser.Scene {
         GAME_WIDTH / 2,
         GAME_HEIGHT / 2 - 105,
         'WILLST DU WIRKLICH\\nALLE TALENTE ZURÜCKSETZEN?',
-        textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold', align: 'center' }),
+        textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold', align: 'center' }),
       )
       .setOrigin(0.5)
       .setAlign('center')
@@ -390,7 +391,7 @@ export class TalentScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2 - 105,
       GAME_HEIGHT / 2 + 88,
-      'ABBRECHEN',
+      'Abbrechen',
       () => this.closeResetConfirmation(),
       { width: 190, height: 68, accent: 0x778099, fontSize: FontSize.tiny },
     );
@@ -398,7 +399,7 @@ export class TalentScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2 + 105,
       GAME_HEIGHT / 2 + 88,
-      'ZURÜCKSETZEN',
+      'Zurücksetzen',
       () => void this.reset(),
       { width: 190, height: 68, accent: 0xb782ff, fontSize: FontSize.tiny },
     );
@@ -436,7 +437,7 @@ export class TalentScene extends Phaser.Scene {
 
     this.closeResetConfirmation();
     if (error) {
-      this.feedbackText.setText(error).setColor(Palette.gold);
+      this.feedbackText.setText(error).setColor(Palette.danger);
       return;
     }
     this.scene.restart({

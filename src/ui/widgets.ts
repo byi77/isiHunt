@@ -36,6 +36,7 @@ import {
   Palette,
   textStyle,
   toCss,
+  mixHex,
 } from '@/ui/theme';
 import * as SoundSystem from '@/systems/SoundSystem';
 import { ensureTouchTarget, prefersReducedMotion } from '@/systems/AccessibilitySystem';
@@ -138,14 +139,17 @@ interface FlatButtonSpec {
   radius: number;
   borderWidth: number;
   borderColor: number;
+  fill: number;
 }
 function bakeFlatButton(scene: Phaser.Scene, spec: FlatButtonSpec, pressed: boolean): string {
-  const { width, height, radius, borderWidth, borderColor } = spec;
-  const key = ['btn-flat', width, height, radius, borderWidth, borderColor, pressed].join('-');
+  const { width, height, radius, borderWidth, borderColor, fill } = spec;
+  const key = ['btn-flat', width, height, radius, borderWidth, borderColor, fill, pressed].join(
+    '-',
+  );
   if (scene.textures.exists(key)) return key;
   const pad = Math.ceil(borderWidth / 2) + BUTTON_TEXTURE_PAD;
   const g = scene.make.graphics({ x: 0, y: 0 }, false);
-  g.fillStyle(pressed ? Palette.buttonHover : Palette.buttonSurface);
+  g.fillStyle(pressed ? Palette.buttonHover : fill);
   g.fillRoundedRect(pad, pad, width, height, radius);
   g.lineStyle(borderWidth, borderColor, 1);
   g.strokeRoundedRect(pad, pad, width, height, radius);
@@ -173,7 +177,7 @@ export function createButton(
      * Beschriftung. Nur beim Druecken bekommt sie eine Flaeche - so tritt sie
      * hinter die Knoepfe mit Rahmen zurueck, ohne an Trefferflaeche zu verlieren.
      */
-    variant?: 'primary' | 'secondary' | 'ghost';
+    variant?: 'primary' | 'secondary' | 'selected' | 'ghost';
     /**
      * Bei `ghost` ueber der Beschriftung, sonst links vor ihr. Die Schrift
      * rueckt dann aus der Mitte, damit das Symbol nie auf dem ersten
@@ -195,9 +199,19 @@ export function createButton(
   );
   const width = target.width;
   const height = target.height;
-  const accent = options.accent ?? worldAccent;
   const primary = options.variant === 'primary';
+  const selected = options.variant === 'selected';
   const ghost = options.variant === 'ghost';
+  // Weltfarbe heisst "ausgewaehlt", Gold heisst "Hauptaktion". Ein normaler
+  // Knopf traegt deshalb die neutrale Kontur - ausser eine Scene gibt bewusst
+  // eine fachliche Farbe vor (Warnrot, Admin-Gold).
+  const semanticAccent =
+    options.accent !== undefined && options.accent !== worldAccent ? options.accent : undefined;
+  const borderColor = primary
+    ? Palette.goldHex
+    : selected
+      ? worldAccent
+      : (semanticAccent ?? Palette.controlBorder);
 
   // Buttons liegen immer über normalen Texten und Statusanzeigen. Dadurch
   // kann eine Meldung niemals die sichtbare Schaltfläche oder deren
@@ -218,7 +232,10 @@ export function createButton(
     height,
     radius,
     borderWidth: canvasUiPixels(InterfaceStyle.borderWidth, canvasWidth, GAME_WIDTH),
-    borderColor: primary ? Palette.goldHex : accent,
+    borderColor,
+    fill: selected
+      ? mixHex(Palette.buttonSurface, worldAccent, InterfaceStyle.selectedFillMix)
+      : Palette.buttonSurface,
   };
   const flatBg = ghost ? null : scene.add.image(0, 0, bakeFlatButton(scene, spec, false));
   const paintBackground = (highlighted: boolean): void => {
@@ -245,7 +262,7 @@ export function createButton(
       ghost ? height * GHOST_BUTTON_VISUALS.labelOffset : 0,
       options.displayLabel ?? label,
       textStyle(uiFont(scene, ghost ? 'tiny' : 'button'), primary ? Palette.gold : Palette.ink, {
-        fontStyle: primary ? 'bold' : 'normal',
+        fontStyle: primary || selected ? 'bold' : 'normal',
       }),
     )
     .setOrigin(0.5);
@@ -422,7 +439,7 @@ export function createBackButton(
     scene,
     68 * u,
     GAME_HEIGHT - BACK_BUTTON_BOTTOM_OFFSET,
-    options.label ?? 'ZURÜCK',
+    options.label ?? 'Zurück',
     onClick,
     { width: 112 * u, height: 44 * u, accent: worldAccent, sound: 'back', icon: 'back' },
   );
@@ -799,7 +816,7 @@ export function createPanel(
   const border = scene.add.graphics();
   border.lineStyle(
     canvasUiPixels(InterfaceStyle.borderWidth, canvasWidth, GAME_WIDTH),
-    accent === Palette.panelBorder ? worldAccent : accent,
+    accent === worldAccent ? Palette.panelBorder : accent,
     1,
   );
   border.strokeRoundedRect(-width / 2, -height / 2, width, height, radius);

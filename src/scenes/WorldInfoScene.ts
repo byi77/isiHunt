@@ -39,9 +39,9 @@ import {
 export type WorldInfoMode = 'jagd' | 'duell' | 'tageslauf';
 
 const MODE_TITLES: Record<WorldInfoMode, string> = {
-  jagd: 'JAGD STARTEN',
-  duell: 'DUELL STARTEN',
-  tageslauf: 'TAGESLAUF STARTEN',
+  jagd: 'Jagd starten',
+  duell: 'Duell starten',
+  tageslauf: 'Tageslauf starten',
 };
 
 /**
@@ -278,7 +278,7 @@ export class WorldInfoScene extends Phaser.Scene {
     if (!this.scene.isActive()) return;
     if (!result.ok) {
       this.boostedBusy = false;
-      this.boostedStatus?.setText(result.error).setColor(Palette.gold);
+      this.boostedStatus?.setText(result.error).setColor(Palette.danger);
       return;
     }
     const accountId = AuthSystem.currentUserId();
@@ -286,7 +286,7 @@ export class WorldInfoScene extends Phaser.Scene {
     if (!this.scene.isActive()) return;
     if (!effectRun.ok) {
       this.boostedBusy = false;
-      this.boostedStatus?.setText(effectRun.error).setColor(Palette.gold);
+      this.boostedStatus?.setText(effectRun.error).setColor(Palette.danger);
       return;
     }
     if (accountId !== AuthSystem.currentUserId()) {
@@ -320,7 +320,7 @@ export class WorldInfoScene extends Phaser.Scene {
       }
       if (!effectRun.ok) {
         this.boostedBusy = false;
-        this.boostedStatus?.setText(effectRun.error).setColor(Palette.gold);
+        this.boostedStatus?.setText(effectRun.error).setColor(Palette.danger);
         return;
       }
       transitionTo(

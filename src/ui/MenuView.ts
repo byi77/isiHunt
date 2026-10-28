@@ -240,10 +240,12 @@ export class MenuView {
     size = 14,
     primary = false,
     icon?: UiIcon,
+    displayLabel?: string,
   ): ButtonHandle {
     const handle = createButton(this.scene, x, y, label, action, {
       width,
       height,
+      displayLabel,
       fontSize: this.layout.font(size),
       variant: primary ? 'primary' : 'secondary',
       icon,
@@ -289,7 +291,7 @@ export class MenuView {
     logo.on('pointerdown', () => this.callbacks.onAction('logo'));
     this.root.add(logo);
     const codeX = GAME_WIDTH - margin - codeWidth / 2;
-    this.button(codeX, headerHeight / 2, codeWidth, 44 * unit, 'CODE', () =>
+    this.button(codeX, headerHeight / 2, codeWidth, 44 * unit, 'Code', () =>
       this.callbacks.onAction('rewardCode'),
     );
     if (hasFullscreen) {
@@ -494,9 +496,12 @@ export class MenuView {
       planetY,
       44 * unit,
       44 * unit,
-      '↑',
+      'Vorherige Welt',
       () => this.chooseWorld(-1),
       22,
+      false,
+      undefined,
+      '‹',
     );
     previous.setEnabled(selectedIndex > 0);
     const nextWorld = WORLDS[selectedIndex + 1];
@@ -505,9 +510,12 @@ export class MenuView {
       planetY,
       44 * unit,
       44 * unit,
-      '↓',
+      'Nächste Welt',
       () => this.chooseWorld(1),
       22,
+      false,
+      undefined,
+      '›',
     );
     next.setEnabled(nextWorld !== undefined && nextWorld.unlockLevel <= this.save.level);
     this.button(
@@ -580,21 +588,21 @@ export class MenuView {
       primaryY,
       half,
       primaryHeight,
-      firstHunt ? 'ERSTE JAGD' : 'JAGD',
+      // Einzige Hauptaktion des Menues. Endlos stand bis 28.10.2026 gleichrangig
+      // in Gold daneben - zwei Hauptaktionen sind keine (ART_STYLE.md).
+      firstHunt ? 'Erste Jagd' : 'Jagd',
       action('jagd'),
       this.layout.compact ? 17 : 19,
       true,
-      'world',
     );
     this.button(
       GAME_WIDTH - margin - half / 2,
       primaryY,
       half,
       primaryHeight,
-      'ENDLOS',
+      'Endlos',
       action('endless'),
       this.layout.compact ? 17 : 19,
-      true,
     );
     this.button(
       margin + half / 2,
@@ -625,19 +633,19 @@ export class MenuView {
       ['Shop', 'shop', 'shop'],
       ['Optionen', 'settings', 'settings'],
     ];
-    const tabWidth = (innerWidth - gap * (tabs.length - 1)) / tabs.length;
+    // Ohne Zwischenraum: Ghost-Kacheln haben keinen Rahmen, den eine Luecke
+    // trennen muesste - und "Rangliste" passt so ungetrennt in ein Fuenftel.
+    const tabWidth = innerWidth / tabs.length;
     tabs.forEach(([label, key, icon], index) => {
       const handle = createButton(
         this.scene,
-        margin + tabWidth / 2 + index * (tabWidth + gap),
+        margin + tabWidth / 2 + index * tabWidth,
         navY,
         label,
         action(key),
         {
           width: tabWidth,
           height: navHeight,
-          displayLabel:
-            label === 'Rangliste' ? 'Rang-\nliste' : label === 'Optionen' ? 'Optio-\nnen' : label,
           fontSize: this.layout.font(12),
           variant: 'ghost',
           icon,
@@ -652,7 +660,7 @@ export class MenuView {
         'Vollbild auf dem iPhone',
         12,
         innerWidth,
-        Palette.gold,
+        Palette.ink,
         true,
       );
       this.label(

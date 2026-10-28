@@ -115,9 +115,9 @@ export class LeaderboardScene extends Phaser.Scene {
   /** Getrennte Wertungen fuer Jagd, Endlos und Duelle. */
   private buildModeTabs(sectionY: number): void {
     const modes: readonly { mode: LeaderboardMode; label: string }[] = [
-      { mode: 'hunt', label: 'JAGD' },
-      { mode: 'endless', label: 'ENDLOS' },
-      { mode: 'duel', label: 'DUELLE' },
+      { mode: 'hunt', label: 'Jagd' },
+      { mode: 'endless', label: 'Endlos' },
+      { mode: 'duel', label: 'Duelle' },
     ];
     modes.forEach(({ mode, label }, index) => {
       createButton(
@@ -131,7 +131,7 @@ export class LeaderboardScene extends Phaser.Scene {
         {
           width: 190,
           height: 52,
-          accent: this.mode === mode ? Palette.goldHex : 0x687394,
+          variant: this.mode === mode ? 'selected' : 'secondary',
           fontSize: FontSize.small,
         },
       );
@@ -144,7 +144,7 @@ export class LeaderboardScene extends Phaser.Scene {
         GAME_WIDTH / 2,
         sectionY - 18,
         'ENDLOS-WERTUNG',
-        textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
+        textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }),
       )
       .setOrigin(0.5);
     this.add
@@ -164,7 +164,7 @@ export class LeaderboardScene extends Phaser.Scene {
         GAME_WIDTH / 2,
         sectionY - 18,
         'DUELL-WERTUNG',
-        textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
+        textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }),
       )
       .setOrigin(0.5);
     this.add
@@ -237,7 +237,7 @@ export class LeaderboardScene extends Phaser.Scene {
     });
 
     const title = this.filter?.name ?? 'ALLE WELTEN';
-    const color = this.filter ? toCss(this.filter.accent) : Palette.gold;
+    const color = this.filter ? toCss(this.filter.accent) : Palette.ink;
 
     this.add
       .text(GAME_WIDTH / 2, y + 52, title, textStyle(FontSize.body, color, { fontStyle: 'bold' }))

@@ -36,7 +36,7 @@ export class DuelSelectScene extends Phaser.Scene {
         GAME_WIDTH / 2,
         150,
         'WÄHLE GEGNER',
-        textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
+        textStyle(FontSize.heading, Palette.ink, { fontStyle: 'bold' }),
       )
       .setOrigin(0.5)
       .setLetterSpacing(3);
@@ -60,44 +60,56 @@ export class DuelSelectScene extends Phaser.Scene {
       planetTextureForVariant(world.spaceVariant),
     );
 
-    createPanel(this, GAME_WIDTH / 2, 600, GAME_WIDTH - 100, 500, world.accent, {
+    // Zwei Karten, je Gegner eine. Bis 28.10.2026 stand der Bot-Knopf in der
+    // Karte "Online-Duell - Spiele online mit zwei bis vier Spielern" und
+    // gehoerte damit scheinbar dazu.
+    this.buildOpponentCard(
+      470,
+      'ONLINE',
+      'Zwei bis vier Spieler, jeder auf seinem Gerät.',
+      'Online-Duell',
+      () => this.scene.start(SceneKey.OnlineDuel, { worldId: world.id }),
+    );
+    this.buildOpponentCard(
+      730,
+      'BOT',
+      'Ein Lauf gegen einen mittelstarken Bot.',
+      'Gegen Bot',
+      () => void this.startBotChallenge(world.id),
+    );
+
+    createBackButton(this, () => this.scene.start(SceneKey.Menu));
+  }
+
+  private buildOpponentCard(
+    centerY: number,
+    title: string,
+    description: string,
+    action: string,
+    onClick: () => void,
+  ): void {
+    const height = 230;
+    const top = centerY - height / 2;
+    createPanel(this, GAME_WIDTH / 2, centerY, GAME_WIDTH - 100, height, Palette.panelBorder, {
       alpha: 0.28,
     });
     this.add
       .text(
         GAME_WIDTH / 2,
-        380,
-        'ONLINE-DUELL',
+        top + 40,
+        title,
         textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }),
       )
       .setOrigin(0.5)
       .setLetterSpacing(2);
     this.add
-      .text(
-        GAME_WIDTH / 2,
-        420,
-        'Spiele online mit zwei bis vier Spielern.',
-        textStyle(FontSize.small, Palette.inkDim),
-      )
+      .text(GAME_WIDTH / 2, top + 82, description, textStyle(FontSize.small, Palette.inkDim))
       .setOrigin(0.5);
-
-    createButton(
-      this,
-      GAME_WIDTH / 2,
-      500,
-      'ONLINE-DUELL',
-      () => this.scene.start(SceneKey.OnlineDuel, { worldId: world.id }),
-      { width: 430, height: 92, accent: 0x38bdf8, fontSize: FontSize.large },
-    );
-
-    createButton(this, GAME_WIDTH / 2, 700, 'VS BOT', () => void this.startBotChallenge(world.id), {
+    createButton(this, GAME_WIDTH / 2, top + 160, action, onClick, {
       width: 430,
       height: 92,
-      accent: Palette.goldHex,
       fontSize: FontSize.large,
     });
-
-    createBackButton(this, () => this.scene.start(SceneKey.Menu));
   }
 
   private async startBotChallenge(worldId: string): Promise<void> {

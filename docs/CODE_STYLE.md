@@ -221,7 +221,7 @@ Damit ist die Kette geschlossen: Sie meldet sich jetzt von selbst.
 
 > **Ein Fehlerbericht ohne Versionsnummer ist wertlos.** Bevor eine
 > Rueckmeldung ausgewertet wird, muss feststehen, welcher Stand sie erzeugt hat.
-> Die Nummer steht unten rechts am Bildschirmrand.
+> Die Nummer steht oben rechts am Bildschirmrand.
 
 Bewusst uebergehen: `git commit --no-verify` bzw. `git push --no-verify`. Die
 CI-Pruefungen laufen trotzdem. Merge-, Rebase- und Amend-Commits ueberspringt

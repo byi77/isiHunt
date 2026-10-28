@@ -8,7 +8,7 @@
 
 import Phaser from 'phaser';
 
-import { GLOW_FX, RELIC_LIFETIME_ARC } from '@/config/effectVisuals';
+import { GLOW_FX, RARITY_MARK_VISUALS, RELIC_LIFETIME_ARC } from '@/config/effectVisuals';
 import {
   MAGNET_PULL_SPEED,
   RARITY_IMPACT_MIN_POINTS,
@@ -114,21 +114,12 @@ export class Collectible extends Phaser.GameObjects.Container {
       .image(0, 0, TextureKey.RelicLight)
       .setDisplaySize(this.radius * 2, this.radius * 2);
     const contour = scene.add.graphics();
-    contour.lineStyle(2.5, rarity.color, 0.95);
-    contour.strokeCircle(0, 0, this.radius + 1.5);
+    const rank = RARITY_IDS.indexOf(rarity.id);
+    drawRarityMark(contour, rank, this.radius, rarity.color);
     contour.lineStyle(1.5, 0xf0f7ff, 0.72);
     contour.beginPath();
     contour.arc(0, 0, this.radius - 1, Math.PI * 1.05, Math.PI * 1.58);
     contour.strokePath();
-    // Anzahl statt Farbe allein: sechs feste Rangmarken fuer sechs Seltenheiten.
-    const rank = RARITY_IDS.indexOf(rarity.id);
-    for (let i = 0; i <= rank; i++) {
-      const angle = Math.PI / 2 + (i - rank / 2) * 0.19;
-      const x = Math.cos(angle) * (this.radius + 7);
-      const y = Math.sin(angle) * (this.radius + 7);
-      contour.fillStyle(rarity.color, 0.95);
-      contour.fillCircle(x, y, rank >= 4 ? 2 : 1.5);
-    }
     this.lifetimeArc = scene.add.graphics();
     this.add([lighting, contour, this.lifetimeArc]);
     this.setDepth(Depth.Collectible);
@@ -397,5 +388,54 @@ export class Collectible extends Phaser.GameObjects.Container {
   override destroy(fromScene?: boolean): void {
     this.magnetVisual.destroy();
     super.destroy(fromScene);
+  }
+}
+
+/**
+ * Ringform plus Rangpunkte einer Seltenheitsstufe. Form und Anzahl tragen die
+ * Stufe auch ohne Farbe - siehe `RARITY_MARK_VISUALS`.
+ */
+function drawRarityMark(
+  g: Phaser.GameObjects.Graphics,
+  rank: number,
+  radius: number,
+  color: number,
+): void {
+  const v = RARITY_MARK_VISUALS;
+  const ring = radius + 1.5;
+  g.lineStyle(v.ringWidth, color, 0.95);
+  const dashes = v.dashes[rank] ?? 0;
+  if (dashes > 0) {
+    const step = (Math.PI * 2) / dashes;
+    for (let i = 0; i < dashes; i++) {
+      g.beginPath();
+      g.arc(0, 0, ring, i * step, i * step + step * 0.55);
+      g.strokePath();
+    }
+  } else {
+    g.strokeCircle(0, 0, ring);
+  }
+  if (v.doubleRing[rank]) {
+    g.lineStyle(v.ringWidth * 0.6, color, 0.8);
+    g.strokeCircle(0, 0, ring + v.innerRingGap);
+  }
+  const ticks = v.ticks[rank] ?? 0;
+  const tickBase = ring + (v.doubleRing[rank] ? v.innerRingGap : 0);
+  g.lineStyle(v.tickWidth, color, 0.95);
+  for (let i = 0; i < ticks; i++) {
+    // Um eine halbe Teilung versetzt, damit keine Zacke auf die Rangpunkte unten faellt.
+    const angle = -Math.PI / 2 + ((i + 0.5) * Math.PI * 2) / ticks;
+    g.lineBetween(
+      Math.cos(angle) * tickBase,
+      Math.sin(angle) * tickBase,
+      Math.cos(angle) * (tickBase + v.tickLength),
+      Math.sin(angle) * (tickBase + v.tickLength),
+    );
+  }
+  g.fillStyle(color, 0.95);
+  const pipDistance = ring + v.pipOffset;
+  for (let i = 0; i <= rank; i++) {
+    const angle = Math.PI / 2 + (i - rank / 2) * v.pipSpacing;
+    g.fillCircle(Math.cos(angle) * pipDistance, Math.sin(angle) * pipDistance, v.pipRadius);
   }
 }

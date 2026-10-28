@@ -208,7 +208,7 @@ export class ProfileScene extends Phaser.Scene {
 
     let saveButton: ButtonHandle | null = null;
     const status = this.add
-      .text(GAME_WIDTH / 2, profileY + 105 * u, '', textStyle(uiFont(this, 'tiny'), Palette.inkDim))
+      .text(GAME_WIDTH / 2, profileY + 152 * u, '', textStyle(uiFont(this, 'tiny'), Palette.inkDim))
       .setOrigin(0.5)
       .setWordWrapWidth(GAME_WIDTH - 160)
       .setAlign('center');
@@ -225,7 +225,7 @@ export class ProfileScene extends Phaser.Scene {
       if (saving) return;
       const name = CloudSystem.sanitizePlayerName(input.getValue());
       if (!name) {
-        status.setText('Bitte gib einen Namen ein.').setColor(Palette.gold);
+        status.setText('Bitte gib einen Namen ein.').setColor(Palette.danger);
         return;
       }
 
@@ -249,7 +249,7 @@ export class ProfileScene extends Phaser.Scene {
         if (!availability.value) {
           saving = false;
           saveButton?.setEnabled(true);
-          status.setText('Dieser Spielername ist bereits vergeben.').setColor(Palette.gold);
+          status.setText('Dieser Spielername ist bereits vergeben.').setColor(Palette.danger);
           return;
         }
         if (AuthSystem.isSignedIn()) {
@@ -361,8 +361,9 @@ export class ProfileScene extends Phaser.Scene {
     saveButton = createButton(
       this,
       GAME_WIDTH / 2,
-      profileY + 196 * u,
-      firstStart ? "LOS GEHT'S" : 'SPEICHERN',
+      // Direkt unter dem Feld, zu dem er gehoert - nicht unter dem XP-Balken.
+      profileY + 118 * u,
+      firstStart ? "Los geht's" : 'Speichern',
       saveProfile,
       { width: innerWidth, height: 44 * u, accent: world.accent, fontSize: uiFont(this, 'button') },
     );
@@ -383,7 +384,7 @@ export class ProfileScene extends Phaser.Scene {
       this.add
         .text(
           GAME_WIDTH / 2,
-          profileY + 145 * u,
+          profileY + 184 * u,
           levelProgress.xpNeeded === 0
             ? `Level ${levelProgress.level}  ·  MAX LEVEL`
             : `Level ${levelProgress.level}  ·  ${levelProgress.xpInLevel} / ${levelProgress.xpNeeded} XP`,
@@ -398,7 +399,7 @@ export class ProfileScene extends Phaser.Scene {
     const xpBar = createBar(
       this,
       GAME_WIDTH / 2 - xpBarWidth / 2,
-      profileY + 166 * u,
+      profileY + 204 * u,
       xpBarWidth,
       6 * u,
       world.accent,
@@ -432,7 +433,7 @@ export class ProfileScene extends Phaser.Scene {
             GAME_WIDTH / 2,
             statisticsY - 130 * u,
             'STATISTIKEN',
-            textStyle(uiFont(this, 'heading'), Palette.gold),
+            textStyle(uiFont(this, 'heading'), Palette.ink),
           )
           .setOrigin(0.5)
           .setLetterSpacing(1),
@@ -474,7 +475,7 @@ export class ProfileScene extends Phaser.Scene {
           this,
           GAME_WIDTH / 2,
           collectionY,
-          'SAMMLUNG ANSEHEN',
+          'Sammlung ansehen',
           () => this.scene.start(SceneKey.Collection),
           {
             width: cardWidth,
@@ -524,7 +525,7 @@ export class ProfileScene extends Phaser.Scene {
           GAME_WIDTH / 2,
           accountY - 116 * u,
           'PROFIL & GERÄTE',
-          textStyle(uiFont(this, 'heading'), Palette.gold),
+          textStyle(uiFont(this, 'heading'), Palette.ink),
         )
         .setOrigin(0.5)
         .setLetterSpacing(2),
@@ -554,7 +555,7 @@ export class ProfileScene extends Phaser.Scene {
         this,
         GAME_WIDTH / 2,
         accountY - 22 * u,
-        'PROFIL ABGLEICHEN',
+        'Profil abgleichen',
         () => void this.syncAccount(),
         { width: innerWidth, height: 44 * u, accent, fontSize: uiFont(this, 'small') },
       );
@@ -563,7 +564,7 @@ export class ProfileScene extends Phaser.Scene {
         this,
         GAME_WIDTH / 2,
         accountY + 36 * u,
-        'ABMELDEN',
+        'Abmelden',
         () => void this.signOutAccount(),
         { width: innerWidth, height: 44 * u, accent: 0x9aa3bd, fontSize: uiFont(this, 'tiny') },
       );
@@ -590,7 +591,7 @@ export class ProfileScene extends Phaser.Scene {
         this,
         GAME_WIDTH / 2,
         accountY + 44 * u,
-        'ANMELDEN / PROFIL ANLEGEN',
+        'Anmelden / Profil anlegen',
         () => this.scene.start(SceneKey.Account),
         { width: innerWidth, height: 44 * u, accent, fontSize: uiFont(this, 'small') },
       );
@@ -621,7 +622,7 @@ export class ProfileScene extends Phaser.Scene {
           GAME_WIDTH / 2,
           y - 125,
           'BELOHNUNGSCODE',
-          textStyle(uiFont(this, 'body'), Palette.gold),
+          textStyle(uiFont(this, 'body'), Palette.ink),
         )
         .setOrigin(0.5)
         .setLetterSpacing(2),
@@ -660,7 +661,7 @@ export class ProfileScene extends Phaser.Scene {
       const profileId = AuthSystem.currentUserId();
       const pending = profileId ? prepareRewardRedemption(profileId, input.getValue()) : null;
       if (!pending) {
-        status.setText('Bitte gib einen zwölfstelligen Code ein.').setColor(Palette.gold);
+        status.setText('Bitte gib einen zwölfstelligen Code ein.').setColor(Palette.danger);
         return;
       }
       this.busy = true;
@@ -697,7 +698,7 @@ export class ProfileScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       y + 35,
-      'CODE EINLÖSEN',
+      'Code einlösen',
       () => void redeem(),
       {
         width: 420,
@@ -713,7 +714,7 @@ export class ProfileScene extends Phaser.Scene {
   private async syncAccount(): Promise<void> {
     if (this.busy) return;
     if (!navigator.onLine) {
-      this.accountStatus.setText('Zum Abgleichen brauchst du Internet.').setColor(Palette.gold);
+      this.accountStatus.setText('Zum Abgleichen brauchst du Internet.').setColor(Palette.danger);
       return;
     }
     this.busy = true;

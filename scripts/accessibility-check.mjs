@@ -93,14 +93,15 @@ try {
       };
     });
 
-    const sound = page.getByRole('button', { name: 'TON: AUS', exact: true });
+    const sound = page.getByRole('switch', { name: 'Ton', exact: true });
+    const soundBefore = await sound.getAttribute('aria-checked');
     await sound.focus();
     await page.keyboard.press('Space');
     assert(
-      (await page.getByRole('button', { name: 'TON: AN', exact: true }).count()) === 1,
+      (await sound.getAttribute('aria-checked')) !== soundBefore,
       'Space did not toggle sound',
     );
-    await page.getByRole('button', { name: 'ZURÜCK', exact: true }).focus();
+    await page.getByRole('button', { name: 'Zurück', exact: true }).focus();
     await page.keyboard.press('Enter');
     await page.waitForFunction(() => window.isiHunt.scene.isActive('Menu'));
     assert(
@@ -162,7 +163,7 @@ try {
       'Talent descriptions too small',
     );
     await page.screenshot({ path: resolve(output, `talents-${viewport.width}.png`) });
-    const purchase = page.getByRole('button', { name: '1 PUNKT', exact: true }).first();
+    const purchase = page.getByRole('button', { name: 'Lernen · 1 Punkt', exact: true }).first();
     await purchase.focus();
     await page.keyboard.press('Space');
     await page.waitForFunction(async () => {

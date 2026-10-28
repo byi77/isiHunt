@@ -1378,7 +1378,7 @@ export class GameScene extends Phaser.Scene {
           this,
           GAME_WIDTH / 2,
           GAME_HEIGHT / 2 + 145,
-          'WEITER',
+          'Weiter',
           nextRound,
           { width: GAME_WIDTH - 130, height: 52, variant: 'primary' },
         );
@@ -1413,7 +1413,7 @@ export class GameScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       GAME_HEIGHT - 84,
-      'SERIE BEENDEN',
+      'Serie beenden',
       () => {
         // Der Knopf liegt direkt unter den Talentwahlen; ein verrutschter
         // Daumen beendete die Serie ohne Rueckweg. Deshalb erst fragen.
@@ -1480,7 +1480,7 @@ export class GameScene extends Phaser.Scene {
         this,
         GAME_WIDTH / 2,
         GAME_HEIGHT / 2 + 45,
-        'WEITERSPIELEN',
+        'Weiterspielen',
         () => {
           close();
           onCancel();

@@ -285,7 +285,7 @@ async function enterDuel2G(page, playerName) {
   }
 
   const duelButtons = await collectInteractive(page, 'OnlineDuel');
-  if (!duelButtons.some((button) => button.label.toUpperCase().includes('VS BOT'))) {
+  if (!duelButtons.some((button) => button.label.toUpperCase().includes('GEGEN BOT'))) {
     throw new Error('OnlineDuel: direkter VS-BOT-Button fehlt.');
   }
   if (

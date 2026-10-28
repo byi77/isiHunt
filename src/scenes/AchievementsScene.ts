@@ -72,7 +72,7 @@ export class AchievementsScene extends Phaser.Scene {
           width: tabWidth,
           height: 44 * u,
           fontSize: uiFont(this, 'button'),
-          variant: id === filter ? 'primary' : 'secondary',
+          variant: id === filter ? 'selected' : 'secondary',
         },
       ),
     );
@@ -130,7 +130,7 @@ export class AchievementsScene extends Phaser.Scene {
         textWidth,
       );
       y += meta.height + 6 * u;
-      const title = addText(achievement.name, textX, y, 'heading', Palette.gold, textWidth, true);
+      const title = addText(achievement.name, textX, y, 'heading', Palette.ink, textWidth, true);
       content.add(
         createAchievementBadge(
           this,

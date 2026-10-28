@@ -188,7 +188,7 @@ export class AccountScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       this.statusPage.contentY(primaryY),
-      isSignUp ? 'PROFIL JETZT ANLEGEN' : 'EINLOGGEN',
+      isSignUp ? 'Profil jetzt anlegen' : 'Einloggen',
       () => void (isSignUp ? this.signUp() : this.signIn()),
       {
         width: 440,
@@ -201,7 +201,7 @@ export class AccountScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       this.statusPage.contentY(secondaryY),
-      isSignUp ? 'ICH HABE SCHON EIN PROFIL' : 'NOCH KEIN PROFIL? NEUES ANLEGEN',
+      isSignUp ? 'Ich habe schon ein Profil' : 'Noch kein Profil? Neues anlegen',
       () => this.switchMode(isSignUp ? 'signIn' : 'signUp'),
       { width: 400, height: 62, accent: 0x9aa3bd, fontSize: FontSize.small },
     );

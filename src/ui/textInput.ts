@@ -98,8 +98,12 @@ export function createTextInput(
     height: `${InterfaceStyle.minTouchSize * uiUnit(scene)}px`,
     boxSizing: 'border-box',
     padding: '0 20px',
-    background: toCss(Palette.buttonSurface),
-    border: `2px solid ${toCss(accent)}`,
+    // Eingelassen statt erhaben: dunkler als jeder Knopf, Innenschatten,
+    // neutrale Kontur. Mit Knopf-Flaeche und Weltfarben-Rahmen sah das
+    // Namensfeld im Profil wie ein Knopf aus (Design-Review 28.10.2026).
+    background: toCss(Palette.fieldSurface),
+    boxShadow: 'inset 0 2px 6px rgba(0, 0, 0, 0.6)',
+    border: `2px solid ${toCss(Palette.controlBorder)}`,
     borderRadius: `${canvasUiPixels(InterfaceStyle.buttonRadius, scene.game.canvas.getBoundingClientRect().width || GAME_WIDTH, GAME_WIDTH)}px`,
     color: Palette.ink,
     fontFamily: FONT_FAMILY,
@@ -111,6 +115,10 @@ export function createTextInput(
     fontWeight: 'bold',
     letterSpacing: options.uppercase ? '6px' : 'normal',
   });
+
+  // Die Weltfarbe zeigt erst der Fokus: Sie heisst "hier wird gerade getippt".
+  input.addEventListener('focus', () => (input.style.borderColor = toCss(accent)));
+  input.addEventListener('blur', () => (input.style.borderColor = toCss(Palette.controlBorder)));
 
   if (options.uppercase) {
     input.addEventListener('input', () => {

@@ -40,7 +40,7 @@ export class RewardCodeScene extends Phaser.Scene {
       radius: 20,
     });
     this.add
-      .text(GAME_WIDTH / 2, panelY - 165, 'BELOHNUNGSCODE', textStyle(FontSize.body, Palette.gold))
+      .text(GAME_WIDTH / 2, panelY - 165, 'BELOHNUNGSCODE', textStyle(FontSize.body, Palette.ink))
       .setOrigin(0.5)
       .setLetterSpacing(2);
     this.add
@@ -84,7 +84,7 @@ export class RewardCodeScene extends Phaser.Scene {
       const profileId = AuthSystem.currentUserId();
       const pending = profileId ? prepareRewardRedemption(profileId, input.getValue()) : null;
       if (!pending) {
-        status.setText('Bitte gib einen zwölfstelligen Code ein.').setColor(Palette.gold);
+        status.setText('Bitte gib einen zwölfstelligen Code ein.').setColor(Palette.danger);
         return;
       }
       this.busy = true;
@@ -121,7 +121,7 @@ export class RewardCodeScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       panelY + 80,
-      'CODE EINLÖSEN',
+      'Code einlösen',
       () => void redeem(),
       { width: 420, height: 64, accent: world.accent, fontSize: FontSize.small },
     );
@@ -135,7 +135,7 @@ export class RewardCodeScene extends Phaser.Scene {
       radius: 20,
     });
     this.add
-      .text(GAME_WIDTH / 2, panelY - 115, 'BELOHNUNGSCODE', textStyle(FontSize.body, Palette.gold))
+      .text(GAME_WIDTH / 2, panelY - 115, 'BELOHNUNGSCODE', textStyle(FontSize.body, Palette.ink))
       .setOrigin(0.5)
       .setLetterSpacing(2);
     this.add
@@ -151,7 +151,7 @@ export class RewardCodeScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       panelY + 92,
-      'ZUM PROFIL',
+      'Zum Profil',
       () => this.scene.start(SceneKey.Profile),
       {
         width: 420,

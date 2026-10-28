@@ -1,5 +1,57 @@
 # Art Style Guide — isiHunt
 
+## Eine Farbe, eine Bedeutung (28.10.2026)
+
+Design-Review gegen Apples Human Interface Guidelines, auf Wunsch des
+Benutzers vollständig umgesetzt. Ersetzt in den genannten Punkten die
+Abschnitte vom 09.10. („Überschriften gelblich, Kontur in der Weltfarbe“) und
+27.09. („Jagd und Endlos gleichrangig in Gold“).
+
+**Warum.** Gold stand gleichzeitig für Überschriften, Auswahl, Hauptaktion und
+Belohnung, die Weltfarbe umrandete jede Karte und jeden Knopf. Damit sagte
+keine der beiden Farben noch etwas aus (HIG `color.md`: „Avoid using the same
+color to mean different things“; `branding.md`: Akzentfarbe sparsam).
+
+| Farbe             | Bedeutung                       | Beispiele                                      |
+| ----------------- | ------------------------------- | ---------------------------------------------- |
+| neutral `#69738d` | Struktur: Kartenkontur          | jede Karte, Hangar-Vorschau                    |
+| neutral `#7a849e` | Struktur: Knopf- und Feldkontur | sekundäre Knöpfe, Eingabefelder (ohne Fokus)   |
+| Weltfarbe         | ausgewählt / aktiv              | Filter-Tabs, Schalter „an“, Effektstufe, Fokus |
+| Gold `#ffe59b`    | Hauptaktion und Belohnung       | „Jagd“, Kaufen, Coins, Level, Bonus            |
+| Warnrot `#ff6b6b` | Fehler bei der Eingabe          | Name fehlt, Code ungültig                      |
+| hell `#eef2ff`    | Text und Überschriften          | Karten- und Seitentitel                        |
+
+`#7a849e` hat 3,75:1 auf der Knopffläche und liegt damit über der 3:1-Grenze für
+Bedienelemente. Die Weltfarbe bleibt außerdem Atmosphäre (Hintergrund, Aura,
+HUD-Akzente), nur nicht mehr Rahmen um alles.
+
+**Knopfstufen** (`createButton`): `primary` (Goldkontur, goldene fette
+Schrift), `selected` (Weltfarben-Kontur, Fläche mit 22 % Weltfarbe, fette
+Schrift), `secondary` (neutrale Kontur), `ghost`. Eine Scene, die eine
+fachliche Farbe übergibt (Warnrot, Admin-Gold), behält sie; die Weltfarbe als
+`accent` wird zur neutralen Kontur. Das Hauptmenü hat genau eine Hauptaktion:
+Jagd. Endlos, Tageslauf und Duell sind sekundär.
+
+**Schreibweise.** Knöpfe in normaler deutscher Schreibweise („Profil öffnen“,
+„Zurück“), Versalien nur für Seitentitel und kleine Etiketten („RANG 1“).
+Knöpfe beginnen mit einem Verb, wenn sie etwas auslösen („Lernen · 1 Punkt“).
+
+**Einstellungen.** An/Aus-Werte sind Schalter in einer Zeile (`role="switch"`):
+Der Knopf wandert, die Fläche füllt sich. Die Effektstufe ist eine
+Dreifachauswahl statt eines Knopfes, der reihum schaltet.
+
+**Seltenheit ohne Farbe.** Grün/Orange und Blau/Lila sind für Farbenschwache
+schwer zu trennen. Jede Stufe hat deshalb eine eigene Ringform
+(`RARITY_MARK_VISUALS`): schlicht gestrichelt, gewöhnlich einfach,
+ungewöhnlich doppelt, ab selten doppelt mit 4/6/8 Zacken nach außen. Die
+Rangpunkte liegen außerhalb des Lebenszeitbogens und haben 3,5 Spielpixel
+Radius statt 1,5. Die Farben aus 2.1 bleiben unverändert.
+
+**Kleinere Punkte.** Eingabefelder sind eingelassen (dunkler als jeder Knopf,
+Innenschatten); die Weltfarbe zeigt erst der Fokus. Die Versionsnummer steht
+oben rechts in der Kopfzeile statt auf dem Pause-Knopf. Die Zurück-Zone ist
+deckend. Die HUD-Zielzeile trägt dieselbe Kontur wie die Kopfzahlen.
+
 ## Typografie und passende Boxen (09.10.2026)
 
 Die gemeinsame Abstufung wird in echten CSS-Pixeln festgelegt: 16 fuer
@@ -1074,7 +1126,6 @@ verfuegbare Wiedergeburt. Beim einmaligen Einsatz blitzt die Spielfigur gold
 auf; der kurze Schriftzug „WIEDERGEBURT“ erscheint direkt an ihr. Das
 Serienfenster zeigt danach die komplette verlaengerte Restzeit und laeuft
 gleichmaessig leer. Der Effekt nutzt vorhandene Farben und Fang-Feedback.
-
 
 ## Lesbare Unterseiten und Tastaturfokus (09.10.2026)
 

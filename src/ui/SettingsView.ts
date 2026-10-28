@@ -2,6 +2,7 @@ import type Phaser from 'phaser';
 import * as SoundSystem from '@/systems/SoundSystem';
 import * as HapticsSystem from '@/systems/HapticsSystem';
 import * as EffectsQualitySystem from '@/systems/EffectsQualitySystem';
+import type { EffectsQuality } from '@/types';
 import './settings.css';
 
 export class SettingsView {
@@ -44,42 +45,90 @@ export class SettingsView {
       parent.append(element);
       return element;
     };
+    /**
+     * Ein Schalter je An/Aus-Einstellung statt eines Knopfes "TON: AUS".
+     * Der Knopf sah in beiden Zustaenden gleich aus; nur der Text verriet den
+     * Zustand (Design-Review 28.10.2026, HIG toggles.md).
+     */
+    const toggle = (
+      parent: HTMLElement,
+      label: string,
+      hint: string,
+      isOn: () => boolean,
+      flip: () => void,
+    ): void => {
+      const row = button(parent, '', (element) => {
+        flip();
+        element.setAttribute('aria-checked', String(isOn()));
+      });
+      row.className = 'settings-switch';
+      row.setAttribute('role', 'switch');
+      row.setAttribute('aria-label', label);
+      row.setAttribute('aria-checked', String(isOn()));
+      const caption = document.createElement('span');
+      caption.className = 'settings-switch-text';
+      const title = document.createElement('span');
+      title.textContent = label;
+      const detail = document.createElement('span');
+      detail.className = 'hint';
+      detail.textContent = hint;
+      caption.append(title, detail);
+      const track = document.createElement('span');
+      track.className = 'settings-switch-track';
+      track.setAttribute('aria-hidden', 'true');
+      row.append(caption, track);
+    };
     const profile = card('PROFIL & GERÄTE');
     text(profile, 'Name, Level, Statistik und Mehrgeräte-Anmeldung an einem Ort.');
-    button(profile, 'PROFIL ÖFFNEN', () => {
+    button(profile, 'Profil öffnen', () => {
       SoundSystem.playUiClick();
       openProfile();
     });
     const feedback = card('FEEDBACK');
-    const soundLabel = (): string => `TON: ${SoundSystem.isEnabled() ? 'AN' : 'AUS'}`;
-    const sound = button(feedback, soundLabel(), (element) => {
-      SoundSystem.setEnabled(!SoundSystem.isEnabled());
-      element.textContent = soundLabel();
-      element.setAttribute('aria-pressed', String(SoundSystem.isEnabled()));
-    });
-    sound.setAttribute('aria-pressed', String(SoundSystem.isEnabled()));
-    text(feedback, 'Spieltöne und Effekte', true);
-    const hapticsLabel = (): string => `HAPTIK: ${HapticsSystem.isEnabled() ? 'AN' : 'AUS'}`;
-    const haptics = button(feedback, hapticsLabel(), (element) => {
-      HapticsSystem.setEnabled(!HapticsSystem.isEnabled());
-      SoundSystem.playUiToggle(HapticsSystem.isEnabled());
-      element.textContent = hapticsLabel();
-      element.setAttribute('aria-pressed', String(HapticsSystem.isEnabled()));
-    });
-    haptics.setAttribute('aria-pressed', String(HapticsSystem.isEnabled()));
-    text(feedback, 'Vibration bei Treffern und Aktionen', true);
+    toggle(
+      feedback,
+      'Ton',
+      'Spieltöne und Effekte',
+      () => SoundSystem.isEnabled(),
+      () => SoundSystem.setEnabled(!SoundSystem.isEnabled()),
+    );
+    toggle(
+      feedback,
+      'Haptik',
+      'Vibration bei Treffern und Aktionen',
+      () => HapticsSystem.isEnabled(),
+      () => {
+        HapticsSystem.setEnabled(!HapticsSystem.isEnabled());
+        SoundSystem.playUiToggle(HapticsSystem.isEnabled());
+      },
+    );
     const graphics = card('GRAFIK');
-    const labels = { full: 'VOLL', medium: 'MITTEL', reduced: 'SPARSAM' };
-    const qualityLabel = (): string => `EFFEKTE: ${labels[EffectsQualitySystem.current()]}`;
-    const qualityButton = button(graphics, qualityLabel(), (element) => {
-      const next = EffectsQualitySystem.nextManual();
-      EffectsQualitySystem.setQuality(next);
-      SoundSystem.playUiToggle(next !== 'reduced');
-      element.textContent = qualityLabel();
-      element.setAttribute('aria-label', `Effektqualität wechseln. ${qualityLabel()}`);
-      hint.textContent = qualityHint();
+    // Drei Stufen nebeneinander statt eines Knopfes, der reihum schaltet: So
+    // sieht man alle Moeglichkeiten und waehlt direkt.
+    const levels: readonly [EffectsQuality, string][] = [
+      ['full', 'Voll'],
+      ['medium', 'Mittel'],
+      ['reduced', 'Sparsam'],
+    ];
+    const segment = document.createElement('div');
+    segment.className = 'settings-segment';
+    segment.setAttribute('role', 'group');
+    segment.setAttribute('aria-label', 'Effekte');
+    graphics.append(segment);
+    const choices = levels.map(([quality, label]) => {
+      const choice = button(segment, label, () => {
+        EffectsQualitySystem.setQuality(quality);
+        SoundSystem.playUiToggle(quality !== 'reduced');
+        markQuality();
+        hint.textContent = qualityHint();
+      });
+      return { choice, quality };
     });
-    qualityButton.setAttribute('aria-label', `Effektqualität wechseln. ${qualityLabel()}`);
+    const markQuality = (): void =>
+      choices.forEach(({ choice, quality }) =>
+        choice.setAttribute('aria-pressed', String(quality === EffectsQualitySystem.current())),
+      );
+    markQuality();
     const qualityHint = (): string =>
       EffectsQualitySystem.wasLoweredAutomatically()
         ? 'Automatisch gesenkt – dein Gerät kam nicht mit'
@@ -93,10 +142,14 @@ export class SettingsView {
       'Für eure aussergewöhnliche Unterstützung bei der Planung, mit Vorschlägen und Ideen, beim Testen und Bugfixen. Eure Neugier und ehrlichen Rückmeldungen machen isiHunt mutiger, schöner und immer ein bisschen besser.',
     );
     text(legal, 'Dein Spielstand wird automatisch lokal gespeichert.', true);
-    button(this.root.querySelector('footer')!, 'ZURÜCK', () => {
+    // Derselbe Pfeil wie am Canvas-Zurueck-Knopf aller anderen Unterseiten.
+    const backButton = button(this.root.querySelector('footer')!, 'Zurück', () => {
       SoundSystem.playUiClick('back');
       back();
     });
+    backButton.setAttribute('aria-label', 'Zurück');
+    backButton.prepend(Object.assign(document.createElement('span'), { textContent: '← ' }));
+    backButton.firstElementChild!.setAttribute('aria-hidden', 'true');
     document.body.append(this.root);
     this.observer = new ResizeObserver(this.position);
     this.observer.observe(scene.game.canvas);

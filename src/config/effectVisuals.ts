@@ -19,7 +19,9 @@ export const BACKDROP_EDGE_FADE = {
 /** Feste Zurueck-Zone der Unterseiten: weicher Einlauf, dann fast deckend. */
 export const BACK_ZONE_VISUALS = {
   fade: 24,
-  alpha: 0.94,
+  // Deckend: Bei 94 % schienen gescrollte Werte im Profil halb durch den
+  // Zurueck-Knopf hindurch und wirkten wie Teil der Fusszeile.
+  alpha: 1,
 } as const;
 
 /**
@@ -70,8 +72,11 @@ export const OBSTACLE_VISUALS = {
 
 /** Restzeit am Relikt: ein duenner Bogen, der sich im Uhrzeigersinn leert. */
 export const RELIC_LIFETIME_ARC = {
-  /** Abstand ausserhalb der Rangmarken, damit beide lesbar bleiben. */
-  gap: 11,
+  /**
+   * Abstand ausserhalb von Ring und Zacken (`RARITY_MARK_VISUALS`, bis +10,5),
+   * damit beide lesbar bleiben. Die Rangpunkte liegen ausserhalb des Bogens.
+   */
+  gap: 15,
   width: 2,
   alpha: 0.55,
   /** Unter diesem Anteil wird der Bogen kraeftiger - das Relikt eilt. */
@@ -186,4 +191,31 @@ export const SERIES_HOLD_VISUALS = {
   /** Unter dem Punkte-Label, damit beide Zahlen lesbar bleiben. */
   labelOffsetY: 28,
   color: 0xffffff,
+} as const;
+
+/**
+ * Seltenheit ohne Farbe lesbar machen (Design-Review 28.10.2026, HIG
+ * accessibility.md "Convey information with more than color alone").
+ *
+ * Gruen/Orange und Blau/Lila sind fuer Farbenschwache schwer zu trennen. Jede
+ * Stufe bekommt deshalb eine eigene Ringform; die Rangpunkte darunter wurden
+ * so gross, dass sie auf dem Handy mehr als ein Pixel sind.
+ *
+ * Index = Position in `RARITY_IDS` (schlicht ... legendaer).
+ */
+export const RARITY_MARK_VISUALS = {
+  /** Strichanzahl des Rings; 0 = durchgezogen. Nur "schlicht" ist gestrichelt. */
+  dashes: [10, 0, 0, 0, 0, 0],
+  /** Zweiter, innerer Ring ab "ungewoehnlich". */
+  doubleRing: [false, false, true, true, true, true],
+  /** Nach aussen zeigende Zacken ab "selten". */
+  ticks: [0, 0, 0, 4, 6, 8],
+  ringWidth: 2.5,
+  innerRingGap: 4,
+  tickLength: 5,
+  tickWidth: 3,
+  pipRadius: 3.5,
+  /** Ab dem Hauptring gemessen; liegt ausserhalb von `RELIC_LIFETIME_ARC.gap`. */
+  pipOffset: 19,
+  pipSpacing: 0.3,
 } as const;

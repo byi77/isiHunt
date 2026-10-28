@@ -42,7 +42,7 @@ export class RulerScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       GAME_HEIGHT - 70,
-      'LINEAL SCHLIESSEN',
+      'Lineal schließen',
       () => this.scene.stop(),
       { width: 400, height: 68, accent: 0x9aa3bd, fontSize: FontSize.small },
     ).container.setDepth(Depth.Overlay + 10);

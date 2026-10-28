@@ -255,7 +255,7 @@ export class OnlineDuelScene extends Phaser.Scene {
         this,
         GAME_WIDTH / 2,
         this.statusPage.contentY(400),
-        'RAUM ERSTELLEN',
+        'Raum erstellen',
         () => void this.createRoom(),
         { width: 440, accent: Palette.goldHex, fontSize: FontSize.body },
       ).container,
@@ -308,13 +308,13 @@ export class OnlineDuelScene extends Phaser.Scene {
         this,
         GAME_WIDTH / 2,
         this.statusPage.contentY(830),
-        'BEITRETEN',
+        'Beitreten',
         () => void this.joinRoom(),
         { width: 440, height: 76, accent: 0x9aa3bd, fontSize: FontSize.body },
       ).container,
     );
 
-    this.buildBackToMenu('ABBRECHEN');
+    this.buildBackToMenu('Abbrechen');
   }
 
   /** Direkter Duell-Einstieg: bereite Spieler oben, Bot darunter. */
@@ -329,7 +329,7 @@ export class OnlineDuelScene extends Phaser.Scene {
           GAME_WIDTH / 2,
           this.statusPage.contentY(270),
           'DUELLBEREITE SPIELER',
-          textStyle(FontSize.small, Palette.gold, { fontStyle: 'bold' }),
+          textStyle(FontSize.small, Palette.ink, { fontStyle: 'bold' }),
         )
         .setOrigin(0.5)
         .setDepth(Depth.Overlay),
@@ -373,7 +373,7 @@ export class OnlineDuelScene extends Phaser.Scene {
         this,
         GAME_WIDTH / 2,
         this.statusPage.contentY(800),
-        'VS BOT',
+        'Gegen Bot',
         () => void this.startBotChallenge(),
         { width: 440, height: 82, accent: Palette.goldHex, fontSize: FontSize.large },
       ).container,
@@ -383,13 +383,13 @@ export class OnlineDuelScene extends Phaser.Scene {
         this,
         GAME_WIDTH / 2,
         this.statusPage.contentY(955),
-        'RAUMCODE ERSTELLEN',
+        'Raumcode erstellen',
         () => void this.createRoom(),
         { width: 380, height: 64, accent: Palette.goldHex, fontSize: FontSize.small },
       ).container.setVisible(false),
     );
 
-    this.buildBackToMenu('ABBRECHEN');
+    this.buildBackToMenu('Abbrechen');
     this.subscribeToDuelLobby();
   }
 
@@ -495,7 +495,7 @@ export class OnlineDuelScene extends Phaser.Scene {
         this,
         GAME_WIDTH - 145,
         y,
-        'EINLADEN',
+        'Einladen',
         () => void this.invitePlayer(player.playerName),
         {
           width: 170,
@@ -577,7 +577,7 @@ export class OnlineDuelScene extends Phaser.Scene {
     );
     this.keepInvitation(
       this.add
-        .text(GAME_WIDTH / 2, 500, 'DUELL-EINLADUNG', textStyle(FontSize.heading, Palette.gold))
+        .text(GAME_WIDTH / 2, 500, 'DUELL-EINLADUNG', textStyle(FontSize.heading, Palette.ink))
         .setOrigin(0.5)
         .setDepth(Depth.Overlay + 1),
     );
@@ -814,7 +814,7 @@ export class OnlineDuelScene extends Phaser.Scene {
         this,
         GAME_WIDTH / 2,
         this.statusPage.contentY(1000),
-        'DUELL STARTEN',
+        'Duell starten',
         () => void this.startTalentDraft(lobbyStatus),
         { width: 460, accent: Palette.goldHex, fontSize: FontSize.large },
       );
@@ -823,7 +823,7 @@ export class OnlineDuelScene extends Phaser.Scene {
       this.keep(startButton.container);
     }
 
-    this.buildBackToMenu('ABBRECHEN');
+    this.buildBackToMenu('Abbrechen');
 
     void this.runLobbyFlow(lobbyStatus);
   }
@@ -847,7 +847,7 @@ export class OnlineDuelScene extends Phaser.Scene {
           GAME_WIDTH / 2,
           panelY - 118,
           `${Math.max(0, playerCount)}/${maxPlayers} SPIELER VERBUNDEN`,
-          textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
+          textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }),
         )
         .setOrigin(0.5)
         .setDepth(Depth.Overlay),
@@ -885,7 +885,7 @@ export class OnlineDuelScene extends Phaser.Scene {
           GAME_WIDTH / 2,
           this.statusPage.contentY(650),
           'WEITERE SPIELER EINLADEN',
-          textStyle(FontSize.small, Palette.gold, { fontStyle: 'bold' }),
+          textStyle(FontSize.small, Palette.ink, { fontStyle: 'bold' }),
         )
         .setOrigin(0.5)
         .setDepth(Depth.Overlay),
@@ -924,7 +924,7 @@ export class OnlineDuelScene extends Phaser.Scene {
         this,
         GAME_WIDTH - 145,
         y,
-        'EINLADEN',
+        'Einladen',
         () => void this.invitePlayer(player.playerName),
         { width: 170, height: 50, accent: 0x38bdf8, fontSize: FontSize.tiny },
       );
@@ -1216,7 +1216,7 @@ export class OnlineDuelScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       GAME_HEIGHT - 250,
-      hasSuggestion ? 'VORSCHLAG ÜBERNEHMEN' : buttonLabel,
+      hasSuggestion ? 'Vorschlag übernehmen' : buttonLabel,
       confirm,
       { width: 460, accent: this.world.accent, fontSize: FontSize.large },
     );
@@ -1315,7 +1315,7 @@ export class OnlineDuelScene extends Phaser.Scene {
       this.resultView = new ResultView(this, content, this.world.accent, [
         ...(rematch ? [{ label: 'REMATCH', run: () => this.enterRematchDraft() }] : []),
         {
-          label: 'ZUM MENÜ',
+          label: 'Zum Menü',
           run: () => {
             void this.leaveDuelAndReturn(() => this.stopResultPolling());
           },
@@ -1325,7 +1325,7 @@ export class OnlineDuelScene extends Phaser.Scene {
     }
     this.buildHeading('WARTE AUF ERGEBNIS', 'Die anderen Spieler spielen noch ihre Runde.');
 
-    this.buildBackToMenu('ZUM MENÜ', () => {
+    this.buildBackToMenu('Zum Menü', () => {
       this.stopResultPolling();
       NetworkDuelSystem.unsubscribeFromRoom();
     });
@@ -1357,7 +1357,7 @@ export class OnlineDuelScene extends Phaser.Scene {
     this.buildOnlineTalentDraft(statusText, 'REMATCH ANFRAGEN', () => {
       void this.requestOnlineRematch(statusText);
     });
-    this.buildBackToMenu('ZUM MENÜ');
+    this.buildBackToMenu('Zum Menü');
   }
 
   private async requestOnlineRematch(statusText: Phaser.GameObjects.Text): Promise<void> {

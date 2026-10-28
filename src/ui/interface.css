@@ -13,7 +13,7 @@
 .isihunt-hangar .hangar-content,
 .isihunt-hangar footer {
   padding: var(--ui-padding);
-  border: var(--ui-border-width) solid var(--accent);
+  border: var(--ui-border-width) solid var(--ui-border);
   border-radius: var(--ui-card-radius);
   background: var(--ui-card);
 }
@@ -36,7 +36,7 @@
 .isihunt-interface select {
   font: inherit;
   min-height: var(--ui-touch-size);
-  border: var(--ui-border-width) solid var(--accent);
+  border: var(--ui-border-width) solid var(--ui-control-border);
   border-radius: var(--ui-button-radius);
   color: var(--ui-ink);
   background: var(--ui-button);
@@ -47,10 +47,15 @@
 .isihunt-interface button:active:not(:disabled) {
   background: var(--ui-button-hover);
 }
-.isihunt-interface button[aria-pressed='true'],
+/* Drei Bedeutungen, drei Farben: neutral fuer Struktur, Weltfarbe fuer die
+   Auswahl, Gold fuer die Hauptaktion. */
+.isihunt-interface button[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) var(--ui-selected-mix), var(--ui-button));
+}
 .isihunt-interface .hangar-buy {
-  color: var(--ui-heading);
-  border-color: var(--ui-heading);
+  color: var(--ui-gold);
+  border-color: var(--ui-gold);
 }
 .isihunt-interface button:disabled {
   opacity: 0.65;

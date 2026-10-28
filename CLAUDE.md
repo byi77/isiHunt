@@ -107,7 +107,7 @@ Das Skript holt die `index.html` vom Server, folgt ihr zum gehashten Bundle und
 vergleicht die Version mit der lokalen — denselben Weg geht auch der Browser.
 Erst wenn das gruen ist, sind Rueckmeldungen vom Geraet verwertbar.
 
-> **Ein Fehlerbericht ohne Versionsnummer ist wertlos.** Die Nummer steht unten
+> **Ein Fehlerbericht ohne Versionsnummer ist wertlos.** Die Nummer steht oben
 > rechts auf dem Bildschirm (im DOM, nicht im Canvas — sichtbar auch dann, wenn
 > Phaser nicht startet).
 

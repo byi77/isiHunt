@@ -40,13 +40,13 @@ export class CollectionScene extends Phaser.Scene {
         this,
         margin + buttonWidth / 2 + index * (buttonWidth + gap),
         28 * u,
-        option === 'relics' ? 'RELIKTE' : 'WELTEN',
+        option === 'relics' ? 'Relikte' : 'Welten',
         () => this.scene.restart({ tab: option }),
         {
           width: buttonWidth,
           height: 44 * u,
           fontSize: uiFont(this, 'button'),
-          variant: tab === option ? 'primary' : 'secondary',
+          variant: tab === option ? 'selected' : 'secondary',
         },
       ),
     );
@@ -107,7 +107,7 @@ export class CollectionScene extends Phaser.Scene {
         textX,
         y,
         entry.name,
-        textStyle(uiFont(this, 'heading'), Palette.gold, {
+        textStyle(uiFont(this, 'heading'), Palette.ink, {
           fontStyle: 'bold',
           wordWrap: { width: wrap, useAdvancedWrap: true },
         }),

@@ -593,7 +593,7 @@ export class MenuScene extends Phaser.Scene {
         GAME_WIDTH / 2,
         GAME_HEIGHT / 2 - 22,
         'DATENSYNC',
-        textStyle(FontSize.body, Palette.gold, { fontStyle: 'bold' }),
+        textStyle(FontSize.body, Palette.ink, { fontStyle: 'bold' }),
       )
       .setOrigin(0.5)
       .setLetterSpacing(3)
@@ -690,12 +690,7 @@ export class MenuScene extends Phaser.Scene {
     }).setDepth(101);
 
     const title = this.add
-      .text(
-        GAME_WIDTH / 2,
-        490,
-        'NEUER SPIELSTAND GEFUNDEN',
-        textStyle(FontSize.body, Palette.gold),
-      )
+      .text(GAME_WIDTH / 2, 490, 'NEUER SPIELSTAND GEFUNDEN', textStyle(FontSize.body, Palette.ink))
       .setOrigin(0.5)
       .setDepth(102)
       .setLetterSpacing(2);
@@ -714,7 +709,7 @@ export class MenuScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       725,
-      'ONLINE-STAND NEHMEN',
+      'Online-Stand nehmen',
       () => {
         const local = SaveSystem.load();
         if (!local.cloudId) return;
@@ -730,7 +725,7 @@ export class MenuScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       820,
-      'DIESEN STAND BEHALTEN',
+      'Diesen Stand behalten',
       () => {
         if (this.saveSyncBusy) return;
         this.saveSyncBusy = true;

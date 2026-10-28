@@ -134,7 +134,7 @@ export class SyncScene extends Phaser.Scene {
         this,
         GAME_WIDTH / 2,
         this.statusPage.contentY(470),
-        'CODE ERZEUGEN',
+        'Code erzeugen',
         () => void this.generateCode(),
         {
           width: 440,
@@ -225,7 +225,7 @@ export class SyncScene extends Phaser.Scene {
         this,
         GAME_WIDTH / 2,
         this.statusPage.contentY(1028),
-        'CODE EINLÖSEN',
+        'Code einlösen',
         () => void this.redeem(),
         {
           width: 440,
@@ -314,7 +314,7 @@ export class SyncScene extends Phaser.Scene {
         this,
         GAME_WIDTH / 2,
         this.statusPage.contentY(720),
-        'FERTIG',
+        'Fertig',
         () => this.buildStart(),
         {
           width: 360,
@@ -399,7 +399,7 @@ export class SyncScene extends Phaser.Scene {
         this,
         GAME_WIDTH / 2,
         this.statusPage.contentY(768),
-        'HERUNTERGELADENEN NEHMEN',
+        'Heruntergeladenen nehmen',
         () => this.adopt(),
         {
           width: 500,
@@ -415,7 +415,7 @@ export class SyncScene extends Phaser.Scene {
         this,
         GAME_WIDTH / 2,
         this.statusPage.contentY(866),
-        'ABBRECHEN',
+        'Abbrechen',
         () => this.buildStart(),
         {
           width: 320,

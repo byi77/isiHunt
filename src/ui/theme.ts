@@ -12,8 +12,16 @@ export const Palette = {
   backdrop: 0x0b1020,
   /** Panel-Hintergrund fuer Menue und Ergebnis. */
   panel: 0x090e20,
+  /**
+   * Neutrale Kartenkontur (4,0:1 auf `panel`). Die Weltfarbe gehoert der
+   * Auswahl, Gold der Hauptaktion - eine Karte ist beides nicht.
+   */
   panelBorder: 0x69738d,
+  /** Neutrale Knopfkontur: 3,75:1 auf `buttonSurface`, ueber der 3:1-Grenze fuer Bedienelemente. */
+  controlBorder: 0x7a849e,
   buttonSurface: 0x202b48,
+  /** Eingabefeld: dunkler als Karte und Knopf, damit es eingelassen wirkt. */
+  fieldSurface: 0x050817,
   buttonHover: 0x2c3b60,
   buttonInk: '#eef2ff',
   buttonInkHex: 0xeef2ff,
@@ -63,10 +71,16 @@ export const FontSize = {
   tiny: 17,
 } as const;
 
-/** Basis-Textstil - Scenes ergaenzen nur, was abweicht. */
+/**
+ * Basis-Textstil - Scenes ergaenzen nur, was abweicht.
+ *
+ * Ueberschriften sind hell, nicht gold: Gold bedeutet Hauptaktion und
+ * Belohnung. Trug jede Ueberschrift es mit, verlor ein goldener Wert seine
+ * Aussage (Design-Review 28.10.2026, docs/ART_STYLE.md).
+ */
 export function textStyle(
   size: number,
-  color: string = size >= FontSize.heading ? Palette.gold : Palette.ink,
+  color: string = Palette.ink,
   extra: Partial<Phaser.Types.GameObjects.Text.TextStyle> = {},
 ): Phaser.Types.GameObjects.Text.TextStyle {
   return {
@@ -94,7 +108,19 @@ export const InterfaceStyle = {
   hintSize: 12,
   spacing: 12,
   padding: 16,
+  /** Anteil der Weltfarbe in der Flaeche eines ausgewaehlten Knopfes. */
+  selectedFillMix: 0.22,
 } as const;
+
+/** Mischt `over` mit Anteil `t` in `base` - fuer getoente Flaechen aus Paletten-Farben. */
+export function mixHex(base: number, over: number, t: number): number {
+  const channel = (shift: number): number => {
+    const a = (base >> shift) & 255;
+    const b = (over >> shift) & 255;
+    return Math.round(a + (b - a) * t) << shift;
+  };
+  return channel(16) | channel(8) | channel(0);
+}
 
 export function canvasUiPixels(
   cssPixels: number,
@@ -107,20 +133,23 @@ export function canvasUiPixels(
 /** Export the same values to native controls instead of maintaining another palette. */
 export function installUiTheme(root: HTMLElement): void {
   const cardChannels = [16, 8, 0].map((shift) => (Palette.panel >> shift) & 255).join(', ');
-  const headingChannels = [16, 8, 0].map((shift) => (Palette.goldHex >> shift) & 255).join(', ');
+  const goldChannels = [16, 8, 0].map((shift) => (Palette.goldHex >> shift) & 255).join(', ');
   const tokens: Record<string, string> = {
     font: FONT_FAMILY,
     ink: Palette.ink,
     muted: Palette.inkDim,
-    heading: Palette.gold,
-    'heading-soft': `rgba(${headingChannels}, .33)`,
-    'heading-glow': `rgba(${headingChannels}, .4)`,
-    'heading-faint': `rgba(${headingChannels}, .2)`,
+    heading: Palette.ink,
+    gold: Palette.gold,
+    'gold-soft': `rgba(${goldChannels}, .33)`,
+    'gold-glow': `rgba(${goldChannels}, .4)`,
+    'gold-faint': `rgba(${goldChannels}, .2)`,
     surface: toCss(Palette.panel),
     card: `rgba(${cardChannels}, ${InterfaceStyle.cardAlpha})`,
     button: toCss(Palette.buttonSurface),
     'button-hover': toCss(Palette.buttonHover),
     border: toCss(Palette.panelBorder),
+    'control-border': toCss(Palette.controlBorder),
+    'selected-mix': `${Math.round(InterfaceStyle.selectedFillMix * 100)}%`,
     success: Palette.success,
     danger: Palette.danger,
     'card-radius': `${InterfaceStyle.cardRadius}px`,

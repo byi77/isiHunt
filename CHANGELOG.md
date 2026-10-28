@@ -9,6 +9,16 @@ using [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed — design review against Apple HIG (2026-10-28)
+
+- Give colors one meaning each: neutral outlines for cards and buttons, world color only for selected states, gold only for the main action and rewards. Headings are light instead of gold; validation errors use the warning red.
+- Make the main menu show a single main action (Hunt); Endless becomes secondary. World switching uses ‹ › with spoken names; the tab bar shows "Rangliste" and "Optionen" without hyphenation.
+- Replace "TON: AUS"/"HAPTIK: AUS" buttons with switches and the cycling effects button with a three-way choice.
+- Show relic rarity by shape as well as color: dashed, single and double rings, 4/6/8 outward ticks, larger rank dots.
+- Write button labels in normal German spelling throughout; the talent action reads "Lernen · 1 Punkt".
+- Split the duel screen into separate online and bot cards; style the name field as an inset input with its save button directly below.
+- Move the version badge to the top-right header, make the back-button zone opaque and outline the HUD goal line.
+
 ### Fixed — gameplay rendering overhead (2026-10-10)
 
 - Redraw timer text only when its value or warning color changes.

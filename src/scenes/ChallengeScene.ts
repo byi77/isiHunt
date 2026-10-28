@@ -119,7 +119,7 @@ export class ChallengeScene extends Phaser.Scene {
         .setOrigin(0.5)
         .setWordWrapWidth(GAME_WIDTH - 180)
         .setAlign('center');
-      this.buildBackToMenu('ZURÜCK ZUM MENÜ');
+      this.buildBackToMenu('Zurück zum Menü');
       return;
     }
     const title =
@@ -184,7 +184,7 @@ export class ChallengeScene extends Phaser.Scene {
       GAME_WIDTH / 2,
       GAME_HEIGHT - 250,
       kind === 'daily'
-        ? 'TAGESLAUF STARTEN'
+        ? 'Tageslauf starten'
         : kind === 'bot'
           ? 'BOT-DUELL STARTEN'
           : 'SPIELER 1 STARTET',
@@ -192,7 +192,7 @@ export class ChallengeScene extends Phaser.Scene {
       { width: 460, accent: world.accent, fontSize: FontSize.large },
     );
 
-    this.buildBackToMenu('ABBRECHEN');
+    this.buildBackToMenu('Abbrechen');
   }
 
   /**
@@ -275,12 +275,12 @@ export class ChallengeScene extends Phaser.Scene {
       this,
       GAME_WIDTH / 2,
       GAME_HEIGHT - 250,
-      hasSuggestion ? 'VORSCHLAG ÜBERNEHMEN' : 'TALENTE BESTÄTIGEN',
+      hasSuggestion ? 'Vorschlag übernehmen' : 'Talente bestätigen',
       start,
       { width: 460, accent: world.accent, fontSize: FontSize.large },
     );
 
-    this.buildBackToMenu('ABBRECHEN');
+    this.buildBackToMenu('Abbrechen');
   }
 
   // --- Phase 2: Uebergabe -----------------------------------------------------
@@ -355,7 +355,7 @@ export class ChallengeScene extends Phaser.Scene {
             ]
           : []),
         {
-          label: 'ZUM MENÜ',
+          label: 'Zum Menü',
           run: () => {
             ChallengeSystem.clear();
             this.scene.start(SceneKey.Menu);
@@ -395,7 +395,7 @@ export class ChallengeScene extends Phaser.Scene {
         GAME_WIDTH / 2,
         150,
         title,
-        textStyle(FontSize.heading, Palette.gold, { fontStyle: 'bold' }),
+        textStyle(FontSize.heading, Palette.ink, { fontStyle: 'bold' }),
       )
       .setOrigin(0.5)
       .setLetterSpacing(3)

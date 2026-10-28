@@ -89,7 +89,7 @@ export class ResultScene extends Phaser.Scene {
         },
       },
       {
-        label: 'ZUM MENÜ',
+        label: 'Zum Menü',
         run: () => {
           transitionTo(this, SceneKey.Menu);
         },
@@ -213,7 +213,7 @@ export class ResultScene extends Phaser.Scene {
       this,
       this.scale.width / 2,
       this.scale.height / 2,
-      'ERNEUT VERSUCHEN',
+      'Erneut versuchen',
       () => {
         this.children.removeAll(true);
         void this.createBoostedResult(data);
@@ -224,7 +224,7 @@ export class ResultScene extends Phaser.Scene {
       this,
       this.scale.width / 2,
       this.scale.height / 2 + 90,
-      'ZUM MENÜ',
+      'Zum Menü',
       () => {
         this.scene.start(SceneKey.Menu);
       },

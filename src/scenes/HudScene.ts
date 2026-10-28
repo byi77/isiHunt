@@ -487,6 +487,12 @@ export class HudScene extends Phaser.Scene {
       }
     }
 
+    // Die Zielzeile liegt im Spielfeld, Relikte ziehen darueber hinweg.
+    // Dieselbe Kontur wie die Kopfzahlen haelt sie dabei lesbar.
+    this.targetText?.setStroke(HUD_TEXT_STROKE.stroke, HUD_TEXT_STROKE.strokeThickness);
+    for (const text of this.opponentLiveTexts.values())
+      text.setStroke(HUD_TEXT_STROKE.stroke, HUD_TEXT_STROKE.strokeThickness);
+
     this.relayout();
     this.scale.on(Phaser.Scale.Events.RESIZE, this.relayout);
 
@@ -711,7 +717,7 @@ export class HudScene extends Phaser.Scene {
       content.add(text);
       y += text.height + 14 * u;
     };
-    paragraph(reason === 'interrupted' ? 'ANGEHALTEN' : 'PAUSE', 22, Palette.gold);
+    paragraph(reason === 'interrupted' ? 'ANGEHALTEN' : 'PAUSE', 22, Palette.ink);
     if (this.mode === 'challenge') {
       paragraph(
         reason === 'interrupted'
@@ -724,7 +730,7 @@ export class HudScene extends Phaser.Scene {
       if (reason === 'interrupted')
         paragraph('Die App war kurz im Hintergrund.', 12, Palette.inkDim);
       if (this.talentLines.length) {
-        paragraph('DEINE TALENTE', 12, Palette.gold);
+        paragraph('DEINE TALENTE', 12, Palette.ink);
         y = this.buildTalentTable(content, y, width, u);
       }
     }
@@ -732,7 +738,7 @@ export class HudScene extends Phaser.Scene {
       this,
       0,
       y + 22 * u,
-      this.mode === 'challenge' ? 'ZURÜCK INS SPIEL' : 'WEITER',
+      this.mode === 'challenge' ? 'Zurück ins Spiel' : 'Weiter',
       () => (this.mode === 'challenge' ? this.closeDuelPause() : this.requestPause()),
       { width, height: 44 * u, fontSize: this.layout.font(14), variant: 'primary' },
     );
@@ -745,7 +751,7 @@ export class HudScene extends Phaser.Scene {
       this,
       0,
       y + 22 * u,
-      this.mode === 'challenge' ? 'DUELL ABBRECHEN' : 'RUN VERLASSEN',
+      this.mode === 'challenge' ? 'Duell abbrechen' : 'Run verlassen',
       () => {
         if (!quitArmed) {
           quitArmed = true;
