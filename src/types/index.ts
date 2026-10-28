@@ -74,8 +74,13 @@ export interface SaveData {
   /** Haptisches Feedback ist separat vom Ton schaltbar. */
   hapticsEnabled: boolean;
   /**
+   * Bildrate im Run einblenden. Die einzige Messung, die vom echten Geraet
+   * kommt - Desktop-Messungen trennten die Effektkosten nicht (28.10.2026).
+   */
+  showFrameRate: boolean;
+  /**
    * Effektstufe (ADR-0035). `reduced` ist der Ausweg fuer schwache Geraete,
-   * `medium` der Stand vor den Phaser-4-Effekten, `full` mit Bloom und Licht.
+   * `medium` der Mittelweg (Standard), `full` mit Nebel, Verzerrung und Licht.
    * Spielrelevante Anzeigen haengen an keiner Stufe.
    */
   effectsQuality: EffectsQuality;

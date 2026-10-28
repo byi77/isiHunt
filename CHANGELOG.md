@@ -9,6 +9,18 @@ using [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed — graphics middle ground and iPhone Duo (2026-10-28)
+
+- New saves start on "Mittel", now the middle ground: light bloom plus color grading, star dust, relic shine and ship shadow. Living nebula, backdrop distortion, dynamic lighting and full bloom stay "Voll"-only (ADR-0040).
+- Add a "Bildrate anzeigen" switch: the run shows fps, longest frame and hitch share, measured on the device.
+- Cover iPhone 18 Pro (home screen, 402 × 874) and iPhone Duo outer, inner and inner landscape in the layout and accessibility checks; the orientation lock only applies to landscape screens below 500 px height, so the unfolded Duo stays playable.
+
+### Added — native iOS shell (2026-10-28)
+
+- Wrap the web build with Capacitor 8 for iOS (`capacitor.config.ts`, `ios/` via Swift Package Manager) and add a manually triggered Codemagic workflow that builds, signs and uploads to TestFlight without a Mac.
+- Target iPhone only, portrait only, iOS 16.4 or later; generate an opaque 1024 px app icon and a plain launch image from `npm run icons`.
+- Inside the native app, skip the `version.json` update check and the service worker, and treat the app as standalone so the home-screen hint stays hidden.
+
 ### Changed — design review against Apple HIG (2026-10-28)
 
 - Give colors one meaning each: neutral outlines for cards and buttons, world color only for selected states, gold only for the main action and rewards. Headings are light instead of gold; validation errors use the warning red.

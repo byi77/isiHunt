@@ -151,11 +151,12 @@ export function playRareSpawnWarning(
 }
 
 /**
- * Laesst einen Glanzstreif ueber ein Bild wandern - nur auf der vollen Stufe.
+ * Laesst einen Glanzstreif ueber ein Bild wandern - ab der mittleren Stufe.
+ * Er liegt nur auf wenigen Relikten, nicht auf dem ganzen Bild.
  * Der Streif raeumt sich mit dem Bild selbst ab (Tween und Textur).
  */
 export function applyShine(image: Phaser.GameObjects.Image): void {
-  if (!EffectsQualitySystem.isFull() || prefersReducedMotion()) return;
+  if (!EffectsQualitySystem.atLeast('medium') || prefersReducedMotion()) return;
   Phaser.Actions.AddEffectShine(image, {
     radius: RELIC_SHINE.radius,
     duration: RELIC_SHINE.durationMs,
@@ -164,9 +165,9 @@ export function applyShine(image: Phaser.GameObjects.Image): void {
   });
 }
 
-/** Weicher Schatten unter einem Bild - nur auf der vollen Stufe. */
+/** Weicher Schatten unter einem Bild - ab der mittleren Stufe (nur das Schiff). */
 export function applyDropShadow(image: Phaser.GameObjects.Image): void {
-  if (!EffectsQualitySystem.isFull()) return;
+  if (!EffectsQualitySystem.atLeast('medium')) return;
   const s = SHIP_SHADOW;
   image.enableFilters();
   image

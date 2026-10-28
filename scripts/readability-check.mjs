@@ -73,7 +73,10 @@ const save = {
   playerName: 'Lesbarkeit',
   soundEnabled: false,
   hapticsEnabled: false,
-  effectsQuality: 'full',
+  // Standard ist die volle Stufe, weil sie die meisten Filter ueber das Bild legt.
+  // `--quality=medium` prueft den Mittelweg, mit dem neue Spielstaende starten -
+  // gegen dieselbe Basis, denn Relikte muessen auf jeder Stufe lesbar sein.
+  effectsQuality: process.argv.find((arg) => arg.startsWith('--quality='))?.slice(10) ?? 'full',
 };
 
 // Sichtbar statt headless: Wer die Pruefung startet, soll zusehen koennen.

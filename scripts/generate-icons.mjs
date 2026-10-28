@@ -16,10 +16,11 @@
 
 import { deflateSync } from 'node:zlib';
 import { mkdirSync, writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const OUTPUT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', 'public');
+const ROOT_DIR = join(dirname(fileURLToPath(import.meta.url)), '..');
+const OUTPUT_DIR = join(ROOT_DIR, 'public');
 
 /** Muss zu Palette.backdrop und Palette.gold in src/ui/theme.ts passen. */
 const BACKDROP = [0x0b, 0x10, 0x20];
@@ -43,7 +44,21 @@ const ICONS = [
   // Groesse, die aktuelle iPhones erwarten.
   { file: 'apple-touch-icon.png', size: 180 },
   { file: 'favicon.png', size: 64 },
+  // Icon der nativen App (ADR-0015). Ohne Alpha-Kanal: App Store Connect
+  // lehnt das 1024er Icon schon wegen eines vorhandenen Alpha-Kanals ab,
+  // auch wenn jeder Bildpunkt deckend ist.
+  {
+    file: join(ROOT_DIR, 'ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png'),
+    size: 1024,
+    opaque: true,
+  },
 ];
+
+// Startbild der nativen App. Das Capacitor-Template liefert dort sein eigenes
+// Logo; eine Flaeche in BACKDROP geht nahtlos in den ersten Phaser-Frame ueber.
+const SPLASH_DIR = join(ROOT_DIR, 'ios/App/App/Assets.xcassets/Splash.imageset');
+const SPLASH_SIZE = 2732;
+const SPLASHES = ['splash-2732x2732.png', 'splash-2732x2732-1.png', 'splash-2732x2732-2.png'];
 
 // --- PNG-Kodierung ----------------------------------------------------------
 
@@ -74,24 +89,29 @@ function chunk(type, data) {
   return Buffer.concat([length, typeBuffer, data, crc]);
 }
 
-function encodePng(size, pixels) {
+function encodePng(size, pixels, opaque = false) {
   const header = Buffer.alloc(13);
   header.writeUInt32BE(size, 0);
   header.writeUInt32BE(size, 4);
   header[8] = 8; // 8 Bit je Kanal
-  header[9] = 6; // RGBA
+  header[9] = opaque ? 2 : 6; // RGB oder RGBA
   header[10] = 0; // Deflate
   header[11] = 0; // Standardfilter
   header[12] = 0; // kein Interlacing
 
   // Jede Bildzeile bekommt ein fuehrendes Filter-Byte. Filter 0 = "keiner":
   // kostet etwas Kompression, spart die gesamte Filterlogik.
-  const stride = size * 4;
+  const channels = opaque ? 3 : 4;
+  const stride = size * channels;
   const raw = Buffer.alloc((stride + 1) * size);
   for (let y = 0; y < size; y++) {
     const target = y * (stride + 1);
     raw[target] = 0;
-    for (let i = 0; i < stride; i++) raw[target + 1 + i] = pixels[y * stride + i];
+    for (let x = 0; x < size; x++) {
+      for (let c = 0; c < channels; c++) {
+        raw[target + 1 + x * channels + c] = pixels[(y * size + x) * 4 + c];
+      }
+    }
   }
 
   return Buffer.concat([
@@ -127,7 +147,7 @@ function mix(a, b, t) {
   ];
 }
 
-function drawIcon(size) {
+function drawIcon(size, opaque) {
   const pixels = new Uint8Array(size * size * 4);
   const center = size / 2;
   const radius = size * SHIP_RADIUS_RATIO;
@@ -198,7 +218,7 @@ function drawIcon(size) {
     }
   }
 
-  return encodePng(size, pixels);
+  return encodePng(size, pixels, opaque);
 }
 
 // --- Ausfuehrung ------------------------------------------------------------
@@ -206,7 +226,22 @@ function drawIcon(size) {
 mkdirSync(OUTPUT_DIR, { recursive: true });
 
 for (const icon of ICONS) {
-  const png = drawIcon(icon.size);
-  writeFileSync(join(OUTPUT_DIR, icon.file), png);
-  console.log(`${icon.file.padEnd(22)} ${icon.size}x${icon.size}  ${png.length} Bytes`);
+  const png = drawIcon(icon.size, icon.opaque === true);
+  const target = resolve(OUTPUT_DIR, icon.file);
+  mkdirSync(dirname(target), { recursive: true });
+  writeFileSync(target, png);
+  console.log(
+    `${relative(ROOT_DIR, target).padEnd(22)} ${icon.size}x${icon.size}  ${png.length} Bytes`,
+  );
+}
+
+const splashPixels = new Uint8Array(SPLASH_SIZE * SPLASH_SIZE * 4);
+for (let i = 0; i < splashPixels.length; i += 4) splashPixels.set([...BACKDROP, 255], i);
+const splash = encodePng(SPLASH_SIZE, splashPixels, true);
+for (const file of SPLASHES) {
+  const target = join(SPLASH_DIR, file);
+  writeFileSync(target, splash);
+  console.log(
+    `${relative(ROOT_DIR, target).padEnd(22)} ${SPLASH_SIZE}x${SPLASH_SIZE}  ${splash.length} Bytes`,
+  );
 }

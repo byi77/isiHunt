@@ -1425,6 +1425,11 @@ TestFlight-Gruppe klären. Keine Secrets in Git.
 `codemagic.yaml`, nativer Update-Hinweis und Gerätetests für Sound-Unlock,
 Safe Area und `localStorage`.
 
+**Stand 2026-10-28:** Wrapper, `ios/`, `capacitor.config.ts` und
+`codemagic.yaml` sind angelegt; der Update-Hinweis ist in der App aus
+(Nachtrag zu ADR-0015). Es fehlen die Konto-Schritte oben, der erste Build
+und die Gerätetests.
+
 ## P6-02 — Dynamic Island / Live Activity
 
 - [ ] **Live Activity erst als natives Feature nach P6-01 bauen.**

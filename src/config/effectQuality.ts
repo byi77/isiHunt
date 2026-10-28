@@ -2,9 +2,12 @@
  * Effektstufen und automatisches Herabstufen (ADR-0035).
  *
  * - `reduced` (SPARSAM): keine Leuchtfilter, halbe Kulissen-Teilchen.
- * - `medium` (MITTEL): alles, was es vor den Phaser-4-Effekten gab.
- * - `full` (VOLL): zusaetzlich die schweren Vollbild-Effekte (Bloom, Licht,
- *   Verzerrung ...). Standard.
+ * - `medium` (MITTEL): der Mittelweg und Standard seit 28.10.2026. Leichtes
+ *   Bloom plus alles, was wenig Arbeit pro Pixel kostet: Farbstimmung,
+ *   Sternstaub, Relikt-Glanz, Schiffsschatten.
+ * - `full` (VOLL): zusaetzlich die Effekte, die jedes Bild ueber den ganzen
+ *   Schirm rechnen - lebender Nebel (3D-Rauschen), Verzerrung, dynamisches
+ *   Licht und volles Bloom. Ein iPhone 18 Pro ruckelte damit spuerbar.
  *
  * Herabgestuft wird nur automatisch, nie hinauf: Ein Geraet, das einmal nicht
  * mitkam, soll nicht bei jedem Run neu ausprobieren und ruckeln.
@@ -36,3 +39,11 @@ export const FRAME_GUARD = {
 
 /** Anteil der Kulissen-Teilchen je Stufe. */
 export const ATMOSPHERE_PARTICLE_SHARE = { reduced: 0.5, medium: 1, full: 1 } as const;
+
+/** Bildratenanzeige im Run (Einstellung "Bildrate anzeigen"). */
+export const FRAME_RATE_METER = {
+  /** Eine Anzeige je Sekunde: ruhig genug zum Ablesen, schnell genug fuer Einbrueche. */
+  windowMs: 1_000,
+  /** Ab diesem Vielfachen des Medians gilt ein Frame als Ruckler. */
+  hitchFactor: 1.5,
+} as const;

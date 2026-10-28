@@ -94,7 +94,8 @@ export function createDefaultSave(): SaveData {
     lastPurchasedCosmetic: null,
     soundEnabled: true,
     hapticsEnabled: true,
-    effectsQuality: 'full',
+    showFrameRate: false,
+    effectsQuality: 'medium',
     effectsQualityAutoLowered: false,
     playerName: '',
     pendingPlayerName: null,
@@ -236,6 +237,8 @@ function reconcile(raw: Partial<SaveData>): SaveData {
       typeof source.soundEnabled === 'boolean' ? source.soundEnabled : base.soundEnabled,
     hapticsEnabled:
       typeof source.hapticsEnabled === 'boolean' ? source.hapticsEnabled : base.hapticsEnabled,
+    showFrameRate:
+      typeof source.showFrameRate === 'boolean' ? source.showFrameRate : base.showFrameRate,
     effectsQuality:
       source.effectsQuality === 'full' ||
       source.effectsQuality === 'medium' ||
@@ -314,6 +317,7 @@ function resetForTalentPointEconomy(save: SaveData): SaveData {
     cloudUpdatedAt: save.cloudUpdatedAt,
     soundEnabled: save.soundEnabled,
     hapticsEnabled: save.hapticsEnabled,
+    showFrameRate: save.showFrameRate,
     effectsQuality: save.effectsQuality,
     effectsQualityAutoLowered: save.effectsQualityAutoLowered,
   };

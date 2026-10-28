@@ -235,7 +235,7 @@ export class GameScene extends Phaser.Scene {
   private pauseBlur: Phaser.Filters.Blur | null = null;
   /** Klassenfeld, damit `off` dieselbe Referenz trifft (Regel 4). */
   private readonly blurOnPause = (): void => {
-    if (!EffectsQualitySystem.isFull() || this.pauseBlur) return;
+    if (!EffectsQualitySystem.atLeast('medium') || this.pauseBlur) return;
     const b = PAUSE_BLUR;
     this.pauseBlur = this.cameras.main.filters.external.addBlur(
       b.quality,
@@ -389,7 +389,8 @@ export class GameScene extends Phaser.Scene {
     this.removeBloom = applyBloom(this.cameras.main, this.world.spaceVariant);
     this.events.on(Phaser.Scenes.Events.PAUSE, this.blurOnPause);
     this.events.on(Phaser.Scenes.Events.RESUME, this.unblurOnResume);
-    this.grading = EffectsQualitySystem.isFull()
+    // Ab "Mittel": ein einziger Farbdurchgang, aber er traegt die Stimmung der Welt.
+    this.grading = EffectsQualitySystem.atLeast('medium')
       ? new CameraGrading(this.cameras.main, this.world.spaceVariant)
       : null;
     enterScene(this, 'rise');
@@ -659,6 +660,10 @@ export class GameScene extends Phaser.Scene {
     this.backdrop.destroy();
     this.backdrop = new GameBackdrop(this, GAME_WIDTH, GAME_HEIGHT, this.world);
     this.removeBloom = applyBloom(this.cameras.main, this.world.spaceVariant);
+    // Nach dem Bloom, wie beim Aufbau: die Reihenfolge der Kamerafilter bleibt gleich.
+    this.grading = EffectsQualitySystem.atLeast('medium')
+      ? new CameraGrading(this.cameras.main, this.world.spaceVariant)
+      : null;
   }
 
   private updatePlayer(dtSec: number): void {

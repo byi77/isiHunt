@@ -25,6 +25,7 @@ import { BACKEND_SCHEMA_VERSION } from '@/config/backend';
 import { isIos, isStandalone } from '@/core/display';
 import { eventBus, GameEvent } from '@/core/EventBus';
 import { requestPortraitOrientationLock } from '@/core/orientation';
+import { isNativeApp } from '@/core/platform';
 import { keepCanvasBoundsFresh, waitForViewportToSettle } from '@/core/viewport';
 import { AdminScene } from '@/scenes/AdminScene';
 import { AdminPinScene } from '@/scenes/AdminPinScene';
@@ -292,7 +293,10 @@ let game: Phaser.Game | null = null;
  * er Entwicklung und HMR nicht beeinflusst.
  */
 function registerOfflineAppShell(): void {
-  if (import.meta.env.DEV || !('serviceWorker' in navigator)) return;
+  // Die native App liefert die Dateien aus dem eigenen Bundle, offline ist dort
+  // der Normalfall. WKWebView unterstuetzt unter `capacitor://` ohnehin keinen
+  // Service Worker - der Versuch landete nur als Warnung im Debug-Log.
+  if (import.meta.env.DEV || isNativeApp() || !('serviceWorker' in navigator)) return;
 
   const register = (): void => {
     void navigator.serviceWorker

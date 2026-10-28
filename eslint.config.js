@@ -6,7 +6,8 @@ export default tseslint.config(
   // wegwerfbare Reproduktionsskripte aus Audits. Ohne diesen Eintrag machte
   // ein liegengebliebenes Skript den Lint rot, obwohl es nie ausgeliefert
   // wird (bemerkt 2026-09-05).
-  { ignores: ['dist/**', 'node_modules/**', 'public/**', 'playtest-shots/**'] },
+  // `ios/` enthaelt nach `cap sync` eine Kopie des Builds (ADR-0015).
+  { ignores: ['dist/**', 'node_modules/**', 'public/**', 'playtest-shots/**', 'ios/**'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

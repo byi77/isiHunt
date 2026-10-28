@@ -2,6 +2,7 @@
 dist/
 node_modules/
 public/
+ios/
 package-lock.json
 
 # TODO.md ist von Prettier nicht stabil formatierbar.

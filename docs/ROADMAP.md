@@ -137,6 +137,7 @@ steht in [`TODO.md`](../TODO.md). Diese Datei zeigt nur den Produktweg.
       WebGL mit DOM-Hinweis. Bildvergleich v3/v4 ueber alle Welten gleich.
 - [x] Phase 2: Effektstufen sparsam/mittel/voll, Standard voll mit
       automatischem Herabstufen (nur abwaerts), `npm run readability:check`.
+      Seit 28.10.2026 Standard mittel (ADR-0040), dazu „Bildrate anzeigen“.
 - [x] Phase 3: Bloom, Licht durch Schiff und Relikte, Farbstimmung und
       Treffer-Entsaettigung, Hitzeflimmern/Raumzittern/Linse, lebender Nebel,
       Schiffsschatten, Glanz auf legendaeren Relikten, Glitch, Wischblenden,
@@ -354,6 +355,12 @@ wie Live Activities bei der Dynamic Island. Technischer Weg (Codemagic ohne
 eigenen Mac, App Store Connect API Signing) und Voraussetzungen-Checkliste
 stehen in ADR-0015 (`docs/DECISIONS.md`); die vorbereitbaren Konto-Schritte
 sind in `TODO.md` gelistet und blockieren M4.1/M6/M7 nicht.
+
+- [x] Capacitor-Huelle, `ios/`-Projekt, `codemagic.yaml`, App-Icon und
+      Startbild; Updatepruefung und Service Worker in der App aus.
+- [ ] Apple-Mitgliedschaft, App-Eintrag, API-Key in Codemagic, erster
+      TestFlight-Build.
+- [ ] Geraetetest: Ton-Freischaltung, Safe Area, `localStorage`, Online-Duell.
 
 ## Grundsätze
 

@@ -506,8 +506,12 @@ Reduzierte Bewegung zeigt eine ruhige Flamme ohne Flackern und Stoss.
 
 **Effekte mit Phaser 4, 29.09.2026 (ADR-0035):** Drei Stufen, waehlbar in den
 Einstellungen: SPARSAM (keine Leuchtfilter, halbe Kulissen-Teilchen), MITTEL
-(Stand vor Phaser 4 plus zartes Bloom), VOLL (Standard, alles unten). Ein
+(Stand vor Phaser 4 plus zartes Bloom), VOLL (alles unten). Ein
 Geraet, das nicht mitkommt, wird automatisch eine Stufe herabgesetzt.
+
+_Seit 28.10.2026 (ADR-0040):_ MITTEL ist Standard und der Mittelweg - zusaetzlich
+Farbstimmung, Sternstaub, Relikt-Glanz, Schiffsschatten und Pausen-Weichzeichner.
+Nur VOLL behaelt lebenden Nebel, Verzerrung, dynamisches Licht und volles Bloom.
 
 Auf VOLL:
 

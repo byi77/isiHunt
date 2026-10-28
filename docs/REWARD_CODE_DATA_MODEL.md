@@ -17,18 +17,18 @@ im Frontend-Bundle noch in Logs oder einer lesbaren Katalogtabelle gespeichert.
 
 ## Tabellenentwurf
 
-| Tabelle | Zweck |
-| --- | --- |
-| `reward_campaigns` | Status, Zeitfenster, Gesamt-/Kontolimits und Ersteller |
-| `reward_packages` | versioniertes, validiertes Belohnungs-JSON; veröffentlichte Version unveränderlich |
-| `reward_codes` | HMAC-Prüfwert, Schlüsselversion, Kampagne, Status und maskierte Endziffern |
-| `reward_redemptions` | Konto, Code, Paketversion, Request-ID und Ergebnisbeleg |
-| `reward_campaign_accounts` | atomarer Kontozähler je Kampagne |
-| `reward_grants` | tatsächlich gebuchte Positionen mit vorher/nachher relevanten Werten |
-| `profile_boosts` | erworbene und noch nicht verbrauchte Laufrechte |
-| `boost_run_attempts` | Start-Request, Balance-Snapshot, Frist und Laufstatus |
-| `boost_applications` | eindeutige Anwendung eines Bonusrechts auf einen Lauf |
-| `reward_admin_audit` | bereinigte Admin-Aktion ohne Klartextcode |
+| Tabelle                    | Zweck                                                                              |
+| -------------------------- | ---------------------------------------------------------------------------------- |
+| `reward_campaigns`         | Status, Zeitfenster, Gesamt-/Kontolimits und Ersteller                             |
+| `reward_packages`          | versioniertes, validiertes Belohnungs-JSON; veröffentlichte Version unveränderlich |
+| `reward_codes`             | HMAC-Prüfwert, Schlüsselversion, Kampagne, Status und maskierte Endziffern         |
+| `reward_redemptions`       | Konto, Code, Paketversion, Request-ID und Ergebnisbeleg                            |
+| `reward_campaign_accounts` | atomarer Kontozähler je Kampagne                                                   |
+| `reward_grants`            | tatsächlich gebuchte Positionen mit vorher/nachher relevanten Werten               |
+| `profile_boosts`           | erworbene und noch nicht verbrauchte Laufrechte                                    |
+| `boost_run_attempts`       | Start-Request, Balance-Snapshot, Frist und Laufstatus                              |
+| `boost_applications`       | eindeutige Anwendung eines Bonusrechts auf einen Lauf                              |
+| `reward_admin_audit`       | bereinigte Admin-Aktion ohne Klartextcode                                          |
 
 ## Verbindliche Sicherheitsgrenzen
 

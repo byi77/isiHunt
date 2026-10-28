@@ -663,7 +663,7 @@ zweite Synchronisationsarchitektur.
 
 ## ADR-0015 — Native App über Capacitor, iOS-Build und TestFlight-Auslieferung über Codemagic
 
-**Datum:** 2026-08-17 · **Status:** Geplant, Vorbereitung fuer M8
+**Datum:** 2026-08-17 · **Status:** In Umsetzung (Nachtrag 2026-10-28)
 
 ### Kontext
 
@@ -725,6 +725,30 @@ vorgezogen — M4.1, M6 und M7 stehen davor.
 - Bundle-ID-Wahl, Android-Reihenfolge und die Vorbereitung fuer Push/Live
   Activities sind bewusst offen gelassen und werden erst bei M8-Start
   entschieden.
+
+**Nachtrag 2026-10-28 — Gerüst steht, Signing fehlt noch:**
+
+- `capacitor.config.ts`, `ios/` (Swift Package Manager statt CocoaPods - kein
+  `pod install`, das ohne Mac nicht laeuft) und `codemagic.yaml` liegen im
+  Repository. Der Workflow startet nur von Hand, damit nicht jeder Commit
+  macOS-Minuten verbraucht.
+- Bundle-ID `io.github.byi77.isihunt`, Anzeigename `isiHunt`. Nach dem ersten
+  Upload nicht mehr aenderbar.
+- iOS-Mindestversion 16.4 statt Capacitors 15.0: `npm run ios:check` findet
+  Static Init Blocks im Three-Chunk, die aeltere Fassungen schon beim Parsen
+  abbrechen. Nur iPhone, nur Hochformat.
+- Updatepruefung und Service Worker sind in der nativen App aus,
+  `isStandalone()` gilt dort als erfuellt (`core/platform.ts`). Die Erkennung
+  liest `window.Capacitor` und importiert `@capacitor/core` bewusst nicht, damit
+  der Web-Build unveraendert bleibt.
+- Versionsnummer in TestFlight = `package.json`, Build-Nummer = Codemagics
+  `BUILD_NUMBER`.
+- Zur verworfenen Alternative GitHub Actions: Das Repository ist oeffentlich,
+  macOS-Runner sind damit kostenlos. Der Kostengrund entfaellt; Codemagic
+  bleibt wegen des automatischen Signings ohne Mac gewaehlt. Ein spaeterer
+  Umzug aendert nur die Pipeline, nicht `ios/`.
+- Offen: Apple-Mitgliedschaft reaktivieren, App-Eintrag und API-Key anlegen,
+  erster Build. Der `ios/`-Ordner ist bisher von keinem Xcode gebaut worden.
 
 ### Verworfene Alternativen
 
@@ -1969,3 +1993,38 @@ Kulissen- und Kameradekoration bereits im laufenden Run. Spiellogik und
 Simulationszeit bleiben bestehen. Die Schwellen werden ohne echte
 Geraetemessung nicht neu festgelegt; Desktop-Messungen sind keine Zusage
 einer bestimmten Bildrate auf dem iPhone.
+
+## ADR-0040 — Mittelweg als Standard-Effektstufe (28.10.2026)
+
+Status: angenommen durch den Benutzerauftrag, auf einem iPhone 18 Pro einen
+Mittelweg fuer die Grafik zu finden („die Frames droppen“).
+
+**Messlage.** Desktop-Messungen trennten die Effektkosten nicht: Auf einer
+RTX 5080 (ANGLE D3D11, Viewport iPhone 17/18 Pro) lag die Renderzeit von
+`prerender` bis `postrender` mit `gl.finish()` bei 1,7 ms (Voll), 1,5 ms
+(Mittel) und 1,3 ms (Sparsam); einzelne Effekte unterschieden sich nur um das
+0,1-ms-Raster. GPU-Timer-Abfragen sind im Chromium nicht verfuegbar, in
+SwiftShader fiel das Rastern nicht in den gemessenen Abschnitt. Eine Messung
+vom iPhone liegt nicht vor.
+
+**Entscheidung.** Die Stufen werden nach der Arbeit pro Pixel geschnitten, wie
+sie im Code steht, nicht nach gemessenen Millisekunden:
+
+- `medium` (neu Standard): leichtes Bloom, Farbstimmung (ein Farbdurchgang),
+  Sternstaub (GPU-Sprite-Schicht), Relikt-Glanz und Schiffsschatten (wenige
+  Objekte), Pausen-Weichzeichner.
+- `full`: zusaetzlich lebender Nebel (3D-Rauschen ueber den ganzen Schirm,
+  jedes Bild), Hintergrund-Verzerrung (ganze Kulisse in eine Zwischentextur),
+  dynamisches Licht (pro Pixel) und volles Bloom (4 statt 2 Weichzeichnerstufen).
+
+Bestehende Spielstaende behalten ihre gewaehlte Stufe; nur neue und
+unvollstaendige Staende starten auf `medium`.
+
+**Messung am Geraet.** Die Einstellung „Bildrate anzeigen“ blendet im Run fps,
+laengsten Frame und Rucklerquote ein (`FrameRateMeter`). Damit wird die
+Entscheidung am iPhone ueberprueft, Stufe gegen Stufe.
+
+**Verworfen: 60-fps-Deckel ueber `TimeStep.setFPSLimit`.** Phasers Begrenzer
+loest aus, sobald sich genug Zeit angesammelt hat; bei 120-Hz-Takten mit
+leichtem Zittern um 8,33 ms braucht er mal zwei, mal drei Takte und erzeugt
+damit ungleichmaessige Bildabstaende - das Gegenteil des Ziels.

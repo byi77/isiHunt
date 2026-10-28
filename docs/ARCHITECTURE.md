@@ -125,11 +125,14 @@ Zwei Helfer kapseln, was sich zwischen Phaser 3 und 4 geaendert hat:
   auf `Vector2[]`, liest aber nur `x`/`y`.
 
 **Effektstufen.** `systems/EffectsQualitySystem.ts` kennt `reduced`, `medium`
-und `full` (Standard) plus `effectsQualityAutoLowered` im Spielstand.
+(Standard seit ADR-0040) und `full` plus `effectsQualityAutoLowered` im Spielstand.
 `systems/FrameRateGuard.ts` ist reine Rechnung ohne Phaser: `GameScene`
 fuettert je Frame das `delta` ein; nach der Aufwaermzeit und zwei langsamen
 Median-Fenstern in Folge senkt `lowerAutomatically()` die Stufe um eins,
 seit ADR-0039 fuer schwere Kulissen- und Kameraeffekte schon im laufenden Run.
+`systems/FrameRateMeter.ts` ist ebenfalls reine Rechnung: `HudScene` fuettert
+`rawDelta` ein und zeigt je Sekunde fps, laengsten Frame und Rucklerquote,
+wenn `showFrameRate` im Spielstand an ist (Einstellung "Bildrate anzeigen").
 Werte in `config/effectQuality.ts`.
 
 **Effekte der vollen Stufe**, alle Werte in `config/postFx.ts`:
@@ -407,6 +410,7 @@ isiHunt/
 │   │   ├── deviceReport.ts     Geraete-/Browser-Kennwerte fuer den Wartungsbildschirm
 │   │   ├── layoutReport.ts     Misst sichere Raender und Canvas-Lage
 │   │   ├── orientation.ts      Hochformat erzwingen, Landscape-Fallback
+│   │   ├── platform.ts         Laeuft das Spiel in der nativen App? (ADR-0015)
 │   │   ├── updateCheck.ts      Liegt eine neuere Fassung bereit?
 │   │   └── viewport.ts         Haelt Phasers Canvas-Position aktuell
 │   ├── entities/               Spielobjekte
@@ -456,8 +460,10 @@ isiHunt/
 │   │   ├── SafeAreaSystem.test.ts
 │   │   ├── SoundSystem.ts      Audio-Fassade, Settings und Fallback
 │   │   ├── SoundSystem.test.ts
-│   │   ├── EffectsQualitySystem.ts Effektstufe voll/sparsam (ADR-0027)
+│   │   ├── EffectsQualitySystem.ts Effektstufe sparsam/mittel/voll, Standard mittel (ADR-0040)
 │   │   ├── EffectsQualitySystem.test.ts
+│   │   ├── FrameRateMeter.ts   Bildratenanzeige im Run: fps, laengster Frame, Ruckler
+│   │   ├── FrameRateMeter.test.ts
 │   │   ├── audio/SoundModule.ts Provider-Vertrag und Prioritaetskette
 │   │   ├── audio/SampleBank.ts vorgerenderte Klaenge, Ereignis -> Datei (ADR-0029)
 │   │   ├── audio/SampleBank.test.ts
@@ -525,7 +531,7 @@ isiHunt/
 │                                (M8, geplant — siehe ADR-0015 in DECISIONS.md)
 ├── index.html                  Mobile-Meta-Tags, Scroll-Sperre, PWA-Verweise
 ├── vite.config.ts
-├── capacitor.config.ts         Native-App-Konfiguration (M8, geplant)
+├── capacitor.config.ts         Native-App-Konfiguration (M8, ADR-0015)
 ├── tsconfig.json
 └── eslint.config.js
 ```
@@ -915,6 +921,12 @@ auf dem Server macht den Unterschied sichtbar.
 `isihunt-version-manifest`) und wird in `core/updateCheck.ts` mit Cache-Buster
 geladen. Weicht sie ab, bietet das Menue einen Hinweis an; erzwungen wird
 nichts.
+
+**In der nativen App** (`core/platform.ts`, ADR-0015) entfaellt die Pruefung:
+`version.json` liegt dort im selben Bundle wie der Code, der Vergleich liefe
+gegen sich selbst. Updates kommen ueber TestFlight. Aus demselben Grund
+registriert `main.ts` dort keinen Service Worker, und `isStandalone()` gilt als
+erfuellt - die App laeuft wie vom Home-Bildschirm ohne Browserleiste.
 
 **Warum eine eigene Datei und nicht die `index.html`:** Sie laesst sich einzeln
 und ohne Cache abfragen, ohne das Spiel neu zu starten.

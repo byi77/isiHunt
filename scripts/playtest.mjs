@@ -1004,6 +1004,19 @@ async function suiteLayout() {
     // Safari mit ausgeklappter Adressleiste erzeugt. Hier bricht ein
     // Hoehenfehler zuerst durch.
     'Kurz (Browserleiste)': { viewport: { width: 390, height: 600 }, deviceScaleFactor: 3 },
+    // iPhone 18 Pro als Home-Bildschirm-App: 1206 x 2622 px bei 460 ppi
+    // (apple.com/iphone-18-pro/specs), Faktor 3. Das Playwright-Profil
+    // "iPhone 17 Pro" hat dieselbe Breite, aber Safari-Leisten abgezogen.
+    'iPhone 18 Pro (Home-Bildschirm)': {
+      viewport: { width: 402, height: 874 },
+      deviceScaleFactor: 3,
+    },
+    // iPhone Duo (support.apple.com/en-us/148588): aussen 1398 x 2034 px bei
+    // 460 ppi, innen 1878 x 2670 px bei 430 ppi. Apple nennt keine Punktwerte;
+    // diese sind durch Faktor 3 geteilt und damit abgeleitet, nicht belegt.
+    'iPhone Duo aussen': { viewport: { width: 466, height: 678 }, deviceScaleFactor: 3 },
+    'iPhone Duo innen': { viewport: { width: 626, height: 890 }, deviceScaleFactor: 3 },
+    'iPhone Duo innen quer': { viewport: { width: 890, height: 626 }, deviceScaleFactor: 3 },
   };
 
   const DEVICE_NAMES = [
@@ -1016,6 +1029,7 @@ async function suiteLayout() {
     'iPhone 16 Pro',
     'iPhone 16 Pro Max',
     'iPhone 17',
+    'iPhone 17 Pro',
     'iPhone 17 Pro Max',
     'iPad Mini',
     'iPad (gen 7)',

@@ -8,9 +8,9 @@ describe('EffectsQualitySystem', () => {
     SaveSystem.reset();
   });
 
-  it('startet mit vollen Effekten', () => {
-    expect(EffectsQualitySystem.current()).toBe('full');
-    expect(EffectsQualitySystem.isFull()).toBe(true);
+  it('startet mit dem Mittelweg', () => {
+    expect(EffectsQualitySystem.current()).toBe('medium');
+    expect(EffectsQualitySystem.isFull()).toBe(false);
     expect(EffectsQualitySystem.wasLoweredAutomatically()).toBe(false);
   });
 
@@ -35,6 +35,7 @@ describe('EffectsQualitySystem', () => {
   });
 
   it('senkt automatisch um genau eine Stufe und merkt sich das', () => {
+    EffectsQualitySystem.setQuality('full');
     expect(EffectsQualitySystem.lowerAutomatically()).toBe(true);
     expect(EffectsQualitySystem.current()).toBe('medium');
     expect(EffectsQualitySystem.wasLoweredAutomatically()).toBe(true);
@@ -58,11 +59,14 @@ describe('EffectsQualitySystem', () => {
       ...legacy
     } = SaveSystem.createDefaultSave();
     const filled = SaveSystem.normalizeForComparison(legacy);
-    expect(filled.effectsQuality).toBe('full');
+    expect(filled.effectsQuality).toBe('medium');
     expect(filled.effectsQualityAutoLowered).toBe(false);
     expect(
       SaveSystem.normalizeForComparison({ ...legacy, effectsQuality: 'ultra' as never })
         .effectsQuality,
+    ).toBe('medium');
+    expect(
+      SaveSystem.normalizeForComparison({ ...legacy, effectsQuality: 'full' }).effectsQuality,
     ).toBe('full');
     expect(
       SaveSystem.normalizeForComparison({ ...legacy, effectsQuality: 'reduced' }).effectsQuality,

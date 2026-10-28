@@ -31,6 +31,7 @@ import type { UpdateInfo } from '@/core/updateCheck';
 import { measureDevice, readWebStorageLine } from '@/core/deviceReport';
 import { formatLayout, measureLayout } from '@/core/layoutReport';
 import { isIos, isStandalone } from '@/core/display';
+import { isNativeApp } from '@/core/platform';
 import { SceneKey } from '@/scenes/SceneKey';
 import * as SaveSystem from '@/systems/SaveSystem';
 import * as SafeAreaSystem from '@/systems/SafeAreaSystem';
@@ -217,7 +218,8 @@ export class AdminScene extends Phaser.Scene {
 
     // Der Startweg entscheidet ueber das Cache-Verhalten: Als installierte App
     // haelt iOS die Dateien deutlich hartnaeckiger als in einem Browser-Tab.
-    const modus = isStandalone() ? 'Vom Home-Bildschirm' : 'Im Browser';
+    let modus = isStandalone() ? 'Vom Home-Bildschirm' : 'Im Browser';
+    if (isNativeApp()) modus = 'Native App';
     const plattform = isIos() ? 'iOS' : 'anderes System';
 
     this.add

@@ -1,6 +1,7 @@
 import type Phaser from 'phaser';
 import * as SoundSystem from '@/systems/SoundSystem';
 import * as HapticsSystem from '@/systems/HapticsSystem';
+import * as SaveSystem from '@/systems/SaveSystem';
 import * as EffectsQualitySystem from '@/systems/EffectsQualitySystem';
 import type { EffectsQuality } from '@/types';
 import './settings.css';
@@ -134,6 +135,16 @@ export class SettingsView {
         ? 'Automatisch gesenkt – dein Gerät kam nicht mit'
         : 'Sparsam und Mittel schonen schwache Geräte';
     const hint = text(graphics, qualityHint(), true);
+    toggle(
+      graphics,
+      'Bildrate anzeigen',
+      'Im Run unten links: fps, längster Frame, Ruckler',
+      () => SaveSystem.load().showFrameRate,
+      () =>
+        SaveSystem.update((data) => {
+          data.showFrameRate = !data.showFrameRate;
+        }),
+    );
     const legal = card('IMPRESSUM');
     text(legal, 'PROGRAMMIERT VON YAVUZ ISIK');
     text(legal, 'BESONDERER DANK AN EMRE UND SIMAY');

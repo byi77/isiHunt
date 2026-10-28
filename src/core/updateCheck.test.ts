@@ -45,4 +45,16 @@ describe('updateCheck', () => {
 
     await expect(checkForUpdate()).resolves.toBeNull();
   });
+
+  it('fragt in der nativen App nicht, weil version.json dort im eigenen Bundle liegt', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({ version: '9.9.9' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    vi.stubGlobal('Capacitor', { isNativePlatform: () => true });
+
+    await expect(checkForUpdate()).resolves.toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
 });

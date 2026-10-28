@@ -4,21 +4,21 @@ Der Auftrag umfasst Performance, Logik, Codeaufteilung, Layout und Bedienung sow
 
 ## Befunde und Nachweise
 
-| Prio | Befund | Umsetzung / Regression |
-| --- | --- | --- |
-| P1 | Doppelter Start verbraucht Effektrechte mehrfach | Synchroner Start-Lock; kontogebundene persistierte Request-ID, einzelne Anfrage je Konto/Welt und bestaetigte Effekte bis zum Laufstart. RunStartSystem-, RewardEffectRunSession- und RewardEffectRunCloud-Tests. |
-| P1 | Offline-Lauf nach 64 Eintraegen verworfen | Keine feste Anzahlgrenze. Speicherfehler bleiben als sichtbarer Sitzungspuffer erhalten, werden erneut gespeichert und warnen beim Verlassen. ProgressSyncSystem-Tests mit 65 Runs und Quota-Erholung. |
-| P1 | Sehr kleine UI-Texte | Responsive DOM-Einstellungen und neu angeordnete CSS-basierte Talentkarten. Accessibility-Check prueft mindestens 12-Pixel-Beschreibungen und 44-Pixel-Ziele auf vier Bildschirmformaten. |
-| P1 | Frame-Glaettung versteckt niedrige Bildrate | Raw-Delta fuer Messung/Herabstufung, Phaser-Delta fuer Simulation; verdeckte Tabs ausgeschlossen. FrameRateGuard-Regression prueft dauerhafte 300-ms-Frames. |
-| P2 | Abgelaufene Relikte noch fangbar | RunUpdateSystem entscheidet Ablauf nach tick und vor Kollision; Grenzfall ist deterministisch getestet. |
-| P2 | Leere Messungen bestehen | PerformanceSystem akzeptiert nur endliche positive Samples; keine Samples bedeutet nicht bestanden. |
-| P2 | Menu laeuft neben Game im Browsercheck | Wechsel ueber vorherige Hauptszene bzw. explizites Stoppen aller alten Szenen; aktive Szenen werden geprueft. |
-| P2 | Diagnose-JSON durch Abschneiden ungueltig | BoundedJsonSystem behaelt ganze Eintraege innerhalb des Zeichenlimits; eigene Tests und ProgressSyncSystem-Regression. |
-| P2 | Node 26 ueberschattet jsdom-Speicher | Standard-Runner deaktiviert Node-Webstorage auch fuer Worker. Keine manuelle Umgebungsvariable erforderlich. |
-| P2 | Nur eine Welt/sparsame Grafik gemessen | performance:matrix mit zehn Welten, drei Stufen und 2D-Jagd/3D-Hangar. Realtime-Einzelcheck verwendet volle Effekte. |
-| P2 | Canvas ohne semantische Tastaturknoepfe | Native Buttons mit Namen, Enter/Space und Fokusrahmen; gesperrte, ausgeblendete, abgeschnittene und von Vollbild-Overlays verdeckte Ziele deaktiviert. PageUp/PageDown scrollen. |
-| P3 | Materialtraversierung je Frame | Tint/Alpha nur bei Aenderung, wiederverwendete Kantenfarbe, Cache beim Modellwechsel ungueltig. Matrix prueft geladene Hangarmodelle. |
-| P3 | Gemischte grosse Module | Gemeinsamer BackendTransport; separate Startkoordination, Effektsitzung, Relikt-Update und JSON-Grenzen. Bestehende Cloud-/Duelltests bleiben erhalten. |
+| Prio | Befund                                           | Umsetzung / Regression                                                                                                                                                                                            |
+| ---- | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1   | Doppelter Start verbraucht Effektrechte mehrfach | Synchroner Start-Lock; kontogebundene persistierte Request-ID, einzelne Anfrage je Konto/Welt und bestaetigte Effekte bis zum Laufstart. RunStartSystem-, RewardEffectRunSession- und RewardEffectRunCloud-Tests. |
+| P1   | Offline-Lauf nach 64 Eintraegen verworfen        | Keine feste Anzahlgrenze. Speicherfehler bleiben als sichtbarer Sitzungspuffer erhalten, werden erneut gespeichert und warnen beim Verlassen. ProgressSyncSystem-Tests mit 65 Runs und Quota-Erholung.            |
+| P1   | Sehr kleine UI-Texte                             | Responsive DOM-Einstellungen und neu angeordnete CSS-basierte Talentkarten. Accessibility-Check prueft mindestens 12-Pixel-Beschreibungen und 44-Pixel-Ziele auf vier Bildschirmformaten.                         |
+| P1   | Frame-Glaettung versteckt niedrige Bildrate      | Raw-Delta fuer Messung/Herabstufung, Phaser-Delta fuer Simulation; verdeckte Tabs ausgeschlossen. FrameRateGuard-Regression prueft dauerhafte 300-ms-Frames.                                                      |
+| P2   | Abgelaufene Relikte noch fangbar                 | RunUpdateSystem entscheidet Ablauf nach tick und vor Kollision; Grenzfall ist deterministisch getestet.                                                                                                           |
+| P2   | Leere Messungen bestehen                         | PerformanceSystem akzeptiert nur endliche positive Samples; keine Samples bedeutet nicht bestanden.                                                                                                               |
+| P2   | Menu laeuft neben Game im Browsercheck           | Wechsel ueber vorherige Hauptszene bzw. explizites Stoppen aller alten Szenen; aktive Szenen werden geprueft.                                                                                                     |
+| P2   | Diagnose-JSON durch Abschneiden ungueltig        | BoundedJsonSystem behaelt ganze Eintraege innerhalb des Zeichenlimits; eigene Tests und ProgressSyncSystem-Regression.                                                                                            |
+| P2   | Node 26 ueberschattet jsdom-Speicher             | Standard-Runner deaktiviert Node-Webstorage auch fuer Worker. Keine manuelle Umgebungsvariable erforderlich.                                                                                                      |
+| P2   | Nur eine Welt/sparsame Grafik gemessen           | performance:matrix mit zehn Welten, drei Stufen und 2D-Jagd/3D-Hangar. Realtime-Einzelcheck verwendet volle Effekte.                                                                                              |
+| P2   | Canvas ohne semantische Tastaturknoepfe          | Native Buttons mit Namen, Enter/Space und Fokusrahmen; gesperrte, ausgeblendete, abgeschnittene und von Vollbild-Overlays verdeckte Ziele deaktiviert. PageUp/PageDown scrollen.                                  |
+| P3   | Materialtraversierung je Frame                   | Tint/Alpha nur bei Aenderung, wiederverwendete Kantenfarbe, Cache beim Modellwechsel ungueltig. Matrix prueft geladene Hangarmodelle.                                                                             |
+| P3   | Gemischte grosse Module                          | Gemeinsamer BackendTransport; separate Startkoordination, Effektsitzung, Relikt-Update und JSON-Grenzen. Bestehende Cloud-/Duelltests bleiben erhalten.                                                           |
 
 ## Reproduzierbare Pruefungen und Grenzen
 

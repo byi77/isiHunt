@@ -18,6 +18,9 @@ import { SceneKey } from '@/scenes/SceneKey';
 import { Depth } from '@/ui/depth';
 import { TextureKey } from '@/ui/textures';
 import { FontSize, Palette, textStyle } from '@/ui/theme';
+import * as EffectsQualitySystem from '@/systems/EffectsQualitySystem';
+import { FrameRateMeter } from '@/systems/FrameRateMeter';
+import * as SaveSystem from '@/systems/SaveSystem';
 import { calculateHudLayout } from '@/ui/hudLayout';
 import { enterScene } from '@/ui/sceneTransition';
 import { prefersReducedMotion } from '@/systems/AccessibilitySystem';
@@ -149,6 +152,9 @@ export interface HudSceneData {
 
 export class HudScene extends Phaser.Scene {
   private layout!: ReturnType<typeof calculateHudLayout>;
+  /** Nur bei eingeschalteter Einstellung "Bildrate anzeigen". */
+  private frameRateText: Phaser.GameObjects.Text | null = null;
+  private frameRateMeter: FrameRateMeter | null = null;
   private plate!: Phaser.GameObjects.Graphics;
   private scoreCaption!: Phaser.GameObjects.Text;
   private timeCaption!: Phaser.GameObjects.Text;
@@ -487,6 +493,15 @@ export class HudScene extends Phaser.Scene {
       }
     }
 
+    if (SaveSystem.load().showFrameRate) {
+      this.frameRateMeter = new FrameRateMeter();
+      this.frameRateText = this.add
+        .text(0, 0, '… fps', textStyle(FontSize.tiny, Palette.inkDim))
+        .setOrigin(0, 0.5)
+        .setDepth(Depth.Overlay)
+        .setStroke(HUD_TEXT_STROKE.stroke, HUD_TEXT_STROKE.strokeThickness);
+    }
+
     // Die Zielzeile liegt im Spielfeld, Relikte ziehen darueber hinweg.
     // Dieselbe Kontur wie die Kopfzahlen haelt sie dabei lesbar.
     this.targetText?.setStroke(HUD_TEXT_STROKE.stroke, HUD_TEXT_STROKE.strokeThickness);
@@ -504,6 +519,18 @@ export class HudScene extends Phaser.Scene {
       // Der Schutz beginnt erst nach dem Countdown und steht bis dahin voll.
       this.onComboWindow({ ratio: 1, combo: data.carriedSeries.combo, shieldRatio: 1 });
     }
+  }
+
+  update(): void {
+    const reading = this.frameRateMeter?.sample(this.game.loop.rawDelta);
+    if (!reading || !this.frameRateText) return;
+    const tier = { full: 'Voll', medium: 'Mittel', reduced: 'Sparsam' }[
+      EffectsQualitySystem.current()
+    ];
+    const hitches = Math.round(reading.hitchShare * 100);
+    this.frameRateText.setText(
+      `${reading.fps} fps · max ${reading.worstMs} ms · Ruckler ${hitches} % · ${tier}`,
+    );
   }
 
   // --- Pause ----------------------------------------------------------------
@@ -557,6 +584,10 @@ export class HudScene extends Phaser.Scene {
     };
     // Alle Zeilen um die Balkenhoehe nach unten - er liegt jetzt darueber.
     place(this.worldText, GAME_WIDTH / 2, 8, 12, l.width);
+    // Gegenueber vom Pause-Knopf, auf seiner Hoehe: unten links ist im Run frei.
+    this.frameRateText
+      ?.setPosition(GAME_WIDTH - l.pauseX - l.pauseSize / 2, l.pauseY)
+      .setFontSize(l.font(12));
     place(this.scoreCaption, l.scoreX, 27, 12, l.columnWidth);
     place(this.timeCaption, l.timeX, 27, 12, l.columnWidth);
     // Shared value sizing keeps the three columns aligned.

@@ -334,7 +334,11 @@
         max-width: 320px;
       }
 
-      @media (orientation: landscape) and (pointer: coarse) {
+      /* Nur niedrige Querformate sperren. Das aufgeklappte iPhone Duo ist quer
+         626 pt hoch - dort passt das Hochformat-Spielfeld mit Randstreifen,
+         eine Sperre wuerde eine gueltige Haltung des Geraets verbieten
+         (HIG designing-for-iphone-duo.md). Ein iPhone quer bleibt unter 500. */
+      @media (orientation: landscape) and (pointer: coarse) and (max-height: 500px) {
         #orientation-lock {
           display: grid;
         }

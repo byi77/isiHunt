@@ -9,14 +9,14 @@ Server- oder Synchronisationspfad muss denselben Wert verwenden?
 
 ## Punkte
 
-| Vorgang              | Rohquelle                                 | Client-Stelle                                               | Server-/Schutzpfad                                                         |
-| -------------------- | ----------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Punkte je Relikt     | `rarities.*.points`                       | `ScoreSystem.registerCollect()`                             | `max_plausible_score()` liest dieselben Raritäten                          |
-| Combo-Multiplikator  | `score.comboTiers`, `comboMultiplierPerExtraSeries` | `multiplierForCombo()` und `ScoreSystem`          | Tages-Score-Tiers verwenden `balance_score_for_runs()`                     |
-| Weltbonus            | `worlds.*.scoreMultiplier`                | `ScoreSystem` erhält den Weltmultiplikator aus `GameScene`  | `max_plausible_score()` prüft Welt-ID und Multiplikator                    |
-| Talentboni           | `talents.*`                               | `resolveStats()`, `ScoreSystem`, `SpawnSystem`, `GameScene` | Duell setzt Talente auf Grundwerte; Run-Event bleibt serverseitig begrenzt |
-| Tages-Score-Schwelle | `economy.daily.scoreTierRuns`             | `DAILY_SCORE_BONUS_STEP` und `ChallengeSystem`              | `claim_daily_bonus()` berechnet die Tierzahl serverseitig                  |
-| Score-Grenze         | keine Belohnungsquelle; Sicherheitsgrenze | kein separater Generator                                    | `max_plausible_score()` cappt Missbrauch und nutzt Sicherheitsmargen       |
+| Vorgang              | Rohquelle                                           | Client-Stelle                                               | Server-/Schutzpfad                                                         |
+| -------------------- | --------------------------------------------------- | ----------------------------------------------------------- | -------------------------------------------------------------------------- |
+| Punkte je Relikt     | `rarities.*.points`                                 | `ScoreSystem.registerCollect()`                             | `max_plausible_score()` liest dieselben Raritäten                          |
+| Combo-Multiplikator  | `score.comboTiers`, `comboMultiplierPerExtraSeries` | `multiplierForCombo()` und `ScoreSystem`                    | Tages-Score-Tiers verwenden `balance_score_for_runs()`                     |
+| Weltbonus            | `worlds.*.scoreMultiplier`                          | `ScoreSystem` erhält den Weltmultiplikator aus `GameScene`  | `max_plausible_score()` prüft Welt-ID und Multiplikator                    |
+| Talentboni           | `talents.*`                                         | `resolveStats()`, `ScoreSystem`, `SpawnSystem`, `GameScene` | Duell setzt Talente auf Grundwerte; Run-Event bleibt serverseitig begrenzt |
+| Tages-Score-Schwelle | `economy.daily.scoreTierRuns`                       | `DAILY_SCORE_BONUS_STEP` und `ChallengeSystem`              | `claim_daily_bonus()` berechnet die Tierzahl serverseitig                  |
+| Score-Grenze         | keine Belohnungsquelle; Sicherheitsgrenze           | kein separater Generator                                    | `max_plausible_score()` cappt Missbrauch und nutzt Sicherheitsmargen       |
 
 Die Rarity-Tabelle in `src/config/rarities.ts` ist eine Kompatibilitätsansicht
 für den Client. Ihr Punkte-/XP-Inhalt wird in `Balance.test.ts` gegen die

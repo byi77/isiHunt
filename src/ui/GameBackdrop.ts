@@ -152,7 +152,8 @@ export class GameBackdrop {
 
     this.stars = createPlayfieldStars(scene, width, height, world.spaceVariant, mood.starTint);
     this.root.add(this.stars);
-    if (EffectsQualitySystem.isFull()) {
+    // Ab "Mittel": eine GPU-Sprite-Schicht, kaum Arbeit pro Pixel.
+    if (EffectsQualitySystem.atLeast('medium')) {
       this.starDust = createStarDust(scene, width, height, mood.starTint, world.spaceVariant);
       this.root.add(this.starDust);
     }

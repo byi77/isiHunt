@@ -40,6 +40,11 @@ try {
     { width: 390, height: 844 },
     { width: 360, height: 640 },
     { width: 768, height: 1024 },
+    // iPhone 18 Pro als Home-Bildschirm-App und iPhone Duo aussen/innen
+    // (Duo-Punktwerte aus Apples Pixelangaben / 3 abgeleitet, siehe playtest.mjs).
+    { width: 402, height: 874 },
+    { width: 466, height: 678 },
+    { width: 626, height: 890 },
   ]) {
     const page = await browser.newPage({ viewport });
     const errors = [];

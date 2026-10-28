@@ -29,6 +29,7 @@
  */
 
 import { APP_VERSION } from '@/config/GameConfig';
+import { isNativeApp } from '@/core/platform';
 
 export interface UpdateInfo {
   /** Version, die auf dem Server liegt. */
@@ -46,6 +47,10 @@ const TIMEOUT_MS = 4000;
  * @returns die Info, wenn eine ANDERE Version bereitliegt - sonst `null`.
  */
 export async function checkForUpdate(): Promise<UpdateInfo | null> {
+  // In der nativen App liegt `version.json` im selben Bundle wie der Code -
+  // der Vergleich liefe gegen sich selbst. Updates kommen dort ueber
+  // TestFlight, nicht ueber Neuladen (ADR-0015).
+  if (isNativeApp()) return null;
   try {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), TIMEOUT_MS);

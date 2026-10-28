@@ -1,0 +1,64 @@
+# iOS-Build und TestFlight-Auslieferung ohne eigenen Mac (ADR-0015).
+#
+# Laeuft getrennt von GitHub Actions: ci.yml/deploy.yml bauen weiter die
+# Web-Fassung fuer Pages, dieser Workflow nur die native App.
+#
+# Bewusst ohne `triggering`: Der Build startet nur von Hand in der
+# Codemagic-Oberflaeche. Ein Push loest bei jedem Commit eine Versionsnummer
+# aus (CLAUDE.md, Regel 9) - automatisch gebaut waeren die freien
+# macOS-Minuten nach wenigen Tagen verbraucht.
+#
+# Einmalig in Codemagic einzurichten (keine Secrets im Repository):
+#   1. Team-Einstellungen -> Integrations -> App Store Connect: API-Key (.p8)
+#      mit Rolle "App Manager" unter dem Namen aus `integrations` hinterlegen.
+#   2. App Store Connect: App-Eintrag mit der Bundle-ID aus `ios_signing`
+#      anlegen. Signing-Zertifikat und Profil holt Codemagic dann selbst.
+workflows:
+  ios-testflight:
+    name: iOS TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 45
+    integrations:
+      app_store_connect: isiHunt App Store Connect
+    environment:
+      ios_signing:
+        distribution_type: app_store
+        # Muss zu `appId` in capacitor.config.ts passen.
+        bundle_identifier: io.github.byi77.isihunt
+      vars:
+        XCODE_PROJECT: ios/App/App.xcodeproj
+        XCODE_SCHEME: App
+      node: 24
+      xcode: latest
+    scripts:
+      - name: Abhaengigkeiten
+        script: npm ci
+      - name: Web-Build
+        # Bewusst nicht `npm run verify`: Das prueft schon die GitHub-CI fuer
+        # denselben Commit. Hier zaehlt nur, dass dist/ entsteht.
+        script: npm run build
+      - name: Web-Build ins Xcode-Projekt
+        script: npx cap sync ios
+      - name: Signing-Profile
+        script: xcode-project use-profiles
+      - name: Versionsnummern
+        # Sichtbare Version = package.json, damit TestFlight dieselbe Nummer
+        # zeigt wie oben rechts im Spiel. Die Build-Nummer muss nur je Upload
+        # steigen; Codemagics BUILD_NUMBER zaehlt je Workflow hoch.
+        script: |
+          set -e
+          VERSION=$(node -p "require('./package.json').version")
+          sed -i '' \
+            -e "s/MARKETING_VERSION = [^;]*;/MARKETING_VERSION = ${VERSION};/" \
+            -e "s/CURRENT_PROJECT_VERSION = [^;]*;/CURRENT_PROJECT_VERSION = ${BUILD_NUMBER};/" \
+            "$XCODE_PROJECT/project.pbxproj"
+          echo "isiHunt v${VERSION} (Build ${BUILD_NUMBER})"
+      - name: IPA bauen
+        script: xcode-project build-ipa --project "$XCODE_PROJECT" --scheme "$XCODE_SCHEME"
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true

@@ -24,13 +24,20 @@
  * ohne jede Browserleiste.
  */
 
+import { isNativeApp } from '@/core/platform';
+
 /**
  * Laeuft das Spiel als installierte App (vom Home-Bildschirm gestartet)?
  *
  * `display-mode: standalone` ist der Standardweg; `navigator.standalone` ist
  * Apples aelterer, nicht standardisierter Vorgaenger, den iOS weiterhin setzt.
+ *
+ * Die native App (ADR-0015) setzt keines von beiden, laeuft aber genauso ohne
+ * Browserleiste. Ohne die erste Zeile empfaehle sie sich selbst den
+ * Home-Bildschirm und liesse die Safe-Area-Korrektur aus.
  */
 export function isStandalone(): boolean {
+  if (isNativeApp()) return true;
   if (window.matchMedia('(display-mode: standalone)').matches) return true;
 
   const legacy = (navigator as Navigator & { standalone?: boolean }).standalone;

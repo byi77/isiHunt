@@ -39,6 +39,7 @@ function save(overrides: Partial<SaveData> = {}): SaveData {
     shipAura: 'none',
     soundEnabled: false,
     hapticsEnabled: false,
+    showFrameRate: false,
     effectsQuality: 'full',
     effectsQualityAutoLowered: false,
     playerName: 'Test',
